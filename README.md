@@ -11,7 +11,10 @@ Desarrollado en:
 MYSQL
 HTML
 PRIMEFACES
-JavaEE 8
+JakartaEE 10
+Jakarta Faces 4.0
+Java 11
+
 
 El programa esta estructurado de la siguiente forma:
 Web Pages - Contiene todas las paginas desplegables.
