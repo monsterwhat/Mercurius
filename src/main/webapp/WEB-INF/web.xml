@@ -5,13 +5,13 @@
          version="5.0">
 
     <servlet>
-        <servlet-name>Faces Servlet</servlet-name>
+        <servlet-name>Mercurius</servlet-name>
         <servlet-class>jakarta.faces.webapp.FacesServlet</servlet-class>
         <load-on-startup>1</load-on-startup>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>Faces Servlet</servlet-name>
+        <servlet-name>Mercurius</servlet-name>
         <url-pattern>*.xhtml</url-pattern>
     </servlet-mapping>
 

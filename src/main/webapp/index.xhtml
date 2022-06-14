@@ -1,19 +1,56 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+         "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://java.sun.com/jsf/html"
-      xmlns:f="http://java.sun.com/jsf/core"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:p="http://primefaces.org/ui">
 
-<h:head></h:head>
+    <h:head>
+        <title>Inicio de Sesion</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="bulma/css/bulma.min.css"/>
 
-<h:body>
-    <p:spinner />
-    <h:form>
-        <p:inputText value="#{IndexBean.p::name}"/>
-        <p:commandButton value="add" actionListeneer="#{IndexBean.add}"/>
-        <p:dataTable value="#{IndexBean.personsList}" ver="e"/>
-        <p:column>
-            <h:outputText value="#{e}"/>
-        </p:column>
-    </h:form>
-</h:body>
+    </h:head>
+    <h:body>
+        
+        <section class="hero is-warning is-fullheight">
+            <div class="hero-body"> 
+                <div class="container">
+                    <p:messages styleClass="message" showDetail="true" closable="true" >
+                        <p:autoUpdate/>
+                    </p:messages>  
+                    <div class="columns is-centered">
+                        <div class="column is-5-tablet is-4-desktop is-3-widescreen ">
+                            <h:form id="formUserLogin" class="box">
+                                <div class="field">
+                                    <label for="username" class="label">Username</label>
+                                    <p:inputText class="input is-rounded is-dark" placeholder="Username" id="Username" required="true" value="#{loginController.user_name}"/>
+                                </div>
+                                <div class="field">
+                                    <label for="password" class="label">Password</label>
+                                    <p:inputText class="input is-rounded is-dark" type="password" placeholder="Password" id="password" required="true" value="#{loginController.user_password}"/>
+                                </div>
+                                <center>
+                                    <div class="field">
+                                        <p:commandButton class="button is-success is-rounded" value="Login" update="@none" action="#{loginController.confirmLogin}"/>
+                                    </div>
+                                </center>
+                            </h:form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </h:body>
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>Mercurius</strong>
+                <br></br>
+                <a href="https://github.com/monsterwhat/Mercurius"><img src="https://github.com/monsterwhat/Mercurius/raw/Master/Mercurius.png" height="80" width="80" alt="Mercurius"/></a>
+            </p>
+        </div>
+    </footer>
 </html>
+
