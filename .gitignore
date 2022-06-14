@@ -18,3 +18,5 @@ Mercurius/nbproject/private/private.xml
 Mercurius/nbproject/project.properties
 Mercurius/nbproject/project.xml
 Mercurius/build.xml
+*.class
+*.lst
