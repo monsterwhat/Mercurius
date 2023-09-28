@@ -518,3 +518,4 @@ MigrationBackup/
 .ionide/
 
 # End of https://www.toptal.com/developers/gitignore/api/netbeans,java,maven,visualstudiocode,vs,intellij+all
+Mercurius/nb-configuration.xml
