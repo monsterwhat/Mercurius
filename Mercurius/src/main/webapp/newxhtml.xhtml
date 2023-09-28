@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui">
+    
+    <h:head>
+        <title>Facelet Title</title>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="bulma/css/bulma.min.css"/>
+
+    </h:head>
+    <h:body>
+        <section class="hero is-warning is-fullheight">
+            <div class="hero-body"> 
+                <div class="container">
+                    <div class="columns is-centered">
+                        <div class="column is-5-tablet is-4-desktop is-3-widescreen ">
+                            <h:form id="formUserLogin" class="box">
+                                <div class="field">
+                                    <label for="" class="label">Email</label>
+                                    <p:inputText class="input is-rounded is-dark" type="email" placeholder="Email" id="email" required="true"/>
+                                </div>
+                                <div class="field">
+                                    <label for="" class="label">Password</label>
+                                    <p:inputText class="input is-rounded is-dark" type="password" placeholder="Password" id="password" required="true"/>
+                                </div>
+                                <div class="field">
+                                    <button class="button is-success is-rounded">
+                                        Ingresar
+                                    </button>
+                                </div>
+                            </h:form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </h:body>
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>Bulma</strong> by <a href="https://jgthms.com">Jeremy Thomas</a>. The source code is licensed
+                <a href="http://opensource.org/licenses/mit-license.php">MIT</a>. The website content
+                is licensed <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY NC SA 4.0</a>.
+            </p>
+        </div>
+    </footer>
+</html>
