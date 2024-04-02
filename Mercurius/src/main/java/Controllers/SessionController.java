@@ -1,7 +1,7 @@
 package Controllers;
 
-import Models.Profiles;
-import Services.Service;
+import Models.Users;
+import Services.LoginService;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.ExternalContext;
@@ -21,12 +21,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotEmpty;
 import java.io.IOException;
 import java.io.Serializable;
+import lombok.Data;
 
 /**
  *
  * @author Al
  */
 
+@Data
 @Named(value = "SessionController")
 @SessionScoped
 public class SessionController implements Serializable{
@@ -36,9 +38,9 @@ public class SessionController implements Serializable{
     
     @NotEmpty private String username;
     @NotEmpty private String password;
-    private Profiles currentUser;
+    private Users currentUser;
     
-    @Inject private Service UserService;
+    @Inject private LoginService loginService;
     @Inject FacesContext facesContext;
     @Inject SecurityContext securityContext;
 
@@ -50,7 +52,7 @@ public class SessionController implements Serializable{
                     facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Invalid username or password."));
                 }
                 case SUCCESS -> {
-                    currentUser = UserService.getSession(securityContext.getCallerPrincipal().getName());
+                    currentUser = loginService.getSession(securityContext.getCallerPrincipal().getName());
                     getExternalContext().redirect(getExternalContext().getRequestContextPath() + "/secured/index.xhtml");
                 }
                 case NOT_DONE -> {
@@ -91,21 +93,5 @@ public class SessionController implements Serializable{
     private ExternalContext getExternalContext(){
      return facesContext.getExternalContext();
     }
-        
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-    
+            
 }

@@ -4,35 +4,71 @@
       xmlns:p="http://primefaces.org/ui">
     
 <h:head>
-    <title>Login Page</title>
+    <title>Inicio de Sesion</title>
+    <meta charset="utf-8"/>
+
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .login-panel {
+            max-width: 400px; /* Adjust as needed */
+            width: 100%;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        .full-width {
+            width: 100%;
+        }
+        .login-panel button {
+            display: block;
+            width: 100%;
+        }
+        @media (max-width: 480px) {
+            .login-panel {
+                max-width: 100%;
+            }
+        }
+    </style>
 </h:head>
     
 <h:body>
-    <h:form rendered="#{not SessionController.isValid()}">
-        <p:panel header="Login">
-            <p:growl id="growl" showDetail="true" />
-            <h:panelGrid columns="2">
+<div class="container">
+        <h:form rendered="#{not SessionController.isValid()}">
+            <p:panel styleClass="login-panel">
+                <h:graphicImage url="/resources/imgs/palmeras1.png" alt="Imagen" />
+                <p:growl id="growl" showDetail="true" />
+                <h:panelGrid columns="1" styleClass="full-width">
+                    <p:inputText id="username" value="#{SessionController.username}" required="true" requiredMessage="El usuario no puede estar vacío" placeholder="Nombre de Usuario" styleClass="full-width"/>
+                    <p:password id="password" value="#{SessionController.password}" required="true" requiredMessage="La contraseña no puede estar vacía" placeholder="Contraseña" styleClass="full-width"/>
+                </h:panelGrid>
+                <p:commandButton value="Iniciar Sesión" action="#{SessionController.executeLogin}" ajax="false" styleClass="ui-button-raised ui-button-success"/>
+            </p:panel>
+        </h:form>
 
-                <h:outputLabel for="username" value="Username:" />
-                <p:inputText id="username" value="#{SessionController.username}" />
-
-                <h:outputLabel for="password" value="Password:" />
-                <p:password id="password" value="#{SessionController.password}" />
-
-                <p:commandButton value="Login" action="#{SessionController.executeLogin}" ajax="false" />
-            </h:panelGrid>
-        </p:panel>
-    </h:form>
     <h:form rendered="#{SessionController.isValid()}">
-        <p:panel>
+        <p:panel styleClass="login-panel">
             <h:panelGrid columns="1">
-                <h:outputLabel for="message" value="Oops!" />
-                <h:outputLabel for="message" value="You are already logged in Silly goose!" />
-                <p:button href="/secured/index"/>
+                <h:outputLabel for="message" value="¡Oops!" />
+                <h:outputLabel for="message" value="¡Ya iniciaste sesión!" />
+                <h:panelGrid columns="2">
+                    <p:button styleClass="button" value="Menú Principal" href="/secured/index"/>
+                    <p:commandButton value="Cerrar Sesión" action="#{SessionController.logOut}"/>
+                </h:panelGrid>
             </h:panelGrid>
         </p:panel>
     </h:form>
-        
+            
+</div>
 </h:body>
+
     
 </html>

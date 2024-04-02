@@ -13,13 +13,13 @@ import jakarta.security.enterprise.identitystore.DatabaseIdentityStoreDefinition
 
 @DatabaseIdentityStoreDefinition(
         dataSourceLookup = "jdbc/MySQL",
-        callerQuery = "select password from Profiles where username = ?",
-        groupsQuery = "select groupName from Profiles where username = ?"
+        callerQuery = "select password from Users where username = ?",
+        groupsQuery = "select groupName from Users where username = ?"
 )
 @CustomFormAuthenticationMechanismDefinition(
         loginToContinue = @LoginToContinue(
         loginPage = "/index",
-        errorPage = "",
+        errorPage = "/",
         useForwardToLogin = false)
 )
 @FacesConfig
