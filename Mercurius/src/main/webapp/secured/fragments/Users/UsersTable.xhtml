@@ -1,0 +1,56 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+</h:head>
+    
+<h:body>
+    <div class="box">
+        <div class="columns is-centered">
+            <div class="column">
+                <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectMenu}" update="dynamicContent" styleClass="button is-fullwidth is-warning is-rounded"/>
+                <br/>
+                <h:form id="profilesTable">
+                    <p:dataTable value="#{ProfilesController.profilesList()}" var="profile" 
+                                 paginator="true" rows="8" paginatorPosition="bottom" 
+                                 selection="#{ProfilesController.selectedProfile}" rowKey="#{profile.id}">
+                        <!-- Define your columns here -->
+                        <p:column headerText="Identificador de perfil" visible="false">
+                            <h:outputText value="#{profile.id}"/>
+                        </p:column>
+                        <p:column headerText="Nombre de usuario">
+                            <h:outputText value="#{profile.username}" />
+                        </p:column>
+                        <p:column headerText="Contraseña (HASH)">
+                            <h:outputText value="#{profile.password}" />
+                        </p:column>
+                        <p:column headerText="Nombre del grupo">
+                            <h:outputText value="#{profile.groupName}" />
+                        </p:column>
+                        <p:column headerText="Acciones" width="20%">
+                            <div class="buttons has-addons">
+                                <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
+                                actionListener="#{ViewController.selectEditUsers()}" process="@this" update="dynamicContent">
+                                    <f:setPropertyActionListener value="#{profile}" target="#{ProfilesController.selectedProfile}" />
+                                </p:commandButton>
+                                <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                actionListener="#{ProfilesController.deleteProfile()}" process="@this" update="dynamicContent profilesTable">
+                                    <f:setPropertyActionListener value="#{profile}" target="#{ProfilesController.selectedProfile}" />
+                                </p:commandButton>
+                            </div>
+                        </p:column>
+                    </p:dataTable>
+                    <p:commandButton value="Crear Usuario" actionListener="#{ViewController.selectCreateUsers()}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
+                </h:form>
+            </div>
+        </div>
+    </div>
+</h:body>
+
+</ui:composition>

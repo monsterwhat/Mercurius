@@ -1,29 +1,31 @@
 package Controllers;
 
-import Models.Profiles;
-import Services.Service;
+import Models.Users;
+import Services.LoginService;
 import Utils.FakeUserGenerator;
 import jakarta.annotation.PostConstruct;
-import jakarta.faces.view.ViewScoped;
+import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Optional;
+import lombok.Data;
 /**
  *
  * @author Al
  */
 
+@Data
 @Named(value = "ProfilesController")
-@ViewScoped
+@SessionScoped
 public class ProfilesController implements Serializable{
-    @Inject private Service profileService;
+    @Inject private LoginService profileService;
+    @Inject ViewController viewManager;
 
-    private List<Profiles> profiles;
-    private Profiles selectedProfile;
-    private Profiles newProfile;
-    private String selectedOption = "view";
+    private List<Users> profiles;
+    private Users selectedProfile;
+    private Users newProfile;
     private String generatorOption;
     
     public ProfilesController() {
@@ -31,11 +33,11 @@ public class ProfilesController implements Serializable{
     
     @PostConstruct
     public void init(){
-        newProfile = new Profiles();
-        selectedProfile = new Profiles();
+        newProfile = new Users();
+        selectedProfile = new Users();
     }
     
-    public List<Profiles> profilesList(){
+    public List<Users> profilesList(){
         if(profiles == null){
             profiles = profileService.listAll();
         }
@@ -46,21 +48,8 @@ public class ProfilesController implements Serializable{
         return profileService.count();
     }
     
-    public void selectView(){
-        selectedOption = "view";
-    }
-    
-    public void selectEdit(){
-        selectedOption = "edit";
-    }
-    
-    public void selectCreate(){
-        selectedOption = "create";
-        openNewProfile();
-    }
-    
     public void openNewProfile(){
-        newProfile = new Profiles();
+        newProfile = new Users();
     }
     
     public void updateProfile(){
@@ -75,8 +64,10 @@ public class ProfilesController implements Serializable{
     
     public void deleteProfile(){
         if(selectedProfile != null){
-        profileService.delete(selectedProfile);
-        clearSelectedProfile();
+            if(selectedProfile.getId()!=null){
+                profileService.delete(selectedProfile);
+                clearSelectedProfile();
+            }
         }
     }
     
@@ -84,7 +75,7 @@ public class ProfilesController implements Serializable{
         profiles = null;
         newProfile = null;
         selectedProfile = null;
-        selectedOption = "view";
+        viewManager.selectViewUsers();
     }
     
     public void generateAndCreateRandomUsers() {
@@ -96,7 +87,7 @@ public class ProfilesController implements Serializable{
         }
         
         for (int i = 0; i < 10; i++) {
-            Profiles newUser = userGenerator.generateFakeUserProfile("user");
+            Users newUser = userGenerator.generateFakeUserProfile("user");
             profileService.create(newUser);
         }
         clearSelectedProfile();
@@ -111,52 +102,10 @@ public class ProfilesController implements Serializable{
         }
         
         for (int i = 0; i < 10; i++) {
-            Profiles newUser = userGenerator.generateFakeUserProfile("admin");
+            Users newUser = userGenerator.generateFakeUserProfile("admin");
             profileService.create(newUser);
         }
         clearSelectedProfile();
     }
-
-    public List<Profiles> getProfiles() {
-        return profiles;
-    }
-
-    public void setProfiles(List<Profiles> profiles) {
-        this.profiles = profiles;
-    }
-
-    public Profiles getSelectedProfile() {
-        return selectedProfile;
-    }
-
-    public void setSelectedProfile(Profiles selectedProfile) {
-        this.selectedProfile = selectedProfile;
-    }
-
-    public Profiles getNewProfile() {
-        return newProfile;
-    }
-
-    public void setNewProfile(Profiles newProfile) {
-        this.newProfile = newProfile;
-    }
-
-    public String getSelectedOption() {
-        return selectedOption;
-    }
-
-    public void setSelectedOption(String selectedOption) {
-        this.selectedOption = selectedOption;
-    }
-
-    public String getGeneratorOption() {
-        return generatorOption;
-    }
-
-    public void setGeneratorOption(String generatorOption) {
-        this.generatorOption = generatorOption;
-    }
-    
-    
-    
+   
 }

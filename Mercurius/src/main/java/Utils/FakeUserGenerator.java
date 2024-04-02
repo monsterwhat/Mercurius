@@ -5,7 +5,7 @@ package Utils;
  * @author Al
  */
 
-import Models.Profiles;
+import Models.Users;
 import com.github.javafaker.Faker;
 import java.util.HashSet;
 import java.util.Set;
@@ -41,8 +41,8 @@ public class FakeUserGenerator {
         return username;
     }
     
-    public Profiles generateFakeUserProfile(String groupName) {
-        Profiles profile = new Profiles();
+    public Users generateFakeUserProfile(String groupName) {
+        Users profile = new Users();
         profile.setUsername(generateUniqueUsername());
         profile.setPassword(faker.internet().password());
         profile.setGroupName(groupName);

@@ -5,7 +5,7 @@
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
 <h:head>
-    <title>Welcome Page</title>
+    <title>Menu Principal</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -23,22 +23,35 @@
                             <!-- Welcome Admin Tile Box -->
                             <article class="message is-info">
                                 <div class="message-body">
-                                    <h1 class="title">Welcome, admin!</h1>
+                                    <h1 class="title">Bienvenido, #{SessionController.currentUser.username}!</h1>
                                 </div>
                             </article>
                         </div>
                     </div>
                     
-                    <p:outputPanel id="dynamicContent">        
-                        <ui:fragment rendered="#{ProfilesController.selectedOption eq 'view'}" >
-                            <ui:include src="./fragments/ProfilesTable.xhtml" />
+                    <p:outputPanel id="dynamicContent">
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'menu'}" >
+                            <ui:include src="./fragments/mainMenu.xhtml" />
                         </ui:fragment>
-                        <ui:fragment rendered="#{ProfilesController.selectedOption eq 'edit'}">
-                            <ui:include src="./fragments/EditProfile.xhtml" />
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsers'}" >
+                            <ui:include src="./fragments/Users/UsersTable.xhtml" />
                         </ui:fragment>
-                        <ui:fragment rendered="#{ProfilesController.selectedOption eq 'create'}">
-                            <ui:include src="./fragments/CreateProfile.xhtml" />
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editUsers'}">
+                            <ui:include src="./fragments/Users/EditUsers.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createUsers'}">
+                            <ui:include src="./fragments/Users/CreateUsers.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewClients'}">
+                            <ui:include src="./fragments/Clients/ClientsTable.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editClients'}">
+                            <ui:include src="./fragments/Clients/EditClients.xhtml" />
+                        </ui:fragment>                        
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createClients'}">
+                            <ui:include src="./fragments/Clients/CreateClients.xhtml" />
+                        </ui:fragment>
+
                     </p:outputPanel>
                 </div>
             </div>
