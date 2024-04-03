@@ -14,7 +14,7 @@
     <div class="box">
         <div class="columns is-centered">
             <div class="column">
-                <p:commandButton value="Volver a lista de usuarios" icon="pi pi-backward" styleClass="button is-fullwidth is-warning is-rounded" immediate="true" action="#{ViewController.selectViewUsers()}" update="dynamicContent" />
+                <p:commandButton value="Volver a lista de usuarios" icon="pi pi-backward" styleClass="button is-fullwidth is-inverted is-warning is-rounded" immediate="true" action="#{ViewController.selectViewUsers()}" update="dynamicContent" />
                 <h:form id="editProfileForm" rendered="#{not empty ProfilesController.selectedProfile}">
                     <br/>
                     <p:panel header="Editar Usuario: #{ProfilesController.selectedProfile.username}">

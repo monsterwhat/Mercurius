@@ -23,16 +23,15 @@
                             <!-- Welcome Admin Tile Box -->
                             <article class="message is-info">
                                 <div class="message-body">
-                                    <h1 class="title">Bienvenido, #{SessionController.currentUser.username}!</h1>
+                                    <h1 class="title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
                                 </div>
                             </article>
                         </div>
                     </div>
                     
+                    <ui:include src="./fragments/mainMenu.xhtml" />
+                    
                     <p:outputPanel id="dynamicContent">
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'menu'}" >
-                            <ui:include src="./fragments/mainMenu.xhtml" />
-                        </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsers'}" >
                             <ui:include src="./fragments/Users/UsersTable.xhtml" />
                         </ui:fragment>
@@ -51,7 +50,6 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createClients'}">
                             <ui:include src="./fragments/Clients/CreateClients.xhtml" />
                         </ui:fragment>
-
                     </p:outputPanel>
                 </div>
             </div>

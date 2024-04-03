@@ -7,12 +7,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import jakarta.security.enterprise.identitystore.Pbkdf2PasswordHash;
-import jakarta.transaction.HeuristicMixedException;
-import jakarta.transaction.HeuristicRollbackException;
-import jakarta.transaction.NotSupportedException;
-import jakarta.transaction.RollbackException;
-import jakarta.transaction.SystemException;
-import jakarta.transaction.Transactional;
 import jakarta.transaction.UserTransaction;
 import java.util.List;
 
@@ -60,7 +54,6 @@ public class LoginService extends GService<Users>{
         }
     }
     
-    @Transactional
     public void InsertAdmin(){  
         try {
             this.userTransaction.begin();
