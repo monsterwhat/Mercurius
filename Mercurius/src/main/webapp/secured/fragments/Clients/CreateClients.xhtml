@@ -17,10 +17,10 @@
                     <p:commandButton value="Volver a la lista de clientes" icon="pi pi-arrow-left"
                                      styleClass="button is-fullwidth is-warning is-rounded"
                                      immediate="true" action="#{ViewController.selectViewClients}"
-                                     update="dynamicContent" />
+                                     update="dynamicContent"/>
                     <h:form id="createClients">
                         <br/>
-                        <p:panel header="Create a new client">
+                        <p:panel header="Crear un nuevo cliente">
                             <p:growl id="growl" showDetail="true" showSummary="false"/>
                             
                             <!-- Validation messages -->
@@ -165,7 +165,7 @@
                             
                         </p:panel>
                         <br/>
-                        <p:commandButton value="Create Client" styleClass="button is-fullwidth is-rounded is-success"
+                        <p:commandButton value="Crear Cliente" styleClass="button is-fullwidth is-rounded is-success"
                                          action="#{ClientsController.createClient}" update="dynamicContent"/>
                     </h:form>
                 </div>

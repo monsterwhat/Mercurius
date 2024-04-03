@@ -16,21 +16,30 @@
             <div class="column">
                 <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectMenu}" update="dynamicContent" styleClass="button is-fullwidth is-warning is-rounded"/>
                 <br/>
-                <h:form id="profilesTable">
-                    <p:dataTable value="#{ProfilesController.profilesList()}" var="profile" 
+                <h:form id="profilesTable">                
+                    <p:dataTable value="#{ProfilesController.filteredProfiles}" var="profile" widgetVar="UsersTable"
                                  paginator="true" rows="8" paginatorPosition="bottom" 
+                                 emptyMessage="No se encontraron usuarios con la criteria proporcionada"
+                                 globalFilterFunction="#{ProfilesController.globalFilterFunction}"
+                                 filterBy="#{ProfilesController.filterBy}"
                                  selection="#{ProfilesController.selectedProfile}" rowKey="#{profile.id}">
+                        
+                        <f:facet name="header">
+                                <p:inputText id="globalFilter" onkeyup="PF('UsersTable').filter()" styleClass="input"
+                                             placeholder="Busqueda general de todos los campos" />
+                        </f:facet>
+
                         <!-- Define your columns here -->
-                        <p:column headerText="Identificador de perfil" visible="false">
+                        <p:column headerText="Identificador de perfil" visible="false" sortBy="#{profile.id}">
                             <h:outputText value="#{profile.id}"/>
                         </p:column>
-                        <p:column headerText="Nombre de usuario">
+                        <p:column headerText="Nombre de usuario" sortBy="#{profile.username}">
                             <h:outputText value="#{profile.username}" />
                         </p:column>
                         <p:column headerText="Contraseña (HASH)">
                             <h:outputText value="#{profile.password}" />
                         </p:column>
-                        <p:column headerText="Nombre del grupo">
+                        <p:column headerText="Nombre del grupo" sortBy="#{profile.groupName}">
                             <h:outputText value="#{profile.groupName}" />
                         </p:column>
                         <p:column headerText="Acciones" width="20%">
@@ -52,5 +61,6 @@
         </div>
     </div>
 </h:body>
+
 
 </ui:composition>
