@@ -17,47 +17,56 @@
                 <p:commandButton value="Back to Main Menu" icon="pi pi-home" actionListener="#{ViewController.selectMenu}" update="dynamicContent" styleClass="button is-fullwidth is-warning is-rounded"/>
                 <br/>
                 <h:form id="clientsTable">
-                    <p:dataTable value="#{ClientsController.clientsList()}" var="client" 
-                                 paginator="true" rows="8" paginatorPosition="bottom" 
+                    <p:dataTable value="#{ClientsController.filteredClients}" var="client"  widgetVar="ClientsTable"
+                                 paginator="true" rows="8" paginatorPosition="bottom"
+                                 emptyMessage="No se encontraron clientes con la criteria proporcionada"
+                                 globalFilterFunction="#{ClientsController.globalFilterFunction}"
+                                 filterBy="#{ClientsController.filterBy}"
                                  selection="#{ClientsController.selectedClient}" rowKey="#{client.code}">
+                        
+                        <f:facet name="header">
+                            <p:inputText id="globalFilter" onkeyup="PF('ClientsTable').filter()"
+                                         placeholder="Busqueda general de todos los campos" styleClass="input"/>
+                        </f:facet>
+                        
                         <!-- Define your columns here -->
                         <p:column headerText="Client ID" visible="false">
                             <h:outputText value="#{client.code}"/>
                         </p:column>
-                        <p:column headerText="Name">
-                            <h:outputText value="#{client.name}" />
+                        <p:column headerText="Nombre" sortBy="#{client.name}">
+                            <h:outputText value="#{client.name}"/>
                         </p:column>
-                        <p:column headerText="Address">
+                        <p:column headerText="Direccion" sortBy="#{client.direccion}">
                             <h:outputText value="#{client.address}" />
                         </p:column>
-                        <p:column headerText="Email">
+                        <p:column headerText="Correo" sortBy="#{client.email}">
                             <h:outputText value="#{client.email}" />
                         </p:column>
-                        <p:column headerText="Birth Date">
+                        <p:column headerText="Nacimiento" sortBy="#{client.birthDate}">
                             <h:outputText value="#{client.birthDate}" />
                         </p:column>
-                        <p:column headerText="ID Type">
+                        <p:column headerText="Tipo de Cedula" sortBy="#{client.idType}">
                             <h:outputText value="#{client.idType}" />
                         </p:column>
-                        <p:column headerText="ID Number">
+                        <p:column headerText="Numero de Cedula" sortBy="#{client.idNumber}">
                             <h:outputText value="#{client.idNumber}" />
                         </p:column>
-                        <p:column headerText="Discount">
+                        <p:column headerText="Descuento" sortBy="#{client.discount}">
                             <h:outputText value="#{client.discount}" />
                         </p:column>
-                        <p:column headerText="Phone Number">
+                        <p:column headerText="Numero de Telefono" sortBy="#{client.phoneNumber}">
                             <h:outputText value="#{client.phoneNumber}" />
                         </p:column>
-                        <p:column headerText="Taxpayer">
+                        <p:column headerText="Tributador" sortBy="#{client.taxpayer}">
                             <h:outputText value="#{client.taxpayer}" />
                         </p:column>
-                        <p:column headerText="Zone Code">
+                        <p:column headerText="Codigo de Zona" sortBy="#{client.zoneCode}">
                             <h:outputText value="#{client.zoneCode}" />
                         </p:column>
-                        <p:column headerText="Actions" width="20%">
+                        <p:column headerText="Acciones">
                             <div class="buttons has-addons">
                                 <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
-                                actionListener="#{ViewController.selectEditClient()}" process="@this" update="dynamicContent">
+                                actionListener="#{ViewController.selectEditClients()}" process="@this" update="dynamicContent">
                                     <f:setPropertyActionListener value="#{client}" target="#{ClientsController.selectedClient}" />
                                 </p:commandButton>
                                 <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
@@ -67,7 +76,7 @@
                             </div>
                         </p:column>
                     </p:dataTable>
-                    <p:commandButton value="Create Client" actionListener="#{ViewController.selectCreateClients}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
+                    <p:commandButton value="Crear Cliente" actionListener="#{ViewController.selectCreateClients}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
                 </h:form>
             </div>
         </div>

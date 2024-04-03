@@ -1,15 +1,20 @@
 package Controllers;
 
+import Models.Users;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
+import static java.lang.Integer.getInteger;
+import java.util.Locale;
 import lombok.Data;
+import org.primefaces.util.LangUtils;
 
 /**
  *
  * @author Al
  */
+
 @Data
 @Named(value = "ViewController")
 @SessionScoped
@@ -49,5 +54,6 @@ public class ViewController implements Serializable {
     public void selectMenu(){
         selectedOption = "menu";
     }
-        
+
+    
 }
