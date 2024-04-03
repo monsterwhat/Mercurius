@@ -1,14 +1,10 @@
 package Controllers;
 
-import Models.Users;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
-import static java.lang.Integer.getInteger;
-import java.util.Locale;
 import lombok.Data;
-import org.primefaces.util.LangUtils;
 
 /**
  *
@@ -23,7 +19,7 @@ public class ViewController implements Serializable {
     @Inject ProfilesController profiles;
     @Inject ClientsController clients;
     
-    String selectedOption = "menu";
+    String selectedOption = "none";
 
     public void selectViewUsers(){
         selectedOption = "viewUsers";
@@ -51,8 +47,8 @@ public class ViewController implements Serializable {
         clients.openNewClient();
     }
     
-    public void selectMenu(){
-        selectedOption = "menu";
+    public void selectNone(){
+        selectedOption = "none";
     }
 
     

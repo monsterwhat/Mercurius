@@ -14,7 +14,7 @@
     <div class="box">
         <div class="columns is-centered">
             <div class="column">
-                <p:commandButton value="Back to Main Menu" icon="pi pi-home" actionListener="#{ViewController.selectMenu}" update="dynamicContent" styleClass="button is-fullwidth is-warning is-rounded"/>
+                <p:commandButton value="Volver al menu principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                 <br/>
                 <h:form id="clientsTable">
                     <p:dataTable value="#{ClientsController.filteredClients}" var="client"  widgetVar="ClientsTable"
