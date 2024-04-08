@@ -8,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.io.Serializable;
+import lombok.Data;
 
 /**
  *
@@ -15,6 +16,7 @@ import java.io.Serializable;
  */
 
 @Entity
+@Data
 @Table(name = "Profiles",
         uniqueConstraints = @UniqueConstraint(columnNames = {"username"}))
 public class Profiles implements Serializable{
@@ -40,39 +42,4 @@ public class Profiles implements Serializable{
         this.password = password;
         this.groupName = groupName;
     }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getGroupName() {
-        return groupName;
-    }
-
-    public void setGroupName(String groupName) {
-        this.groupName = groupName;
-    }
-    
-    
-    
 }

@@ -16,9 +16,21 @@
             <div class="column">
                 <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                 <br/>
-                <h:form id="profilesTable">                
+                <h:form id="profilesTable">
+                    
+                    <p:toolbar>
+                        <p:toolbarGroup align="right">
+                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
+                                <p:dataExporter type="xlsx" target="UsersTableData" fileName="Usuarios-Mercurius-Excel" />
+                            </p:commandButton>
+                            <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help" ajax="false">
+                                <p:dataExporter type="pdf" target="UsersTableData" fileName="Usuarios-Mercurius-PDF" />
+                            </p:commandButton>
+                        </p:toolbarGroup>
+                    </p:toolbar>
+                    
                     <p:dataTable value="#{ProfilesController.filteredProfiles}" var="profile" widgetVar="UsersTable"
-                                 paginator="true" rows="8" paginatorPosition="bottom" 
+                                 paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"
                                  emptyMessage="No se encontraron usuarios con la criteria proporcionada"
                                  globalFilterFunction="#{ProfilesController.globalFilterFunction}"
                                  filterBy="#{ProfilesController.filterBy}"
@@ -36,13 +48,13 @@
                         <p:column headerText="Nombre de usuario" sortBy="#{profile.username}">
                             <h:outputText value="#{profile.username}" />
                         </p:column>
-                        <p:column headerText="Contraseña (HASH)">
+                        <p:column headerText="Contraseña (HASH)" exportable="false">
                             <h:outputText value="#{profile.password}" />
                         </p:column>
                         <p:column headerText="Nombre del grupo" sortBy="#{profile.groupName}">
                             <h:outputText value="#{profile.groupName}" />
                         </p:column>
-                        <p:column headerText="Acciones" width="20%">
+                        <p:column headerText="Acciones" width="20%" exportable="false">
                             <div class="buttons has-addons">
                                 <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
                                 actionListener="#{ViewController.selectEditUsers()}" process="@this" update="dynamicContent">

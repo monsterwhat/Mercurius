@@ -1,0 +1,135 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+</h:head>
+    
+<h:body>
+    <div class="box">
+        <div class="columns is-centered">
+            <div class="column">
+                <p:commandButton value="Volver al menu principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                <br/>
+                <h:form id="cabysTableForm">
+                    
+                    <p:toolbar>
+                        <p:toolbarGroup align="left">
+                            <p:fileUpload mode="simple" skinSimple="true" label="Importar Catalogo de bienes y Servicios" chooseIcon="pi pi-download" />
+                        </p:toolbarGroup>
+                        <p:toolbarGroup align="right">
+                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
+                                <p:dataExporter type="xlsx" target="CabysTable" fileName="Cabys-Mercurius" />
+                            </p:commandButton>
+                            <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help" ajax="false">
+                                <p:dataExporter type="pdf" target="CabysTable" fileName="Cabys-Mercurius" />
+                            </p:commandButton>
+                        </p:toolbarGroup>
+                    </p:toolbar>
+                    
+                    <p:dataTable value="#{CabysController.filteredCabys}" var="cabys"  widgetVar="CabysTable"
+                                 paginator="true" rows="8" paginatorPosition="bottom" id="CabysTable"
+                                 emptyMessage="No se encontraron bienes ni servicios con la criteria proporcionada"
+                                 globalFilterFunction="#{CabysController.globalFilterFunction}"
+                                 filterBy="#{CabysController.filterBy}"
+                                 selection="#{CabysController.selectedCabys}" rowKey="#{cabys.id}">
+                        
+                        <f:facet name="header">
+                            <p:inputText id="globalFilter" onkeyup="PF('CabysTable').filter()"
+                                         placeholder="Busqueda general de todos los campos" styleClass="input"/>
+                        </f:facet>
+                        
+                        <!-- Define your columns here -->
+                        <p:column headerText="Id" sortBy="#{cabys.id}" visible="false">
+                            <h:outputText value="#{cabys.id}" />
+                        </p:column>
+                        <p:column headerText="Categoria 1" sortBy="#{cabys.categoria1}">
+                            <h:outputText value="#{cabys.categoria1}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 1" sortBy="#{cabys.descripcionCategoria1}">
+                            <h:outputText value="#{cabys.descripcionCategoria1}" />
+                        </p:column>
+                        <p:column headerText="Categoria 2" sortBy="#{cabys.categoria2}">
+                            <h:outputText value="#{cabys.categoria2}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 2" sortBy="#{cabys.descripcionCategoria2}">
+                            <h:outputText value="#{cabys.descripcionCategoria2}" />
+                        </p:column>
+                        <p:column headerText="Categoria 3" sortBy="#{cabys.categoria3}">
+                            <h:outputText value="#{cabys.categoria3}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 3" sortBy="#{cabys.descripcionCategoria3}">
+                            <h:outputText value="#{cabys.descripcionCategoria3}" />
+                        </p:column>
+                        <p:column headerText="Categoria 4" sortBy="#{cabys.categoria4}">
+                            <h:outputText value="#{cabys.categoria4}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 4" sortBy="#{cabys.descripcionCategoria4}">
+                            <h:outputText value="#{cabys.descripcionCategoria4}" />
+                        </p:column>
+                        <p:column headerText="Categoria 5" sortBy="#{cabys.categoria5}">
+                            <h:outputText value="#{cabys.categoria5}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 5" sortBy="#{cabys.descripcionCategoria5}">
+                            <h:outputText value="#{cabys.descripcionCategoria5}" />
+                        </p:column>
+                        <p:column headerText="Categoria 6" sortBy="#{cabys.categoria6}">
+                            <h:outputText value="#{cabys.categoria6}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 6" sortBy="#{cabys.descripcionCategoria6}">
+                            <h:outputText value="#{cabys.descripcionCategoria6}" />
+                        </p:column>
+                        <p:column headerText="Categoria 7" sortBy="#{cabys.categoria7}">
+                            <h:outputText value="#{cabys.categoria7}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 7" sortBy="#{cabys.descripcionCategoria7}">
+                            <h:outputText value="#{cabys.descripcionCategoria7}" />
+                        </p:column>
+                        <p:column headerText="Categoria 8" sortBy="#{cabys.categoria8}">
+                            <h:outputText value="#{cabys.categoria8}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 8" sortBy="#{cabys.descripcionCategoria8}">
+                            <h:outputText value="#{cabys.descripcionCategoria8}" />
+                        </p:column>
+                        <p:column headerText="Categoria 9" sortBy="#{cabys.categoria9}">
+                            <h:outputText value="#{cabys.categoria9}" />
+                        </p:column>
+                        <p:column headerText="Descripcion Categoria 9" sortBy="#{cabys.descripcionCategoria9}">
+                            <h:outputText value="#{cabys.descripcionCategoria9}" />
+                        </p:column>
+                        <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}">
+                            <h:outputText value="#{cabys.impuesto}" />
+                        </p:column>
+                        <p:column headerText="Nota Inclusiva 1">
+                            <h:outputText value="#{cabys.notaInclusiva1}" />
+                        </p:column>
+                        <p:column headerText="Nota Exclusiva 1">
+                            <h:outputText value="#{cabys.notaExclusiva1}" />
+                        </p:column>
+
+                        <p:column headerText="Acciones">
+                            <div class="buttons has-addons">
+                                <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
+                                actionListener="#{ViewController.selectEditCabys()}" process="@this" update="dynamicContent">
+                                    <f:setPropertyActionListener value="#{cabys}" target="#{CabysController.selectedCabys}" />
+                                </p:commandButton>
+                                <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                actionListener="#{ClientsController.deleteCabys()}" process="@this" update="dynamicContent cabysTable">
+                                    <f:setPropertyActionListener value="#{cabys}" target="#{CabysController.selectedCabys}" />
+                                </p:commandButton>
+                            </div>
+                        </p:column>
+                    </p:dataTable>
+                    <p:commandButton value="Crear Cabys" actionListener="#{ViewController.selectCreateCabys}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
+                </h:form>
+            </div>
+        </div>
+    </div>
+</h:body>
+
+</ui:composition>

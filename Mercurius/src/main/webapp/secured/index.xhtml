@@ -50,6 +50,9 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createClients'}">
                             <ui:include src="./fragments/Clients/CreateClients.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewCabys'}">
+                            <ui:include src="./fragments/CaByS/CabysTable.xhtml" />
+                        </ui:fragment>
                     </p:outputPanel>
                 </div>
             </div>
