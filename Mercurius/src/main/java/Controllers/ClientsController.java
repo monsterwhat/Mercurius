@@ -1,7 +1,6 @@
 package Controllers;
 
 import Models.Clients;
-import Models.Users;
 import Services.ClientService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
@@ -82,40 +81,7 @@ public class ClientsController implements Serializable {
         newClient = null;
         selectedClient = null;
         viewManager.selectViewClients();
-    }
-
-    /*
-    public void generateAndCreateRandomUsers() {
-        FakeUserGenerator userGenerator = new FakeUserGenerator();
-        // Use the selectedGenerator value to determine the generator strategy
-        Optional<String> generatorInput = Optional.ofNullable(generatorOption);
-        if (generatorInput.isPresent()) {
-            userGenerator.setUsernameGenerator(generatorInput.get());
-        }
-
-        for (int i = 0; i < 10; i++) {
-            Clients newUser = userGenerator.generateFakeClientProfile("user");
-            clientService.create(newUser);
-        }
-        clearSelectedClient();
-    }
-
-    public void generateAndCreateRandomAdmins() {
-        FakeUserGenerator userGenerator = new FakeUserGenerator();
-
-        Optional<String> generatorInput = Optional.ofNullable(generatorOption);
-        if (generatorInput.isPresent()) {
-            userGenerator.setUsernameGenerator(generatorInput.get());
-        }
-
-        for (int i = 0; i < 10; i++) {
-            Clients newUser = userGenerator.generateFakeClientProfile("admin");
-            clientService.create(newUser);
-        }
-        clearSelectedClient();
-    }
-    */
-    
+    }    
         
     public List<Clients> getFilteredClients() {
         if (clientsFilter != null && !clientsFilter.isEmpty()) {

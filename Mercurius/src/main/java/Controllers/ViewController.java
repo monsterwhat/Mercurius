@@ -47,6 +47,10 @@ public class ViewController implements Serializable {
         clients.openNewClient();
     }
     
+    public void selectViewCabys(){
+        selectedOption = "viewCabys";
+    }
+    
     public void selectNone(){
         selectedOption = "none";
     }
