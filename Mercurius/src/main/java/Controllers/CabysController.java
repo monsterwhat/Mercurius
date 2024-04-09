@@ -1,6 +1,6 @@
 package Controllers;
 
-import Models.CaByS;
+import Models.Cabys;
 import Services.CabysService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
@@ -30,26 +30,32 @@ public class CabysController implements Serializable {
     @Inject private CabysService cabysService;
     @Inject private ViewController viewManager;
 
-    private List<CaByS> cabys;
-    private CaByS selectedCabys;
-    private CaByS newCabys;
+    private List<Cabys> catalogo;
+    private Cabys selectedCabys;
+    private Cabys newCabys;
     private String cabysFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     
     @PostConstruct
     public void init() {
-        newCabys = new CaByS();
-        selectedCabys = new CaByS();
+        newCabys = new Cabys();
+        selectedCabys = new Cabys();
         cabysList();
         filterBy = new ArrayList<>();        
     }
 
-    public List<CaByS> cabysList() {
-        if (cabys == null) {
-            cabys = cabysService.listAll();
+    public List<Cabys> cabysList() {
+        if (catalogo == null) {
+            catalogo = cabysService.listAll();
         }
-        return cabys;
+        return catalogo;
+    }
+    
+    public List<Cabys> cabysListApi(){
+        catalogo = cabysService.listAllAPI();
+        saveAPItoDB();
+        return catalogo;
     }
     
     public long cabysCount() {
@@ -57,7 +63,11 @@ public class CabysController implements Serializable {
     }
 
     public void openNewCabys() {
-        newCabys = new CaByS();
+        newCabys = new Cabys();
+    }
+    
+    public void saveAPItoDB(){
+        cabysService.saveAllDB(catalogo);
     }
 
     public void updateCabys() {
@@ -72,7 +82,7 @@ public class CabysController implements Serializable {
 
     public void deleteCabys() {
         if (selectedCabys != null) {
-            if (selectedCabys.getId()!= 0) {
+            if (!selectedCabys.getCodigo().isBlank()) {
                 cabysService.delete(selectedCabys);
                 clearSelectedCabys();
             }
@@ -80,13 +90,13 @@ public class CabysController implements Serializable {
     }
 
     public void clearSelectedCabys() {
-        cabys = null;
+        catalogo = null;
         newCabys = null;
         selectedCabys = null;
         viewManager.selectViewCabys();
     }    
         
-    public List<CaByS> getFilteredCabys() {
+    public List<Cabys> getFilteredCabys() {
         if (cabysFilter != null && !cabysFilter.isEmpty()) {
             return cabysList().stream()
                     .filter(profile -> globalFilterFunction(profile, cabysFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -102,28 +112,12 @@ public class CabysController implements Serializable {
             return true;
         }
 
-        CaByS cabys = (CaByS) value;
-        return cabys.getDescripcionCategoria1().toLowerCase().contains(filterText) ||
-               cabys.getDescripcionCategoria2().toLowerCase().contains(filterText) ||
-               cabys.getDescripcionCategoria3().toLowerCase().contains(filterText) ||
-               cabys.getDescripcionCategoria4().toLowerCase().contains(filterText) ||
-               cabys.getDescripcionCategoria5().toLowerCase().contains(filterText) ||
-               cabys.getDescripcionCategoria6().toLowerCase().contains(filterText) ||
-               cabys.getDescripcionCategoria7().toLowerCase().contains(filterText) ||
-               cabys.getDescripcionCategoria8().toLowerCase().contains(filterText) ||
-               cabys.getNotaInclusiva1().toLowerCase().contains(filterText) ||
-               cabys.getNotaExclusiva1().toLowerCase().contains(filterText) ||
-               String.valueOf(cabys.getCategoria1()).contains(filterText) ||
-               String.valueOf(cabys.getCategoria2()).contains(filterText) ||
-               String.valueOf(cabys.getCategoria3()).contains(filterText) ||
-               String.valueOf(cabys.getCategoria4()).contains(filterText) ||
-               String.valueOf(cabys.getCategoria5()).contains(filterText) ||
-               String.valueOf(cabys.getCategoria6()).contains(filterText) ||
-               String.valueOf(cabys.getCategoria7()).contains(filterText) ||
-               String.valueOf(cabys.getCategoria8()).contains(filterText) ||
-               String.valueOf(cabys.getId()).contains(filterText) ||
-               String.valueOf(cabys.getImpuesto()).contains(filterText);
-                
+        Cabys catalogo = (Cabys) value;
+        return catalogo.getCodigo().toLowerCase().contains(filterText) ||
+               catalogo.getDescripcion().toLowerCase().contains(filterText) ||
+               catalogo.getCategorias().contains(filterText) ||
+               catalogo.getEstado().toLowerCase().contains(filterText) ||
+               String.valueOf(catalogo.getImpuesto()).contains(filterText);   
     }
     
     
