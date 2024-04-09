@@ -5,6 +5,7 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
     <h:head>
+        <title>Crear Clientes</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -23,7 +24,6 @@
                         <p:panel header="Crear un nuevo cliente">
                             <p:growl id="growl" showDetail="true" showSummary="false"/>
                             
-                            <!-- Validation messages -->
                             <p:messages showDetail="true" for="name" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -32,7 +32,7 @@
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="name" value="#{ClientsController.newClient.name}"
-                                                     required="true" requiredMessage="El nombre no puede estar vacio"
+                                                     required="true" requiredMessage="El nombre no puede estar vacío"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
@@ -41,12 +41,12 @@
                             <p:messages showDetail="true" for="address" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="address">Direccion:</label>
+                                    <label class="label" for="address">Dirección:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="address" value="#{ClientsController.newClient.address}"
-                                                     required="true" requiredMessage="La direccion no puede estar vacia"
+                                                     required="true" requiredMessage="La dirección no puede estar vacía"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
@@ -60,7 +60,7 @@
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="email" value="#{ClientsController.newClient.email}"
-                                                     required="true" requiredMessage="El correo no puede estar vacio"
+                                                     required="true" requiredMessage="El correo no puede estar vacío"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
@@ -74,7 +74,7 @@
                                 <div class="field-body">
                                     <div class="field">
                                         <p:calendar id="birthDate" value="#{ClientsController.newClient.birthDate}"
-                                                    pattern="MM/dd/yyyy" required="true" requiredMessage="La fecha de nacimiento no puede estar vacia"
+                                                    pattern="MM/dd/yyyy" required="true" requiredMessage="La fecha de nacimiento no puede estar vacía"
                                                     styleClass="is-fullwidth"/>
                                     </div>
                                 </div>
@@ -83,12 +83,12 @@
                             <p:messages showDetail="true" for="idType" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="idType">Tipo de Cedula:</label>
+                                    <label class="label" for="idType">Tipo de Cédula:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="idType" value="#{ClientsController.newClient.idType}"
-                                                     required="true" requiredMessage="El tipo de cedula no puede estar vacio"
+                                                     required="true" requiredMessage="El tipo de cédula no puede estar vacío"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
@@ -97,12 +97,12 @@
                             <p:messages showDetail="true" for="idNumber" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="idNumber">Numero de Cedula:</label>
+                                    <label class="label" for="idNumber">Número de Cédula:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="idNumber" value="#{ClientsController.newClient.idNumber}"
-                                                     required="true" requiredMessage="El numero de cedula no puede estar vacio"
+                                                     required="true" requiredMessage="El número de cédula no puede estar vacío"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
@@ -116,7 +116,7 @@
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="discount" value="#{ClientsController.newClient.discount}"
-                                                     required="true" requiredMessage="El descuento no puede estar vacio (deberia ser 0)"
+                                                     required="true" requiredMessage="El descuento no puede estar vacío (debería ser 0)"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
@@ -125,12 +125,12 @@
                             <p:messages showDetail="true" for="phoneNumber" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="phoneNumber">Numero de Telefono:</label>
+                                    <label class="label" for="phoneNumber">Número de Teléfono:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="phoneNumber" value="#{ClientsController.newClient.phoneNumber}"
-                                                     required="true" requiredMessage="El numero de telefono no puede estar vacio"
+                                                     required="true" requiredMessage="El número de teléfono no puede estar vacío"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
@@ -152,12 +152,12 @@
                             <p:messages showDetail="true" for="zoneCode" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="zoneCode">Codigo de Zona:</label>
+                                    <label class="label" for="zoneCode">Código de Zona:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
                                         <p:inputText id="zoneCode" value="#{ClientsController.newClient.zoneCode}"
-                                                     required="true" requiredMessage="El codigo de zona no puede estar vacio"
+                                                     required="true" requiredMessage="El código de zona no puede estar vacío"
                                                      styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>

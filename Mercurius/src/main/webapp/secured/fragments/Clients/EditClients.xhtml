@@ -5,6 +5,7 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
     <h:head>
+        <title>Editar Clientes</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -23,7 +24,6 @@
                         <p:panel header="Editar Cliente: #{ClientsController.selectedClient.name}">
                             <p:growl id="growl" showDetail="true" showSummary="false"/>
                             
-                            <!-- Mensajes de validación -->
                             <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -38,7 +38,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Dirección -->
                             <p:messages for="address" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -53,7 +52,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Email -->
                             <p:messages for="email" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -68,7 +66,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Fecha de Nacimiento -->
                             <p:messages for="birthDate" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -84,7 +81,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Tipo de Cédula -->
                             <p:messages for="idType" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -99,7 +95,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Cédula -->
                             <p:messages for="idNumber" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -114,7 +109,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Descuento -->
                             <p:messages for="discount" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -129,7 +123,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Teléfono -->
                             <p:messages for="phoneNumber" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -144,7 +137,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Contribuyente -->
                             <p:messages for="taxpayer" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -158,7 +150,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Código de Zona -->
                             <p:messages for="zoneCode" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -173,7 +164,6 @@
                                 </div>
                             </div>
                             
-                            <!-- Botón de actualización -->
                             <div class="field is-horizontal">
                                 <div class="field-body">
                                     <div class="field">
