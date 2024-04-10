@@ -5,8 +5,9 @@
     
 <h:head>
     <title>Inicio de Sesion</title>
-    <meta charset="utf-8"/>
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+    
     <style>
         body, html {
             height: 100%;
@@ -55,31 +56,36 @@
         </h:form>
 
         <h:form rendered="#{SessionController.isValid()}">
-            <p:panel styleClass="login-panel">
-                <h:panelGrid columns="1">
-                    <h:outputLabel for="message" value="¡Oops!" />
-                    <h:outputLabel for="message" value="¡Ya iniciaste sesión!" />
-                    <h:panelGrid columns="2">
-                        <p:button styleClass="button" value="Menú Principal" href="/secured/index"/>
-                        <p:commandButton value="Cerrar Sesión" action="#{SessionController.logOut}"/>
-                    </h:panelGrid>
-                </h:panelGrid>
+            <p:panel styleClass="box has-text-centered">
+                <div class="columns">
+                    <div class="column">
+                        <h:outputLabel for="message" value="¡Oops! " />
+                        <h:outputLabel for="message" value=" ¡Ya iniciaste sesión!" />
+                    </div>
+                </div>
+                <div class="columns buttons">
+                    <p:button styleClass="button is-rounded is-success" value="Menú Principal" href="/secured/index"/>
+                    <p:commandButton styleClass="button is-rounded is-danger" value="Cerrar Sesión" action="#{SessionController.logOut}"/>
+                </div>
             </p:panel>
         </h:form>
     </div>
         
-        
     <footer class="footer">
-        <div class="content has-text-centered">
-            <p>
-                <strong>Mercurius</strong> por <a href="https://github.com/monsterwhat">Alvaro Padilla Rossi</a>.
-            </p>
+        <div class="columns is-centered">
+            <div class="column is-half">
+                <div class="container">
+                    <a href="https://github.com/monsterwhat/Mercurius">
+                    <figure class="image is-128x128">
+                            <img src="https://github.com/monsterwhat/Mercurius/raw/Master/Mercurius.png"/>
+                    </figure>
+                    <p class="title">Mercurius</p>
+                    </a>
+                </div>
+            </div>
         </div>
     </footer>
         
 </h:body>
-    
-    
 
-    
 </html>

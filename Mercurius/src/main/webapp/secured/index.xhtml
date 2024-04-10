@@ -28,6 +28,8 @@
                     
                     <ui:include src="./fragments/mainMenu.xhtml" />
                     
+                    <p:growl id="growl" showDetail="true" showSummary="true" />
+                    
                     <p:outputPanel id="dynamicContent">
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsers'}" >
                             <ui:include src="./fragments/Users/UsersTable.xhtml" />

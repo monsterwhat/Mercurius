@@ -1,12 +1,12 @@
 package Services;
 
+import Controllers.CabysController;
 import Models.Cabys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
-import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.FacesContext;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -26,6 +26,9 @@ import java.util.List;
 
 @Named
 public class CabysService extends GService<Cabys>{
+    
+    @Inject CabysController controller;
+    
     @Override
     protected Class<Cabys> getEntityClass() {
         return Cabys.class;
@@ -85,25 +88,19 @@ public class CabysService extends GService<Cabys>{
                     ObjectMapper mapper = new ObjectMapper();
                     JsonNode rootNode = mapper.readTree(response.toString());
                     int totalCount = rootNode.get("total").asInt();
-                    
-                    // Display message: Requesting full list
-                    FacesMessage requestingMessage = new FacesMessage(FacesMessage.SEVERITY_INFO, "Info", "Requesting full list...");
-                    FacesContext.getCurrentInstance().addMessage(null, requestingMessage);
-
 
                     // Step 2: Request the full list using the total count
                     if (totalCount > 0) {
-                        url = new URL("https://api.hacienda.go.cr/fe/cabys?q=*&top=" + totalCount);
+                        url = new URL("https://api.hacienda.go.cr/fe/cabys?q=*&top="+totalCount);
                         connection = (HttpURLConnection) url.openConnection();
                         connection.setRequestMethod("GET");
                         responseCode = connection.getResponseCode();
 
                         switch (responseCode) {
                             case HttpURLConnection.HTTP_OK -> {
-                                // Display message: Parsing response
-                                FacesMessage parsingMessage = new FacesMessage(FacesMessage.SEVERITY_INFO, "Info", "Parsing response...");
-                                FacesContext.getCurrentInstance().addMessage(null, parsingMessage);
-
+                                
+                                controller.showInfo("Ok", "Conectado a tributacion...");
+                                
                                 // Parse JSON response and populate Cabys objects
                                 try (BufferedReader fullListReader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
                                     StringBuilder fullListResponse = new StringBuilder();
@@ -112,38 +109,30 @@ public class CabysService extends GService<Cabys>{
                                     }
                                     cabysList = parseJsonResponse(fullListResponse.toString());
                                 }
-                                // Display message: Done
-                                FacesMessage doneMessage = new FacesMessage(FacesMessage.SEVERITY_INFO, "Info", "Done");
-                                FacesContext.getCurrentInstance().addMessage(null, doneMessage);
-                        
                             }
                             case 429 -> {
-                                System.err.println("HTTP request failed with response code: " + responseCode);
+                                controller.showWarn("Oops!", "Demaciados Intentos, trate mas tarde");
                                 // Handle error 429 (Too Many Requests)
-                                FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Too many requests. Please try again later.");
-                                FacesContext.getCurrentInstance().addMessage(null, message);
                             }
                             default -> {
-                                System.err.println("HTTP request failed with response code: " + responseCode);
-                                FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "HTTP request failed with response code: " + responseCode);
-                                FacesContext.getCurrentInstance().addMessage(null, errorMessage);
+                                controller.showError("Error", "Codigo: " + responseCode);
                             }
                         }
                     }
                 }
             } else {
-                System.err.println("HTTP request failed with response code: " + responseCode);
+                controller.showError("Error", "Codigo: " + responseCode);
             }
         } catch (IOException e) {
+            controller.showError("Error", "Error: " + e.getLocalizedMessage());
             System.err.println("Error making HTTP request: " + e.getMessage());
         }
-
+        controller.showInfo("Exito", "Se descargo la lista CaByS");
         return cabysList;
     }
 
     private List<Cabys> parseJsonResponse(String jsonResponse) throws IOException {
         List<Cabys> resultList = new ArrayList<>();
-        System.out.println("Parsing respuesta");
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(new ByteArrayInputStream(jsonResponse.getBytes(StandardCharsets.UTF_8)));
@@ -152,11 +141,13 @@ public class CabysService extends GService<Cabys>{
             for (JsonNode cabysNode : cabysArray) {
                 String codigo = cabysNode.get("codigo").asText();
                 String descripcion = cabysNode.get("descripcion").asText();
-                List<String> categorias = new ArrayList<>();
+                // Concatenate categorias into a single string
+                StringBuilder categoriasBuilder = new StringBuilder();
                 JsonNode categoriasArray = cabysNode.get("categorias");
                 for (JsonNode categoriaNode : categoriasArray) {
-                    categorias.add(categoriaNode.asText());
+                    categoriasBuilder.append(categoriaNode.asText()).append("; ");
                 }
+                String categorias = categoriasBuilder.toString();
                 int impuesto = cabysNode.get("impuesto").asInt();
                 String uri = cabysNode.get("uri").asText();
                 String estado = cabysNode.get("estado").asText();
@@ -176,11 +167,8 @@ public class CabysService extends GService<Cabys>{
             for (Cabys cabys : cabysList) {
                 create(cabys);
             }
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_INFO, "Info", "Cabys list saved successfully.");
-            FacesContext.getCurrentInstance().addMessage(null, message);
         } catch (Exception e) {
-            FacesMessage errorMessage = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Failed to save Cabys list: " + e.getMessage());
-            FacesContext.getCurrentInstance().addMessage(null, errorMessage);
+            System.out.println("Error: " + e.getLocalizedMessage());
         }
     }
 

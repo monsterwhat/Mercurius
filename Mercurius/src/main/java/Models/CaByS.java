@@ -1,10 +1,8 @@
 package Models;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import java.util.List;
 import lombok.Data;
 
 /**
@@ -19,11 +17,11 @@ public class Cabys {
     @Id
     private String codigo;
 
-    @Column(length = 255)
+    @Column(length = 2000)
     private String descripcion;
 
-    @ElementCollection
-    private List<String> categorias;
+    @Column(length = 3000)
+    private String categorias;
 
     private int impuesto;
 
@@ -34,7 +32,7 @@ public class Cabys {
     public Cabys() {
     }
 
-    public Cabys(String codigo, String descripcion, List<String> categorias, int impuesto, String uri, String estado) {
+    public Cabys(String codigo, String descripcion, String categorias, int impuesto, String uri, String estado) {
         this.codigo = codigo;
         this.descripcion = descripcion;
         this.categorias = categorias;
