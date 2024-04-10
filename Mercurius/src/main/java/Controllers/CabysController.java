@@ -4,6 +4,7 @@ import Models.Cabys;
 import Services.CabysService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -36,6 +37,7 @@ public class CabysController implements Serializable {
     private String cabysFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
+    private boolean cabysStatus;
     
     @PostConstruct
     public void init() {
@@ -48,6 +50,9 @@ public class CabysController implements Serializable {
     public List<Cabys> cabysList() {
         if (catalogo == null) {
             catalogo = cabysService.listAll();
+            if(catalogo == null || catalogo.isEmpty()){
+                cabysStatus=false;
+            }
         }
         return catalogo;
     }
@@ -55,6 +60,7 @@ public class CabysController implements Serializable {
     public List<Cabys> cabysListApi(){
         catalogo = cabysService.listAllAPI();
         saveAPItoDB();
+        cabysStatus = true;
         return catalogo;
     }
     
@@ -120,5 +126,25 @@ public class CabysController implements Serializable {
                String.valueOf(catalogo.getImpuesto()).contains(filterText);   
     }
     
+    public void addMessage(FacesMessage.Severity severity, String summary, String detail) {
+        FacesContext.getCurrentInstance().
+                addMessage(null, new FacesMessage(severity, summary, detail));
+    }
+
+    public void showInfo(String message, String content) {
+        addMessage(FacesMessage.SEVERITY_INFO, message, content);
+    }
+
+    public void showWarn(String message, String content) {
+        addMessage(FacesMessage.SEVERITY_WARN, message, content);
+    }
+
+    public void showError(String message, String content) {
+        addMessage(FacesMessage.SEVERITY_ERROR, message, content);
+    }
+
+    public void showSticky(String message, String content) {
+        FacesContext.getCurrentInstance().addMessage("sticky-key", new FacesMessage(FacesMessage.SEVERITY_INFO, message, content));
+    }
     
 }

@@ -1,9 +1,12 @@
 package Controllers;
 
 import jakarta.enterprise.context.SessionScoped;
+import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
+import java.util.Arrays;
 import lombok.Data;
 
 /**
@@ -20,6 +23,7 @@ public class ViewController implements Serializable {
     @Inject ClientsController clients;
     
     String selectedOption = "none";
+    String[] selectedOptions;
 
     public void selectViewUsers(){
         selectedOption = "viewUsers";
@@ -53,6 +57,26 @@ public class ViewController implements Serializable {
     
     public void selectNone(){
         selectedOption = "none";
+    }
+    
+    public void selectedOptionsChanged() {
+        String message = "Se cambio a: ";
+        if (selectedOptions != null) {
+            for (int i = 0; i < selectedOptions.length; i++) {
+                if (i > 0) {
+                    message += ", ";
+                }
+                message += selectedOptions[i];
+            }
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+    }
+    
+    public boolean isSelected(String selection){
+        var state = Arrays.toString(selectedOptions).contains(selection);
+        return state;
     }
 
     
