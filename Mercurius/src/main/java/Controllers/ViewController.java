@@ -21,6 +21,9 @@ public class ViewController implements Serializable {
     
     @Inject ProfilesController profiles;
     @Inject ClientsController clients;
+    @Inject FamiliaController familias;
+    @Inject ArticulosController articulos;
+    @Inject DepartamentoController departamentos;
     
     String selectedOption = "none";
     String[] selectedOptions;
@@ -53,6 +56,45 @@ public class ViewController implements Serializable {
     
     public void selectViewCabys(){
         selectedOption = "viewCabys";
+    }
+    
+    public void selectViewFamilias(){
+        selectedOption = "viewFamilias";
+    }
+    
+    public void selectEditFamilias(){
+        selectedOption="editFamilias";
+    }
+    
+    public void selectCreateFamilias(){
+        selectedOption = "createFamilias";
+        familias.openNewFamilia();
+    }
+    
+    public void selectViewArticulos(){
+        selectedOption="viewArticulos";
+    }
+    
+    public void selectEditArticulos(){
+        selectedOption="editArticulos";
+    }
+    
+    public void selectCreateArticulos(){
+        selectedOption="createArticulos";
+        articulos.openNewArticulo();
+    }
+    
+    public void selectViewDepartamentos(){
+        selectedOption="viewDepartamentos";
+    }
+
+    public void selectEditDepartamentos(){
+        selectedOption="editDepartamentos";
+    }
+    
+    public void selectCreateDepartamentos(){
+        selectedOption="createDepartamentos";
+        departamentos.openNewDepartamento();
     }
     
     public void selectNone(){

@@ -24,8 +24,9 @@
                     <p:commandButton id="InventariosButton" value="Inventarios" styleClass="button is-rounded is-info is-fullwidth" icon="pi pi-box"/>
                     <p:menu overlay="true" trigger="InventariosButton" my="left top" at="left bottom">
                         <p:submenu label="Inventarios">
-                            <p:menuitem value="Ver Artículos" icon="pi pi-eye" disabled="true"/>
-                            <p:menuitem value="Ver Familias" icon="pi pi-th-large" disabled="true"/>
+                            <p:menuitem value="Ver Artículos" icon="pi pi-eye" action="#{ViewController.selectViewArticulos}" update="dynamicContent"/>
+                            <p:menuitem value="Ver Departamentos" icon="pi pi-truck" action="#{ViewController.selectViewDepartamentos}" update="dynamicContent"/>
+                            <p:menuitem value="Ver Familias" icon="pi pi-th-large" action="#{ViewController.selectViewFamilias}" update="dynamicContent" />
                             <p:menuitem value="Ajustar Inventario" icon="pi pi-pencil" disabled="true"/>
                         </p:submenu>
                     </p:menu>

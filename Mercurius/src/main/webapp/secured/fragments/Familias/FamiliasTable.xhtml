@@ -1,0 +1,79 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <title>Familias</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    </h:head>
+    
+    <h:body>
+        <div class="box">
+            <div class="columns is-centered">
+                <div class="column">
+                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                    <br/>
+                    <h:form id="familiasTable">
+                        
+                        <p:toolbar>
+                            <p:toolbarGroup align="right">
+                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
+                                    <!-- Adjust the target and file name -->
+                                    <p:dataExporter type="xlsx" target="FamiliasTableData" fileName="Familias-Mercurius-Excel" />
+                                </p:commandButton>
+                                <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help" ajax="false">
+                                    <!-- Adjust the target and file name -->
+                                    <p:dataExporter type="pdf" target="FamiliasTableData" fileName="Familias-Mercurius-PDF" />
+                                </p:commandButton>
+                            </p:toolbarGroup>
+                        </p:toolbar>
+                        
+                        <!-- Adjust the controller and filtered data -->
+                        <p:dataTable value="#{FamiliasController.filteredFamilias}" var="familia"  widgetVar="FamiliasTable"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="FamiliasTableData"
+                                     emptyMessage="No se encontraron familias con la critería proporcionada"
+                                     globalFilterFunction="#{FamiliasController.globalFilterFunction}"
+                                     filterBy="#{FamiliasController.filterBy}"
+                                     selection="#{FamiliasController.selectedFamilia}" rowKey="#{familia.id}">
+                            
+                            <f:facet name="header">
+                                <p:inputText id="globalFilter" onkeyup="PF('FamiliasTable').filter()"
+                                             placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                            </f:facet>
+                            
+                            <!-- Adjust the column headers and data -->
+                            <p:column headerText="ID Familia" visible="false">
+                                <h:outputText value="#{familia.id}"/>
+                            </p:column>
+                            <p:column headerText="Nombre" sortBy="#{familia.nombre}">
+                                <h:outputText value="#{familia.nombre}"/>
+                            </p:column>
+                            <!-- Add more columns as needed -->
+                            
+                            <!-- Adjust the actions -->
+                            <p:column headerText="Acciones">
+                                <div class="buttons has-addons">
+                                    <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
+                                    actionListener="#{ViewController.selectEditFamilias()}" process="@this" update="dynamicContent">
+                                        <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                    </p:commandButton>
+                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                    actionListener="#{FamiliasController.deleteFamilia()}" process="@this" update="dynamicContent familiasTable">
+                                        <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                    </p:commandButton>
+                                </div>
+                            </p:column>
+                        </p:dataTable>
+                        <!-- Adjust the button action -->
+                        <p:commandButton value="Crear Familia" actionListener="#{ViewController.selectCreateFamilias}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
+                    </h:form>
+                </div>
+            </div>
+        </div>
+    </h:body>
+
+</ui:composition>

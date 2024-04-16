@@ -26,7 +26,6 @@ public class ClientsController implements Serializable {
     private List<Clients> clients;
     private Clients selectedClient;
     private Clients newClient;
-    //private String generatorOption;
     private String clientsFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
