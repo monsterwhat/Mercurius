@@ -49,6 +49,33 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createClients'}">
                             <ui:include src="./fragments/Clients/CreateClients.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulos'}">
+                            <ui:include src="./fragments/Articulos/ArticulosTable.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editArticulos'}">
+                            <ui:include src="./fragments/Articulos/EditArticulo.xhtml" />
+                        </ui:fragment>                        
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createArticulos'}">
+                            <ui:include src="./fragments/Articulos/CreateArticulos.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewDepartamentos'}">
+                            <ui:include src="./fragments/Departamentos/DepartamentosTable.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editDepartamentos'}">
+                            <ui:include src="./fragments/Departamentos/EditDepartamento.xhtml" />
+                        </ui:fragment>                        
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createDepartamentos'}">
+                            <ui:include src="./fragments/Departamentos/CreateDepartamento.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFamilias'}">
+                            <ui:include src="./fragments/Familias/FamiliasTable.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editFamilias'}">
+                            <ui:include src="./fragments/Familias/EditFamilias.xhtml" />
+                        </ui:fragment>                        
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createFamilias'}">
+                            <ui:include src="./fragments/Familias/CreateFamilias.xhtml" />
+                        </ui:fragment>                        
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewCabys'}">
                             <ui:include src="./fragments/CaByS/CabysTable.xhtml" />
                         </ui:fragment>
