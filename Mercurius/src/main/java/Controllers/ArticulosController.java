@@ -7,8 +7,8 @@ import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
@@ -22,7 +22,7 @@ import org.primefaces.util.LangUtils;
 
 @Data
 @Named(value = "ArticulosController")
-@SessionScoped
+@ViewScoped
 public class ArticulosController implements Serializable {
     
     @Inject private ArticulosService articulosService;
@@ -38,7 +38,7 @@ public class ArticulosController implements Serializable {
     private boolean globalFilterOnly;
     private List<Departamento> departamentoOptions;
     private List<Familia> familiaOptions;
-
+    private int DepartamentoID,FamiliaID = 0;
 
     @PostConstruct
     public void init() {
@@ -71,8 +71,14 @@ public class ArticulosController implements Serializable {
     }
 
     public void createArticulo() {
-        articulosService.create(newArticulo);
-        clearSelectedArticulo();
+        if(DepartamentoID != 0 || FamiliaID != 0){
+            newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+            newArticulo.setFamilia(familiaService.findById(FamiliaID));
+            if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null){
+                articulosService.create(newArticulo);
+                clearSelectedArticulo();
+            }
+        }
     }
 
     public void deleteArticulo() {
@@ -109,5 +115,36 @@ public class ArticulosController implements Serializable {
         return String.valueOf(articulo.getCodigo()).contains(filterText)
                 || articulo.getNombre().toLowerCase().contains(filterText);
     }
+    
+    public void calcularPrecioConIVA() {
+        if (newArticulo != null) {
+            if (newArticulo.getPrecioFinal() != 0) {
+                double impuesto = newArticulo.getCodigoCabys().getImpuesto();
+                double precioSinIVA = newArticulo.getPrecioFinal();
+                double IVA = precioSinIVA * (impuesto * 0.01);
+                double precioConIVA = precioSinIVA+IVA;
+                newArticulo.setPrecioCostoConIVA(precioConIVA);
+            }
+        }
+    }
+    
+    public void calcularPrecioConUtilidad(){
+        try {
+        if (newArticulo != null) {
+            double porcentajeUtilidad = newArticulo.getPorcentajeUtilidad();
+            double precioCosto = newArticulo.getPrecioCostoSinIVA();
+            if(precioCosto != 0){
+                double Utilidad = precioCosto*(porcentajeUtilidad*0.01);
+                double precioConUtilidad = precioCosto+Utilidad;
+                newArticulo.setPrecioFinal(precioConUtilidad);
+                calcularPrecioConIVA();
+            }
+        }
+        } catch (Exception e) {
+            System.out.println("Error:" + e.getLocalizedMessage());
+        }
+        
+    }
+
 
 }

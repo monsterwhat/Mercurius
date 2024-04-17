@@ -63,4 +63,14 @@ public class FamiliaService extends GService<Familia> {
             return null;
         }
     }
+
+    public Familia findById(Integer id) {
+    try {
+        return em.find(getEntityClass(), id);
+    } catch (Exception e) {
+        System.out.println("Error finding entity by ID: " + e.toString());
+        return null;
+    }
+    
+    }
 }

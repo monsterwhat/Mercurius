@@ -30,6 +30,7 @@ public class CabysController implements Serializable {
     
     @Inject private CabysService cabysService;
     @Inject private ViewController viewManager;
+    @Inject private ArticulosController articulos;
 
     private List<Cabys> catalogo;
     private Cabys selectedCabys;
@@ -146,5 +147,15 @@ public class CabysController implements Serializable {
     public void showSticky(String message, String content) {
         FacesContext.getCurrentInstance().addMessage("sticky-key", new FacesMessage(FacesMessage.SEVERITY_INFO, message, content));
     }
+    
+    public void selectCabys() {
+    if (selectedCabys != null) {
+        articulos.getNewArticulo().setCodigoCabys(selectedCabys);
+    } else {
+        FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
+        FacesContext.getCurrentInstance().addMessage(null, message);
+    }
+}
+
     
 }

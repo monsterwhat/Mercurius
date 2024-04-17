@@ -62,6 +62,11 @@ public class DepartamentoController implements Serializable {
         departamentoService.create(newDepartamento);
         clearSelectedDepartamento();
     }
+    
+    public void createDepartamentoSimple(){
+        departamentoService.create(newDepartamento);
+        clearSelectedDepartamento();
+    }
 
     public void deleteDepartamento() {
         if (selectedDepartamento != null) {
@@ -75,6 +80,12 @@ public class DepartamentoController implements Serializable {
         newDepartamento = null;
         selectedDepartamento = null;
         viewManager.selectViewDepartamentos();
+    }
+    
+    public void clearSelectedDepartamentoSimple() {
+        departamentos = null;
+        newDepartamento = null;
+        selectedDepartamento = null;
     }
 
     public List<Departamento> getFilteredDepartamentos() {
@@ -96,6 +107,12 @@ public class DepartamentoController implements Serializable {
         Departamento departamento = (Departamento) value;
         return departamento.getNombre().toLowerCase().contains(filterText)
                 || String.valueOf(departamento.getId()).contains(filterText);
+    }
+
+    public Departamento findDepartamentoById(Integer number) {
+        
+        return departamentoService.findById(number);
+        
     }
 
 }
