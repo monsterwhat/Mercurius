@@ -1,5 +1,6 @@
 package Controllers;
 
+import Models.Departamento;
 import Models.Familia;
 import Services.FamiliaService;
 import jakarta.annotation.PostConstruct;
@@ -62,6 +63,11 @@ public class FamiliaController implements Serializable {
         familiaService.create(newFamilia);
         clearSelectedFamilia();
     }
+    
+    public void createFamiliaSimple() {
+        familiaService.create(newFamilia);
+        clearSelectedFamiliaSimple();
+    }
 
     public void deleteFamilia() {
         if (selectedFamilia != null) {
@@ -75,6 +81,12 @@ public class FamiliaController implements Serializable {
         newFamilia = null;
         selectedFamilia = null;
         viewManager.selectViewFamilias();
+    }
+    
+    public void clearSelectedFamiliaSimple() {
+        familias = null;
+        newFamilia = null;
+        selectedFamilia = null;
     }
 
     public List<Familia> getFilteredFamilias() {
@@ -96,6 +108,12 @@ public class FamiliaController implements Serializable {
         Familia familia = (Familia) value;
         return familia.getNombre().toLowerCase().contains(filterText)
                 || String.valueOf(familia.getId()).contains(filterText);
+    }
+
+    public Familia findFamiliaById(Integer number) {
+        
+        return familiaService.findById(number);
+        
     }
 
 }

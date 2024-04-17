@@ -68,7 +68,7 @@ public class ViewController implements Serializable {
     
     public void selectCreateFamilias(){
         selectedOption = "createFamilias";
-        familias.openNewFamilia();
+        createNewFamilia();
     }
     
     public void selectViewArticulos(){
@@ -94,7 +94,15 @@ public class ViewController implements Serializable {
     
     public void selectCreateDepartamentos(){
         selectedOption="createDepartamentos";
+        createNewDepartamento();
+    }
+    
+    public void createNewDepartamento(){
         departamentos.openNewDepartamento();
+    }
+    
+    public void createNewFamilia(){
+        familias.openNewFamilia();
     }
     
     public void selectNone(){
