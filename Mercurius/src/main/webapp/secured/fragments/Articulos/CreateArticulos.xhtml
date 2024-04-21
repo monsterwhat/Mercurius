@@ -8,8 +8,9 @@
         <title>Crear Artículo</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
         <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <script src="../../../resources/js/functions.js"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>   
+           <script src="../../../resources/js/functions.js"/>
+
     </h:head>
     
     <h:body>
@@ -20,7 +21,8 @@
                                      styleClass="button is-inverted is-fullwidth is-warning is-rounded"
                                      immediate="true" action="#{ViewController.selectViewArticulos}"
                                      update="dynamicContent"/>
-                    <h:form id="createArticulos">
+                    <h:form id="createArticulos" acceptcharset="utf-8">
+                    
                         <br/>
                         <p:panel header="Crear un nuevo artículo" styleClass="panel">
                             <p:growl id="growl" showDetail="true" showSummary="false"/>
@@ -35,7 +37,23 @@
                                     <div class="field">
                                         <p:inputText id="name" value="#{ArticulosController.newArticulo.nombre}"
                                                      required="true" requiredMessage="El nombre no puede estar vacío"
-                                                     styleClass="input is-fullwidth" onkeydown="return focusNext(event, 'codigoCabysInput')"/>
+                                                     styleClass="input is-fullwidth"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Input for codigo de barra -->
+                            <p:messages showDetail="true" for="codigoBarra" showSummary="false" closable="true" />
+                            <div class="field is-horizontal">
+                                <div class="field-label is-normal">
+                                    <label class="label" for="codigoBarra">Codigo de Barra:</label>
+                                </div>
+                                <div class="field-body">
+                                    <div class="field">
+                                        <p:inputText id="codigoBarra" value="#{ArticulosController.newArticulo.codigoBarra}"
+                                                     required="true" requiredMessage="El codigo de barra no puede estar vacío"
+                                                     styleClass="input is-fullwidth" >
+                                        </p:inputText>
                                     </div>
                                 </div>
                             </div>
@@ -51,7 +69,7 @@
                                                      onclick="PF('codigoCabysDialog').show();"/> 
                                     <!-- Container for selected option -->
                                     <div class="selected-option is-flex">
-                                        <p:outputLabel value="#{ArticulosController.newArticulo.codigoCabys.codigo} - #{ArticulosController.newArticulo.codigoCabys.descripcion}"
+                                        <p:outputLabel value="#{ArticulosController.newArticulo.codigoCabys.codigo} - #{ArticulosController.newArticulo.codigoCabys.descripcion} - #{ArticulosController.newArticulo.codigoCabys.impuesto} %"
                                                        styleClass="label"/>
                                     </div>
                                     <!-- Should probably insert the dialog here -->
@@ -70,7 +88,7 @@
                                     <div class="column">
                                         <p:selectOneMenu id="departamentoSelect" value="#{ArticulosController.departamentoID}"
                                                          required="true" requiredMessage="El Departamento no puede estar vacío"
-                                                         styleClass="input" widgetVar="departamentoSelect">
+                                                         styleClass="input" widgetVar="departamentoSelect">\
                                             <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
                                             <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
                                                            itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
@@ -89,7 +107,7 @@
                                     <div class="column">
                                         <p:selectOneMenu id="familiaSelect" value="#{ArticulosController.familiaID}"
                                                          required="true" requiredMessage="La Familia no puede estar vacía"
-                                                         styleClass="input" widgetVar="familiaSelect">
+                                                         styleClass="input" widgetVar="familiaSelect" >
                                             <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
                                             <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
                                                            itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
@@ -106,7 +124,7 @@
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="precioCostoSinIVA" value="#{ArticulosController.newArticulo.precioCostoSinIVA}"
+                                        <p:inputText id="precioCostoSinIVA" type="number" value="#{ArticulosController.newArticulo.precioCostoSinIVA}"
                                                      required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
                                                      styleClass="input is-fullwidth">
                                             <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad()}"
@@ -124,16 +142,17 @@
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="porcentajeUtilidad" value="#{ArticulosController.newArticulo.porcentajeUtilidad}"
+                                        <p:inputText id="porcentajeUtilidad" type="number" value="#{ArticulosController.newArticulo.porcentajeUtilidad}"
                                                      required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
-                                                     styleClass="input is-fullwidth" onkeyup="calculatePrecioFinal()">
-                                                    <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad()}" update="precioCostoSinIVA precioFinal precioFinalConIVA" />
+                                                     styleClass="input is-fullwidth">
+                                                    <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad()}"
+                                                            update="precioCostoSinIVA precioFinal precioFinalConIVA" />
                                         </p:inputText>
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Input for Precio Final -->
+                            <!-- Output for Precio Final -->
                             <p:messages showDetail="true" for="precioFinal" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -146,7 +165,7 @@
                                 </div>
                             </div>
                             
-                            <!-- Input for Precio Final con IVA -->
+                            <!-- Output for Precio Final con IVA -->
                             <p:messages showDetail="true" for="precioFinalConIVA" showSummary="false" closable="true"/>
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
@@ -163,7 +182,7 @@
                         <br/>
                         <!-- Button to create article -->
                         <p:commandButton value="Crear Artículo" styleClass="button is-fullwidth is-rounded is-success"
-                                         action="#{ArticulosController.createArticulo}" update="dynamicContent createArticulos"/>
+                                         action="#{ArticulosController.createArticulo}" update="dynamicContent articulosTable createArticulos"/>
                     </h:form>
                 </div>
             </div>

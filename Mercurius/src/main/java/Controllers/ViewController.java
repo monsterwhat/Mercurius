@@ -19,11 +19,12 @@ import lombok.Data;
 @SessionScoped
 public class ViewController implements Serializable {
     
-    @Inject ProfilesController profiles;
+    @Inject UsersController profiles;
     @Inject ClientsController clients;
     @Inject FamiliaController familias;
     @Inject ArticulosController articulos;
     @Inject DepartamentoController departamentos;
+    @Inject InventarioController inventarios;
     
     String selectedOption = "none";
     String[] selectedOptions;
@@ -38,7 +39,7 @@ public class ViewController implements Serializable {
     
     public void selectCreateUsers(){
         selectedOption = "createUsers";
-        profiles.openNewProfile();
+        profiles.openNewUser();
     }
     
     public void selectViewClients(){
@@ -69,6 +70,19 @@ public class ViewController implements Serializable {
     public void selectCreateFamilias(){
         selectedOption = "createFamilias";
         createNewFamilia();
+    }
+    
+    public void selectViewInventario(){
+        selectedOption = "viewInventarios";
+    }
+    
+    public void selectEditInventario(){
+        selectedOption="editInventarios";
+    }
+    
+    public void selectCreateInventario(){
+        selectedOption = "createInventarios";
+        createNewInventario();
     }
     
     public void selectViewArticulos(){
@@ -103,6 +117,10 @@ public class ViewController implements Serializable {
     
     public void createNewFamilia(){
         familias.openNewFamilia();
+    }
+    
+    public void createNewInventario(){
+        inventarios.openNewInventario();
     }
     
     public void selectNone(){

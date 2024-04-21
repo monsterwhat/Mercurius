@@ -1,6 +1,6 @@
 package Services;
 
-import Models.Profiles;
+import Models.Users;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import jakarta.inject.Inject;
@@ -13,7 +13,6 @@ import jakarta.transaction.NotSupportedException;
 import jakarta.transaction.RollbackException;
 import jakarta.transaction.SystemException;
 import jakarta.transaction.UserTransaction;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -22,15 +21,15 @@ import java.util.List;
  */
 
 @Named
-public class Service extends GService<Profiles>{
+public class UserService extends GService<Users>{
         
     @Inject Pbkdf2PasswordHash passwordHasher;
     @Resource UserTransaction userTransaction;
 
 
     @Override
-    protected Class<Profiles> getEntityClass(){
-        return Profiles.class;
+    protected Class<Users> getEntityClass(){
+        return Users.class;
     }
      
     @PostConstruct
@@ -42,12 +41,12 @@ public class Service extends GService<Profiles>{
         return passwordHasher.verify(password, hashedPassword);
     }
         
-    public Profiles getSession(String username) {
+    public Users getSession(String username) {
         try {
-            TypedQuery<Profiles> query = em.createQuery("SELECT u FROM Profiles u WHERE u.username = :username", Profiles.class);
+            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
             query.setParameter("username", username);
 
-            List<Profiles> resultList = query.getResultList();
+            List<Users> resultList = query.getResultList();
 
             if (!resultList.isEmpty()) {
                 return resultList.get(0);
@@ -66,12 +65,12 @@ public class Service extends GService<Profiles>{
             this.userTransaction.begin();
             String username = "Admin";
             
-            TypedQuery<Profiles> query = em.createQuery("SELECT u FROM Profiles u WHERE u.username = :username", Profiles.class);
+            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
             query.setParameter("username", username);
-            List<Profiles> existingUsers = query.getResultList();
+            List<Users> existingUsers = query.getResultList();
 
             if (existingUsers.isEmpty()) {
-                Profiles user = new Profiles();
+                Users user = new Users();
                 user.setUsername(username);
                 user.setPassword(passwordHasher.generate("password123".toCharArray()));
                 user.setGroupName("admin");
@@ -89,7 +88,7 @@ public class Service extends GService<Profiles>{
     }
     
     @Override
-    public void create(Profiles entity) {
+    public void create(Users entity) {
         try {
             var unHashedPassword = entity.getPassword();
             var HashedPassword = passwordHasher.generate(unHashedPassword.toCharArray());
@@ -100,7 +99,7 @@ public class Service extends GService<Profiles>{
     }
     
     @Override
-    public void delete(Profiles entity) {
+    public void delete(Users entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());

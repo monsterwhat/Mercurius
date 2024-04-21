@@ -151,11 +151,22 @@ public class CabysController implements Serializable {
     public void selectCabys() {
     if (selectedCabys != null) {
         articulos.getNewArticulo().setCodigoCabys(selectedCabys);
-    } else {
-        FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
-        FacesContext.getCurrentInstance().addMessage(null, message);
+        } else {
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
     }
-}
+    
+    
+    public void selectCabysEdit() {
+    if (selectedCabys != null) {
+        articulos.getSelectedArticulo().setCodigoCabys(selectedCabys);
+        } else {
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
+    
+    }
 
     
 }

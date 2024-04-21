@@ -27,7 +27,7 @@
                             <p:menuitem value="Ver Artículos" icon="pi pi-eye" action="#{ViewController.selectViewArticulos}" update="dynamicContent"/>
                             <p:menuitem value="Ver Departamentos" icon="pi pi-truck" action="#{ViewController.selectViewDepartamentos}" update="dynamicContent"/>
                             <p:menuitem value="Ver Familias" icon="pi pi-th-large" action="#{ViewController.selectViewFamilias}" update="dynamicContent" />
-                            <p:menuitem value="Ajustar Inventario" icon="pi pi-pencil" disabled="true"/>
+                            <p:menuitem value="Ver Inventario" icon="pi pi-pencil" action="#{ViewController.selectViewInventario}" update="dynamicContent"/>
                         </p:submenu>
                     </p:menu>
                 </div>
@@ -57,11 +57,11 @@
                             <p:menuitem value="Facturación de Artículos" icon="pi pi-box" disabled="true"/>
                         </p:submenu>
                         <p:submenu label="Reportes Inventarios">
-                            <p:menuitem value="Inventario Detallado" icon="pi pi-search" disabled="true"/>
-                            <p:menuitem value="Precios Detallados" icon="pi pi-search" disabled="true"/>
+                            <p:menuitem value="Articulos Detallados" icon="pi pi-search" disabled="true"/>
+                            <p:menuitem value="Departamentos Detallados" icon="pi pi-search" disabled="true"/>
                             <p:menuitem value="Familias Detalladas" icon="pi pi-search" disabled="true"/>
-                            <p:menuitem value="Ajustes Detallados" icon="pi pi-search" disabled="true"/>
-                            <p:menuitem value="Generar Etiquetas" icon="pi pi-ticket" disabled="true"/>
+                            <p:menuitem value="Inventarios Detallados" icon="pi pi-search" disabled="true"/>
+                            <p:menuitem value="Generar Etiquetas" icon="pi pi-ticket" rendered="false" disabled="true"/>
                         </p:submenu>
                     </p:menu>
                 </div>

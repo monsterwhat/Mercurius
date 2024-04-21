@@ -5,7 +5,7 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
     <h:head>
-        <title>Editar Usuarios</title>
+        <title>Editar Inventario</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -15,40 +15,50 @@
         <div class="box">
             <div class="columns is-centered">
                 <div class="column">
-                    <p:commandButton value="Volver a lista de usuarios" icon="pi pi-backward" styleClass="button is-fullwidth is-inverted is-warning is-rounded" immediate="true" action="#{ViewController.selectViewUsers()}" update="dynamicContent" />
-                    <h:form id="editUserForm" rendered="#{not empty UsersController.selectedUser}">
+                    <p:commandButton value="Volver a lista de inventarios" icon="pi pi-backward"
+                                     styleClass="button is-inverted is-fullwidth is-warning is-rounded"
+                                     immediate="true" action="#{ViewController.selectViewInventario()}"
+                                     update="dynamicContent" />
+                    <h:form id="editInventarioForm" rendered="#{not empty InventarioController.selectedInventario}">
                         <br/>
-                        <p:panel header="Editar Usuario: #{UsersController.selectedUser.username}">
+                        <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.codigo}">
                             <p:growl id="growl" showDetail="true" showSummary="false"/>
                             
-                            <p:messages for="username" showSummary="false" showDetail="true" closable="true" />
+                            <!-- Input for article -->
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="username">Nombre de usuario:</label>
+                                    <label class="label">Artículo:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="username" value="#{UsersController.selectedUser.username}" required="true" requiredMessage="El nombre de usuario no puede estar vacío" styleClass="input is-fullwidth"/>
+                                        <p:inputText value="#{InventarioController.selectedInventario.articulo.nombre}" 
+                                                     styleClass="input is-fullwidth" disabled="true" />
                                     </div>
                                 </div>
                             </div>
                             
-                            <p:messages for="groupName" showSummary="false" showDetail="true" closable="true" />
+                            <!-- Input for quantity -->
+                            <p:messages for="cantidad" showSummary="false" showDetail="true" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="groupName">Grupo:</label>
+                                    <label class="label" for="cantidad">Cantidad:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="groupName" value="#{UsersController.selectedUser.groupName}" required="true" requiredMessage="El grupo no puede estar vacío" styleClass="input is-fullwidth"/>
+                                        <p:inputText id="cantidad" value="#{InventarioController.selectedInventario.cantidad}"
+                                                     required="true" requiredMessage="La cantidad no puede estar vacía"
+                                                     styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
                             </div>
                             
+                            <!-- Add more fields for inventory attributes if needed -->
+                            
                             <div class="field is-horizontal">
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:commandButton value="Actualizar datos" styleClass="button is-fullwidth is-success is-rounded" action="#{UsersController.updateUser}" update="dynamicContent" />
+                                        <p:commandButton value="Actualizar datos" styleClass="button is-fullwidth is-success is-rounded"
+                                                         action="#{InventarioController.updateInventario}" update="dynamicContent" />
                                     </div>
                                 </div>
                             </div>
@@ -58,5 +68,4 @@
             </div>
         </div>
     </h:body>
-    
 </ui:composition>

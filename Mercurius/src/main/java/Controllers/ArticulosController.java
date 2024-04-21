@@ -7,6 +7,7 @@ import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import jakarta.annotation.PostConstruct;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
@@ -46,13 +47,12 @@ public class ArticulosController implements Serializable {
         selectedArticulo = new Articulos();
         articulosList();
         filterBy = new ArrayList<>();
-        departamentoOptions = departamentoService.listAll();
-        familiaOptions = familiaService.listAll();
+        updateDepartamentoAndFamiliaOptions(); 
     }
 
     public List<Articulos> articulosList() {
         if (articulosList == null) {
-            articulosList = articulosService.listAll();
+            articulosList = articulosService.ListAllEnabled();
         }
         return articulosList;
     }
@@ -63,11 +63,19 @@ public class ArticulosController implements Serializable {
 
     public void openNewArticulo() {
         newArticulo = new Articulos();
+        updateDepartamentoAndFamiliaOptions(); 
     }
 
     public void updateArticulo() {
-        articulosService.update(selectedArticulo);
-        clearSelectedArticulo();
+        if(DepartamentoID != 0 || FamiliaID != 0){
+            selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+            selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
+            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null){
+                articulosService.updateAndDisable(selectedArticulo);
+                clearSelectedArticulo();
+            }
+        }
+
     }
 
     public void createArticulo() {
@@ -75,6 +83,7 @@ public class ArticulosController implements Serializable {
             newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             newArticulo.setFamilia(familiaService.findById(FamiliaID));
             if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null){
+                newArticulo.setStatus(true);
                 articulosService.create(newArticulo);
                 clearSelectedArticulo();
             }
@@ -83,7 +92,7 @@ public class ArticulosController implements Serializable {
 
     public void deleteArticulo() {
         if (selectedArticulo != null) {
-            articulosService.delete(selectedArticulo);
+            articulosService.softDelete(selectedArticulo);
             clearSelectedArticulo();
         }
     }
@@ -113,7 +122,8 @@ public class ArticulosController implements Serializable {
 
         Articulos articulo = (Articulos) value;
         return String.valueOf(articulo.getCodigo()).contains(filterText)
-                || articulo.getNombre().toLowerCase().contains(filterText);
+                || articulo.getNombre().toLowerCase().contains(filterText)
+                || String.valueOf(articulo.getCodigoBarra()).contains(filterText);
     }
     
     public void calcularPrecioConIVA() {
@@ -123,6 +133,9 @@ public class ArticulosController implements Serializable {
                 double precioSinIVA = newArticulo.getPrecioFinal();
                 double IVA = precioSinIVA * (impuesto * 0.01);
                 double precioConIVA = precioSinIVA+IVA;
+                
+                precioConIVA = Math.ceil(precioConIVA);
+                
                 newArticulo.setPrecioCostoConIVA(precioConIVA);
             }
         }
@@ -133,11 +146,38 @@ public class ArticulosController implements Serializable {
         if (newArticulo != null) {
             double porcentajeUtilidad = newArticulo.getPorcentajeUtilidad();
             double precioCosto = newArticulo.getPrecioCostoSinIVA();
-            if(precioCosto != 0){
+            if(precioCosto >= 0 && porcentajeUtilidad >=0 ){
                 double Utilidad = precioCosto*(porcentajeUtilidad*0.01);
                 double precioConUtilidad = precioCosto+Utilidad;
+                
+                precioConUtilidad = Math.ceil(precioConUtilidad);
+                
                 newArticulo.setPrecioFinal(precioConUtilidad);
                 calcularPrecioConIVA();
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+            }
+        }
+        } catch (Exception e) {
+            System.out.println("Error:" + e.getLocalizedMessage());
+        }
+    }
+    
+    public void calcularPrecioConUtilidadEdit(){
+        try {
+        if (selectedArticulo != null) {
+            double porcentajeUtilidad = selectedArticulo.getPorcentajeUtilidad();
+            double precioCosto = selectedArticulo.getPrecioCostoSinIVA();
+            if(precioCosto >= 0 && porcentajeUtilidad >=0 ){
+                double Utilidad = precioCosto*(porcentajeUtilidad*0.01);
+                double precioConUtilidad = precioCosto+Utilidad;
+                
+                precioConUtilidad = Math.ceil(precioConUtilidad);
+                
+                selectedArticulo.setPrecioFinal(precioConUtilidad);
+                calcularPrecioConIVAEdit();
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
             }
         }
         } catch (Exception e) {
@@ -145,6 +185,25 @@ public class ArticulosController implements Serializable {
         }
         
     }
-
-
+    
+    public void calcularPrecioConIVAEdit() {
+        if (selectedArticulo != null) {
+            if (selectedArticulo.getPrecioFinal() != 0) {
+                double impuesto = selectedArticulo.getCodigoCabys().getImpuesto();
+                double precioSinIVA = selectedArticulo.getPrecioFinal();
+                double IVA = precioSinIVA * (impuesto * 0.01);
+                double precioConIVA = precioSinIVA+IVA;
+                
+                precioConIVA = Math.ceil(precioConIVA);
+                
+                selectedArticulo.setPrecioCostoConIVA(precioConIVA);
+            }
+        }
+    }
+    
+    private void updateDepartamentoAndFamiliaOptions() {
+        departamentoOptions = departamentoService.listAll();
+        familiaOptions = familiaService.listAll();
+    }
+    
 }

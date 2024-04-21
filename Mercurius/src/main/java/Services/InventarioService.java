@@ -1,18 +1,17 @@
 package Services;
 
-import Models.Articulos;
-import Models.Articulos;
+import Models.Inventario;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @Named
-public class ArticulosService extends GService<Articulos> {
+public class InventarioService extends GService<Inventario> {
 
     @Override
-    protected Class<Articulos> getEntityClass() {
-        return Articulos.class;
+    protected Class<Inventario> getEntityClass() {
+        return Inventario.class;
     }
 
     @PostConstruct
@@ -20,7 +19,7 @@ public class ArticulosService extends GService<Articulos> {
     }
 
     @Override
-    public void create(Articulos entity) {
+    public void create(Inventario entity) {
         try {
             em.persist(entity);
         } catch (Exception e) {
@@ -29,7 +28,7 @@ public class ArticulosService extends GService<Articulos> {
     }
 
     @Override
-    public void delete(Articulos entity) {
+    public void delete(Inventario entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getCodigo());
@@ -46,7 +45,7 @@ public class ArticulosService extends GService<Articulos> {
     }
 
     @Override
-    public void update(Articulos entity) {
+    public void update(Inventario entity) {
         try {
             em.merge(entity);
         } catch (Exception e) {
@@ -54,10 +53,10 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
     
-    public void updateAndDisable(Articulos entity) {
+    public void updateAndDisable(Inventario entity) {
         try {
             // Find the existing item by its ID
-            Articulos existingItem = em.find(getEntityClass(), entity.getCodigo());
+            Inventario existingItem = em.find(getEntityClass(), entity.getCodigo());
 
             if (existingItem != null) {
                 // Disable the existing item
@@ -75,9 +74,9 @@ public class ArticulosService extends GService<Articulos> {
     }
 
     @Override
-    public List<Articulos> listAll() {
+    public List<Inventario> listAll() {
         try {
-            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a", Articulos.class);
+            TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a", Inventario.class);
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());
@@ -85,9 +84,9 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
     
-    public List<Articulos> ListAllEnabled() {
+    public List<Inventario> ListAllEnabled() {
         try {
-            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.status = true", Articulos.class);
+            TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true", Inventario.class);
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all enabled entities: " + e.toString());
@@ -95,10 +94,10 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
 
-    public void softDelete(Articulos entity) {
+    public void softDelete(Inventario entity) {
         try {
             // Find the item by its ID
-            Articulos existingItem = em.find(getEntityClass(), entity.getCodigo());
+            Inventario existingItem = em.find(getEntityClass(), entity.getCodigo());
 
             if (existingItem != null) {
                 // Soft delete the item by setting its status to false
@@ -109,15 +108,6 @@ public class ArticulosService extends GService<Articulos> {
             }
         } catch (Exception e) {
             System.out.println("Error soft deleting entity: " + e.toString());
-        }
-    }
-    
-    public Articulos findById(Integer id) {
-    try {
-        return em.find(getEntityClass(), id);
-        } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
-            return null;
         }
     }
 

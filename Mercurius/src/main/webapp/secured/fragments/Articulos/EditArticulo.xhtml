@@ -39,107 +39,137 @@
                                 </div>
                             </div>
                             
+                            <!-- Input for codigo de barra -->
+                            <p:messages showDetail="true" for="codigoBarra" showSummary="false" closable="true" />
+                            <div class="field is-horizontal">
+                                <div class="field-label is-normal">
+                                    <label class="label" for="codigoBarra">Codigo de Barra:</label>
+                                </div>
+                                <div class="field-body">
+                                    <div class="field">
+                                        <p:inputText id="codigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
+                                                     required="true" requiredMessage="El codigo de barra no puede estar vacío"
+                                                     styleClass="input is-fullwidth" >
+                                        </p:inputText>
+                                    </div>
+                                </div>
+                            </div>
+                                                        
                             <!-- Input for Código CABYS -->
-                            <p:messages for="codigoCabys" showSummary="false" showDetail="true" closable="true" />
+                            <p:messages showDetail="true" for="codigoCabys" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
                                     <label class="label" for="codigoCabys">Código CABYS:</label>
                                 </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <p:inputText id="codigoCabys" value="#{ArticulosController.selectedArticulo.codigoCabys}"
-                                                     required="true" requiredMessage="El Código CABYS no puede estar vacío"
-                                                     styleClass="input is-fullwidth"/>
+                                <div class="field-body is-flex">
+                                    <p:commandButton value="Seleccionar" styleClass="button"
+                                                     onclick="PF('codigoCabysDialog').show();"/> 
+                                    <!-- Container for selected option -->
+                                    <div class="selected-option is-flex">
+                                        <p:outputLabel value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto} %"
+                                                       styleClass="label"/>
                                     </div>
+                                    <!-- Should probably insert the dialog here -->
+                                    <ui:include src="../CaByS/CabysDialog.xhtml"/>  
                                 </div>
                             </div>
-                            
+                                                      
                             <!-- Input for Departamento -->
-                            <p:messages for="departamento" showSummary="false" showDetail="true" closable="true" />
+                            <p:messages showDetail="true" for="departamento" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
                                     <label class="label" for="departamento">Departamento:</label>
                                 </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <p:inputText id="departamento" value="#{ArticulosController.selectedArticulo.departamento}"
-                                                     required="true" requiredMessage="El Departamento no puede estar vacío"
-                                                     styleClass="input is-fullwidth"/>
+                                <div class="field-body columns is-mobile">
+                                    <div class="column">
+                                        <p:selectOneMenu id="departamentoSelect" value="#{ArticulosController.departamentoID}"
+                                                         required="true" requiredMessage="El Departamento no puede estar vacío"
+                                                         styleClass="input" widgetVar="departamentoSelect" >\
+                                            <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
+                                            <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
+                                                           itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
+                                        </p:selectOneMenu>
                                     </div>
                                 </div>
                             </div>
-                            
+                                                        
                             <!-- Input for Familia -->
-                            <p:messages for="familia" showSummary="false" showDetail="true" closable="true" />
+                            <p:messages showDetail="true" for="familia" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
                                     <label class="label" for="familia">Familia:</label>
                                 </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <p:inputText id="familia" value="#{ArticulosController.selectedArticulo.familia}"
-                                                     required="true" requiredMessage="La Familia no puede estar vacía"
-                                                     styleClass="input is-fullwidth"/>
+                                <div class="field-body columns is-mobile">
+                                    <div class="column">
+                                        <p:selectOneMenu id="familiaSelect" value="#{ArticulosController.familiaID}"
+                                                         required="true" requiredMessage="La Familia no puede estar vacía"
+                                                         styleClass="input" widgetVar="familiaSelect" >
+                                            <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                            <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                           itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
+                                        </p:selectOneMenu>
                                     </div>
                                 </div>
                             </div>
-                            
+                                                       
                             <!-- Input for Precio Costo sin IVA -->
-                            <p:messages for="precioCostoSinIVA" showSummary="false" showDetail="true" closable="true" />
+                            <p:messages showDetail="true" for="precioCostoSinIVA" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
                                     <label class="label" for="precioCostoSinIVA">Precio Costo sin IVA:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="precioCostoSinIVA" value="#{ArticulosController.selectedArticulo.precioCostoSinIVA}"
+                                        <p:inputText id="precioCostoSinIVA" type="number" value="#{ArticulosController.selectedArticulo.precioCostoSinIVA}"
                                                      required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
-                                                     styleClass="input is-fullwidth"/>
+                                                     styleClass="input is-fullwidth">
+                                            <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
+                                                    update="precioCostoSinIVA precioFinal precioFinalConIVA" process="@this"/>
+                                        </p:inputText>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Input for Precio Costo con IVA -->
-                            <p:messages for="precioCostoConIVA" showSummary="false" showDetail="true" closable="true" />
+                                                        
+                            <!-- Input for Porcentaje de Utilidad -->
+                            <p:messages showDetail="true" for="porcentajeUtilidad" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="precioCostoConIVA">Precio Costo con IVA:</label>
+                                    <label class="label" for="porcentajeUtilidad">Porcentaje de Utilidad:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="precioCostoConIVA" value="#{ArticulosController.selectedArticulo.precioCostoConIVA}"
-                                                     required="true" requiredMessage="El Precio Costo con IVA no puede estar vacío"
-                                                     styleClass="input is-fullwidth"/>
+                                        <p:inputText id="porcentajeUtilidad" type="number" value="#{ArticulosController.selectedArticulo.porcentajeUtilidad}"
+                                                     required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
+                                                     styleClass="input is-fullwidth">
+                                                    <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
+                                                            update="precioCostoSinIVA precioFinal precioFinalConIVA"/>
+                                        </p:inputText>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Input for Porcentaje Utilidad -->
-                            <p:messages for="porcentajeUtilidad" showSummary="false" showDetail="true" closable="true" />
-                            <div class="field is-horizontal">
-                                <div class="field-label is-normal">
-                                    <label class="label" for="porcentajeUtilidad">Porcentaje Utilidad:</label>
-                                </div>
-                                <div class="field-body">
-                                    <div class="field">
-                                        <p:inputText id="porcentajeUtilidad" value="#{ArticulosController.selectedArticulo.porcentajeUtilidad}"
-                                                     required="true" requiredMessage="El Porcentaje Utilidad no puede estar vacío"
-                                                     styleClass="input is-fullwidth"/>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Input for Precio Final -->
-                            <p:messages for="precioFinal" showSummary="false" showDetail="true" closable="true" />
+                                                       
+                            <!-- Output for Precio Final -->
+                            <p:messages showDetail="true" for="precioFinal" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
                                     <label class="label" for="precioFinal">Precio Final:</label>
+                                </div> 
+                                <div class="field-body">
+                                    <div class="field">
+                                        <p:outputLabel id="precioFinal" value="#{ArticulosController.selectedArticulo.precioFinal}"/>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Output for Precio Final con IVA -->
+                            <p:messages showDetail="true" for="precioFinalConIVA" showSummary="false" closable="true"/>
+                            <div class="field is-horizontal">
+                                <div class="field-label is-normal">
+                                    <label class="label" for="precioFinalConIVA">Precio Final con IVA:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="precioFinal" value="#{ArticulosController.selectedArticulo.precioFinal}"
-                                                     required="true" requiredMessage="El Precio Final no puede estar vacío"
-                                                     styleClass="input is-fullwidth"/>
+                                        <p:outputLabel id="precioFinalConIVA" value="#{ArticulosController.selectedArticulo.precioCostoConIVA}"/>
                                     </div>
                                 </div>
                             </div>

@@ -1,11 +1,10 @@
 package Controllers;
 
-import Models.Departamento;
 import Models.Familia;
 import Services.FamiliaService;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
@@ -19,7 +18,7 @@ import org.primefaces.util.LangUtils;
 
 @Data
 @Named(value = "FamiliasController")
-@SessionScoped
+@ViewScoped
 public class FamiliaController implements Serializable {
     @Inject private FamiliaService familiaService;
     @Inject private ViewController viewManager;

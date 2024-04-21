@@ -17,7 +17,7 @@
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="profilesTable">
+                    <h:form id="usersTable">
                         
                         <p:toolbar>
                             <p:toolbarGroup align="right">
@@ -30,39 +30,39 @@
                             </p:toolbarGroup>
                         </p:toolbar>
                         
-                        <p:dataTable value="#{ProfilesController.filteredProfiles}" var="profile" widgetVar="UsersTable"
+                        <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTable"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"
                                      emptyMessage="No se encontraron usuarios con la critería proporcionada"
-                                     globalFilterFunction="#{ProfilesController.globalFilterFunction}"
-                                     filterBy="#{ProfilesController.filterBy}"
-                                     selection="#{ProfilesController.selectedProfile}" rowKey="#{profile.id}">
+                                     globalFilterFunction="#{UsersController.globalFilterFunction}"
+                                     filterBy="#{UsersController.filterBy}"
+                                     selection="#{UsersController.selectedUser}" rowKey="#{user.id}">
                             
                             <f:facet name="header">
                                     <p:inputText id="globalFilter" onkeyup="PF('UsersTable').filter()" styleClass="input"
                                                  placeholder="Búsqueda general de todos los campos" />
                             </f:facet>
     
-                            <p:column headerText="Identificador de perfil" visible="false" sortBy="#{profile.id}">
-                                <h:outputText value="#{profile.id}"/>
+                            <p:column headerText="Identificador de perfil" visible="false" sortBy="#{user.id}">
+                                <h:outputText value="#{user.id}"/>
                             </p:column>
-                            <p:column headerText="Nombre de usuario" sortBy="#{profile.username}">
-                                <h:outputText value="#{profile.username}" />
+                            <p:column headerText="Nombre de usuario" sortBy="#{user.username}">
+                                <h:outputText value="#{user.username}" />
                             </p:column>
                             <p:column headerText="Contraseña (HASH)" exportable="false">
-                                <h:outputText value="#{profile.password}" />
+                                <h:outputText value="#{user.password}" />
                             </p:column>
-                            <p:column headerText="Nombre del grupo" sortBy="#{profile.groupName}">
-                                <h:outputText value="#{profile.groupName}" />
+                            <p:column headerText="Nombre del grupo" sortBy="#{user.groupName}">
+                                <h:outputText value="#{user.groupName}" />
                             </p:column>
                             <p:column headerText="Acciones" width="20%" exportable="false">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
                                     actionListener="#{ViewController.selectEditUsers()}" process="@this" update="dynamicContent">
-                                        <f:setPropertyActionListener value="#{profile}" target="#{ProfilesController.selectedProfile}" />
+                                        <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
                                     </p:commandButton>
                                     <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                    actionListener="#{ProfilesController.deleteProfile()}" process="@this" update="dynamicContent profilesTable">
-                                        <f:setPropertyActionListener value="#{profile}" target="#{ProfilesController.selectedProfile}" />
+                                    actionListener="#{UsersController.deleteUser()}" process="@this" update="dynamicContent usersTable">
+                                        <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
                                     </p:commandButton>
                                 </div>
                             </p:column>

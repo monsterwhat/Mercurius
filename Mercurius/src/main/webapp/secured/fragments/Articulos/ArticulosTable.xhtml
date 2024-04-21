@@ -42,8 +42,11 @@
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
                             
-                            <p:column headerText="Código" sortBy="#{articulo.codigo}">
+                            <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
                                 <h:outputText value="#{articulo.codigo}"/>
+                            </p:column>
+                            <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                                <h:outputText value="#{articulo.codigoBarra}"/>
                             </p:column>
                             <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}">
                                 <h:outputText value="#{articulo.codigoCabys.codigo}"/>
@@ -51,20 +54,20 @@
                             <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
                                 <h:outputText value="#{articulo.nombre}"/>
                             </p:column>
-                            <p:column headerText="Precio Costo Sin IVA" sortBy="#{articulo.precioCostoSinIVA}">
+                            <p:column headerText="Precio Costo Sin IVA" sortBy="#{articulo.precioCostoSinIVA}" visible="false">
                                 <h:outputText value="#{articulo.precioCostoSinIVA}"/>
                             </p:column>
-                            <p:column headerText="Precio Costo Con IVA" sortBy="#{articulo.precioCostoConIVA}">
-                                <h:outputText value="#{articulo.precioCostoConIVA}"/>
-                            </p:column>
-                            <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.porcentajeUtilidad}">
+                            <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.porcentajeUtilidad}" visible="false">
                                 <h:outputText value="#{articulo.porcentajeUtilidad}"/>
                             </p:column>
-                            <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}">
+                            <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}" visible="false">
                                 <h:outputText value="#{articulo.precioFinal}"/>
                             </p:column>
+                            <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}">
+                                <h:outputText value="#{articulo.precioCostoConIVA}"/>
+                            </p:column>
                             
-                            <p:column headerText="Acciones">
+                            <p:column headerText="Acciones" exportable="false">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
                                     actionListener="#{ViewController.selectEditArticulos()}" process="@this" update="dynamicContent">
@@ -77,7 +80,9 @@
                                 </div>
                             </p:column>
                         </p:dataTable>
-                        <p:commandButton value="Crear Artículo" actionListener="#{ViewController.selectCreateArticulos}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
+                        <p:commandButton value="Crear Artículo" actionListener="#{ViewController.selectCreateArticulos}"
+                                         update="dynamicContent createArticulos" styleClass="button is-fullwidth is-success is-rounded"
+                                         />
                     </h:form>
                 </div>
             </div>

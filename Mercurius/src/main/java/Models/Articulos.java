@@ -16,6 +16,8 @@ public class Articulos {
     private Cabys codigoCabys;
 
     private String nombre;
+    
+    private String codigoBarra;
 
     @ManyToOne
     @JoinColumn(name = "departamento_id")
@@ -36,21 +38,24 @@ public class Articulos {
 
     @Column(name = "precio_final")
     private double precioFinal;
+    
+    private boolean status;
 
     public Articulos() {
     }
 
-    public Articulos(int codigo, Cabys codigoCabys, String nombre, Departamento departamento, Familia familia, double precioCostoSinIVA, double precioCostoConIVA, double porcentajeUtilidad, double precioFinal) {
+    public Articulos(int codigo, Cabys codigoCabys, String nombre, String codigoBarra, Departamento departamento, Familia familia, double precioCostoSinIVA, double precioCostoConIVA, double porcentajeUtilidad, double precioFinal, boolean status) {
         this.codigo = codigo;
         this.codigoCabys = codigoCabys;
         this.nombre = nombre;
+        this.codigoBarra = codigoBarra;
         this.departamento = departamento;
         this.familia = familia;
         this.precioCostoSinIVA = precioCostoSinIVA;
         this.precioCostoConIVA = precioCostoConIVA;
         this.porcentajeUtilidad = porcentajeUtilidad;
         this.precioFinal = precioFinal;
+        this.status = status;
     }
-
     
 }
