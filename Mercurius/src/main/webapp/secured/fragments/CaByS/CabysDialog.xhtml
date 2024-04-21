@@ -42,7 +42,9 @@
 
           </p:dataTable>
         
-        <p:commandButton value="Seleccionar" action="#{CabysController.selectCabys}" onsuccess="PF('codigoCabysDialog').hide();" update="createArticulos" />
+        <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{CabysController.selectCabys}" 
+                         onsuccess="PF('codigoCabysDialog').hide();" update="createArticulos" 
+                         immediate="true"/>
 
     </p:dialog>
     </h:body>

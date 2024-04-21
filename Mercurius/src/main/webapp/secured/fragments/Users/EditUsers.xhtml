@@ -16,9 +16,9 @@
             <div class="columns is-centered">
                 <div class="column">
                     <p:commandButton value="Volver a lista de usuarios" icon="pi pi-backward" styleClass="button is-fullwidth is-inverted is-warning is-rounded" immediate="true" action="#{ViewController.selectViewUsers()}" update="dynamicContent" />
-                    <h:form id="editProfileForm" rendered="#{not empty ProfilesController.selectedProfile}">
+                    <h:form id="editUserForm" rendered="#{not empty UsersController.selectedUser}">
                         <br/>
-                        <p:panel header="Editar Usuario: #{ProfilesController.selectedProfile.username}">
+                        <p:panel header="Editar Usuario: #{UsersController.selectedUser.username}">
                             <p:growl id="growl" showDetail="true" showSummary="false"/>
                             
                             <p:messages for="username" showSummary="false" showDetail="true" closable="true" />
@@ -28,7 +28,7 @@
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="username" value="#{ProfilesController.selectedProfile.username}" required="true" requiredMessage="El nombre de usuario no puede estar vacío" styleClass="input is-fullwidth"/>
+                                        <p:inputText id="username" value="#{UsersController.selectedUser.username}" required="true" requiredMessage="El nombre de usuario no puede estar vacío" styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
                             </div>
@@ -40,7 +40,7 @@
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="groupName" value="#{ProfilesController.selectedProfile.groupName}" required="true" requiredMessage="El grupo no puede estar vacío" styleClass="input is-fullwidth"/>
+                                        <p:inputText id="groupName" value="#{UsersController.selectedUser.groupName}" required="true" requiredMessage="El grupo no puede estar vacío" styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
                             </div>
@@ -48,7 +48,7 @@
                             <div class="field is-horizontal">
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:commandButton value="Actualizar datos" styleClass="button is-fullwidth is-success is-rounded" action="#{ProfilesController.updateProfile}" update="dynamicContent" />
+                                        <p:commandButton value="Actualizar datos" styleClass="button is-fullwidth is-success is-rounded" action="#{UsersController.updateUser}" update="dynamicContent" />
                                     </div>
                                 </div>
                             </div>

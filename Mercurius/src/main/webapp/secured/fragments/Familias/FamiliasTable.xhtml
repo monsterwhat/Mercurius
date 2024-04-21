@@ -45,16 +45,13 @@
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
                             
-                            <!-- Adjust the column headers and data -->
                             <p:column headerText="ID Familia" visible="false">
                                 <h:outputText value="#{familia.id}"/>
                             </p:column>
                             <p:column headerText="Nombre" sortBy="#{familia.nombre}">
                                 <h:outputText value="#{familia.nombre}"/>
                             </p:column>
-                            <!-- Add more columns as needed -->
                             
-                            <!-- Adjust the actions -->
                             <p:column headerText="Acciones">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"

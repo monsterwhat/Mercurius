@@ -28,7 +28,7 @@
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="username" value="#{ProfilesController.newProfile.username}" required="true" requiredMessage="El nombre de usuario no puede estar vacío" styleClass="input is-fullwidth"/>
+                                        <p:inputText id="username" value="#{UsersController.newUser.username}" required="true" requiredMessage="El nombre de usuario no puede estar vacío" styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
                             </div>
@@ -40,7 +40,7 @@
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:password id="password" value="#{ProfilesController.newProfile.password}" required="true" requiredMessage="La contraseña no puede estar vacía" styleClass="input is-fullwidth"/>
+                                        <p:password id="password" value="#{UsersController.newUser.password}" required="true" requiredMessage="La contraseña no puede estar vacía" styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
                             </div>
@@ -52,13 +52,13 @@
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="groupName" value="#{ProfilesController.newProfile.groupName}" required="true" requiredMessage="El nombre de grupo no puede estar vacío" styleClass="input is-fullwidth"/>
+                                        <p:inputText id="groupName" value="#{UsersController.newUser.groupName}" required="true" requiredMessage="El nombre de grupo no puede estar vacío" styleClass="input is-fullwidth"/>
                                     </div>
                                 </div>
                             </div>
                         </p:panel>
                         <br/>
-                        <p:commandButton value="Crear Usuario" styleClass="button is-fullwidth is-rounded is-success" action="#{ProfilesController.createProfile}" update="dynamicContent"/>
+                        <p:commandButton value="Crear Usuario" styleClass="button is-fullwidth is-rounded is-success" action="#{UsersController.createUser}" update="dynamicContent"/>
                     </h:form>
                 </div>
             </div>

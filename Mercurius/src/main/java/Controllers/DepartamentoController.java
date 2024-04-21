@@ -3,8 +3,8 @@ package Controllers;
 import Models.Departamento;
 import Services.DepartamentoService;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
@@ -18,7 +18,7 @@ import org.primefaces.util.LangUtils;
 
 @Data
 @Named(value = "DepartamentosController")
-@SessionScoped
+@ViewScoped
 public class DepartamentoController implements Serializable {
     @Inject private DepartamentoService departamentoService;
     @Inject private ViewController viewManager;
