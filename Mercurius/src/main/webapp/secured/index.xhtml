@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
     <script src="../../../resources/js/functions.js"/>
+    <script src="../resources/css/style.css"/>
 
 </h:head>
 
@@ -21,7 +22,14 @@
                         <div class="column">
                             <article class="message is-info">
                                 <div class="message-body">
-                                    <h1 class="title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
+                                    <div class="columns is-mobile">
+                                        <div class="column is-four-fifths">
+                                            <h1 class="title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
+                                        </div>
+                                        <div class="column">
+                                            <p:commandButton styleClass="button is-rounded is-danger is-2" icon="pi pi-sign-out" value="Salir" actionListener="#{SessionController.logOut()}" />
+                                        </div>
+                                    </div>
                                 </div>
                             </article>
                         </div>
@@ -34,6 +42,9 @@
                     <p:outputPanel id="dynamicContent">
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsers'}" >
                             <ui:include src="./fragments/Users/UsersTable.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsersDetallados'}" >
+                            <ui:include src="./fragments/Users/Detallados/UsersTableDetallado.xhtml" />
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editUsers'}">
                             <ui:include src="./fragments/Users/EditUsers.xhtml" />
@@ -53,6 +64,9 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulos'}">
                             <ui:include src="./fragments/Articulos/ArticulosTable.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulosDetallado'}">
+                            <ui:include src="./fragments/Articulos/Detallados/ArticulosTableDetallada.xhtml" />
+                        </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editArticulos'}">
                             <ui:include src="./fragments/Articulos/EditArticulo.xhtml" />
                         </ui:fragment>                        
@@ -61,6 +75,9 @@
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewDepartamentos'}">
                             <ui:include src="./fragments/Departamentos/DepartamentosTable.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewDepartamentosDetallado'}">
+                            <ui:include src="./fragments/Departamentos/Detallados/DepartamentosTableDetallada.xhtml" />
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editDepartamentos'}">
                             <ui:include src="./fragments/Departamentos/EditDepartamento.xhtml" />
@@ -71,6 +88,9 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFamilias'}">
                             <ui:include src="./fragments/Familias/FamiliasTable.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFamiliasDetallado'}">
+                            <ui:include src="./fragments/Familias/Detallados/FamiliasTableDetallada.xhtml" />
+                        </ui:fragment>                        
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editFamilias'}">
                             <ui:include src="./fragments/Familias/EditFamilias.xhtml" />
                         </ui:fragment>                        
@@ -79,6 +99,9 @@
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventarios'}">
                             <ui:include src="./fragments/Inventario/InventariosTable.xhtml"/>
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventariosDetallado'}">
+                            <ui:include src="./fragments/Inventario/Detallados/InventariosTableDetallada.xhtml"/>
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editInventarios'}">
                             <ui:include src="./fragments/Inventario/EditMovimientoInventario.xhtml" />

@@ -22,6 +22,7 @@ import org.primefaces.util.LangUtils;
 public class FamiliaController implements Serializable {
     @Inject private FamiliaService familiaService;
     @Inject private ViewController viewManager;
+    @Inject private SessionController currentSession;
 
     private List<Familia> familias;
     private Familia selectedFamilia;
@@ -40,9 +41,13 @@ public class FamiliaController implements Serializable {
 
     public List<Familia> familiasList() {
         if (familias == null) {
-            familias = familiaService.listAll();
+            familias = familiaService.ListAllEnabled();
         }
         return familias;
+    }
+    
+    public List<Familia> familiasListAll() {
+        return familiaService.listAll();
     }
 
     public long familiaCount() {
@@ -52,25 +57,27 @@ public class FamiliaController implements Serializable {
     public void openNewFamilia() {
         newFamilia = new Familia();
     }
-
+    
     public void updateFamilia() {
-        familiaService.update(selectedFamilia);
-        clearSelectedFamilia();
+        if(currentSession.isValid()){
+            selectedFamilia.setUsuario(currentSession.getCurrentUser());
+            familiaService.updateAndDisable(selectedFamilia);
+            clearSelectedFamilia();    
+        }
     }
 
     public void createFamilia() {
-        familiaService.create(newFamilia);
-        clearSelectedFamilia();
+        if(currentSession.isValid()){
+            newFamilia.setStatus(true);
+            newFamilia.setUsuario(currentSession.getCurrentUser());
+            familiaService.create(newFamilia);
+            clearSelectedFamilia();
+        }
     }
     
-    public void createFamiliaSimple() {
-        familiaService.create(newFamilia);
-        clearSelectedFamiliaSimple();
-    }
-
     public void deleteFamilia() {
         if (selectedFamilia != null) {
-            familiaService.delete(selectedFamilia);
+            familiaService.softDelete(selectedFamilia);
             clearSelectedFamilia();
         }
     }
@@ -80,12 +87,6 @@ public class FamiliaController implements Serializable {
         newFamilia = null;
         selectedFamilia = null;
         viewManager.selectViewFamilias();
-    }
-    
-    public void clearSelectedFamiliaSimple() {
-        familias = null;
-        newFamilia = null;
-        selectedFamilia = null;
     }
 
     public List<Familia> getFilteredFamilias() {
@@ -97,6 +98,16 @@ public class FamiliaController implements Serializable {
             return familiasList();
         }
     }
+    
+    public List<Familia> getFilteredFamiliasDetallado() {
+        if (familiaFilter != null && !familiaFilter.isEmpty()) {
+            return familiasListAll().stream()
+                    .filter(familia -> globalFilterFunction(familia, familiaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return familiasListAll();
+        }
+    }
 
     public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
@@ -106,7 +117,8 @@ public class FamiliaController implements Serializable {
 
         Familia familia = (Familia) value;
         return familia.getNombre().toLowerCase().contains(filterText)
-                || String.valueOf(familia.getId()).contains(filterText);
+                || String.valueOf(familia.getId()).contains(filterText)
+                || familia.getUsuario().getUsername().toLowerCase().contains(filterText);
     }
 
     public Familia findFamiliaById(Integer number) {

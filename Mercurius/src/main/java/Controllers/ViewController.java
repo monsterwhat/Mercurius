@@ -33,6 +33,10 @@ public class ViewController implements Serializable {
         selectedOption = "viewUsers";
     }
     
+    public void selectViewUsersDetallados(){
+        selectedOption = "viewUsersDetallados";
+    }
+    
     public void selectEditUsers(){
         selectedOption = "editUsers";
     }
@@ -63,6 +67,10 @@ public class ViewController implements Serializable {
         selectedOption = "viewFamilias";
     }
     
+    public void selectViewFamiliasDetallado(){
+        selectedOption = "viewFamiliasDetallado";
+    }
+    
     public void selectEditFamilias(){
         selectedOption="editFamilias";
     }
@@ -74,6 +82,10 @@ public class ViewController implements Serializable {
     
     public void selectViewInventario(){
         selectedOption = "viewInventarios";
+    }
+    
+    public void selectViewInventarioDetallado(){
+        selectedOption = "viewInventariosDetallado";
     }
     
     public void selectEditInventario(){
@@ -89,6 +101,10 @@ public class ViewController implements Serializable {
         selectedOption="viewArticulos";
     }
     
+    public void selectViewArticulosDetallado(){
+        selectedOption="viewArticulosDetallado";
+    }
+    
     public void selectEditArticulos(){
         selectedOption="editArticulos";
     }
@@ -100,6 +116,10 @@ public class ViewController implements Serializable {
     
     public void selectViewDepartamentos(){
         selectedOption="viewDepartamentos";
+    }
+    
+    public void selectViewDepartamentosDetallado(){
+        selectedOption="viewDepartamentosDetallado";
     }
 
     public void selectEditDepartamentos(){

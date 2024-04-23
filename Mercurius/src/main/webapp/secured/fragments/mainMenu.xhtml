@@ -12,7 +12,8 @@
         <h:form id="MainMenu">
             <div class="columns is-mobile buttons">
                 <div class="column">
-                    <p:commandButton id="FacturacionButton" value="Facturación" styleClass="button is-rounded is-primary is-fullwidth" icon="pi pi-shopping-cart"/>
+                    <p:commandButton id="FacturacionButton" value="Facturación" styleClass="button is-rounded is-primary is-fullwidth"
+                                     icon="pi pi-shopping-cart" rendered="#{SessionController.facturacion}"/>
                     <p:menu overlay="true" trigger="FacturacionButton" my="left top" at="left bottom">
                         <p:submenu label="Facturación">
                             <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" disabled="true"/>
@@ -21,18 +22,22 @@
                     </p:menu>
                 </div>
                 <div class="column">
-                    <p:commandButton id="InventariosButton" value="Inventarios" styleClass="button is-rounded is-info is-fullwidth" icon="pi pi-box"/>
+                    <p:commandButton id="InventariosButton" value="Inventarios" 
+                                     styleClass="button is-rounded is-info is-fullwidth" 
+                                     icon="pi pi-box" rendered="#{SessionController.inventarios}"/>
                     <p:menu overlay="true" trigger="InventariosButton" my="left top" at="left bottom">
                         <p:submenu label="Inventarios">
                             <p:menuitem value="Ver Artículos" icon="pi pi-eye" action="#{ViewController.selectViewArticulos}" update="dynamicContent"/>
                             <p:menuitem value="Ver Departamentos" icon="pi pi-truck" action="#{ViewController.selectViewDepartamentos}" update="dynamicContent"/>
                             <p:menuitem value="Ver Familias" icon="pi pi-th-large" action="#{ViewController.selectViewFamilias}" update="dynamicContent" />
-                            <p:menuitem value="Ver Inventario" icon="pi pi-pencil" action="#{ViewController.selectViewInventario}" update="dynamicContent"/>
+                            <p:menuitem value="Ver Movimientos" icon="pi pi-pencil" action="#{ViewController.selectViewInventario}" update="dynamicContent"/>
                         </p:submenu>
                     </p:menu>
                 </div>
                 <div class="column">
-                    <p:commandButton id="UsuariosButton" value="Usuarios" styleClass="button is-rounded is-link is-fullwidth" icon="pi pi-user"/>
+                    <p:commandButton id="UsuariosButton" value="Usuarios" 
+                                     styleClass="button is-rounded is-link is-fullwidth" 
+                                     icon="pi pi-user" rendered="#{SessionController.usuarios}"/>
                     <p:menu overlay="true" trigger="UsuariosButton" my="left top" at="left bottom">
                         <p:submenu label="Usuarios">
                             <p:menuitem value="Ver Usuarios" icon="pi pi-users" action="#{ViewController.selectViewUsers}" update="dynamicContent"/>
@@ -41,7 +46,9 @@
                     </p:menu>
                 </div>
                 <div class="column">
-                    <p:commandButton id="TributacionButton" value="Tributación" styleClass="button is-rounded is-danger is-fullwidth" icon="pi pi-money-bill"/>
+                    <p:commandButton id="TributacionButton" value="Tributación" 
+                                     styleClass="button is-rounded is-danger is-fullwidth" 
+                                     icon="pi pi-money-bill" rendered="#{SessionController.tributacion}"/>
                     <p:menu overlay="true" trigger="TributacionButton" my="left top" at="left bottom">
                         <p:submenu label="Tributación">
                             <p:menuitem value="Consultas" icon="pi pi-book" disabled="true"/>
@@ -50,18 +57,23 @@
                     </p:menu>
                 </div>
                 <div class="column">
-                    <p:commandButton id="RegistrosButton" value="Registros" styleClass="button is-rounded is-warning is-fullwidth" icon="pi pi-book"/>
+                    <p:commandButton id="RegistrosButton" value="Registros" 
+                                     styleClass="button is-rounded is-warning is-fullwidth" 
+                                     icon="pi pi-book" rendered="#{SessionController.registros}"/>
                     <p:menu overlay="true" trigger="RegistrosButton" my="left top" at="left bottom" collision="fit">
                         <p:submenu label="Reportes Facturación">
                             <p:menuitem value="Facturación Diaria" icon="pi pi-calendar" disabled="true"/>
                             <p:menuitem value="Facturación de Artículos" icon="pi pi-box" disabled="true"/>
                         </p:submenu>
                         <p:submenu label="Reportes Inventarios">
-                            <p:menuitem value="Articulos Detallados" icon="pi pi-search" disabled="true"/>
-                            <p:menuitem value="Departamentos Detallados" icon="pi pi-search" disabled="true"/>
-                            <p:menuitem value="Familias Detalladas" icon="pi pi-search" disabled="true"/>
-                            <p:menuitem value="Inventarios Detallados" icon="pi pi-search" disabled="true"/>
+                            <p:menuitem value="Articulos Detallados" action="#{ViewController.selectViewArticulosDetallado()}" icon="pi pi-search" update="dynamicContent"/>
+                            <p:menuitem value="Departamentos Detallados" action="#{ViewController.selectViewDepartamentosDetallado()}" icon="pi pi-search" update="dynamicContent"/>
+                            <p:menuitem value="Familias Detalladas" action="#{ViewController.selectViewFamiliasDetallado()}" icon="pi pi-search" update="dynamicContent"/>
+                            <p:menuitem value="Inventarios Detallados" action="#{ViewController.selectViewInventarioDetallado()}" icon="pi pi-search" update="dynamicContent"/>
                             <p:menuitem value="Generar Etiquetas" icon="pi pi-ticket" rendered="false" disabled="true"/>
+                        </p:submenu>
+                        <p:submenu label="Reportes de Usuarios">
+                            <p:menuitem value="Usuarios Detallados" action="#{ViewController.selectViewUsersDetallados()}" icon="pi pi-search" update="dynamicContent"/>
                         </p:submenu>
                     </p:menu>
                 </div>

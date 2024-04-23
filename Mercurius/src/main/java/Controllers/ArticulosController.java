@@ -6,6 +6,7 @@ import Models.Familia;
 import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
+import Services.InventarioService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -30,6 +31,8 @@ public class ArticulosController implements Serializable {
     @Inject private ViewController viewManager;
     @Inject private DepartamentoService departamentoService;
     @Inject private FamiliaService familiaService;
+    @Inject private InventarioService inventarioService;
+    @Inject private SessionController currentSession;
     
     private List<Articulos> articulosList;
     private Articulos selectedArticulo;
@@ -56,6 +59,10 @@ public class ArticulosController implements Serializable {
         }
         return articulosList;
     }
+    
+    public List<Articulos> articulosListFull() {
+        return articulosService.listAll();
+    }
 
     public long articulosCount() {
         return articulosService.count();
@@ -67,22 +74,23 @@ public class ArticulosController implements Serializable {
     }
 
     public void updateArticulo() {
-        if(DepartamentoID != 0 || FamiliaID != 0){
+        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
             selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
-            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null){
+            selectedArticulo.setUsuario(currentSession.getCurrentUser());
+            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
                 articulosService.updateAndDisable(selectedArticulo);
                 clearSelectedArticulo();
             }
         }
-
     }
 
     public void createArticulo() {
-        if(DepartamentoID != 0 || FamiliaID != 0){
+        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
             newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             newArticulo.setFamilia(familiaService.findById(FamiliaID));
-            if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null){
+            newArticulo.setUsuario(currentSession.getCurrentUser());
+            if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null && newArticulo.getUsuario() != null){
                 newArticulo.setStatus(true);
                 articulosService.create(newArticulo);
                 clearSelectedArticulo();
@@ -111,6 +119,16 @@ public class ArticulosController implements Serializable {
                     .collect(Collectors.toList());
         } else {
             return articulosList();
+        }
+    }
+    
+    public List<Articulos> getFilteredArticulosDetallado() {
+        if (articulosFilter != null && !articulosFilter.isEmpty()) {
+            return articulosListFull().stream()
+                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return articulosListFull();
         }
     }
 
@@ -204,6 +222,12 @@ public class ArticulosController implements Serializable {
     private void updateDepartamentoAndFamiliaOptions() {
         departamentoOptions = departamentoService.listAll();
         familiaOptions = familiaService.listAll();
+    }
+    
+    public int getStock(Articulos articulo){
+        String codigoBarra = articulo.getCodigoBarra();
+        int totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
+        return totalStock;
     }
     
 }

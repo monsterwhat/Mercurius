@@ -32,15 +32,18 @@ public class Users implements Serializable{
     
     @Column
     private String groupName;
+    
+    private Boolean status; //En caso de querer archivar o desabilitar
 
     public Users() {
     }
 
-    public Users(Long id, String username, String password, String groupName) {
+    public Users(Long id, String username, String password, String groupName, Boolean status) {
         this.id = id;
         this.username = username;
         this.password = password;
         this.groupName = groupName;
-    }    
-    
+        this.status = status;
+    }
+
 }

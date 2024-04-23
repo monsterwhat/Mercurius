@@ -10,6 +10,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.Date;
 import lombok.Data;
@@ -50,11 +52,17 @@ public class Clients {
     
     @Column
     private int zoneCode; // Codigo de Zona (Int)
+    
+    private Boolean status; //En caso de querer archivar o desabilitar
+
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Users usuario; //Referencia a quien creo el cliente
 
     public Clients() {
     }
 
-    public Clients(int code, String name, String address, String email, Date birthDate, String idType, int idNumber, double discount, int phoneNumber, boolean taxpayer, int zoneCode) {
+    public Clients(int code, String name, String address, String email, Date birthDate, String idType, int idNumber, double discount, int phoneNumber, boolean taxpayer, int zoneCode, Boolean status, Users usuario) {
         this.code = code;
         this.name = name;
         this.address = address;
@@ -66,6 +74,8 @@ public class Clients {
         this.phoneNumber = phoneNumber;
         this.taxpayer = taxpayer;
         this.zoneCode = zoneCode;
+        this.status = status;
+        this.usuario = usuario;
     }
     
 }

@@ -1,5 +1,6 @@
 package Services;
 
+import Models.Articulos;
 import Models.Inventario;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
@@ -111,4 +112,21 @@ public class InventarioService extends GService<Inventario> {
         }
     }
 
+    public int calculateTotalStockForItemByBarcode(String barcode) {
+        try {
+            // Query to sum up the quantities of inventory movements for items with the given barcode
+            String queryString = "SELECT SUM(i.cantidad) FROM Inventario i WHERE i.articulo.codigoBarra = :barcode AND i.status = true";
+            Long result = em.createQuery(queryString, Long.class)
+                            .setParameter("barcode", barcode)
+                            .getSingleResult();
+
+            return result != null ? result.intValue() : 0; // Return the sum or 0 if result is null
+        } catch (Exception e) {
+            System.out.println("Error calculating total stock for item by barcode: " + e.toString());
+            return 0;
+        }
+    }
+
+
+    
 }

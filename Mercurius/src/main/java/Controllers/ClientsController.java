@@ -3,8 +3,8 @@ package Controllers;
 import Models.Clients;
 import Services.ClientService;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
@@ -18,10 +18,11 @@ import org.primefaces.util.LangUtils;
 
 @Data
 @Named(value = "ClientsController")
-@SessionScoped
+@ViewScoped
 public class ClientsController implements Serializable {
     @Inject private ClientService clientService;
     @Inject private ViewController viewManager;
+    @Inject private SessionController currentSession;
 
     private List<Clients> clients;
     private Clients selectedClient;
@@ -43,7 +44,7 @@ public class ClientsController implements Serializable {
 
     public List<Clients> clientsList() {
         if (clients == null) {
-            clients = clientService.listAll();
+            clients = clientService.ListAllEnabled();
         }
         return clients;
     }
@@ -57,19 +58,26 @@ public class ClientsController implements Serializable {
     }
 
     public void updateClient() {
-        clientService.update(selectedClient);
-        clearSelectedClient();
+        if(currentSession.isValid()){
+            selectedClient.setUsuario(currentSession.getCurrentUser());
+            clientService.updateAndDisable(selectedClient);
+            clearSelectedClient();
+        }
     }
 
     public void createClient() {
-        clientService.create(newClient);
-        clearSelectedClient();
+        if(currentSession.isValid()){
+            newClient.setUsuario(currentSession.getCurrentUser());
+            newClient.setStatus(true);
+            clientService.create(newClient);
+            clearSelectedClient();    
+        }
     }
 
     public void deleteClient() {
         if (selectedClient != null) {
             if (selectedClient.getCode() != 0) {
-                clientService.delete(selectedClient);
+                clientService.softDelete(selectedClient);
                 clearSelectedClient();
             }
         }

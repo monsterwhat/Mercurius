@@ -3,12 +3,14 @@ package Controllers;
 import Models.Users;
 import Services.LoginService;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -22,7 +24,7 @@ import org.primefaces.util.LangUtils;
 
 @Data
 @Named(value = "UsersController")
-@SessionScoped
+@ViewScoped
 public class UsersController implements Serializable{
     @Inject private LoginService userService;
     @Inject ViewController viewManager;
@@ -34,6 +36,7 @@ public class UsersController implements Serializable{
     private String usernameFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
+    private String[] SelectedPuestos;
 
     public UsersController() {
     }
@@ -49,9 +52,13 @@ public class UsersController implements Serializable{
     
     public List<Users> usersList(){
         if(users == null){
-            users = userService.listAll();
+            users = userService.listAllEnabledUsers();
         }
         return users;
+    }
+    
+    public List<Users> usersListFull(){
+        return userService.listAll();
     }
     
     public long userCount(){
@@ -68,6 +75,7 @@ public class UsersController implements Serializable{
     }
     
     public void createUser(){
+        newUser.setStatus(true);
         userService.create(newUser);
         clearSelectedUser();        
     }
@@ -75,8 +83,9 @@ public class UsersController implements Serializable{
     public void deleteUser(){
         if(selectedUser != null){
             if(selectedUser.getId()!=null){
-                userService.delete(selectedUser);
-                clearSelectedUser();
+                selectedUser.setStatus(false);
+                userService.update(selectedUser);
+                clearSelectedUser();        
             }
         }
     }
@@ -97,6 +106,16 @@ public class UsersController implements Serializable{
             return usersList();
         }
     }
+    
+    public List<Users> getFilteredUsersDetallado(){
+        if (usernameFilter != null && !usernameFilter.isEmpty()) {
+            return usersListFull().stream()
+                    .filter(user -> globalFilterFunction(user, usernameFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return usersListFull();
+        }
+    }
        
     public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
@@ -108,5 +127,40 @@ public class UsersController implements Serializable{
         return user.getUsername().toLowerCase().contains(filterText)
                 || user.getGroupName().toLowerCase().contains(filterText);
     }
+    
+    public void selectedOptionsChanged() {
+        String message = "Se selecciono: ";
+        if (SelectedPuestos != null) {
+            for (int i = 0; i < SelectedPuestos.length; i++) {
+                if (i > 0) {
+                    message += ", ";
+                }
+                message += SelectedPuestos[i];
+            }
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+        
+        newUser.setGroupName(Arrays.toString(SelectedPuestos));
+    }
+    
+    public void selectedOptionsUpdateChanged() {
+        String message = "Se selecciono: ";
+        if (SelectedPuestos != null) {
+            for (int i = 0; i < SelectedPuestos.length; i++) {
+                if (i > 0) {
+                    message += ", ";
+                }
+                message += SelectedPuestos[i];
+            }
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+        
+        selectedUser.setGroupName(Arrays.toString(SelectedPuestos));
+    }
+    
 
 }

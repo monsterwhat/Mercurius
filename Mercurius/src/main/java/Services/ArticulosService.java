@@ -1,7 +1,6 @@
 package Services;
 
 import Models.Articulos;
-import Models.Articulos;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
@@ -54,6 +53,17 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
     
+    @Override
+    public List<Articulos> listAll() {
+        try {
+            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a", Articulos.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all entities: " + e.toString());
+            return null;
+        }
+    }
+    
     public void updateAndDisable(Articulos entity) {
         try {
             // Find the existing item by its ID
@@ -74,17 +84,6 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
 
-    @Override
-    public List<Articulos> listAll() {
-        try {
-            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a", Articulos.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
-            return null;
-        }
-    }
-    
     public List<Articulos> ListAllEnabled() {
         try {
             TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.status = true", Articulos.class);

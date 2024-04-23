@@ -27,6 +27,7 @@ public class InventarioController implements Serializable {
     @Inject private InventarioService inventarioService;
     @Inject private ViewController viewManager;
     @Inject private ArticulosService articuloService;
+    @Inject private SessionController currentSession;
     
     private List<Inventario> inventarioList;
     private Inventario selectedInventario;
@@ -52,6 +53,10 @@ public class InventarioController implements Serializable {
         }
         return inventarioList;
     }
+    
+    public List<Inventario> inventarioListAll() {
+        return inventarioService.listAll();
+    }
 
     public long inventarioCount() {
         return inventarioService.count();
@@ -62,31 +67,29 @@ public class InventarioController implements Serializable {
     }
 
     public void updateInventario() {
-        if(selectedInventario != null){
-            if(ArticuloID != 0){
-                selectedInventario.setArticulo(articuloService.findById(ArticuloID));
-                if(selectedInventario.getArticulo() != null){
-                    Date today = new Date();
-                    selectedInventario.setFechaMovimiento(today);
-                    inventarioService.updateAndDisable(selectedInventario);
-                    clearSelectedInventario();      
-                }
+        if(selectedInventario != null && ArticuloID != 0 && currentSession.isValid()){
+            selectedInventario.setArticulo(articuloService.findById(ArticuloID));
+            selectedInventario.setUsuario(currentSession.getCurrentUser());
+            if(selectedInventario.getArticulo() != null && selectedInventario.getUsuario() != null){
+                Date today = new Date();
+                selectedInventario.setFechaMovimiento(today);
+                inventarioService.updateAndDisable(selectedInventario);
+                clearSelectedInventario();      
             }
         }
     }
 
     public void createInventario() {
-        if(newInventario != null) {
-            if(ArticuloID != 0 ){
-                newInventario.setArticulo(articuloService.findById(ArticuloID));
-                if(newInventario.getArticulo() != null){
-                    newInventario.setStatus(true);
-                    Date today = new Date();
-                    newInventario.setFechaMovimiento(today);
-                    inventarioService.create(newInventario);
-                    clearSelectedInventario();
-                }
-            }
+        if(newInventario != null && ArticuloID != 0 && currentSession.isValid()) {
+            newInventario.setArticulo(articuloService.findById(ArticuloID));
+            newInventario.setUsuario(currentSession.getCurrentUser());
+            if(newInventario.getArticulo() != null && newInventario.getUsuario() != null){
+                newInventario.setStatus(true);
+                Date today = new Date();
+                newInventario.setFechaMovimiento(today);
+                inventarioService.create(newInventario);
+                clearSelectedInventario();
+            }                
         }
     }
 
@@ -114,6 +117,16 @@ public class InventarioController implements Serializable {
             return inventarioList();
         }
     }
+    
+    public List<Inventario> getFilteredInventarioDetallado() {
+        if (inventarioFilter != null && !inventarioFilter.isEmpty()) {
+            return inventarioList().stream()
+                    .filter(inventario -> globalFilterFunction(inventario, inventarioFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return inventarioList();
+        }
+    }
 
     public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
@@ -128,11 +141,18 @@ public class InventarioController implements Serializable {
                 || inventario.getFechaMovimiento().toString().toLowerCase().contains(filterText)
                 || inventario.getNotas().toLowerCase().contains(filterText)
                 || inventario.getTipoMovimiento().toLowerCase().contains(filterText)
-                || String.valueOf(inventario.getCantidad()).contains(filterText);
+                || String.valueOf(inventario.getCantidad()).contains(filterText)
+                || inventario.getUsuario().getUsername().toLowerCase().contains(filterText);
     }
     
     public void updateArticulosOptions(){
         articuloOptions = articuloService.ListAllEnabled();
+    }
+    
+    public int getStock(Articulos articulo){
+        String codigoBarra = articulo.getCodigoBarra();
+        int totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
+        return totalStock;
     }
     
 }
