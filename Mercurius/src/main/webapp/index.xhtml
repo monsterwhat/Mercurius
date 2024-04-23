@@ -65,7 +65,7 @@
                 </div>
                 <div class="columns buttons">
                     <p:button styleClass="button is-rounded is-success" value="Menú Principal" href="/secured/index"/>
-                    <p:commandButton styleClass="button is-rounded is-danger" value="Cerrar Sesión" action="#{SessionController.logOut}"/>
+                    <p:commandButton styleClass="button is-rounded is-danger" value="Cerrar Sesión" actionListener="#{SessionController.logOut}"/>
                 </div>
             </p:panel>
         </h:form>

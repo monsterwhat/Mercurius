@@ -19,7 +19,9 @@
                     <h:form>
                         <br/>
                         <p:panel header="Crear un nuevo usuario">
-                            <p:growl id="growl" showDetail="true" showSummary="false"/>
+                            <p:growl id="growl" showDetail="true" showSummary="false">
+                                <p:autoUpdate/>
+                            </p:growl>
                             
                             <p:messages showDetail="true" for="username" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
@@ -44,18 +46,30 @@
                                     </div>
                                 </div>
                             </div>
-
+                            
+                            <!-- Input for groupName -->
                             <p:messages showDetail="true" for="groupName" showSummary="false" closable="true" />
                             <div class="field is-horizontal">
                                 <div class="field-label is-normal">
-                                    <label class="label" for="groupName">Grupo:</label>
+                                    <label class="label" for="groupName">Permisos:</label>
                                 </div>
                                 <div class="field-body">
                                     <div class="field">
-                                        <p:inputText id="groupName" value="#{UsersController.newUser.groupName}" required="true" requiredMessage="El nombre de grupo no puede estar vacío" styleClass="input is-fullwidth"/>
+                                        <p:selectManyCheckbox id="groupName" value="#{UsersController.selectedPuestos}"
+                                                        required="true" requiredMessage="El nombre de grupo no puede estar vacío"
+                                                        styleClass="input is-fullwidth">
+                                            <p:ajax listener="#{UsersController.selectedOptionsChanged}"/>
+                                            <f:selectItem itemLabel="Administrativo" itemValue="admin" rendered="#{SessionController.admin}"/>
+                                            <f:selectItem itemLabel="Facturacion" itemValue="facturacion"/>
+                                            <f:selectItem itemLabel="Inventarios" itemValue="inventario"/>
+                                            <f:selectItem itemLabel="Usuarios" itemValue="usuario"/>
+                                            <f:selectItem itemLabel="Tributacion" itemValue="tributacion"/>
+                                            <f:selectItem itemLabel="Registros" itemValue="registro"/>
+                                        </p:selectManyCheckbox>
                                     </div>
                                 </div>
                             </div>
+                            
                         </p:panel>
                         <br/>
                         <p:commandButton value="Crear Usuario" styleClass="button is-fullwidth is-rounded is-success" action="#{UsersController.createUser}" update="dynamicContent"/>

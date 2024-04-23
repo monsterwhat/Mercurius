@@ -43,10 +43,11 @@
                             <p:ajax event="rowSelect" update="inventarioTable"/>
                             
                             <f:facet name="header">
-                                <div class="field columns">
+                                <div class="field columns is-mobile">
                                     <p:inputText id="globalFilter" onkeyup="PF('InventarioTable').filter()"
-                                             placeholder="Búsqueda general de todos los campos" styleClass="input column"/>
-                                    <p:commandButton value="Ver Detalles" styleClass="button is-2 is-rounded" icon="pi pi-eye"
+                                             placeholder="Búsqueda general de todos los campos" styleClass="input column is-mobile"/>
+                                    <p:commandButton value="Ver Detalles" styleClass="button is-1 is-rounded is-mobile"
+                                                     icon="pi pi-eye" 
                                                      onclick="PF('AjusteDetailsDialog').show();" >
                                     <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
                                     </p:commandButton>
@@ -72,6 +73,9 @@
                             </p:column>
                             <p:column headerText="Notas" visible="false">
                                 <h:outputText value="#{inventario.notas}"/>
+                            </p:column>
+                            <p:column headerText="Usuario">
+                                <h:outputText value="#{inventario.usuario.username}"/>
                             </p:column>
                             
                             <p:column headerText="Acciones" rendered="false">

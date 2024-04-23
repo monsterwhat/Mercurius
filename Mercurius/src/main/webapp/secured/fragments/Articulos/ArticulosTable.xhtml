@@ -34,7 +34,7 @@
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
                                      emptyMessage="No se encontraron artículos con la critería proporcionada"
                                      globalFilterFunction="#{ArticulosController.globalFilterFunction}"
-                                     filterBy="#{ArticulosController.filterBy}"
+                                     filterBy="#{ArticulosController.filterBy}" liveScroll="true" touchable="true"
                                      selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
                             
                             <f:facet name="header">
@@ -65,6 +65,9 @@
                             </p:column>
                             <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}">
                                 <h:outputText value="#{articulo.precioCostoConIVA}"/>
+                            </p:column>
+                            <p:column headerText="Stock">
+                                <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
                             </p:column>
                             
                             <p:column headerText="Acciones" exportable="false">

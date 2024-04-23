@@ -12,9 +12,9 @@ import jakarta.security.enterprise.identitystore.DatabaseIdentityStoreDefinition
  */
 
 @DatabaseIdentityStoreDefinition(
-        dataSourceLookup = "jdbc/MySQL",
-        callerQuery = "select password from Users where username = ?",
-        groupsQuery = "select groupName from Users where username = ?"
+    dataSourceLookup = "jdbc/MySQL",
+    callerQuery = "SELECT password FROM Users WHERE username = ? AND status = true",
+    groupsQuery = "SELECT groupName FROM Users WHERE username = ? AND status = true"
 )
 @CustomFormAuthenticationMechanismDefinition(
         loginToContinue = @LoginToContinue(

@@ -48,12 +48,16 @@
                             <p:column headerText="Nombre de usuario" sortBy="#{user.username}">
                                 <h:outputText value="#{user.username}" />
                             </p:column>
-                            <p:column headerText="Contraseña (HASH)" exportable="false">
+                            <p:column headerText="Contraseña (HASH)" rendered="false">
                                 <h:outputText value="#{user.password}" />
                             </p:column>
-                            <p:column headerText="Nombre del grupo" sortBy="#{user.groupName}">
+                            <p:column headerText="Permisos" sortBy="#{user.groupName}">
                                 <h:outputText value="#{user.groupName}" />
                             </p:column>
+                            <p:column headerText="Activo" visible="false" sortBy="#{user.status}">
+                                <h:outputText value="#{user.status}" />
+                            </p:column>
+                            
                             <p:column headerText="Acciones" width="20%" exportable="false">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"

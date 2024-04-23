@@ -9,6 +9,12 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <style>
+            .inactive-row {
+                background-color: #999999 !important;
+                color: #ffffff !important;
+            }
+        </style>
     </h:head>
     
     <h:body>
@@ -35,6 +41,7 @@
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ClientsTableData"
                                      emptyMessage="No se encontraron clientes con la critería proporcionada"
                                      globalFilterFunction="#{ClientsController.globalFilterFunction}"
+                                     rowStyleClass="#{client.status == 'false' ? 'inactive-row' : null}"
                                      filterBy="#{ClientsController.filterBy}"
                                      selection="#{ClientsController.selectedClient}" rowKey="#{client.code}">
                             
@@ -76,6 +83,9 @@
                             <p:column headerText="Código de Zona" sortBy="#{client.zoneCode}">
                                 <h:outputText value="#{client.zoneCode}" />
                             </p:column>
+                            <p:column headerText="Estado" visible="false" sortBy="#{client.status}">
+                                <h:outputText value="#{client.status}" />
+                            </p:column>                            
                             <p:column headerText="Acciones">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"

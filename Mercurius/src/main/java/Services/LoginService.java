@@ -37,7 +37,7 @@ public class LoginService extends GService<Users>{
         
     public Users getSession(String username) {
         try {
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
+            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username AND u.status = true", Users.class);
             query.setParameter("username", username);
 
             List<Users> resultList = query.getResultList();
@@ -68,6 +68,7 @@ public class LoginService extends GService<Users>{
                 user.setUsername(username);
                 user.setPassword(passwordHasher.generate("password123".toCharArray()));
                 user.setGroupName("admin");
+                user.setStatus(true);
                 
                 em.persist(user);
                 this.userTransaction.commit();
@@ -107,6 +108,19 @@ public class LoginService extends GService<Users>{
             System.out.println("Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString());
         }
     }
+    
+    public List<Users> listAllEnabledUsers() {
+        try {
+            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.status = true", Users.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all enabled users: " + e.getMessage());
+            e.printStackTrace(); // Print stack trace for debugging purposes
+            return null;
+        }
+    }
+
+
     
     
 }

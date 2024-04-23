@@ -22,6 +22,7 @@ import org.primefaces.util.LangUtils;
 public class DepartamentoController implements Serializable {
     @Inject private DepartamentoService departamentoService;
     @Inject private ViewController viewManager;
+    @Inject private SessionController currentSession;
 
     private List<Departamento> departamentos;
     private Departamento selectedDepartamento;
@@ -40,9 +41,13 @@ public class DepartamentoController implements Serializable {
 
     public List<Departamento> departamentosList() {
         if (departamentos == null) {
-            departamentos = departamentoService.listAll();
+            departamentos = departamentoService.ListAllEnabled();
         }
         return departamentos;
+    }
+    
+    public List<Departamento> departamentosListAll() {
+        return departamentoService.listAll();
     }
 
     public long departamentoCount() {
@@ -54,23 +59,25 @@ public class DepartamentoController implements Serializable {
     }
 
     public void updateDepartamento() {
-        departamentoService.update(selectedDepartamento);
-        clearSelectedDepartamento();
+        if(currentSession.isValid()){
+        selectedDepartamento.setUsuario(currentSession.getCurrentUser());
+        departamentoService.updateAndDisable(selectedDepartamento);
+        clearSelectedDepartamento();        
+        }
     }
 
     public void createDepartamento() {
-        departamentoService.create(newDepartamento);
-        clearSelectedDepartamento();
-    }
-    
-    public void createDepartamentoSimple(){
-        departamentoService.create(newDepartamento);
-        clearSelectedDepartamento();
+        if(currentSession.isValid()){
+            newDepartamento.setStatus(true);
+            newDepartamento.setUsuario(currentSession.getCurrentUser());
+            departamentoService.create(newDepartamento);
+            clearSelectedDepartamento();
+        }
     }
 
     public void deleteDepartamento() {
         if (selectedDepartamento != null) {
-            departamentoService.delete(selectedDepartamento);
+            departamentoService.softDelete(selectedDepartamento);
             clearSelectedDepartamento();
         }
     }
@@ -80,12 +87,6 @@ public class DepartamentoController implements Serializable {
         newDepartamento = null;
         selectedDepartamento = null;
         viewManager.selectViewDepartamentos();
-    }
-    
-    public void clearSelectedDepartamentoSimple() {
-        departamentos = null;
-        newDepartamento = null;
-        selectedDepartamento = null;
     }
 
     public List<Departamento> getFilteredDepartamentos() {
@@ -97,6 +98,16 @@ public class DepartamentoController implements Serializable {
             return departamentosList();
         }
     }
+    
+    public List<Departamento> getFilteredDepartamentosDetallados() {
+        if (departamentoFilter != null && !departamentoFilter.isEmpty()) {
+            return departamentosListAll().stream()
+                    .filter(departamento -> globalFilterFunction(departamento, departamentoFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return departamentosListAll();
+        }
+    }
 
     public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
@@ -106,7 +117,8 @@ public class DepartamentoController implements Serializable {
 
         Departamento departamento = (Departamento) value;
         return departamento.getNombre().toLowerCase().contains(filterText)
-                || String.valueOf(departamento.getId()).contains(filterText);
+                || String.valueOf(departamento.getId()).contains(filterText)
+                || departamento.getUsuario().getUsername().toLowerCase().contains(filterText);
     }
 
     public Departamento findDepartamentoById(Integer number) {

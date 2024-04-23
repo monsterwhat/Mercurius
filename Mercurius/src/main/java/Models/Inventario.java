@@ -22,39 +22,42 @@ import lombok.Data;
 @Data
 public class Inventario implements Serializable {
     
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int codigo;
     
     @ManyToOne
     @JoinColumn(name = "articulo_codigo")
-    private Articulos articulo;
+    private Articulos articulo; //Referencia al articulo (Al valido en el momento del ajuste)
+    
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Users usuario; //Referencia a quien realizo el ajuste
         
     private int cantidad;
     
     private String tipoMovimiento;
     
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
-    private Date fechaMovimiento;
+    private Date fechaMovimiento; 
     
     private String notas;
     
-    private Boolean status;
+    private Boolean status; //En caso de querer archivar o desabilitar un ajuste
 
     public Inventario() {
     }
 
-    public Inventario(int codigo, Articulos articulo, int cantidad, String tipoMovimiento, Date fechaMovimiento, String notas, Boolean status) {
+    public Inventario(int codigo, Articulos articulo, Users usuario, int cantidad, String tipoMovimiento, Date fechaMovimiento, String notas, Boolean status) {
         this.codigo = codigo;
         this.articulo = articulo;
+        this.usuario = usuario;
         this.cantidad = cantidad;
         this.tipoMovimiento = tipoMovimiento;
         this.fechaMovimiento = fechaMovimiento;
         this.notas = notas;
         this.status = status;
     }
-    
-    
+
 }

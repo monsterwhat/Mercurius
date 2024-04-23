@@ -12,7 +12,8 @@
     
     <h:body>
             <!-- Dialog for Código CABYS -->
-    <p:dialog header="Informacion de Ajuste" widgetVar="AjusteDetailsDialog"
+            <p:dialog header="Informacion de Ajuste" widgetVar="AjusteDetailsDialog" 
+                      fitViewport="true" responsive="true" 
             modal="true" resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
              
         <div class="box">
@@ -47,8 +48,11 @@
                 <p:column headerText="Fecha Movimiento">
                     <h:outputText value="#{item.fechaMovimiento}" />
                 </p:column>
-                <p:column headerText="Notas" visible="false">
+                <p:column headerText="Notas">
                     <h:outputText value="#{item.notas}" />
+                </p:column>
+                <p:column headerText="Usuario">
+                    <h:outputText value="#{item.usuario.username}" />
                 </p:column>
             </p:dataTable>
         </div>

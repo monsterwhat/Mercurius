@@ -11,11 +11,11 @@
     </h:head>
     
     <h:body>
-            <!-- Dialog for Código CABYS -->
-    <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog"
-            modal="true" resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
-            <p:dataTable value="#{CabysController.filteredCabys}" var="cabys"  widgetVar="CabysTable"
-                    paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable"
+        <!-- Dialog for Código CABYS -->
+        <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog" fitViewport="true" blockScroll="true"
+        modal="true" resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
+        <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" liveScroll="true"  widgetVar="CabysTable"
+                         paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable" touchable="true"
                     emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
                     globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
                     filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
