@@ -2,6 +2,7 @@ package Controllers;
 
 import Models.Cabys;
 import Services.CabysService;
+import Utils.ProgramadorTareas;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -31,6 +32,7 @@ public class CabysController implements Serializable {
     @Inject private CabysService cabysService;
     @Inject private ViewController viewManager;
     @Inject private ArticulosController articulos;
+    @Inject private ProgramadorTareas tareas;
 
     private List<Cabys> catalogo;
     private Cabys selectedCabys;

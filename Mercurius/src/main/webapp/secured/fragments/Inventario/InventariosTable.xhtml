@@ -18,21 +18,22 @@
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
                     <h:form id="inventarioTable">
-                        
-                        <p:toolbar class="is-clearfix">
-                            <p:toolbarGroup align="right">
-                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help button is-primary" ajax="false">
-                                    <!-- Adjust the target and file name -->
-                                    <p:dataExporter type="xlsx" target="InventarioTableData" fileName="Inventario-Mercurius-Excel" />
-                                </p:commandButton>
-                                <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help button is-primary" ajax="false">
-                                    <!-- Adjust the target and file name -->
-                                    <p:dataExporter type="pdf" target="InventarioTableData" fileName="Inventario-Mercurius-PDF" />
-                                </p:commandButton>
-                            </p:toolbarGroup>
-                        </p:toolbar>
-                        
-                        <!-- Adjust the controller and filtered data -->
+                        <div class="columns is-mobile">
+                                <div class="column">
+                                    <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" styleClass="button is-fullwidth"/>                            
+                                </div>
+
+                                <div class="column buttons">
+                                    <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="button is-warning" ajax="false">
+                                        <p:dataExporter type="xlsx" target="InventarioTableData" fileName="Inventario-Mercurius-Excel" />
+                                    </p:commandButton>
+                                    <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="button is-warning" ajax="false">
+                                        <p:dataExporter type="pdf" target="InventarioTableData" fileName="Inventario-Mercurius-PDF" />
+                                    </p:commandButton>
+                                </div>
+                        </div>
+                        <ui:include src="../Inventario/Upload/subirFacturas.xhtml"/>
+
                         <p:dataTable value="#{InventarioController.filteredInventario}" var="inventario"  widgetVar="InventarioTable"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="InventarioTableData"
                                      emptyMessage="No se encontraron registros de inventario con la critería proporcionada"
@@ -47,8 +48,7 @@
                                     <p:inputText id="globalFilter" onkeyup="PF('InventarioTable').filter()"
                                              placeholder="Búsqueda general de todos los campos" styleClass="input column is-mobile"/>
                                     <p:commandButton value="Ver Detalles" styleClass="button is-1 is-rounded is-mobile"
-                                                     icon="pi pi-eye" 
-                                                     onclick="PF('AjusteDetailsDialog').show();" >
+                                                     icon="pi pi-eye" onclick="PF('AjusteDetailsDialog').show();" >
                                     <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
                                     </p:commandButton>
                                     <ui:include src="../Inventario/verDetallesDeAjuste.xhtml"/>
