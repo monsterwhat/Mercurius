@@ -17,7 +17,6 @@
                     <p:menu overlay="true" trigger="FacturacionButton" my="left top" at="left bottom">
                         <p:submenu label="Facturación">
                             <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" disabled="true"/>
-                            <p:menuitem value="Tipo de Cambio" icon="pi pi-dollar" disabled="true"/>
                         </p:submenu>
                     </p:menu>
                 </div>
@@ -52,9 +51,11 @@
                     <p:menu overlay="true" trigger="TributacionButton" my="left top" at="left bottom">
                         <p:submenu label="Tributación">
                             <p:menuitem value="Consultas" icon="pi pi-book" disabled="true"/>
-                            <p:menuitem value="CaByS" icon="pi pi-book" action="#{ViewController.selectViewCabys}" update="dynamicContent" disabled="false"/>
+                            <p:menuitem value="CaByS" icon="pi pi-book" action="#{ViewController.selectViewCabys}" update="dynamicContent"/>
+                            <p:menuitem value="Tipo de Cambio" icon="pi pi-dollar" onclick="PF('dollarValueDialog').show();"/>
                         </p:submenu>
                     </p:menu>
+                    <ui:include src="./Monedas/DollarValueDialog.xhtml" />
                 </div>
                 <div class="column">
                     <p:commandButton id="RegistrosButton" value="Registros" 
