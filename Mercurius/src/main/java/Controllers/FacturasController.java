@@ -1,5 +1,10 @@
 package Controllers;
 
+import Models.Facturas.DetalleServicio;
+import Models.Facturas.Emisor;
+import Models.Facturas.LineaDetalle;
+import Models.Facturas.Receptor;
+import Models.Facturas.ResumenFactura;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import jakarta.annotation.PostConstruct;
@@ -10,6 +15,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -122,6 +128,106 @@ public class FacturasController implements Serializable {
             parseXMLFromUploadedFile(files.get(i));
         }
         files.clear();
+    }
+    
+    public void parseXMLToObjects(InputStream inputStream) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+            StringBuilder xmlContent = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                xmlContent.append(line);
+            }
+
+            XmlMapper xmlMapper = new XmlMapper();
+            JsonNode rootNode = xmlMapper.readTree(xmlContent.toString());
+
+            //Clave
+            //CodigoActividad
+            //NumeroConsecutivo
+            //FechaEmision
+            
+            // Parse Emisor
+            Emisor emisor = new Emisor();
+            emisor.setNombre(rootNode.path("Emisor").path("Nombre").asText());
+            //Nombre
+            //Identificacion
+            //NombreComercial
+            //Ubicacion*
+            //Telefono*
+            //Fax
+            //CorreoElectronico
+
+            // Parse Receptor
+            Receptor receptor = new Receptor();
+            receptor.setNombre(rootNode.path("Receptor").path("Nombre").asText());
+            //Nombre
+            //Identificacion
+            //NombreComercial
+            //Ubicacion*
+            //Telefono*
+            //Fax
+            //CorreoElectronico
+            
+            //CondicionVenta
+            //PlazoCredito
+            //MedioPago
+
+            // Parse DetalleServicio
+            DetalleServicio detalleServicio = new DetalleServicio();
+            JsonNode lineaDetalleNodes = rootNode.path("DetalleServicio").path("LineaDetalle");
+            
+            for (JsonNode lineaDetalleNode : lineaDetalleNodes) {
+                LineaDetalle lineaDetalle = new LineaDetalle();
+                lineaDetalle.setNumeroLinea(lineaDetalleNode.path("NumeroLinea").asInt());
+                lineaDetalle.setCodigo(lineaDetalleNode.path("Codigo").asText());
+                // Parse other attributes of LineaDetalle as needed
+                detalleServicio.getLineasDetalle().add(lineaDetalle);
+            }
+            
+            //
+            //NumeroLinea
+            //Codigo
+            //CodigoComercial*
+            //Cantidad
+            //UnidadMedida
+            //UnidadMedidaComercial
+            //Detalle
+            //PrecioUnitario
+            //MontoTotal
+            //Descuento*
+            //SubTotal
+            //Impusto*
+            //ImpuestoNeto
+            //MontoLineaTotal
+            
+             // Parse ResumenFactura
+            ResumenFactura resumenFactura = new ResumenFactura();
+            resumenFactura.setTotalVenta(BigDecimal.valueOf(rootNode.path("ResumenFactura").path("TotalVenta").asDouble()));
+            // Parse other attributes of ResumenFactura as needed
+            
+            //ResumenFactura
+            //CodigoTipoMoneda
+            //CodigoMoneda
+            //TipoCambio
+            //TotalServGravados
+            //TotalServExentos
+            //TotalServExonerado
+            //TotalMercanciasGravadas
+            //TotalMercanciasExentas
+            //TotalMercExonerada
+            //TotalGravado
+            //TotalExento
+            //TotalExonerado
+            //TotalVenta
+            //TotalDescuentos
+            //TotalVentaNeta
+            //TotalImpuesto
+            //TotalComprobante
+            
+                    
+        }catch(Exception e){
+            System.out.println("Error ParsingXML to Object" + e.getLocalizedMessage());
+        }
     }
     
 }
