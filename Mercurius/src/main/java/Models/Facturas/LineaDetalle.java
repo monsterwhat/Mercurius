@@ -17,19 +17,19 @@ public class LineaDetalle {
 
     private int numeroLinea;
     private String codigo;
+    @OneToMany(cascade = CascadeType.ALL)
+    private List<CodigoComercial> codigosComerciales;
     private BigDecimal cantidad;
     private String unidadMedida;
     private String unidadMedidaComercial;
     private String detalle;
     private BigDecimal precioUnitario;
     private BigDecimal montoTotal;
+    @Embedded private Descuento descuento;
     private BigDecimal subTotal;
-
-    @Embedded
-    private Descuento descuento;
-
-    @OneToMany(mappedBy = "lineaDetalle", cascade = CascadeType.ALL)
-    private List<CodigoComercial> codigosComerciales;
+    @Embedded private Impuesto impuesto;
+    private BigDecimal impuestoNeto;
+    private BigDecimal montoTotalLinea;
 
 }
 

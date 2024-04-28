@@ -3,6 +3,7 @@ package Models.Facturas;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import java.util.List;
 import lombok.Data;
@@ -12,8 +13,11 @@ import lombok.Data;
 public class DetalleServicio {
     @Id
     private Long id;
+    
+    @ManyToOne
+    private Factura factura;
 
-    @OneToMany(mappedBy = "detalleServicio", cascade = CascadeType.ALL)
-    private List<LineaDetalle> lineasDetalle ;
+    @OneToMany(cascade = CascadeType.ALL)
+    private List<LineaDetalle> lineasDetalle;
 }
 
