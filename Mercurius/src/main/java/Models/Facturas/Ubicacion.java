@@ -1,15 +1,11 @@
 package Models.Facturas;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.Embeddable;
 import lombok.Data;
 
-@Entity
+@Embeddable
 @Data
 public class Ubicacion {
-    @Id
-    private Long id;
-
     private String provincia;
     private String canton;
     private String distrito;

@@ -3,10 +3,8 @@ package Models.Facturas;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import java.util.Date;
-import java.util.List;
 import lombok.Data;
 
 @Entity
@@ -29,8 +27,8 @@ public class Factura {
     private String plazoCredito;
     private String medioPago;
 
-    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL)
-    private List<DetalleServicio> detalleServicios;
+    @OneToOne(cascade = CascadeType.ALL)
+    private DetalleServicio detalleServicio;
 
     @OneToOne(cascade = CascadeType.ALL)
     private ResumenFactura resumenFactura;
