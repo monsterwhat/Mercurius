@@ -6,6 +6,6 @@ import lombok.Data;
 @Embeddable
 @Data
 public class Telefono {
-    private String codigoPais;
+    private String codigoPaisTelefono;
     private String numTelefono;
 }

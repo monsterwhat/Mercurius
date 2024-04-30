@@ -5,9 +5,9 @@ import lombok.Data;
 
 @Embeddable
 @Data
-class Impuesto {
+public class Impuesto {
    
-    private String codigo;
+    private String codigoImpuesto;
     private String codigoTarifa;
     private String tarifa;
     private String monto;

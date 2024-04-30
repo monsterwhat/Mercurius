@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 
@@ -88,5 +89,29 @@ public class EmisorService extends GService<Emisor> {
             return null;
         }
     }
+
+    public Emisor createIfNotExist(Emisor emisor) {
+        try {
+            // Check if an Emisor with the same identification number already exists
+            TypedQuery<Emisor> query = em.createQuery("SELECT e FROM Emisor e WHERE e.identificacionNumero = :identificacionNumero", Emisor.class);
+            query.setParameter("identificacionNumero", emisor.getIdentificacionNumero());
+            List<Emisor> existingEmisors = query.getResultList();
+
+            // If no Emisor with the same identification number exists, create a new one
+            if (existingEmisors.isEmpty()) {
+                em.persist(emisor);
+                return emisor;
+            } else {
+                // If an Emisor with the same identification number already exists, return it
+                return existingEmisors.get(0);
+            }
+        } catch (PersistenceException e) {
+            // Catch the database constraint violation exception
+            System.out.println("Error creating or retrieving Emisor: " + e.toString());
+            // Handle the error gracefully, maybe log it or notify the user
+            return null;
+        }
+    }
+
 
 }

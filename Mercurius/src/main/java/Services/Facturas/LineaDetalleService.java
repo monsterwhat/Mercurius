@@ -88,5 +88,16 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
             return null;
         }
     }
+    
+    public LineaDetalle createAndReturnEntity(LineaDetalle entity) {
+        try {
+            em.persist(entity);
+            return entity;
+        } catch (Exception e) {
+            System.out.println("Error creating and returning entity: " + e.toString());
+            return null;
+        }
+    }
+
 
 }

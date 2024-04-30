@@ -1,0 +1,88 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <title>Facturas</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <style>
+            .inactive-row {
+                background-color: #999999 !important;
+                color: #ffffff !important;
+            }
+        </style>
+    </h:head>
+    
+    <h:body>
+        <p:dialog widgetVar="selectedFacturaDetallado" id="selectedFacturaDetallado" width="100%"
+                  fitViewport="true" blockScroll="true" responsive="true" maximizable="true"
+                  modal="true" resizable="false" draggable="false" height="100%">
+            <div class="box">                    
+                <div class="columns is-centered">
+                    <div class="column">
+                            <p:toolbar class="is-clearfix">
+                                <p:toolbarGroup align="right">
+                                    <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help button is-primary" ajax="false">
+                                        <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                                    </p:commandButton>
+                                    <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help button is-primary" ajax="false">
+                                        <p:dataExporter type="pdf" target="FacturasTableData" fileName="Facturas-Mercurius-PDF" />
+                                    </p:commandButton>
+                                </p:toolbarGroup>
+                            </p:toolbar>
+
+                            <p:dataTable value="#{facturasController.selectedFactura.detalleServicio.lineasDetalle}" 
+                                         var="lineaDetalle" id="lineasDetalleTable" lazy="true">
+                                <p:autoUpdate/>
+
+                                <p:column headerText="Nombre">
+                                    <h:outputText value="#{lineaDetalle.detalle}"/>
+                                </p:column>
+                                <p:column headerText="Codigo">
+                                    <h:outputText value="#{lineaDetalle.codigo}"/>
+                                </p:column>
+                                <p:column headerText="Codigos Comerciales" rendered="false">
+                                    <h:outputText value="#{lineaDetalle.codigosComerciales}"/>
+                                </p:column>
+                                <p:column headerText="Cantidad">
+                                    <h:outputText value="#{lineaDetalle.cantidad}"/>
+                                </p:column>
+                                <p:column headerText="Unidad de Medida">
+                                    <h:outputText value="#{lineaDetalle.unidadMedida}"/>
+                                </p:column>
+                                <p:column headerText="Unidad de Medida Comercial">
+                                    <h:outputText value="#{lineaDetalle.unidadMedidaComercial}"/>
+                                </p:column>
+                                <p:column headerText="Precio Unitario">
+                                    <h:outputText value="#{lineaDetalle.precioUnitario}"/>
+                                </p:column>
+                                <p:column headerText="Monto Total">
+                                    <h:outputText value="#{lineaDetalle.montoTotal}"/>
+                                </p:column>
+                                <p:column headerText="Descuentos" rendered="false">
+                                    <h:outputText value="#{lineaDetalle.descuentos}"/>
+                                </p:column>
+                                <p:column headerText="Subtotal">
+                                    <h:outputText value="#{lineaDetalle.subTotal}"/>
+                                </p:column>
+                                <p:column headerText="Impuesto">
+                                    <h:outputText value="#{lineaDetalle.impuesto.monto}"/>
+                                </p:column>
+                                <p:column headerText="Impuesto Neto" rendered="false">
+                                    <h:outputText value="#{lineaDetalle.impuestoNeto}"/>
+                                </p:column>
+                                <p:column headerText="Monto total Linea">
+                                    <h:outputText value="#{lineaDetalle.montoTotalLinea}"/>
+                                </p:column>
+                            </p:dataTable>
+                    </div>
+                </div>
+            </div>
+        </p:dialog>
+    </h:body>
+
+</ui:composition>

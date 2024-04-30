@@ -1,16 +1,17 @@
 package Models.Facturas;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
 import lombok.Data;
 
 @Entity
 @Data
 public class Receptor {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Use auto-increment strategy
     private Long id;
     private String nombre;
     private String identificacionTipo;
@@ -18,7 +19,7 @@ public class Receptor {
     private String nombreComercial;
     @Embedded private Ubicacion ubicacion;
     @Embedded private Telefono telefono;
-    @Embedded private Telefono fax;
+    @Embedded private Fax fax;
     private String correoElectronico;
 
 }
