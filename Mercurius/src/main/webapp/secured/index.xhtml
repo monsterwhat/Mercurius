@@ -112,6 +112,12 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewCabys'}">
                             <ui:include src="./fragments/CaByS/CabysTable.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFacturas'}">
+                            <ui:include src="./fragments/Facturas/Recibos/FacturacionTable.xhtml" />
+                        </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFacturasDetallado'}">
+                            <ui:include src="./fragments/Facturas/Recibos/verDetallesFactura.xhtml" />
+                        </ui:fragment>
                     </p:outputPanel>
                 </div>
             </div>

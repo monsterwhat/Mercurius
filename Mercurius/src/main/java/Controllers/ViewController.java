@@ -46,6 +46,14 @@ public class ViewController implements Serializable {
         profiles.openNewUser();
     }
     
+    public void selectViewFacturas(){
+        selectedOption = "viewFacturas";
+    }
+    
+    public void selectViewFacturasDetalladas(){
+        selectedOption = "viewFacturasDetalladas";
+    }
+    
     public void selectViewClients(){
         selectedOption = "viewClients";
     }

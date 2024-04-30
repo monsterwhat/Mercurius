@@ -65,6 +65,7 @@
                         <p:submenu label="Reportes Facturación">
                             <p:menuitem value="Facturación Diaria" icon="pi pi-calendar" disabled="true"/>
                             <p:menuitem value="Facturación de Artículos" icon="pi pi-box" disabled="true"/>
+                            <p:menuitem value="Facturas Ingresadas" icon="pi pi-box" action="#{ViewController.selectViewFacturas()}" update="dynamicContent"/>
                         </p:submenu>
                         <p:submenu label="Reportes Inventarios">
                             <p:menuitem value="Articulos Detallados" action="#{ViewController.selectViewArticulosDetallado()}" icon="pi pi-search" update="dynamicContent"/>

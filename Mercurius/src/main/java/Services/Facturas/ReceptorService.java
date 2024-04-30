@@ -6,6 +6,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 @Named
@@ -86,5 +87,29 @@ public class ReceptorService extends GService<Receptor> {
             return null;
         }
     }
+
+    public Receptor createIfNotExist(Receptor receptor) {
+        try {
+            // Check if a Receptor with the same identification number already exists
+            TypedQuery<Receptor> query = em.createQuery("SELECT r FROM Receptor r WHERE r.identificacionNumero = :identificacionNumero", Receptor.class);
+            query.setParameter("identificacionNumero", receptor.getIdentificacionNumero());
+            List<Receptor> existingReceptors = query.getResultList();
+
+            // If no Receptor with the same identification number exists, create a new one
+            if (existingReceptors.isEmpty()) {
+                em.persist(receptor);
+                return receptor;
+            } else {
+                // If a Receptor with the same identification number already exists, return it
+                return existingReceptors.get(0);
+            }
+        } catch (PersistenceException e) {
+            // Catch the database constraint violation exception
+            System.out.println("Error creating or retrieving Receptor: " + e.toString());
+            // Handle the error gracefully, maybe log it or notify the user
+            return null;
+        }
+    }
+
 
 }

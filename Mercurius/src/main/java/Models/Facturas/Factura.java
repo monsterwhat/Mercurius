@@ -1,36 +1,42 @@
 package Models.Facturas;
 
-import jakarta.persistence.CascadeType;
+import Models.Users;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
-import java.util.Date;
 import lombok.Data;
 
 @Entity
 @Data
 public class Factura {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // Use auto-increment strategy
     private Long id;
 
     private String codigoActividad;
     private String numeroConsecutivo;
-    private Date fechaEmision;
+    private String fechaEmision;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     private Emisor emisor;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     private Receptor receptor;
 
     private String condicionVenta;
     private String plazoCredito;
     private String medioPago;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     private DetalleServicio detalleServicio;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     private ResumenFactura resumenFactura;
+    
+    private boolean Status;
+    
+    private Users user;
 
 }
