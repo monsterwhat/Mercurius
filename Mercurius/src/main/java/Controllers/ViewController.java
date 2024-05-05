@@ -51,7 +51,7 @@ public class ViewController implements Serializable {
     }
     
     public void selectViewFacturasDetalladas(){
-        selectedOption = "viewFacturasDetalladas";
+        selectedOption = "viewFacturasDetallado";
     }
     
     public void selectViewClients(){

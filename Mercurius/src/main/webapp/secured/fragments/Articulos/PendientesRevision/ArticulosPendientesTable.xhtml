@@ -15,32 +15,37 @@
         <div class="box">
             <div class="columns is-centered">
                 <div class="column">
-                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="articulosTable">
+                    <h:form id="articulosRevisionTable">
                         
                         <p:toolbar>
                             <p:toolbarGroup align="right">
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
-                                    <p:dataExporter type="xlsx" target="ArticulosTableData" fileName="Articulos-Mercurius-Excel" />
+                                    <p:dataExporter type="xlsx" target="ArticulosRevisionTableData" fileName="Articulos-Mercurius-Excel" />
                                 </p:commandButton>
                                 <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help" ajax="false">
-                                    <p:dataExporter type="pdf" target="ArticulosTableData" fileName="Articulos-Mercurius-PDF" />
+                                    <p:dataExporter type="pdf" target="ArticulosRevisionTableData" fileName="Articulos-Mercurius-PDF" />
                                 </p:commandButton>
                             </p:toolbarGroup>
                         </p:toolbar>
                         
-                        <p:dataTable value="#{ArticulosController.filteredArticulos}" var="articulo"  widgetVar="ArticulosTable"
-                                     paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
+                        <p:dataTable value="#{ArticulosController.filteredArticulos}" var="articulo"  widgetVar="ArticulosRevisionTable"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosRevisionTableData"
                                      emptyMessage="No se encontraron artículos con la critería proporcionada"
                                      globalFilterFunction="#{ArticulosController.globalFilterFunction}"
                                      filterBy="#{ArticulosController.filterBy}" liveScroll="true" touchable="true"
                                      selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
                             
                             <f:facet name="header">
-                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosTable').filter()"
+                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosRevisionTable').filter()"
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
+                            
+                            <p:column width="5%">
+                                <p:chip icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!articulo.processed}"/>
+                                <p:chip icon="pi pi-check" styleClass="has-background-success" rendered="#{articulo.status}"/>
+                            </p:column>
                             
                             <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
                                 <h:outputText value="#{articulo.codigo}"/>
@@ -63,21 +68,21 @@
                             <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}" visible="false">
                                 <h:outputText value="#{articulo.precioFinal}"/>
                             </p:column>
-                            <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}">
+                            <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}" width="10%">
                                 <h:outputText value="#{articulo.precioCostoConIVA}"/>
                             </p:column>
-                            <p:column headerText="Stock">
+                            <p:column headerText="Stock" width="6%">
                                 <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
                             </p:column>
                             
                             <p:column headerText="Acciones" exportable="false">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
-                                    actionListener="#{ViewController.selectEditArticulos()}" process="@this" update="dynamicContent">
+                                    actionListener="#{ViewController.selectEditArticulos()}" process="@this">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                     <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                    actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="dynamicContent articulosTable">
+                                    actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="dynamicContent articulosRevisionTable">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                 </div>

@@ -13,40 +13,41 @@
     <h:body>
         <!-- Dialog for Código CABYS -->
         <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog" fitViewport="true" blockScroll="true"
-        modal="true" resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
-        <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" liveScroll="true"  widgetVar="CabysTable"
-                         paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable" touchable="true"
-                    emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
-                    globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
-                    filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
-                    selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
+         resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
+                        
+            <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" liveScroll="true"  widgetVar="CabysTable"
+                        paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable" touchable="true"
+                        emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
+                        globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
+                        filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
+                        selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
 
-           <f:facet name="header">
-               <p:inputText id="globalFilter" onkeyup="PF('CabysTable').filter()"
-                            placeholder="Búsqueda general de todos los campos" styleClass="input"/>
-           </f:facet>
+                <f:facet name="header">
+                    <p:inputText id="globalFilter" onkeyup="PF('CabysTable').filter()"
+                                 placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                </f:facet>
 
-           <p:column selectionMode="single" style="width: 3%" />
-           <p:column headerText="Código" sortBy="#{cabys.codigo}">
-               <h:outputText value="#{cabys.codigo}" />
-           </p:column>
-           <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}">
-               <h:outputText value="#{cabys.descripcion}" />
-           </p:column>
-           <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}">
-               <h:outputText value="#{cabys.impuesto}" />
-           </p:column>
-           <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">
-               <h:outputText value="#{cabys.estado}" />
-           </p:column>
+               <p:column selectionMode="single" style="width: 3%" />
+               <p:column headerText="Código" sortBy="#{cabys.codigo}">
+                   <h:outputText value="#{cabys.codigo}" />
+               </p:column>
+               <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}">
+                   <h:outputText value="#{cabys.descripcion}" />
+               </p:column>
+               <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}">
+                   <h:outputText value="#{cabys.impuesto}" />
+               </p:column>
+               <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">
+                   <h:outputText value="#{cabys.estado}" />
+               </p:column>
 
-          </p:dataTable>
+            </p:dataTable>
         
-        <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{CabysController.selectCabys}" 
-                         onsuccess="PF('codigoCabysDialog').hide();" update="createArticulos" 
-                         immediate="true"/>
-
-    </p:dialog>
+                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{CabysController.selectCabysEdit()}" 
+                                 onclick="PF('codigoCabysDialog').hide();" immediate="true" update="dynamicContent editArticuloForm"
+                         />
+            
+        </p:dialog>
     </h:body>
 
 </ui:composition>

@@ -34,7 +34,9 @@ public class UserService extends GService<Users>{
      
     @PostConstruct
     public void init() {
-        InsertAdmin();
+        if(this.count() == 0){
+            InsertAdmin();
+        }
     }
     
     public boolean verifyPassword(char[] password, String hashedPassword){
@@ -62,26 +64,30 @@ public class UserService extends GService<Users>{
     
     public void InsertAdmin(){  
         try {
-            this.userTransaction.begin();
-            String username = "Admin";
+            //
             
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
-            query.setParameter("username", username);
-            List<Users> existingUsers = query.getResultList();
+                this.userTransaction.begin();
+                String username = "Admin";
 
-            if (existingUsers.isEmpty()) {
-                Users user = new Users();
-                user.setUsername(username);
-                user.setPassword(passwordHasher.generate("password123".toCharArray()));
-                user.setGroupName("admin");
-                
-                em.persist(user);
-                this.userTransaction.commit();
-                System.out.println("Default Admin Saved!");
-            } else {
-                System.out.println("User already exists");
-                this.userTransaction.rollback();
-            }
+                TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
+                query.setParameter("username", username);
+                List<Users> existingUsers = query.getResultList();
+
+                if (existingUsers.isEmpty()) {
+                    Users user = new Users();
+                    user.setUsername(username);
+                    user.setPassword(passwordHasher.generate("password123".toCharArray()));
+                    user.setGroupName("admin");
+
+                    em.persist(user);
+                    this.userTransaction.commit();
+                    System.out.println("Default Admin Saved!");
+                } else {
+                    System.out.println("User already exists");
+                    this.userTransaction.rollback();
+                }
+            
+            
         } catch (HeuristicMixedException | HeuristicRollbackException | NotSupportedException | RollbackException | SystemException | IllegalStateException | SecurityException e) {
             System.out.println("Error in InsertAdmin! Error: " + e.toString());
         }
@@ -112,6 +118,17 @@ public class UserService extends GService<Users>{
             }
         } catch (Exception e) {
             System.out.println("Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString());
+        }
+    }
+    
+    @Override
+    public Long count() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
         }
     }
     

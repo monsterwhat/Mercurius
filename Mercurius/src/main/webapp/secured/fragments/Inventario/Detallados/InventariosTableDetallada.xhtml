@@ -62,16 +62,16 @@
                                 
                             </f:facet>
                             
-                            <p:column headerText="Código">
+                            <p:column headerText="Código" width="4%">
                                 <h:outputText value="#{inventario.codigo}"/>
                             </p:column>
                             <p:column headerText="Artículo">
                                 <h:outputText value="#{inventario.articulo.nombre}"/>
                             </p:column>
-                            <p:column headerText="Cantidad">
+                            <p:column headerText="Cantidad" width="6%">
                                 <h:outputText value="#{inventario.cantidad}"/>
                             </p:column>
-                            <p:column headerText="Tipo Movimiento">
+                            <p:column headerText="Tipo Movimiento" width="9%">
                                 <h:outputText value="#{inventario.tipoMovimiento}"/>
                             </p:column>
                             <p:column headerText="Fecha Movimiento">
@@ -80,12 +80,16 @@
                             <p:column headerText="Notas" visible="false">
                                 <h:outputText value="#{inventario.notas}"/>
                             </p:column>
-                            <p:column headerText="Usuario">
+                            <p:column headerText="Usuario" width="8%">
                                 <h:outputText value="#{inventario.usuario.username}"/>
                             </p:column>
-                            <p:column headerText="Activo" visible="false">
-                                <h:outputText value="#{inventario.status}"/>
+                            <p:column width="4%">
+                                <p:chip icon="pi pi-exclamation-triangle" styleClass="has-background-warning" rendered="#{!inventario.processed}"/>
                             </p:column>
+                            <p:column width="4%">
+                                <p:chip icon="pi pi-check" styleClass="has-background-success" rendered="#{inventario.status}"/>
+                            </p:column>
+
                             
                             <p:column headerText="Acciones" rendered="false">
                                 <div class="has-addons">

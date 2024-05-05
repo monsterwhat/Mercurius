@@ -30,6 +30,7 @@ public class InventarioController implements Serializable {
     @Inject private SessionController currentSession;
     
     private List<Inventario> inventarioList;
+    private List<Inventario> inventarioListAll;
     private Inventario selectedInventario;
     private Inventario newInventario;
     private String inventarioFilter;
@@ -48,14 +49,17 @@ public class InventarioController implements Serializable {
     }
 
     public List<Inventario> inventarioList() {
-        if (inventarioList == null) {
+        if(inventarioList == null){
             inventarioList = inventarioService.ListAllEnabled();
         }
         return inventarioList;
     }
     
     public List<Inventario> inventarioListAll() {
-        return inventarioService.listAll();
+        if(inventarioListAll == null){
+            inventarioListAll = inventarioService.listAll();
+        }
+        return inventarioListAll;
     }
 
     public long inventarioCount() {
@@ -70,6 +74,7 @@ public class InventarioController implements Serializable {
         if(selectedInventario != null && ArticuloID != 0 && currentSession.isValid()){
             selectedInventario.setArticulo(articuloService.findById(ArticuloID));
             selectedInventario.setUsuario(currentSession.getCurrentUser());
+            selectedInventario.setProcessed(true);
             if(selectedInventario.getArticulo() != null && selectedInventario.getUsuario() != null){
                 Date today = new Date();
                 selectedInventario.setFechaMovimiento(today);
@@ -83,6 +88,7 @@ public class InventarioController implements Serializable {
         if(newInventario != null && ArticuloID != 0 && currentSession.isValid()) {
             newInventario.setArticulo(articuloService.findById(ArticuloID));
             newInventario.setUsuario(currentSession.getCurrentUser());
+            newInventario.setProcessed(true);
             if(newInventario.getArticulo() != null && newInventario.getUsuario() != null){
                 newInventario.setStatus(true);
                 Date today = new Date();
@@ -91,6 +97,10 @@ public class InventarioController implements Serializable {
                 clearSelectedInventario();
             }                
         }
+    }
+    
+    public void createSimpleInventario(Inventario inventario){
+        inventarioService.create(inventario);
     }
 
     public void deleteInventario() {
@@ -102,6 +112,7 @@ public class InventarioController implements Serializable {
 
     public void clearSelectedInventario() {
         inventarioList = null;
+        inventarioListAll = null;
         newInventario = null;
         selectedInventario = null;
         viewManager.selectViewInventario();
@@ -120,11 +131,11 @@ public class InventarioController implements Serializable {
     
     public List<Inventario> getFilteredInventarioDetallado() {
         if (inventarioFilter != null && !inventarioFilter.isEmpty()) {
-            return inventarioList().stream()
+            return inventarioListAll().stream()
                     .filter(inventario -> globalFilterFunction(inventario, inventarioFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
         } else {
-            return inventarioList();
+            return inventarioListAll();
         }
     }
 

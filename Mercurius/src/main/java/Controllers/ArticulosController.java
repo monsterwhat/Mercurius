@@ -15,6 +15,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -43,6 +44,8 @@ public class ArticulosController implements Serializable {
     private List<Departamento> departamentoOptions;
     private List<Familia> familiaOptions;
     private int DepartamentoID,FamiliaID = 0;
+    private String SelectedUnidadMedida, SelectedUnidadMedidaComercial;
+
 
     @PostConstruct
     public void init() {
@@ -54,10 +57,7 @@ public class ArticulosController implements Serializable {
     }
 
     public List<Articulos> articulosList() {
-        if (articulosList == null) {
-            articulosList = articulosService.ListAllEnabled();
-        }
-        return articulosList;
+        return articulosService.ListAllEnabled();
     }
     
     public List<Articulos> articulosListFull() {
@@ -78,11 +78,29 @@ public class ArticulosController implements Serializable {
             selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
             selectedArticulo.setUsuario(currentSession.getCurrentUser());
+            selectedArticulo.setProcessed(true);
             if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
                 articulosService.updateAndDisable(selectedArticulo);
                 clearSelectedArticulo();
             }
         }
+    }
+    
+    public void updateArticuloDetallado() {
+        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
+            selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+            selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
+            selectedArticulo.setUsuario(currentSession.getCurrentUser());
+            selectedArticulo.setProcessed(true);
+            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
+                articulosService.updateAndDisable(selectedArticulo);
+                clearSelectedArticuloDetallado();
+            }
+        }
+    }
+    
+    public void updateSimpleArticulo(Articulos articulo){
+        articulosService.updateAndDisable(articulo);
     }
 
     public void createArticulo() {
@@ -90,6 +108,7 @@ public class ArticulosController implements Serializable {
             newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             newArticulo.setFamilia(familiaService.findById(FamiliaID));
             newArticulo.setUsuario(currentSession.getCurrentUser());
+            selectedArticulo.setProcessed(true);
             if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null && newArticulo.getUsuario() != null){
                 newArticulo.setStatus(true);
                 articulosService.create(newArticulo);
@@ -104,12 +123,27 @@ public class ArticulosController implements Serializable {
             clearSelectedArticulo();
         }
     }
+    
+    public void createSimpleArticulo(Articulos articulo){
+        articulosService.create(articulo);
+    }
 
     public void clearSelectedArticulo() {
-        articulosList = null;
+        resetArticulos();
         newArticulo = null;
         selectedArticulo = null;
         viewManager.selectViewArticulos();
+    }
+    
+    public void clearSelectedArticuloDetallado() {
+        resetArticulos();
+        newArticulo = null;
+        selectedArticulo = null;
+        viewManager.selectViewArticulosDetallado();
+    }
+    
+    public void resetArticulos(){
+        articulosList = null;
     }
 
     public List<Articulos> getFilteredArticulos() {
@@ -206,17 +240,47 @@ public class ArticulosController implements Serializable {
     
     public void calcularPrecioConIVAEdit() {
         if (selectedArticulo != null) {
-            if (selectedArticulo.getPrecioFinal() != 0) {
+            if (selectedArticulo.getPrecioFinal() != 0 && selectedArticulo.getCodigoCabys() != null && selectedArticulo.getCodigoCabys().getImpuesto() != 0) {
                 double impuesto = selectedArticulo.getCodigoCabys().getImpuesto();
                 double precioSinIVA = selectedArticulo.getPrecioFinal();
                 double IVA = precioSinIVA * (impuesto * 0.01);
                 double precioConIVA = precioSinIVA+IVA;
-                
+
                 precioConIVA = Math.ceil(precioConIVA);
-                
-                selectedArticulo.setPrecioCostoConIVA(precioConIVA);
+
+                selectedArticulo.setPrecioCostoConIVA(precioConIVA); 
             }
         }
+    }
+    
+    public double calcularPrecioConIVAReturn(double precio, double tax) {
+        if (precio != 0) {
+            
+            double IVA = precio * (tax * 0.01);
+            double precioConIVA = precio+IVA;
+
+            precioConIVA = Math.ceil(precioConIVA);
+
+            return precioConIVA;
+        }
+        return 0;
+    }
+    
+    public double calcularPrecioConUtilidadReturn(double precio, double utilidad){
+        try {
+            if (precio != 0) {
+                if(precio >= 0 && utilidad >=0 ){
+                    double Utilidad = precio*(utilidad*0.01);
+                    double precioConUtilidad = precio+Utilidad;
+
+                    precioConUtilidad = Math.ceil(precioConUtilidad);
+                    return precioConUtilidad;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error:" + e.getLocalizedMessage());
+        }
+        return 0;
     }
     
     private void updateDepartamentoAndFamiliaOptions() {
@@ -228,6 +292,38 @@ public class ArticulosController implements Serializable {
         String codigoBarra = articulo.getCodigoBarra();
         int totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
         return totalStock;
+    }
+    
+    public Articulos findArticuloByName(String name){
+        return articulosService.findByName(name);
+    }
+    
+    public Articulos findArticuloByBarCode(String barcode){
+        return articulosService.findByBarCode(barcode);
+    }
+    
+    public void selectedUnidadMedidaChanged() {
+        String message = "Se selecciono: ";
+        if (SelectedUnidadMedida != null) {
+                message += SelectedUnidadMedida;
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+        
+        selectedArticulo.setUnidadMedida(SelectedUnidadMedida);
+    }
+    
+    public void selectedUnidadMedidaComercialChanged() {
+        String message = "Se selecciono: ";
+        if (SelectedUnidadMedidaComercial != null) {
+                message += SelectedUnidadMedidaComercial;
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+        
+        selectedArticulo.setUnidadMedidaComercial(SelectedUnidadMedidaComercial);
     }
     
 }

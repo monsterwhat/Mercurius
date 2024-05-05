@@ -35,15 +35,15 @@
                         </div>
                         <ui:include src="../../Inventario/Upload/subirFacturas.xhtml"/>
 
-
-                        <p:dataTable value="#{facturasController.filteredFacturas}" var="factura" widgetVar="FacturasTable"
-                                     paginator="true" rows="8" paginatorPosition="bottom" id="FacturasTableData"
+                        <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTable"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="FacturasTableData" reflow="true"
                                      emptyMessage="No se encontraron registros de factura con la critería proporcionada"
                                      globalFilterFunction="#{facturasController.globalFilterFunction}"
                                      filterBy="#{facturasController.filterBy}"
                                      selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
                             
-                            <p:ajax event="rowSelect" update="lineasDetalleTable"/>
+                            <p:ajax event="rowSelect" update="buttonSync buttonSee buttonDelete"/>
+                            <p:ajax event="toggleSelect" update="buttonSync buttonSee buttonDelete"/>
                             
                             <f:facet name="header">
                                 <div class="field columns is-mobile">
@@ -76,13 +76,19 @@
                                 <h:outputText value="#{factura.medioPago}"/>
                             </p:column>
                             
-                            <p:column headerText="Acciones" exportable="false">
+                            <p:column headerText="Acciones" width="20%" exportable="false">
                                 <div class="buttons">
-                                    <p:commandButton styleClass="button is-1 is-rounded is-mobile" process="@this" update="lineasDetalleTable"
-                                                     icon="pi pi-sync" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
-                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                    <p:commandButton id="buttonSync" styleClass="button is-success is-1 is-rounded is-mobile" disabled="#{!factura.status}" process="@this"
+                                                     icon="pi pi-sync" onclick="#{facturasController.processSelectedFactura()}" update="FacturasTableData">
+                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
                                     </p:commandButton>
-                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                    
+                                    <p:commandButton id="buttonSee" styleClass="button is-1 is-rounded is-mobile" process="@this" update="lineasDetalleTable"
+                                                     icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
+                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                    </p:commandButton>
+                                    
+                                    <p:commandButton id="buttonDelete" styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
                                         actionListener="#{facturasController.deleteFactura()}" process="@this" update="dynamicContent facturaTable">
                                         <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                     </p:commandButton>

@@ -34,7 +34,9 @@ public class Inventario implements Serializable {
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien realizo el ajuste
         
-    private int cantidad;
+    private double cantidad;
+    
+    private double unidadesRecomendadasFactura;
     
     private String tipoMovimiento;
     
@@ -45,19 +47,8 @@ public class Inventario implements Serializable {
     private String notas;
     
     private Boolean status; //En caso de querer archivar o desabilitar un ajuste
+    
+    private Boolean processed;
 
-    public Inventario() {
-    }
-
-    public Inventario(int codigo, Articulos articulo, Users usuario, int cantidad, String tipoMovimiento, Date fechaMovimiento, String notas, Boolean status) {
-        this.codigo = codigo;
-        this.articulo = articulo;
-        this.usuario = usuario;
-        this.cantidad = cantidad;
-        this.tipoMovimiento = tipoMovimiento;
-        this.fechaMovimiento = fechaMovimiento;
-        this.notas = notas;
-        this.status = status;
-    }
 
 }

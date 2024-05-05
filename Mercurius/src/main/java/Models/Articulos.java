@@ -15,9 +15,15 @@ public class Articulos {
     @JoinColumn(name = "codigo_cabys")
     private Cabys codigoCabys;
 
+    private String recomendacionCabys;
+    
     private String nombre;
     
     private String codigoBarra;
+    
+    private String UnidadMedida;
+    
+    private String unidadMedidaComercial;
 
     @ManyToOne
     @JoinColumn(name = "departamento_id")
@@ -41,26 +47,10 @@ public class Articulos {
     
     private boolean status;
     
+    private boolean processed;
+    
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el Articulo
-
-    public Articulos() {
-    }
-
-    public Articulos(int codigo, Cabys codigoCabys, String nombre, String codigoBarra, Departamento departamento, Familia familia, double precioCostoSinIVA, double precioCostoConIVA, double porcentajeUtilidad, double precioFinal, boolean status, Users usuario) {
-        this.codigo = codigo;
-        this.codigoCabys = codigoCabys;
-        this.nombre = nombre;
-        this.codigoBarra = codigoBarra;
-        this.departamento = departamento;
-        this.familia = familia;
-        this.precioCostoSinIVA = precioCostoSinIVA;
-        this.precioCostoConIVA = precioCostoConIVA;
-        this.porcentajeUtilidad = porcentajeUtilidad;
-        this.precioFinal = precioFinal;
-        this.status = status;
-        this.usuario = usuario;
-    }
-
+    
 }
