@@ -3,6 +3,7 @@ package Services;
 import Models.Departamento;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 
@@ -117,6 +118,26 @@ public class DepartamentoService extends GService<Departamento> {
             }
         } catch (Exception e) {
             System.out.println("Error soft deleting entity: " + e.toString());
+        }
+    }
+    
+    public Departamento createIfNotExist(Departamento departamento) {
+        try {
+            TypedQuery<Departamento> query = em.createQuery("SELECT e FROM Departamento e WHERE e.nombre = :nombre", Departamento.class);
+            query.setParameter("nombre", departamento.getNombre());
+            List<Departamento> existingEmisors = query.getResultList();
+
+            if (existingEmisors.isEmpty()) {
+                em.persist(departamento);
+                return departamento;
+            } else {
+                return existingEmisors.get(0);
+            }
+        } catch (PersistenceException e) {
+            // Catch the database constraint violation exception
+            System.out.println("Error creating or retrieving Departamento: " + e.toString());
+            // Handle the error gracefully, maybe log it or notify the user
+            return null;
         }
     }
 

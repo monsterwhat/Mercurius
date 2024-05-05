@@ -74,6 +74,15 @@ public class DepartamentoController implements Serializable {
             clearSelectedDepartamento();
         }
     }
+    
+    public Departamento createSimpleDepartamento(Departamento departamento){
+        if(currentSession.isValid()){
+            Departamento persistedDepartamento = departamentoService.createIfNotExist(departamento);
+            clearLists();
+            return persistedDepartamento;
+        }
+        return null;
+    }
 
     public void deleteDepartamento() {
         if (selectedDepartamento != null) {
@@ -83,10 +92,14 @@ public class DepartamentoController implements Serializable {
     }
 
     public void clearSelectedDepartamento() {
-        departamentos = null;
+        clearLists();
         newDepartamento = null;
         selectedDepartamento = null;
         viewManager.selectViewDepartamentos();
+    }
+    
+    public void clearLists(){
+        departamentos = null;
     }
 
     public List<Departamento> getFilteredDepartamentos() {

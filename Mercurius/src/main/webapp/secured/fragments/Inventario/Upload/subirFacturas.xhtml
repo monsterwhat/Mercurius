@@ -21,7 +21,7 @@
                     <div class="columns">
                         <p:fileUpload value="#{uploadController.file}" mode="advanced"
                                       multiple="true" update="messages uploadedFiles" styleClass="column"
-                                    sizeLimit="100000" fileLimit="5" allowTypes="/(\.|\/)(xml)$/" 
+                                    sizeLimit="100000" allowTypes="/(\.|\/)(xml)$/" 
                                     invalidFileMessage="Tipo de archivo invalido"
                                     listener="#{uploadController.handleFileUpload}"
                                     fileLimitMessage="Se alcanzo el limite de facturas por peticion" 

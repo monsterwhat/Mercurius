@@ -72,6 +72,7 @@ public class ArticulosService extends GService<Articulos> {
             if (existingItem != null) {
                 // Disable the existing item
                 existingItem.setStatus(false);
+                existingItem.setProcessed(true);
                 em.merge(existingItem);
 
                 // Create a new item with the updated information
@@ -119,5 +120,28 @@ public class ArticulosService extends GService<Articulos> {
             return null;
         }
     }
+
+    public Articulos findByName(String name) {
+        try {
+            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.nombre = :name", Articulos.class);
+            query.setParameter("name", name);
+            List<Articulos> resultList = query.getResultList();
+            return resultList.isEmpty() ? null : resultList.get(0);
+        } catch (Exception e) {
+            System.out.println("Error " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+
+    public Articulos findByBarCode(String barcode) {
+        try {
+            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.codigoBarra = :barcode", Articulos.class);
+            query.setParameter("barcode", barcode);
+            List<Articulos> resultList = query.getResultList();
+            return resultList.isEmpty() ? null : resultList.get(0);
+        } catch (Exception e) {
+            System.out.println("Error " + e.getLocalizedMessage());
+            return null;
+        }    }
 
 }

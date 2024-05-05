@@ -40,11 +40,9 @@
                     <p:growl id="growl" showDetail="true" showSummary="true" />
                     
                     <p:outputPanel id="dynamicContent">
+                            <!-- Usuarios -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsers'}" >
                             <ui:include src="./fragments/Users/UsersTable.xhtml" />
-                        </ui:fragment>
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsersDetallados'}" >
-                            <ui:include src="./fragments/Users/Detallados/UsersTableDetallado.xhtml" />
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editUsers'}">
                             <ui:include src="./fragments/Users/EditUsers.xhtml" />
@@ -52,6 +50,11 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createUsers'}">
                             <ui:include src="./fragments/Users/CreateUsers.xhtml" />
                         </ui:fragment>
+                            <!-- Usuarios Detallados -->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewUsersDetallados'}" >
+                            <ui:include src="./fragments/Users/Detallados/UsersTableDetallado.xhtml" />
+                        </ui:fragment>
+                            <!-- Clientes -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewClients'}">
                             <ui:include src="./fragments/Clients/ClientsTable.xhtml" />
                         </ui:fragment>
@@ -61,23 +64,29 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createClients'}">
                             <ui:include src="./fragments/Clients/CreateClients.xhtml" />
                         </ui:fragment>
+                            <!-- ARTICULOS -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulos'}">
-                            <ui:include src="./fragments/Articulos/ArticulosTable.xhtml" />
+                            <ui:include src="./fragments/Articulos/Simples/ArticulosTable.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editArticulos'}">
+                            <ui:include src="./fragments/Articulos/Simples/EditArticulo.xhtml" />
+                        </ui:fragment>                        
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createArticulos'}">
+                            <ui:include src="./fragments/Articulos/Simples/CreateArticulos.xhtml" />
+                        </ui:fragment>
+                            <!-- ARTICULOS DETALLADOS -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulosDetallado'}">
                             <ui:include src="./fragments/Articulos/Detallados/ArticulosTableDetallada.xhtml" />
                         </ui:fragment>
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editArticulos'}">
-                            <ui:include src="./fragments/Articulos/EditArticulo.xhtml" />
-                        </ui:fragment>                        
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createArticulos'}">
-                            <ui:include src="./fragments/Articulos/CreateArticulos.xhtml" />
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editArticulosDetallado'}">
+                            <ui:include src="./fragments/Articulos/Detallados/EditArticuloDetallado.xhtml" />
                         </ui:fragment>
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createArticulosDetallado'}">
+                            <ui:include src="./fragments/Articulos/Detallados/CreateArticuloDetallado.xhtml" />
+                        </ui:fragment>
+                            <!-- Departamentos -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewDepartamentos'}">
                             <ui:include src="./fragments/Departamentos/DepartamentosTable.xhtml" />
-                        </ui:fragment>
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewDepartamentosDetallado'}">
-                            <ui:include src="./fragments/Departamentos/Detallados/DepartamentosTableDetallada.xhtml" />
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editDepartamentos'}">
                             <ui:include src="./fragments/Departamentos/EditDepartamento.xhtml" />
@@ -85,23 +94,28 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createDepartamentos'}">
                             <ui:include src="./fragments/Departamentos/CreateDepartamento.xhtml" />
                         </ui:fragment>
+                            <!-- Departamentos Detallados -->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewDepartamentosDetallado'}">
+                            <ui:include src="./fragments/Departamentos/Detallados/DepartamentosTableDetallada.xhtml" />
+                        </ui:fragment>
+                            
+                            <!-- Familias -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFamilias'}">
                             <ui:include src="./fragments/Familias/FamiliasTable.xhtml" />
                         </ui:fragment>
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFamiliasDetallado'}">
-                            <ui:include src="./fragments/Familias/Detallados/FamiliasTableDetallada.xhtml" />
-                        </ui:fragment>                        
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editFamilias'}">
                             <ui:include src="./fragments/Familias/EditFamilias.xhtml" />
                         </ui:fragment>                        
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createFamilias'}">
                             <ui:include src="./fragments/Familias/CreateFamilias.xhtml" />
                         </ui:fragment>
+                            <!-- Familias Detalladas -->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFamiliasDetallado'}">
+                            <ui:include src="./fragments/Familias/Detallados/FamiliasTableDetallada.xhtml" />
+                        </ui:fragment>  
+                            <!-- Inventarios -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventarios'}">
                             <ui:include src="./fragments/Inventario/InventariosTable.xhtml"/>
-                        </ui:fragment>
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventariosDetallado'}">
-                            <ui:include src="./fragments/Inventario/Detallados/InventariosTableDetallada.xhtml"/>
                         </ui:fragment>
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'editInventarios'}">
                             <ui:include src="./fragments/Inventario/EditMovimientoInventario.xhtml" />
@@ -109,12 +123,18 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createInventarios'}">
                             <ui:include src="./fragments/Inventario/CreateMovimientoInventario.xhtml" />
                         </ui:fragment>
+                            <!-- Inventarios Detallados-->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventariosDetallado'}">
+                            <ui:include src="./fragments/Inventario/Detallados/InventariosTableDetallada.xhtml"/>
+                        </ui:fragment>                            <!-- CABYS -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewCabys'}">
                             <ui:include src="./fragments/CaByS/CabysTable.xhtml" />
                         </ui:fragment>
+                            <!-- Facturas -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFacturas'}">
                             <ui:include src="./fragments/Facturas/Recibos/FacturacionTable.xhtml" />
                         </ui:fragment>
+                            <!-- Facturas Detalladas -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFacturasDetallado'}">
                             <ui:include src="./fragments/Facturas/Recibos/verDetallesFactura.xhtml" />
                         </ui:fragment>

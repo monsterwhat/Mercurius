@@ -1,6 +1,9 @@
 package Controllers;
 
+import Models.Articulos;
+import Models.Departamento;
 import Models.Facturas.*;
+import Models.Inventario;
 import Services.Facturas.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -17,6 +20,7 @@ import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -43,9 +47,13 @@ public class FacturasController implements Serializable {
     @Inject ResumenFacturaService resumenFacturaService;
     @Inject SessionController currentSession;
     @Inject ViewController viewManager;
+    @Inject ArticulosController articuloController;
+    @Inject InventarioController inventarioController;
+    @Inject DepartamentoController departamentosController;
     
     private List<UploadedFile> files;
     private List<Factura> facturas;
+    private List<Factura> facturasDetalladas;
     
     private Factura selectedFactura;
     private String facturaFilter;
@@ -56,8 +64,10 @@ public class FacturasController implements Serializable {
     public void init(){
         files = new ArrayList<>();
         facturas = new ArrayList<>();
+        facturasDetalladas = new ArrayList<>();
         filterBy = new ArrayList<>();
         selectedFactura = new Factura();
+        updateFacturasDetalladas();
         updateFacturas();
     }
     
@@ -68,12 +78,24 @@ public class FacturasController implements Serializable {
         return facturas;
     }
     
+    public List<Factura> facturasListDetalladas() {
+        if(facturasDetalladas == null){
+            facturasDetalladas = facturaService.listAll();
+        }
+        return facturasDetalladas;
+    }
+    
+    public void updateLists(){
+        updateFacturas();
+        updateFacturasDetalladas();
+    }
+    
     public void updateFacturas(){
         facturas = facturaService.ListAllEnabled();
     }
     
-    public List<Factura> facturasListAll() {
-        return facturaService.listAll();
+    public void updateFacturasDetalladas(){
+        facturasDetalladas = facturaService.listAll();
     }
 
     public long facturaCount() {
@@ -112,11 +134,11 @@ public class FacturasController implements Serializable {
     
     public List<Factura> getFilteredFacturasDetallados() {
         if (facturaFilter != null && !facturaFilter.isEmpty()) {
-            return facturasListAll().stream()
+            return facturasListDetalladas().stream()
                     .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
         } else {
-            return facturasListAll();
+            return facturasListDetalladas();
         }
     }
 
@@ -164,7 +186,7 @@ public class FacturasController implements Serializable {
             parseXMLFromUploadedFile(files.get(i));
         }
         files.clear();
-        updateFacturas();
+        updateLists();
     }
     
     public void parseXML(InputStream inputStream) {
@@ -205,8 +227,8 @@ public class FacturasController implements Serializable {
 
             resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
             
-            Emisor foundEmisor = emisorService.createIfNotExist(emisor);
-            Receptor foundReceptor = receptorService.createIfNotExist(receptor);
+            Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
+            Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
             List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
             List<LineaDetalle> ServicioLineas = new ArrayList<>();
             
@@ -219,15 +241,11 @@ public class FacturasController implements Serializable {
             detalleServicioService.create(detalleServicio);
             resumenFacturaService.create(resumenFactura);
             Factura factura = new Factura();
-            if(foundEmisor != null){
-                factura.setEmisor(foundEmisor);
-            }else{
-                factura.setEmisor(emisor);
+            if(persistedEmisor != null){
+                factura.setEmisor(persistedEmisor);
             }
-            if(foundReceptor != null){
-                factura.setReceptor(foundReceptor);
-            }else{
-                factura.setReceptor(receptor);
+            if(persistedReceptor != null){
+                factura.setReceptor(persistedReceptor);
             }
             factura.setCodigoActividad(codigoActividad);
             factura.setNumeroConsecutivo(numeroConsecutivo);
@@ -523,5 +541,130 @@ public class FacturasController implements Serializable {
         descuento.setNaturalezaDescuento(naturalezaDescuento);
         
         return descuento;
+    }
+    
+    public void processSelectedFactura(){
+        if(selectedFactura!=null){
+            processFactura(selectedFactura);
+        }else{
+            FacesMessage message = new FacesMessage("Error","No hay una factura seleccionada");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
+    }
+        
+    private void processFactura(Factura factura){
+        boolean status = factura.isStatus();
+        if(status){
+            List<LineaDetalle> lineasDetalle = factura.getDetalleServicio().getLineasDetalle();
+                        
+            for(LineaDetalle lineaDetalle : lineasDetalle){
+                String codigoBarra = "";
+                String nombre = lineaDetalle.getDetalle();
+                List<CodigoComercial> codigosComercialesLineaDetalle = lineaDetalle.getCodigosComerciales();
+
+                for(CodigoComercial codigoComercial : codigosComercialesLineaDetalle){
+                    if(codigoComercial.getTipoCodigo().contains("03")){
+                        codigoBarra = codigoComercial.getCodigoComercial();
+                        break;
+                    }
+                }
+                
+                Articulos articuloExistente = (codigoBarra.isEmpty()) ? 
+                articuloController.findArticuloByName(nombre) : 
+                articuloController.findArticuloByBarCode(codigoBarra);
+                
+                double cantidad = Double.parseDouble(lineaDetalle.getCantidad());
+                String codigoCabys = lineaDetalle.getCodigo();
+                String unidadMedida = lineaDetalle.getUnidadMedida();
+                String unidadMedidaComercial = lineaDetalle.getUnidadMedidaComercial();
+                double precioUnitario = Double.parseDouble(lineaDetalle.getPrecioUnitario());
+                double UnidadesParseadas = parseUnidadComercial(unidadMedida, unidadMedidaComercial) * cantidad;
+                            
+                Articulos articulo = new Articulos();
+                if(articuloExistente == null){
+                    articulo.setNombre(nombre);
+                    articulo.setCodigoBarra(codigoBarra);
+                    articulo.setRecomendacionCabys(codigoCabys);
+                    
+                    Departamento departamento = new Departamento();
+                        departamento.setNombre(factura.getEmisor().getNombre());
+                        departamento.setStatus(true);
+                        departamento.setUsuario(currentSession.getCurrentUser());
+                    Departamento persistedDepartamento = departamentosController.createSimpleDepartamento(departamento);
+                    
+                    articulo.setDepartamento(persistedDepartamento);
+                    articulo.setUnidadMedida(unidadMedida);
+                    articulo.setUnidadMedidaComercial(unidadMedidaComercial);
+                    articulo.setPrecioCostoSinIVA(precioUnitario);
+                    articulo.setUsuario(currentSession.getCurrentUser());
+                    articulo.setStatus(true);
+                    articulo.setProcessed(false);
+                    articuloController.createSimpleArticulo(articulo);
+                }else{
+                    articuloExistente.setRecomendacionCabys(codigoCabys);
+                    articuloExistente.setPrecioCostoSinIVA(precioUnitario);
+                    articuloExistente.setUsuario(currentSession.getCurrentUser());
+                    articuloExistente.setUnidadMedida(unidadMedida);
+                    articuloExistente.setUnidadMedidaComercial(unidadMedidaComercial);
+                    articuloExistente.setStatus(true);
+                    articuloExistente.setProcessed(false);
+                    articuloExistente.setPrecioFinal(0.0);
+                    articuloExistente.setPrecioCostoConIVA(0.0);
+                    articuloController.updateSimpleArticulo(articuloExistente);
+                }
+                
+                Inventario ajusteArticulo = new Inventario();
+                
+                if(articuloExistente != null){
+                    ajusteArticulo.setArticulo(articuloExistente);
+                }else{
+                    ajusteArticulo.setArticulo(articulo);
+                }
+                ajusteArticulo.setUnidadesRecomendadasFactura(cantidad);
+                ajusteArticulo.setUsuario(currentSession.getCurrentUser());
+                ajusteArticulo.setFechaMovimiento(new Date());
+                ajusteArticulo.setTipoMovimiento("Automatico");
+                ajusteArticulo.setStatus(true);
+                ajusteArticulo.setProcessed(false);
+                ajusteArticulo.setCantidad(cantidad);
+                ajusteArticulo.setNotas((cantidad != 0) ? "Auto procesado por el sistema" : "No se pudo auto adquirir la cantidad");                
+                
+                inventarioController.createSimpleInventario(ajusteArticulo);
+            }
+            
+            factura.setStatus(false);
+            facturaService.update(factura);
+            
+            FacesMessage message = new FacesMessage("Exito","Se procesaron los articulos de la factura!");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+            
+            updateLists();
+        }else{
+            FacesMessage message = new FacesMessage("Oops!","La factura ya fue procesada.");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
+    }
+    
+    private double parseUnidadComercial(String unidad, String unidadComercial) {
+        return switch (unidad) {
+            case "Otros" -> parseUnidadComercial(unidadComercial);
+            case "Unid" -> parseUnidadComercial(unidadComercial);
+            case "g" -> parseUnidadComercial(unidadComercial);
+            default -> 0;
+        }; // Default to 0 if no specific conversion found
+    }
+
+    private double parseUnidadComercial(String unidadComercial) {
+        return switch (unidadComercial) {
+            case "BOT" -> 1;
+            case "LT" -> 1;
+            case "ST" -> 6;
+            case "Pieza" -> 1;
+            case "UN" -> 1;
+            case "Unid" -> 1;
+            case "UND" -> 1;
+            case "" -> 1;
+            default -> 0;
+        }; // Default to 0 if no conversion defined
     }
 }

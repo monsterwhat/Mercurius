@@ -115,7 +115,7 @@ public class InventarioService extends GService<Inventario> {
     public int calculateTotalStockForItemByBarcode(String barcode) {
         try {
             // Query to sum up the quantities of inventory movements for items with the given barcode
-            String queryString = "SELECT SUM(i.cantidad) FROM Inventario i WHERE i.articulo.codigoBarra = :barcode AND i.status = true";
+            String queryString = "SELECT SUM(i.cantidad) FROM Inventario i WHERE i.articulo.codigoBarra = :barcode AND i.status = true AND i.processed = true";
             Long result = em.createQuery(queryString, Long.class)
                             .setParameter("barcode", barcode)
                             .getSingleResult();

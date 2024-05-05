@@ -33,65 +33,75 @@
                                 </div>
                         </div>
                         <ui:include src="../Inventario/Upload/subirFacturas.xhtml"/>
-
+                        <ui:include src="../Inventario/verDetallesDeAjuste.xhtml"/>
+                        
                         <p:dataTable value="#{InventarioController.filteredInventario}" var="inventario"  widgetVar="InventarioTable"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="InventarioTableData"
                                      emptyMessage="No se encontraron registros de inventario con la critería proporcionada"
                                      globalFilterFunction="#{InventarioController.globalFilterFunction}"
-                                     filterBy="#{InventarioController.filterBy}"
+                                     filterBy="#{InventarioController.filterBy}" reflow="true" rowSelectMode="add"
                                      selection="#{InventarioController.selectedInventario}" rowKey="#{inventario.codigo}">
                             
-                            <p:ajax event="rowSelect" update="inventarioTable"/>
+                            <p:ajax event="rowSelect" update="inventarioTable:selectedArticulo"/>
+                            <p:ajax event="rowUnselect" update="inventarioTable:selectedArticulo" />
+                            <p:ajax event="toggleSelect" update="inventarioTable:selectedArticulo"/>
                             
                             <f:facet name="header">
                                 <div class="field columns is-mobile">
                                     <p:inputText id="globalFilter" onkeyup="PF('InventarioTable').filter()"
                                              placeholder="Búsqueda general de todos los campos" styleClass="input column is-mobile"/>
-                                    <p:commandButton value="Ver Detalles" styleClass="button is-1 is-rounded is-mobile"
-                                                     icon="pi pi-eye" onclick="PF('AjusteDetailsDialog').show();" >
-                                    <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
-                                    </p:commandButton>
-                                    <ui:include src="../Inventario/verDetallesDeAjuste.xhtml"/>
                                 </div>
-                                
                             </f:facet>
                             
-                            <p:column headerText="Código" visible="false" >
+                            <p:column width="8%">
+                                <p:commandButton styleClass="button is-rounded is-info" icon="pi pi-eye" process="@this"
+                                                 onclick="PF('AjusteDetailsDialog').show();" update="inventarioTable:selectedArticulo">
+                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
+                                </p:commandButton>
+                                <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
+                                        actionListener="#{ViewController.selectEditInventario()}" rendered="#{SessionController.inventarios}"
+                                        process="@this" update="dynamicContent" immediate="true" >
+                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
+                                        <p:resetInput target="InventarioTableData"/>
+                                </p:commandButton>
+                            </p:column>
+                            
+                            <p:column headerText="Código" visible="false">
                                 <h:outputText value="#{inventario.codigo}"/>
                             </p:column>
                             <p:column headerText="Artículo">
                                 <h:outputText value="#{inventario.articulo.nombre}"/>
                             </p:column>
-                            <p:column headerText="Cantidad">
+                            <p:column headerText="Cantidad" width="8%">
                                 <h:outputText value="#{inventario.cantidad}"/>
                             </p:column>
-                            <p:column headerText="Tipo Movimiento">
+                            <p:column headerText="Tipo Movimiento" width="9%">
                                 <h:outputText value="#{inventario.tipoMovimiento}"/>
                             </p:column>
-                            <p:column headerText="Fecha Movimiento">
+                            <p:column headerText="Fecha Movimiento" width="10%">
                                 <h:outputText value="#{inventario.fechaMovimiento}"/>
                             </p:column>
                             <p:column headerText="Notas" visible="false">
                                 <h:outputText value="#{inventario.notas}"/>
                             </p:column>
-                            <p:column headerText="Usuario">
+                            <p:column headerText="Usuario" width="7%">
                                 <h:outputText value="#{inventario.usuario.username}"/>
                             </p:column>
                             
-                            <p:column headerText="Acciones" rendered="false">
-                                <div class="has-addons">
-                                    <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
-                                        actionListener="#{ViewController.selectEditInventario()}" process="@this" update="dynamicContent">
-                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
-                                    </p:commandButton>
-                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                        actionListener="#{InventarioController.deleteInventario()}" process="@this" update="dynamicContent inventarioTable">
-                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
-                                    </p:commandButton>
-                                </div>
+                            <p:column width="5%">
+                                <p:chip icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!inventario.processed}"/>
+                                <p:chip icon="pi pi-check" styleClass="has-background-success" rendered="#{inventario.status}"/>
                             </p:column>
+                            
+                            <p:column width="4%">
+                                <p:commandButton styleClass="button is-rounded is-danger" icon="pi pi-trash"
+                                        actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update="dynamicContent inventarioTable">
+                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
+                                </p:commandButton>
+                            </p:column>
+                            
                         </p:dataTable>
-                        <!-- Adjust the button action -->
+                        
                         <p:commandButton value="Crear Ajuste" actionListener="#{ViewController.selectCreateInventario}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
                     </h:form>
                 </div>

@@ -39,6 +39,18 @@ public class LineaDetalle {
     private DetalleServicio detalleServicio;
 
 
+    public String getCodigo(int TipoCodigo){
+        if(!codigosComerciales.isEmpty()){
+            for (CodigoComercial codigoComercial : codigosComerciales){
+                String codigo = codigoComercial.getTipoCodigo();
+                if(codigo.equals(String.valueOf(TipoCodigo))){
+                    return codigoComercial.getCodigoComercial();
+                }
+            }
+        }
+        return null;
+    }
+    
 }
 
 

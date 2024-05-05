@@ -18,9 +18,10 @@
     </h:head>
     
     <h:body>
-        <p:dialog widgetVar="selectedFacturaDetallado" id="selectedFacturaDetallado" width="100%"
+        <p:dialog rendered="#{not empty facturasController.selectedFactura}" widgetVar="selectedFacturaDetallado" id="selectedFacturaDetallado" width="100%"
                   fitViewport="true" blockScroll="true" responsive="true" maximizable="true"
                   modal="true" resizable="false" draggable="false" height="100%">
+            
             <div class="box">                    
                 <div class="columns is-centered">
                     <div class="column">
@@ -42,11 +43,11 @@
                                 <p:column headerText="Nombre">
                                     <h:outputText value="#{lineaDetalle.detalle}"/>
                                 </p:column>
-                                <p:column headerText="Codigo">
+                                <p:column headerText="CodigoCabys">
                                     <h:outputText value="#{lineaDetalle.codigo}"/>
                                 </p:column>
-                                <p:column headerText="Codigos Comerciales" rendered="false">
-                                    <h:outputText value="#{lineaDetalle.codigosComerciales}"/>
+                                <p:column headerText="Codigo Barra" rendered="#{not empty lineaDetalle.getCodigo(4)}">
+                                    <h:outputText value="#{lineaDetalle.getCodigo(4)}"/>
                                 </p:column>
                                 <p:column headerText="Cantidad">
                                     <h:outputText value="#{lineaDetalle.cantidad}"/>

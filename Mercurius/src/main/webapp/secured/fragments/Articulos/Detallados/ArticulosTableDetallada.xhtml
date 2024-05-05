@@ -24,7 +24,7 @@
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="articulosTableDetallado">
+                    <h:form id="ArticulosTableDetallado">
                         
                         <p:toolbar>
                             <p:toolbarGroup align="right">
@@ -37,20 +37,35 @@
                             </p:toolbarGroup>
                         </p:toolbar>
                         
-                        <p:dataTable value="#{ArticulosController.filteredArticulosDetallado}" var="articulo"  widgetVar="ArticulosTable"
+                        <p:dataTable value="#{ArticulosController.filteredArticulosDetallado}" var="articulo"  widgetVar="ArticulosTableDetallado"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
                                      emptyMessage="No se encontraron artículos con la critería proporcionada"
                                      rowStyleClass="#{articulo.status == 'false' ? 'inactive-row' : null}"
                                      globalFilterFunction="#{ArticulosController.globalFilterFunction}"
-                                     filterBy="#{ArticulosController.filterBy}"
+                                     filterBy="#{ArticulosController.filterBy}" reflow="true" 
                                      selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
                             
                             <f:facet name="header">
-                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosTable').filter()"
+                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosTableDetallado').filter()"
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
                             
-                            <p:column headerText="Código" sortBy="#{articulo.codigo}">
+                            <p:column width="5%">
+                                <p:chip id="processedChip" icon="pi pi-exclamation-circle" styleClass="has-background-success"
+                                        rendered="#{articulo.processed}"/>
+                                <p:tooltip for="processedChip" value="Procesada" position="top"/>
+                                <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning"
+                                        rendered="#{!articulo.processed}"/>
+                                <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
+                                <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" 
+                                        rendered="#{articulo.status}"/>
+                                <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+                                <p:chip id="InactiveChip" icon="pi pi-times" styleClass="has-background-danger" 
+                                        rendered="#{!articulo.status}"/>
+                                <p:tooltip for="InactiveChip" value="Inactiva" position="top"/>
+                            </p:column>
+                            
+                            <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
                                 <h:outputText value="#{articulo.codigo}"/>
                             </p:column>
                             <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
@@ -88,14 +103,14 @@
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                     <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                    actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="dynamicContent articulosTableDetallado">
+                                    actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="dynamicContent ArticulosTableDetallado">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                 </div>
                             </p:column>
                         </p:dataTable>
                         <p:commandButton value="Crear Artículo" actionListener="#{ViewController.selectCreateArticulos}"
-                                         update="dynamicContent createArticulos" styleClass="button is-fullwidth is-success is-rounded"
+                                         update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"
                                          />
                     </h:form>
                 </div>
