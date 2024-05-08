@@ -41,7 +41,7 @@
                                      globalFilterFunction="#{InventarioController.globalFilterFunction}"
                                      filterBy="#{InventarioController.filterBy}" reflow="true" rowSelectMode="add"
                                      selection="#{InventarioController.selectedInventario}" rowKey="#{inventario.codigo}">
-                            
+                            <p:autoUpdate/>
                             <p:ajax event="rowSelect" update="inventarioTable:selectedArticulo"/>
                             <p:ajax event="rowUnselect" update="inventarioTable:selectedArticulo" />
                             <p:ajax event="toggleSelect" update="inventarioTable:selectedArticulo"/>
@@ -53,17 +53,27 @@
                                 </div>
                             </f:facet>
                             
-                            <p:column width="8%">
-                                <p:commandButton styleClass="button is-rounded is-info" icon="pi pi-eye" process="@this"
-                                                 onclick="PF('AjusteDetailsDialog').show();" update="inventarioTable:selectedArticulo">
-                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
-                                </p:commandButton>
-                                <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
-                                        actionListener="#{ViewController.selectEditInventario()}" rendered="#{SessionController.inventarios}"
-                                        process="@this" update="dynamicContent" immediate="true" >
-                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
-                                        <p:resetInput target="InventarioTableData"/>
-                                </p:commandButton>
+                            <p:column width="5%">
+                                <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!inventario.processed}"/>
+                                <p:tooltip for="unprocessedChip" value="Sin Procesar" position="top"/>
+                                
+                                <p:chip id="processedChip" icon="pi pi-exclamation-circle" styleClass="has-background-success" rendered="#{inventario.processed}"/>
+                                <p:tooltip for="processedChip" value="Procesada" position="top"/>
+                                
+                                <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" rendered="#{inventario.status}"/>
+                                <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+                                
+                                <p:chip id="inActiveChip" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!inventario.status}"/>
+                                <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                            </p:column>
+                            
+                            <p:column width="4%">
+                                <div class="buttons">
+                                    <p:commandButton styleClass="button is-rounded is-info" icon="pi pi-eye" process="@this"
+                                                     onclick="PF('AjusteDetailsDialog').show();" update="inventarioTable:selectedArticulo">
+                                            <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
+                                    </p:commandButton>
+                                </div>
                             </p:column>
                             
                             <p:column headerText="Código" visible="false">
@@ -87,12 +97,7 @@
                             <p:column headerText="Usuario" width="7%">
                                 <h:outputText value="#{inventario.usuario.username}"/>
                             </p:column>
-                            
-                            <p:column width="5%">
-                                <p:chip icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!inventario.processed}"/>
-                                <p:chip icon="pi pi-check" styleClass="has-background-success" rendered="#{inventario.status}"/>
-                            </p:column>
-                            
+                                                        
                             <p:column width="4%">
                                 <p:commandButton styleClass="button is-rounded is-danger" icon="pi pi-trash"
                                         actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update="dynamicContent inventarioTable">

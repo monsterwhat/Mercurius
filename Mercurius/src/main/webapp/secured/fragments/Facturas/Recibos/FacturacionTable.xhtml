@@ -35,19 +35,18 @@
                         </div>
                         <ui:include src="../../Inventario/Upload/subirFacturas.xhtml"/>
 
-                        <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTable"
-                                     paginator="true" rows="8" paginatorPosition="bottom" id="FacturasTableData" reflow="true"
+                        <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="FacturasTableData"
                                      emptyMessage="No se encontraron registros de factura con la critería proporcionada"
                                      globalFilterFunction="#{facturasController.globalFilterFunction}"
-                                     filterBy="#{facturasController.filterBy}"
+                                     filterBy="#{facturasController.filterBy}" reflow="true" rowSelectMode="add"
                                      selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
-                            
                             <p:ajax event="rowSelect" update="buttonSync buttonSee buttonDelete"/>
                             <p:ajax event="toggleSelect" update="buttonSync buttonSee buttonDelete"/>
                             
                             <f:facet name="header">
                                 <div class="field columns is-mobile">
-                                    <p:inputText id="globalFilter" onkeyup="PF('FacturasTable').filter()"
+                                    <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
                                              placeholder="Búsqueda general de todos los campos" styleClass="input column"/>
 
                                     <ui:include src="../../Facturas/Recibos/verDetallesFactura.xhtml"/>
@@ -78,19 +77,19 @@
                             
                             <p:column headerText="Acciones" width="20%" exportable="false">
                                 <div class="buttons">
-                                    <p:commandButton id="buttonSync" styleClass="button is-success is-1 is-rounded is-mobile" disabled="#{!factura.status}" process="@this"
-                                                     icon="pi pi-sync" onclick="#{facturasController.processSelectedFactura()}" update="FacturasTableData">
-                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
+                                    <p:commandButton id="buttonSync" styleClass="button is-success is-1 is-rounded is-mobile" disabled="#{factura.status}" process="@this"
+                                                     icon="pi pi-sync" actionListener="#{facturasController.processSelectedFactura()}" update="FacturasTableData">
+                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
                                     </p:commandButton>
                                     
                                     <p:commandButton id="buttonSee" styleClass="button is-1 is-rounded is-mobile" process="@this" update="lineasDetalleTable"
                                                      icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
-                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                     </p:commandButton>
                                     
                                     <p:commandButton id="buttonDelete" styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                        actionListener="#{facturasController.deleteFactura()}" process="@this" update="dynamicContent facturaTable">
-                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                                    actionListener="#{facturasController.deleteFactura()}" process="@this" update="dynamicContent facturaTable">
+                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                     </p:commandButton>
                                 </div>
                             </p:column>

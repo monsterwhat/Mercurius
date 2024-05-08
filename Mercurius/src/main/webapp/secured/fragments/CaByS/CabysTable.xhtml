@@ -16,66 +16,9 @@
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="cabysTableForm">
-                    <p:growl id="growl" showDetail="true" />
-                    <div class="columns">
-                        <div class="column">
-                            <p:commandButton value="Cargar Catálogo de Bienes y Servicios" icon="pi pi-cloud-download"
-                                            process="@this" update="CabysTable cabysTableForm" rendered="#{!CabysController.cabysStatus}"
-                                            actionListener="#{CabysController.cabysListApi}" 
-                                            styleClass="button is-danger"
-                                            />
-                        </div>
-                        <div class="column has-text-centered">
-                            <h1 class="title is-6">Seleccione las casillas que desee mostrar</h1>
-                            <p:selectManyCheckbox id="ColumnPicker" value="#{ViewController.selectedOptions}" widgetVar="blub">
-                                <p:ajax listener="#{ViewController.selectedOptionsChanged}" update="CabysTable"/>
-                                <f:selectItem itemLabel="Codigo" itemValue="codigo"/>
-                                <f:selectItem itemLabel="Categoria" itemValue="categoria"/>
-                                <f:selectItem itemLabel="Descripcion" itemValue="descripcion"/>
-                                <f:selectItem itemLabel="Impuesto" itemValue="impuesto"/>
-                            </p:selectManyCheckbox>
-                        </div>
-                        <div class="column buttons">
-                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="button is-fullwidth" ajax="false">
-                                <p:dataExporter type="xlsx" target="CabysTable" fileName="Cabys-Mercurius" />
-                            </p:commandButton>
-                            <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="button is-fullwidth" ajax="false">
-                                <p:dataExporter type="pdf" target="CabysTable" fileName="Cabys-Mercurius" />
-                            </p:commandButton>
-                        </div>
-                    </div>
-                        
-                        <p:dataTable value="#{CabysController.filteredCabys}" var="cabys"  widgetVar="CabysTable"
-                                     paginator="true" rows="10" paginatorPosition="bottom" id="CabysTable"
-                                     emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
-                                     globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
-                                     filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
-                                     selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
-                            
-                            <f:facet name="header">
-                                <p:inputText id="globalFilter" onkeyup="PF('CabysTable').filter()"
-                                             placeholder="Búsqueda general de todos los campos" styleClass="input"/>
-                            </f:facet>
-                            
-                            <p:column headerText="Código" sortBy="#{cabys.codigo}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('codigo')}">
-                                <h:outputText value="#{cabys.codigo}" />
-                            </p:column>
-                            <p:column headerText="Categoría" sortBy="#{cabys.categorias}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('categoria')}">
-                                <h:outputText value="#{cabys.categorias}" />
-                            </p:column>
-                            <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('descripcion')}">
-                                <h:outputText value="#{cabys.descripcion}" />
-                            </p:column>
-                            <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('impuesto')}">
-                                <h:outputText value="#{cabys.impuesto}" />
-                            </p:column>
-                            <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">
-                                <h:outputText value="#{cabys.estado}" />
-                            </p:column>
-
-                        </p:dataTable>
-                    </h:form>
+                    
+                    <ui:include src="./Forms/TableForm.xhtml"/>
+                    
                 </div>
             </div>
         </div>

@@ -12,18 +12,18 @@
     
     <h:body>
         <!-- Dialog for Código CABYS -->
-        <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog" fitViewport="true" blockScroll="true"
+        <p:dialog header="Seleccionar Articulo" widgetVar="ArticuloRevisionDialog" fitViewport="true" blockScroll="true"
          resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
                         
-            <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" liveScroll="true"  widgetVar="CabysTable"
-                        paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable" touchable="true"
+            <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo" liveScroll="true"  widgetVar="ArticuloTable"
+                        paginator="true" rows="5" paginatorPosition="bottom" id="ArticuloTable" touchable="true"
                         emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
                         globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
                         filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
                         selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
 
                 <f:facet name="header">
-                    <p:inputText id="globalFilter" onkeyup="PF('CabysTable').filter()"
+                    <p:inputText id="globalFilter" onkeyup="PF('ArticuloTable').filter()"
                                  placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                 </f:facet>
 
@@ -43,8 +43,8 @@
 
             </p:dataTable>
         
-                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{CabysController.selectCabysEdit()}" 
-                                 onclick="PF('codigoCabysDialog').hide();" immediate="true" update=""
+                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{ArticulosController.selectCabysEdit()}" 
+                                 onclick="PF('ArticuloRevisionDialog').hide();" immediate="true" update=""
                          />
             
         </p:dialog>

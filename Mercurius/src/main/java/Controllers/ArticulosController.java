@@ -15,7 +15,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -35,7 +34,11 @@ public class ArticulosController implements Serializable {
     @Inject private InventarioService inventarioService;
     @Inject private SessionController currentSession;
     
-    private List<Articulos> articulosList;
+    private List<Articulos> articulosActivos;
+    private List<Articulos> articulos;
+    private List<Articulos> sinProcesar;
+    private List<Articulos> activosYProcesados;
+    private List<Articulos> inactivos;
     private Articulos selectedArticulo;
     private Articulos newArticulo;
     private String articulosFilter;
@@ -51,17 +54,43 @@ public class ArticulosController implements Serializable {
     public void init() {
         newArticulo = new Articulos();
         selectedArticulo = new Articulos();
-        articulosList();
         filterBy = new ArrayList<>();
         updateDepartamentoAndFamiliaOptions(); 
     }
 
-    public List<Articulos> articulosList() {
-        return articulosService.ListAllEnabled();
+    public List<Articulos> articulosActivos() {
+        if(articulosActivos == null){
+            articulosActivos = articulosService.ListAllEnabled();
+        }
+        return articulosActivos;
     }
     
-    public List<Articulos> articulosListFull() {
-        return articulosService.listAll();
+    public List<Articulos> articulosFull() {
+        if(articulos == null){
+            articulos = articulosService.listAll();
+        }
+        return articulos;
+    }
+    
+    public List<Articulos> articulosSinProcesar(){
+        if(sinProcesar == null){
+            sinProcesar = articulosService.listAllSinProcesar();
+        }
+        return sinProcesar;
+    }
+    
+    public List<Articulos> articulosActivosYProcesados(){
+        if(activosYProcesados == null){
+            activosYProcesados = articulosService.listAllActivosYProcesados();
+        }
+        return activosYProcesados;
+    }
+    
+    public List<Articulos> articulosInactivos(){
+        if(inactivos == null){
+            inactivos = articulosService.listAllInactivos();
+        }
+        return inactivos;
     }
 
     public long articulosCount() {
@@ -99,6 +128,23 @@ public class ArticulosController implements Serializable {
         }
     }
     
+    public void updateArticuloRevision() {
+        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
+            selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+            selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
+            selectedArticulo.setUsuario(currentSession.getCurrentUser());
+            selectedArticulo.setProcessed(true);
+            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
+                articulosService.updateAndDisable(selectedArticulo);
+                clearCache();
+                clearArticulo();
+                
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
+            }
+        }
+    }
+    
     public void updateSimpleArticulo(Articulos articulo){
         articulosService.updateAndDisable(articulo);
     }
@@ -129,40 +175,92 @@ public class ArticulosController implements Serializable {
     }
 
     public void clearSelectedArticulo() {
-        resetArticulos();
-        newArticulo = null;
-        selectedArticulo = null;
+        clearCache();
+        clearArticulo();
         viewManager.selectViewArticulos();
     }
     
     public void clearSelectedArticuloDetallado() {
-        resetArticulos();
-        newArticulo = null;
-        selectedArticulo = null;
+        clearCache();
+        clearArticulo();
         viewManager.selectViewArticulosDetallado();
     }
     
-    public void resetArticulos(){
-        articulosList = null;
+    public void clearArticulo(){
+        newArticulo = null;
+        selectedArticulo = null;
+    }
+    
+    public void clearCache(){
+        articulos = null;
+        articulosActivos = null;
+        sinProcesar = null;
+        activosYProcesados = null; 
+        updateDepartamentoAndFamiliaOptions();
     }
 
-    public List<Articulos> getFilteredArticulos() {
+    public List<Articulos> getFilteredArticulosActivos() {
+        if(articulosActivos == null){
+            articulosActivos = articulosService.ListAllEnabled();
+        }
         if (articulosFilter != null && !articulosFilter.isEmpty()) {
-            return articulosList().stream()
+            return articulosActivos().stream()
                     .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
         } else {
-            return articulosList();
+            return articulosActivos();
         }
     }
     
-    public List<Articulos> getFilteredArticulosDetallado() {
+    public List<Articulos> getFilteredArticulosFull() {
+        if(articulos == null){
+            articulos = articulosService.listAll();
+        }
         if (articulosFilter != null && !articulosFilter.isEmpty()) {
-            return articulosListFull().stream()
+            return articulosFull().stream()
                     .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
         } else {
-            return articulosListFull();
+            return articulosFull();
+        }
+    }
+    
+    public List<Articulos> getFilteredArticulosSinProcesar() {
+        if(sinProcesar == null){
+            sinProcesar = articulosService.listAllSinProcesar();
+        }
+        if (articulosFilter != null && !articulosFilter.isEmpty()) {
+            return articulosSinProcesar().stream()
+                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return articulosSinProcesar();
+        }
+    }
+    
+    public List<Articulos> getFilteredArticulosActivosYProcesados() {
+        if(activosYProcesados == null){
+            activosYProcesados = articulosService.listAllActivosYProcesados();
+        }
+        if (articulosFilter != null && !articulosFilter.isEmpty()) {
+            return articulosActivosYProcesados().stream()
+                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return articulosActivosYProcesados();
+        }
+    }
+    
+    public List<Articulos> getFilteredArticulosInactivos() {
+        if(inactivos == null){
+            inactivos = articulosService.listAllInactivos();
+        }
+        if (articulosFilter != null && !articulosFilter.isEmpty()) {
+            return articulosInactivos().stream()
+                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return articulosInactivos();
         }
     }
 
