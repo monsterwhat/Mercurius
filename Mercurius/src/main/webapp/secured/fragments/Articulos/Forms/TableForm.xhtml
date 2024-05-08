@@ -13,18 +13,7 @@
 
 <h:body>
     <h:form id="articulosTable">
-        <p:toolbar>
-            <p:toolbarGroup align="right">
-                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
-                    <p:dataExporter type="xlsx" target="ArticulosTableData" fileName="Articulos-Mercurius-Excel" />
-                </p:commandButton>
-                <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help" ajax="false">
-                    <p:dataExporter type="pdf" target="ArticulosTableData" fileName="Articulos-Mercurius-PDF" />
-                </p:commandButton>
-            </p:toolbarGroup>
-        </p:toolbar>
-
-        <p:dataTable value="#{ArticulosController.filteredArticulos}" var="articulo"  widgetVar="ArticulosTable"
+        <p:dataTable value="#{ArticulosController.filteredArticulosActivos}" var="articulo"  widgetVar="ArticulosTable"
                      paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
                      emptyMessage="No se encontraron artículos con la critería proporcionada"
                      globalFilterFunction="#{ArticulosController.globalFilterFunction}"
@@ -75,9 +64,7 @@
             <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}" width="10%">
                 <h:outputText value="#{articulo.precioCostoConIVA}"/>
             </p:column>
-            <p:column headerText="Stock" width="6%">
-                <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
-            </p:column>
+
 
             <p:column headerText="Acciones" exportable="false">
                 <div class="buttons has-addons">

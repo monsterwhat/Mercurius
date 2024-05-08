@@ -1,0 +1,72 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <title>Artículos</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    </h:head>
+    
+    <h:body>
+        <div class="box">
+            <div class="columns is-centered">
+                <div class="column">
+                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" update="dynamicContent" actionListener="#{ViewController.selectNone}" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                    <br/>
+                    <h:form id="inventarioInactivoTable">
+                        <p:dataTable value="#{InventarioController.filteredInventarioInactivo}" var="movimiento"  widgetVar="InventarioInactivoTable"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="InventarioInactivoTableData"
+                                     emptyMessage="No se encontraron artículos con la critería proporcionada"
+                                     globalFilterFunction="#{InventarioController.globalFilterFunction}"
+                                     filterBy="#{InventarioController.filterBy}" liveScroll="true" touchable="true"
+                                     selection="#{InventarioController.selectedInventario}" rowKey="#{movimiento.codigo}">
+                            
+                            <f:facet name="header">
+                                <p:inputText id="globalFilter" onkeyup="PF('InventarioInactivoTable').filter()"
+                                             placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                            </f:facet>
+                            
+                            <p:column width="5%">
+                                <p:chip icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!movimiento.processed}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Código" sortBy="#{movimiento.codigo}" visible="false">
+                                <h:outputText value="#{movimiento.codigo}"/>
+                            </p:column>
+                            <p:column headerText="Nombre" sortBy="#{movimiento.articulo.nombre}">
+                                <h:outputText value="#{movimiento.articulo.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Codigo Barra" sortBy="#{movimiento.articulo.codigoBarra}">
+                                <h:outputText value="#{movimiento.articulo.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Cantidad" sortBy="#{movimiento.cantidad}">
+                                <h:outputText value="#{movimiento.cantidad}"/>
+                            </p:column>
+                            <p:column headerText="Fecha" sortBy="#{movimiento.fechaMovimiento}">
+                                <h:outputText value="#{movimiento.fechaMovimiento}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Acciones" exportable="false">
+                                <div class="buttons has-addons">
+                                    <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
+                                    process="@this">
+                                        <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
+                                    </p:commandButton>
+                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                    process="@this" update="dynamicContent inventarioInactivoTable">
+                                        <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
+                                    </p:commandButton>
+                                </div>
+                            </p:column>
+                        </p:dataTable>
+                    </h:form>
+                </div>
+            </div>
+        </div>
+    </h:body>
+
+</ui:composition>

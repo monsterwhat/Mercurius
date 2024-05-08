@@ -144,4 +144,34 @@ public class ArticulosService extends GService<Articulos> {
             return null;
         }    }
 
+    public List<Articulos> listAllSinProcesar() {
+        try {
+            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.processed = false AND a.status = true", Articulos.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all enabled entities: " + e.toString());
+            return null;
+        }    
+    }
+
+    public List<Articulos> listAllActivosYProcesados() {
+        try {
+            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.processed = true AND a.status = true", Articulos.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all enabled entities: " + e.toString());
+            return null;
+        }     
+    }
+    
+    public List<Articulos> listAllInactivos() {
+        try {
+            TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.status = false", Articulos.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all enabled entities: " + e.toString());
+            return null;
+        }     
+    }
+
 }

@@ -9,13 +9,6 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
-
-        <style>
-            .inactive-row {
-                background-color: #999999 !important;
-                color: #ffffff !important;
-            }
-        </style>
     </h:head>
     
     <h:body>
@@ -37,10 +30,9 @@
                             </p:toolbarGroup>
                         </p:toolbar>
                         
-                        <p:dataTable value="#{ArticulosController.filteredArticulosDetallado}" var="articulo"  widgetVar="ArticulosTableDetallado"
+                        <p:dataTable value="#{ArticulosController.filteredArticulosFull}" var="articulo"  widgetVar="ArticulosTableDetallado"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
                                      emptyMessage="No se encontraron artículos con la critería proporcionada"
-                                     rowStyleClass="#{articulo.status == 'false' ? 'inactive-row' : null}"
                                      globalFilterFunction="#{ArticulosController.globalFilterFunction}"
                                      filterBy="#{ArticulosController.filterBy}" reflow="true" 
                                      selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">

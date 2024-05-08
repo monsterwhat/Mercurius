@@ -26,10 +26,20 @@
                                      icon="pi pi-box" rendered="#{SessionController.inventarios}"/>
                     <p:menu overlay="true" trigger="InventariosButton" my="left top" at="left bottom">
                         <p:submenu label="Inventarios">
-                            <p:menuitem value="Ver Artículos" icon="pi pi-eye" action="#{ViewController.selectViewArticulos}" update="dynamicContent"/>
                             <p:menuitem value="Ver Departamentos" icon="pi pi-truck" action="#{ViewController.selectViewDepartamentos}" update="dynamicContent"/>
                             <p:menuitem value="Ver Familias" icon="pi pi-th-large" action="#{ViewController.selectViewFamilias}" update="dynamicContent" />
-                            <p:menuitem value="Ver Movimientos" icon="pi pi-pencil" action="#{ViewController.selectViewInventario}" update="dynamicContent"/>
+                        </p:submenu>
+                        <p:submenu label="Movimientos">
+                            <p:menuitem value="Catalogo Actual" icon="pi pi-check-circle" action="#{ViewController.selectViewInventarioActivoYProcesado}" update="dynamicContent"/>
+                            <p:menuitem value="Catalogo Pendiente" icon="pi pi-hourglass" action="#{ViewController.selectViewInventarioSinProcesar}" update="dynamicContent"/>
+                            <p:menuitem value="Moviemientos Activos" icon="pi pi-check" action="#{ViewController.selectViewInventario}" update="dynamicContent"/>
+                            <p:menuitem value="Moviemientos Inactivos" icon="pi pi-times" action="#{ViewController.selectViewInventarioInactivo}" update="dynamicContent"/>
+                        </p:submenu>
+                        <p:submenu label="Artículos">
+                            <p:menuitem value="Catalogo Actual" icon="pi pi-check-circle" action="#{ViewController.selectViewArticulosActivosYProcesados}" update="dynamicContent"/>
+                            <p:menuitem value="Catalogo Pendiente" icon="pi pi-hourglass" action="#{ViewController.selectViewArticulosSinProcesar}" update="dynamicContent"/>
+                            <p:menuitem value="Artículos Activos" icon="pi pi-check" action="#{ViewController.selectViewArticulos}" update="dynamicContent"/>
+                            <p:menuitem value="Artículos Inactivos" icon="pi pi-times" action="#{ViewController.selectViewArticulosInactivos}" update="dynamicContent"/>
                         </p:submenu>
                     </p:menu>
                 </div>

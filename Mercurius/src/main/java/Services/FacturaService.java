@@ -1,20 +1,15 @@
-package Services.Facturas;
+package Services;
 
 import Models.Facturas.Factura;
-import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
-import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @Named
 public class FacturaService extends GService<Factura> {
     
-    @PersistenceContext EntityManager em;
-
     @Override
     protected Class<Factura> getEntityClass() {
         return Factura.class;
@@ -119,7 +114,7 @@ public class FacturaService extends GService<Factura> {
     
     public List<Factura> ListAllEnabled() {
         try {
-            TypedQuery<Factura> query = em.createQuery("SELECT f FROM Factura f WHERE f.Status = 1", Factura.class);
+            TypedQuery<Factura> query = em.createQuery("SELECT f FROM Factura f WHERE f.Status = true", Factura.class);
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all enabled entities: " + e.toString());

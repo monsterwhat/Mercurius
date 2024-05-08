@@ -133,7 +133,7 @@
                         <div class="column">
                             <p:selectOneMenu id="departamentoSelect" value="#{ArticulosController.departamentoID}"
                                              required="true" requiredMessage="El Departamento no puede estar vacío"
-                                             styleClass="input" widgetVar="departamentoSelect" >\
+                                             styleClass="input" widgetVar="departamentoSelect" >
                                 <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
                                 <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
                                                itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />

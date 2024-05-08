@@ -56,6 +56,21 @@
                     </p:column>
                 </p:dataTable>
             </div>
+                
+            <div class="columns buttons">
+                <div class="column is-2">
+                    <p:commandButton value="Procesar" styleClass="button is-fullwidth is-rounded is-success" icon="pi pi-sync"
+                            actionListener="#{ViewController.selectSyncInventario}" rendered="#{SessionController.inventarios}"
+                            process="@this" update="dynamicContent" immediate="true">
+                            <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
+                            <p:resetInput target="InventarioTableData"/>
+                    </p:commandButton>                
+                </div>
+                <div class="column is-fullwidth">
+                    <p:commandButton styleClass="button is-fullwidth is-warning" value="Editar"/>
+                </div>
+            </div>
+                
         </p:outputPanel>
         
     </p:dialog>

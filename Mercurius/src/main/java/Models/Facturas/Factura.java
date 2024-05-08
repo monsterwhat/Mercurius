@@ -35,7 +35,7 @@ public class Factura {
     @OneToOne
     private ResumenFactura resumenFactura;
     
-    private boolean Status;
+    private Boolean status;
     
     private Users user;
 

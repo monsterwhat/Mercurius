@@ -84,6 +84,18 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'createArticulosDetallado'}">
                             <ui:include src="./fragments/Articulos/Detallados/CreateArticuloDetallado.xhtml" />
                         </ui:fragment>
+                            <!-- ARTICULOS Pendientes -->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulosPendientes'}">
+                            <ui:include src="./fragments/Articulos/PendientesRevision/ArticulosPendientesTable.xhtml" />
+                        </ui:fragment>
+                            <!-- ARTICULOS Activos y Procesados -->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulosActivosYProcesados'}">
+                            <ui:include src="./fragments/Articulos/ActivosYProcesados/ArticulosActivosYProcesados.xhtml" />
+                        </ui:fragment> 
+                            <!-- ARTICULOS Inactivos -->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulosInactivos'}">
+                            <ui:include src="./fragments/Articulos/Inactivos/ArticulosInactivos.xhtml" />
+                        </ui:fragment>
                             <!-- Departamentos -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewDepartamentos'}">
                             <ui:include src="./fragments/Departamentos/DepartamentosTable.xhtml" />
@@ -126,10 +138,25 @@
                             <!-- Inventarios Detallados-->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventariosDetallado'}">
                             <ui:include src="./fragments/Inventario/Detallados/InventariosTableDetallada.xhtml"/>
-                        </ui:fragment>                            <!-- CABYS -->
+                        </ui:fragment> 
+                            <!-- Inventarios Pendientes-->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventarioSinProcesar'}">
+                            <ui:include src="./fragments/Inventario/PendientesRevision/InventariosPendientesTable.xhtml"/>
+                        </ui:fragment> 
+                            <!-- Inventarios Activos y Procesados-->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventarioActivoYProcesado'}">
+                            <ui:include src="./fragments/Inventario/ActivoYProcesado/InventarioActivoYProcesado.xhtml"/>
+                        </ui:fragment>
+                            <!-- Inventarios Inactivos-->
+                        <ui:fragment rendered="#{ViewController.selectedOption eq 'viewInventarioInactivo'}">
+                            <ui:include src="./fragments/Inventario/Inactivos/InventarioInactivo.xhtml"/>
+                        </ui:fragment>
+                            <!-- CABYS -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewCabys'}">
                             <ui:include src="./fragments/CaByS/CabysTable.xhtml" />
                         </ui:fragment>
+
+                            
                             <!-- Facturas -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewFacturas'}">
                             <ui:include src="./fragments/Facturas/Recibos/FacturacionTable.xhtml" />

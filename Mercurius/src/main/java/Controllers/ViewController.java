@@ -92,12 +92,28 @@ public class ViewController implements Serializable {
         selectedOption = "viewInventarios";
     }
     
+    public void selectViewInventarioInactivo(){
+        selectedOption = "viewInventarioInactivo";
+    }
+    
+    public void selectViewInventarioSinProcesar(){
+        selectedOption = "viewInventarioSinProcesar";
+    }
+    
+    public void selectViewInventarioActivoYProcesado(){
+        selectedOption = "viewInventarioActivoYProcesado";
+    }
+    
     public void selectViewInventarioDetallado(){
         selectedOption = "viewInventariosDetallado";
     }
     
     public void selectEditInventario(){
         selectedOption="editInventarios";
+    }
+    
+    public void selectSyncInventario(){
+        selectedOption="syncInventarios";
     }
     
     public void selectCreateInventario(){
@@ -107,6 +123,18 @@ public class ViewController implements Serializable {
     
     public void selectViewArticulos(){
         selectedOption="viewArticulos";
+    }
+    
+    public void selectViewArticulosSinProcesar(){
+        selectedOption="viewArticulosPendientes";
+    }
+    
+    public void selectViewArticulosActivosYProcesados(){
+        selectedOption="viewArticulosActivosYProcesados";
+    }
+    
+    public void selectViewArticulosInactivos(){
+        selectedOption="viewArticulosInactivos";
     }
     
     public void selectViewArticulosDetallado(){

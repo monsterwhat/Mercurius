@@ -1,6 +1,5 @@
 package Services;
 
-import Models.Articulos;
 import Models.Inventario;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
@@ -125,6 +124,36 @@ public class InventarioService extends GService<Inventario> {
             System.out.println("Error calculating total stock for item by barcode: " + e.toString());
             return 0;
         }
+    }
+
+    public List<Inventario> listAllSinProcesar() {
+        try {
+            TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = false", Inventario.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all entities: " + e.toString());
+            return null;
+        }
+    }
+
+    public List<Inventario> listAllActivosYProcesados() {
+    try {
+            TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = true", Inventario.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all entities: " + e.toString());
+            return null;
+        }    
+    }
+
+    public List<Inventario> listAllInactivos() {
+    try {
+            TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = false", Inventario.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all entities: " + e.toString());
+            return null;
+        }     
     }
 
 
