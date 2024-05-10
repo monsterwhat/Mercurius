@@ -5,6 +5,7 @@ import Models.Articulos;
 import Services.InventarioService;
 import Services.ArticulosService;
 import jakarta.annotation.PostConstruct;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
@@ -36,6 +37,7 @@ public class InventarioController implements Serializable {
     private List<Inventario> inactivos;
 
     private Inventario selectedInventario;
+    private Articulos selectedArticulo;
     private Inventario newInventario;
     private String inventarioFilter;
     private List<FilterMeta> filterBy;
@@ -48,6 +50,7 @@ public class InventarioController implements Serializable {
         newInventario = new Inventario();
         selectedInventario = new Inventario();
         filterBy = new ArrayList<>();
+        selectedArticulo = new Articulos();
     }
 
     public List<Inventario> inventarioList() {
@@ -283,6 +286,16 @@ public class InventarioController implements Serializable {
                 || inventario.getUsuario().getUsername().toLowerCase().contains(filterText);
     }
     
+    public void articuloSelectedEdit() {
+        if (selectedArticulo != null) {
+            selectedInventario.setArticulo(selectedArticulo);
+        } else {
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
+    
+    }
+    
     public void clearCache(){
         inventario = null;
         inventarioActivo = null;
@@ -295,9 +308,9 @@ public class InventarioController implements Serializable {
         selectedInventario = null;
     }
     
-    public int getStock(Articulos articulo){
+    public double getStock(Articulos articulo){
         String codigoBarra = articulo.getCodigoBarra();
-        int totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
+        double totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
         return totalStock;
     }
     

@@ -22,7 +22,7 @@
                                      paginator="true" rows="8" paginatorPosition="bottom" id="InventarioInactivoTableData"
                                      emptyMessage="No se encontraron artículos con la critería proporcionada"
                                      globalFilterFunction="#{InventarioController.globalFilterFunction}"
-                                     filterBy="#{InventarioController.filterBy}" liveScroll="true" touchable="true"
+                                     filterBy="#{InventarioController.filterBy}" reflow="true"
                                      selection="#{InventarioController.selectedInventario}" rowKey="#{movimiento.codigo}">
                             
                             <f:facet name="header">
@@ -30,8 +30,11 @@
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
                             
-                            <p:column width="5%">
-                                <p:chip icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!movimiento.processed}"/>
+                            <p:column exportable="false">
+                                <p:chip id="sinProcesar" icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!movimiento.processed}"/>
+                                <p:tooltip for="sinProcesar" value="Sin Procesar" position="top"/>                            
+                                <p:chip id="inactivo" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!movimiento.status}"/>
+                                <p:tooltip for="inactivo" value="Inactiva" position="top"/>
                             </p:column>
                             
                             <p:column headerText="Código" sortBy="#{movimiento.codigo}" visible="false">
@@ -41,7 +44,7 @@
                                 <h:outputText value="#{movimiento.articulo.nombre}"/>
                             </p:column>
                             <p:column headerText="Codigo Barra" sortBy="#{movimiento.articulo.codigoBarra}">
-                                <h:outputText value="#{movimiento.articulo.nombre}"/>
+                                <h:outputText value="#{movimiento.articulo.codigoBarra}"/>
                             </p:column>
                             <p:column headerText="Cantidad" sortBy="#{movimiento.cantidad}">
                                 <h:outputText value="#{movimiento.cantidad}"/>
@@ -51,12 +54,12 @@
                             </p:column>
                             
                             <p:column headerText="Acciones" exportable="false">
-                                <div class="buttons has-addons">
-                                    <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
+                                <div class="buttons">
+                                    <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
                                     process="@this">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
                                     </p:commandButton>
-                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                    <p:commandButton styleClass="button is-warning is-rounded" icon="pi pi-trash"
                                     process="@this" update="dynamicContent inventarioInactivoTable">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
                                     </p:commandButton>

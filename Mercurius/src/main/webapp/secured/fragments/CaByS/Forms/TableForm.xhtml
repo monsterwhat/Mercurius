@@ -17,7 +17,7 @@
                     <div class="columns">
                         <div class="column">
                             <p:commandButton value="Cargar Catálogo de Bienes y Servicios" icon="pi pi-cloud-download"
-                                            process="@this" update="CabysTable cabysTableForm" rendered="#{!CabysController.cabysStatus}"
+                                            process="@this" update="CabysTable cabysTableForm" rendered="#{empty CabysController.catalogo}"
                                             actionListener="#{CabysController.cabysListApi}" 
                                             styleClass="button is-danger"
                                             />

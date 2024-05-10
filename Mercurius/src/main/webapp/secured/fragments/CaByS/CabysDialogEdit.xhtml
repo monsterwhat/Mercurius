@@ -12,41 +12,44 @@
     
     <h:body>
             <!-- Dialog for Código CABYS -->
-    <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog"
-            modal="true" resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
-            <p:dataTable value="#{CabysController.filteredCabys}" var="cabys"  widgetVar="CabysTable"
-                    paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable"
+            <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog" responsive="true" fitViewport="true">
+                <p:outputPanel rendered="#{not empty CabysController.articulos}">
+                <h:form>
+                        
+                <p:dataTable value="#{CabysController.filteredCabys}" var="cabys"  widgetVar="UpdateCabysTable"
+                    paginator="true" rows="5" paginatorPosition="bottom" id="UpdateCabysTable"
                     emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
-                    globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
-                    filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
+                    globalFilterFunction="#{CabysController.globalFilterFunction}"
+                    filterBy="#{CabysController.filterBy}" showGridlines="true" reflow="true"
                     selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
 
-           <f:facet name="header">
-               <p:inputText id="globalFilter" onkeyup="PF('CabysTable').filter()"
-                            placeholder="Búsqueda general de todos los campos" styleClass="input"/>
-           </f:facet>
+                <f:facet name="header">
+                    <p:inputText id="globalFilter" onkeyup="PF('UpdateCabysTable').filter()"
+                                 placeholder="#{ArticulosController.selectedArticulo.recomendacionCabys}" styleClass="input"/>
+                </f:facet>
 
-           <p:column selectionMode="single" style="width: 3%" />
-           <p:column headerText="Código" sortBy="#{cabys.codigo}">
-               <h:outputText value="#{cabys.codigo}" />
-           </p:column>
-           <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}">
-               <h:outputText value="#{cabys.descripcion}" />
-           </p:column>
-           <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}">
-               <h:outputText value="#{cabys.impuesto}" />
-           </p:column>
-           <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">
-               <h:outputText value="#{cabys.estado}" />
-           </p:column>
+                <p:column selectionMode="single" style="width: 3%" />
+                <p:column headerText="Código" sortBy="#{cabys.codigo}">
+                    <h:outputText value="#{cabys.codigo}" />
+                </p:column>
+                <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}">
+                    <h:outputText value="#{cabys.descripcion}" />
+                </p:column>
+                <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}">
+                    <h:outputText value="#{cabys.impuesto}" />
+                </p:column>
+                <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">
+                    <h:outputText value="#{cabys.estado}" />
+                </p:column>
 
-          </p:dataTable>
+                </p:dataTable>
         
-        <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{CabysController.selectCabysEdit}" 
-                         onsuccess="PF('codigoCabysDialog').hide();" update="editArticuloForm" 
-                         immediate="true"/>
+                <p:commandButton value="Seleccionar" process="@form" styleClass="button is-fullwidth" action="#{CabysController.selectCabysEdit}" 
+                                 onsuccess="PF('codigoCabysDialog').hide();"/>
 
-    </p:dialog>
+                </h:form>
+            </p:outputPanel>
+        </p:dialog>
     </h:body>
 
 </ui:composition>

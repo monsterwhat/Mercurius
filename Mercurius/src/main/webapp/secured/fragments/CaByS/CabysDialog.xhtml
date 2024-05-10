@@ -12,18 +12,17 @@
     
     <h:body>
         <!-- Dialog for Código CABYS -->
-        <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog" fitViewport="true" blockScroll="true"
-         resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
+        <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog" responsive="true">
                         
-            <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" liveScroll="true"  widgetVar="CabysTable"
-                        paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable" touchable="true"
+            <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" widgetVar="CabysTableCreate"
+                        paginator="true" rows="5" paginatorPosition="bottom" id="CabysTableCreate"
                         emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
-                        globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
-                        filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
+                        globalFilterFunction="#{CabysController.globalFilterFunction}"
+                        filterBy="#{CabysController.filterBy}" showGridlines="true" reflow="true"
                         selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
 
                 <f:facet name="header">
-                    <p:inputText id="globalFilter" onkeyup="PF('CabysTable').filter()"
+                    <p:inputText id="globalFilter" onkeyup="PF('CabysTableCreate').filter()"
                                  placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                 </f:facet>
 
@@ -43,8 +42,8 @@
 
             </p:dataTable>
         
-                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{CabysController.selectCabysEdit()}" 
-                                 onclick="PF('codigoCabysDialog').hide();" immediate="true" update=""
+                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{CabysController.selectCabysCreate()}" 
+                                 onclick="PF('codigoCabysDialog').hide();" immediate="true"
                          />
             
         </p:dialog>

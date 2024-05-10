@@ -115,6 +115,22 @@ public class ArticulosController implements Serializable {
         }
     }
     
+    public void updateArticuloByDialog() {
+        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
+            selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+            selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
+            selectedArticulo.setUsuario(currentSession.getCurrentUser());
+            selectedArticulo.setProcessed(true);
+            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
+                articulosService.updateAndDisable(selectedArticulo);
+                clearCache();
+                clearArticulo();
+            }
+        }else{
+            System.out.println("Not working...");
+        }
+    }
+    
     public void updateArticuloDetallado() {
         if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
             selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
@@ -159,6 +175,23 @@ public class ArticulosController implements Serializable {
                 newArticulo.setStatus(true);
                 articulosService.create(newArticulo);
                 clearSelectedArticulo();
+            }
+        }
+    }
+    
+    public void createArticuloByDialog() {
+        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
+            newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+            newArticulo.setFamilia(familiaService.findById(FamiliaID));
+            newArticulo.setUsuario(currentSession.getCurrentUser());
+            newArticulo.setProcessed(true);
+            if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null && newArticulo.getUsuario() != null){
+                newArticulo.setStatus(true);
+                articulosService.create(newArticulo);
+                clearCache();
+                clearArticulo();
+            }else{
+                System.out.println("Falto Info!");
             }
         }
     }
@@ -273,12 +306,15 @@ public class ArticulosController implements Serializable {
         Articulos articulo = (Articulos) value;
         return String.valueOf(articulo.getCodigo()).contains(filterText)
                 || articulo.getNombre().toLowerCase().contains(filterText)
-                || String.valueOf(articulo.getCodigoBarra()).contains(filterText);
+                || articulo.getCodigoBarra().toLowerCase().contains(filterText)
+                || articulo.getDepartamento().getNombre().toLowerCase().contains(filterText)
+                || articulo.getFamilia().getNombre().toLowerCase().contains(filterText)
+                || articulo.getUsuario().getUsername().toLowerCase().contains(filterText);
     }
     
     public void calcularPrecioConIVA() {
         if (newArticulo != null) {
-            if (newArticulo.getPrecioFinal() != 0) {
+            if (newArticulo.getPrecioFinal() != 0 && newArticulo.getCodigoCabys() != null) {
                 double impuesto = newArticulo.getCodigoCabys().getImpuesto();
                 double precioSinIVA = newArticulo.getPrecioFinal();
                 double IVA = precioSinIVA * (impuesto * 0.01);
@@ -329,6 +365,8 @@ public class ArticulosController implements Serializable {
             }else{
                 FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
             }
+        }else{
+            System.out.println("No hay articulo para editar...");
         }
         } catch (Exception e) {
             System.out.println("Error:" + e.getLocalizedMessage());
@@ -338,7 +376,7 @@ public class ArticulosController implements Serializable {
     
     public void calcularPrecioConIVAEdit() {
         if (selectedArticulo != null) {
-            if (selectedArticulo.getPrecioFinal() != 0 && selectedArticulo.getCodigoCabys() != null && selectedArticulo.getCodigoCabys().getImpuesto() != 0) {
+            if (selectedArticulo.getPrecioFinal() != 0 && selectedArticulo.getCodigoCabys() != null) {
                 double impuesto = selectedArticulo.getCodigoCabys().getImpuesto();
                 double precioSinIVA = selectedArticulo.getPrecioFinal();
                 double IVA = precioSinIVA * (impuesto * 0.01);
@@ -347,7 +385,11 @@ public class ArticulosController implements Serializable {
                 precioConIVA = Math.ceil(precioConIVA);
 
                 selectedArticulo.setPrecioCostoConIVA(precioConIVA); 
+            }else{
+                System.out.println("No hay Cabys o Precio final.");
             }
+        }else{
+            System.out.println("No hay articulo.");
         }
     }
     
@@ -386,9 +428,9 @@ public class ArticulosController implements Serializable {
         familiaOptions = familiaService.listAll();
     }
     
-    public int getStock(Articulos articulo){
+    public double getStock(Articulos articulo){
         String codigoBarra = articulo.getCodigoBarra();
-        int totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
+        double totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
         return totalStock;
     }
     

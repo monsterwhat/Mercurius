@@ -1,4 +1,4 @@
-<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+ <ui:composition xmlns="http://www.w3.org/1999/xhtml"
                 xmlns:h="http://xmlns.jcp.org/jsf/html"
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
@@ -26,7 +26,7 @@
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosRevisionTableData"
                                      emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"
                                      globalFilterFunction="#{ArticulosController.globalFilterFunction}" reflow="true"
-                                     filterBy="#{ArticulosController.filterBy}" liveScroll="true" touchable="true" 
+                                     filterBy="#{ArticulosController.filterBy}"
                                      selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
                             
                             <f:facet name="header">
@@ -34,7 +34,7 @@
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
                             
-                            <p:column exportable="false" width="15%">
+                            <p:column exportable="false">
                                 <div class="buttons has-addons">
                                     <p:commandButton value="Procesar" styleClass="button is-rounded is-info"
                                                      icon="pi pi-sync" onclick="PF('RevisionArticuloDialog').show(); PF('RevisionArticuloDialog').toggleMaximize();" process="@this">
@@ -48,7 +48,7 @@
                             <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
                                 <h:outputText value="#{articulo.codigo}"/>
                             </p:column>
-                            <p:column headerText="Nombre" sortBy="#{articulo.nombre}" width="40%">
+                            <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
                                 <h:outputText value="#{articulo.nombre}"/>
                             </p:column>
                             <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">

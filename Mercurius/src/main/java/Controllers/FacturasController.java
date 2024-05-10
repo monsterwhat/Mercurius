@@ -588,7 +588,9 @@ public class FacturasController implements Serializable {
                 String codigoCabys = lineaDetalle.getCodigo();
                 String unidadMedida = lineaDetalle.getUnidadMedida();
                 String unidadMedidaComercial = lineaDetalle.getUnidadMedidaComercial();
-                double precioUnitario = Double.parseDouble(lineaDetalle.getPrecioUnitario());
+                double montoTotalLinea = Double.parseDouble(lineaDetalle.getMontoTotalLinea());
+                double totalUnitario = montoTotalLinea/cantidad;
+                double precioUnitario = totalUnitario;
                 double UnidadesParseadas = parseUnidadComercial(unidadMedida, unidadMedidaComercial) * cantidad;
                             
                 Articulos articulo = new Articulos();
@@ -631,7 +633,7 @@ public class FacturasController implements Serializable {
                 }else{
                     ajusteArticulo.setArticulo(articulo);
                 }
-                ajusteArticulo.setUnidadesRecomendadasFactura(cantidad);
+                ajusteArticulo.setUnidadesRecomendadasFactura(UnidadesParseadas);
                 ajusteArticulo.setUsuario(currentSession.getCurrentUser());
                 ajusteArticulo.setFechaMovimiento(new Date());
                 ajusteArticulo.setTipoMovimiento("Automatico");

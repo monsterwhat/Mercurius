@@ -18,23 +18,11 @@
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
                     <h:form id="departamentosTable">
-                        
-                        <p:toolbar>
-                            <p:toolbarGroup align="right">
-                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
-                                    <p:dataExporter type="xlsx" target="DepartamentosTableData" fileName="Departamentos-Mercurius-Excel" />
-                                </p:commandButton>
-                                <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="ui-button-help" ajax="false">
-                                    <p:dataExporter type="pdf" target="DepartamentosTableData" fileName="Departamentos-Mercurius-PDF" />
-                                </p:commandButton>
-                            </p:toolbarGroup>
-                        </p:toolbar>
-                        
                         <p:dataTable value="#{DepartamentosController.filteredDepartamentos}" var="departamento"  widgetVar="DepartamentosTable"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="DepartamentosTableData"
                                      emptyMessage="No se encontraron departamentos con la critería proporcionada"
                                      globalFilterFunction="#{DepartamentosController.globalFilterFunction}"
-                                     filterBy="#{DepartamentosController.filterBy}"
+                                     filterBy="#{DepartamentosController.filterBy}" reflow="true"
                                      selection="#{DepartamentosController.selectedDepartamento}" rowKey="#{departamento.id}">
                             
                             <f:facet name="header">
@@ -48,15 +36,14 @@
                             <p:column headerText="Nombre" sortBy="#{departamento.nombre}">
                                 <h:outputText value="#{departamento.nombre}"/>
                             </p:column>
-                            <!-- Add more columns as needed -->
                             
-                            <p:column headerText="Acciones">
-                                <div class="buttons has-addons">
-                                    <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
+                            <p:column headerText="Acciones" exportable="false" width="10%">
+                                <div class="buttons">
+                                    <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
                                     actionListener="#{ViewController.selectEditDepartamentos()}" process="@this" update="dynamicContent">
                                         <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
                                     </p:commandButton>
-                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                    <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-trash"
                                     actionListener="#{DepartamentosController.deleteDepartamento()}" process="@this" update="dynamicContent departamentosTable">
                                         <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
                                     </p:commandButton>

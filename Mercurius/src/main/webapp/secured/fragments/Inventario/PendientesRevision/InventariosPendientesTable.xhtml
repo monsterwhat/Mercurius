@@ -35,7 +35,7 @@
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
                             
-                            <p:column exportable="false" width="13%">
+                            <p:column exportable="false">
                                 <p:commandButton value="Procesar" styleClass="button is-info is-rounded" 
                                     icon="pi pi-sync" onclick="PF('RevisionMovimientoDialog').show();" process="@this">
                                     <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
@@ -45,7 +45,7 @@
                             <p:column headerText="Código" sortBy="#{movimiento.codigo}" visible="false">
                                 <h:outputText value="#{movimiento.codigo}"/>
                             </p:column>
-                            <p:column headerText="Nombre" sortBy="#{movimiento.articulo.nombre}" width="45%">
+                            <p:column headerText="Nombre" sortBy="#{movimiento.articulo.nombre}">
                                 <h:outputText value="#{movimiento.articulo.nombre}"/>
                             </p:column>
                             <p:column headerText="Codigo Barra" sortBy="#{movimiento.articulo.codigoBarra}" visible="false">
@@ -54,7 +54,7 @@
                             <p:column headerText="Cantidad" sortBy="#{movimiento.cantidad}">
                                 <h:outputText value="#{movimiento.cantidad}"/>
                             </p:column>
-                            <p:column headerText="Fecha" sortBy="#{movimiento.fechaMovimiento}" width="25%">
+                            <p:column headerText="Fecha" sortBy="#{movimiento.fechaMovimiento}">
                                 <h:outputText value="#{movimiento.fechaMovimiento}"/>
                             </p:column>
                             

@@ -18,33 +18,16 @@
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
                     <h:form id="inventarioTable">
-                        <div class="columns is-mobile">
-                                <div class="column">
-                                    <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" styleClass="button is-fullwidth"/>                            
-                                </div>
-
-                                <div class="column buttons">
-                                    <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="button is-warning" ajax="false">
-                                        <p:dataExporter type="xlsx" target="InventarioTableData" fileName="Inventario-Mercurius-Excel" />
-                                    </p:commandButton>
-                                    <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="button is-warning" ajax="false">
-                                        <p:dataExporter type="pdf" target="InventarioTableData" fileName="Inventario-Mercurius-PDF" />
-                                    </p:commandButton>
-                                </div>
-                        </div>
-                        <ui:include src="../Inventario/Upload/subirFacturas.xhtml"/>
                         <ui:include src="../Inventario/verDetallesDeAjuste.xhtml"/>
                         
                         <p:dataTable value="#{InventarioController.filteredInventario}" var="inventario"  widgetVar="InventarioTable"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="InventarioTableData"
                                      emptyMessage="No se encontraron registros de inventario con la critería proporcionada"
                                      globalFilterFunction="#{InventarioController.globalFilterFunction}"
-                                     filterBy="#{InventarioController.filterBy}" reflow="true" rowSelectMode="add"
+                                     filterBy="#{InventarioController.filterBy}" reflow="true"
                                      selection="#{InventarioController.selectedInventario}" rowKey="#{inventario.codigo}">
                             <p:autoUpdate/>
                             <p:ajax event="rowSelect" update="inventarioTable:selectedArticulo"/>
-                            <p:ajax event="rowUnselect" update="inventarioTable:selectedArticulo" />
-                            <p:ajax event="toggleSelect" update="inventarioTable:selectedArticulo"/>
                             
                             <f:facet name="header">
                                 <div class="field columns is-mobile">
@@ -53,7 +36,7 @@
                                 </div>
                             </f:facet>
                             
-                            <p:column width="5%">
+                            <p:column exportable="false">
                                 <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!inventario.processed}"/>
                                 <p:tooltip for="unprocessedChip" value="Sin Procesar" position="top"/>
                                 
@@ -67,7 +50,7 @@
                                 <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
                             </p:column>
                             
-                            <p:column width="4%">
+                            <p:column exportable="false">
                                 <div class="buttons">
                                     <p:commandButton styleClass="button is-rounded is-info" icon="pi pi-eye" process="@this"
                                                      onclick="PF('AjusteDetailsDialog').show();" update="inventarioTable:selectedArticulo">
@@ -79,27 +62,27 @@
                             <p:column headerText="Código" visible="false">
                                 <h:outputText value="#{inventario.codigo}"/>
                             </p:column>
-                            <p:column headerText="Artículo">
+                            <p:column headerText="Artículo" sortBy="#{inventario.articulo.nombre}">
                                 <h:outputText value="#{inventario.articulo.nombre}"/>
                             </p:column>
-                            <p:column headerText="Cantidad" width="8%">
+                            <p:column headerText="Cantidad" sortBy="#{inventario.cantidad}">
                                 <h:outputText value="#{inventario.cantidad}"/>
                             </p:column>
-                            <p:column headerText="Tipo Movimiento" width="9%">
+                            <p:column headerText="Tipo Movimiento" sortBy="#{inventario.tipoMovimiento}">
                                 <h:outputText value="#{inventario.tipoMovimiento}"/>
                             </p:column>
-                            <p:column headerText="Fecha Movimiento" width="10%">
+                            <p:column headerText="Fecha Movimiento" sortBy="#{inventario.fechaMovimiento}">
                                 <h:outputText value="#{inventario.fechaMovimiento}"/>
                             </p:column>
                             <p:column headerText="Notas" visible="false">
                                 <h:outputText value="#{inventario.notas}"/>
                             </p:column>
-                            <p:column headerText="Usuario" width="7%">
+                            <p:column headerText="Usuario" visible="false">
                                 <h:outputText value="#{inventario.usuario.username}"/>
                             </p:column>
                                                         
-                            <p:column width="4%">
-                                <p:commandButton styleClass="button is-rounded is-danger" icon="pi pi-trash"
+                            <p:column exportable="false">
+                                <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-trash"
                                         actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update="dynamicContent inventarioTable">
                                         <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
                                 </p:commandButton>
