@@ -67,4 +67,15 @@ public abstract class GService<T> implements Serializable{
             return null;
         }
     }
+    
+    public List<T> listPage(int offset, int pageSize) {
+        try {
+            TypedQuery<T> query = em.createQuery("SELECT e FROM " + getEntityClass().getSimpleName() + " e", getEntityClass());
+            query.setFirstResult(offset);
+            query.setMaxResults(pageSize);
+            return query.getResultList();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

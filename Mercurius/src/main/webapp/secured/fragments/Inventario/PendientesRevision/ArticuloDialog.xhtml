@@ -5,46 +5,37 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
     <h:head>
-        <title>CaByS</title>
+        <title>Articulo</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
         <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
     </h:head>
     
     <h:body>
-        <!-- Dialog for Código CABYS -->
+        <!-- Dialog for Articulo -->
         <p:dialog header="Seleccionar Articulo" widgetVar="ArticuloRevisionDialog" fitViewport="true" blockScroll="true"
          resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
                         
-            <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo" liveScroll="true"  widgetVar="ArticuloTable"
-                        paginator="true" rows="5" paginatorPosition="bottom" id="ArticuloTable" touchable="true"
+            <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo" widgetVar="ArticuloTable"
+                         paginator="true" rows="8" paginatorPosition="bottom" id="ArticuloTable" reflow="true"
                         emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
-                        globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
-                        filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
-                        selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
+                        globalFilterFunction="#{ArticulosController.globalFilterFunction}"
+                        filterBy="#{ArticulosController.filterBy}" showGridlines="true"
+                        selection="#{InventarioController.selectedArticulo}" rowKey="#{articulo.codigo}">
 
                 <f:facet name="header">
                     <p:inputText id="globalFilter" onkeyup="PF('ArticuloTable').filter()"
-                                 placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                                 placeholder="#{InventarioController.selectedInventario.articulo.nombre}" styleClass="input"/>
                 </f:facet>
 
                <p:column selectionMode="single" style="width: 3%" />
-               <p:column headerText="Código" sortBy="#{cabys.codigo}">
-                   <h:outputText value="#{cabys.codigo}" />
-               </p:column>
-               <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}">
-                   <h:outputText value="#{cabys.descripcion}" />
-               </p:column>
-               <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}">
-                   <h:outputText value="#{cabys.impuesto}" />
-               </p:column>
-               <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">
-                   <h:outputText value="#{cabys.estado}" />
+               <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                   <h:outputText value="#{articulo.nombre}" />
                </p:column>
 
             </p:dataTable>
         
-                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{ArticulosController.selectCabysEdit()}" 
-                                 onclick="PF('ArticuloRevisionDialog').hide();" immediate="true" update=""
+                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{InventarioController.articuloSelectedEdit()}" 
+                                 onclick="PF('ArticuloRevisionDialog').hide();" immediate="true"
                          />
             
         </p:dialog>

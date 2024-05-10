@@ -1,0 +1,189 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <title>Crear Artículo</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>   
+
+    </h:head>
+    
+    <h:body>
+        <h:form id="CrearArticuloDialog">
+        <!-- Dialog for Crear Articulo -->
+        <p:dialog header="Crear Articulo" widgetVar="CrearArticuloDialog" 
+                  responsive="true" modal="true">                   
+            <p:outputPanel rendered="#{not empty ArticulosController.newArticulo}">
+                    <p:panel header="Crear un nuevo artículo">
+                        <p:growl id="growlCreate" showDetail="true" showSummary="false"/>
+
+                        <!-- Input for article name -->
+                        <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newName">Nombre:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="newName" value="#{ArticulosController.newArticulo.nombre}"
+                                                 required="true" requiredMessage="El nombre no puede estar vacío"
+                                                />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input for codigo de barra -->
+                        <p:messages showDetail="true" for="newCodigoBarra" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newCodigoBarra">Codigo de Barra:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="newCodigoBarra" value="#{ArticulosController.newArticulo.codigoBarra}"
+                                                 required="true" requiredMessage="El codigo de barra no puede estar vacío"
+                                                 >
+                                    </p:inputText>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input for Código CABYS -->
+                        <p:messages showDetail="true" for="newCodigoCabys" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newCodigoCabys">Código CABYS:</label>
+                            </div>
+                            <div class="field-body is-flex">
+                                <p:commandButton value="Seleccionar" styleClass="button"
+                                                 onclick="PF('codigoCabysDialog').show();"/> 
+                                <!-- Container for selected option -->
+                                <div class="selected-option is-flex">
+                                    <p:outputLabel value="#{ArticulosController.newArticulo.codigoCabys.codigo} - #{ArticulosController.newArticulo.codigoCabys.descripcion} - #{ArticulosController.newArticulo.codigoCabys.impuesto} %"
+                                                   >
+                                        <p:autoUpdate/>
+                                    </p:outputLabel>
+                                </div>
+                                <!-- Should probably insert the dialog here -->
+                                <ui:include src="../../CaByS/CabysDialog.xhtml"/>  
+                            </div>
+                        </div>
+
+
+                        <!-- Input for Departamento -->
+                        <p:messages showDetail="true" for="newDepartamento" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newDepartamento">Departamento:</label>
+                            </div>
+                            <div class="field-body columns is-mobile">
+                                <div class="column">
+                                    <p:selectOneMenu id="newDepartamentoSelect" value="#{ArticulosController.departamentoID}"
+                                                     required="true" requiredMessage="El Departamento no puede estar vacío"
+                                                     widgetVar="newDepartamentoSelect">
+                                        <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
+                                        <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
+                                                       itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
+                                    </p:selectOneMenu>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input for Familia -->
+                        <p:messages showDetail="true" for="newFamilia" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newFamilia">Familia:</label>
+                            </div>
+                            <div class="field-body columns is-mobile">
+                                <div class="column">
+                                    <p:selectOneMenu id="newFamiliaSelect" value="#{ArticulosController.familiaID}"
+                                                     required="true" requiredMessage="La Familia no puede estar vacía"
+                                                     widgetVar="newFamiliaSelect" >
+                                        <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                        <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                       itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
+                                    </p:selectOneMenu>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input for Precio Costo sin IVA -->
+                        <p:messages showDetail="true" for="newPrecioCostoSinIVA" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newPrecioCostoSinIVA">Precio Costo sin IVA:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="newPrecioCostoSinIVA" type="number" value="#{ArticulosController.newArticulo.precioCostoSinIVA}"
+                                                 required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
+                                                 >
+                                        <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad()}"
+                                                update="newPrecioCostoSinIVA newPrecioFinal newPrecioFinalConIVA" process="@this"/>
+                                    </p:inputText>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Input for Porcentaje de Utilidad -->
+                        <p:messages showDetail="true" for="newPorcentajeUtilidad" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newPorcentajeUtilidad">Porcentaje de Utilidad:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="newPorcentajeUtilidad" type="number" value="#{ArticulosController.newArticulo.porcentajeUtilidad}"
+                                                 required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
+                                                 >
+                                                <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad()}"
+                                                        update="newPrecioCostoSinIVA newPrecioFinal newPrecioFinalConIVA" />
+                                    </p:inputText>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output for Precio Final -->
+                        <p:messages showDetail="true" for="newPrecioFinal" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newPrecioFinal">Precio Final:</label>
+                            </div> 
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:outputLabel id="newPrecioFinal" value="#{ArticulosController.newArticulo.precioFinal}"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Output for Precio Final con IVA -->
+                        <p:messages showDetail="true" for="newPrecioFinalConIVA" showSummary="false" closable="true"/>
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newPrecioFinalConIVA">Precio Final con IVA:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:outputLabel id="newPrecioFinalConIVA" value="#{ArticulosController.newArticulo.precioCostoConIVA}">
+                                        <p:autoUpdate/>
+                                    </p:outputLabel>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p:commandButton value="Crear Artículo" 
+                        action="#{ArticulosController.createArticuloByDialog()}" update="dynamicContent @this"/>
+
+                    </p:panel>
+                    <br/>
+                    
+            </p:outputPanel>
+        </p:dialog>
+        </h:form>
+    </h:body>
+</ui:composition>

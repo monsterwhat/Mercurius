@@ -141,12 +141,7 @@ public class ViewController implements Serializable {
         selectedOption="viewArticulosDetallado";
     }
     
-    public void selectEditArticulos(){
-        selectedOption="editArticulos";
-    }
-    
     public void selectCreateArticulos(){
-        selectedOption="createArticulos";
         articulos.openNewArticulo();
     }
     

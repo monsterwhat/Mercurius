@@ -68,12 +68,6 @@
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulos'}">
                             <ui:include src="./fragments/Articulos/Simples/ArticulosTable.xhtml" />
                         </ui:fragment>
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'editArticulos'}">
-                            <ui:include src="./fragments/Articulos/Simples/EditArticulo.xhtml" />
-                        </ui:fragment>                        
-                        <ui:fragment rendered="#{ViewController.selectedOption eq 'createArticulos'}">
-                            <ui:include src="./fragments/Articulos/Simples/CreateArticulos.xhtml" />
-                        </ui:fragment>
                             <!-- ARTICULOS DETALLADOS -->
                         <ui:fragment rendered="#{ViewController.selectedOption eq 'viewArticulosDetallado'}">
                             <ui:include src="./fragments/Articulos/Detallados/ArticulosTableDetallada.xhtml" />

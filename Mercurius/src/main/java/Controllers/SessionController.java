@@ -69,13 +69,13 @@ public class SessionController implements Serializable{
     
     private void redirectToSecuredArea() throws IOException {
         ExternalContext ec = facesContext.getExternalContext();
-        ec.redirect(ec.getRequestContextPath() + "/secured/index.xhtml");
+        ec.redirect(ec.getRequestContextPath() + "/secured/index");
     }
     
     public void logOut() {
         try {
             ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
-            ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
+            ec.redirect(ec.getRequestContextPath() + "/index");
             ec.invalidateSession(); // Invalidate the session
             this.currentUser = null;
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Logout successful!"));

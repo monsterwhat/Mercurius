@@ -12,9 +12,9 @@
 
 <h:body>
     <!-- Dialog for Revision de Movimiento -->
-    <p:dialog header="Revision de Movimiento" widgetVar="RevisionMovimientoDialog" style="height: 400px; overflow-y: auto;"
-              fitViewport="true" responsive="true" id="RevisionMovimientoDialog" my="center" position="center"
-            modal="true" resizable="false" draggable="false"  >
+    <p:dialog header="Revision de Movimiento" widgetVar="RevisionMovimientoDialog"
+              responsive="true" id="RevisionMovimientoDialog" my="center" position="center"
+            modal="true">
         <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}">
         
             <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.articulo.nombre}">
@@ -33,7 +33,7 @@
                     </div>
                 </div>
                 
-                <!-- Input for Articulo -->
+                <!-- Select for Articulo -->
                 <p:messages showDetail="true" for="ArticuloSelect" showSummary="false" closable="true" />
                 <div class="field is-horizontal">
                     <div class="field-label is-normal">
@@ -82,10 +82,6 @@
                         </div>
                     </div>
                 </div>
-
-                
-                
-                <!-- Add more fields for inventory attributes if needed -->
 
                 <div class="field is-horizontal">
                     <div class="field-body">

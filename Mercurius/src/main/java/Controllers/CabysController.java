@@ -2,11 +2,10 @@ package Controllers;
 
 import Models.Cabys;
 import Services.CabysService;
-import Utils.ProgramadorTareas;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
@@ -16,23 +15,17 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.model.FilterMeta;
+import org.primefaces.model.LazyDataModel;
 import org.primefaces.util.LangUtils;
-
-/**
- *
- * @author Al
- */
-
 
 @Data
 @Named(value = "CabysController")
-@SessionScoped
+@ViewScoped
 public class CabysController implements Serializable {
     
     @Inject private CabysService cabysService;
     @Inject private ViewController viewManager;
     @Inject private ArticulosController articulos;
-    @Inject private ProgramadorTareas tareas;
 
     private List<Cabys> catalogo;
     private Cabys selectedCabys;
@@ -42,14 +35,17 @@ public class CabysController implements Serializable {
     private boolean globalFilterOnly;
     private boolean cabysStatus;
     
+    private LazyDataModel<Cabys> reducedCatalogo;
+    
     @PostConstruct
     public void init() {
         newCabys = new Cabys();
         selectedCabys = new Cabys();
         cabysList();
+        //loadPage();
         filterBy = new ArrayList<>();        
     }
-
+    
     public List<Cabys> cabysList() {
         if (catalogo == null) {
             catalogo = cabysService.listAll();
@@ -106,6 +102,9 @@ public class CabysController implements Serializable {
     }    
         
     public List<Cabys> getFilteredCabys() {
+        if(catalogo == null){
+            catalogo = cabysService.listAll();
+        }
         if (cabysFilter != null && !cabysFilter.isEmpty()) {
             return cabysList().stream()
                     .filter(profile -> globalFilterFunction(profile, cabysFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -168,6 +167,15 @@ public class CabysController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null, message);
         }
     
+    }
+    
+    public void selectCabysCreate(){
+        if (selectedCabys != null) {
+            articulos.getNewArticulo().setCodigoCabys(selectedCabys);
+        } else {
+            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
     }
 
     
