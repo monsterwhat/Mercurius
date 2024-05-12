@@ -13,9 +13,9 @@
 <h:body>
     <!-- Dialog for Revision de Articulo -->
     <p:dialog header="Revision de Articulo" widgetVar="RevisionArticuloDialog" style="height: 400px; overflow-y: auto;"
-              fitViewport="true" responsive="true" id="RevisionArticuloDialog" my="center" position="center"
-            modal="true" resizable="false" draggable="false"  >
-        <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
+              fitViewport="true" responsive="true">
+        <p:outputPanel id="RevisionArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
+            <h:form>
                 <p:panel header="Revisar Artículo: #{ArticulosController.selectedArticulo.nombre}">
                     <p:growl id="growl" showDetail="true" showSummary="false"/>
 
@@ -70,8 +70,10 @@
                             <label class="label" for="codigoCabys">Código CABYS:</label>
                         </div>
                         <div class="field-body is-flex">
-                            <p:commandButton value="Seleccionar" styleClass="button"
-                                             onclick="PF('codigoCabysDialog').show();"/> 
+                            <p:commandButton value="Seleccionar"  id="selectCabys" immediate="true"
+                                onclick="PF('codigoCabysDialogEdit').show();">
+                                <p:autoUpdate/>
+                            </p:commandButton>
                             <!-- Container for selected option -->
                             <div class="selected-option is-flex">
                                 <p:outputLabel id="codigoCabys" value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto} %"
@@ -80,7 +82,7 @@
                                 </p:outputLabel>
                             </div>
                             <!-- Should probably insert the dialog here -->
-                            <ui:include src="../../CaByS/CabysDialog.xhtml"/>  
+                            <ui:include src="/secured/fragments/CaByS/CabysDialogEdit.xhtml"/>  
                         </div>
                     </div>
 
@@ -230,11 +232,13 @@
                         <div class="field-body">
                             <div class="field">
                                 <p:commandButton value="Actualizar datos" styleClass="button is-fullwidth is-success is-rounded"
-                                                 action="#{ArticulosController.updateArticuloRevision}" update="dynamicContent" />
+                                                 action="#{ArticulosController.updateArticuloRevision}" />
                             </div>
                         </div>
                     </div>
                 </p:panel>
+                
+            </h:form>
         </p:outputPanel>
     </p:dialog>
 </h:body>

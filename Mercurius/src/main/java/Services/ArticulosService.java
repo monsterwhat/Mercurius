@@ -142,7 +142,8 @@ public class ArticulosService extends GService<Articulos> {
         } catch (Exception e) {
             System.out.println("Error " + e.getLocalizedMessage());
             return null;
-        }    }
+        }    
+    }
 
     public List<Articulos> listAllSinProcesar() {
         try {

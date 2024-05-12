@@ -15,15 +15,20 @@
         <div class="box">
             <div class="columns is-centered">
                 <div class="column">
-                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="ArticulosInactivos">                        
+                    <h:form id="ArticulosInactivos">   
+                        <ui:include src="/secured/fragments/Articulos/Inactivos/verDetalles.xhtml"/>
+
                         <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
                                      emptyMessage="No se encontraron artículos con la critería proporcionada"
                                      globalFilterFunction="#{ArticulosController.globalFilterFunction}"
                                      filterBy="#{ArticulosController.filterBy}" reflow="true" 
                                      selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+                            
+                            <p:ajax event="rowSelect" update="ArticulosInactivos:selectedArticulo"/>
+
                             
                             <f:facet name="header">
                                 <p:inputText id="globalFilter" onkeyup="PF('ArticulosInactivos').filter()"
@@ -75,8 +80,8 @@
                             
                             <p:column headerText="Acciones" exportable="false">
                                 <div class="buttons has-addons">
-                                    <p:commandButton styleClass="button is-rounded is-primary" 
-                                                     icon="pi pi-eye" process="@this" update="dynamicContent">
+                                    <p:commandButton styleClass="button is-rounded is-primary" onclick="PF('ArticuloDetailsDialog').show();"
+                                                     icon="pi pi-eye" process="@this">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                 </div>

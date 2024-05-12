@@ -15,9 +15,8 @@
         <div class="box">
             <div class="columns is-centered">
                 <div class="column">
-                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="ArticulosActivosYProcesados">     
                         <ui:include src="../ActivosYProcesados/verDetalles.xhtml"/>
 
                         <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
@@ -27,7 +26,7 @@
                                      filterBy="#{ArticulosController.filterBy}" reflow="true" 
                                      selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
                             
-                            <p:ajax event="rowSelect" update="ArticulosActivosYProcesados:selectedArticulo"/>
+                            <p:ajax event="rowSelect" update="selectedArticulo"/>
                             
                             <f:facet name="header">
                                 <p:inputText id="globalFilter" onkeyup="PF('ArticulosActivosYProcesados').filter()"
@@ -77,13 +76,12 @@
                             <p:column headerText="Acciones" exportable="false">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button is-rounded is-primary" onclick="PF('ArticuloDetailsDialog').show();"
-                                                     icon="pi pi-eye" process="@this" update="ArticulosActivosYProcesados:selectedArticulo">
+                                                     icon="pi pi-eye" process="@this" update="selectedArticulo">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                 </div>
                             </p:column>
                         </p:dataTable>
-                    </h:form>
                 </div>
             </div>
         </div>

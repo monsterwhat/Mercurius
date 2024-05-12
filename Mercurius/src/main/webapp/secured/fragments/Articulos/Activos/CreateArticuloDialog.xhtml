@@ -13,12 +13,13 @@
     </h:head>
     
     <h:body>
-        <h:form id="CrearArticuloDialog">
         <!-- Dialog for Crear Articulo -->
-        <p:dialog header="Crear Articulo" widgetVar="CrearArticuloDialog" 
-                  responsive="true" modal="true">                   
-            <p:outputPanel rendered="#{not empty ArticulosController.newArticulo}">
-                    <p:panel header="Crear un nuevo artículo">
+        <p:dialog header="Crear Articulo"
+                  widgetVar="CrearArticuloDialog" fitViewport="true" responsive="true">                   
+            <p:outputPanel id="CrearArticuloDialog" rendered="#{not empty ArticulosController.newArticulo}">
+                <h:form>
+                    <div class="box">
+                        
                         <p:growl id="growlCreate" showDetail="true" showSummary="false"/>
 
                         <!-- Input for article name -->
@@ -59,8 +60,10 @@
                                 <label class="label" for="newCodigoCabys">Código CABYS:</label>
                             </div>
                             <div class="field-body is-flex">
-                                <p:commandButton value="Seleccionar" styleClass="button"
-                                                 onclick="PF('codigoCabysDialog').show();"/> 
+                                <p:commandButton value="Seleccionar" id="selectCabys" immediate="true"
+                                                    onclick="PF('codigoCabysDialog').show();">
+                                    <p:autoUpdate/>
+                                </p:commandButton>
                                 <!-- Container for selected option -->
                                 <div class="selected-option is-flex">
                                     <p:outputLabel value="#{ArticulosController.newArticulo.codigoCabys.codigo} - #{ArticulosController.newArticulo.codigoCabys.descripcion} - #{ArticulosController.newArticulo.codigoCabys.impuesto} %"
@@ -69,10 +72,50 @@
                                     </p:outputLabel>
                                 </div>
                                 <!-- Should probably insert the dialog here -->
-                                <ui:include src="../../CaByS/CabysDialog.xhtml"/>  
+                                <ui:include src="/secured/fragments/CaByS/CabysDialog.xhtml"/>  
+                            </div>
+                        </div>
+                        
+                        <!-- Input for Unidad de Medida -->
+                        <p:messages showDetail="true" for="newUnidadMedida" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newUnidadMedida">Unidad de Medida:</label>
+                            </div>
+                            <div class="field-body columns is-mobile">
+                                <div class="column">
+                                    <p:selectOneMenu id="newUnidadMedida" value="#{ArticulosController.newArticulo.unidadMedida}"
+                                                    >
+                                        <p:ajax listener="#{ArticulosController.createUnidadMedidaChanged}"/>
+                                        <f:selectItem itemLabel="Unid" itemValue="Unid"/>
+                                        <f:selectItem itemLabel="Otros" itemValue="Otros"/>
+                                        <f:selectItem itemLabel="g" itemValue="g"/>
+                                    </p:selectOneMenu>
+                                </div>
                             </div>
                         </div>
 
+                        <!-- Input for Unidad de Medida Comercial -->
+                        <p:messages showDetail="true" for="newUnidadMedidaComercial" showSummary="false" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="newUnidadMedidaComercial">Unidad de Medida Comercial:</label>
+                            </div>
+                            <div class="field-body columns is-mobile">
+                                <div class="column">
+                                    <p:selectOneMenu id="newUnidadMedidaComercial" value="#{ArticulosController.newArticulo.unidadMedidaComercial}"
+                                                    >
+                                        <p:ajax listener="#{ArticulosController.createUnidadMedidaComercialChanged}"/>
+                                        <f:selectItem itemLabel="Botella" itemValue="BOT"/>
+                                        <f:selectItem itemLabel="Lata" itemValue="LT"/>
+                                        <f:selectItem itemLabel="SixPack" itemValue="ST"/>
+                                        <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
+                                        <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                        <f:selectItem itemLabel="Generico" itemValue=""/>
+                                    </p:selectOneMenu>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- Input for Departamento -->
                         <p:messages showDetail="true" for="newDepartamento" showSummary="false" closable="true" />
@@ -176,14 +219,13 @@
                             </div>
                         </div>
                         
-                        <p:commandButton value="Crear Artículo" 
-                        action="#{ArticulosController.createArticuloByDialog()}" update="dynamicContent @this"/>
+                        <p:commandButton value="Crear Artículo" update="@form"
+                                         action="#{ArticulosController.createArticuloByDialog()}"
+                                         />
 
-                    </p:panel>
-                    <br/>
-                    
+                    </div>
+                </h:form>
             </p:outputPanel>
         </p:dialog>
-        </h:form>
     </h:body>
 </ui:composition>

@@ -20,13 +20,7 @@
                                      immediate="true" action="#{ViewController.selectViewArticulosDetallado}"
                                      update="dynamicContent" />
                     
-                    <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
-
-                            <ui:define name="editDetallado">
-                                <ui:include src="../Forms/EditForm.xhtml"/>
-                            </ui:define>
-                        
-                    </p:outputPanel>
+                    
                 </div>
             </div>
         </div>

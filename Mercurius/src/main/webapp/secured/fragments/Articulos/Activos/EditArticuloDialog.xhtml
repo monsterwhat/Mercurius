@@ -12,12 +12,13 @@
     </h:head>
     
     <h:body>
-        <form id="EditArticuloForm">
         <!-- Dialog for Edit Articulo -->
         <p:dialog header="Editar Artículo: #{ArticulosController.selectedArticulo.nombre}" 
                   widgetVar="EditArticuloDialog" fitViewport="true"
                   responsive="true" modal="true">
             <p:outputPanel id="EditArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
+                <h:form>
+
                 <p:growl id="growlUpdate" showDetail="true" showSummary="false"/>
 
                 <!-- Input for article name -->
@@ -71,8 +72,8 @@
                         <label class="label" for="editCodigoCabys">Código CABYS:</label>
                     </div>
                     <div class="field-body is-flex">
-                        <p:commandButton value="Seleccionar" id="selectCabys" 
-                            onclick="PF('codigoCabysDialog').show();">
+                        <p:commandButton value="Seleccionar" id="selectCabys"
+                                            onclick="PF('codigoCabysDialog').show();">
                             <p:autoUpdate/>
                         </p:commandButton>
                         <!-- Container for selected option -->
@@ -227,10 +228,10 @@
                         </div>
                     </div>
                 </div>
-                <p:commandButton value="Actualizar datos" update="dynamicContent @this" 
+                <p:commandButton value="Actualizar datos" update="@this"
                                  action="#{ArticulosController.updateArticuloByDialog()}"/>
+                </h:form>
             </p:outputPanel>
         </p:dialog> 
-        </form>
     </h:body>
 </ui:composition>
