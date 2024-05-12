@@ -26,20 +26,20 @@
                                      icon="pi pi-box" rendered="#{SessionController.inventarios}"/>
                     <p:menu overlay="true" trigger="InventariosButton" my="left top" at="left bottom">
                         <p:submenu label="Inventarios">
-                            <p:menuitem value="Ver Departamentos" icon="pi pi-truck" action="#{ViewController.selectViewDepartamentos}" update="dynamicContent"/>
-                            <p:menuitem value="Ver Familias" icon="pi pi-th-large" action="#{ViewController.selectViewFamilias}" update="dynamicContent" />
+                            <p:menuitem value="Ver Departamentos" icon="pi pi-truck" action="#{ViewController.selectViewDepartamentos}"/>
+                            <p:menuitem value="Ver Familias" icon="pi pi-th-large" action="#{ViewController.selectViewFamilias}"/>
                         </p:submenu>
                         <p:submenu label="Movimientos">
-                            <p:menuitem value="Ajustes Actuales" icon="pi pi-check-circle" action="#{ViewController.selectViewInventarioActivoYProcesado}" update="dynamicContent"/>
-                            <p:menuitem value="Ajustes Pendientes" icon="pi pi-hourglass" action="#{ViewController.selectViewInventarioSinProcesar}" update="dynamicContent"/>
-                            <p:menuitem value="Ajustes Activos" icon="pi pi-check" action="#{ViewController.selectViewInventario}" update="dynamicContent"/>
-                            <p:menuitem value="Ajustes Inactivos" icon="pi pi-times" action="#{ViewController.selectViewInventarioInactivo}" update="dynamicContent"/>
+                            <p:menuitem value="Ajustes Actuales" icon="pi pi-check-circle" url="/secured/pages/Inventario/AjustesActuales.xhtml"/>
+                            <p:menuitem value="Ajustes Pendientes" icon="pi pi-hourglass" url="/secured/pages/Inventario/AjustesPendientes.xhtml"/>
+                            <p:menuitem value="Ajustes Activos" icon="pi pi-check" url="/secured/pages/Inventario/AjustesActivos.xhtml"/>
+                            <p:menuitem value="Ajustes Inactivos" icon="pi pi-times" url="/secured/pages/Inventario/AjustesInactivos.xhtml"/>
                         </p:submenu>
                         <p:submenu label="Artículos">
-                            <p:menuitem value="Catalogo Actual" icon="pi pi-check-circle" action="#{ViewController.selectViewArticulosActivosYProcesados}" update="dynamicContent"/>
-                            <p:menuitem value="Catalogo Pendiente" icon="pi pi-hourglass" action="#{ViewController.selectViewArticulosSinProcesar}" update="dynamicContent"/>
-                            <p:menuitem value="Artículos Activos" icon="pi pi-check" action="#{ViewController.selectViewArticulos}" update="dynamicContent"/>
-                            <p:menuitem value="Artículos Inactivos" icon="pi pi-times" action="#{ViewController.selectViewArticulosInactivos}" update="dynamicContent"/>
+                            <p:menuitem value="Catalogo Actual" icon="pi pi-check-circle" url="/secured/pages/Articulos/catalogoActual.xhtml"/>
+                            <p:menuitem value="Catalogo Pendiente" icon="pi pi-hourglass" url="/secured/pages/Articulos/catalogoPendiente.xhtml"/>
+                            <p:menuitem value="Artículos Activos" icon="pi pi-check" url="/secured/pages/Articulos/ArticulosActivos.xhtml"/>
+                            <p:menuitem value="Artículos Inactivos" icon="pi pi-times" url="/secured/pages/Articulos/ArticulosInactivos.xhtml"/>
                         </p:submenu>
                     </p:menu>
                 </div>
@@ -49,8 +49,8 @@
                                      icon="pi pi-user" rendered="#{SessionController.usuarios}"/>
                     <p:menu overlay="true" trigger="UsuariosButton" my="left top" at="left bottom">
                         <p:submenu label="Usuarios">
-                            <p:menuitem value="Ver Usuarios" icon="pi pi-users" action="#{ViewController.selectViewUsers}" update="dynamicContent"/>
-                            <p:menuitem value="Ver Clientes" icon="pi pi-id-card" action="#{ViewController.selectViewClients}" update="dynamicContent"/>
+                            <p:menuitem value="Ver Usuarios" icon="pi pi-users" action="#{ViewController.selectViewUsers}"/>
+                            <p:menuitem value="Ver Clientes" icon="pi pi-id-card" action="#{ViewController.selectViewClients}"/>
                         </p:submenu>
                     </p:menu>
                 </div>
@@ -61,11 +61,11 @@
                     <p:menu overlay="true" trigger="TributacionButton" my="left top" at="left bottom">
                         <p:submenu label="Tributación">
                             <p:menuitem value="Consultas" icon="pi pi-book" disabled="true"/>
-                            <p:menuitem value="CaByS" icon="pi pi-book" action="#{ViewController.selectViewCabys}" update="dynamicContent"/>
+                            <p:menuitem value="CaByS" icon="pi pi-book" action="#{ViewController.selectViewCabys}"/>
                             <p:menuitem value="Tipo de Cambio" icon="pi pi-dollar" onclick="PF('dollarValueDialog').show();"/>
                         </p:submenu>
                     </p:menu>
-                    <ui:include src="./Monedas/DollarValueDialog.xhtml" />
+                    <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
                 </div>
                 <div class="column">
                     <p:commandButton id="RegistrosButton" value="Registros" 
@@ -75,17 +75,17 @@
                         <p:submenu label="Reportes Facturación">
                             <p:menuitem value="Facturación Diaria" icon="pi pi-calendar" disabled="true"/>
                             <p:menuitem value="Facturación de Artículos" icon="pi pi-box" disabled="true"/>
-                            <p:menuitem value="Facturas Ingresadas" icon="pi pi-box" action="#{ViewController.selectViewFacturas()}" update="dynamicContent"/>
+                            <p:menuitem value="Facturas Ingresadas" icon="pi pi-box" action="#{ViewController.selectViewFacturas()}"/>
                         </p:submenu>
                         <p:submenu label="Reportes Inventarios">
-                            <p:menuitem value="Articulos Detallados" action="#{ViewController.selectViewArticulosDetallado()}" icon="pi pi-search" update="dynamicContent"/>
-                            <p:menuitem value="Departamentos Detallados" action="#{ViewController.selectViewDepartamentosDetallado()}" icon="pi pi-search" update="dynamicContent"/>
-                            <p:menuitem value="Familias Detalladas" action="#{ViewController.selectViewFamiliasDetallado()}" icon="pi pi-search" update="dynamicContent"/>
-                            <p:menuitem value="Inventarios Detallados" action="#{ViewController.selectViewInventarioDetallado()}" icon="pi pi-search" update="dynamicContent"/>
+                            <p:menuitem value="Articulos Detallados" action="#{ViewController.selectViewArticulosDetallado()}" icon="pi pi-search"/>
+                            <p:menuitem value="Departamentos Detallados" action="#{ViewController.selectViewDepartamentosDetallado()}" icon="pi pi-search"/>
+                            <p:menuitem value="Familias Detalladas" action="#{ViewController.selectViewFamiliasDetallado()}" icon="pi pi-search"/>
+                            <p:menuitem value="Inventarios Detallados" action="#{ViewController.selectViewInventarioDetallado()}" icon="pi pi-search"/>
                             <p:menuitem value="Generar Etiquetas" icon="pi pi-ticket" rendered="false" disabled="true"/>
                         </p:submenu>
                         <p:submenu label="Reportes de Usuarios">
-                            <p:menuitem value="Usuarios Detallados" action="#{ViewController.selectViewUsersDetallados()}" icon="pi pi-search" update="dynamicContent"/>
+                            <p:menuitem value="Usuarios Detallados" action="#{ViewController.selectViewUsersDetallados()}" icon="pi pi-search"/>
                         </p:submenu>
                     </p:menu>
                 </div>

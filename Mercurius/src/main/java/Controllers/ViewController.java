@@ -8,6 +8,7 @@ import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.Arrays;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 
 /**
  *
@@ -143,6 +144,7 @@ public class ViewController implements Serializable {
     
     public void selectCreateArticulos(){
         articulos.openNewArticulo();
+        PrimeFaces.current().executeScript("PF('CrearArticuloDialog').show();");
     }
     
     public void selectViewDepartamentos(){

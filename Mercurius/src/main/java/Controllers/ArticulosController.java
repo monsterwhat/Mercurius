@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
@@ -116,7 +117,8 @@ public class ArticulosController implements Serializable {
     }
     
     public void updateArticuloByDialog() {
-        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
+        if(currentSession.isValid()){
+            if(DepartamentoID != 0 || FamiliaID != 0){
             selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
             selectedArticulo.setUsuario(currentSession.getCurrentUser());
@@ -125,9 +127,17 @@ public class ArticulosController implements Serializable {
                 articulosService.updateAndDisable(selectedArticulo);
                 clearCache();
                 clearArticulo();
+                
+                PrimeFaces.current().executeScript("PF('EditArticuloDialog').hide();");
             }
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono departamento o familia", null));
+            }    
         }else{
-            System.out.println("Not working...");
+            FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesion es invalida", null));
+            
         }
     }
     
@@ -145,42 +155,73 @@ public class ArticulosController implements Serializable {
     }
     
     public void updateArticuloRevision() {
-        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
-            selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
-            selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
-            selectedArticulo.setUsuario(currentSession.getCurrentUser());
-            selectedArticulo.setProcessed(true);
-            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                articulosService.updateAndDisable(selectedArticulo);
-                clearCache();
-                clearArticulo();
-                
+        if(currentSession.isValid()){
+            if(DepartamentoID != 0 || FamiliaID != 0){
+                selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+                selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
+                selectedArticulo.setUsuario(currentSession.getCurrentUser());
+                selectedArticulo.setProcessed(true);
+                if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
+                    articulosService.updateAndDisable(selectedArticulo);
+                    clearCache();
+                    clearArticulo();
+
+                    FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
+                }
+            }else{
                 FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono departamento o familia", null));
             }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesion es invalida", null));
+            
         }
+        
     }
     
     public void updateSimpleArticulo(Articulos articulo){
         articulosService.updateAndDisable(articulo);
     }
+        
+    public boolean isValidArticulo(){
+        if(currentSession.isValid()){
+            if(DepartamentoID != 0 || FamiliaID != 0){
+                var existingArticulo = articulosService.findByBarCode(newArticulo.getCodigoBarra());
+                if(existingArticulo == null){
+                        return true;
+                }else{
+                    FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "El codigo de barra ingresado ya existe.", null));
+                }
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No se encontro seleccion para Departamentos o Familias", null));
+            }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_ERROR, "La sesion es invalida.", null));
+        }
+        return false;
+    }
 
     public void createArticulo() {
-        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
-            newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
-            newArticulo.setFamilia(familiaService.findById(FamiliaID));
-            newArticulo.setUsuario(currentSession.getCurrentUser());
-            selectedArticulo.setProcessed(true);
-            if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null && newArticulo.getUsuario() != null){
-                newArticulo.setStatus(true);
-                articulosService.create(newArticulo);
-                clearSelectedArticulo();
+        if(isValidArticulo()){
+                newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+                newArticulo.setFamilia(familiaService.findById(FamiliaID));
+                newArticulo.setUsuario(currentSession.getCurrentUser());
+                selectedArticulo.setProcessed(true);
+                if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null && newArticulo.getUsuario() != null){
+                    newArticulo.setStatus(true);
+                    articulosService.create(newArticulo);
+                    clearSelectedArticulo();
             }
         }
     }
-    
+
     public void createArticuloByDialog() {
-        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
+        if(isValidArticulo()){
             newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             newArticulo.setFamilia(familiaService.findById(FamiliaID));
             newArticulo.setUsuario(currentSession.getCurrentUser());
@@ -190,8 +231,7 @@ public class ArticulosController implements Serializable {
                 articulosService.create(newArticulo);
                 clearCache();
                 clearArticulo();
-            }else{
-                System.out.println("Falto Info!");
+                PrimeFaces.current().executeScript("PF('CrearArticuloDialog').hide();");
             }
         }
     }
@@ -464,6 +504,30 @@ public class ArticulosController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
         
         selectedArticulo.setUnidadMedidaComercial(SelectedUnidadMedidaComercial);
+    }
+    
+    public void createUnidadMedidaComercialChanged() {
+        String message = "Se selecciono: ";
+        if (SelectedUnidadMedidaComercial != null) {
+                message += SelectedUnidadMedidaComercial;
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+        
+        newArticulo.setUnidadMedidaComercial(SelectedUnidadMedidaComercial);
+    }
+    
+    public void createUnidadMedidaChanged() {
+        String message = "Se selecciono: ";
+        if (SelectedUnidadMedida != null) {
+                message += SelectedUnidadMedida;
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+        
+        newArticulo.setUnidadMedida(SelectedUnidadMedida);
     }
     
 }

@@ -15,7 +15,7 @@
         <div class="box">
             <div class="columns is-centered">
                 <div class="column">
-                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" update="dynamicContent" actionListener="#{ViewController.selectNone}" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" update="" actionListener="#{ViewController.selectNone}" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
                     <h:form id="inventarioInactivoTable">
                         <p:dataTable value="#{InventarioController.filteredInventarioInactivo}" var="movimiento"  widgetVar="InventarioInactivoTable"
@@ -60,7 +60,7 @@
                                         <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
                                     </p:commandButton>
                                     <p:commandButton styleClass="button is-warning is-rounded" icon="pi pi-trash"
-                                    process="@this" update="dynamicContent inventarioInactivoTable">
+                                    process="@this" update=" inventarioInactivoTable">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
                                     </p:commandButton>
                                 </div>
