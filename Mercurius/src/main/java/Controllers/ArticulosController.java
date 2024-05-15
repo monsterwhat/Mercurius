@@ -34,6 +34,7 @@ public class ArticulosController implements Serializable {
     @Inject private FamiliaService familiaService;
     @Inject private InventarioService inventarioService;
     @Inject private SessionController currentSession;
+    @Inject private CabysController cabysController;
     
     private List<Articulos> articulosActivos;
     private List<Articulos> articulos;
@@ -50,7 +51,6 @@ public class ArticulosController implements Serializable {
     private int DepartamentoID,FamiliaID = 0;
     private String SelectedUnidadMedida, SelectedUnidadMedidaComercial;
 
-
     @PostConstruct
     public void init() {
         newArticulo = new Articulos();
@@ -64,6 +64,13 @@ public class ArticulosController implements Serializable {
             articulosActivos = articulosService.ListAllEnabled();
         }
         return articulosActivos;
+    }
+    
+    public void getCabysSelection(){
+        if(cabysController.getSelectedCabys()!=null){
+            var selection = cabysController.getSelectedCabys();
+            selectedArticulo.setCodigoCabys(selection);
+        }
     }
     
     public List<Articulos> articulosFull() {
@@ -127,7 +134,9 @@ public class ArticulosController implements Serializable {
                 articulosService.updateAndDisable(selectedArticulo);
                 clearCache();
                 clearArticulo();
-                
+                 
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizo el articulo", null));
                 PrimeFaces.current().executeScript("PF('EditArticuloDialog').hide();");
             }
             }else{
@@ -168,6 +177,9 @@ public class ArticulosController implements Serializable {
 
                     FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
+                    
+                    PrimeFaces.current().executeScript("PF('RevisionArticuloDialog').hide();");
+
                 }
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -231,6 +243,10 @@ public class ArticulosController implements Serializable {
                 articulosService.create(newArticulo);
                 clearCache();
                 clearArticulo();
+                
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo el articulo", null));
+                
                 PrimeFaces.current().executeScript("PF('CrearArticuloDialog').hide();");
             }
         }
@@ -261,7 +277,6 @@ public class ArticulosController implements Serializable {
     
     public void clearArticulo(){
         newArticulo = null;
-        selectedArticulo = null;
     }
     
     public void clearCache(){
@@ -391,23 +406,23 @@ public class ArticulosController implements Serializable {
     
     public void calcularPrecioConUtilidadEdit(){
         try {
-        if (selectedArticulo != null) {
-            double porcentajeUtilidad = selectedArticulo.getPorcentajeUtilidad();
-            double precioCosto = selectedArticulo.getPrecioCostoSinIVA();
-            if(precioCosto >= 0 && porcentajeUtilidad >=0 ){
-                double Utilidad = precioCosto*(porcentajeUtilidad*0.01);
-                double precioConUtilidad = precioCosto+Utilidad;
-                
-                precioConUtilidad = Math.ceil(precioConUtilidad);
-                
-                selectedArticulo.setPrecioFinal(precioConUtilidad);
-                calcularPrecioConIVAEdit();
+            if (selectedArticulo != null) {
+                double porcentajeUtilidad = selectedArticulo.getPorcentajeUtilidad();
+                double precioCosto = selectedArticulo.getPrecioCostoSinIVA();
+                if(precioCosto >= 0 && porcentajeUtilidad >=0 ){
+                    double Utilidad = precioCosto*(porcentajeUtilidad*0.01);
+                    double precioConUtilidad = precioCosto+Utilidad;
+
+                    precioConUtilidad = Math.ceil(precioConUtilidad);
+
+                    selectedArticulo.setPrecioFinal(precioConUtilidad);
+                    calcularPrecioConIVAEdit();
+                }else{
+                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+                }
             }else{
-                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+                System.out.println("No hay articulo para editar...");
             }
-        }else{
-            System.out.println("No hay articulo para editar...");
-        }
         } catch (Exception e) {
             System.out.println("Error:" + e.getLocalizedMessage());
         }

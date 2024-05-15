@@ -4,23 +4,14 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-    <h:head>
-        <title>Crear Artículo</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>   
+        <ui:include src="/secured/fragments/CaByS/CabysDialog.xhtml"/>  
 
-    </h:head>
-    
-    <h:body>
         <!-- Dialog for Crear Articulo -->
         <p:dialog header="Crear Articulo"
                   widgetVar="CrearArticuloDialog" fitViewport="true" responsive="true">                   
             <p:outputPanel id="CrearArticuloDialog" rendered="#{not empty ArticulosController.newArticulo}">
                 <h:form>
-                    <div class="box">
-                        
-                        <p:growl id="growlCreate" showDetail="true" showSummary="false"/>
+                <p:growl showDetail="true" showSummary="false"/>
 
                         <!-- Input for article name -->
                         <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
@@ -60,8 +51,8 @@
                                 <label class="label" for="newCodigoCabys">Código CABYS:</label>
                             </div>
                             <div class="field-body is-flex">
-                                <p:commandButton value="Seleccionar" id="selectCabys" immediate="true"
-                                                    onclick="PF('codigoCabysDialog').show();">
+                                <p:commandButton value="Seleccionar" id="selectCabysCreate"
+                                                    onclick="PF('codigoCabysDialogCreate').show();">
                                     <p:autoUpdate/>
                                 </p:commandButton>
                                 <!-- Container for selected option -->
@@ -71,8 +62,6 @@
                                         <p:autoUpdate/>
                                     </p:outputLabel>
                                 </div>
-                                <!-- Should probably insert the dialog here -->
-                                <ui:include src="/secured/fragments/CaByS/CabysDialog.xhtml"/>  
                             </div>
                         </div>
                         
@@ -219,13 +208,10 @@
                             </div>
                         </div>
                         
-                        <p:commandButton value="Crear Artículo" update="@form"
+                        <p:commandButton value="Crear Artículo" update="@form ArticulosActivos" process="@form"
                                          action="#{ArticulosController.createArticuloByDialog()}"
                                          />
-
-                    </div>
                 </h:form>
             </p:outputPanel>
         </p:dialog>
-    </h:body>
 </ui:composition>

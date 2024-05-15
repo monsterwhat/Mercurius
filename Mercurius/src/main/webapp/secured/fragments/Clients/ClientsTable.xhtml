@@ -22,9 +22,7 @@
             <div class="columns is-centered">
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
-                    <br/>
-                    <h:form id="clientsTable">
-                        
+                    <br/>                        
                         <p:toolbar>
                             <p:toolbarGroup align="right">
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
@@ -100,7 +98,6 @@
                             </p:column>
                         </p:dataTable>
                         <p:commandButton value="Crear Cliente" actionListener="#{ViewController.selectCreateClients}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
-                    </h:form>
                 </div>
             </div>
         </div>

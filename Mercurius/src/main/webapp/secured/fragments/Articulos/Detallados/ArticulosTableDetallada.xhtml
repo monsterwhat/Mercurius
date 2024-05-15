@@ -17,7 +17,6 @@
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="ArticulosTableDetallado">
                         
                         <p:toolbar>
                             <p:toolbarGroup align="right">
@@ -91,20 +90,19 @@
                             <p:column headerText="Acciones" exportable="false">
                                 <div class="buttons has-addons">
                                     <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
-                                    actionListener="#{ViewController.selectEditArticulos()}" process="@this" update="dynamicContent">
+                                    actionListener="#{ViewController.selectEditArticulos()}" process="@this">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                     <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                    actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="dynamicContent ArticulosTableDetallado">
+                                    actionListener="#{ArticulosController.deleteArticulo()}" process="@this">
                                         <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                     </p:commandButton>
                                 </div>
                             </p:column>
                         </p:dataTable>
                         <p:commandButton value="Crear Artículo" actionListener="#{ViewController.selectCreateArticulos}"
-                                         update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"
+                                         styleClass="button is-fullwidth is-success is-rounded"
                                          />
-                    </h:form>
                 </div>
             </div>
         </div>

@@ -1,0 +1,87 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <!-- Dialog for Informacion de Ajuste -->
+    <p:dialog header="Crear Ajuste" widgetVar="CrearAjusteDialog" 
+              fitViewport="true" responsive="true" id="CrearAjusteDialog" modal="true">
+        <p:outputPanel rendered="#{not empty InventarioController.newInventario}">
+            <h:form id="crearAjuste">
+                <p:panel header="Crear un Ajuste de Inventario">
+                    <p:growl id="growl" showDetail="true" showSummary="false"/>
+
+                    <p:messages showDetail="true" for="article" showSummary="false" closable="true" />
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="article">Artículo:</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <p:selectOneMenu id="article" value="#{InventarioController.articuloID}"
+                                                 required="true" requiredMessage="El artículo es obligatorio"
+                                                 widgetVar="articuloSelect">
+                                    <f:selectItem itemLabel="Seleccionar Articulo" itemValue="" />
+                                    <f:selectItems value="#{InventarioController.activosYProcesados}" var="inventario"
+                                                   itemLabel="#{inventario.articulo.nombre}" itemValue="#{inventario.articulo.codigo}"/>
+                                </p:selectOneMenu>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p:messages showDetail="true" for="cantidad" showSummary="false" closable="true" />
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="cantidad">Cantidad:</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <p:inputText id="cantidad" type="number" value="#{InventarioController.newInventario.cantidad}"
+                                             required="true" requiredMessage="La cantidad es obligatoria"
+                                             />
+                            </div>
+                        </div>
+                    </div>
+
+                    <p:messages showDetail="true" for="tipo" showSummary="false" closable="true" />
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="tipo">Tipo:</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <p:selectOneMenu id="tipo" value="#{InventarioController.newInventario.tipoMovimiento}"
+                                                required="true" requiredMessage="El tipo es obligatorio"
+                                                >
+                                    <f:selectItem itemLabel="-- Seleccionar --" itemValue=""/>
+                                    <f:selectItem itemLabel="Entrada de Inventario" itemValue="Entrada de Inventario"/>
+                                    <f:selectItem itemLabel="Ajuste de Inventario" itemValue="Ajuste de Inventario"/>
+                                    <f:selectItem itemLabel="Option 3" itemValue="Option 3"/>
+                                </p:selectOneMenu>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p:messages showDetail="true" for="notas" showSummary="false" closable="true" />
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="notas">Notas:</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <p:inputTextarea id="notas" value="#{InventarioController.newInventario.notas}"
+                                                 rows="4"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <br/>
+                    <p:commandButton value="Crear Ajuste" 
+                                 action="#{InventarioController.createInventarioDialog()}" process="@form" update="@form"/>
+
+                </p:panel>
+            </h:form>
+        </p:outputPanel>
+    </p:dialog>
+</ui:composition>

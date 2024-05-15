@@ -23,7 +23,6 @@
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="inventarioTableDetallado">
                         
                         <p:toolbar class="is-clearfix">
                             <p:toolbarGroup align="right">
@@ -106,7 +105,6 @@
                         </p:dataTable>
                         <!-- Adjust the button action -->
                         <p:commandButton value="Crear Ajuste" actionListener="#{ViewController.selectCreateInventario}" update="dynamicContent" styleClass="button is-fullwidth is-success is-rounded"/>
-                    </h:form>
                 </div>
             </div>
         </div>
