@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
@@ -34,10 +35,78 @@
                     
                     <ui:include src="../../pages/mainMenu.xhtml" />
                     
-                    <p:growl id="growl" showDetail="true" showSummary="true" />
+                    <p:growl showDetail="true" showSummary="true" />
                     
-                    <ui:include src="../../fragments/Articulos/Inactivos/ArticulosInactivos.xhtml"/>
-                    
+                    <ui:include src="/secured/fragments/Articulos/Inactivos/verDetalles.xhtml"/>
+
+                    <h:form>
+                        
+                    <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"
+                                 paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
+                                 emptyMessage="No se encontraron artículos con la critería proporcionada"
+                                 globalFilterFunction="#{ArticulosController.globalFilterFunction}"
+                                 filterBy="#{ArticulosController.filterBy}" reflow="true" 
+                                 selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+
+                        <f:facet name="header">
+                            <p:inputText id="globalFilter" onkeyup="PF('ArticulosInactivos').filter()"
+                                         placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                        </f:facet>
+
+                        <p:column>
+                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" styleClass="has-background-success"
+                                    rendered="#{articulo.processed}"/>
+                            <p:tooltip for="processedChip" value="Procesado" position="top"/>
+                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning"
+                                    rendered="#{!articulo.processed}"/>
+                            <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
+                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" 
+                                    rendered="#{articulo.status}"/>
+                            <p:tooltip for="ActiveChip" value="Activo" position="top"/>
+                            <p:chip id="InactiveChip" icon="pi pi-times" styleClass="has-background-danger" 
+                                    rendered="#{!articulo.status}"/>
+                            <p:tooltip for="InactiveChip" value="Inactivo" position="top"/>
+                        </p:column>
+
+                        <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
+                            <h:outputText value="#{articulo.codigo}"/>
+                        </p:column>
+                        <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                            <h:outputText value="#{articulo.codigoBarra}"/>
+                        </p:column>
+                        <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
+                            <h:outputText value="#{articulo.codigoCabys.codigo}"/>
+                        </p:column>                            
+                        <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                            <h:outputText value="#{articulo.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Precio Costo Sin IVA" sortBy="#{articulo.precioCostoSinIVA}" visible="false">
+                            <h:outputText value="#{articulo.precioCostoSinIVA}"/>
+                        </p:column>
+                        <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.porcentajeUtilidad}" visible="false">
+                            <h:outputText value="#{articulo.porcentajeUtilidad}"/>
+                        </p:column>
+                        <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}" visible="false">
+                            <h:outputText value="#{articulo.precioFinal}"/>
+                        </p:column>
+                        <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}">
+                            <h:outputText value="#{articulo.precioCostoConIVA}"/>
+                        </p:column>
+                        <p:column headerText="Creador" sortBy="#{articulo.usuario.username}" visible="false">
+                            <h:outputText value="#{articulo.usuario.username}"/>
+                        </p:column>
+
+                        <p:column headerText="Acciones" exportable="false">
+                            <div class="buttons has-addons">
+                                <p:commandButton styleClass="button is-rounded is-primary" onclick="PF('ArticuloDetailsDialog').show();"
+                                                 icon="pi pi-eye" process="@this" update="selectedArticulo">
+                                    <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
+                                </p:commandButton>
+                            </div>
+                        </p:column>
+                    </p:dataTable>
+                        
+                    </h:form>
                 </div>
             </div>
         </div>

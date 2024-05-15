@@ -18,7 +18,6 @@
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="dynamicContent" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="facturaTable">
                         <div class="columns is-mobile">
                                 <div class="column">
                                     <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" styleClass="button is-fullwidth"/>                            
@@ -94,7 +93,6 @@
                                 </div>
                             </p:column>
                         </p:dataTable>
-                    </h:form>
                 </div>
             </div>
         </div>

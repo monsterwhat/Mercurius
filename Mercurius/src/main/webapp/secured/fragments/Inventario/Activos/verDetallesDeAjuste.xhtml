@@ -13,10 +13,8 @@
     <h:body>
         <!-- Dialog for Informacion de Ajuste -->
         <p:dialog header="Informacion de Ajuste" widgetVar="AjusteDetailsDialog" 
-                  fitViewport="true" responsive="true" id="AjusteDetailsDialog"
-        modal="true" resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
+                  fitViewport="true" responsive="true" id="AjusteDetailsDialog" modal="true" >
         <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}">
-            <div class="box">
                 <p:dataTable id="selectedArticulo" var="item" value="#{InventarioController.selectedInventario}">
                     <p:column headerText="Código" visible="false">
                         <h:outputText value="#{item.codigo}" />
@@ -54,12 +52,8 @@
                     <p:column headerText="Usuario">
                         <h:outputText value="#{item.usuario.username}" />
                     </p:column>
-                </p:dataTable>
-            </div>
-                
-                
+                </p:dataTable>                
         </p:outputPanel>
-        
     </p:dialog>
     </h:body>
 

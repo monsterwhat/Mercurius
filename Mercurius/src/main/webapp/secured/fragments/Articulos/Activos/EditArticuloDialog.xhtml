@@ -3,23 +3,14 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-
-    <h:head>
-        <title>Editar Artículo</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    </h:head>
     
-    <h:body>
+        <ui:include src="/secured/fragments/CaByS/CabysDialogEdit.xhtml"/>      
         <!-- Dialog for Edit Articulo -->
         <p:dialog header="Editar Artículo: #{ArticulosController.selectedArticulo.nombre}" 
-                  widgetVar="EditArticuloDialog" fitViewport="true"
-                  responsive="true" modal="true">
+                  widgetVar="EditArticuloDialog" fitViewport="true" responsive="true" modal="true">
             <p:outputPanel id="EditArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
                 <h:form>
-
-                <p:growl id="growlUpdate" showDetail="true" showSummary="false"/>
+                <p:growl showDetail="true" showSummary="false"/>
 
                 <!-- Input for article name -->
                 <p:messages for="editName" showSummary="false" showDetail="true" closable="true" />
@@ -37,14 +28,14 @@
                 </div>
 
                 <!-- Input for codigo de barra -->
-                <p:messages showDetail="true" for="ediCodigoBarra" showSummary="false" closable="true" />
+                <p:messages showDetail="true" for="editCodigoBarra" showSummary="false" closable="true" />
                 <div class="field is-horizontal">
                     <div class="field-label is-normal">
-                        <label class="label" for="ediCodigoBarra">Codigo de Barra:</label>
+                        <label class="label" for="editCodigoBarra">Codigo de Barra:</label>
                     </div>
                     <div class="field-body">
                         <div class="field">
-                            <p:inputText id="ediCodigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
+                            <p:inputText id="editCodigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
                                          required="true" requiredMessage="El codigo de barra no puede estar vacío"
                                          >
                             </p:inputText>
@@ -53,14 +44,14 @@
                 </div>
 
                 <!-- Output for Recomendacion Cabys -->
-                <p:messages showDetail="true" for="ediRecomendacionCabys" showSummary="false" closable="true" />
+                <p:messages showDetail="true" for="editRecomendacionCabys" showSummary="false" closable="true" />
                 <div class="field is-horizontal">
                     <div class="field-label is-normal">
-                        <label class="label" for="ediRecomendacionCabys">Recomendacion Cabys:</label>
+                        <label class="label" for="editRecomendacionCabys">Recomendacion Cabys:</label>
                     </div> 
                     <div class="field-body">
                         <div class="field">
-                            <p:outputLabel id="ediRecomendacionCabys" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
+                            <p:outputLabel id="editRecomendacionCabys" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
                         </div>
                     </div>
                 </div>
@@ -72,8 +63,8 @@
                         <label class="label" for="editCodigoCabys">Código CABYS:</label>
                     </div>
                     <div class="field-body is-flex">
-                        <p:commandButton value="Seleccionar" id="selectCabys"
-                                            onclick="PF('codigoCabysDialog').show();">
+                        <p:commandButton value="Seleccionar" id="selectCabysEdit" 
+                                            onclick="PF('codigoCabysDialogEdit').show();">
                             <p:autoUpdate/>
                         </p:commandButton>
                         <!-- Container for selected option -->
@@ -83,8 +74,6 @@
                                 <p:autoUpdate/>
                             </p:outputLabel>
                         </div>
-                        <!-- Should probably insert the dialog here -->
-                        <ui:include src="../../CaByS/CabysDialogEdit.xhtml"/>  
                     </div>
                 </div>
 
@@ -179,7 +168,7 @@
                                          required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
                                          >
                                 <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                        update="editPrecioFinal editPrecioFinalConIVA" process="@this"/>
+                                        update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this"/>
                             </p:inputText>
                         </div>
                     </div>
@@ -197,7 +186,7 @@
                                          required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
                                          >
                                         <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                                update="editPrecioFinal editPrecioFinalConIVA" process="@this" />
+                                                update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this" />
                             </p:inputText>
                         </div>
                     </div>
@@ -228,10 +217,10 @@
                         </div>
                     </div>
                 </div>
-                <p:commandButton value="Actualizar datos" update="@this"
+                <p:commandButton value="Actualizar datos" update="@form ArticulosActivos" process="@form"
                                  action="#{ArticulosController.updateArticuloByDialog()}"/>
+            
                 </h:form>
             </p:outputPanel>
         </p:dialog> 
-    </h:body>
 </ui:composition>

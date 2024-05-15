@@ -15,7 +15,6 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.model.FilterMeta;
-import org.primefaces.model.LazyDataModel;
 import org.primefaces.util.LangUtils;
 
 @Data
@@ -34,15 +33,12 @@ public class CabysController implements Serializable {
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     private boolean cabysStatus;
-    
-    private LazyDataModel<Cabys> reducedCatalogo;
-    
+        
     @PostConstruct
     public void init() {
         newCabys = new Cabys();
         selectedCabys = new Cabys();
         cabysList();
-        //loadPage();
         filterBy = new ArrayList<>();        
     }
     

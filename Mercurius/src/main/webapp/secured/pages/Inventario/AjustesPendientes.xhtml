@@ -2,7 +2,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="jakarta.faces.core">
 
 <h:head>
     <title>Catalogo de Ajustes Pendientes</title>
@@ -32,12 +33,52 @@
                         </div>
                     </div>
                     
-                    <ui:include src="../../pages/mainMenu.xhtml" />
+                    <ui:include src="/secured/pages/mainMenu.xhtml" />
                     
-                    <p:growl id="growl" showDetail="true" showSummary="true" />
+                    <p:growl showDetail="true" showSummary="true" />
                     
-                    <ui:include src="../../fragments/Inventario/PendientesRevision/InventariosPendientesTable.xhtml"/>
-                    
+                    <ui:include src="/secured/fragments/Inventario/PendientesRevision/DialogoRevisionInventario.xhtml"/>
+
+                    <h:form>
+                    <p:dataTable value="#{InventarioController.filteredInventarioSinProcesar}" var="movimiento"  widgetVar="InventariosPendientesTable"
+                                 paginator="true" rows="8" paginatorPosition="bottom" id="InventariosPendientesTableData"
+                                 emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"
+                                 globalFilterFunction="#{InventarioController.globalFilterFunction}" reflow="true"
+                                 filterBy="#{InventarioController.filterBy}" liveScroll="true" touchable="true"
+                                 selection="#{InventarioController.selectedInventario}" rowKey="#{movimiento.codigo}">
+                        
+                        <p:ajax event="rowSelect" update="RevisionMovimientoDialog"/>
+
+                        <f:facet name="header">
+                            <p:inputText id="globalFilter" onkeyup="PF('InventariosPendientesTable').filter()"
+                                         placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                        </f:facet>
+
+                        <p:column exportable="false">
+                            <p:commandButton value="Procesar" styleClass="button is-info is-rounded" update="RevisionMovimientoDialog"
+                                icon="pi pi-sync" onclick="PF('RevisionMovimientoDialog').show();" process="@this">
+                                <f:setPropertyActionListener value="#{movimiento}" target="#{InventarioController.selectedInventario}" />
+                            </p:commandButton>
+                        </p:column>
+
+                        <p:column headerText="Código" sortBy="#{movimiento.codigo}" visible="false">
+                            <h:outputText value="#{movimiento.codigo}"/>
+                        </p:column>
+                        <p:column headerText="Nombre" sortBy="#{movimiento.articulo.nombre}">
+                            <h:outputText value="#{movimiento.articulo.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Codigo Barra" sortBy="#{movimiento.articulo.codigoBarra}" visible="false">
+                            <h:outputText value="#{movimiento.articulo.codigoBarra}"/>
+                        </p:column>
+                        <p:column headerText="Cantidad" sortBy="#{movimiento.cantidad}">
+                            <h:outputText value="#{movimiento.cantidad}"/>
+                        </p:column>
+                        <p:column headerText="Fecha" sortBy="#{movimiento.fechaMovimiento}">
+                            <h:outputText value="#{movimiento.fechaMovimiento}"/>
+                        </p:column>
+
+                    </p:dataTable>
+                    </h:form>
                 </div>
             </div>
         </div>

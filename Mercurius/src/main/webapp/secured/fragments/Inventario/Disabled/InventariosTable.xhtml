@@ -17,7 +17,6 @@
                 <div class="column">
                     <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
                     <br/>
-                    <h:form id="inventarioTable">
                         <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
                         
                         <p:dataTable value="#{InventarioController.filteredInventario}" var="inventario"  widgetVar="InventarioTable"
@@ -27,7 +26,7 @@
                                      filterBy="#{InventarioController.filterBy}" reflow="true"
                                      selection="#{InventarioController.selectedInventario}" rowKey="#{inventario.codigo}">
                             <p:autoUpdate/>
-                            <p:ajax event="rowSelect" update="inventarioTable:selectedArticulo"/>
+                            <p:ajax event="rowSelect" update="selectedArticulo"/>
                             
                             <f:facet name="header">
                                 <div class="field columns is-mobile">
@@ -53,7 +52,7 @@
                             <p:column exportable="false">
                                 <div class="buttons">
                                     <p:commandButton styleClass="button is-rounded is-info" icon="pi pi-eye" process="@this"
-                                                     onclick="PF('AjusteDetailsDialog').show();" update="inventarioTable:selectedArticulo">
+                                                     onclick="PF('AjusteDetailsDialog').show();" update="selectedArticulo">
                                             <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
                                     </p:commandButton>
                                 </div>
@@ -83,7 +82,7 @@
                                                         
                             <p:column exportable="false">
                                 <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-trash"
-                                        actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update=" inventarioTable">
+                                        actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update="InventarioTableData">
                                         <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
                                 </p:commandButton>
                             </p:column>
@@ -91,7 +90,6 @@
                         </p:dataTable>
                         
                         <p:commandButton value="Crear Ajuste" actionListener="#{ViewController.selectCreateInventario}" update="" styleClass="button is-fullwidth is-success is-rounded"/>
-                    </h:form>
                 </div>
             </div>
         </div>
