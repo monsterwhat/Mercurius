@@ -3,16 +3,19 @@ package Controllers;
 import Models.Familia;
 import Services.FamiliaService;
 import jakarta.annotation.PostConstruct;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
@@ -41,13 +44,9 @@ public class FamiliaController implements Serializable {
 
     public List<Familia> familiasList() {
         if (familias == null) {
-            familias = familiaService.ListAllEnabled();
+            familias = familiaService.listAll();
         }
         return familias;
-    }
-    
-    public List<Familia> familiasListAll() {
-        return familiaService.listAll();
     }
 
     public long familiaCount() {
@@ -58,20 +57,46 @@ public class FamiliaController implements Serializable {
         newFamilia = new Familia();
     }
     
-    public void updateFamilia() {
+    public void updateFamiliaDialog() {
         if(currentSession.isValid()){
-            selectedFamilia.setUsuario(currentSession.getCurrentUser());
-            familiaService.updateAndDisable(selectedFamilia);
-            clearSelectedFamilia();    
+            if(selectedFamilia != null){
+                selectedFamilia.setUsuario(currentSession.getCurrentUser());
+                selectedFamilia.setFecha(new Date());
+                familiaService.updateAndDisable(selectedFamilia);
+                clearSelectedFamilia();
+                
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se edito la familia", null));
+
+                PrimeFaces.current().executeScript("PF('EditarFamiliaDialog').hide();");
+            }
+        }else{
+             FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion Invalida!", null));
         }
     }
-
-    public void createFamilia() {
+    
+    public void createFamiliaDialog() {
         if(currentSession.isValid()){
-            newFamilia.setStatus(true);
-            newFamilia.setUsuario(currentSession.getCurrentUser());
-            familiaService.create(newFamilia);
-            clearSelectedFamilia();
+            if(newFamilia != null){
+                newFamilia.setStatus(true);
+                newFamilia.setUsuario(currentSession.getCurrentUser());
+                newFamilia.setFecha(new Date());
+                var valid = familiaService.createIfNotExists(newFamilia);
+                if(valid){
+                    clearSelectedFamilia();
+                    FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo la familia", null));
+
+                    PrimeFaces.current().executeScript("PF('CrearFamiliaDialog').hide();");
+                }else{
+                    FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Ya existe una familia con ese nombre!", null));
+                }
+            }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion Invalida!", null));
         }
     }
     
@@ -86,7 +111,6 @@ public class FamiliaController implements Serializable {
         familias = null;
         newFamilia = null;
         selectedFamilia = null;
-        viewManager.selectViewFamilias();
     }
 
     public List<Familia> getFilteredFamilias() {
@@ -99,16 +123,6 @@ public class FamiliaController implements Serializable {
         }
     }
     
-    public List<Familia> getFilteredFamiliasDetallado() {
-        if (familiaFilter != null && !familiaFilter.isEmpty()) {
-            return familiasListAll().stream()
-                    .filter(familia -> globalFilterFunction(familia, familiaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return familiasListAll();
-        }
-    }
-
     public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {

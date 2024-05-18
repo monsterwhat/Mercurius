@@ -1,6 +1,7 @@
 package Models;
 
 import jakarta.persistence.*;
+import java.util.Date;
 import lombok.Data;
 
 @Entity
@@ -14,19 +15,13 @@ public class Familia {
     private String nombre;
     
     private Boolean status; //En caso de querer archivar o desabilitar
+    
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date fecha; //LOGS LOGS LOGS!!
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo la familia
-
-    public Familia() {
-    }
-
-    public Familia(int id, String nombre, Boolean status, Users usuario) {
-        this.id = id;
-        this.nombre = nombre;
-        this.status = status;
-        this.usuario = usuario;
-    }
     
 }

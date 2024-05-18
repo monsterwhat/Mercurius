@@ -94,7 +94,6 @@ public class CabysController implements Serializable {
         catalogo = null;
         newCabys = null;
         selectedCabys = null;
-        viewManager.selectViewCabys();
     }    
         
     public List<Cabys> getFilteredCabys() {

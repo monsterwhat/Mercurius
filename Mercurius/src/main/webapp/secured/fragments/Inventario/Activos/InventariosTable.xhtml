@@ -1,0 +1,103 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <title>Inventario</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    </h:head>
+    
+    <h:body>
+        <div class="box">
+            <div class="columns is-centered">
+                <div class="column">
+                    <p:commandButton value="Volver al menú principal" icon="pi pi-home" actionListener="#{ViewController.selectNone}" update="" styleClass="button is-fullwidth is-inverted is-warning is-rounded"/>
+                    <br/>
+                        <div class="column">
+                            <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" styleClass="button is-fullwidth"/>                            
+                        </div>
+                    
+                        <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
+                        <ui:include src="/secured/fragments/Inventario/Upload/subirFacturas.xhtml"
+                        
+                        <p:dataTable value="#{InventarioController.filteredInventario}" var="inventario"  widgetVar="InventarioTable"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="InventarioTableData"
+                                     emptyMessage="No se encontraron registros de inventario con la critería proporcionada"
+                                     globalFilterFunction="#{InventarioController.globalFilterFunction}"
+                                     filterBy="#{InventarioController.filterBy}" reflow="true"
+                                     selection="#{InventarioController.selectedInventario}" rowKey="#{inventario.codigo}">
+                            <p:autoUpdate/>
+                            <p:ajax event="rowSelect" update="selectedArticulo"/>
+                            
+                            <f:facet name="header">
+                                <div class="field columns is-mobile">
+                                    <p:inputText id="globalFilter" onkeyup="PF('InventarioTable').filter()"
+                                             placeholder="Búsqueda general de todos los campos" styleClass="input column is-mobile"/>
+                                </div>
+                            </f:facet>
+                            
+                            <p:column exportable="false">
+                                <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!inventario.processed}"/>
+                                <p:tooltip for="unprocessedChip" value="Sin Procesar" position="top"/>
+                                
+                                <p:chip id="processedChip" icon="pi pi-exclamation-circle" styleClass="has-background-success" rendered="#{inventario.processed}"/>
+                                <p:tooltip for="processedChip" value="Procesada" position="top"/>
+                                
+                                <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" rendered="#{inventario.status}"/>
+                                <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+                                
+                                <p:chip id="inActiveChip" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!inventario.status}"/>
+                                <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                            </p:column>
+                            
+                            <p:column exportable="false">
+                                <div class="buttons">
+                                    <p:commandButton styleClass="button is-rounded is-info" icon="pi pi-eye" process="@this"
+                                                     onclick="PF('AjusteDetailsDialog').show();" update="selectedArticulo">
+                                            <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
+                                    </p:commandButton>
+                                </div>
+                            </p:column>
+                            
+                            <p:column headerText="Código" visible="false">
+                                <h:outputText value="#{inventario.codigo}"/>
+                            </p:column>
+                            <p:column headerText="Artículo" sortBy="#{inventario.articulo.nombre}">
+                                <h:outputText value="#{inventario.articulo.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Cantidad" sortBy="#{inventario.cantidad}">
+                                <h:outputText value="#{inventario.cantidad}"/>
+                            </p:column>
+                            <p:column headerText="Tipo Movimiento" sortBy="#{inventario.tipoMovimiento}">
+                                <h:outputText value="#{inventario.tipoMovimiento}"/>
+                            </p:column>
+                            <p:column headerText="Fecha Movimiento" sortBy="#{inventario.fechaMovimiento}">
+                                <h:outputText value="#{inventario.fechaMovimiento}"/>
+                            </p:column>
+                            <p:column headerText="Notas" visible="false">
+                                <h:outputText value="#{inventario.notas}"/>
+                            </p:column>
+                            <p:column headerText="Usuario" visible="false">
+                                <h:outputText value="#{inventario.usuario.username}"/>
+                            </p:column>
+                                                        
+                            <p:column exportable="false">
+                                <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-trash"
+                                        actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update="InventarioTableData">
+                                        <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
+                                </p:commandButton>
+                            </p:column>
+                            
+                        </p:dataTable>
+                        
+                        <p:commandButton value="Crear Ajuste" actionListener="#{ViewController.selectCreateInventario}" update="" styleClass="button is-fullwidth is-success is-rounded"/>
+                </div>
+            </div>
+        </div>
+    </h:body>
+
+</ui:composition>

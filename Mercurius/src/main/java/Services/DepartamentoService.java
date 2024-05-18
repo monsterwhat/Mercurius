@@ -1,7 +1,10 @@
 package Services;
 
 import Models.Departamento;
+import Models.Familia;
 import jakarta.annotation.PostConstruct;
+import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
@@ -27,6 +30,27 @@ public class DepartamentoService extends GService<Departamento> {
             System.out.println("Error creating entity: " + e.toString());
         }
     }
+    
+    public boolean createIfNotExists(Familia entity) {
+        try {
+            String queryStr = "SELECT COUNT(d) FROM Departamento d WHERE d.nombre = :nombre";
+            Long count = em.createQuery(queryStr, Long.class)
+                           .setParameter("nombre", entity.getNombre())
+                           .getSingleResult();
+
+            if (count > 0) {
+                return false;
+            } else {
+                em.persist(entity);
+                return true;
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error creating entity: " + e.toString());
+            return false;
+        }
+    }
+    
 
     @Override
     public void delete(Departamento entity) {
@@ -48,6 +72,9 @@ public class DepartamentoService extends GService<Departamento> {
     @Override
     public void update(Departamento entity) {
         try {
+            if(!entity.getStatus()){
+                entity.setStatus(true);
+            }
             em.merge(entity);
         } catch (Exception e) {
             System.out.println("Error updating entity: " + e.toString());
@@ -86,6 +113,7 @@ public class DepartamentoService extends GService<Departamento> {
 
                 // Create a new item with the updated information
                 em.persist(entity);
+                
             } else {
                 System.out.println("Entity not found");
             }
@@ -110,8 +138,15 @@ public class DepartamentoService extends GService<Departamento> {
             Departamento existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
-                // Soft delete the item by setting its status to false
-                existingItem.setStatus(false);
+                if(existingItem.getStatus()){
+                    existingItem.setStatus(false);
+                        FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se desactivo el departamento!", null));
+                }else{
+                    existingItem.setStatus(true);
+                        FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se activo el departamento!", null));
+                }
                 em.merge(existingItem);
             } else {
                 System.out.println("Entity not found");

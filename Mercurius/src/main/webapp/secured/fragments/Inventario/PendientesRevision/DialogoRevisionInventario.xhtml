@@ -12,7 +12,7 @@
         <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}">
             <h:form id="RevisionMovimientoDialog">
                 <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.articulo.nombre}">
-                    <p:growl id="growl" showDetail="true" showSummary="false"/>
+                    <p:growl showDetail="true" showSummary="false"/>
 
                     <!-- Input for article -->
                     <div class="field is-horizontal">
@@ -78,7 +78,7 @@
                     <div class="field is-horizontal">
                         <div class="field-body">
                             <div class="field">
-                                <p:commandButton value="Actualizar datos" update="@form" process="@this"
+                                <p:commandButton value="Actualizar datos" update="@form inventarioPendiente" process="@form"
                                                  action="#{InventarioController.updateInventarioRevisionDialog()}" />
                             </div>
                         </div>

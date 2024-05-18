@@ -94,7 +94,6 @@ public class UsersController implements Serializable{
         users = null;
         newUser = null;
         selectedUser = null;
-        viewManager.selectViewUsers();
     }
         
     public List<Users> getFilteredUsers() {

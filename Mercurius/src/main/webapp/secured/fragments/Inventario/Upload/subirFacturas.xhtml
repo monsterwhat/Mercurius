@@ -5,16 +5,7 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-    <h:head>
-        <title>Inventario</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    </h:head>
-    
-    <h:body>
-        <p:dialog header="Subir Facturas" widgetVar="facturasUpload" position="center"
-          fitViewport="true" width="800" height="500" responsive="true" draggable="false">
+        <p:dialog header="Subir Facturas" widgetVar="facturasUpload" fitViewport="true" responsive="true">
             <h:form id="upload">
                 <div class="box">
                     <p:growl id="messages" showDetail="true" keepAlive="true"/>
@@ -36,11 +27,10 @@
                     </div>
                 </div>
             </h:form>
-                <div class="column has-text-centered">
-                    <p:commandButton value="Procesar Facturas" actionListener="#{facturasController.processFacturas}"
-                                     styleClass="button" update="upload:uploadedFiles dynamicContent facturaTable"/>
-                </div>
+            <div class="column has-text-centered">
+                <p:commandButton value="Procesar Facturas" actionListener="#{facturasController.processFacturas}"
+                                 styleClass="button" update="upload:uploadedFiles recibos"/>
+            </div>
         </p:dialog>
-    </h:body>
 
 </ui:composition>

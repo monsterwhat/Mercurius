@@ -29,10 +29,6 @@ public class ViewController implements Serializable {
     
     String selectedOption = "none";
     String[] selectedOptions;
-
-    public void selectViewUsers(){
-        selectedOption = "viewUsers";
-    }
     
     public void selectViewUsersDetallados(){
         selectedOption = "viewUsersDetallados";
@@ -41,16 +37,7 @@ public class ViewController implements Serializable {
     public void selectEditUsers(){
         selectedOption = "editUsers";
     }
-    
-    public void selectCreateUsers(){
-        selectedOption = "createUsers";
-        profiles.openNewUser();
-    }
-    
-    public void selectViewFacturas(){
-        selectedOption = "viewFacturas";
-    }
-    
+        
     public void selectViewFacturasDetalladas(){
         selectedOption = "viewFacturasDetallado";
     }
@@ -68,10 +55,6 @@ public class ViewController implements Serializable {
         clients.openNewClient();
     }
     
-    public void selectViewCabys(){
-        selectedOption = "viewCabys";
-    }
-    
     public void selectViewFamilias(){
         selectedOption = "viewFamilias";
     }
@@ -80,13 +63,8 @@ public class ViewController implements Serializable {
         selectedOption = "viewFamiliasDetallado";
     }
     
-    public void selectEditFamilias(){
-        selectedOption="editFamilias";
-    }
-    
     public void selectCreateFamilias(){
-        selectedOption = "createFamilias";
-        createNewFamilia();
+        familias.openNewFamilia();
     }
     
     public void selectViewInventario(){
@@ -154,10 +132,6 @@ public class ViewController implements Serializable {
     public void selectViewDepartamentosDetallado(){
         selectedOption="viewDepartamentosDetallado";
     }
-
-    public void selectEditDepartamentos(){
-        selectedOption="editDepartamentos";
-    }
     
     public void selectCreateDepartamentos(){
         selectedOption="createDepartamentos";
@@ -166,10 +140,6 @@ public class ViewController implements Serializable {
     
     public void createNewDepartamento(){
         departamentos.openNewDepartamento();
-    }
-    
-    public void createNewFamilia(){
-        familias.openNewFamilia();
     }
     
     public void createNewInventario(){

@@ -362,9 +362,9 @@ public class ArticulosController implements Serializable {
         return String.valueOf(articulo.getCodigo()).contains(filterText)
                 || articulo.getNombre().toLowerCase().contains(filterText)
                 || articulo.getCodigoBarra().toLowerCase().contains(filterText)
-                || articulo.getDepartamento().getNombre().toLowerCase().contains(filterText)
-                || articulo.getFamilia().getNombre().toLowerCase().contains(filterText)
-                || articulo.getUsuario().getUsername().toLowerCase().contains(filterText);
+                || (articulo.getDepartamento() != null && articulo.getDepartamento().getNombre().toLowerCase().contains(filterText))
+                || (articulo.getFamilia() != null && articulo.getFamilia().getNombre().toLowerCase().contains(filterText))
+                || (articulo.getUsuario() != null && articulo.getUsuario().getUsername().toLowerCase().contains(filterText));
     }
     
     public void calcularPrecioConIVA() {

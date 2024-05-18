@@ -2,6 +2,8 @@ package Services;
 
 import Models.Familia;
 import jakarta.annotation.PostConstruct;
+import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
@@ -26,6 +28,27 @@ public class FamiliaService extends GService<Familia> {
             System.out.println("Error creating entity: " + e.toString());
         }
     }
+    
+    public boolean createIfNotExists(Familia entity) {
+        try {
+            String queryStr = "SELECT COUNT(f) FROM Familia f WHERE f.nombre = :nombre";
+            Long count = em.createQuery(queryStr, Long.class)
+                           .setParameter("nombre", entity.getNombre())
+                           .getSingleResult();
+
+            if (count > 0) {
+                return false;
+            } else {
+                em.persist(entity);
+                return true;
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error creating entity: " + e.toString());
+            return false;
+        }
+    }
+
 
     @Override
     public void delete(Familia entity) {
@@ -79,11 +102,16 @@ public class FamiliaService extends GService<Familia> {
             Familia existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
-                // Disable the existing item
-                existingItem.setStatus(false);
+                // Disable the existing item if enabled
+                if(existingItem.getStatus()){
+                    existingItem.setStatus(false);
+                }
                 em.merge(existingItem);
-
-                // Create a new item with the updated information
+                
+                //If we are updating an existing disabled record we need to re-enable it...
+                if(!entity.getStatus()){
+                    entity.setStatus(true);
+                }
                 em.persist(entity);
             } else {
                 System.out.println("Entity not found");
@@ -109,8 +137,15 @@ public class FamiliaService extends GService<Familia> {
             Familia existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
-                // Soft delete the item by setting its status to false
-                existingItem.setStatus(false);
+                if(existingItem.getStatus()){
+                    existingItem.setStatus(false);
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_WARN, "Se desactivo la familia!", null));
+                }else{
+                    existingItem.setStatus(true);
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_WARN, "Se activo la familia!", null));
+                }
                 em.merge(existingItem);
             } else {
                 System.out.println("Entity not found");

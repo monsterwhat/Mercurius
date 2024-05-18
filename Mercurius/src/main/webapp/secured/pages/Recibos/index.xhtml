@@ -1,1 +1,140 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
+<h:head>
+    <title>Menu Principal Recibos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+    <script src="../../../resources/css/style.css"/>
+
+</h:head>
+
+<h:body>
+    <div class="container mt-5">
+        <div class="columns">
+            <div class="column">
+                <div class="box">
+                    <div class="columns">
+                        <div class="column">
+                                <div class="message-body">
+                                    <div class="columns is-mobile">
+                                        <div class="column is-four-fifths">
+                                            <h1 class="title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
+                                        </div>
+                                        <div class="column">
+                                            <p:commandButton styleClass="button is-rounded is-danger is-2" icon="pi pi-sign-out" value="Salir" actionListener="#{SessionController.logOut()}" />
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                    
+                    <ui:include src="/secured/pages/mainMenu.xhtml" />
+                    <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
+                    <ui:include src="/secured/fragments/Inventario/Upload/subirFacturas.xhtml"/>
+                    <ui:include src="/secured/fragments/Facturas/Recibos/verDetallesFactura.xhtml"/>
+                    
+                    <p:growl showDetail="true" showSummary="true" />
+                    
+                    <h:form id="recibos">
+                    
+                    <div class="columns is-mobile">
+                        <div class="column">
+                            <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" styleClass="button is-fullwidth"/>                            
+                        </div>
+
+                        <div class="column buttons">
+                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="button is-warning" ajax="false">
+                                <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                            </p:commandButton>
+                            <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" styleClass="button is-warning" ajax="false">
+                                <p:dataExporter type="pdf" target="FacturasTableData" fileName="Facturas-Mercurius-PDF" />
+                            </p:commandButton>
+                        </div>
+                    </div>
+
+                    <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
+                                 paginator="true" rows="8" paginatorPosition="bottom" id="FacturasTableData"
+                                 emptyMessage="No se encontraron registros de factura con la critería proporcionada"
+                                 globalFilterFunction="#{facturasController.globalFilterFunction}"
+                                 filterBy="#{facturasController.filterBy}" reflow="true" rowSelectMode="add"
+                                 selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
+
+                        <p:ajax event="rowSelect" update="@this recibos"/>
+                        
+                        <p:autoUpdate/>
+
+                        <f:facet name="header">
+                            <div class="field columns is-mobile">
+                                <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
+                                         placeholder="Búsqueda general de todos los campos" styleClass="input column"/>
+                            </div>
+                        </f:facet>
+                        
+                        <p:column exportable="false">
+                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" rendered="#{factura.status}"/>
+                            <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+
+                            <p:chip id="inActiveChip" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!factura.status}"/>
+                            <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                           
+                            <p:chip id="ProcessedChip" icon="pi pi-check" styleClass="has-background-success" rendered="#{factura.processed}"/>
+                            <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
+
+                            <p:chip id="unProcessedChip" icon="pi pi-clock" styleClass="has-background-warning" rendered="#{!factura.processed}"/>
+                            <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
+                        </p:column>
+
+                        <p:column headerText="Código" visible="false" >
+                            <h:outputText value="#{factura.id}"/>
+                        </p:column>
+                        <p:column headerText="Numero Consecutivo" sortBy="#{factura.numeroConsecutivo}">
+                            <h:outputText value="#{factura.numeroConsecutivo}"/>
+                        </p:column>
+                        <p:column headerText="Fecha" sortBy="#{factura.fechaEmision}">
+                            <h:outputText value="#{factura.fechaEmision}"/>
+                        </p:column>
+                        <p:column headerText="Emisor: " sortBy="#{factura.emisor.nombre}">
+                            <h:outputText value="#{factura.emisor.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Condicion Venta" sortBy="#{factura.condicionVenta}">
+                            <h:outputText value="#{factura.condicionVenta}"/>
+                        </p:column>
+                        <p:column headerText="Plazo Credito" sortBy="#{factura.plazoCredito}">
+                            <h:outputText value="#{factura.plazoCredito}"/>
+                        </p:column>
+                        <p:column headerText="Medio Pago" sortBy="#{factura.medioPago}">
+                            <h:outputText value="#{factura.medioPago}"/>
+                        </p:column>
+
+                        <p:column headerText="Acciones" exportable="false">
+                            <div class="buttons">
+                                <p:commandButton id="buttonSync" styleClass="button is-success is-1 is-rounded is-mobile" disabled="#{factura.processed}" process="@this"
+                                                 icon="pi pi-sync" actionListener="#{facturasController.processSelectedFactura()}" update="@this recibos">
+                                                <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
+                                </p:commandButton>
+
+                                <p:commandButton id="buttonSee" styleClass="button is-1 is-rounded is-mobile" process="@this"
+                                                 icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
+                                                <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                </p:commandButton>
+
+                                <p:commandButton id="buttonDelete" styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
+                                                actionListener="#{facturasController.deleteFactura()}" process="@this" update="@this recibos">
+                                                <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                </p:commandButton>
+                            </div>
+                        </p:column>
+                    </p:dataTable>
+                        
+                    </h:form>
+                </div>
+            </div>
+        </div>
+    </div>
+</h:body>
+</html>

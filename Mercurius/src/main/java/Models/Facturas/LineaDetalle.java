@@ -4,6 +4,7 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -28,7 +29,7 @@ public class LineaDetalle {
     private String detalle;
     private String precioUnitario;
     private String montoTotal;
-    @ElementCollection private List<Descuento> descuentos;
+    @ElementCollection(fetch = FetchType.EAGER) private List<Descuento> descuentos;
     private String subTotal;
     @Embedded private Impuesto impuesto;
     private String impuestoNeto;

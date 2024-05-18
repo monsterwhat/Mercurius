@@ -3,6 +3,7 @@ package Controllers;
 import Models.Departamento;
 import Services.DepartamentoService;
 import jakarta.annotation.PostConstruct;
+import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
@@ -41,7 +43,7 @@ public class DepartamentoController implements Serializable {
 
     public List<Departamento> departamentosList() {
         if (departamentos == null) {
-            departamentos = departamentoService.ListAllEnabled();
+            departamentos = departamentoService.listAll();
         }
         return departamentos;
     }
@@ -60,25 +62,44 @@ public class DepartamentoController implements Serializable {
 
     public void updateDepartamento() {
         if(currentSession.isValid()){
-        selectedDepartamento.setUsuario(currentSession.getCurrentUser());
-        departamentoService.updateAndDisable(selectedDepartamento);
-        clearSelectedDepartamento();        
+            if(selectedDepartamento !=null ){
+                selectedDepartamento.setUsuario(currentSession.getCurrentUser());
+                departamentoService.update(selectedDepartamento);
+                clearSelectedDepartamento();
+                
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizo el departamento!", null));
+                PrimeFaces.current().executeScript("PF('EditarDepartamentoDialog').hide();");
+
+            }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion Invalida!", null));
         }
     }
 
     public void createDepartamento() {
         if(currentSession.isValid()){
-            newDepartamento.setStatus(true);
-            newDepartamento.setUsuario(currentSession.getCurrentUser());
-            departamentoService.create(newDepartamento);
-            clearSelectedDepartamento();
+            if(newDepartamento != null){
+                newDepartamento.setStatus(true);
+                newDepartamento.setUsuario(currentSession.getCurrentUser());
+                departamentoService.create(newDepartamento);
+                clearSelectedDepartamento(); 
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo el departamento", null));
+                PrimeFaces.current().executeScript("PF('CrearDepartamentoDialog').hide();");
+
+            }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion Invalida!", null));
         }
     }
     
     public Departamento createSimpleDepartamento(Departamento departamento){
         if(currentSession.isValid()){
             Departamento persistedDepartamento = departamentoService.createIfNotExist(departamento);
-            clearLists();
+            clearSelectedDepartamento();
             return persistedDepartamento;
         }
         return null;
@@ -92,14 +113,9 @@ public class DepartamentoController implements Serializable {
     }
 
     public void clearSelectedDepartamento() {
-        clearLists();
+        departamentos = null;
         newDepartamento = null;
         selectedDepartamento = null;
-        viewManager.selectViewDepartamentos();
-    }
-    
-    public void clearLists(){
-        departamentos = null;
     }
 
     public List<Departamento> getFilteredDepartamentos() {
