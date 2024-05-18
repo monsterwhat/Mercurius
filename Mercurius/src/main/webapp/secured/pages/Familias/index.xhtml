@@ -2,6 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
 <h:head>
@@ -32,10 +33,64 @@
                         </div>
                     </div>
                     
-                    <ui:include src="../../pages/mainMenu.xhtml" />
+                    <ui:include src="/secured/pages/mainMenu.xhtml" />
                     
-                    <p:growl id="growl" showDetail="true" showSummary="true" />
+                    <ui:include src="/secured/fragments/Familias/CreateFamiliaDialog.xhtml"/>
                     
+                    <ui:include src="/secured/fragments/Familias/EditFamiliasDialog.xhtml"/>
+                    
+                    <p:growl showDetail="true" showSummary="true" />
+                    
+                    <h:form id="familias">
+                        
+                    <p:dataTable value="#{FamiliasController.filteredFamilias}" var="familia"  widgetVar="FamiliasTable"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="FamiliasTableData"
+                                     emptyMessage="No se encontraron familias con la critería proporcionada"
+                                     globalFilterFunction="#{FamiliasController.globalFilterFunction}"
+                                     filterBy="#{FamiliasController.filterBy}" reflow="true"
+                                     selection="#{FamiliasController.selectedFamilia}" rowKey="#{familia.id}">
+                            
+                            <f:facet name="header">
+                                <p:inputText id="globalFilter" onkeyup="PF('FamiliasTable').filter()"
+                                             placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                            </f:facet>
+                        
+                            <p:ajax event="rowSelect" update="@form"/>
+                        
+                            <p:column exportable="false">
+                                <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" rendered="#{familia.status}"/>
+                                <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+
+                                <p:chip id="inActiveChip" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!familia.status}"/>
+                                <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                            </p:column>
+                            
+                            <p:column headerText="ID Familia" visible="false">
+                                <h:outputText value="#{familia.id}"/>
+                            </p:column>
+                            <p:column headerText="Nombre" sortBy="#{familia.nombre}">
+                                <h:outputText value="#{familia.nombre}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Acciones" exportable="false" width="10%">
+                                <div class="buttons">
+                                    <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil" 
+                                                     onclick="PF('EditarFamiliaDialog').show();" process="@this">
+                                        <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                    </p:commandButton>
+                                    <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-power-off"
+                                    actionListener="#{FamiliasController.deleteFamilia()}" process="@this" update="familias">
+                                        <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                    </p:commandButton>
+                                </div>
+                            </p:column>
+                        </p:dataTable>
+                        <!-- Adjust the button action -->
+                        <p:commandButton value="Crear Familia" actionListener="#{ViewController.selectCreateFamilias}"
+                                         styleClass="button is-fullwidth is-success is-rounded" 
+                                         onclick="PF('CrearFamiliaDialog').show();"/>
+                    
+                    </h:form>
                 </div>
             </div>
         </div>

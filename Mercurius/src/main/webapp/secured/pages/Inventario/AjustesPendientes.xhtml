@@ -39,7 +39,7 @@
                     
                     <ui:include src="/secured/fragments/Inventario/PendientesRevision/DialogoRevisionInventario.xhtml"/>
 
-                    <h:form>
+                    <h:form id="inventarioPendiente">
                     <p:dataTable value="#{InventarioController.filteredInventarioSinProcesar}" var="movimiento"  widgetVar="InventariosPendientesTable"
                                  paginator="true" rows="8" paginatorPosition="bottom" id="InventariosPendientesTableData"
                                  emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"

@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.file.UploadedFile;
 import org.primefaces.util.LangUtils;
@@ -109,11 +110,7 @@ public class FacturasController implements Serializable {
         facturas = null;
         facturasDetalladas = null;
     }
-    
-    public void clearViewFacturas(){
-        viewManager.selectViewFacturas();
-    }
-    
+        
     public void clearViewFacturasDetalladas(){
         viewManager.selectViewFacturasDetalladas();
     }
@@ -188,11 +185,20 @@ public class FacturasController implements Serializable {
     }
     
     public void processFacturas(){
-        for (int i = 0; i < files.size(); i++) {
-            parseXMLFromUploadedFile(files.get(i));
+        if(!files.isEmpty()){
+            for (int i = 0; i < files.size(); i++) {
+                parseXMLFromUploadedFile(files.get(i));
+            }
+            files.clear();
+            clearCache();
+
+            PrimeFaces.current().executeScript("PF('facturasUpload').hide();");            
+            FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Se procesaron las facturas", null));
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay facturas por procesar!", null));
         }
-        files.clear();
-        clearCache();
     }
     
     public void parseXML(InputStream inputStream) {
@@ -262,7 +268,8 @@ public class FacturasController implements Serializable {
             factura.setDetalleServicio(detalleServicio);
             factura.setResumenFactura(resumenFactura);
             factura.setUser(currentSession.getCurrentUser());
-            factura.setStatus(false);
+            factura.setStatus(true);
+            factura.setProcessed(false);
             
             facturaService.create(factura);
             
@@ -551,10 +558,10 @@ public class FacturasController implements Serializable {
     
     public void processSelectedFactura(){
         if(selectedFactura != null){
-            if(!selectedFactura.getStatus()){
+            if(!selectedFactura.getProcessed() && selectedFactura.getStatus()){
                 processFactura(selectedFactura);
                 FacesMessage message = new FacesMessage("Exito","Se procesaron los articulos de la factura!");
-                FacesContext.getCurrentInstance().addMessage("growl", message);
+                FacesContext.getCurrentInstance().addMessage(null, message);
             }else{
                 FacesMessage message = new FacesMessage("Oops!","La factura ya fue procesada.");
                 FacesContext.getCurrentInstance().addMessage(null, message);
@@ -594,17 +601,17 @@ public class FacturasController implements Serializable {
                 double UnidadesParseadas = parseUnidadComercial(unidadMedida, unidadMedidaComercial) * cantidad;
                             
                 Articulos articulo = new Articulos();
-                if(articuloExistente == null){
-                    articulo.setNombre(nombre);
-                    articulo.setCodigoBarra(codigoBarra);
-                    articulo.setRecomendacionCabys(codigoCabys);
-                    
-                    Departamento departamento = new Departamento();
+                
+                Departamento departamento = new Departamento();
                     departamento.setNombre(factura.getEmisor().getNombre());
                     departamento.setStatus(true);
                     departamento.setUsuario(currentSession.getCurrentUser());
                     Departamento persistedDepartamento = departamentosController.createSimpleDepartamento(departamento);
-                    
+                
+                if(articuloExistente == null){
+                    articulo.setNombre(nombre);
+                    articulo.setCodigoBarra(codigoBarra);
+                    articulo.setRecomendacionCabys(codigoCabys);
                     articulo.setDepartamento(persistedDepartamento);
                     articulo.setUnidadMedida(unidadMedida);
                     articulo.setUnidadMedidaComercial(unidadMedidaComercial);
@@ -621,6 +628,7 @@ public class FacturasController implements Serializable {
                     articuloExistente.setUnidadMedidaComercial(unidadMedidaComercial);
                     articuloExistente.setStatus(true);
                     articuloExistente.setProcessed(false);
+                    articuloExistente.setDepartamento(persistedDepartamento);
                     articuloExistente.setPrecioFinal(0.0);
                     articuloExistente.setPrecioCostoConIVA(0.0);
                     articuloController.updateSimpleArticulo(articuloExistente);
@@ -645,7 +653,7 @@ public class FacturasController implements Serializable {
                 inventarioController.createSimpleInventario(ajusteArticulo);
             }
             
-            factura.setStatus(true);
+            factura.setProcessed(true);
             facturaService.update(factura);
             clearCache();
     }

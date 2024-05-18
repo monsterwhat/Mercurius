@@ -50,6 +50,8 @@
                             <p:inputText id="globalFilter" onkeyup="PF('InventarioActivoYProcesadoTable').filter()"
                                          placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                         </f:facet>
+                        
+                        <p:ajax event="rowSelect" update="@this"/>
 
                         <p:column exportable="false">
                             <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning" rendered="#{!movimiento.processed}"/>
@@ -84,7 +86,7 @@
                         <p:column headerText="Acciones" exportable="false">
                             <div class="buttons">
                                 <p:commandButton styleClass="button is-success is-rounded" icon="pi pi-pencil"
-                                process="@this">
+                                process="@this" >
                                     <f:setPropertyActionListener value="#{articulo}" target="#{InventarioController.selectedInventario}" />
                                 </p:commandButton>
                                 <p:commandButton styleClass="button is-warning is-rounded" icon="pi pi-trash"

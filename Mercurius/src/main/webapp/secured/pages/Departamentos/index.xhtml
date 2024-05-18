@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
@@ -32,10 +33,60 @@
                         </div>
                     </div>
                     
-                    <ui:include src="../../pages/mainMenu.xhtml" />
+                    <ui:include src="/secured/pages/mainMenu.xhtml" />
+                    <ui:include src="/secured/fragments/Departamentos/CrearDepartamentoDialog.xhtml"/>
+                    <ui:include src="/secured/fragments/Departamentos/EditDepartamentoDialog.xhtml"/>
                     
-                    <p:growl id="growl" showDetail="true" showSummary="true" />
+                    <p:growl showDetail="true" showSummary="true" />
                     
+                    <h:form id="departamentos">
+                        
+                        <p:dataTable value="#{DepartamentosController.filteredDepartamentos}" var="departamento"  widgetVar="DepartamentosTable"
+                                     paginator="true" rows="8" paginatorPosition="bottom" id="DepartamentosTableData"
+                                     emptyMessage="No se encontraron departamentos con la critería proporcionada"
+                                     globalFilterFunction="#{DepartamentosController.globalFilterFunction}"
+                                     filterBy="#{DepartamentosController.filterBy}" reflow="true"
+                                     selection="#{DepartamentosController.selectedDepartamento}" rowKey="#{departamento.id}">
+                            
+                            <p:ajax event="rowSelect" update="@form"/>
+                            
+                            <f:facet name="header">
+                                <p:inputText id="globalFilter" onkeyup="PF('DepartamentosTable').filter()"
+                                             placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                            </f:facet>
+                            
+                            <p:column exportable="false" width="5%"> 
+                                <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" rendered="#{departamento.status}"/>
+                                <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+
+                                <p:chip id="inActiveChip" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!departamento.status}"/>
+                                <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                            </p:column>
+                            
+                            <p:column headerText="ID Departamento" visible="false">
+                                <h:outputText value="#{departamento.id}"/>
+                            </p:column>
+                            <p:column headerText="Nombre" sortBy="#{departamento.nombre}">
+                                <h:outputText value="#{departamento.nombre}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Acciones" exportable="false" width="10%">
+                                <div class="buttons">
+                                    <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
+                                    onclick="PF('EditarDepartamentoDialog').show();" process="@this" update="editDepartamento">
+                                        <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
+                                    </p:commandButton>
+                                    <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-power-off" update="@form departamentos"
+                                    actionListener="#{DepartamentosController.deleteDepartamento()}" process="@this">
+                                        <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
+                                    </p:commandButton>
+                                </div>
+                            </p:column>
+                        </p:dataTable>
+                        
+                        <p:commandButton value="Crear Departamento" actionListener="#{ViewController.selectCreateDepartamentos}" 
+                                         styleClass="button is-fullwidth is-success is-rounded" onclick="PF('CrearDepartamentoDialog').show();"/>
+                    </h:form>
                 </div>
             </div>
         </div>

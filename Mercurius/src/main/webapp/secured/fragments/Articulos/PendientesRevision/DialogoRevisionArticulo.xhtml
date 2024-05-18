@@ -10,7 +10,7 @@
         <p:outputPanel id="RevisionArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
             <h:form>
                 <p:panel header="Revisar Artículo: #{ArticulosController.selectedArticulo.nombre}">
-                    <p:growl id="growl" showDetail="true" showSummary="false"/>
+                    <p:growl showDetail="true" showSummary="false"/>
 
                     <!-- Input for article name -->
                     <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
@@ -129,7 +129,7 @@
                                 <p:selectOneMenu id="departamento" value="#{ArticulosController.departamentoID}"
                                                  required="true" requiredMessage="El Departamento no puede estar vacío"
                                                  widgetVar="departamento" >
-                                    <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
+                                    <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" itemValue="#{ArticulosController.selectedArticulo.departamento.id}" />
                                     <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
                                                    itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
                                     

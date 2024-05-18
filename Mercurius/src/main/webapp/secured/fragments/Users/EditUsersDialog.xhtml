@@ -1,0 +1,64 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+    xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    <p:dialog header="Editar Usuario" widgetVar="EditarUsuarioDialog" 
+        fitViewport="true" responsive="true" id="EditarUsuarioDialog" modal="true">
+        <p:outputPanel rendered="#{not empty UsersController.selectedUser}">
+        
+            <h:form id="editUserForm">
+                <br/>
+                <p:panel header="Editar Usuario: #{UsersController.selectedUser.username}">
+                    <p:growl showDetail="true" showSummary="false">
+                        <p:autoUpdate/>
+                    </p:growl>
+
+                    <p:messages for="username" showSummary="false" showDetail="true" closable="true" />
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="username">Nombre de usuario:</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <p:inputText id="username" value="#{UsersController.selectedUser.username}" required="true" requiredMessage="El nombre de usuario no puede estar vacío" styleClass="input is-fullwidth"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input for groupName -->
+                    <p:messages showDetail="true" for="groupName" showSummary="false" closable="true" />
+                    <div class="field is-horizontal">
+                        <div class="field-label is-normal">
+                            <label class="label" for="groupName">Permisos:</label>
+                        </div>
+                        <div class="field-body">
+                            <div class="field">
+                                <p:selectManyCheckbox id="groupName" value="#{UsersController.selectedPuestos}"
+                                                required="true" requiredMessage="El nombre de grupo no puede estar vacío"
+                                                styleClass="input is-fullwidth">
+                                    <p:ajax listener="#{UsersController.selectedOptionsUpdateChanged}"/>
+                                    <f:selectItem itemLabel="Administrativo" itemValue="admin" rendered="#{SessionController.admin}"/>
+                                    <f:selectItem itemLabel="Facturacion" itemValue="facturacion"/>
+                                    <f:selectItem itemLabel="Inventarios" itemValue="inventario"/>
+                                    <f:selectItem itemLabel="Usuarios" itemValue="usuario"/>
+                                    <f:selectItem itemLabel="Tributacion" itemValue="tributacion"/>
+                                    <f:selectItem itemLabel="Registros" itemValue="registro"/>
+                                </p:selectManyCheckbox>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field is-horizontal">
+                        <div class="field-body">
+                            <div class="field">
+                                <p:commandButton value="Actualizar datos" styleClass="button is-fullwidth is-success is-rounded" action="#{UsersController.updateUser}"/>
+                            </div>
+                        </div>
+                    </div>
+                </p:panel>
+            </h:form>
+        
+        </p:outputPanel>
+    </p:dialog>
+</ui:composition>

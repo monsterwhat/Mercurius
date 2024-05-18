@@ -33,8 +33,14 @@
                     </div>
                     
                     <ui:include src="../../pages/mainMenu.xhtml" />
+                    <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
+                    <ui:include src="/secured/fragments/Inventario/Upload/subirFacturas.xhtml"/>
                     
                     <p:growl id="growl" showDetail="true" showSummary="true" />
+                    
+                    <div class="column">
+                        <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" styleClass="button is-fullwidth"/>                            
+                    </div>
                     
                 </div>
             </div>

@@ -37,6 +37,8 @@ public class Factura {
     
     private Boolean status;
     
+    private Boolean processed;
+    
     private Users user;
 
 }
