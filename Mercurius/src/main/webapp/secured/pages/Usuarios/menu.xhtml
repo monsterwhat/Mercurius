@@ -35,53 +35,66 @@
                     
                     <ui:include src="../../pages/mainMenu.xhtml" />
                     
-                    <p:growl id="growl" showDetail="true" showSummary="true" />
+                    <ui:include src="/secured/fragments/Users/CreateUsersDialog.xhtml"/>
+                    
+                    <ui:include src="/secured/fragments/Users/EditUsersDialog.xhtml"/>
+                    
+                    <p:growl showDetail="true" showSummary="true" />
                     
                     <h:form id="usuarios">
                         
-                    <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTable"
+                    <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTableData"
                         paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"
                         emptyMessage="No se encontraron usuarios con la critería proporcionada"
                         globalFilterFunction="#{UsersController.globalFilterFunction}"
                         filterBy="#{UsersController.filterBy}"
                         selection="#{UsersController.selectedUser}" rowKey="#{user.id}">
 
-                            <f:facet name="header">
-                                    <p:inputText id="globalFilter" onkeyup="PF('UsersTable').filter()" styleClass="input"
-                                                 placeholder="Búsqueda general de todos los campos" />
-                            </f:facet>
+                        <p:ajax event="rowSelect" update="EditarUsuarioDialog"/>
+                        
+                        <f:facet name="header">
+                                <p:inputText id="globalFilter" onkeyup="PF('UsersTableData').filter()" styleClass="input"
+                                             placeholder="Búsqueda general de todos los campos" />
+                        </f:facet>
+                        
+                        <p:column exportable="false">
+                            <p:chip id="activo" icon="pi pi-exclamation-circle" styleClass="has-background-success" rendered="#{user.status}"/>
+                            <p:tooltip for="activo" value="Activo" position="top"/>                            
+                            <p:chip id="inactivo" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!user.status}"/>
+                            <p:tooltip for="inactivo" value="Inactivo" position="top"/>
+                        </p:column>
 
-                            <p:column headerText="Identificador de perfil" visible="false" sortBy="#{user.id}">
-                                <h:outputText value="#{user.id}"/>
-                            </p:column>
-                            <p:column headerText="Nombre de usuario" sortBy="#{user.username}">
-                                <h:outputText value="#{user.username}" />
-                            </p:column>
-                            <p:column headerText="Contraseña (HASH)" rendered="false">
-                                <h:outputText value="#{user.password}" />
-                            </p:column>
-                            <p:column headerText="Permisos" sortBy="#{user.groupName}">
-                                <h:outputText value="#{user.groupName}" />
-                            </p:column>
-                            <p:column headerText="Activo" visible="false" sortBy="#{user.status}">
-                                <h:outputText value="#{user.status}" />
-                            </p:column>
+                        <p:column headerText="Identificador de perfil" visible="false" sortBy="#{user.id}">
+                            <h:outputText value="#{user.id}"/>
+                        </p:column>
+                        <p:column headerText="Nombre de usuario" sortBy="#{user.username}">
+                            <h:outputText value="#{user.username}" />
+                        </p:column>
+                        <p:column headerText="Contraseña (HASH)" rendered="false">
+                            <h:outputText value="#{user.password}" />
+                        </p:column>
+                        <p:column headerText="Permisos" sortBy="#{user.groupName}">
+                            <h:outputText value="#{user.groupName}" />
+                        </p:column>
+                        <p:column headerText="Activo" visible="false" sortBy="#{user.status}">
+                            <h:outputText value="#{user.status}" />
+                        </p:column>
 
-                            <p:column headerText="Acciones" width="20%" exportable="false">
-                                <div class="buttons has-addons">
-                                    <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
-                                    actionListener="#{ViewController.selectEditUsers()}" process="@this">
-                                        <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
-                                    </p:commandButton>
-                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                    actionListener="#{UsersController.deleteUser()}" process="@this" update="usuarios">
-                                        <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
-                                    </p:commandButton>
-                                </div>
-                            </p:column>
-                         </p:dataTable>
+                        <p:column headerText="Acciones" width="20%" exportable="false">
+                            <div class="buttons">
+                                <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
+                                process="@this" onclick="PF('EditarUsuarioDialog').show();">
+                                    <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
+                                </p:commandButton>
+                                <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-power-off"
+                                actionListener="#{UsersController.toggleUser()}" process="@this" update="usuarios">
+                                    <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
+                                </p:commandButton>
+                            </div>
+                        </p:column>
+                    </p:dataTable>
 
-                         <p:commandButton value="Crear Usuario" actionListener="#{UsersController.openNewUser}" styleClass="button is-fullwidth is-success is-rounded"/>
+                    <p:commandButton value="Crear Usuario" onclick="PF('CrearUsuarioDialog').show();" actionListener="#{UsersController.openNewUser}" styleClass="button is-fullwidth is-success is-rounded"/>
 
                     </h:form>
                 </div>

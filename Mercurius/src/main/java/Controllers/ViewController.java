@@ -33,11 +33,7 @@ public class ViewController implements Serializable {
     public void selectViewUsersDetallados(){
         selectedOption = "viewUsersDetallados";
     }
-    
-    public void selectEditUsers(){
-        selectedOption = "editUsers";
-    }
-        
+            
     public void selectViewFacturasDetalladas(){
         selectedOption = "viewFacturasDetallado";
     }
@@ -45,11 +41,7 @@ public class ViewController implements Serializable {
     public void selectViewClients(){
         selectedOption = "viewClients";
     }
-    
-    public void selectEditClients(){
-        selectedOption = "editClients";
-    }
-    
+        
     public void selectCreateClients(){
         selectedOption = "createClients";
         clients.openNewClient();

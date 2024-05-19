@@ -36,9 +36,13 @@
                     
                     <p:growl showDetail="true" showSummary="true" />
                     
+                    <ui:include src="/secured/fragments/Clients/CrearClientesDialog.xhtml" />
+                    <ui:include src="/secured/fragments/Clients/EditClientesDialog.xhtml" />
+                    
+                    
                     <h:form id="clientes">
                         
-                    <p:toolbar>
+                        <p:toolbar rendered="#{SessionController.admin}">
                             <p:toolbarGroup align="right">
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
                                     <p:dataExporter type="xlsx" target="ClientsTableData" fileName="Clientes-Mercurius-Excel" />
@@ -49,20 +53,26 @@
                             </p:toolbarGroup>
                         </p:toolbar>
                         
-                        
-                        <p:dataTable value="#{ClientsController.filteredClients}" var="client"  widgetVar="ClientsTable"
+                        <p:dataTable value="#{ClientsController.filteredClients}" var="client"  widgetVar="ClientsTableData"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ClientsTableData"
                                      emptyMessage="No se encontraron clientes con la critería proporcionada"
                                      globalFilterFunction="#{ClientsController.globalFilterFunction}"
                                      filterBy="#{ClientsController.filterBy}" reflow="true"
                                      selection="#{ClientsController.selectedClient}" rowKey="#{client.code}">
                             
-                            
+                            <p:ajax event="rowSelect" update="EditarClienteDialog"/>
                             
                             <f:facet name="header">
-                                <p:inputText id="globalFilter" onkeyup="PF('ClientsTable').filter()"
+                                <p:inputText id="globalFilter" onkeyup="PF('ClientsTableData').filter()"
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
+                                          
+                            <p:column exportable="false">
+                                <p:chip id="activo" icon="pi pi-exclamation-circle" styleClass="has-background-success" rendered="#{client.status}"/>
+                                <p:tooltip for="activo" value="Activo" position="top"/>                            
+                                <p:chip id="inactivo" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!client.status}"/>
+                                <p:tooltip for="inactivo" value="Inactivo" position="top"/>
+                            </p:column>
                             
                             <p:column headerText="ID Cliente" visible="false">
                                 <h:outputText value="#{client.code}"/>
@@ -76,16 +86,16 @@
                             <p:column headerText="Correo" sortBy="#{client.email}">
                                 <h:outputText value="#{client.email}" />
                             </p:column>
-                            <p:column headerText="Nacimiento" sortBy="#{client.birthDate}">
+                            <p:column headerText="Nacimiento" sortBy="#{client.birthDate}" visible="false">
                                 <h:outputText value="#{client.birthDate}" />
                             </p:column>
-                            <p:column headerText="Tipo de Cédula" sortBy="#{client.idType}">
+                            <p:column headerText="Tipo de Cédula" sortBy="#{client.idType}" visible="false">
                                 <h:outputText value="#{client.idType}" />
                             </p:column>
                             <p:column headerText="Número de Cédula" sortBy="#{client.idNumber}">
                                 <h:outputText value="#{client.idNumber}" />
                             </p:column>
-                            <p:column headerText="Descuento" sortBy="#{client.discount}">
+                            <p:column headerText="Descuento" sortBy="#{client.discount}" visible="false">
                                 <h:outputText value="#{client.discount}" />
                             </p:column>
                             <p:column headerText="Número de Teléfono" sortBy="#{client.phoneNumber}">
@@ -101,19 +111,19 @@
                                 <h:outputText value="#{client.status}" />
                             </p:column>                            
                             <p:column headerText="Acciones" exportable="false">
-                                <div class="buttons has-addons">
-                                    <p:commandButton styleClass="button edit-button rounded-button ui-button-success" icon="pi pi-pencil"
-                                    actionListener="#{ViewController.selectEditClients()}" process="@this">
+                                <div class="buttons">
+                                    <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
+                                      process="@this" onclick="PF('EditarClienteDialog').show();">
                                         <f:setPropertyActionListener value="#{client}" target="#{ClientsController.selectedClient}" />
                                     </p:commandButton>
-                                    <p:commandButton styleClass="button ui-button-warning rounded-button" icon="pi pi-trash"
-                                    actionListener="#{ClientsController.deleteClient()}" process="@this" update="clientes">
+                                    <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-power-off"
+                                    actionListener="#{ClientsController.toggleClient()}" process="@this" update="clientes">
                                         <f:setPropertyActionListener value="#{client}" target="#{ClientsController.selectedClient}" />
                                     </p:commandButton>
                                 </div>
                             </p:column>
                         </p:dataTable>
-                        <p:commandButton value="Crear Cliente" actionListener="#{ViewController.selectCreateClients}" styleClass="button is-fullwidth is-success is-rounded"/>
+                        <p:commandButton value="Crear Cliente" onclick="PF('CrearClienteDialog').show();" actionListener="#{ClientsController.openNewClient}" styleClass="button is-fullwidth is-success is-rounded"/>
                 
                     </h:form>
                 </div>
