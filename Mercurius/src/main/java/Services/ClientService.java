@@ -62,6 +62,20 @@ public class ClientService extends GService<Clients> {
         }
     }
     
+    public boolean checkClientName(String username) {
+        try {
+            TypedQuery<Clients> query = em.createQuery("SELECT c FROM Clients c WHERE c.name = :username", Clients.class);
+            query.setParameter("username", username);
+
+            List<Clients> resultList = query.getResultList();
+
+            return !resultList.isEmpty();
+        } catch (Exception e) {
+            System.out.println("Error getting client by username: " + e.toString());
+            return true;
+        }
+    }
+    
     public void updateAndDisable(Clients entity) {
         try {
             // Find the existing item by its ID

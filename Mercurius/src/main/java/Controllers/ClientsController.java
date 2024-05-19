@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
@@ -44,7 +45,7 @@ public class ClientsController implements Serializable {
 
     public List<Clients> clientsList() {
         if (clients == null) {
-            clients = clientService.ListAllEnabled();
+            clients = clientService.listAll();
         }
         return clients;
     }
@@ -60,27 +61,43 @@ public class ClientsController implements Serializable {
     public void updateClient() {
         if(currentSession.isValid()){
             selectedClient.setUsuario(currentSession.getCurrentUser());
-            clientService.updateAndDisable(selectedClient);
+            clientService.update(selectedClient);
             clearSelectedClient();
+            PrimeFaces.current().executeScript("PF('EditarClienteDialog').hide();");
         }
     }
 
     public void createClient() {
         if(currentSession.isValid()){
-            newClient.setUsuario(currentSession.getCurrentUser());
-            newClient.setStatus(true);
-            clientService.create(newClient);
-            clearSelectedClient();    
+            var exists = clientService.checkClientName(newClient.getName());
+            if(!exists){
+                newClient.setUsuario(currentSession.getCurrentUser());
+                newClient.setStatus(true);
+                clientService.create(newClient);
+                clearSelectedClient();    
+                PrimeFaces.current().executeScript("PF('CrearClienteDialog').hide();");
+            }
         }
     }
 
-    public void deleteClient() {
+    public void toggleClient() {
         if (selectedClient != null) {
-            if (selectedClient.getCode() != 0) {
-                clientService.softDelete(selectedClient);
-                clearSelectedClient();
+            if(selectedClient.getStatus()){
+                disableCliente();
+            }else{
+                enableCliente();
             }
+            clientService.update(selectedClient);
+            clearSelectedClient();
         }
+    }
+    
+    public void disableCliente(){
+        selectedClient.setStatus(false);
+    }
+    
+    public void enableCliente(){
+        selectedClient.setStatus(true);
     }
 
     public void clearSelectedClient() {

@@ -20,7 +20,8 @@
                         </div>
                         <div class="field-body">
                             <div class="field">
-                                <p:inputText id="username" value="#{UsersController.newUser.username}" required="true" requiredMessage="El nombre de usuario no puede estar vacío" styleClass="input is-fullwidth"/>
+                                <p:inputText id="username" value="#{UsersController.newUser.username}" 
+                                             required="true" requiredMessage="El nombre de usuario no puede estar vacío"/>
                             </div>
                         </div>
                     </div>
@@ -32,7 +33,8 @@
                         </div>
                         <div class="field-body">
                             <div class="field">
-                                <p:password id="password" value="#{UsersController.newUser.password}" required="true" requiredMessage="La contraseña no puede estar vacía" styleClass="input is-fullwidth"/>
+                                <p:password id="password" value="#{UsersController.newUser.password}" 
+                                            required="true" requiredMessage="La contraseña no puede estar vacía"/>
                             </div>
                         </div>
                     </div>
@@ -47,14 +49,14 @@
                             <div class="field">
                                 <p:selectManyCheckbox id="groupName" value="#{UsersController.selectedPuestos}"
                                                 required="true" requiredMessage="El nombre de grupo no puede estar vacío"
-                                                styleClass="input is-fullwidth">
+                                                >
                                     <p:ajax listener="#{UsersController.selectedOptionsChanged}"/>
                                     <f:selectItem itemLabel="Administrativo" itemValue="admin" rendered="#{SessionController.admin}"/>
-                                    <f:selectItem itemLabel="Facturacion" itemValue="facturacion"/>
-                                    <f:selectItem itemLabel="Inventarios" itemValue="inventario"/>
-                                    <f:selectItem itemLabel="Usuarios" itemValue="usuario"/>
-                                    <f:selectItem itemLabel="Tributacion" itemValue="tributacion"/>
-                                    <f:selectItem itemLabel="Registros" itemValue="registro"/>
+                                    <f:selectItem itemLabel="Facturacion" itemValue="facturacion" rendered="#{SessionController.usuarios}"/>
+                                    <f:selectItem itemLabel="Inventarios" itemValue="inventario" rendered="#{SessionController.usuarios}"/>
+                                    <f:selectItem itemLabel="Usuarios" itemValue="usuario" rendered="#{SessionController.usuarios}"/>
+                                    <f:selectItem itemLabel="Tributacion" itemValue="tributacion" rendered="#{SessionController.usuarios}"/>
+                                    <f:selectItem itemLabel="Registros" itemValue="registro" rendered="#{SessionController.usuarios}"/>
                                 </p:selectManyCheckbox>
                             </div>
                         </div>
@@ -62,7 +64,7 @@
 
                 </p:panel>
                 <br/>
-                <p:commandButton value="Crear Usuario" styleClass="button is-fullwidth is-rounded is-success" action="#{UsersController.createUser}" update="usuarios"/>
+                <p:commandButton value="Crear Usuario" action="#{UsersController.createUser}" update="usuarios"/>
             </h:form>
             
         </p:outputPanel>

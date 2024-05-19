@@ -7,6 +7,11 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import jakarta.security.enterprise.identitystore.Pbkdf2PasswordHash;
+import jakarta.transaction.HeuristicMixedException;
+import jakarta.transaction.HeuristicRollbackException;
+import jakarta.transaction.NotSupportedException;
+import jakarta.transaction.RollbackException;
+import jakarta.transaction.SystemException;
 import jakarta.transaction.UserTransaction;
 import java.util.List;
 
@@ -28,7 +33,9 @@ public class LoginService extends GService<Users>{
      
     @PostConstruct
     public void init() {
-        InsertAdmin();
+        if(count() <= 0){
+            InsertAdmin();
+        }
     }
     
     public boolean verifyPassword(char[] password, String hashedPassword){
@@ -73,10 +80,8 @@ public class LoginService extends GService<Users>{
                 em.persist(user);
                 this.userTransaction.commit();
                 System.out.println("Default Admin Saved!");
-            } else {
-                System.out.println("User already exists");
             }
-        } catch (Exception e) {
+        } catch (HeuristicMixedException | HeuristicRollbackException | NotSupportedException | RollbackException | SystemException | IllegalStateException | SecurityException e) {
             System.out.println("Error in InsertAdmin! Error: " + e.toString());
         }
     }
@@ -117,6 +122,20 @@ public class LoginService extends GService<Users>{
             System.out.println("Error listing all enabled users: " + e.getMessage());
             e.printStackTrace(); // Print stack trace for debugging purposes
             return null;
+        }
+    }
+    
+    public boolean usernameExists(String name){
+        try {
+            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
+            query.setParameter("username", name);
+            List<Users> existingUser = query.getResultList();
+            
+            return !existingUser.isEmpty();
+
+        } catch (Exception e) {
+            System.out.println("Error:" + e.getLocalizedMessage());
+            return true;
         }
     }
 

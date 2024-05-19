@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 /**
@@ -52,7 +53,7 @@ public class UsersController implements Serializable{
     
     public List<Users> usersList(){
         if(users == null){
-            users = userService.listAllEnabledUsers();
+            users = userService.listAll();
         }
         return users;
     }
@@ -72,22 +73,45 @@ public class UsersController implements Serializable{
     public void updateUser(){
         userService.update(selectedUser);
         clearSelectedUser();
+        PrimeFaces.current().executeScript("PF('EditarUsuarioDialog').hide();");
     }
     
     public void createUser(){
-        newUser.setStatus(true);
-        userService.create(newUser);
-        clearSelectedUser();        
+        if(newUser != null){
+            var exists = userService.usernameExists(newUser.getUsername());
+            if(!exists){
+                newUser.setStatus(true);
+                userService.create(newUser);
+                clearSelectedUser();
+                PrimeFaces.current().executeScript("PF('CrearUsuarioDialog').hide();");
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Ya existe un usuario con ese nombre", null));
+            }
+        }
+        
     }
     
-    public void deleteUser(){
+    public void toggleUser(){
         if(selectedUser != null){
             if(selectedUser.getId()!=null){
-                selectedUser.setStatus(false);
+                if(selectedUser.getStatus()){
+                    disableUser();
+                }else{
+                    enableUser();
+                }
                 userService.update(selectedUser);
                 clearSelectedUser();        
             }
         }
+    }
+    
+    public void enableUser(){
+        selectedUser.setStatus(true);
+    }
+    
+    public void disableUser(){
+        selectedUser.setStatus(false);
     }
     
     public void clearSelectedUser(){
