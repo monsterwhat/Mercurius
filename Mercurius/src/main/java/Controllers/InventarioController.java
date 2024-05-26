@@ -4,13 +4,26 @@ import Models.Inventario;
 import Models.Articulos;
 import Services.InventarioService;
 import Services.ArticulosService;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Meta;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -18,6 +31,7 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
+import org.primefaces.component.datatable.DataTable;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
@@ -111,21 +125,6 @@ public class InventarioController implements Serializable {
             }
         }
     }
-    
-    public void updateInventarioDetallado() {
-        if(selectedInventario != null && ArticuloID != 0 && currentSession.isValid()){
-            selectedInventario.setArticulo(articuloService.findById(ArticuloID));
-            selectedInventario.setUsuario(currentSession.getCurrentUser());
-            selectedInventario.setProcessed(true);
-            if(selectedInventario.getArticulo() != null && selectedInventario.getUsuario() != null){
-                Date today = new Date();
-                selectedInventario.setFechaMovimiento(today);
-                inventarioService.updateAndDisable(selectedInventario);
-                clearSelectedInventario();
-                resetViewInventarioDetallado();
-            }
-        }
-    }
         
     public void updateInventarioRevision() {
         if(selectedInventario != null && currentSession.isValid()){
@@ -180,7 +179,6 @@ public class InventarioController implements Serializable {
                 newInventario.setFechaMovimiento(today);
                 inventarioService.create(newInventario);
                 clearSelectedInventario();
-                resetViewInventario();
             }                
         }
     }
@@ -220,22 +218,6 @@ public class InventarioController implements Serializable {
         }
     }
     
-    public void createInventarioDetallado() {
-        if(newInventario != null && ArticuloID != 0 && currentSession.isValid()) {
-            newInventario.setArticulo(articuloService.findById(ArticuloID));
-            newInventario.setUsuario(currentSession.getCurrentUser());
-            newInventario.setProcessed(true);
-            if(newInventario.getArticulo() != null && newInventario.getUsuario() != null){
-                newInventario.setStatus(true);
-                Date today = new Date();
-                newInventario.setFechaMovimiento(today);
-                inventarioService.create(newInventario);
-                clearSelectedInventario();
-                resetViewInventarioDetallado();
-            }                
-        }
-    }
-    
     public void createSimpleInventario(Inventario inventario){
         inventarioService.create(inventario);
     }
@@ -244,29 +226,12 @@ public class InventarioController implements Serializable {
         if (selectedInventario != null) {
             inventarioService.softDelete(selectedInventario);
             clearSelectedInventario();
-            resetViewInventario();
-        }
-    }
-    
-    public void deleteInventarioDetallado() {
-        if (selectedInventario != null) {
-            inventarioService.softDelete(selectedInventario);
-            clearSelectedInventario();
-            resetViewInventarioDetallado();
         }
     }
 
     public void clearSelectedInventario() {
         clearCache();
         clearInventario();
-    }
-    
-    public void resetViewInventario(){
-        viewManager.selectViewInventario();
-    }
-    
-    public void resetViewInventarioDetallado(){
-        viewManager.selectViewInventarioDetallado();
     }
 
     public List<Inventario> getFilteredInventarioSinProcesar() {
@@ -387,6 +352,66 @@ public class InventarioController implements Serializable {
         String codigoBarra = articulo.getCodigoBarra();
         double totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
         return totalStock;
+    }
+    
+    public void exportPDF() throws IOException, DocumentException {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        DataTable dataTable = (DataTable) facesContext.getViewRoot().findComponent("AjustesActivos:InventarioTableData");
+
+        // Create a document with custom page size (width: 80mm, height: 200mm) and margins (5px)
+        //Document document = new Document(new Rectangle(80f, 200f), 5, 5, 5, 5);
+        Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PdfWriter.getInstance(document, baos);
+        document.add(new Meta("charset", "UTF-8"));
+        document.open();
+        
+        // Set font size
+        com.lowagie.text.Font font = new com.lowagie.text.Font();
+        font.setSize(8); // Set font size to 5 points
+
+        //Add fancy title
+        document.add(new Paragraph("Reporte de Ajustes Activos", font));
+        document.add(new Paragraph("-------------------------------------", font));
+
+        
+        // Add content to the PDF
+        List<Inventario> inventarios = (List<Inventario>) dataTable.getValue();
+        int totalItems = inventarios.size();
+        int currentItem = 1;
+        for (Inventario inventario : inventarios) {
+            String itemInfo = currentItem + "/" + totalItems;
+            document.add(new Paragraph(itemInfo, font));
+
+            document.add(new Paragraph("Art: " + inventario.getArticulo().getNombre(), font));
+            document.add(new Paragraph("Can: " + inventario.getCantidad()+ "  Tipo: " + inventario.getTipoMovimiento(), font));
+            document.add(new Paragraph("Fecha: " + inventario.getFechaMovimiento(), font));
+            document.add(new Paragraph("Creador: " + inventario.getUsuario().getUsername(), font));
+            document.add(new Paragraph("\n", font));
+            
+            currentItem++;
+        }
+
+        document.close();
+
+        // Serve the PDF to the client
+        HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
+        response.setContentType("application/pdf; charset=UTF-8");
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentLength(baos.size());
+        response.setHeader("Content-disposition", "attachment; filename=reporteAjustesActivos.pdf");
+
+        response.getOutputStream().write(baos.toByteArray());
+        response.getOutputStream().flush();
+        response.getOutputStream().close();
+
+        facesContext.responseComplete();
+    }
+    
+    public String getContextPath() {
+        ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
+        HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
+        return request.getContextPath();
     }
     
 }

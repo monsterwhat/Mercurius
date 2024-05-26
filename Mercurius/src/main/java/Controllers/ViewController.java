@@ -30,103 +30,24 @@ public class ViewController implements Serializable {
     String selectedOption = "none";
     String[] selectedOptions;
     
-    public void selectViewUsersDetallados(){
-        selectedOption = "viewUsersDetallados";
-    }
-            
-    public void selectViewFacturasDetalladas(){
-        selectedOption = "viewFacturasDetallado";
-    }
-    
-    public void selectViewClients(){
-        selectedOption = "viewClients";
-    }
-        
     public void selectCreateClients(){
-        selectedOption = "createClients";
         clients.openNewClient();
-    }
-    
-    public void selectViewFamilias(){
-        selectedOption = "viewFamilias";
-    }
-    
-    public void selectViewFamiliasDetallado(){
-        selectedOption = "viewFamiliasDetallado";
-    }
+    }    
     
     public void selectCreateFamilias(){
         familias.openNewFamilia();
     }
-    
-    public void selectViewInventario(){
-        selectedOption = "viewInventarios";
-    }
-    
-    public void selectViewInventarioInactivo(){
-        selectedOption = "viewInventarioInactivo";
-    }
-    
-    public void selectViewInventarioSinProcesar(){
-        selectedOption = "viewInventarioSinProcesar";
-    }
-    
-    public void selectViewInventarioActivoYProcesado(){
-        selectedOption = "viewInventarioActivoYProcesado";
-    }
-    
-    public void selectViewInventarioDetallado(){
-        selectedOption = "viewInventariosDetallado";
-    }
-    
-    public void selectEditInventario(){
-        selectedOption="editInventarios";
-    }
-    
-    public void selectSyncInventario(){
-        selectedOption="syncInventarios";
-    }
-    
+        
     public void selectCreateInventario(){
-        selectedOption = "createInventarios";
         createNewInventario();
     }
-    
-    public void selectViewArticulos(){
-        selectedOption="viewArticulos";
-    }
-    
-    public void selectViewArticulosSinProcesar(){
-        selectedOption="viewArticulosPendientes";
-    }
-    
-    public void selectViewArticulosActivosYProcesados(){
-        selectedOption="viewArticulosActivosYProcesados";
-    }
-    
-    public void selectViewArticulosInactivos(){
-        selectedOption="viewArticulosInactivos";
-    }
-    
-    public void selectViewArticulosDetallado(){
-        selectedOption="viewArticulosDetallado";
-    }
-    
+        
     public void selectCreateArticulos(){
         articulos.openNewArticulo();
         PrimeFaces.current().executeScript("PF('CrearArticuloDialog').show();");
     }
     
-    public void selectViewDepartamentos(){
-        selectedOption="viewDepartamentos";
-    }
-    
-    public void selectViewDepartamentosDetallado(){
-        selectedOption="viewDepartamentosDetallado";
-    }
-    
     public void selectCreateDepartamentos(){
-        selectedOption="createDepartamentos";
         createNewDepartamento();
     }
     

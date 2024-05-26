@@ -39,6 +39,12 @@ public class SessionController implements Serializable{
     @NotEmpty private String password;
     private Users currentUser;
     
+    private String newUsername;
+    private String currentPassword;
+    private String newPassword;
+    private String newEmail;
+    private String confirmPassword;
+    
     @Inject private LoginService loginService;
     @Inject FacesContext facesContext;
     @Inject SecurityContext securityContext;
@@ -124,5 +130,79 @@ public class SessionController implements Serializable{
     private ExternalContext getExternalContext(){
      return facesContext.getExternalContext();
     }
-            
+    
+    public void errorMessage(String message){
+        facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", message));
+    }
+    
+    public void infoMessage(String message){
+        facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", message));
+    }
+        
+    public void warnMessage(String message){
+        facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", message));
+    }
+    
+    public void openEmail(){
+        newEmail = new String();
+    }
+    
+    public void openUsername(){
+        newUsername = new String();
+    }
+    
+    public void openPassword(){
+        currentPassword = new String();
+        newPassword = new String();
+        confirmPassword = new String();
+    }
+    
+    
+    public void changeName(){
+        if(newUsername != null){
+            if(!newUsername.isBlank()){
+                if(!currentUser.getUsername().equals(newUsername)){
+                    loginService.updateUsername(currentUser, newUsername);
+                    infoMessage("Se actualizo el nombre de usuario.");
+                    newUsername = null;
+                }else{
+                    warnMessage( "El nuevo nombre no puede ser igual");
+                }
+            }else{
+                errorMessage("El nuevo nombre no puede estar vacio.");
+            }
+        }
+    }
+    
+    public void changeEmail(){
+        if(newEmail != null){
+            if(!newEmail.isBlank()){
+                if(!currentUser.getEmail().equals(newEmail)){
+                    loginService.updateEmail(currentUser, newEmail);
+                    infoMessage("Se actualizo el correo electronico.");
+                    newEmail = null;
+                }else{
+                    warnMessage("El nuevo correo no puede ser igual");
+                }
+            }else{
+                facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El nuevo correo no puede estar vacio."));
+            }
+        }
+    }
+    
+    public void changePassword(){
+        if(newPassword != null){
+            if(!newPassword.isBlank()){
+                if(newPassword.equals(confirmPassword)){
+                    loginService.updatePassword(currentUser, newPassword);
+                    infoMessage("Se actualizo la contrasena.");
+                    newPassword = null;
+                }else{
+                    warnMessage("Las contrasenas no son iguales.");
+                }
+            }else{
+                errorMessage("La nueva contrasena no puede estar vacia");
+            }
+        }
+    }
 }

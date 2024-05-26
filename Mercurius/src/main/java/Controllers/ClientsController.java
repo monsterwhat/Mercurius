@@ -104,7 +104,6 @@ public class ClientsController implements Serializable {
         clients = null;
         newClient = null;
         selectedClient = null;
-        viewManager.selectViewClients();
     }    
         
     public List<Clients> getFilteredClients() {

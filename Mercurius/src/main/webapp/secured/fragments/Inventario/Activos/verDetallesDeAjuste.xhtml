@@ -15,7 +15,7 @@
         <p:dialog header="Informacion de Ajuste" widgetVar="AjusteDetailsDialog" 
                   fitViewport="true" responsive="true" id="AjusteDetailsDialog" modal="true" >
         <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}">
-                <p:dataTable id="selectedArticulo" var="item" value="#{InventarioController.selectedInventario}">
+            <p:dataTable id="selectedArticulo" var="item" reflow="true" value="#{InventarioController.selectedInventario}">
                     <p:column headerText="Código" visible="false">
                         <h:outputText value="#{item.codigo}" />
                     </p:column>
