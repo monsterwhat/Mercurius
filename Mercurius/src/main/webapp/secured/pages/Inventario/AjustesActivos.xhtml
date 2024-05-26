@@ -10,7 +10,36 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
     <script src="../../../resources/css/style.css"/>
-
+    <h:outputStylesheet name="primefaces/primefaces.css"/>
+    <h:outputStylesheet name="primefaces/themes/nova-light/theme.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/primeflex.css"/>     
+    
+    <script type="text/javascript">
+        function printPDF(url) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var blob = xhr.response;
+                    var fileReader = new FileReader();
+                    fileReader.onload = function () {
+                        var data = this.result;
+                        var printWindow = window.open('', '_blank');
+                        printWindow.document.write('<iframe width="100%" height="100%" src="data:application/pdf;base64,' + btoa(data) + '"></iframe>');
+                        printWindow.document.close();
+                        printWindow.onload = function () {
+                            printWindow.focus();
+                            printWindow.print();
+                        };
+                    };
+                    fileReader.readAsBinaryString(blob);
+                }
+            };
+            xhr.send();
+        }
+    </script>
+    
 </h:head>
 
 <h:body>
@@ -18,20 +47,7 @@
         <div class="columns">
             <div class="column">
                 <div class="box">
-                    <div class="columns">
-                        <div class="column">
-                                <div class="message-body">
-                                    <div class="columns is-mobile">
-                                        <div class="column is-four-fifths">
-                                            <h1 class="title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
-                                        </div>
-                                        <div class="column">
-                                            <p:commandButton styleClass="button is-rounded is-danger is-2" icon="pi pi-sign-out" value="Salir" actionListener="#{SessionController.logOut()}" />
-                                        </div>
-                                    </div>
-                                </div>
-                        </div>
-                    </div>
+                    <ui:include src="/secured/fragments/userBar.xhtml" />
                     
                     <ui:include src="/secured/pages/mainMenu.xhtml" />
                     
@@ -40,8 +56,13 @@
                     <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
                     <ui:include src="/secured/fragments/Inventario/Activos/CreateMovimientoDialog.xhtml"/>
 
-                    <h:form>
+                    <h:form id="AjustesActivos">
                         
+                    <p:commandButton value="Imprimir" icon="pi pi-print" 
+                                     action="#{InventarioController.exportPDF}" ajax="false" styleClass="button is-rounded is-fullwidth"
+                                oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')"/>
+        
+        
                     <p:dataTable value="#{InventarioController.filteredInventario}" var="inventario"  widgetVar="InventarioTable"
                                  paginator="true" rows="8" paginatorPosition="bottom" id="InventarioTableData"
                                  emptyMessage="No se encontraron registros de inventario con la critería proporcionada"
@@ -115,6 +136,7 @@
                     <p:commandButton value="Crear Ajuste" onclick="PF('CrearAjusteDialog').show();" update="crearAjuste" styleClass="button is-fullwidth is-success is-rounded"/>
                 
                     </h:form>
+                     
                 </div>
             </div>
         </div>

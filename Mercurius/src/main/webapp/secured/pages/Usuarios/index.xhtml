@@ -9,6 +9,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
     <script src="../../../resources/css/style.css"/>
+    <h:outputStylesheet name="primefaces/primefaces.css"/>
+    <h:outputStylesheet name="primefaces/themes/nova-light/theme.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/primeflex.css"/>     
 
 </h:head>
 
@@ -17,20 +20,7 @@
         <div class="columns">
             <div class="column">
                 <div class="box">
-                    <div class="columns">
-                        <div class="column">
-                                <div class="message-body">
-                                    <div class="columns is-mobile">
-                                        <div class="column is-four-fifths">
-                                            <h1 class="title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
-                                        </div>
-                                        <div class="column">
-                                            <p:commandButton styleClass="button is-rounded is-danger is-2" icon="pi pi-sign-out" value="Salir" actionListener="#{SessionController.logOut()}" />
-                                        </div>
-                                    </div>
-                                </div>
-                        </div>
-                    </div>
+                    <ui:include src="/secured/fragments/userBar.xhtml" />
                     
                     <ui:include src="../../pages/mainMenu.xhtml" />
                     

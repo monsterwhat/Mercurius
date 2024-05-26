@@ -19,7 +19,7 @@
                         paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable" touchable="true"
                         emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
                         globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
-                        filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
+                        filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true" reflow="true"
                         selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
 
                 <f:facet name="header">

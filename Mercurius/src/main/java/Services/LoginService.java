@@ -139,7 +139,63 @@ public class LoginService extends GService<Users>{
         }
     }
 
-
+    
+    public void updateUsername(Users currentUser, String newUsername){
+        try {
+            if (em.contains(currentUser)) {
+                currentUser.setUsername(newUsername);
+                em.merge(currentUser);
+            }else{
+                Users foundUser = em.find(getEntityClass(), currentUser.getId());
+                
+                if (foundUser != null) {
+                    foundUser.setUsername(newUsername);
+                    em.merge(foundUser);
+                }
+            }
+            
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+        }
+    }
+    
+    public void updateEmail(Users currentUser, String newEmail){
+        try {
+            if (em.contains(currentUser)) {
+                currentUser.setEmail(newEmail);
+                em.merge(currentUser);
+            }else{
+                Users foundUser = em.find(getEntityClass(), currentUser.getId());
+                
+                if (foundUser != null) {
+                    foundUser.setEmail(newEmail);
+                    em.merge(foundUser);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+        }
+    }
+    
+    public void updatePassword(Users currentUser, String newPassword){
+        try {
+            if (em.contains(currentUser)) {
+                var HashedPassword = passwordHasher.generate(newPassword.toCharArray());
+                    currentUser.setPassword(HashedPassword);
+                    em.merge(currentUser);
+            } else {
+                Users foundUser = em.find(getEntityClass(), currentUser.getId());
+                
+                if (foundUser != null) {
+                    var HashedPassword = passwordHasher.generate(newPassword.toCharArray());
+                    foundUser.setPassword(HashedPassword);
+                    em.merge(foundUser);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+        }
+    }
     
     
 }

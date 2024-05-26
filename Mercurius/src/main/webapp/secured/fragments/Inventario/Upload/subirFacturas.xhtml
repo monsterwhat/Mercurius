@@ -19,7 +19,7 @@
                                     invalidSizeMessage="El archivo es muy grande"/>                                
                     </div>
                     <div class="column">
-                        <p:dataTable id="uploadedFiles" value="#{facturasController.files}" widgetVar="uploadedFiles" var="file">
+                        <p:dataTable id="uploadedFiles" value="#{facturasController.files}" reflow="true" widgetVar="uploadedFiles" var="file">
                             <p:column headerText="Nombre:">
                                 <h:outputText value="#{file.fileName}"/>
                             </p:column>

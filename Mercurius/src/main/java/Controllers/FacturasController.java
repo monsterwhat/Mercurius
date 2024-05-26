@@ -110,10 +110,6 @@ public class FacturasController implements Serializable {
         facturas = null;
         facturasDetalladas = null;
     }
-        
-    public void clearViewFacturasDetalladas(){
-        viewManager.selectViewFacturasDetalladas();
-    }
 
     public List<Factura> getFilteredFacturas() {
         if(facturas == null){

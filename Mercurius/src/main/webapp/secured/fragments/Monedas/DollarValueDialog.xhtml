@@ -13,12 +13,13 @@
     <h:body>
         <!-- Dialog for Tipo Cambio Dolares -->
         <p:dialog header="Tipo de Cambio USD" widgetVar="dollarValueDialog" id="dollarValueDialog"
-                  fitViewport="true" blockScroll="true" responsive="true"
-                    modal="true" resizable="false" draggable="false" style="height: 400px; overflow-y: auto;">
+                  fitViewport="true" blockScroll="true" responsive="true" 
+                    modal="true" >
         
             <div class="box">
                 
-                <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarValueTable" widgetVar="dollarValueTable" var="cambio">
+                <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarValueTable" 
+                             widgetVar="dollarValueTable" var="cambio" reflow="true">
                     
                 <p:column headerText="Fecha">
                     <h:outputText value="#{cambio.fecha}"/>
@@ -36,7 +37,8 @@
                 
                 <br/>
                 
-                <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarTable" widgetVar="dollarTable" var="cambio">
+                <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarTable"
+                             widgetVar="dollarTable" var="cambio" reflow="true">
                     
                 <p:column headerText="1$">
                     <h:outputText value="#{cambio.valorCompra}"/>
@@ -60,19 +62,17 @@
                     
                     
                 </p:dataTable>
-                
-                
-            </div>
-
+                <br/>
                 <div class="columns is-mobile">
-                    <p:commandButton icon="pi pi-refresh" styleClass="column is-1 is-rounded is-warning button is-fullwidth" 
-                                     actionListener="#{TipoCambioController.recargar()}" update="dollarValueTable dollarTable"/>
-                    <p:commandButton value="Ok" styleClass="column is-rounded is-success button is-fullwidth" 
-                             onsuccess="PF('dollarValueDialog').hide();" 
-                             immediate="true"/>
+                <p:commandButton icon="pi pi-refresh" styleClass="column is-1 is-rounded is-warning button is-fullwidth" 
+                                 actionListener="#{TipoCambioController.recargar()}" update="dollarValueTable dollarTable"/>
+                <p:commandButton value="Ok" styleClass="column is-rounded is-success button is-fullwidth" 
+                         onsuccess="PF('dollarValueDialog').hide();" 
+                         immediate="true"/>
                 </div>
                 
-                
+            </div> 
+            
         </p:dialog>
     </h:body>
 

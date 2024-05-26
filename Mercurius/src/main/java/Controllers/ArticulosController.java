@@ -7,19 +7,39 @@ import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.InventarioService;
+import Services.PrinterService;
+import Utils.directoryConfig;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Meta;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
+import org.primefaces.component.datatable.DataTable;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
@@ -35,6 +55,8 @@ public class ArticulosController implements Serializable {
     @Inject private InventarioService inventarioService;
     @Inject private SessionController currentSession;
     @Inject private CabysController cabysController;
+    @Inject private directoryConfig directoryConfig;
+    @Inject private PrinterService printer;
     
     private List<Articulos> articulosActivos;
     private List<Articulos> articulos;
@@ -150,19 +172,6 @@ public class ArticulosController implements Serializable {
         }
     }
     
-    public void updateArticuloDetallado() {
-        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
-            selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
-            selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
-            selectedArticulo.setUsuario(currentSession.getCurrentUser());
-            selectedArticulo.setProcessed(true);
-            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                articulosService.updateAndDisable(selectedArticulo);
-                clearSelectedArticuloDetallado();
-            }
-        }
-    }
-    
     public void updateArticuloRevision() {
         if(currentSession.isValid()){
             if(DepartamentoID != 0 || FamiliaID != 0){
@@ -266,13 +275,6 @@ public class ArticulosController implements Serializable {
     public void clearSelectedArticulo() {
         clearCache();
         clearArticulo();
-        viewManager.selectViewArticulos();
-    }
-    
-    public void clearSelectedArticuloDetallado() {
-        clearCache();
-        clearArticulo();
-        viewManager.selectViewArticulosDetallado();
     }
     
     public void clearArticulo(){
@@ -543,6 +545,94 @@ public class ArticulosController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
         
         newArticulo.setUnidadMedida(SelectedUnidadMedida);
+    }
+    
+    public void exportPDF(String table) throws IOException, DocumentException {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        
+        // Generate a unique file name using timestamp
+        LocalDateTime currentTime = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String timestamp = currentTime.format(formatter);
+        String fileName = "reporteAjustesActivos_" + timestamp + ".pdf";
+        File tempFile = File.createTempFile("reporteAjustesActivos_" + timestamp, ".pdf");
+        
+        try (OutputStream os = new FileOutputStream(tempFile)) {
+            Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
+            PdfWriter.getInstance(document, os);
+            document.add(new Meta("charset", "UTF-8"));
+            document.open();
+
+            // Set font size
+            com.lowagie.text.Font font = new com.lowagie.text.Font();
+            font.setSize(8); // Set font size to 5 points
+
+            //Add fancy title
+            document.add(new Paragraph("Reporte de Articulos Activos", font));
+            document.add(new Paragraph("-------------------------------------", font));
+
+            // Add content to the PDF
+            DataTable dataTable = (DataTable) facesContext.getViewRoot().findComponent(table);
+            List<Articulos> articulos = (List<Articulos>) dataTable.getValue();
+            int totalItems = articulos.size();
+            int currentItem = 1;
+            for (Articulos articulo : articulos) {
+                String itemInfo = currentItem + "/" + totalItems;
+                document.add(new Paragraph(itemInfo, font));
+
+                document.add(new Paragraph("Art: " + articulo.getNombre(), font));
+                if(articulo.getFamilia() !=null){
+                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + "Fam" + articulo.getFamilia().getNombre(), font));
+                }else{
+                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + "Familia sin definir", font));
+                }
+                if(articulo.getCodigoCabys() != null){
+                    document.add(new Paragraph("%Imp: " + articulo.getCodigoCabys().getCodigo(), font));
+                }else{
+                    document.add(new Paragraph("Cabys sin definir", font));
+                }
+                document.add(new Paragraph("Und: " + articulo.getUnidadMedida() + " UndComercial " + articulo.getUnidadMedidaComercial(), font));
+                document.add(new Paragraph("Costo: " + articulo.getPrecioCostoSinIVA(), font));
+                document.add(new Paragraph("%Util: " + articulo.getPorcentajeUtilidad(), font));
+                document.add(new Paragraph("C/Iva: " + articulo.getPrecioFinal(), font));
+                document.add(new Paragraph("Venta: " + articulo.getPrecioCostoConIVA(), font));
+                document.add(new Paragraph("Creador: " + articulo.getUsuario().getUsername(), font));
+                document.add(new Paragraph("\n", font));
+
+                currentItem++;
+            }
+            document.close();
+        }
+        
+        // Create the directory if it doesn't exist
+        directoryConfig.createPdfSaveDirectoryIfNeeded();
+
+        // Move the temporary file to the permanent location with the unique name
+        File permanentFile = new File(directoryConfig.getPdfSaveDirectory(), fileName);
+        Files.move(tempFile.toPath(), permanentFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+
+        //PDF has been saved print it!!!
+        printer.printPDFFile(permanentFile);
+        
+        // Serve the PDF to the client with the unique name
+        ExternalContext externalContext = facesContext.getExternalContext();
+        HttpServletResponse response = (HttpServletResponse) externalContext.getResponse();
+        response.setContentType("application/pdf");
+        response.setHeader("Content-disposition", "attachment; filename=" + fileName);
+
+        try (OutputStream outStream = response.getOutputStream()) {
+            // Write the content of the permanent file to the output stream
+            Files.copy(permanentFile.toPath(), outStream);
+            outStream.flush();
+        }
+        
+        facesContext.responseComplete();
+    }
+    
+    public String getContextPath() {
+        ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
+        HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
+        return request.getContextPath();
     }
     
 }
