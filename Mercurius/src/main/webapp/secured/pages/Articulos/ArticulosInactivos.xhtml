@@ -7,47 +7,50 @@
 
 <h:head>
     <title>Catalago de Articulos Inactivos</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-    <script src="../../../resources/css/style.css"/>
     <h:outputStylesheet name="primefaces/primefaces.css"/>
-    <h:outputStylesheet name="primefaces/themes/nova-light/theme.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/primeflex.css"/>     
-    
+    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
 </h:head>
 
 <h:body>
-    <div class="container mt-5">
-        <div class="columns">
-            <div class="column">
-                <div class="box">
-                    <ui:include src="/secured/fragments/userBar.xhtml" />
-                    
-                    <ui:include src="../../pages/mainMenu.xhtml" />
-                    
-                    <p:growl showDetail="true" showSummary="true" />
-                    
-                    <ui:include src="/secured/fragments/Articulos/Inactivos/verDetalles.xhtml"/>
+    <p:panelGrid columns="1" styleClass="ui-g">
+        <p:row>
+            <p:column>
+                <ui:include src="/secured/fragments/userBar.xhtml" /> 
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <ui:include src="/secured/pages/mainMenu.xhtml" />
+            </p:column>
+        </p:row> 
+        
+        <p:growl showDetail="true" showSummary="true" />
 
+        <p:row>
+            <p:column>
+                <p:card styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                    
                     <h:form id="ArticulosInactivos">
                         
-                    <p:panel styleClass="box" rendered="#{SessionController.registros}" >
+                    <p:card rendered="#{SessionController.registros}" >
                         <div class="columns">
                             <div class="column is-half">
                                 <p:commandButton value="Imprimir" icon="pi pi-print"
-                               action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" styleClass="button is-rounded is-fullwidth"
+                               action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" 
+                               styleClass="rounded-button ui-button-primary" style='width: 100%'
                                oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
                             </div>
                             <div class="column">
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel"
-                                    styleClass="button is-rounded is-success is-light is-fullwidth"/>
+                                    styleClass="rounded-button ui-button-success" style='width: 100%'/>
                             </div>
                             <div class="column">
                                 <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf"
-                                styleClass="button is-rounded is-danger is-light is-fullwidth"/>
+                                styleClass="rounded-button ui-button-danger" style='width: 100%'/>
                             </div>
                         </div>
-                    </p:panel>
+                    </p:card>
                         
                     <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"
                                  paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
@@ -58,20 +61,20 @@
 
                         <f:facet name="header">
                             <p:inputText id="globalFilter" onkeyup="PF('ArticulosInactivos').filter()"
-                                         placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                         </f:facet>
 
                         <p:column>
-                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" styleClass="has-background-success"
+                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
                                     rendered="#{articulo.processed}"/>
                             <p:tooltip for="processedChip" value="Procesado" position="top"/>
-                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning"
+                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" style="background: var(--yellow-500)"
                                     rendered="#{!articulo.processed}"/>
                             <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
-                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" 
+                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
                                     rendered="#{articulo.status}"/>
                             <p:tooltip for="ActiveChip" value="Activo" position="top"/>
-                            <p:chip id="InactiveChip" icon="pi pi-times" styleClass="has-background-danger" 
+                            <p:chip id="InactiveChip" icon="pi pi-times" style="background: var(--red-500);"
                                     rendered="#{!articulo.status}"/>
                             <p:tooltip for="InactiveChip" value="Inactivo" position="top"/>
                         </p:column>
@@ -106,7 +109,7 @@
 
                         <p:column headerText="Acciones" exportable="false">
                             <div class="buttons has-addons">
-                                <p:commandButton styleClass="button is-rounded is-primary" onclick="PF('ArticuloDetailsDialog').show();"
+                                <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloDetailsDialog').show();"
                                                  icon="pi pi-eye" process="@this" update="selectedArticulo">
                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                 </p:commandButton>
@@ -115,9 +118,14 @@
                     </p:dataTable>
                         
                     </h:form>
-                </div>
-            </div>
-        </div>
-    </div>
+                    
+                </p:card>
+                
+                </p:column>
+            </p:row>
+        </p:panelGrid>
+
+        <ui:include src="/secured/fragments/Articulos/Inactivos/verDetalles.xhtml"/>
+
 </h:body>
 </html>

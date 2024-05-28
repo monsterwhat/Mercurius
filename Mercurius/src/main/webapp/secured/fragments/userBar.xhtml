@@ -4,73 +4,100 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-    <div class="columns">
-        <div class="column">
-            <article class="notification">
-                    <div class="columns">
-                        <div class="column is-fullwidth">
-                            <h1 class="title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
+    <p:card styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+        <div class="ui-g">
+            <div class="ui-g-12">
+                <div class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round">
+                    <div class="ui-g">
+                        <div class="ui-g-10 ui-g-offset-1 ui-text-center">
+                            <h1 style="color: var(--primary-color);" class="title success-title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
                         </div>
-                        <div class="column is-2">
-                            <p:commandButton styleClass="button is-rounded is-danger is-2" icon="pi pi-user" 
+                        <div class="ui-g-1 ui-text-right">
+                            <p:commandButton styleClass="ui-button-rounded ui-button-danger" icon="pi pi-user" 
                                              value="Perfil" oncomplete="PF('userSettingsDialog').show()" />
                         </div>
                     </div>
-            </article>
+                </div>
+            </div>
         </div>
-    </div>
+    </p:card>
     
     <p:dialog header="Menu de Usuario" widgetVar="userSettingsDialog" modal="true"
               fitViewport="true" responsive="true">
-        <h:form id="userSettingsForm" class="ui-g">
+        <h:form id="userSettingsForm" >
             <p:growl showDetail="true" showSummary="true" />
-            <div class="box" style="width: 100%">
-                <div class="ui-g-12 ui-md-4">
-                    <h:outputText value="Nombre de usuario:" />
-                </div>
-                <div class="ui-g-12 ui-md-4">
-                    <h:outputText value="#{SessionController.currentUser.username}" />
-                </div>
-                <div class="ui-g-12 ui-md-4">
-                    <p:commandButton value="Cambiar" oncomplete="PF('nameDialog').show()" 
-                                      style="width: 100%; border-radius: 2em;" 
-                                      actionListener="#{SessionController.openUsername()}"/>
-                </div>
-                <div class="ui-g-12 ui-md-4">
-                <h:outputText value="Correo Electronico:" />
-                </div>
-                <div class="ui-g-12 ui-md-4">
-                    <h:outputText value="#{SessionController.currentUser.email}" />
-                </div>
-                <div class="ui-g-12 ui-md-4">
-                    <p:commandButton value="Cambiar" oncomplete="PF('emailDialog').show()"
-                                     style="width: 100% ; border-radius: 2em;"
-                                     actionListener="#{SessionController.openEmail()}"/>
-                </div>
-            </div>
-            <div class="box" style="width: 100%">
-                <div class="ui-g-12">
-                <p:commandButton value="Cambiar Contrasena" oncomplete="PF('passwordDialog').show()" 
-                                 style="width: 100%; border-radius: 2em;"
-                                 actionListener="#{SessionController.openPassword()}"/>
-                </div>
-            </div>
-            
-            
-            <div class="ui-g-12">
-                <p:commandButton value="Cerrar Session" class="button is-danger" style="width: 100%; border-radius: 2em;" 
-                         icon="pi pi-power-off" actionListener="#{SessionController.logOut()}"/>
-            </div>
+                <p:card>
+                    <p:panelGrid columns="3" styleClass="ui-grid ui-grid-responsive" columnClasses="ui-grid-col-4,ui-grid-col-4,ui-grid-col-4">
+                        <p:outputPanel styleClass="ui-g ui-md-4 ui-sm-12 ui-text-align-center">
+                            <h:outputText value="Nombre de usuario:"/>
+                        </p:outputPanel>
+                        <p:outputPanel styleClass="ui-g ui-md-4 ui-sm-12 ui-text-align-center">
+                            <h:outputText value="#{SessionController.currentUser.username}"/>
+                        </p:outputPanel>
+                        <p:outputPanel styleClass="ui-g ui-md-4 ui-sm-12">
+                            <p:commandButton icon="pi pi-pencil" oncomplete="PF('nameDialog').show()" 
+                                             styleClass="rounded-button ui-button-help"
+                                             actionListener="#{SessionController.openUsername()}"/>
+                        </p:outputPanel>
 
+                        <p:outputPanel styleClass="ui-grid-col-12 ui-md-4 ui-sm-12 ui-text-align-center">
+                            <h:outputText value="Correo Electronico:"/>
+                        </p:outputPanel>
+                        <p:outputPanel styleClass="ui-grid-col-12 ui-md-4 ui-sm-12 ui-text-align-center">
+                            <h:outputText value="#{SessionController.currentUser.email}"/>
+                        </p:outputPanel>
+                        <p:outputPanel styleClass="ui-grid-col-12 ui-md-4 ui-sm-12 ui-text-align-center">
+                            <p:commandButton icon="pi pi-pencil" oncomplete="PF('emailDialog').show()"
+                                             styleClass="rounded-button ui-button-help"
+                                             actionListener="#{SessionController.openEmail()}"/>
+                        </p:outputPanel>
+                    </p:panelGrid>
+                </p:card>
+            
+                <p:card class="ui-g-12">
+                    <p:commandButton icon="pi pi-heart-fill" value="Cambiar Estilo Visual" onclick="PF('themeDialog').show()" 
+                                 styleClass="rounded-button ui-button-info" style="width: 100%;"/>
+                    <p:spacer height="10"/>
+                    <p:commandButton icon="pi pi-key" value="Cambiar Contrasena" oncomplete="PF('passwordDialog').show()" 
+                             styleClass="rounded-button ui-button-help" style="width: 100%;"
+                             actionListener="#{SessionController.openPassword()}"/> 
+                    <p:spacer height="10"/>
+                    <p:commandButton value="Cerrar Session" styleClass="rounded-button ui-button-danger" 
+                     icon="pi pi-power-off" actionListener="#{SessionController.logOut()}" style="width: 100%;" />
+                </p:card>
+            
+        </h:form>
+    </p:dialog>
+    
+    <p:dialog header="Cambiar Tema" widgetVar="themeDialog" modal="true">
+        <h:form>
+            <p:panelGrid columns="2">
+                <h:outputText value="Seleccionar Tema:" />
+                <p:selectOneMenu value="#{ThemeController.selectedTheme}">
+                    <f:selectItem itemLabel="Saga" itemValue="saga" />
+                    <f:selectItem itemLabel="Vela" itemValue="vela" />
+                    <f:selectItem itemLabel="Arya" itemValue="arya" />
+                    <f:selectItem itemLabel="Luna Amber" itemValue="luna-amber" />
+                    <f:selectItem itemLabel="Luna Blue" itemValue="luna-blue" />
+                    <f:selectItem itemLabel="Luna Green" itemValue="luna-green" />
+                    <f:selectItem itemLabel="Luna Pink" itemValue="luna-pink" />
+                    <f:selectItem itemLabel="Nova Colored" itemValue="nova-colored" />
+                    <f:selectItem itemLabel="Nova Dark" itemValue="nova-dark" />
+                    <f:selectItem itemLabel="Nova Light" itemValue="nova-light" />
+                </p:selectOneMenu>
+            </p:panelGrid>
+                <br/>
+            <p:commandButton value="Seleccionar" actionListener="#{ThemeController.updateTheme()}"
+                             styleClass="rounded-button ui-button-info" style="width: 100%;" />
         </h:form>
     </p:dialog>
     
     <!-- Dialog for changing Name -->
     <p:dialog header="Cambiar Nombre de Usuario" widgetVar="nameDialog" modal="true" 
               fitViewport="true" responsive="true">
-        <h:form class="ui-g">
+        <h:form class="ui-g p-4">
             <p:growl showDetail="true" showSummary="true" />
-            <div class="box" style="width: 100%">
+            <div class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round ui-g-12">
                 <p:inputText value="#{SessionController.newUsername}" required="true" requiredMessage="El nombre de usuario no puede estar vacio"/>
                 <p:commandButton value="Guardar" action="#{SessionController.changeName}" process="@this" update=":userSettingsForm @this" oncomplete="PF('nameDialog').hide()" />
             </div>
@@ -80,9 +107,9 @@
     <!-- Dialog for changing Email -->
     <p:dialog header="Cambiar correo electronico" widgetVar="emailDialog" modal="true"
               fitViewport="true" responsive="true">
-        <h:form class="ui-g">
+        <h:form class="ui-g p-4">
             <p:growl showDetail="true" showSummary="true" />
-            <div class="box" style="width: 100%">
+            <div class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round ui-g-12">
                 <p:inputText value="#{SessionController.newEmail}" required="true" requiredMessage="El correo electronico no puede estar vacio"/>
                 <p:commandButton value="Guardar" action="#{userSettingsBean.changeEmail}" process="@this" update=":userSettingsForm @this" oncomplete="PF('emailDialog').hide()" />
             </div>
@@ -91,31 +118,34 @@
     
     <!-- Dialog for changing Password -->
     <p:dialog header="Change Password" widgetVar="passwordDialog" modal="true"
-              fitViewport="true" responsive="true" styleClass="p-fluid">
+              fitViewport="true" responsive="true">
         <h:form>
             <p:growl showDetail="true" showSummary="true" />
-            <div class="grid formgrid">
-                <div class="field col-12">
-                    <p:outputLabel for="currentPassword" value="Current Password:" class="p-d-block"/>
-                    <p:inputText id="currentPassword" value="#{SessionController.currentPassword}" required="true"
-                                 class="p-d-block w-full"/>
-                </div>
-                <div class="field col-12">
-                    <p:outputLabel for="newPassword" value="New Password:" class="p-d-block"/>
-                    <p:inputText id="newPassword" value="#{SessionController.newPassword}" required="true"
-                                 class="p-d-block w-full"/>
-                </div>
-                <div class="field col-12">
-                    <p:outputLabel for="confirmPassword" value="Confirm New Password:" class="p-d-block"/>
-                    <p:inputText id="confirmPassword" value="#{SessionController.confirmPassword}" required="true"
-                                 class="p-d-block w-full"/>
-                </div>
-                <div class="col-12 text-right">
-                    <p:commandButton value="Save" action="#{SessionController.changePassword}" update=":userSettingsForm" oncomplete="PF('passwordDialog').hide()" />
-                </div>
-            </div>
+            <p:panelGrid columns="1" styleClass="ui-g">
+                <p:outputPanel class="ui-g-12 p-mb-12">
+                    <p:outputLabel for="currentPassword" value="Contrasena actual:" style="width: 100%"/>
+                    <p:inputText id="currentPassword" value="#{SessionController.currentPassword}"
+                                 required="true" style="width: 100%"
+                                 />
+                </p:outputPanel>
+                <p:outputPanel class="ui-g-12 p-mb-2">
+                    <p:outputLabel for="newPassword" value="Nueva Contrasena:" style="width: 100%"/>
+                    <p:inputText id="newPassword" value="#{SessionController.newPassword}"
+                                 required="true" style="width: 100%"
+                                 />
+                </p:outputPanel>
+                <p:outputPanel class="ui-g-12 p-mb-12">
+                    <p:outputLabel for="confirmPassword" value="Confimar nueva contrasena:" style="width: 100%"/>
+                    <p:inputText id="confirmPassword" value="#{SessionController.confirmPassword}"
+                                 required="true" style="width: 100%"
+                                 />
+                </p:outputPanel>
+                <p:outputPanel class="ui-g-12">
+                    <p:commandButton value="Guardar" action="#{SessionController.changePassword}" update=":userSettingsForm" 
+                                     oncomplete="PF('passwordDialog').hide()" style="width: 100%"/>
+                </p:outputPanel>
+            </p:panelGrid>            
         </h:form>
     </p:dialog>
 
-    
 </ui:composition>

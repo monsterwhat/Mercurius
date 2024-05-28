@@ -7,7 +7,7 @@
         <p:dialog header="Informacion de Articulo" widgetVar="ArticuloDetailsDialog" 
                   responsive="true" id="ArticuloDetailsDialog" modal="true">
         <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
-            <div class="box">
+            <p:card>
                 <p:dataTable id="selectedArticulo" var="articulo" reflow="true"
                              value="#{ArticulosController.selectedArticulo}">
                     <p:column headerText="Código" visible="false">
@@ -47,7 +47,7 @@
                         <h:outputText value="#{articulo.usuario.username}" />
                     </p:column>
                 </p:dataTable>
-            </div>
+            </p:card>
         </p:outputPanel>
     </p:dialog>
 

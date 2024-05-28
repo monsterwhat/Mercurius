@@ -16,19 +16,22 @@
 </h:head>
 
 <h:body>
-    <div class="container mt-5">
-        <div class="columns">
-            <div class="column">
-                <div class="box">
-                    <ui:include src="/secured/fragments/userBar.xhtml" />
-                    
-                    <ui:include src="../../pages/mainMenu.xhtml" />
-                    
-                    <p:growl showDetail="true" showSummary="true" />
-                    
-                </div>
-            </div>
-        </div>
-    </div>
+    <p:panelGrid styleClass="p-grid p-dir-col p-nogutter" columns="1">
+        <p:row>
+            <p:column>
+                <ui:include src="/secured/fragments/userBar.xhtml" />
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <ui:include src="../../pages/mainMenu.xhtml" />
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <p:growl id="growl" showDetail="true" showSummary="true" />
+            </p:column>
+        </p:row>
+    </p:panelGrid>
 </h:body>
 </html>
