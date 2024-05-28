@@ -11,19 +11,21 @@
                   widgetVar="CrearArticuloDialog" fitViewport="true" responsive="true">                   
             <p:outputPanel id="CrearArticuloDialog" rendered="#{not empty ArticulosController.newArticulo}">
                 <h:form>
-                <p:growl showDetail="true" showSummary="false"/>
+                    <p:panelGrid columns="1" style="width: 800px">
+                        <p:panel header="Crear Artículo:">
+                            <p:growl showDetail="true" showSummary="false"/>
 
                         <!-- Input for article name -->
                         <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newName">Nombre:</label>
+                                <label class="label" for="newName" style="color: var(--primary-color);">Nombre:</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
                                     <p:inputText id="newName" value="#{ArticulosController.newArticulo.nombre}"
                                                  required="true" requiredMessage="El nombre no puede estar vacío"
-                                                />
+                                                style="width: 100%"/>
                                 </div>
                             </div>
                         </div>
@@ -32,13 +34,13 @@
                         <p:messages showDetail="true" for="newCodigoBarra" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newCodigoBarra">Codigo de Barra:</label>
+                                <label class="label" for="newCodigoBarra" style="color: var(--primary-color);">Codigo de Barra:</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
                                     <p:inputText id="newCodigoBarra" value="#{ArticulosController.newArticulo.codigoBarra}"
                                                  required="true" requiredMessage="El codigo de barra no puede estar vacío"
-                                                 >
+                                                 style="width: 100%">
                                     </p:inputText>
                                 </div>
                             </div>
@@ -48,7 +50,7 @@
                         <p:messages showDetail="true" for="newCodigoCabys" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newCodigoCabys">Código CABYS:</label>
+                                <label class="label" for="newCodigoCabys" style="color: var(--primary-color);">Código CABYS:</label>
                             </div>
                             <div class="field-body is-flex">
                                 <p:commandButton value="Seleccionar" id="selectCabysCreate"
@@ -69,12 +71,12 @@
                         <p:messages showDetail="true" for="newUnidadMedida" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newUnidadMedida">Unidad de Medida:</label>
+                                <label class="label" for="newUnidadMedida" style="color: var(--primary-color);">Unidad de Medida:</label>
                             </div>
                             <div class="field-body columns is-mobile">
                                 <div class="column">
                                     <p:selectOneMenu id="newUnidadMedida" value="#{ArticulosController.newArticulo.unidadMedida}"
-                                                    >
+                                                    style="width: 100%">
                                         <p:ajax listener="#{ArticulosController.createUnidadMedidaChanged}"/>
                                         <f:selectItem itemLabel="Unid" itemValue="Unid"/>
                                         <f:selectItem itemLabel="Otros" itemValue="Otros"/>
@@ -88,12 +90,12 @@
                         <p:messages showDetail="true" for="newUnidadMedidaComercial" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newUnidadMedidaComercial">Unidad de Medida Comercial:</label>
+                                <label class="label" for="newUnidadMedidaComercial" style="color: var(--primary-color);">Unidad de Medida Comercial:</label>
                             </div>
                             <div class="field-body columns is-mobile">
                                 <div class="column">
                                     <p:selectOneMenu id="newUnidadMedidaComercial" value="#{ArticulosController.newArticulo.unidadMedidaComercial}"
-                                                    >
+                                                    style="width: 100%">
                                         <p:ajax listener="#{ArticulosController.createUnidadMedidaComercialChanged}"/>
                                         <f:selectItem itemLabel="Botella" itemValue="BOT"/>
                                         <f:selectItem itemLabel="Lata" itemValue="LT"/>
@@ -110,13 +112,13 @@
                         <p:messages showDetail="true" for="newDepartamento" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newDepartamento">Departamento:</label>
+                                <label class="label" for="newDepartamento" style="color: var(--primary-color);">Departamento:</label>
                             </div>
                             <div class="field-body columns is-mobile">
                                 <div class="column">
                                     <p:selectOneMenu id="newDepartamentoSelect" value="#{ArticulosController.departamentoID}"
                                                      required="true" requiredMessage="El Departamento no puede estar vacío"
-                                                     widgetVar="newDepartamentoSelect">
+                                                     widgetVar="newDepartamentoSelect" style="width: 100%">
                                         <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
                                         <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
                                                        itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
@@ -129,13 +131,13 @@
                         <p:messages showDetail="true" for="newFamilia" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newFamilia">Familia:</label>
+                                <label class="label" for="newFamilia" style="color: var(--primary-color);">Familia:</label>
                             </div>
                             <div class="field-body columns is-mobile">
                                 <div class="column">
                                     <p:selectOneMenu id="newFamiliaSelect" value="#{ArticulosController.familiaID}"
                                                      required="true" requiredMessage="La Familia no puede estar vacía"
-                                                     widgetVar="newFamiliaSelect" >
+                                                     widgetVar="newFamiliaSelect" style="width: 100%">
                                         <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
                                         <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
                                                        itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
@@ -148,13 +150,13 @@
                         <p:messages showDetail="true" for="newPrecioCostoSinIVA" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newPrecioCostoSinIVA">Precio Costo sin IVA:</label>
+                                <label class="label" for="newPrecioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
                                     <p:inputText id="newPrecioCostoSinIVA" type="number" value="#{ArticulosController.newArticulo.precioCostoSinIVA}"
                                                  required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
-                                                 >
+                                                 style="width: 100%">
                                         <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad()}"
                                                 update="newPrecioCostoSinIVA newPrecioFinal newPrecioFinalConIVA" process="@this"/>
                                     </p:inputText>
@@ -166,13 +168,13 @@
                         <p:messages showDetail="true" for="newPorcentajeUtilidad" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newPorcentajeUtilidad">Porcentaje de Utilidad:</label>
+                                <label class="label" for="newPorcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
                                     <p:inputText id="newPorcentajeUtilidad" type="number" value="#{ArticulosController.newArticulo.porcentajeUtilidad}"
                                                  required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
-                                                 >
+                                                 style="width: 100%">
                                                 <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad()}"
                                                         update="newPrecioCostoSinIVA newPrecioFinal newPrecioFinalConIVA" />
                                     </p:inputText>
@@ -184,7 +186,7 @@
                         <p:messages showDetail="true" for="newPrecioFinal" showSummary="false" closable="true" />
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newPrecioFinal">Precio Final:</label>
+                                <label class="label" for="newPrecioFinal" style="color: var(--primary-color);">Precio Final:</label>
                             </div> 
                             <div class="field-body">
                                 <div class="field">
@@ -197,7 +199,7 @@
                         <p:messages showDetail="true" for="newPrecioFinalConIVA" showSummary="false" closable="true"/>
                         <div class="field is-horizontal">
                             <div class="field-label is-normal">
-                                <label class="label" for="newPrecioFinalConIVA">Precio Final con IVA:</label>
+                                <label class="label" for="newPrecioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
                             </div>
                             <div class="field-body">
                                 <div class="field">
@@ -209,8 +211,11 @@
                         </div>
                         
                         <p:commandButton value="Crear Artículo" update="@form ArticulosActivos" process="@form"
-                                         action="#{ArticulosController.createArticuloByDialog()}"
-                                         />
+                                         action="#{ArticulosController.createArticuloByDialog()}" style="width: 100%"
+                                         styleClass="rounded-button ui-button-primary"/>
+                        
+                        </p:panel>
+                    </p:panelGrid>
                 </h:form>
             </p:outputPanel>
         </p:dialog>

@@ -9,13 +9,15 @@
               fitViewport="true" responsive="true" id="CrearAjusteDialog" modal="true">
         <p:outputPanel rendered="#{not empty InventarioController.newInventario}">
             <h:form id="crearAjuste">
+                <p:panelGrid columns="1" style="width: 600px">
+
                 <p:panel header="Crear un Ajuste de Inventario">
                     <p:growl id="growl" showDetail="true" showSummary="false"/>
 
                     <p:messages showDetail="true" for="article" showSummary="false" closable="true" />
                     <div class="field">
                         <div class="field-label is-normal">
-                            <label class="label" for="article" style="text-align: center;">Artículo:</label>
+                            <label class="label" for="article" style="color: var(--primary-color); text-align: center" >Artículo:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
@@ -33,7 +35,7 @@
                     <p:messages showDetail="true" for="cantidad" showSummary="false" closable="true" />
                     <div class="field">
                         <div class="field-label is-normal">
-                            <label class="label" for="cantidad" style="text-align: center;">Cantidad:</label>
+                            <label class="label" for="cantidad" style="color: var(--primary-color); text-align: center">Cantidad:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
@@ -47,7 +49,7 @@
                     <p:messages showDetail="true" for="tipo" showSummary="false" closable="true" />
                     <div class="field">
                         <div class="field-label is-normal">
-                            <label class="label" for="tipo" style="text-align: center;">Tipo:</label>
+                            <label class="label" for="tipo" style="color: var(--primary-color); text-align: center">Tipo:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
@@ -66,7 +68,7 @@
                     <p:messages showDetail="true" for="notas" showSummary="false" closable="true" />
                     <div class="field">
                         <div class="field-label is-normal">
-                            <label class="label" for="notas" style="text-align: center;">Notas:</label>
+                            <label class="label" for="notas" style="color: var(--primary-color); text-align: center">Notas:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
@@ -80,12 +82,13 @@
                     <div style="text-align: center;">
                         <p:commandButton value="Crear Ajuste" 
                                  action="#{InventarioController.createInventarioDialog()}" 
-                                 process="@form" update="@form"
-                                 style="border-radius: 25px; width: 100%;"/>
+                                 process="@form" update="@form" style="width: 100%"
+                                 styleClass="rounded-button ui-button-primary"/>
                     </div>
                     
 
                 </p:panel>
+                    </p:panelGrid>
             </h:form>
         </p:outputPanel>
     </p:dialog>

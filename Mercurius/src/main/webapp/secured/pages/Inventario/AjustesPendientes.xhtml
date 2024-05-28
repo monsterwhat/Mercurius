@@ -7,29 +7,30 @@
 
 <h:head>
     <title>Catalogo de Ajustes Pendientes</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-    <script src="../../../resources/css/style.css"/>
     <h:outputStylesheet name="primefaces/primefaces.css"/>
-    <h:outputStylesheet name="primefaces/themes/nova-light/theme.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/primeflex@latest/primeflex.css"/>     
-    
-    
+    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
 </h:head>
 
 <h:body>
-    <div class="container mt-5">
-        <div class="columns">
-            <div class="column">
-                <div class="box">
-                    <ui:include src="/secured/fragments/userBar.xhtml" />
-                    
-                    <ui:include src="/secured/pages/mainMenu.xhtml" />
-                    
-                    <p:growl showDetail="true" showSummary="true" />
-                    
-                    <ui:include src="/secured/fragments/Inventario/PendientesRevision/DialogoRevisionInventario.xhtml"/>
+    <p:panelGrid columns="1" styleClass="ui-g">
+        <p:row>
+            <p:column>
+                <ui:include src="/secured/fragments/userBar.xhtml" /> 
+            </p:column>
+        </p:row>
+        <p:row>
+            <p:column>
+                <ui:include src="/secured/pages/mainMenu.xhtml" />
+            </p:column>
+        </p:row> 
+        
+        <p:growl showDetail="true" showSummary="true" />
 
+        <p:row>
+            <p:column>
+                <p:panel styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                    
                     <h:form id="inventarioPendiente">
                     <p:dataTable value="#{InventarioController.filteredInventarioSinProcesar}" var="movimiento"  widgetVar="InventariosPendientesTable"
                                  paginator="true" rows="8" paginatorPosition="bottom" id="InventariosPendientesTableData"
@@ -42,11 +43,11 @@
 
                         <f:facet name="header">
                             <p:inputText id="globalFilter" onkeyup="PF('InventariosPendientesTable').filter()"
-                                         placeholder="Búsqueda general de todos los campos" styleClass="input"/>
+                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                         </f:facet>
 
                         <p:column exportable="false">
-                            <p:commandButton value="Procesar" styleClass="button is-info is-rounded" update="RevisionMovimientoDialog"
+                            <p:commandButton value="Procesar" styleClass="rounded-button ui-button-secondary" update="RevisionMovimientoDialog"
                                 icon="pi pi-sync" onclick="PF('RevisionMovimientoDialog').show();" process="@this">
                                 <f:setPropertyActionListener value="#{movimiento}" target="#{InventarioController.selectedInventario}" />
                             </p:commandButton>
@@ -70,9 +71,14 @@
 
                     </p:dataTable>
                     </h:form>
-                </div>
-            </div>
-        </div>
-    </div>
+                    
+                </p:panel>
+                    
+                </p:column>
+            </p:row>
+        </p:panelGrid>
+
+        <ui:include src="/secured/fragments/Inventario/PendientesRevision/DialogoRevisionInventario.xhtml"/>
+               
 </h:body>
 </html>

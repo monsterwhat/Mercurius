@@ -3,16 +3,14 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-
-    <h:head>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-    </h:head>
+   
     <h:body>
-        <h:form id="MainMenu">
-            <div class="columns is-mobile buttons">
-                <div class="column">
-                    <p:commandButton id="FacturacionButton" value="Facturación" styleClass="button is-rounded is-primary is-fullwidth"
+        <p:card styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+            <h:form id="MainMenu">
+            <div class="ui-g">
+                <div class="ui-g-12 ui-md-3">
+                    <p:commandButton id="FacturacionButton" value="Facturación" style="width: 100%"
+                                     styleClass="ui-button-rounded ui-button-primary" 
                                      icon="pi pi-shopping-cart" rendered="#{SessionController.facturacion}"/>
                     <p:menu overlay="true" trigger="FacturacionButton" my="left top" at="left bottom">
                         <p:submenu label="Facturación">
@@ -20,9 +18,9 @@
                         </p:submenu>
                     </p:menu>
                 </div>
-                <div class="column">
-                    <p:commandButton id="InventariosButton" value="Inventarios" 
-                                     styleClass="button is-rounded is-info is-fullwidth" 
+                <div class="ui-g-12 ui-md-2">
+                    <p:commandButton id="InventariosButton" value="Inventarios" style="width: 100%"
+                                     styleClass="ui-button-rounded ui-button-info" 
                                      icon="pi pi-box" rendered="#{SessionController.inventarios}"/>
                     <p:menu overlay="true" trigger="InventariosButton" my="left top" at="left bottom">
                         <p:submenu label="Inventarios">
@@ -43,9 +41,9 @@
                         </p:submenu>
                     </p:menu>
                 </div>
-                <div class="column">
-                    <p:commandButton id="UsuariosButton" value="Usuarios" 
-                                     styleClass="button is-rounded is-link is-fullwidth" 
+                <div class="ui-g-12 ui-md-2">
+                    <p:commandButton id="UsuariosButton" value="Usuarios" style="width: 100%"
+                                     styleClass="ui-button-rounded ui-button-info" 
                                      icon="pi pi-user" rendered="#{SessionController.usuarios}"/>
                     <p:menu overlay="true" trigger="UsuariosButton" my="left top" at="left bottom">
                         <p:submenu label="Usuarios">
@@ -54,9 +52,9 @@
                         </p:submenu>
                     </p:menu>
                 </div>
-                <div class="column">
-                    <p:commandButton id="TributacionButton" value="Tributación" 
-                                     styleClass="button is-rounded is-danger is-fullwidth" 
+                <div class="ui-g-12 ui-md-2">
+                    <p:commandButton id="TributacionButton" value="Tributación" style="width: 100%"
+                                     styleClass="ui-button-rounded ui-button-danger" 
                                      icon="pi pi-money-bill" rendered="#{SessionController.tributacion}"/>
                     <p:menu overlay="true" trigger="TributacionButton" my="left top" at="left bottom">
                         <p:submenu label="Tributación">
@@ -67,9 +65,9 @@
                     </p:menu>
                     <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
                 </div>
-                <div class="column">
-                    <p:commandButton id="RegistrosButton" value="Registros" 
-                                     styleClass="button is-rounded is-warning is-fullwidth" 
+                <div class="ui-g-12 ui-md-3">
+                    <p:commandButton id="RegistrosButton" value="Registros" style="width: 100%"
+                                     styleClass="ui-button-rounded ui-button-warning" 
                                      icon="pi pi-book" rendered="#{SessionController.registros}"/>
                     <p:menu overlay="true" trigger="RegistrosButton" my="left top" at="left bottom" collision="fit">
                         <p:submenu label="Reportes Facturación">
@@ -91,5 +89,6 @@
                 </div>
             </div>
         </h:form>
+        </p:card>
     </h:body>
 </ui:composition>

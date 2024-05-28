@@ -16,8 +16,8 @@
                     <p:autoUpdate/>
                     
                     <f:facet name="header">
-                        <p:inputText id="globalFilter" onkeyup="PF('ArticuloTable').filter()"
-                                     placeholder="#{InventarioController.selectedInventario.articulo.nombre}" styleClass="input"/>
+                        <p:inputText id="globalFilter" onkeyup="PF('ArticuloTable').filter()" style="color: var(--primary-color); width: 100%"
+                                     placeholder="#{InventarioController.selectedInventario.articulo.nombre}"/>
                     </f:facet>
 
                    <p:column selectionMode="single" style="width: 3%" />
@@ -27,8 +27,8 @@
 
                 </p:dataTable>
         
-                <p:commandButton value="Seleccionar" styleClass="button is-fullwidth" action="#{InventarioController.articuloSelectedEditDialog()}" 
-                                 process="@form" update="@form"
+                <p:commandButton value="Seleccionar" styleClass="rounded-button ui-button-primary" action="#{InventarioController.articuloSelectedEditDialog()}" 
+                                 process="@form" update="@form" style="width: 100%"
                          />
             </h:form>
         </p:dialog>
