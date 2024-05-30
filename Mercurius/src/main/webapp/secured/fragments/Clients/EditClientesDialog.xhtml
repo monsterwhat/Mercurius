@@ -7,158 +7,162 @@
         fitViewport="true" responsive="true" id="EditarClienteDialog" modal="true">
         <p:outputPanel rendered="#{not empty ClientsController.selectedClient}">
             <h:form id="editClientForm">
-                <p:panel header="Editar Cliente: #{ClientsController.selectedClient.name}">
-                    <p:growl showDetail="true" showSummary="false"/>
+                <p:panelGrid columns="1" style="width: 800px">
+                    <p:panel header="Editar Cliente: #{ClientsController.selectedClient.name}">
+                        <p:growl showDetail="true" showSummary="false"/>
 
-                    <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="name">Nombre:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="name" value="#{ClientsController.selectedClient.name}"
-                                             required="true" requiredMessage="El nombre no puede estar vacío"
-                                            />
+                        <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="name" style="color: var(--primary-color);">Nombre:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="name" value="#{ClientsController.selectedClient.name}"
+                                                 required="true" requiredMessage="El nombre no puede estar vacío"
+                                                style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="address" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="address">Dirección:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="address" value="#{ClientsController.selectedClient.address}"
-                                             required="true" requiredMessage="La dirección no puede estar vacía"
-                                             />
+                        <p:messages for="address" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="address" style="color: var(--primary-color);">Dirección:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="address" value="#{ClientsController.selectedClient.address}"
+                                                 required="true" requiredMessage="La dirección no puede estar vacía"
+                                                 style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="email" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="email">Email:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="email" value="#{ClientsController.selectedClient.email}"
-                                             required="true" requiredMessage="El email no puede estar vacío"
-                                             />
+                        <p:messages for="email" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="email" style="color: var(--primary-color);">Email:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="email" value="#{ClientsController.selectedClient.email}"
+                                                 required="true" requiredMessage="El email no puede estar vacío"
+                                                 style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="birthDate" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="birthDate">Fecha de Nacimiento:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:calendar id="birthDate" value="#{ClientsController.selectedClient.birthDate}"
-                                            pattern="dd/MM/yyyy" required="true"
-                                            requiredMessage="La fecha de nacimiento no puede estar vacía"
-                                            />
+                        <p:messages for="birthDate" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="birthDate" style="color: var(--primary-color);">Fecha de Nacimiento:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:calendar id="birthDate" value="#{ClientsController.selectedClient.birthDate}"
+                                                pattern="dd/MM/yyyy" required="true"
+                                                requiredMessage="La fecha de nacimiento no puede estar vacía"
+                                                style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="idType" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="idType">Tipo de Cédula:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="idType" value="#{ClientsController.selectedClient.idType}"
-                                             required="true" requiredMessage="El tipo de cédula no puede estar vacío"
-                                             />
+                        <p:messages for="idType" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="idType" style="color: var(--primary-color);">Tipo de Cédula:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="idType" value="#{ClientsController.selectedClient.idType}"
+                                                 required="true" requiredMessage="El tipo de cédula no puede estar vacío"
+                                                 style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="idNumber" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="idNumber">Cédula:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="idNumber" value="#{ClientsController.selectedClient.idNumber}"
-                                             required="true" requiredMessage="La cédula no puede estar vacía"
-                                             />
+                        <p:messages for="idNumber" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="idNumber" style="color: var(--primary-color);">Cédula:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="idNumber" value="#{ClientsController.selectedClient.idNumber}"
+                                                 required="true" requiredMessage="La cédula no puede estar vacía"
+                                                 style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="discount" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="discount">Descuento:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="discount" value="#{ClientsController.selectedClient.discount}"
-                                             required="true" requiredMessage="El descuento no puede estar vacío"
-                                             />
+                        <p:messages for="discount" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="discount" style="color: var(--primary-color);">Descuento:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="discount" value="#{ClientsController.selectedClient.discount}"
+                                                 required="true" requiredMessage="El descuento no puede estar vacío"
+                                                 style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="phoneNumber" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="phoneNumber">Teléfono:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="phoneNumber" value="#{ClientsController.selectedClient.phoneNumber}"
-                                             required="true" requiredMessage="El teléfono no puede estar vacío"
-                                             />
+                        <p:messages for="phoneNumber" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="phoneNumber" style="color: var(--primary-color);">Teléfono:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="phoneNumber" value="#{ClientsController.selectedClient.phoneNumber}"
+                                                 required="true" requiredMessage="El teléfono no puede estar vacío"
+                                                 style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="taxpayer" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="taxpayer">Contribuyente:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:selectBooleanCheckbox id="taxpayer" value="#{ClientsController.selectedClient.taxpayer}"
-                                                        required="true" requiredMessage="Debe especificar si el cliente es contribuyente"/>
+                        <p:messages for="taxpayer" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="taxpayer" style="color: var(--primary-color);">Contribuyente:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:selectBooleanCheckbox id="taxpayer" value="#{ClientsController.selectedClient.taxpayer}"
+                                                            required="true" requiredMessage="Debe especificar si el cliente es contribuyente"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <p:messages for="zoneCode" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="zoneCode">Código de Zona:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="zoneCode" value="#{ClientsController.selectedClient.zoneCode}"
-                                             required="true" requiredMessage="El código de zona no puede estar vacío"
-                                             />
+                        <p:messages for="zoneCode" showSummary="false" showDetail="true" closable="true" />
+                        <div class="field is-horizontal">
+                            <div class="field-label is-normal">
+                                <label class="label" for="zoneCode" style="color: var(--primary-color);">Código de Zona:</label>
+                            </div>
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:inputText id="zoneCode" value="#{ClientsController.selectedClient.zoneCode}"
+                                                 required="true" requiredMessage="El código de zona no puede estar vacío"
+                                                 style="width: 100%"/>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="field is-horizontal">
-                        <div class="field-body">
-                            <div class="field">
-                                <p:commandButton value="Actualizar datos" process="@form" update="@form clientes"
-                                                 action="#{ClientsController.updateClient}" />
+                        <div class="field is-horizontal">
+                            <div class="field-body">
+                                <div class="field">
+                                    <p:commandButton value="Actualizar datos" process="@form" update="@form clientes"
+                                                     action="#{ClientsController.updateClient}" style="width: 100%"
+                                                     styleClass="rounded-button ui-button-primary" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </p:panel>
+                    </p:panel>
+                </p:panelGrid>
+                
             </h:form>
         </p:outputPanel>
     </p:dialog>

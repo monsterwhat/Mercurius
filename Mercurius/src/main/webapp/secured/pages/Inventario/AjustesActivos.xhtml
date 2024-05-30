@@ -40,7 +40,7 @@
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1" styleClass="ui-g">
+    <p:panelGrid columns="1">
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
@@ -126,7 +126,7 @@
                         </p:column>
 
                         <p:column exportable="false">
-                            <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-trash"
+                            <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
                                     actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update="InventarioTableData">
                                     <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
                             </p:commandButton>
@@ -134,7 +134,9 @@
 
                     </p:dataTable>
 
-                    <p:commandButton value="Crear Ajuste" onclick="PF('CrearAjusteDialog').show();" update="crearAjuste" styleClass="rounded-button ui-button-success" style="width: 100%"/>
+                    <p:commandButton value="Crear Ajuste" onclick="PF('CrearAjusteDialog').show();" 
+                                     update="crearAjuste" styleClass="rounded-button ui-button-primary" 
+                                     style="width: 100%"/>
                 
                     </h:form>
                 </p:card>

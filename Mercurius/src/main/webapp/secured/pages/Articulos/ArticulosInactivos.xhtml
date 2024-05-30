@@ -34,22 +34,18 @@
                     <h:form id="ArticulosInactivos">
                         
                     <p:card rendered="#{SessionController.registros}" >
-                        <div class="columns">
-                            <div class="column is-half">
+                        <p:panelGrid columns="1">
+                            <p:column>
                                 <p:commandButton value="Imprimir" icon="pi pi-print"
                                action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" 
-                               styleClass="rounded-button ui-button-primary" style='width: 100%'
+                               styleClass="rounded-button ui-button-primary" style='width: 50%'
                                oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
-                            </div>
-                            <div class="column">
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel"
-                                    styleClass="rounded-button ui-button-success" style='width: 100%'/>
-                            </div>
-                            <div class="column">
+                                    styleClass="rounded-button ui-button-success" style='width: 25%'/>
                                 <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf"
-                                styleClass="rounded-button ui-button-danger" style='width: 100%'/>
-                            </div>
-                        </div>
+                                styleClass="rounded-button ui-button-danger" style='width: 25%'/>
+                            </p:column>
+                        </p:panelGrid>
                     </p:card>
                         
                     <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"

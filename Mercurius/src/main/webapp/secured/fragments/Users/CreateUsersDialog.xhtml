@@ -8,65 +8,55 @@
         <p:outputPanel rendered="#{not empty UsersController.newUser}">
         
             <h:form>
-                <p:panel header="Crear un nuevo usuario">
-                    <p:growl id="growl" showDetail="true" showSummary="false">
-                        <p:autoUpdate/>
-                    </p:growl>
-
-                    <p:messages showDetail="true" for="username" showSummary="false" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="username">Nombre de usuario:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="username" value="#{UsersController.newUser.username}" 
-                                             required="true" requiredMessage="El nombre de usuario no puede estar vacío"/>
-                            </div>
-                        </div>
-                    </div>
-
-                    <p:messages showDetail="true" for="password" showSummary="false" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="password">Contraseña:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:password id="password" value="#{UsersController.newUser.password}" 
-                                            required="true" requiredMessage="La contraseña no puede estar vacía"/>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Input for groupName -->
-                    <p:messages showDetail="true" for="groupName" showSummary="false" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="groupName">Permisos:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
+                <p:panelGrid columns="1" style="width: 800px">
+                    <p:panel header="Crear un nuevo usuario">
+                        <p:growl id="growl" showDetail="true" showSummary="false">
+                            <p:autoUpdate/>
+                        </p:growl>
+                        <p:column>
+                            <p:messages showDetail="true" for="username" showSummary="false" closable="true">
+                                <p:autoUpdate/>
+                            </p:messages>
+                            <label class="label" for="username" style="color: var(--primary-color);">Nombre de usuario:</label>
+                            <p:inputText id="username" value="#{UsersController.newUser.username}" style="width: 100%"
+                            required="true" requiredMessage="El nombre de usuario no puede estar vacío"/>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:messages showDetail="true" for="password" showSummary="false" closable="true" >
+                                <p:autoUpdate/>
+                            </p:messages>
+                                <label class="label" for="password" style="color: var(--primary-color);">Contraseña:</label>
+                                <p:password id="password" value="#{UsersController.newUser.password}" style="width: 100%"
+                                                required="true" requiredMessage="La contraseña no puede estar vacía"/>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:card>
+                            <p:messages showDetail="true" for="groupName" showSummary="false" closable="true">
+                                <p:autoUpdate/>
+                            </p:messages>
+                                <label class="label" for="groupName" style="color: var(--primary-color);">Permisos:</label>
                                 <p:selectManyCheckbox id="groupName" value="#{UsersController.selectedPuestos}"
-                                                required="true" requiredMessage="El nombre de grupo no puede estar vacío"
-                                                >
-                                    <p:ajax listener="#{UsersController.selectedOptionsChanged}"/>
-                                    <f:selectItem itemLabel="Administrativo" itemValue="admin" rendered="#{SessionController.admin}"/>
-                                    <f:selectItem itemLabel="Facturacion" itemValue="facturacion" rendered="#{SessionController.usuarios}"/>
-                                    <f:selectItem itemLabel="Inventarios" itemValue="inventario" rendered="#{SessionController.usuarios}"/>
-                                    <f:selectItem itemLabel="Usuarios" itemValue="usuario" rendered="#{SessionController.usuarios}"/>
-                                    <f:selectItem itemLabel="Tributacion" itemValue="tributacion" rendered="#{SessionController.usuarios}"/>
-                                    <f:selectItem itemLabel="Registros" itemValue="registro" rendered="#{SessionController.usuarios}"/>
+                                                    required="true" requiredMessage="El grupo no puede estar vacío"
+                                                    >
+                                        <p:ajax listener="#{UsersController.selectedOptionsChanged}"/>
+                                        <f:selectItem itemLabel="Administrativo" itemValue="admin" rendered="#{SessionController.admin}"/>
+                                        <f:selectItem itemLabel="Facturacion" itemValue="facturacion" rendered="#{SessionController.usuarios}"/>
+                                        <f:selectItem itemLabel="Inventarios" itemValue="inventario" rendered="#{SessionController.usuarios}"/>
+                                        <f:selectItem itemLabel="Usuarios" itemValue="usuario" rendered="#{SessionController.usuarios}"/>
+                                        <f:selectItem itemLabel="Tributacion" itemValue="tributacion" rendered="#{SessionController.usuarios}"/>
+                                        <f:selectItem itemLabel="Registros" itemValue="registro" rendered="#{SessionController.usuarios}"/>
                                 </p:selectManyCheckbox>
-                            </div>
-                        </div>
-                    </div>
+                        </p:card>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:commandButton value="Crear Usuario" action="#{UsersController.createUser}" update="usuarios"
+                                     styleClass="rounded-button ui-button-primary" style="width: 100%"/>
+                        </p:column>
 
-                </p:panel>
-                <br/>
-                <p:commandButton value="Crear Usuario" action="#{UsersController.createUser}" update="usuarios"/>
+                    </p:panel>
+                </p:panelGrid>
             </h:form>
-            
         </p:outputPanel>
     </p:dialog>
 </ui:composition>

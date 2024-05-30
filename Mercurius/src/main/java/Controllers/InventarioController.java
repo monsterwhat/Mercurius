@@ -348,6 +348,13 @@ public class InventarioController implements Serializable {
         selectedInventario = null;
     }
     
+    public void unprocess(){
+        if(selectedInventario != null){
+            selectedInventario.setProcessed(false);
+            inventarioService.update(selectedInventario);
+        }
+    }
+    
     public double getStock(Articulos articulo){
         String codigoBarra = articulo.getCodigoBarra();
         double totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);

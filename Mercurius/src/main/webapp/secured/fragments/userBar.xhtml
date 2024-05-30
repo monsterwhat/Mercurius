@@ -4,22 +4,17 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-    <p:card styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
-        <div class="ui-g">
-            <div class="ui-g-12">
-                <div class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round">
-                    <div class="ui-g">
-                        <div class="ui-g-10 ui-g-offset-1 ui-text-center">
-                            <h1 style="color: var(--primary-color);" class="title success-title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
-                        </div>
-                        <div class="ui-g-1 ui-text-right">
-                            <p:commandButton styleClass="ui-button-rounded ui-button-danger" icon="pi pi-user" 
-                                             value="Perfil" oncomplete="PF('userSettingsDialog').show()" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <p:card>
+        <p:panelGrid columns="2">
+            <p:column>
+                <h1 style="color: var(--primary-color);" class="title success-title">Bienvenid@, #{SessionController.currentUser.username}!</h1>
+            </p:column>
+            <p:column style="align-content: center;">
+                <p:commandButton styleClass="rounded-button ui-button-secondary" 
+                                 icon="pi pi-user" style="float: right; width: 30%"
+                                 value="Perfil" oncomplete="PF('userSettingsDialog').show()" />
+            </p:column>
+        </p:panelGrid>
     </p:card>
     
     <p:dialog header="Menu de Usuario" widgetVar="userSettingsDialog" modal="true"
