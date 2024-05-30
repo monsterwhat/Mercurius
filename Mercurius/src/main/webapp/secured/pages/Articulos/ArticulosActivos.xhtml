@@ -34,21 +34,17 @@
                     <h:form id="ArticulosActivos">
                         
                     <p:card rendered="#{SessionController.registros}" >
-                        <div class="columns">
-                            <div class="column is-half">
+                        <p:panelGrid columns="1">
+                            <p:column>
                                 <p:commandButton value="Imprimir" icon="pi pi-print" action="#{ArticulosController.exportPDF('ArticulosActivos:ArticulosTableData')}" 
-                                                 ajax="false" styleClass="rounded-button ui-button-primary"  style="width: 100%"
+                                                 ajax="false" styleClass="rounded-button ui-button-primary"  style="width: 50%"
                                 oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
-                            </div>
-                            <div class="column">
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel"
-                                    styleClass="rounded-button ui-button-success"  style="width: 100%"/>
-                            </div>
-                            <div class="column">
+                                    styleClass="rounded-button ui-button-success"  style="width: 25%"/>
                                 <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf"
-                                                 styleClass="rounded-button ui-button-danger" style="width: 100%"/>
-                            </div>
-                        </div>
+                                                 styleClass="rounded-button ui-button-danger" style="width: 25%"/>
+                            </p:column>
+                        </p:panelGrid>
                     </p:card>
 
                     <p:dataTable value="#{ArticulosController.filteredArticulosActivos}" var="articulo"  widgetVar="ArticulosTable"
@@ -111,7 +107,7 @@
                                     onclick="PF('EditArticuloDialog').show();" update="EditArticuloDialog">
                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                 </p:commandButton>
-                                <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-trash"
+                                <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
                                 actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="@this">
                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                 </p:commandButton>
@@ -120,7 +116,7 @@
                     </p:dataTable>
                     
                     <p:commandButton value="Crear Artículo" actionListener="#{ViewController.selectCreateArticulos}" process="@this"
-                    update="@this" styleClass="rounded-button ui-button-success" style="width: 100%" />
+                    update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
                     
                     </h:form>
                     

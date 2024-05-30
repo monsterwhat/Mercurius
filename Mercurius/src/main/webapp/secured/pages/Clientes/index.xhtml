@@ -33,7 +33,7 @@
                     
                     <h:form id="clientes">
                         
-                        <p:toolbar rendered="#{SessionController.admin}">
+                        <p:toolbar rendered="#{SessionController.registros}">
                             <p:toolbarGroup align="right">
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="ui-button-help" ajax="false">
                                     <p:dataExporter type="xlsx" target="ClientsTableData" fileName="Clientes-Mercurius-Excel" />
@@ -59,9 +59,9 @@
                             </f:facet>
                             
                             <p:column exportable="false">
-                                <p:chip id="activo" icon="pi pi-exclamation-circle" styleClass="has-background-success" rendered="#{client.status}"/>
+                                <p:chip id="activo" icon="pi pi-exclamation-circle" style="background: var(--green-500)" rendered="#{client.status}"/>
                                 <p:tooltip for="activo" value="Activo" position="top"/>                            
-                                <p:chip id="inactivo" icon="pi pi-times" styleClass="has-background-danger" rendered="#{!client.status}"/>
+                                <p:chip id="inactivo" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!client.status}"/>
                                 <p:tooltip for="inactivo" value="Inactivo" position="top"/>
                             </p:column>
                             
@@ -103,18 +103,19 @@
                             </p:column>                            
                             <p:column headerText="Acciones" exportable="false">
                                 <div class="buttons">
-                                    <p:commandButton styleClass="button is-rounded is-success" icon="pi pi-pencil"
+                                    <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil"
                                       process="@this" onclick="PF('EditarClienteDialog').show();">
                                         <f:setPropertyActionListener value="#{client}" target="#{ClientsController.selectedClient}" />
                                     </p:commandButton>
-                                    <p:commandButton styleClass="button is-rounded is-warning" icon="pi pi-power-off"
+                                    <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
                                     actionListener="#{ClientsController.toggleClient()}" process="@this" update="clientes">
                                         <f:setPropertyActionListener value="#{client}" target="#{ClientsController.selectedClient}" />
                                     </p:commandButton>
                                 </div>
                             </p:column>
                         </p:dataTable>
-                        <p:commandButton value="Crear Cliente" onclick="PF('CrearClienteDialog').show();" actionListener="#{ClientsController.openNewClient}" styleClass="button is-fullwidth is-success is-rounded"/>
+                        <p:commandButton value="Crear Cliente" onclick="PF('CrearClienteDialog').show();" actionListener="#{ClientsController.openNewClient}" 
+                                         styleClass="rounded-button ui-button-primary" style="width: 100%"/>
                 
                     </h:form>
                     

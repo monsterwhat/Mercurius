@@ -7,32 +7,30 @@
         fitViewport="true" responsive="true" id="EditarDepartamentoDialog" modal="true">
         <p:outputPanel rendered="#{not empty DepartamentosController.selectedDepartamento}">
             <h:form id="editDepartamento">
-                <p:panel header="Editar Departamento: #{DepartamentosController.selectedDepartamento.nombre}">
-                    <p:growl id="growl" showDetail="true" showSummary="false"/>
+                <p:panelGrid columns="1">
+                    <p:panel header="Editar Departamento: #{DepartamentosController.selectedDepartamento.nombre}">
+                        <p:growl id="growl" showDetail="true" showSummary="false">
+                            <p:autoUpdate/>
+                        </p:growl>
 
-                    <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="name">Nombre:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="name" value="#{DepartamentosController.selectedDepartamento.nombre}"
-                                             required="true" requiredMessage="El nombre no puede estar vacío"
-                                             />
-                            </div>
-                        </div>
-                    </div>
+                        <p:column>
+                            <p:messages for="name" showSummary="false" showDetail="true" closable="true" >
+                                <p:autoUpdate/>
+                            </p:messages>
+                            <label class="label" for="name" style="color: var(--primary-color); text-align: center">Nombre:</label>
+                            <p:inputText id="name" value="#{DepartamentosController.selectedDepartamento.nombre}"
+                                required="true" requiredMessage="El nombre no puede estar vacío" style="width: 100%"
+                                />
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:commandButton value="Actualizar datos" styleClass="ui-button-primary rounded-button" style="width: 100%"
+                                                     action="#{DepartamentosController.updateDepartamento}" update="departamentos" />
+                        </p:column>
 
-                    <div class="field is-horizontal">
-                        <div class="field-body">
-                            <div class="field">
-                                <p:commandButton value="Actualizar datos"
-                                                 action="#{DepartamentosController.updateDepartamento}" update="departamentos" />
-                            </div>
-                        </div>
-                    </div>
-                </p:panel>
+                    </p:panel>
+                </p:panelGrid>
+                
             </h:form>
         
         </p:outputPanel>

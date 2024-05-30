@@ -7,19 +7,20 @@
         fitViewport="true" responsive="true" id="CrearClienteDialog" modal="true">
         <p:outputPanel rendered="#{not empty ClientsController.newClient}">
             <h:form id="createClients">
-                <p:panel header="Crear un nuevo cliente">
+                <p:panelGrid columns="1" style="width: 800px">
+                    <p:panel header="Crear un nuevo cliente">
                     <p:growl showDetail="true" showSummary="false"/>
 
                     <p:messages showDetail="true" for="name" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="name">Nombre:</label>
+                            <label class="label" for="name" style="color: var(--primary-color);">Nombre:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="name" value="#{ClientsController.newClient.name}"
                                              required="true" requiredMessage="El nombre no puede estar vacío"
-                                             />
+                                             style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -27,13 +28,13 @@
                     <p:messages showDetail="true" for="address" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="address">Dirección:</label>
+                            <label class="label" for="address" style="color: var(--primary-color);">Dirección:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="address" value="#{ClientsController.newClient.address}"
                                              required="true" requiredMessage="La dirección no puede estar vacía"
-                                             />
+                                             style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -41,13 +42,13 @@
                     <p:messages showDetail="true" for="email" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="email">Correo:</label>
+                            <label class="label" for="email" style="color: var(--primary-color);">Correo:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="email" value="#{ClientsController.newClient.email}"
                                              required="true" requiredMessage="El correo no puede estar vacío"
-                                             />
+                                             style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -55,13 +56,13 @@
                     <p:messages showDetail="true" for="birthDate" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="birthDate">Fecha de Nacimiento:</label>
+                            <label class="label" for="birthDate" style="color: var(--primary-color);">Fecha de Nacimiento:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:calendar id="birthDate" value="#{ClientsController.newClient.birthDate}"
                                             pattern="MM/dd/yyyy" required="true" requiredMessage="La fecha de nacimiento no puede estar vacía"
-                                             />
+                                            style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -69,13 +70,13 @@
                     <p:messages showDetail="true" for="idType" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="idType">Tipo de Cédula:</label>
+                            <label class="label" for="idType" style="color: var(--primary-color);">Tipo de Cédula:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="idType" value="#{ClientsController.newClient.idType}"
                                              required="true" requiredMessage="El tipo de cédula no puede estar vacío"
-                                             />
+                                             style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -83,13 +84,13 @@
                     <p:messages showDetail="true" for="idNumber" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="idNumber">Número de Cédula:</label>
+                            <label class="label" for="idNumber" style="color: var(--primary-color);">Número de Cédula:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="idNumber" value="#{ClientsController.newClient.idNumber}"
                                              required="true" requiredMessage="El número de cédula no puede estar vacío"
-                                             />
+                                             style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -97,13 +98,13 @@
                     <p:messages showDetail="true" for="discount" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="discount">Descuento:</label>
+                            <label class="label" for="discount" style="color: var(--primary-color);">Descuento:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="discount" value="#{ClientsController.newClient.discount}"
                                              required="true" requiredMessage="El descuento no puede estar vacío (debería ser 0)"
-                                             />
+                                             style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -111,13 +112,13 @@
                     <p:messages showDetail="true" for="phoneNumber" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="phoneNumber">Número de Teléfono:</label>
+                            <label class="label" for="phoneNumber" style="color: var(--primary-color);">Número de Teléfono:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="phoneNumber" value="#{ClientsController.newClient.phoneNumber}"
                                              required="true" requiredMessage="El número de teléfono no puede estar vacío"
-                                              />
+                                             style="width: 100%" />
                             </div>
                         </div>
                     </div>
@@ -125,7 +126,7 @@
                     <p:messages showDetail="true" for="taxpayer" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="taxpayer">Tributa:</label>
+                            <label class="label" for="taxpayer" style="color: var(--primary-color);">Tributa:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
@@ -138,13 +139,13 @@
                     <p:messages showDetail="true" for="zoneCode" showSummary="false" closable="true" />
                     <div class="field is-horizontal">
                         <div class="field-label is-normal">
-                            <label class="label" for="zoneCode">Código de Zona:</label>
+                            <label class="label" for="zoneCode" style="color: var(--primary-color);">Código de Zona:</label>
                         </div>
                         <div class="field-body">
                             <div class="field">
                                 <p:inputText id="zoneCode" value="#{ClientsController.newClient.zoneCode}"
                                              required="true" requiredMessage="El código de zona no puede estar vacío"
-                                              />
+                                             style="width: 100%"/>
                             </div>
                         </div>
                     </div>
@@ -152,7 +153,10 @@
                 </p:panel>
                 <br/>
                 <p:commandButton value="Crear Cliente" process="@form" update="@form clientes"
-                                 action="#{ClientsController.createClient}"/>
+                                 action="#{ClientsController.createClient}" style="width: 100%"
+                                 styleClass="rounded-button ui-button-primary" />
+                </p:panelGrid>
+                
             </h:form>
         </p:outputPanel>           
     </p:dialog>

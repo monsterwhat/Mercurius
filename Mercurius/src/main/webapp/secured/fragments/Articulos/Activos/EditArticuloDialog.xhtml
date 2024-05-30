@@ -12,220 +12,147 @@
                 <h:form>
                     <p:panelGrid columns="1" style="width: 800px">
                         <p:panel header="Editar Artículo: #{ArticulosController.selectedArticulo.nombre}">
-
                         <p:growl showDetail="true" showSummary="false"/>
-
-                        <!-- Input for article name -->
-                        <p:messages for="editName" showSummary="false" showDetail="true" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editName" style="color: var(--primary-color);">Nombre:</label>
-                            </div>
-                            <div class="field-body">
-                                <div class="field">
+                            <p:column>
+                                <p:messages for="editName" showSummary="false" showDetail="true" closable="true" />
+                                    <label class="label" for="editName" style="color: var(--primary-color);">Nombre:</label>
                                     <p:inputText id="editName" value="#{ArticulosController.selectedArticulo.nombre}"
-                                                 required="true" requiredMessage="El nombre no puede estar vacío"
-                                                 style="width: 100%"/>
-                                </div>
-                            </div>
-                        </div>
+                                    required="true" requiredMessage="El nombre no puede estar vacío"
+                                    style="width: 100%"/>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editCodigoBarra" showSummary="false" closable="true" />
+                                    <label class="label" for="editCodigoBarra" style="color: var(--primary-color);">Codigo de Barra:</label>
+                                        <p:inputText id="editCodigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
+                                                     required="true" requiredMessage="El codigo de barra no puede estar vacío"
+                                                     style="width: 100%">
+                                        </p:inputText>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editRecomendacionCabys" showSummary="false" closable="true" />
+                                    <label class="label" for="editRecomendacionCabys" style="color: var(--primary-color);">Recomendacion Cabys:</label>
+                                    <p:card>
+                                        <p:outputLabel id="editRecomendacionCabys" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
+                                    </p:card>    
 
-                        <!-- Input for codigo de barra -->
-                        <p:messages showDetail="true" for="editCodigoBarra" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editCodigoBarra" style="color: var(--primary-color);">Codigo de Barra:</label>
-                            </div>
-                            <div class="field-body">
-                                <div class="field">
-                                    <p:inputText id="editCodigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
-                                                 required="true" requiredMessage="El codigo de barra no puede estar vacío"
-                                                 style="width: 100%">
-                                    </p:inputText>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Output for Recomendacion Cabys -->
-                        <p:messages showDetail="true" for="editRecomendacionCabys" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editRecomendacionCabys" style="color: var(--primary-color);">Recomendacion Cabys:</label>
-                            </div> 
-                            <div class="field-body">
-                                <div class="field">
-                                    <p:outputLabel id="editRecomendacionCabys" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Input for Código CABYS -->
-                        <p:messages showDetail="true" for="editCodigoCabys" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editCodigoCabys" style="color: var(--primary-color);">Código CABYS:</label>
-                            </div>
-                            <div class="field-body is-flex">
-                                <p:commandButton value="Seleccionar" id="selectCabysEdit" 
-                                                    onclick="PF('codigoCabysDialogEdit').show();">
-                                    <p:autoUpdate/>
-                                </p:commandButton>
-                                <!-- Container for selected option -->
-                                <div class="selected-option is-flex">
-                                    <p:outputLabel id="codigoCabys" value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto} %"
-                                                   styleClass="label" style="color: var(--primary-color);">
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editCodigoCabys" showSummary="false" closable="true" />
+                                    <label class="label" for="editCodigoCabys" style="color: var(--primary-color);">Código CABYS:</label>
+                                    <p:commandButton value="Seleccionar" id="selectCabysEdit" styleClass="ui-button-primary rounded-button"
+                                                     onclick="PF('codigoCabysDialogEdit').show();" style="width: 100%">
                                         <p:autoUpdate/>
-                                    </p:outputLabel>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Input for Unidad de Medida -->
-                        <p:messages showDetail="true" for="editUnidadMedida" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editUnidadMedida" style="color: var(--primary-color);">Unidad de Medida:</label>
-                            </div>
-                            <div class="field-body columns is-mobile">
-                                <div class="column">
-                                    <p:selectOneMenu id="editUnidadMedida" value="#{ArticulosController.selectedArticulo.unidadMedida}"
-                                                    style="width: 100%">
-                                        <p:ajax listener="#{ArticulosController.selectedUnidadMedidaChanged}"/>
-                                        <f:selectItem itemLabel="Unid" itemValue="Unid"/>
-                                        <f:selectItem itemLabel="Otros" itemValue="Otros"/>
-                                        <f:selectItem itemLabel="g" itemValue="g"/>
-                                    </p:selectOneMenu>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Input for Unidad de Medida Comercial -->
-                        <p:messages showDetail="true" for="editUnidadMedidaComercial" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editUnidadMedidaComercial" style="color: var(--primary-color);">Unidad de Medida Comercial:</label>
-                            </div>
-                            <div class="field-body columns is-mobile">
-                                <div class="column">
-                                    <p:selectOneMenu id="editUnidadMedidaComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
-                                                    style="width: 100%">
-                                        <p:ajax listener="#{ArticulosController.selectedUnidadMedidaComercialChanged}"/>
-                                        <f:selectItem itemLabel="Generico" itemValue=""/>
-                                        <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
-                                        <f:selectItem itemLabel="Botella" itemValue="BOT"/>
-                                        <f:selectItem itemLabel="Lata" itemValue="LT"/>
-                                        <f:selectItem itemLabel="SixPack" itemValue="ST"/>
-                                        <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
-                                    </p:selectOneMenu>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Input for Departamento -->
-                        <p:messages showDetail="true" for="editDepartamento" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editDepartamento" style="color: var(--primary-color);">Departamento:</label>
-                            </div>
-                            <div class="field-body columns is-mobile">
-                                <div class="column">
-                                    <p:selectOneMenu id="editDepartamentoSelect" value="#{ArticulosController.departamentoID}"
-                                                     required="true" requiredMessage="El Departamento no puede estar vacío"
-                                                     styleClass="input" widgetVar="editDepartamentoSelect" 
+                                    </p:commandButton>
+                                    <p:spacer height="1em"/>
+                                    <p:card class="selected-option is-flex">
+                                        <p:outputLabel id="codigoCabys" value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto} %"
+                                                       styleClass="label" style="color: var(--primary-color);">
+                                            <p:autoUpdate/>
+                                        </p:outputLabel>
+                                    </p:card>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editUnidadMedida" showSummary="false" closable="true" />
+                                    <label class="label" for="editUnidadMedida" style="color: var(--primary-color);">Unidad de Medida:</label>
+                                        <p:selectOneMenu id="editUnidadMedida" value="#{ArticulosController.selectedArticulo.unidadMedida}"
+                                                        style="width: 100%">
+                                            <p:ajax listener="#{ArticulosController.selectedUnidadMedidaChanged}"/>
+                                            <f:selectItem itemLabel="Unid" itemValue="Unid"/>
+                                            <f:selectItem itemLabel="Otros" itemValue="Otros"/>
+                                            <f:selectItem itemLabel="g" itemValue="g"/>
+                                        </p:selectOneMenu>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editUnidadMedidaComercial" showSummary="false" closable="true" />
+                                    <label class="label" for="editUnidadMedidaComercial" style="color: var(--primary-color);">Unidad de Medida Comercial:</label>
+                                        <p:selectOneMenu id="editUnidadMedidaComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
+                                                        style="width: 100%">
+                                            <p:ajax listener="#{ArticulosController.selectedUnidadMedidaComercialChanged}"/>
+                                            <f:selectItem itemLabel="Generico" itemValue=""/>
+                                            <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                            <f:selectItem itemLabel="Botella" itemValue="BOT"/>
+                                            <f:selectItem itemLabel="Lata" itemValue="LT"/>
+                                            <f:selectItem itemLabel="SixPack" itemValue="ST"/>
+                                            <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
+                                        </p:selectOneMenu>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editDepartamento" showSummary="false" closable="true" />
+                                    <label class="label" for="editDepartamento" style="color: var(--primary-color);">Departamento:</label>
+                                        <p:selectOneMenu id="editDepartamentoSelect" value="#{ArticulosController.departamentoID}"
+                                                         required="true" requiredMessage="El Departamento no puede estar vacío"
+                                                         styleClass="input" widgetVar="editDepartamentoSelect" 
+                                                         style="width: 100%">
+                                            <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" itemValue="#{ArticulosController.selectedArticulo.departamento.id}" />
+                                            <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
+                                                           itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
+                                        </p:selectOneMenu>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editFamilia" showSummary="false" closable="true" />
+                                    <label class="label" for="editFamilia" style="color: var(--primary-color);">Familia:</label>
+                                        <p:selectOneMenu id="editFamiliaSelect" value="#{ArticulosController.familiaID}"
+                                                         required="true" requiredMessage="La Familia no puede estar vacía"
+                                                         widgetVar="editFamiliaSelect" 
+                                                         style="width: 100%">
+                                            <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                            <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                           itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
+                                        </p:selectOneMenu>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editPrecioCostoSinIVA" showSummary="false" closable="true" />
+                                    <label class="label" for="editPrecioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
+                                        <p:inputText id="editPrecioCostoSinIVA" type="number" value="#{ArticulosController.selectedArticulo.precioCostoSinIVA}"
+                                                     required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
                                                      style="width: 100%">
-                                        <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" itemValue="#{ArticulosController.selectedArticulo.departamento.id}" />
-                                        <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
-                                                       itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
-                                    </p:selectOneMenu>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Input for Familia -->
-                        <p:messages showDetail="true" for="editFamilia" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editFamilia" style="color: var(--primary-color);">Familia:</label>
-                            </div>
-                            <div class="field-body columns is-mobile">
-                                <div class="column">
-                                    <p:selectOneMenu id="editFamiliaSelect" value="#{ArticulosController.familiaID}"
-                                                     required="true" requiredMessage="La Familia no puede estar vacía"
-                                                     widgetVar="editFamiliaSelect" 
+                                            <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
+                                                    update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this"/>
+                                        </p:inputText>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editPorcentajeUtilidad" showSummary="false" closable="true" />
+                                    <label class="label" for="editPorcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
+                                        <p:inputText id="editPorcentajeUtilidad" type="number" value="#{ArticulosController.selectedArticulo.porcentajeUtilidad}"
+                                                     required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
                                                      style="width: 100%">
-                                        <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
-                                        <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
-                                                       itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
-                                    </p:selectOneMenu>
-                                </div>
-                            </div>
-                        </div>
+                                                    <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
+                                                            update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this" />
+                                        </p:inputText>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editPrecioFinal" showSummary="false" closable="true" />
+                                    <label class="label" for="editPrecioFinal" style="color: var(--primary-color);">Precio Final:</label>
+                                    <p:card>
+                                        <p:outputLabel id="editPrecioFinal" value="#{ArticulosController.selectedArticulo.precioFinal}"/>
+                                    </p:card>
 
-                        <!-- Input for Precio Costo sin IVA -->
-                        <p:messages showDetail="true" for="editPrecioCostoSinIVA" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editPrecioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
-                            </div>
-                            <div class="field-body">
-                                <div class="field">
-                                    <p:inputText id="editPrecioCostoSinIVA" type="number" value="#{ArticulosController.selectedArticulo.precioCostoSinIVA}"
-                                                 required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
-                                                 style="width: 100%">
-                                        <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                                update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this"/>
-                                    </p:inputText>
-                                </div>
-                            </div>
-                        </div>
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="editPrecioFinalConIVA" showSummary="false" closable="true"/>
+                                    <label class="label" for="editPrecioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
+                                    <p:card>
+                                        <p:outputLabel id="editPrecioFinalConIVA" value="#{ArticulosController.selectedArticulo.precioCostoConIVA}"/>
+                                    </p:card>   
 
-                        <!-- Input for Porcentaje de Utilidad -->
-                        <p:messages showDetail="true" for="editPorcentajeUtilidad" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editPorcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
-                            </div>
-                            <div class="field-body">
-                                <div class="field">
-                                    <p:inputText id="editPorcentajeUtilidad" type="number" value="#{ArticulosController.selectedArticulo.porcentajeUtilidad}"
-                                                 required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
-                                                 style="width: 100%">
-                                                <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                                        update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this" />
-                                    </p:inputText>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Output for Precio Final -->
-                        <p:messages showDetail="true" for="editPrecioFinal" showSummary="false" closable="true" />
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editPrecioFinal" style="color: var(--primary-color);">Precio Final:</label>
-                            </div> 
-                            <div class="field-body">
-                                <div class="field">
-                                    <p:outputLabel id="editPrecioFinal" value="#{ArticulosController.selectedArticulo.precioFinal}"/>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Output for Precio Final con IVA -->
-                        <p:messages showDetail="true" for="editPrecioFinalConIVA" showSummary="false" closable="true"/>
-                        <div class="field is-horizontal">
-                            <div class="field-label is-normal">
-                                <label class="label" for="editPrecioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
-                            </div>
-                            <div class="field-body">
-                                <div class="field">
-                                    <p:outputLabel id="editPrecioFinalConIVA" value="#{ArticulosController.selectedArticulo.precioCostoConIVA}"/>
-                                </div>
-                            </div>
-                        </div>
-                        <p:commandButton value="Actualizar datos" update="@form ArticulosActivos" process="@form"
-                                         action="#{ArticulosController.updateArticuloByDialog()}" 
-                                         styleClass="rouded-button ui-button-primary" style="width: 100%"/>
-
+                            </p:column>
+                        <p:spacer height="1em"/>
+                            <p:column>
+                                 <p:commandButton value="Actualizar datos" update="@form ArticulosActivos" process="@form"
+                                             action="#{ArticulosController.updateArticuloByDialog()}" 
+                                             styleClass="rouded-button ui-button-primary" style="width: 100%"/>
+                            </p:column>
                         </p:panel>
                     </p:panelGrid>
                 </h:form>

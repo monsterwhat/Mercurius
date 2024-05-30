@@ -48,7 +48,7 @@
                             <p:ajax event="rowSelect" update="@form"/>
                         
                             <p:column exportable="false">
-                                <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--primary-color); color: var(--primary-color-text)" rendered="#{familia.status}"/>
+                                <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{familia.status}"/>
                                 <p:tooltip for="ActiveChip" value="Activa" position="top"/>
 
                                 <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!familia.status}"/>
@@ -77,7 +77,7 @@
                         </p:dataTable>
                         <!-- Adjust the button action -->
                         <p:commandButton value="Crear Familia" actionListener="#{ViewController.selectCreateFamilias}"
-                                         styleClass="rounded-button ui-button-success" style="width: 100%"
+                                         styleClass="rounded-button ui-button-primary" style="width: 100%"
                                          onclick="PF('CrearFamiliaDialog').show();"/>
                     
                     </h:form>

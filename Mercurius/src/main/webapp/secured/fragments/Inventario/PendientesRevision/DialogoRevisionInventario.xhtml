@@ -13,81 +13,53 @@
             <h:form id="RevisionMovimientoDialog">
                 <p:panelGrid columns="1" style="width: 800px">
                     
+                    <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.articulo.nombre}">
+                        <p:growl showDetail="true" showSummary="false"/>
 
-                <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.articulo.nombre}">
-                    <p:growl showDetail="true" showSummary="false"/>
-
-                    <!-- Input for article -->
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
+                        <p:column>
                             <label class="label" style="color: var(--primary-color);">Artículo:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText value="#{InventarioController.selectedInventario.articulo.nombre}" 
-                                            style="width: 100%" disabled="true" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Select for Articulo -->
-                    <p:messages showDetail="true" for="ArticuloSelect" showSummary="false" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
+                            <p:inputText value="#{InventarioController.selectedInventario.articulo.nombre}" 
+                                                style="width: 100%" disabled="true" />
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:messages showDetail="true" for="ArticuloSelect" showSummary="false" closable="true" />
                             <label class="label" for="ArticuloSelect" style="color: var(--primary-color);">Articulo Seleccionado:</label>
-                        </div>
-                        <div class="field-body is-flex">
-                            <p:commandButton value="Seleccionar" styleClass="button"
-                                             onclick="PF('ArticuloRevisionDialog').show();"/> 
-                            <!-- Container for selected option -->
-                            <div class="selected-option is-flex">
+                            <p:commandButton value="Seleccionar" styleClass="rounded-button ui-button-primary" style="width: 100%"
+                                                 onclick="PF('ArticuloRevisionDialog').show();"/> 
+                            <p:spacer height="1em"/>
+                            <p:card>
                                 <p:outputLabel id="ArticuloSelect" value="#{InventarioController.selectedInventario.articulo.nombre}"
-                                               style="width: 100%">
-                                    <p:autoUpdate/>
+                                                   style="width: 100%">
+                                        <p:autoUpdate/>
                                 </p:outputLabel>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Input for quantity -->
-                    <p:messages for="cantidadRecomendada" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="cantidadRecomendada" style="color: var(--primary-color);">Cantidad recomendada:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:outputLabel id="cantidadRecomendada" value="#{InventarioController.selectedInventario.unidadesRecomendadasFactura}"
-                                             />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Input for quantity -->
-                    <p:messages for="cantidad" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
+                            </p:card>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:messages for="cantidadRecomendada" showSummary="false" showDetail="true" closable="true" />
+                                <label class="label" for="cantidadRecomendada" style="color: var(--primary-color);">Cantidad recomendada:</label>
+                                <p:card>
+                                    <p:outputLabel id="cantidadRecomendada" value="#{InventarioController.selectedInventario.unidadesRecomendadasFactura}"
+                                                 />
+                                </p:card>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:messages for="cantidad" showSummary="false" showDetail="true" closable="true" />
                             <label class="label" for="cantidad" style="color: var(--primary-color);">Cantidad:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="cantidad" value="#{InventarioController.selectedInventario.cantidad}"
-                                             required="true" requiredMessage="La cantidad no puede estar vacía"
-                                            style="width: 100%"/>
-                            </div>
-                        </div>
-                    </div>
+                            <p:inputText id="cantidad" value="#{InventarioController.selectedInventario.cantidad}"
+                                required="true" requiredMessage="La cantidad no puede estar vacía"
+                                style="width: 100%; "/>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:commandButton value="Actualizar datos" update="@form inventarioPendiente" process="@form"
+                                                     action="#{InventarioController.updateInventarioRevisionDialog()}"
+                                                     styleClass="rounded-button ui-button-primary" style="width: 100%"/>
+                        </p:column>
 
-                    <div class="field is-horizontal">
-                        <div class="field-body">
-                            <div class="field">
-                                <p:commandButton value="Actualizar datos" update="@form inventarioPendiente" process="@form"
-                                                 action="#{InventarioController.updateInventarioRevisionDialog()}"
-                                                 styleClass="rounded-button ui-button-primary" style="width: 100%"/>
-                            </div>
-                        </div>
-                    </div>
-                </p:panel>
+                    </p:panel>
                     
                 </p:panelGrid>
             </h:form>
