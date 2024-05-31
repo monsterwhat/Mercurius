@@ -45,18 +45,13 @@
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
             </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
-            </p:column>
         </p:row> 
         
         <p:growl showDetail="true" showSummary="true" />
 
         <p:row>
             <p:column>
-                <p:card styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                <p:card  >
                     <h:form id="AjustesActivos">
                         
                     <p:commandButton value="Imprimir" icon="pi pi-print" 
@@ -68,7 +63,7 @@
                                  paginator="true" rows="8" paginatorPosition="bottom" id="InventarioTableData"
                                  emptyMessage="No se encontraron registros de inventario con la critería proporcionada"
                                  globalFilterFunction="#{InventarioController.globalFilterFunction}"
-                                 filterBy="#{InventarioController.filterBy}" reflow="true"
+                                 filterBy="#{InventarioController.filterBy}" reflow="true" selectionMode="single"
                                  selection="#{InventarioController.selectedInventario}" rowKey="#{inventario.codigo}">
                         <p:autoUpdate/>
                         <p:ajax event="rowSelect" update="selectedArticulo"/>

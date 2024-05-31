@@ -13,15 +13,10 @@
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1" styleClass="ui-g">
+    <p:panelGrid columns="1"  >
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
             </p:column>
         </p:row> 
         
@@ -29,7 +24,7 @@
 
         <p:row>
             <p:column>
-                <p:panel styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                <p:panel >
                     
                     <h:form id="familias">
                         
@@ -37,16 +32,16 @@
                                      paginator="true" rows="8" paginatorPosition="bottom" id="FamiliasTableData"
                                      emptyMessage="No se encontraron familias con la critería proporcionada"
                                      globalFilterFunction="#{FamiliasController.globalFilterFunction}"
-                                     filterBy="#{FamiliasController.filterBy}" reflow="true"
+                                     filterBy="#{FamiliasController.filterBy}" reflow="true" selectionMode="single"
                                      selection="#{FamiliasController.selectedFamilia}" rowKey="#{familia.id}">
                             
+                        <p:ajax event="rowSelect" update="@form"/>
+
                             <f:facet name="header">
                                 <p:inputText id="globalFilter" onkeyup="PF('FamiliasTable').filter()"
                                              placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                             </f:facet>
-                        
-                            <p:ajax event="rowSelect" update="@form"/>
-                        
+                                                
                             <p:column exportable="false">
                                 <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{familia.status}"/>
                                 <p:tooltip for="ActiveChip" value="Activa" position="top"/>
@@ -64,7 +59,7 @@
                             
                             <p:column headerText="Acciones" exportable="false" width="10%">
                                 <div class="buttons">
-                                    <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil" 
+                                    <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil" update="editFamilia"
                                                      onclick="PF('EditarFamiliaDialog').show();" process="@this">
                                         <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
                                     </p:commandButton>

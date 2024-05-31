@@ -19,17 +19,12 @@
                 <ui:include src="/secured/fragments/userBar.xhtml" />
             </p:column>
         </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
-            </p:column>
-        </p:row>
 
         <p:growl showDetail="true" showSummary="true" />
 
         <p:row>
             <p:column>
-                <p:panel styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                <p:panel  >
                     <h:form id="usuarios">
                         <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTableData"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"

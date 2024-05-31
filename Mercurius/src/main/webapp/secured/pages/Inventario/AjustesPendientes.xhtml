@@ -3,7 +3,7 @@
       xmlns:h="http://xmlns.jcp.org/jsf/html"
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      xmlns:f="jakarta.faces.core">
+      xmlns:f="http://xmlns.jcp.org/jsf/core">
 
 <h:head>
     <title>Catalogo de Ajustes Pendientes</title>
@@ -16,11 +16,6 @@
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
             </p:column>
         </p:row> 
         
@@ -35,7 +30,7 @@
                                  paginator="true" rows="8" paginatorPosition="bottom" id="InventariosPendientesTableData"
                                  emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"
                                  globalFilterFunction="#{InventarioController.globalFilterFunction}" reflow="true"
-                                 filterBy="#{InventarioController.filterBy}" touchable="false"
+                                 filterBy="#{InventarioController.filterBy}" touchable="false" selectionMode="single"
                                  selection="#{InventarioController.selectedInventario}" rowKey="#{movimiento.codigo}">
                         
                         <p:ajax event="rowSelect" update="RevisionMovimientoDialog"/>

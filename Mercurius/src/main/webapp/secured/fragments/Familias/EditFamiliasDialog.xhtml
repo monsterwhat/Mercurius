@@ -2,37 +2,28 @@
                 xmlns:h="http://xmlns.jcp.org/jsf/html"
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
-    xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    
     <p:dialog header="Editar Familia" widgetVar="EditarFamiliaDialog" 
         fitViewport="true" responsive="true" id="EditarFamiliaDialog" modal="true">
         <p:outputPanel rendered="#{not empty FamiliasController.selectedFamilia}">
-            <h:form>
-                <p:panel header="Editar Familia: #{FamiliasController.selectedFamilia.nombre}">
-                    <p:growl id="growl" showDetail="true" showSummary="false"/>
+            <h:form id="editFamilia">
+                <p:panelGrid columns="1">
+                    <p:panel header="Editar Familia: #{FamiliasController.selectedFamilia.nombre}">
+                        <p:growl id="growl" showDetail="true" showSummary="false"/>
 
-                    <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
-                    <div class="field is-horizontal">
-                        <div class="field-label is-normal">
-                            <label class="label" for="name">Nombre:</label>
-                        </div>
-                        <div class="field-body">
-                            <div class="field">
-                                <p:inputText id="name" value="#{FamiliasController.selectedFamilia.nombre}"
-                                             required="true" requiredMessage="El nombre no puede estar vacío"
-                                             />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="field is-horizontal">
-                        <div class="field-body">
-                            <div class="field">
-                                <p:commandButton value="Actualizar datos" process="@form" update="@form familias"
-                                                 action="#{FamiliasController.updateFamiliaDialog}"/>
-                            </div>
-                        </div>
-                    </div>
-                </p:panel>
+                        <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
+                        <label class="label" for="name" style="color: var(--primary-color); text-align: center">Nombre:</label>
+                        <p:inputText id="name" value="#{FamiliasController.selectedFamilia.nombre}" 
+                            required="true" requiredMessage="El nombre no puede estar vacío" style="width: 100%"
+                        />
+                        <p:spacer height="1em"/>
+                        <p:commandButton value="Actualizar datos" process="@form" styleClass="rounded-button ui-button-primary"
+                                         update="@form familias" style="width: 100%"
+                                         action="#{FamiliasController.updateFamiliaDialog}"/>
+                               
+                    </p:panel>
+                </p:panelGrid>
             </h:form>
         </p:outputPanel>
     </p:dialog>
