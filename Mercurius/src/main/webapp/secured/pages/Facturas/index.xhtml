@@ -12,15 +12,10 @@
 </h:head>
 
 <h:body>
-<p:panelGrid columns="1" styleClass="ui-g">
+<p:panelGrid columns="1" >
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
             </p:column>
         </p:row> 
         
@@ -28,7 +23,7 @@
 
         <p:row>
             <p:column>
-                <p:panel styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                <p:panel >
                     
                     <p:column>
                         <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" styleClass="button is-fullwidth"/>                            

@@ -17,11 +17,6 @@
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
             </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
-            </p:column>
         </p:row> 
         
         <p:growl showDetail="true" showSummary="true" />
@@ -35,7 +30,7 @@
                                  paginator="true" rows="8" paginatorPosition="bottom" id="InventarioActivoYProcesadoTableData"
                                  emptyMessage="No se encontraron artículos con la critería proporcionada"
                                  globalFilterFunction="#{InventarioController.globalFilterFunction}" reflow="true"
-                                 filterBy="#{InventarioController.filterBy}" 
+                                 filterBy="#{InventarioController.filterBy}" selectionMode="single"
                                  selection="#{InventarioController.selectedInventario}" rowKey="#{movimiento.codigo}">
 
                         <f:facet name="header">

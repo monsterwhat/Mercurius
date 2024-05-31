@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <title>Menu Principal de la Aplicacion</title>
+        <h:outputStylesheet name="primefaces/primefaces.css"/>
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+        <script type="text/javascript">
+    </script>
+    </h:head>
+
+    <h:body>
+        <p:panelGrid columns="1">
+            <p:row>
+                <p:column>
+                    <ui:include src="/secured/fragments/userBar.xhtml" /> 
+                </p:column>
+            </p:row> 
+
+            <p:growl showDetail="true" showSummary="true" />
+
+            <p:row>
+                <p:column>
+                    <p:card>
+                        <h:form>
+                            <p:panelGrid columns="1">
+                                <p:card>
+                                    <p:steps activeIndex="">
+                                        <p:menuitem value="Directorios"/>
+                                        <p:menuitem value="Correo"/>
+                                        <p:menuitem value="Tributacion"/>
+                                        <p:menuitem value="Confirmacion"/>
+                                    </p:steps>
+                                </p:card>
+                                <p:column>
+                                    <p:card>
+                                        <h1 style="text-align: center"> Configuracion de Directorios </h1>
+                                        <p:outputLabel value="Nombre:" for="newName" style="color: var(--primary-color);"/>
+                                        <p:inputText id="newName" value="#{ArticulosController.newArticulo.nombre}"
+                                         required="true" requiredMessage="El nombre no puede estar vacío"
+                                        style="width: 100%"/>
+                                    </p:card>
+                                    <h:form id="directoryForm">
+                                        <p:panel header="Select Directory">
+                                            <h:panelGrid columns="2">
+                                                <p:outputLabel for="directory" value="Selected Directory:" />
+                                                <h:inputText id="directory" value="#{directoryBean.selectedDirectory}" readonly="true"/>
+
+                                                <h:outputLabel />
+                                                <p:commandButton value="Select Directory" icon="pi pi-folder-open" 
+                                                                 onclick="PF('directoryDialog').show(); return false;"/>
+                                            </h:panelGrid>
+                                        </p:panel>
+
+                                        <p:dialog header="Select Directory" widgetVar="directoryDialog" modal="true" width="400px">
+                                            <h:form id="directoryDialogForm">
+                                                <p:fileUpload mode="simple" allowTypes="*" listener="#{uploadController.saveDirectory()}" auto="true" />
+                                            </h:form>
+                                        </p:dialog>
+                                    </h:form>
+                                </p:column>
+                            </p:panelGrid>
+                        </h:form>
+                    </p:card>
+                </p:column>
+            </p:row>
+        </p:panelGrid>
+    </h:body>
+</html>

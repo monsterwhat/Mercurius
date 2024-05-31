@@ -13,15 +13,10 @@
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1" styleClass="ui-g">
+    <p:panelGrid columns="1" >
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
             </p:column>
         </p:row> 
         
@@ -29,7 +24,7 @@
 
         <p:row>
             <p:column>
-                <p:panel styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                <p:panel >
                     
                     <h:form id="departamentos">
                         
@@ -37,7 +32,7 @@
                                      paginator="true" rows="8" paginatorPosition="bottom" id="DepartamentosTableData"
                                      emptyMessage="No se encontraron departamentos con la critería proporcionada"
                                      globalFilterFunction="#{DepartamentosController.globalFilterFunction}"
-                                     filterBy="#{DepartamentosController.filterBy}" reflow="true"
+                                     filterBy="#{DepartamentosController.filterBy}" reflow="true" selectionMode="single"
                                      selection="#{DepartamentosController.selectedDepartamento}" rowKey="#{departamento.id}">
                             
                             <p:ajax event="rowSelect" update="@form"/>

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
+import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.printing.PDFPageable;
 
@@ -22,7 +23,8 @@ import org.apache.pdfbox.printing.PDFPageable;
 public class PrinterService implements Serializable{
 
     public void printPDFFile(File fileToPrint) {
-        try (PDDocument document = PDDocument.load(fileToPrint)){
+        try {
+            PDDocument document = Loader.loadPDF(fileToPrint);
             // Find the printer...
             PrintService printService = PrintServiceLookup.lookupDefaultPrintService();
             

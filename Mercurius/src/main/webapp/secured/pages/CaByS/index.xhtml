@@ -13,15 +13,10 @@
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1" styleClass="ui-g">
+    <p:panelGrid columns="1" >
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
             </p:column>
         </p:row> 
         
@@ -68,7 +63,7 @@
                                      paginator="true" rows="10" paginatorPosition="bottom" id="CabysTable" reflow="true"
                                      emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
                                      globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"
-                                     filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true"
+                                     filterBy="#{CabysController.filterBy}" scrollable="true" showGridlines="true" selectionMode="single"
                                      selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
 
                             <f:facet name="header">

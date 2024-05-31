@@ -12,14 +12,11 @@
 </h:head>
 
 <h:body>
-    <p:card class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round">
-        <div class="ui-g ui-align-center ui-mb-2">
-            <div class="ui-g-12">
-                <div class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round">
+    <p:card>
+        <div>
+            <div>
+                <div>
                     <ui:include src="/secured/fragments/userBar.xhtml" />
-                    <p:spacer height="10"/>
-
-                    <ui:include src="./pages/mainMenu.xhtml" />
                     <p:growl showDetail="true" showSummary="true" />
                 </div>
             </div>

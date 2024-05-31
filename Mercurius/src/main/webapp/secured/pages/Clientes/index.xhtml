@@ -13,15 +13,10 @@
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1" styleClass="ui-g">
+    <p:panelGrid columns="1" >
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
             </p:column>
         </p:row> 
         
@@ -29,7 +24,7 @@
 
         <p:row>
             <p:column>
-                <p:panel styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                <p:panel  >
                     
                     <h:form id="clientes">
                         
@@ -48,7 +43,7 @@
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ClientsTableData"
                                      emptyMessage="No se encontraron clientes con la critería proporcionada"
                                      globalFilterFunction="#{ClientsController.globalFilterFunction}"
-                                     filterBy="#{ClientsController.filterBy}" reflow="true"
+                                     filterBy="#{ClientsController.filterBy}" reflow="true" selectionMode="single"
                                      selection="#{ClientsController.selectedClient}" rowKey="#{client.code}">
                             
                             <p:ajax event="rowSelect" update="EditarClienteDialog"/>

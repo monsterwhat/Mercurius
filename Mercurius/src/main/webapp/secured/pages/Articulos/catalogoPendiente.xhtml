@@ -13,15 +13,10 @@
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1" styleClass="ui-g">
+    <p:panelGrid columns="1" >
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/pages/mainMenu.xhtml" />
             </p:column>
         </p:row> 
         
@@ -37,7 +32,7 @@
                                  paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosRevisionTable"
                                  emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"
                                  globalFilterFunction="#{ArticulosController.globalFilterFunction}" reflow="true"
-                                 filterBy="#{ArticulosController.filterBy}"
+                                 filterBy="#{ArticulosController.filterBy}" selectionMode="single"
                                  selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
                         
                         <p:ajax event="rowSelect" update="RevisionArticuloDialog"/>
