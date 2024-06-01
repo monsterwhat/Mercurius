@@ -26,45 +26,112 @@
             <p:row>
                 <p:column>
                     <p:card>
-                        <h:form>
-                            <p:panelGrid columns="1">
+                        <p:panelGrid columns="1">
+                            <p:card>
+                                <p:steps activeIndex="#{SettingsController.initSteps}">
+                                    <p:menuitem value="Perfil" />
+                                    <p:menuitem value="Logo" />
+                                    <p:menuitem value="Correo" />
+                                    <p:menuitem value="Tributacion" />
+                                    <p:menuitem value="Confirmacion" />
+                                </p:steps>
+                            </p:card>
+                            <p:column rendered="#{!SettingsController.hasValidProfile}">
                                 <p:card>
-                                    <p:steps activeIndex="">
-                                        <p:menuitem value="Directorios"/>
-                                        <p:menuitem value="Correo"/>
-                                        <p:menuitem value="Tributacion"/>
-                                        <p:menuitem value="Confirmacion"/>
-                                    </p:steps>
-                                </p:card>
-                                <p:column>
-                                    <p:card>
-                                        <h1 style="text-align: center"> Configuracion de Directorios </h1>
-                                        <p:outputLabel value="Nombre:" for="newName" style="color: var(--primary-color);"/>
-                                        <p:inputText id="newName" value="#{ArticulosController.newArticulo.nombre}"
-                                         required="true" requiredMessage="El nombre no puede estar vacío"
-                                        style="width: 100%"/>
-                                    </p:card>
-                                    <h:form id="directoryForm">
-                                        <p:panel header="Select Directory">
-                                            <h:panelGrid columns="2">
-                                                <p:outputLabel for="directory" value="Selected Directory:" />
-                                                <h:inputText id="directory" value="#{directoryBean.selectedDirectory}" readonly="true"/>
+                                    <h:form rendered="#{!SettingsController.hasValidProfile}">
+                                    <h1 style="text-align: center"> Configuracion de Aplicacion </h1>
+                                        <p:panel header="Perfil">
+                                            <p:panelGrid columns="1">
+                                                    <p:messages/>
+                                                    <p:growl showDetail="true" showSummary="true" />
 
-                                                <h:outputLabel />
-                                                <p:commandButton value="Select Directory" icon="pi pi-folder-open" 
-                                                                 onclick="PF('directoryDialog').show(); return false;"/>
-                                            </h:panelGrid>
+                                                    <p:outputLabel value="Nombre del perfil: " for="nombre" style="color: var(--primary-color);"/>
+                                                    <p:inputText id="nombre" value="#{SettingsController.currentSettings.nombrePerfil}" required="true"
+                                                                style="width: 100%" />
+                                                    <p:commandButton value="Submit" actionListener="#{SettingsController.defaultConfig()}" 
+                                                                     process="@form" style="width: 100%" styleClass="ui-button-primary rounded-button"/>
+                                            </p:panelGrid>
                                         </p:panel>
-
-                                        <p:dialog header="Select Directory" widgetVar="directoryDialog" modal="true" width="400px">
-                                            <h:form id="directoryDialogForm">
-                                                <p:fileUpload mode="simple" allowTypes="*" listener="#{uploadController.saveDirectory()}" auto="true" />
-                                            </h:form>
-                                        </p:dialog>
                                     </h:form>
-                                </p:column>
-                            </p:panelGrid>
-                        </h:form>
+                                </p:card>
+                            </p:column>
+                                
+                            <p:column rendered="#{SettingsController.hasValidProfile}">
+                                <p:card>
+                                    <h:form>
+                                        <p:wizard flowListener="#{SettingsController.onFlowProcess}" >
+                                            <p:tab id="LogoSelect" title="Logo">
+                                                <p:panel header="Logo">
+                                                    <p:messages/>
+                                                    <p:autoUpdate/>
+                                                    <h:panelGrid columns="2" style="text-align: center">
+                                                        <p:autoUpdate/>
+                                                        <p:column rendered="#{SettingsController.currentSettings.logo eq null}">
+                                                            <p:outputLabel value="Logo: " style="color: var(--primary-color);"/>
+                                                            <p:graphicImage id="Logo" style="align-items: center">
+                                                                <p:skeleton height="10em" width="10em"/>
+                                                            </p:graphicImage>
+                                                        </p:column>
+                                                        <p:column rendered="#{!SettingsController.currentSettings.logo eq null}">
+                                                            <p:outputLabel value="Logo: " style="color: var(--primary-color);"/>
+                                                            <p:graphicImage name="#{SettingsController.currentSettings.logo}" width="250" height="250"
+                                                                            id="LogoSelected" style="align-items: center"/>
+                                                        </p:column>
+                                                        <p:column>
+                                                            <h:form enctype="multipart/form-data">
+                                                                <p:fileUpload 
+                                                                    listener="#{SettingsController.handleLogoUpload}" 
+                                                                    mode="simple" fileLimit="1" 
+                                                                    dragDropSupport="false"
+                                                                    update="messages" auto="true"
+                                                                    label="Subir logo"/>
+                                                                <p:growl id="messages" showDetail="true"/>
+                                                            </h:form>
+                                                        </p:column>
+                                                    </h:panelGrid>
+                                                </p:panel>
+                                            </p:tab>
+                                            <p:tab id="Correo" title="Correo">
+                                                <p:panel header="Correo">
+                                                    <p:messages/>
+                                                    <h:panelGrid columns="1" style="text-align: center">
+                                                        <p:column>
+                                                            <div style="text-align: center">
+                                                                <p:outputLabel value="Correo Electronico Principal: " for="correo" style="color: var(--primary-color);"/>
+                                                                <p:inputText id="correo" value="#{SettingsController.currentSettings.correoElectronico}"
+                                                                 required="true" requiredMessage="El nombre no puede estar vacío"
+                                                                style="width: 100%"/>
+                                                            </div>
+                                                            <p:spacer height="1em"/>
+                                                            <div style="text-align: center">
+                                                                <p:outputLabel value="Contrasena Correo Electronico: " for="correoPass" style="color: var(--primary-color);"/>
+                                                                <p:inputText id="correoPass" value="#{SettingsController.currentSettings.contrasenaCorreo}"
+                                                                 required="true" requiredMessage="El nombre no puede estar vacío"
+                                                                style="width: 100%"/>
+                                                            </div>
+                                                        </p:column>
+                                                    </h:panelGrid>
+                                                </p:panel>
+                                            </p:tab>
+                                            <p:tab id="Tributacion" title="Tributacion">
+                                                <p:panel header="Tributacion">
+                                                    <h:panelGrid>
+
+                                                    </h:panelGrid>
+                                                </p:panel>
+                                            </p:tab>
+                                            <p:tab id="Confirmacion" title="Confirmacion">
+                                                <p:panel header="Confirmacion">
+                                                    <h:panelGrid>
+                                                        <p:commandButton value="Submit" process="@this"/>
+                                                    </h:panelGrid>
+                                                </p:panel>
+                                            </p:tab>
+                                        </p:wizard>
+                                    </h:form>
+                                </p:card>
+                            </p:column>
+                        </p:panelGrid>
                     </p:card>
                 </p:column>
             </p:row>

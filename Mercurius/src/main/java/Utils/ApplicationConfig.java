@@ -25,5 +25,7 @@ import jakarta.security.enterprise.identitystore.DatabaseIdentityStoreDefinition
 @FacesConfig
 @ApplicationScoped
 public class ApplicationConfig{
-        
+    
+    
+    
 }
