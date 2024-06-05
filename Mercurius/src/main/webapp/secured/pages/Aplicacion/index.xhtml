@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
@@ -9,8 +8,7 @@
         <title>Menu Principal de la Aplicacion</title>
         <h:outputStylesheet name="primefaces/primefaces.css"/>
         <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
-        <script type="text/javascript">
-    </script>
+        <script type="text/javascript"/>
     </h:head>
 
     <h:body>
@@ -21,114 +19,134 @@
                 </p:column>
             </p:row> 
 
-            <p:growl showDetail="true" showSummary="true" />
-
-            <p:row>
-                <p:column>
-                    <p:card>
-                        <p:panelGrid columns="1">
-                            <p:card>
-                                <p:steps activeIndex="#{SettingsController.initSteps}">
-                                    <p:menuitem value="Perfil" />
-                                    <p:menuitem value="Logo" />
-                                    <p:menuitem value="Correo" />
-                                    <p:menuitem value="Tributacion" />
-                                    <p:menuitem value="Confirmacion" />
-                                </p:steps>
-                            </p:card>
-                            <p:column rendered="#{!SettingsController.hasValidProfile}">
+            <p:row style="width: 100%">
+                <p:column style="width: 100%">
+                    <p:card style="width: 100%">
+                        <p:panelGrid columns="1" style="width: 100%" >
+                            <p:growl showDetail="true" showSummary="true" />
+                            <p:autoUpdate/>
+                            <p:column style="width: 100%">
                                 <p:card>
-                                    <h:form rendered="#{!SettingsController.hasValidProfile}">
-                                    <h1 style="text-align: center"> Configuracion de Aplicacion </h1>
-                                        <p:panel header="Perfil">
-                                            <p:panelGrid columns="1">
-                                                    <p:messages/>
-                                                    <p:growl showDetail="true" showSummary="true" />
+                                    <p:panel>
+                                        <p:steps activeIndex="#{SettingsController.currentSettings.completedSteps}">
+                                        <p:menuitem value="Perfil" />
+                                        <p:menuitem value="Logo" />
+                                        <p:menuitem value="Correo" />
+                                        <p:menuitem value="Tributacion" />
+                                        <p:menuitem value="Confirmacion" />
+                                        </p:steps>
+                                    </p:panel>
+                                    <p:column rendered="#{SettingsController.currentSettings.completedSteps eq 0}">
+                                        <p:card style="width: 100%">
+                                            <h:form id="profileName">
+                                            <h1 style="text-align: center"> Configuracion de Aplicacion </h1>
+                                                <p:panel header="Perfil">
+                                                    <p:panelGrid columns="1">
+                                                        <p:growl showDetail="true" showSummary="true" />
+                                                        <p:messages for="nombre"/>
 
-                                                    <p:outputLabel value="Nombre del perfil: " for="nombre" style="color: var(--primary-color);"/>
-                                                    <p:inputText id="nombre" value="#{SettingsController.currentSettings.nombrePerfil}" required="true"
-                                                                style="width: 100%" />
-                                                    <p:commandButton value="Submit" actionListener="#{SettingsController.defaultConfig()}" 
-                                                                     process="@form" style="width: 100%" styleClass="ui-button-primary rounded-button"/>
-                                            </p:panelGrid>
-                                        </p:panel>
-                                    </h:form>
-                                </p:card>
-                            </p:column>
-                                
-                            <p:column rendered="#{SettingsController.hasValidProfile}">
-                                <p:card>
-                                    <h:form>
-                                        <p:wizard flowListener="#{SettingsController.onFlowProcess}" >
-                                            <p:tab id="LogoSelect" title="Logo">
-                                                <p:panel header="Logo">
-                                                    <p:messages/>
-                                                    <p:autoUpdate/>
-                                                    <h:panelGrid columns="2" style="text-align: center">
-                                                        <p:autoUpdate/>
-                                                        <p:column rendered="#{SettingsController.currentSettings.logo eq null}">
-                                                            <p:outputLabel value="Logo: " style="color: var(--primary-color);"/>
-                                                            <p:graphicImage id="Logo" style="align-items: center">
-                                                                <p:skeleton height="10em" width="10em"/>
-                                                            </p:graphicImage>
-                                                        </p:column>
-                                                        <p:column rendered="#{!SettingsController.currentSettings.logo eq null}">
-                                                            <p:outputLabel value="Logo: " style="color: var(--primary-color);"/>
-                                                            <p:graphicImage name="#{SettingsController.currentSettings.logo}" width="250" height="250"
-                                                                            id="LogoSelected" style="align-items: center"/>
-                                                        </p:column>
-                                                        <p:column>
-                                                            <h:form enctype="multipart/form-data">
-                                                                <p:fileUpload 
-                                                                    listener="#{SettingsController.handleLogoUpload}" 
-                                                                    mode="simple" fileLimit="1" 
-                                                                    dragDropSupport="false"
-                                                                    update="messages" auto="true"
-                                                                    label="Subir logo"/>
-                                                                <p:growl id="messages" showDetail="true"/>
-                                                            </h:form>
-                                                        </p:column>
-                                                    </h:panelGrid>
+                                                        <p:outputLabel value="Nombre del perfil: " for="nombre" style="color: var(--primary-color);"/>
+                                                        <p:inputText id="nombre" value="#{SettingsController.currentSettings.nombrePerfil}" required="true"
+                                                                    style="width: 100%" />
+                                                        <p:commandButton value="Siguiente" actionListener="#{SettingsController.saveUsername()}" update="profileName"
+                                                                         process="@form" style="width: 100%" styleClass="ui-button-primary rounded-button"/>
+                                                    </p:panelGrid>
                                                 </p:panel>
-                                            </p:tab>
-                                            <p:tab id="Correo" title="Correo">
-                                                <p:panel header="Correo">
-                                                    <p:messages/>
-                                                    <h:panelGrid columns="1" style="text-align: center">
+                                            </h:form>
+                                        </p:card>
+                                    </p:column>
+                                    <p:column id="LogoSelect" title="Logo" rendered="#{SettingsController.currentSettings.completedSteps eq 1}">
+                                        <p:panelGrid columns="1" >
+                                            <p:panel header="Logo">
+                                                <p:autoUpdate/>
+                                                <h:panelGrid columns="2" style="text-align: center; width: 100%">
+                                                    <p:column>
+                                                        <h:form enctype="multipart/form-data">
+                                                            <p:fileUpload 
+                                                                listener="#{SettingsController.saveLogo}" mode="advanced" displayFilename="false"
+                                                                fileLimit="1" previewWidth="120" chooseButtonStyleClass="ui-button-primary rounded-button"
+                                                                dragDropSupport="false" uploadButtonStyleClass="ui-button-primary rounded-button"
+                                                                update="messages" cancelLabel="Cancelar" cancelButtonStyleClass="ui-button-danger rounded-button"
+                                                                label="Seleccionar Logo" uploadLabel="Subir">
+                                                                <p:autoUpdate/>
+                                                            </p:fileUpload>
+                                                                
+                                                            <p:growl id="messages" showDetail="true"/>
+                                                            <p:commandButton styleClass="ui-button-secondary rounded-button" value="Atras" process="@form" update="@this"
+                                                                     actionListener="#{SettingsController.backOneStep()}" style="width: 100%"/>
+                                                        </h:form>
+                                                    </p:column>
+                                                </h:panelGrid>
+                                            </p:panel>
+                                        </p:panelGrid>
+                                    </p:column>
+
+                                    <p:column id="Correo" title="Correo" rendered="#{SettingsController.currentSettings.completedSteps eq 2}">
+                                        <h:form>
+                                            <p:panel header="Correo">
+                                                <p:autoUpdate/>
+                                                <p:growl showDetail="true" showSummary="true" />
+
+                                                <h:panelGrid columns="1" style="text-align: center; width: 100%" >
+                                                        <p:messages for="correo"/>
                                                         <p:column>
-                                                            <div style="text-align: center">
                                                                 <p:outputLabel value="Correo Electronico Principal: " for="correo" style="color: var(--primary-color);"/>
                                                                 <p:inputText id="correo" value="#{SettingsController.currentSettings.correoElectronico}"
-                                                                 required="true" requiredMessage="El nombre no puede estar vacío"
+                                                                 required="true" requiredMessage="El correo electronico no puede estar vacío"
                                                                 style="width: 100%"/>
-                                                            </div>
-                                                            <p:spacer height="1em"/>
-                                                            <div style="text-align: center">
-                                                                <p:outputLabel value="Contrasena Correo Electronico: " for="correoPass" style="color: var(--primary-color);"/>
-                                                                <p:inputText id="correoPass" value="#{SettingsController.currentSettings.contrasenaCorreo}"
-                                                                 required="true" requiredMessage="El nombre no puede estar vacío"
-                                                                style="width: 100%"/>
-                                                            </div>
                                                         </p:column>
-                                                    </h:panelGrid>
-                                                </p:panel>
-                                            </p:tab>
-                                            <p:tab id="Tributacion" title="Tributacion">
-                                                <p:panel header="Tributacion">
-                                                    <h:panelGrid>
-
-                                                    </h:panelGrid>
-                                                </p:panel>
-                                            </p:tab>
-                                            <p:tab id="Confirmacion" title="Confirmacion">
-                                                <p:panel header="Confirmacion">
-                                                    <h:panelGrid>
-                                                        <p:commandButton value="Submit" process="@this"/>
-                                                    </h:panelGrid>
-                                                </p:panel>
-                                            </p:tab>
-                                        </p:wizard>
-                                    </h:form>
+                                                        <p:messages for="correoPass" />
+                                                        <p:column>
+                                                            <p:outputLabel value="Contrasena Correo Electronico: " for="correoPass" style="color: var(--primary-color);"/>
+                                                            <p:inputText id="correoPass" value="#{SettingsController.currentSettings.contrasenaCorreo}"
+                                                             required="true" requiredMessage="La contrasena no puede estar vacía"
+                                                            style="width: 100%"/>
+                                                        </p:column>
+                                                        <p:spacer height="1em"/>
+                                                        <p:column>
+                                                            <p:commandButton styleClass="ui-button-primary rounded-button" value="Siguiente" 
+                                                                             actionListener="#{SettingsController.saveCorreo()}" style="width: 100%"/>
+                                                            <p:commandButton styleClass="ui-button-secondary rounded-button" value="Atras" process="@this" update="@this"
+                                                                     actionListener="#{SettingsController.backOneStep()}" style="width: 100%"/>
+                                                        </p:column>
+                                                </h:panelGrid>
+                                            </p:panel>
+                                        </h:form>
+                                    </p:column>
+                                    <p:column id="Tributacion" title="Tributacion" rendered="#{SettingsController.currentSettings.completedSteps eq 3}">
+                                        <p:panel header="Tributacion">
+                                            <h:panelGrid style="text-align: center; width: 100%">
+                                                <p:commandButton styleClass="ui-button-primary rounded-button" value="Siguiente" 
+                                                                 actionListener="#{SettingsController.saveTributacion()}" style="width: 100%"/>
+                                                <p:commandButton styleClass="ui-button-secondary rounded-button" value="Atras" process="@this" update="@this"
+                                                                     actionListener="#{SettingsController.backOneStep()}" style="width: 100%"/>
+                                            </h:panelGrid>
+                                        </p:panel>
+                                    </p:column>
+                                    <p:column id="Confirmacion" title="Confirmacion" rendered="#{SettingsController.currentSettings.completedSteps eq 4}">
+                                        <p:panel header="Confirmacion">
+                                            <h:panelGrid columns="1" style="text-align: center; width: 100%">
+                                                <p:column>
+                                                    <p:outputLabel value="Nombre del perfil: #{SettingsController.currentSettings.nombrePerfil}" style="color: var(--primary-color);"/>
+                                                </p:column>
+                                                <p:column>
+                                                    <p:outputLabel value="Logo: #{SettingsController.currentSettings.logo}" style="color: var(--primary-color);"/>
+                                                    <p:graphicImage value="#{SettingsController.logoImagePath}" height="100px" width="100px"/>
+                                                </p:column>
+                                                <p:column>
+                                                    <p:outputLabel value="Correo Electronico: #{SettingsController.currentSettings.correoElectronico}" style="color: var(--primary-color);"/>
+                                                </p:column>
+                                                <p:column>
+                                                    <p:commandButton styleClass="ui-button-primary rounded-button" value="Confirmar" process="@this" 
+                                                                     actionListener="#{SettingsController.saveProfile()}" style="width: 100%"/>
+                                                    <p:commandButton styleClass="ui-button-danger rounded-button" value="Cancelar" process="@this"
+                                                                     actionListener="#{SettingsController.reset()}" style="width: 100%"/>
+                                                    <p:commandButton styleClass="ui-button-secondary rounded-button" value="Atras" process="@this" update="@this"
+                                                                     actionListener="#{SettingsController.backOneStep()}" style="width: 100%"/>
+                                                </p:column>
+                                            </h:panelGrid>
+                                        </p:panel>
+                                    </p:column>
                                 </p:card>
                             </p:column>
                         </p:panelGrid>

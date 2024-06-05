@@ -7,7 +7,7 @@
     <h:body>
         <h:form id="MainMenu">
             <div style="display: flex; flex-wrap: wrap;">
-                <p:column rendered="#{SessionController.facturacion}" >
+                <p:column rendered="#{SessionController.facturacion}">
                     <p:commandButton id="FacturacionButton" value="Facturación" style="flex: 1; width: 100%;"
                                  styleClass="rounded-button ui-button-primary" 
                                  icon="pi pi-receipt"/>
@@ -16,7 +16,6 @@
                             <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" disabled="true"/>
                         </p:submenu>
                     </p:menu>
-                    <p:spacer width="1em"/>
                 </p:column>
                 <p:column rendered="#{SessionController.inventarios}">
                     <p:commandButton id="ArticulosButton" value="Articulos" style="flex: 1; width: 100%;"
@@ -34,7 +33,6 @@
                             <p:menuitem value="Artículos Inactivos" icon="pi pi-times" url="/Mercurius/secured/pages/Articulos/ArticulosInactivos"/>
                         </p:submenu>
                     </p:menu>
-                    <p:spacer width="1em"/>
                 </p:column>
                 <p:column rendered="#{SessionController.inventarios}">
                     <p:commandButton id="InventariosButton" value="Inventarios" style="flex: 1; width: 100%;"
@@ -48,7 +46,6 @@
                             <p:menuitem value="Ajustes Inactivos" icon="pi pi-times" url="/Mercurius/secured/pages/Inventario/AjustesInactivos"/>
                         </p:submenu>
                     </p:menu>
-                    <p:spacer width="1em"/>
                 </p:column>
                 <p:column rendered="#{SessionController.usuarios}">
                     <p:commandButton id="UsuariosButton" value="Usuarios" style="flex: 1; width: 100%;"
@@ -60,7 +57,6 @@
                             <p:menuitem value="Ver Clientes" icon="pi pi-id-card" url="/Mercurius/secured/pages/Clientes/"/>
                         </p:submenu>
                     </p:menu>
-                    <p:spacer width="1em"/>
                 </p:column>
                 <p:column rendered="#{SessionController.tributacion}">
                     <p:commandButton id="TributacionButton" value="Tributación" style="flex: 1; width: 100%;"
@@ -74,7 +70,6 @@
                         </p:submenu>
                     </p:menu>
                     <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
-                    <p:spacer width="1em"/>
                 </p:column>
                 <p:column rendered="#{SessionController.registros}">
                     <p:commandButton id="RegistrosButton" value="Registros" style="flex: 1; width: 100%;"
@@ -99,7 +94,6 @@
                     </p:menu>
                 </p:column>
                 <p:column rendered="#{SessionController.admin}">
-                    <p:spacer width="1em"/> <!-- Si lo pongo antes Registros se ve feo si no se es admin -->
                     <p:commandButton id="SettingsButton" value="Ajustes" style="flex: 1; width: 100%;"
                                      styleClass="rounded-button ui-button-secondary" 
                                      icon="pi pi-cog"/>

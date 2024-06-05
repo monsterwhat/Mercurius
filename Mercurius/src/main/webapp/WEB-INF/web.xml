@@ -31,7 +31,7 @@
     </error-page>
 
     <session-config>
-    <session-timeout>60</session-timeout> <!-- Timeout in minutes -->
+    <session-timeout>60</session-timeout> <!-- in minutes -->
     </session-config>
     
 </web-app>
