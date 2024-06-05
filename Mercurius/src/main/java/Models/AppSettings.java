@@ -24,6 +24,7 @@ public class AppSettings {
     private String contrasenaCorreo; //Contrasena del Correo
     //Aqui deberian ir datos de tributacion...
     private Boolean estatus; //Si se esta usando o no en el sistema
+    private int completedSteps; //En que punto del setup esta...
     
     
 }

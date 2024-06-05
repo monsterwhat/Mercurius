@@ -2,6 +2,7 @@ package Controllers;
 
 import Models.AppSettings;
 import Services.AppSettingsService;
+import Services.EmailService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.faces.application.FacesMessage;
@@ -19,7 +20,6 @@ import javax.swing.filechooser.FileSystemView;
 import lombok.Data;
 import org.apache.commons.compress.utils.IOUtils;
 import org.primefaces.event.FileUploadEvent;
-import org.primefaces.event.FlowEvent;
 import org.primefaces.model.file.UploadedFile;
 
 /**
@@ -36,13 +36,11 @@ public class SettingsController implements Serializable {
     private AppSettings currentSettings;
     private AppSettings newSettings;
     private AppSettings selectedSettings;
-    private String mainDirectory;
     private Boolean hasValidProfile;
-    private int initSteps = 0;
-    private boolean skip;
     
     @Inject AppSettingsService settingsService;
     @Inject private ServletContext servletContext;
+    @Inject private EmailService emailer;
     
     @PostConstruct
     private void init(){
@@ -56,7 +54,7 @@ public class SettingsController implements Serializable {
         }
     }
     
-    public void defaultConfig(){
+    public void saveUsername(){
         if(!hasValidProfile){
             if(currentSettings!=null){
                 var nombre = currentSettings.getNombrePerfil();
@@ -64,6 +62,7 @@ public class SettingsController implements Serializable {
                     if(!nombre.isBlank()){
                         dirInit();
                         currentSettings.setEstatus(true);
+                        currentSettings.setCompletedSteps(1);
                         settingsService.create(currentSettings);
                         createDirectories();
                     }
@@ -82,11 +81,9 @@ public class SettingsController implements Serializable {
         createProfileDir();   // Creates Profile directory inside Mercurius
         createXMLDir();
         createPDFDir();
-        createImgDir();
         createFacturasDir();
         createRecibosDir();
         createReportesDir();
-        createLogoDir();
     }
     
     public void createHomeDir(){
@@ -107,14 +104,6 @@ public class SettingsController implements Serializable {
     
     public void createPDFDir(){
         createFolder(getMainDirectory() + File.separator + "Mercurius" + File.separator + currentSettings.getNombrePerfil(), "pdf");
-    }
-    
-    public void createImgDir(){
-        createFolder(getMainDirectory() + File.separator + "Mercurius" + File.separator + currentSettings.getNombrePerfil(), "img");
-    }
-    
-    public void createLogoDir(){
-        createFolder(getMainDirectory() + File.separator + "Mercurius" + File.separator + currentSettings.getNombrePerfil() + File.separator + "img", "logo");
     }
     
     public void createFacturasDir(){
@@ -183,7 +172,7 @@ public class SettingsController implements Serializable {
     }
     
     public String getImgDirPath() {
-        return getProfileDirPath() + File.separator + "img";
+        return servletContext.getRealPath("/") + "resources/img";
     }
     
     public String getLogoDirPath() {
@@ -198,36 +187,98 @@ public class SettingsController implements Serializable {
         return getProfileDirPath() + File.separator + "recibos";
     }
     
-    public void handleLogoUpload(FileUploadEvent event) {
+    public void saveLogo(FileUploadEvent event) {
         UploadedFile file = event.getFile();
         if (file != null) {
-            try (InputStream input = file.getInputStream();
-                FileOutputStream output = new FileOutputStream(new File(getLogoDirPath(), file.getFileName()))) {
-                
-                IOUtils.copy(input, output);
-                
-                System.out.println(getLogoDirPath() + File.separator + file.getFileName());
-                
-                currentSettings.setLogo(getLogoDirPath() + File.separator + file.getFileName());
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Successful", file.getFileName() + " is uploaded."));
-                
+            try (InputStream input = file.getInputStream()) {
+                File logoDir = new File(getLogoDirPath());
+                if (!logoDir.exists()) {
+                    logoDir.mkdirs();
+                }
+
+                File outputFile = new File(logoDir, file.getFileName());
+                try (FileOutputStream output = new FileOutputStream(outputFile)) {
+                    IOUtils.copy(input, output);
+
+                    currentSettings.setLogo("imgs/logo/" + file.getFileName());
+                    currentSettings.setCompletedSteps(2);
+                    settingsService.update(currentSettings);
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Successful", file.getFileName() + " is uploaded."));
+
+                } catch (IOException e) {
+
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Upload failed", e.getMessage()));
+                }
             } catch (IOException e) {
-                System.out.println("Error Uploading Logo: " + e.getLocalizedMessage());
                 FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Upload failed", e.getMessage()));
             }
         }
     }
     
-    public String onFlowProcess(FlowEvent event) {
-        if (skip) {
-            skip = false; //reset in case user goes back
-            return "confirm";
+    public void saveCorreo() {
+        if (currentSettings == null) {
+            addMessage(FacesMessage.SEVERITY_ERROR, "Configuración faltante", "Las configuraciones actuales no pueden estar vacías");
+            return;
         }
-        else {
-            return event.getNewStep();
+
+        String correoElectronico = currentSettings.getCorreoElectronico();
+        String contrasenaCorreo = currentSettings.getContrasenaCorreo();
+
+        if (correoElectronico.isBlank()) {
+            addMessage(FacesMessage.SEVERITY_ERROR, "Correo vacío", "El correo electrónico no puede estar vacío");
+            return;
         }
+
+        if (contrasenaCorreo.isBlank()) {
+            addMessage(FacesMessage.SEVERITY_ERROR, "Contraseña vacía", "La contraseña no puede estar vacía");
+            return;
+        }
+
+        try {
+            currentSettings.setCompletedSteps(3);
+            settingsService.update(currentSettings);
+
+            emailer.sendEmail(correoElectronico, "¡Bienvenido!", "¡Se registró con éxito su correo en el sistema Mercurius!");
+
+            addMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Se añadió el correo electrónico");
+        } catch (Exception e) {
+            System.out.println("Error:" + e.getLocalizedMessage());
+            addMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo enviar el correo: " + e.getMessage());
+        }
+    }
+    
+    public void saveTributacion(){
+        currentSettings.setCompletedSteps(4);
+    }
+
+    private void addMessage(FacesMessage.Severity severity, String summary, String detail) {
+        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(severity, summary, detail));
+    }
+    
+    public String getLogoImagePath(){
+        if(currentSettings != null && currentSettings.getLogo() != null){
+            return "/resources/" + currentSettings.getLogo();
+        }
+        return null;
+    }
+    
+    public void saveProfile(){
+        currentSettings.setCompletedSteps(5);
+        settingsService.update(currentSettings);
+        
+    }
+    
+    public void reset(){
+        currentSettings.setCompletedSteps(0);
+        settingsService.update(currentSettings);
+    }
+    
+    public void backOneStep(){
+        currentSettings.setCompletedSteps(currentSettings.getCompletedSteps() - 1);
+        settingsService.update(currentSettings);
     }
     
 }
