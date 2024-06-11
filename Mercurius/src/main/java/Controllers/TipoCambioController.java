@@ -16,6 +16,7 @@ import lombok.Data;
 public class TipoCambioController implements Serializable {
     
     @Inject private TipoCambioService tipoCambioService;
+    @Inject private SettingsController settings;
 
     private List<TipoCambio> tipoCambios;
     
@@ -42,11 +43,21 @@ public class TipoCambioController implements Serializable {
     }
     
     public void getTipoCambioFromApi(){
-        tipoCambioService.getTipoCambioFromApi();
+        var configuracion = settings.getCurrentSettings();
+        if(configuracion != null){
+            var diferencia = configuracion.getDiferenciaCambio();
+            tipoCambioService.getTipoCambioFromApi(diferencia);
+        }
     }
     
     public TipoCambio getTipoCambioActual(){
-        return tipoCambioService.getNewestTipoCambio();
+        var configuracion = settings.getCurrentSettings();
+        if(configuracion != null){
+            var diferencia = configuracion.getDiferenciaCambio();
+            return tipoCambioService.getNewestTipoCambio(diferencia);
+        }else{
+            return tipoCambioService.getNewestTipoCambio(0);
+        }
     }
     
 }

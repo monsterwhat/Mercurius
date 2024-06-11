@@ -13,9 +13,10 @@
                                  icon="pi pi-receipt"/>
                     <p:menu overlay="true" trigger="FacturacionButton" my="left top" at="left bottom">
                         <p:submenu label="Facturación">
-                            <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" disabled="true"/>
+                            <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" onclick="PF('CrearFacturaDialog').show();"/>
                         </p:submenu>
                     </p:menu>
+                    <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/>
                 </p:column>
                 <p:column rendered="#{SessionController.inventarios}">
                     <p:commandButton id="ArticulosButton" value="Articulos" style="flex: 1; width: 100%;"
@@ -82,11 +83,11 @@
                             <p:menuitem value="Facturas Ingresadas" icon="pi pi-box" url="/Mercurius/secured/pages/Recibos/"/>
                         </p:submenu>
                         <p:submenu label="Reportes Inventarios">
-                            <p:menuitem value="Articulos Detallados" icon="pi pi-search"/>
-                            <p:menuitem value="Departamentos Detallados" icon="pi pi-search"/>
-                            <p:menuitem value="Familias Detalladas" icon="pi pi-search"/>
-                            <p:menuitem value="Inventarios Detallados" icon="pi pi-search"/>
-                            <p:menuitem value="Generar Etiquetas" icon="pi pi-ticket" rendered="false" disabled="true"/>
+                            <p:menuitem value="Articulos" icon="pi pi-search"/>
+                            <p:menuitem value="Departamentos" icon="pi pi-search"/>
+                            <p:menuitem value="Familias" icon="pi pi-search"/>
+                            <p:menuitem value="Inventarios" icon="pi pi-search"/>
+                            <p:menuitem value="Generar Etiquetas" icon="pi pi-ticket" disabled="true"/>
                         </p:submenu>
                         <p:submenu label="Reportes de Usuarios">
                             <p:menuitem value="Usuarios Detallados" icon="pi pi-search"/>
@@ -112,5 +113,7 @@
             </div>
             
         </h:form>
+            
+        
     </h:body>
 </ui:composition>

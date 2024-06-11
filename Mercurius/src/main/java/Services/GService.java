@@ -32,6 +32,7 @@ public abstract class GService<T> implements Serializable{
         try {
             em.merge(entity);
         } catch (Exception e) {
+            System.out.println("No entity found!");
         }
     }
 
@@ -39,6 +40,7 @@ public abstract class GService<T> implements Serializable{
         try {
             em.persist(entity);
         } catch (Exception e) {
+            System.out.println("Error creating Entity!");
         }
     }
 

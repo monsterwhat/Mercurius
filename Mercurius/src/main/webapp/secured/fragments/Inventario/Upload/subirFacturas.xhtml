@@ -13,10 +13,7 @@
                         <p:fileUpload value="#{uploadController.file}" mode="advanced"
                                       multiple="true" update="messages uploadedFiles" styleClass="column"
                                     sizeLimit="100000" allowTypes="/(\.|\/)(xml)$/" 
-                                    invalidFileMessage="Tipo de archivo invalido"
-                                    listener="#{uploadController.handleFileUpload}"
-                                    fileLimitMessage="Se alcanzo el limite de facturas por peticion" 
-                                    invalidSizeMessage="El archivo es muy grande"/>                                
+                                    listener="#{uploadController.handleFileUpload}"/>                                
                     </div>
                     <div class="column">
                         <p:dataTable id="uploadedFiles" value="#{facturasController.files}" reflow="true" widgetVar="uploadedFiles" var="file">
@@ -29,7 +26,7 @@
             </h:form>
             <div class="column has-text-centered">
                 <p:commandButton value="Procesar Facturas" actionListener="#{facturasController.processFacturas}"
-                                 styleClass="button" update="upload:uploadedFiles recibos"/>
+                                 styleClass="ui-button-primary rounded-button" style="width: 100%" update="upload:uploadedFiles recibos"/>
             </div>
         </p:dialog>
 

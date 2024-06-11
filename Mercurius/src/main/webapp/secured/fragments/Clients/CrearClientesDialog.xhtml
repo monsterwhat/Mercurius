@@ -7,7 +7,7 @@
         fitViewport="true" responsive="true" id="CrearClienteDialog" modal="true">
         <p:outputPanel rendered="#{not empty ClientsController.newClient}">
             <h:form id="createClients">
-                <p:panelGrid columns="1" style="width: 800px">
+                <p:panelGrid columns="1" layout="flex">
                     <p:panel header="Crear un nuevo cliente">
                     <p:growl showDetail="true" showSummary="false"/>
 

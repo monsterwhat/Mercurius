@@ -37,9 +37,9 @@
                                     <h1>Seleccione las casillas que desee mostrar</h1>
                                 </p:column>
                                 <p:column style="display: flex; justify-content: center; align-items: center;">
-                                    <p:selectManyCheckbox id="ColumnPicker" value="#{ViewController.selectedOptions}"
+                                    <p:selectManyCheckbox id="ColumnPicker" value="#{CabysController.selectedOptions}"
                                                           widgetVar="blub" >
-                                        <p:ajax listener="#{ViewController.selectedOptionsChanged}" update="cabys"/>
+                                        <p:ajax listener="#{CabysController.selectedOptionsChanged}" update="cabys"/>
                                         <f:selectItem itemLabel="Codigo" itemValue="codigo"/>
                                         <f:selectItem itemLabel="Categoria" itemValue="categoria"/>
                                         <f:selectItem itemLabel="Descripcion" itemValue="descripcion"/>
@@ -71,16 +71,16 @@
                                              placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                             </f:facet>
 
-                            <p:column headerText="Código" sortBy="#{cabys.codigo}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('codigo')}">
+                            <p:column headerText="Código" sortBy="#{cabys.codigo}" rendered="#{not empty CabysController.selectedOptions and CabysController.isSelected('codigo')}">
                                 <h:outputText value="#{cabys.codigo}" />
                             </p:column>
-                            <p:column headerText="Categoría" sortBy="#{cabys.categorias}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('categoria')}">
+                            <p:column headerText="Categoría" sortBy="#{cabys.categorias}" rendered="#{not empty CabysController.selectedOptions and CabysController.isSelected('categoria')}">
                                 <h:outputText value="#{cabys.categorias}" />
                             </p:column>
-                            <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('descripcion')}">
+                            <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}" rendered="#{not empty CabysController.selectedOptions and CabysController.isSelected('descripcion')}">
                                 <h:outputText value="#{cabys.descripcion}" />
                             </p:column>
-                            <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}" rendered="#{not empty ViewController.selectedOptions and ViewController.isSelected('impuesto')}">
+                            <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}" rendered="#{not empty CabysController.selectedOptions and CabysController.isSelected('impuesto')}">
                                 <h:outputText value="#{cabys.impuesto}" />
                             </p:column>
                             <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">

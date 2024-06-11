@@ -4,44 +4,70 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     
+    <h:head>
+        <script>
+            function copyToClipboard(text) {
+                // Create a temporary textarea element
+                const textarea = document.createElement('textarea');
+                // Set its value to the provided text
+                textarea.value = text;
+                // Make the textarea non-editable
+                textarea.setAttribute('readonly', '');
+                // Hide the textarea to avoid interfering with the page layout
+                textarea.style.position = 'absolute';
+                textarea.style.left = '-9999px';
+                // Append the textarea to the document
+                document.body.appendChild(textarea);
+                // Select the text within the textarea
+                textarea.select();
+                // Copy the selected text to the clipboard
+                document.execCommand('copy');
+                // Remove the textarea from the document
+                document.body.removeChild(textarea);
+            }
+        </script>
+    </h:head>
+
     <!-- Dialog for Revision de Articulo -->
-    <p:dialog header="Revision de Articulo" widgetVar="RevisionArticuloDialog" modal="true"
+    <p:dialog header="Revision de Articulo" widgetVar="RevisionArticulosDialog" modal="true"
               fitViewport="true" responsive="true">
-        <p:outputPanel id="RevisionArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
+        <p:outputPanel id="RevisionArticulosDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
             <h:form>
                 <p:panelGrid columns="1" layout="flex">
                     <p:panel header="Revisar Artículo: #{ArticulosController.selectedArticulo.nombre}" >
                         <p:growl showDetail="true" showSummary="false"/>
                         <p:column>
-                            <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
-                                <p:outputLabel class="label" for="name" style="color: var(--primary-color);" >Nombre:</p:outputLabel>
-                                <p:inputText id="name" value="#{ArticulosController.selectedArticulo.nombre}"
+                            <p:messages for="nameR" showSummary="false" showDetail="true" closable="true" />
+                                <p:outputLabel class="label" for="nameR" style="color: var(--primary-color);" >Nombre:</p:outputLabel>
+                                <p:inputText id="nameR" value="#{ArticulosController.selectedArticulo.nombre}"
                                                  required="true" requiredMessage="El nombre no puede estar vacío"
                                                  style="width: 100%"/>
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="codigoBarra" showSummary="false" closable="true" />
-                            <label class="label" for="codigoBarra" style="color: var(--primary-color);">Codigo de Barra:</label>
-                            <p:inputText id="codigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
+                            <p:messages showDetail="true" for="codigoBarraR" showSummary="false" closable="true" />
+                            <label class="label" for="codigoBarraR" style="color: var(--primary-color);">Codigo de Barra:</label>
+                            <p:inputText id="codigoBarraR" value="#{ArticulosController.selectedArticulo.codigoBarra}"
                                 required="true" requiredMessage="El codigo de barra no puede estar vacío"
                                 style="width: 100%">
                             </p:inputText>
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="recomendacionCabys" showSummary="false" closable="true" />
-                            <label class="label" for="recomendacionCabys" style="color: var(--primary-color);">Recomendacion Cabys:</label>
-                            <p:card>
-                                <p:outputLabel id="recomendacionCabys" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
-                            </p:card>    
+                            <p:messages showDetail="true" for="recomendacionCabysR" showSummary="false" closable="true" />
+                            <label class="label" for="recomendacionCabysR" style="color: var(--primary-color);">Recomendacion Cabys:</label>
+                            <div onclick="copyToClipboard(#{ArticulosController.selectedArticulo.recomendacionCabys})" style="cursor: pointer;">
+                                <p:card>
+                                    <p:outputLabel id="recomendacionCabysR" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
+                                </p:card>
+                            </div>
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="codigoCabys" showSummary="false" closable="true" />
-                            <label class="label" for="codigoCabys" style="color: var(--primary-color);">Código CABYS:</label>
+                            <p:messages showDetail="true" for="codigoCabysR" showSummary="false" closable="true" />
+                            <label class="label" for="codigoCabysR" style="color: var(--primary-color);">Código CABYS:</label>
                             <p:commandButton value="Seleccionar" id="selectCabysEdit" styleClass="ui-button-primary rounded-button" style="width: 100%"
-                                    onclick="PF('codigoCabysDialogEdit').show();" update="@this">
+                                    onclick="PF('codigoCabysDialogEdit').show();">
                                     <p:autoUpdate/>
                                 </p:commandButton>
                             <p:spacer height="1em"/>
@@ -54,9 +80,9 @@
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="unidadMedida" showSummary="false" closable="true" />
-                            <label class="label" for="unidadMedida" style="color: var(--primary-color);">Unidad de Medida:</label>
-                            <p:selectOneMenu id="unidadMedida" value="#{ArticulosController.selectedArticulo.unidadMedida}"
+                            <p:messages showDetail="true" for="unidadMedidaR" showSummary="false" closable="true" />
+                            <label class="label" for="unidadMedidaR" style="color: var(--primary-color);">Unidad de Medida:</label>
+                            <p:selectOneMenu id="unidadMedidaR" value="#{ArticulosController.selectedArticulo.unidadMedida}"
                                             style="width: 100%">
                                 <p:ajax listener="#{ArticulosController.selectedUnidadMedidaChanged}"/>
                                 <f:selectItem itemLabel="Unid" itemValue="Unid"/>
@@ -66,9 +92,9 @@
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="unidadMedidaComercial" showSummary="false" closable="true" />
-                                <label class="label" for="unidadMedidaComercial" style="color: var(--primary-color);">Unidad de Medida Comercial:</label>
-                                    <p:selectOneMenu id="unidadMedidaComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
+                            <p:messages showDetail="true" for="unidadMedidaRComercial" showSummary="false" closable="true" />
+                                <label class="label" for="unidadMedidaRComercial" style="color: var(--primary-color);">Unidad de Medida Comercial:</label>
+                                    <p:selectOneMenu id="unidadMedidaRComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
                                                    style="width: 100%" >
                                         <p:ajax listener="#{ArticulosController.selectedUnidadMedidaComercialChanged}"/>
                                         <f:selectItem itemLabel="Botella" itemValue="BOT"/>
@@ -81,11 +107,11 @@
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="departamento" showSummary="false" closable="true" />
-                                <label class="label" for="departamento" style="color: var(--primary-color);">Departamento:</label>
-                                    <p:selectOneMenu id="departamento" value="#{ArticulosController.departamentoID}"
+                            <p:messages showDetail="true" for="departamentoR" showSummary="false" closable="true" />
+                                <label class="label" for="departamentoR" style="color: var(--primary-color);">Departamento:</label>
+                                    <p:selectOneMenu id="departamentoR" value="#{ArticulosController.departamentoID}"
                                                      required="true" requiredMessage="El Departamento no puede estar vacío"
-                                                     widgetVar="departamento" style="width: 100%">
+                                                     widgetVar="departamentoR" style="width: 100%">
                                         <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" itemValue="#{ArticulosController.selectedArticulo.departamento.id}" />
                                         <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
                                                        itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
@@ -94,11 +120,11 @@
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="familia" showSummary="false" closable="true" />
-                                <label class="label" for="familia" style="color: var(--primary-color);">Familia:</label>
-                                    <p:selectOneMenu id="familia" value="#{ArticulosController.familiaID}"
+                            <p:messages showDetail="true" for="familiaR" showSummary="false" closable="true" />
+                                <label class="label" for="familiaR" style="color: var(--primary-color);">Familia:</label>
+                                    <p:selectOneMenu id="familiaR" value="#{ArticulosController.familiaID}"
                                                      required="true" requiredMessage="La Familia no puede estar vacía"
-                                                     widgetVar="familia" style="width: 100%">
+                                                     widgetVar="familiaR" style="width: 100%">
                                         <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
                                         <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
                                                        itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
@@ -107,42 +133,42 @@
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="precioCostoSinIVA" showSummary="false" closable="true" />
-                                <label class="label" for="precioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
-                                    <p:inputText id="precioCostoSinIVA" type="number" value="#{ArticulosController.selectedArticulo.precioCostoSinIVA}"
+                            <p:messages showDetail="true" for="precioCostoSinIVAR" showSummary="false" closable="true" />
+                                <label class="label" for="precioCostoSinIVAR" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
+                                    <p:inputText id="precioCostoSinIVAR" type="number" value="#{ArticulosController.selectedArticulo.precioCostoSinIVA}"
                                                  required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
                                                  style="width: 100%">
                                         <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                                update="precioCostoSinIVA precioFinal precioFinalConIVA" process="@this"/>
+                                                update="precioCostoSinIVAR precioFinalR precioFinalRConIVAR" process="@this"/>
                                     </p:inputText>
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="porcentajeUtilidad" showSummary="false" closable="true" />
-                                <label class="label" for="porcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
-                                    <p:inputText id="porcentajeUtilidad" type="number" value="#{ArticulosController.selectedArticulo.porcentajeUtilidad}"
+                            <p:messages showDetail="true" for="porcentajeUtilidadR" showSummary="false" closable="true" />
+                                <label class="label" for="porcentajeUtilidadR" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
+                                    <p:inputText id="porcentajeUtilidadR" type="number" value="#{ArticulosController.selectedArticulo.porcentajeUtilidad}"
                                                  required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
                                                  style="width: 100%">
                                                 <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                                        update="precioCostoSinIVA precioFinal precioFinalConIVA"/>
+                                                        update="precioCostoSinIVAR precioFinalR precioFinalRConIVAR"/>
                                     </p:inputText>
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="precioFinal" showSummary="false" closable="true" />
-                            <label class="label" for="precioFinal" style="color: var(--primary-color);">Precio Final:</label>
+                            <p:messages showDetail="true" for="precioFinalR" showSummary="false" closable="true" />
+                            <label class="label" for="precioFinalR" style="color: var(--primary-color);">Precio Final:</label>
                             <p:card>
-                                <p:outputLabel id="precioFinal" value="#{ArticulosController.selectedArticulo.precioFinal}"/>
+                                <p:outputLabel id="precioFinalR" value="#{ArticulosController.selectedArticulo.precioFinal}"/>
                             </p:card>
 
 
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>
-                            <p:messages showDetail="true" for="precioFinalConIVA" showSummary="false" closable="true"/>
-                            <label class="label" for="precioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
+                            <p:messages showDetail="true" for="precioFinalRConIVAR" showSummary="false" closable="true"/>
+                            <label class="label" for="precioFinalRConIVAR" style="color: var(--primary-color);">Precio Final con IVA:</label>
                             <p:card>
-                                <p:outputLabel id="precioFinalConIVA" value="#{ArticulosController.selectedArticulo.precioCostoConIVA}">
+                                <p:outputLabel id="precioFinalRConIVAR" value="#{ArticulosController.selectedArticulo.precioCostoConIVA}">
                                     <p:autoUpdate/>
                                 </p:outputLabel>
                             </p:card>
@@ -150,8 +176,8 @@
                         </p:column>
                         <p:spacer height="2em"/>
                         <p:column>
-                            <p:commandButton value="Actualizar datos" update="@form ArticulosPendientes" process="@form"
-                                                     action="#{ArticulosController.updateArticuloRevision}"
+                            <p:commandButton value="Salvar -> Siguiente" update="@form ArticulosPendientes" process="@form"
+                                                     action="#{ArticulosController.updateArticulosRevision}"
                                                      styleClass="rounded-button ui-button-primary" style="width: 100%" />
                         </p:column>
 

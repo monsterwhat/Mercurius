@@ -10,6 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -23,7 +24,6 @@ import org.primefaces.util.LangUtils;
 public class CabysController implements Serializable {
     
     @Inject private CabysService cabysService;
-    @Inject private ViewController viewManager;
     @Inject private ArticulosController articulos;
 
     private List<Cabys> catalogo;
@@ -33,6 +33,9 @@ public class CabysController implements Serializable {
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     private boolean cabysStatus;
+    private String selectedOption = "none";
+    private String[] selectedOptions;
+
         
     @PostConstruct
     public void init() {
@@ -171,6 +174,26 @@ public class CabysController implements Serializable {
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
             FacesContext.getCurrentInstance().addMessage(null, message);
         }
+    }
+    
+    public void selectedOptionsChanged() {
+        String message = "Se cambio a: ";
+        if (selectedOptions != null) {
+            for (int i = 0; i < selectedOptions.length; i++) {
+                if (i > 0) {
+                    message += ", ";
+                }
+                message += selectedOptions[i];
+            }
+        }
+
+        FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
+    }
+    
+    public boolean isSelected(String selection){
+        var state = Arrays.toString(selectedOptions).contains(selection);
+        return state;
     }
 
     

@@ -4,22 +4,24 @@ import Models.AppSettings;
 import Services.AppSettingsService;
 import Services.EmailService;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.RequestScoped;
 import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
+import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.servlet.ServletContext;
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.List;
 import javax.swing.filechooser.FileSystemView;
 import lombok.Data;
-import org.apache.commons.compress.utils.IOUtils;
 import org.primefaces.event.FileUploadEvent;
+import org.primefaces.model.DefaultStreamedContent;
+import org.primefaces.model.StreamedContent;
 import org.primefaces.model.file.UploadedFile;
 
 /**
@@ -29,7 +31,7 @@ import org.primefaces.model.file.UploadedFile;
 
 @Data
 @Named("SettingsController")
-@RequestScoped
+@ViewScoped
 public class SettingsController implements Serializable {
     
     private List<AppSettings> currentSettingsList;
@@ -37,6 +39,7 @@ public class SettingsController implements Serializable {
     private AppSettings newSettings;
     private AppSettings selectedSettings;
     private Boolean hasValidProfile;
+    private UploadedFile imagen;
     
     @Inject AppSettingsService settingsService;
     @Inject private ServletContext servletContext;
@@ -47,30 +50,38 @@ public class SettingsController implements Serializable {
         currentSettingsList = settingsService.listAll();
         currentSettings = settingsService.returnCurrent();
         if(currentSettings == null){
-            hasValidProfile = false;
             currentSettings = new AppSettings();
-        }else{
-            hasValidProfile = true;
         }
     }
     
     public void saveUsername(){
-        if(!hasValidProfile){
-            if(currentSettings!=null){
-                var nombre = currentSettings.getNombrePerfil();
-                if(nombre != null){
-                    if(!nombre.isBlank()){
+        if(currentSettings != null){
+            var nombre = currentSettings.getNombrePerfil();
+            if(nombre != null){
+                if(!nombre.isBlank()){
+                    if(currentSettings.getCompletedSteps() < 1){
                         dirInit();
+                        createDirectories();
                         currentSettings.setEstatus(true);
                         currentSettings.setCompletedSteps(1);
                         settingsService.create(currentSettings);
-                        createDirectories();
+                    }else{
+                        settingsService.update(currentSettings);
                     }
-                }else{
-                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sin Nombre", ""));
+                    reloadPage();
+                    
+                        FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito!", "Se registro el nombre de perfil."));
                 }
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Sin nombre!", "Digite un nombre antes de continuar"));
             }
+        }else{
+                FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_FATAL, "Configuracion invalida!", "La configuracion es nula."));
         }
+        
     }
     
     public void dirInit(){
@@ -78,7 +89,7 @@ public class SettingsController implements Serializable {
     }
     
     public void createDirectories(){
-        createProfileDir();   // Creates Profile directory inside Mercurius
+        createProfileDir();
         createXMLDir();
         createPDFDir();
         createFacturasDir();
@@ -140,15 +151,10 @@ public class SettingsController implements Serializable {
     
     public void createFolder(String documentsPath, String folderName) {
         File newFolder = new File(documentsPath, folderName);
-        String message;
         if (newFolder.exists()) {
-            message = "Ya existe el folder!";
-        } else if (newFolder.mkdir()) {
-            message = "Se creo exitosamente el folder!";
-        } else {
-            message = "Error al crear el folder!";
+        } else if (newFolder.mkdir()){
+            
         }
-        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, message, ""));
     }
     
     public String getHomeDirPath() {
@@ -172,7 +178,7 @@ public class SettingsController implements Serializable {
     }
     
     public String getImgDirPath() {
-        return servletContext.getRealPath("/") + "resources/img";
+        return File.separator + "resources" + File.separator +  "img";
     }
     
     public String getLogoDirPath() {
@@ -187,36 +193,27 @@ public class SettingsController implements Serializable {
         return getProfileDirPath() + File.separator + "recibos";
     }
     
-    public void saveLogo(FileUploadEvent event) {
-        UploadedFile file = event.getFile();
-        if (file != null) {
-            try (InputStream input = file.getInputStream()) {
-                File logoDir = new File(getLogoDirPath());
-                if (!logoDir.exists()) {
-                    logoDir.mkdirs();
-                }
-
-                File outputFile = new File(logoDir, file.getFileName());
-                try (FileOutputStream output = new FileOutputStream(outputFile)) {
-                    IOUtils.copy(input, output);
-
-                    currentSettings.setLogo("imgs/logo/" + file.getFileName());
+    public void uploadLogo(FileUploadEvent event) {
+        imagen = event.getFile();
+        if (imagen != null) {
+            try (InputStream input = imagen.getInputStream()){
+                byte[] logoBytes = input.readAllBytes();
+                
+                currentSettings.setLogo(logoBytes);
+                currentSettings.setLogoMimeType(imagen.getContentType());
+                if(currentSettings.getCompletedSteps() < 2){
                     currentSettings.setCompletedSteps(2);
-                    settingsService.update(currentSettings);
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Successful", file.getFileName() + " is uploaded."));
-
-                } catch (IOException e) {
-
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Upload failed", e.getMessage()));
                 }
-            } catch (IOException e) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Upload failed", e.getMessage()));
+                settingsService.update(currentSettings);
+                reloadPage();   
+                
+            } catch (IOException ex) {
+                System.out.println("Error: " + ex.getLocalizedMessage());
             }
+            FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito!", imagen.getFileName() + " se selecciono."));
         }
-    }
+    }    
     
     public void saveCorreo() {
         if (currentSettings == null) {
@@ -238,11 +235,13 @@ public class SettingsController implements Serializable {
         }
 
         try {
-            currentSettings.setCompletedSteps(3);
+            if(currentSettings.getCompletedSteps() < 3){
+                    currentSettings.setCompletedSteps(3);
+            }
             settingsService.update(currentSettings);
 
-            emailer.sendEmail(correoElectronico, "¡Bienvenido!", "¡Se registró con éxito su correo en el sistema Mercurius!");
-
+            sendWelcomeMail();
+            reloadPage();
             addMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Se añadió el correo electrónico");
         } catch (Exception e) {
             System.out.println("Error:" + e.getLocalizedMessage());
@@ -250,35 +249,88 @@ public class SettingsController implements Serializable {
         }
     }
     
+    public void sendWelcomeMail(){
+        String correoElectronico = currentSettings.getCorreoElectronico();
+        String contrasenaCorreo = currentSettings.getContrasenaCorreo();
+        String to = currentSettings.getCorreoElectronico();
+        String subject = "¡Bienvenido!";
+        String body = "¡Se registró con éxito su correo en el sistema Mercurius!";
+        emailer.sendEmail(to, subject, body, correoElectronico, contrasenaCorreo, this::handleEmailResult);
+    }
+    
+    public void handleEmailResult(String emailResult) {
+    // Handle the result of the email sending operation
+    if (emailResult.equals("Sent")) {
+        // Email sent successfully
+        FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Email sent successfully!", null));
+        } else {
+            // Failed to send email
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Failed to send email: " + emailResult, null));
+        }
+    }
+
+    
     public void saveTributacion(){
-        currentSettings.setCompletedSteps(4);
+        if(currentSettings.getCompletedSteps() < 4){
+            currentSettings.setCompletedSteps(4);
+        }
+        settingsService.update(currentSettings);
+        reloadPage();
     }
 
     private void addMessage(FacesMessage.Severity severity, String summary, String detail) {
         FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(severity, summary, detail));
     }
     
-    public String getLogoImagePath(){
-        if(currentSettings != null && currentSettings.getLogo() != null){
-            return "/resources/" + currentSettings.getLogo();
-        }
-        return null;
-    }
-    
     public void saveProfile(){
-        currentSettings.setCompletedSteps(5);
+        if(currentSettings.getCompletedSteps() < 5){
+            currentSettings.setCompletedSteps(5);
+        }
         settingsService.update(currentSettings);
-        
-    }
-    
-    public void reset(){
-        currentSettings.setCompletedSteps(0);
-        settingsService.update(currentSettings);
+        reloadPage();
     }
     
     public void backOneStep(){
         currentSettings.setCompletedSteps(currentSettings.getCompletedSteps() - 1);
         settingsService.update(currentSettings);
+    }
+    
+    public void nextOne(){
+        currentSettings.setCompletedSteps(currentSettings.getCompletedSteps() + 1);
+        settingsService.update(currentSettings);
+    }
+    
+    public void navigate(int step){
+        currentSettings.setCompletedSteps(step);
+    }
+    
+    public void reloadPage() {
+        FacesContext facesContext = FacesContext.getCurrentInstance();
+        ExternalContext externalContext = facesContext.getExternalContext();
+        String contextPath = externalContext.getRequestContextPath();
+        String currentView = facesContext.getViewRoot().getViewId();
+        String url = contextPath + currentView;
+
+        try {
+            externalContext.redirect(url);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public StreamedContent getLogo() {
+        if (currentSettings != null) {
+            byte[] logoBytes = currentSettings.getLogo();
+            if (logoBytes != null) {
+                return DefaultStreamedContent.builder()
+                        .stream(() -> new ByteArrayInputStream(logoBytes))
+                        .contentType(currentSettings.getLogoMimeType())
+                        .build();
+            }
+        }
+        return null;
     }
     
 }

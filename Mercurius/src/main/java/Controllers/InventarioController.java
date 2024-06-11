@@ -41,7 +41,6 @@ import org.primefaces.util.LangUtils;
 public class InventarioController implements Serializable {
     
     @Inject private InventarioService inventarioService;
-    @Inject private ViewController viewManager;
     @Inject private ArticulosService articuloService;
     @Inject private SessionController currentSession;
     
@@ -166,6 +165,69 @@ public class InventarioController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion invalida", null));
         }
+    }
+    
+    public void updateInventariosRevisionDialog() {
+        if(currentSession.isValid()){
+            if(selectedInventario != null){
+                selectedInventario.setUsuario(currentSession.getCurrentUser());
+                selectedInventario.setProcessed(true);
+                if(selectedInventario.getArticulo() != null){
+                    if(selectedInventario.getUsuario() != null){
+                        Date today = new Date();
+                        selectedInventario.setFechaMovimiento(today);
+                        System.out.println("Entity: " + selectedInventario.getArticulo().getNombre() + "id: " + selectedInventario.getCodigo());
+                        inventarioService.updateAndDisable(selectedInventario);
+                        clearSelectedInventario();
+                        
+                        // Load the next movimiento or reset if none available
+                        loadNextMovimiento();
+                        
+                        FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el movimiento", null));
+
+                        // Refresh the dialog instead of hiding it
+                        PrimeFaces.current().ajax().update("RevisionMovimientoDialog");
+
+                    }
+                }else{
+                    FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Articulo Invalido", null));
+                }
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono articulo por procesar?", null));
+            }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion invalida", null));
+        }
+    }
+    
+    public void loadNextMovimiento(){
+        sinProcesar = inventarioService.listAllSinProcesar();
+        
+        if (sinProcesar == null || sinProcesar.isEmpty()) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más movimientos para revisar", null));
+            PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
+            return;
+        }
+
+        // Retrieve the first unprocessed article
+        
+        selectedInventario = sinProcesar.get(0);
+
+        // Check if there are no more articles after the removal
+        if (selectedInventario == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más movimientos para revisar", null));
+            PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
+        }
+    }
+    
+    public void procesadoRapido(){
+        selectedInventario = sinProcesar.get(0);
     }
 
     public void createInventario() {

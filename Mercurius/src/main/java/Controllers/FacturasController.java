@@ -48,7 +48,6 @@ public class FacturasController implements Serializable {
     @Inject ReceptorService receptorService;
     @Inject ResumenFacturaService resumenFacturaService;
     @Inject SessionController currentSession;
-    @Inject ViewController viewManager;
     @Inject ArticulosController articuloController;
     @Inject InventarioController inventarioController;
     @Inject DepartamentoController departamentosController;
@@ -56,6 +55,8 @@ public class FacturasController implements Serializable {
     private List<UploadedFile> files;
     private List<Factura> facturas;
     private List<Factura> facturasDetalladas;
+    private List<Factura> carritoCompras;
+    private Factura newFactura;
     
     private Factura selectedFactura;
     private String facturaFilter;
@@ -67,6 +68,7 @@ public class FacturasController implements Serializable {
         files = new ArrayList<>();
         filterBy = new ArrayList<>();
         selectedFactura = new Factura();
+        carritoCompras = new ArrayList<>();
     }
     
     public List<Factura> facturasList() {
@@ -676,4 +678,13 @@ public class FacturasController implements Serializable {
             default -> 0;
         }; // Default to 0 if no conversion defined
     }
+    
+    public void cancel(){
+        System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + "Cancelo Factura");
+    }
+    
+    public void openNewFactura(){
+        newFactura = new Factura();
+    }
+    
 }

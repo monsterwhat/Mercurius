@@ -6,9 +6,8 @@
     <p:dialog header="Crear Usuario" widgetVar="CrearUsuarioDialog" 
         fitViewport="true" responsive="true" id="CrearUsuarioDialog" modal="true">
         <p:outputPanel rendered="#{not empty UsersController.newUser}">
-        
             <h:form>
-                <p:panelGrid columns="1" style="width: 800px">
+                <p:panelGrid columns="1" layout="flex">
                     <p:panel header="Crear un nuevo usuario">
                         <p:growl id="growl" showDetail="true" showSummary="false">
                             <p:autoUpdate/>

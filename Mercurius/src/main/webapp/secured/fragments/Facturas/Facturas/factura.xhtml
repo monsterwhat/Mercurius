@@ -1,0 +1,79 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    
+    <p:dialog widgetVar="CrearFacturaDialog" closable="false" 
+        fitViewport="true" responsive="true" id="CrearFacturaDialog" modal="true">
+        <p:outputPanel rendered="#{not empty ClientsController.newClient}">
+            <h:form id="createFactura">
+                <p:panel header="Crear Factura - #{SessionController.currentUser.username}" >
+                    <p:growl showDetail="true" showSummary="false"/>
+                    <p:panelGrid columns="2" layout="flex">
+                        <p:row> 
+                           <p:column>
+                                <!-- Tipo Factura -->
+                                <p:selectOneMenu id="group" >
+                                    <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
+                                    <f:selectItems/>
+                                </p:selectOneMenu>
+                            </p:column>
+                            <p:column>
+                                <!-- Cliente -->
+                                <span class="ui-inputgroup">
+                                    <p:inputText placeholder="Cliente"/>
+                                    <p:commandButton icon="pi pi-address-book" styleClass="ui-button-warning"/>
+                                </span>
+                            </p:column>
+                        </p:row>
+                        <p:row>
+                            <p:column>
+                                <!-- Cantidad -->
+                                <div class="ui-input-icon-left">
+                                    <i class="pi pi-hashtag" />
+                                    <p:inputText placeholder="Cantidad"/>
+                                </div>
+                            </p:column>
+                            <p:column>
+                                <!-- CodigoBarra (Ingreso articulo) -->
+                                <div class="ui-inputgroup">
+                                     <p:inputText placeholder="Codigo de Barra"/>
+                                    <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning"/>
+                                </div>
+                            </p:column>
+                        </p:row>
+                    </p:panelGrid>
+                    <p:panelGrid columns="1" layout="flex">
+                        <p:row>
+                            <p:column>
+                                <!--Articulos-->
+                                <p:card>
+                                    <p:dataTable var="carrito" value="#{facturasController.carritoCompras}" scrollable="true" scrollHeight="250">
+                                        <p:autoUpdate/>
+                                        <p:column>
+                                            
+                                        </p:column>
+                                    </p:dataTable>
+                                </p:card>
+                            </p:column>
+                        </p:row>
+                        <p:row>
+                            <p:column>
+                            <!--Total-->
+                            <p:card>
+
+                            </p:card>
+                            </p:column>
+                        </p:row>
+                    </p:panelGrid>
+                        
+                    <p:commandButton style="width: 100%" styleClass="ui-button-secondary" icon="pi pi-times"  value="Cancelar"
+                                 actionListener="#{facturasController.cancel()}" process="@form" update="@this"
+                                 onclick="PF('CrearFacturaDialog').hide();"/>
+                </p:panel>
+            </h:form>
+        </p:outputPanel>           
+    </p:dialog>
+</ui:composition>
+        

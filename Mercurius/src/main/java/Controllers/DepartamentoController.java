@@ -23,7 +23,6 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class DepartamentoController implements Serializable {
     @Inject private DepartamentoService departamentoService;
-    @Inject private ViewController viewManager;
     @Inject private SessionController currentSession;
 
     private List<Departamento> departamentos;

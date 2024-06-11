@@ -2,6 +2,7 @@ package Services;
 
 import Models.AppSettings;
 import jakarta.inject.Named;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
 
 /**
@@ -33,15 +34,19 @@ public class AppSettingsService extends GService<AppSettings> {
             System.out.println("Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString());
         }
     }
-    
-    public AppSettings returnCurrent(){
+     
+    public AppSettings returnCurrent() {
         try {
-            TypedQuery<AppSettings> query = em.createQuery("SELECT e FROM AppSettings e WHERE e.estatus = true", getEntityClass());
-            return query.getResultList().get(0);
+            TypedQuery<AppSettings> query = em.createQuery("SELECT a FROM AppSettings a WHERE a.estatus = true", getEntityClass());
+            query.setMaxResults(1);
+            return query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
         } catch (Exception e) {
             System.out.println("Error: " + e.getLocalizedMessage());
             return null;
         }
     }
-    
+
+
 }

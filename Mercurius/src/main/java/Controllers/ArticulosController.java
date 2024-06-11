@@ -49,7 +49,6 @@ import org.primefaces.util.LangUtils;
 public class ArticulosController implements Serializable {
     
     @Inject private ArticulosService articulosService;
-    @Inject private ViewController viewManager;
     @Inject private DepartamentoService departamentoService;
     @Inject private FamiliaService familiaService;
     @Inject private InventarioService inventarioService;
@@ -130,6 +129,7 @@ public class ArticulosController implements Serializable {
     public void openNewArticulo() {
         newArticulo = new Articulos();
         updateDepartamentoAndFamiliaOptions(); 
+        PrimeFaces.current().executeScript("PF('CrearArticuloDialog').show();");
     }
 
     public void updateArticulo() {
@@ -201,6 +201,66 @@ public class ArticulosController implements Serializable {
         }
         
     }
+    
+    public void procesadoRapido(){
+        selectedArticulo = sinProcesar.get(0);
+    }
+    
+    public void updateArticulosRevision() {
+        if(currentSession.isValid()) {
+            if(DepartamentoID != 0 || FamiliaID != 0) {
+                selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
+                selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
+                selectedArticulo.setUsuario(currentSession.getCurrentUser());
+                selectedArticulo.setProcessed(true);
+                if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null) {
+                    articulosService.updateAndDisable(selectedArticulo);
+                    clearCache();
+
+                    // Load the next article or reset if none available
+                    loadNextArticulo();
+
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
+
+                    // Refresh the dialog instead of hiding it
+                    PrimeFaces.current().ajax().update("RevisionArticulosDialog");
+                }
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono departamento o familia", null));
+            }
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesion es invalida", null));
+        }
+    }
+
+    private void loadNextArticulo() {
+        
+        sinProcesar = articulosService.listAllSinProcesar();
+        
+        if (sinProcesar == null || sinProcesar.isEmpty()) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
+            PrimeFaces.current().executeScript("PF('RevisionArticulosDialog').hide();");
+            return;
+        }
+
+        // Retrieve the first unprocessed article
+        
+        selectedArticulo = sinProcesar.get(0);
+
+        // Check if there are no more articles after the removal
+        if (selectedArticulo == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
+            PrimeFaces.current().executeScript("PF('RevisionArticulosDialog').hide();");
+        }
+    }
+
+
+
     
     public void updateSimpleArticulo(Articulos articulo){
         articulosService.updateAndDisable(articulo);

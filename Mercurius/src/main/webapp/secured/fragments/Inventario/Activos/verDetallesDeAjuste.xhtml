@@ -4,17 +4,11 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-    <h:head>
-        <title>Detalles Ajuste</title>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css"/>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-    </h:head>
-    
     <h:body>
         <!-- Dialog for Informacion de Ajuste -->
         <p:dialog header="Informacion de Ajuste" widgetVar="AjusteDetailsDialog" 
                   fitViewport="true" responsive="true" id="AjusteDetailsDialog" modal="true" >
-        <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}">
+            <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}" layout="flex">
             <p:dataTable id="selectedArticulo" var="item" reflow="true" value="#{InventarioController.selectedInventario}">
                     <p:column headerText="Código" visible="false">
                         <h:outputText value="#{item.codigo}" />

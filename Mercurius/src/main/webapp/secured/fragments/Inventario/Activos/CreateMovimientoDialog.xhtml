@@ -9,7 +9,7 @@
               fitViewport="true" responsive="true" id="CrearAjusteDialog" modal="true">
         <p:outputPanel rendered="#{not empty InventarioController.newInventario}">
             <h:form id="crearAjuste">
-                <p:panelGrid columns="1" style="width: 600px">
+                <p:panelGrid columns="1" layout="flex">
 
                 <p:panel header="Crear un Ajuste de Inventario">
                     <p:growl id="growl" showDetail="true" showSummary="false"/>
