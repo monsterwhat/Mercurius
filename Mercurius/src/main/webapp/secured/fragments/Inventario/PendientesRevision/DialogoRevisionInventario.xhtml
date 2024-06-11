@@ -8,11 +8,10 @@
 
     <!-- Dialog for Revision de Movimiento -->
     <p:dialog header="Revision de Movimiento" widgetVar="RevisionMovimientoDialog"
-              responsive="true" modal="true">
-        <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}">
+              responsive="true" modal="true" fitViewport="true">
+        <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}" >
             <h:form id="RevisionMovimientoDialog">
-                <p:panelGrid columns="1" style="width: 800px">
-                    
+                <p:panelGrid columns="1" layout="flex">
                     <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.articulo.nombre}">
                         <p:growl showDetail="true" showSummary="false"/>
 

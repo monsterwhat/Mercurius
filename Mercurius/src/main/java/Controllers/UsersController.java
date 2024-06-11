@@ -28,7 +28,6 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class UsersController implements Serializable{
     @Inject private LoginService userService;
-    @Inject ViewController viewManager;
 
     private List<Users> users;
     private Users selectedUser;

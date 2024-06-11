@@ -12,7 +12,7 @@
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1">
+    <p:panelGrid columns="1" layout="flex">
         <p:row>
             <p:column>
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
@@ -38,6 +38,9 @@
                         <f:facet name="header">
                             <p:inputText id="globalFilter" onkeyup="PF('InventariosPendientesTable').filter()"
                                          placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                            <p:commandButton value="Procesado Rapido" actionListener="#{InventarioController.procesadoRapido()}" 
+                                            styleClass="rounded-button ui-button-primary" update="RevisionMovimientoDialog" style="width: 100%"
+                                            icon="pi pi-sync" onclick="PF('RevisionMovimientosDialog').show();" process="@this"/>
                         </f:facet>
 
                         <p:column exportable="false">
@@ -73,6 +76,7 @@
         </p:panelGrid>
 
         <ui:include src="/secured/fragments/Inventario/PendientesRevision/DialogoRevisionInventario.xhtml"/>
-               
-</h:body>
+        <ui:include src="/secured/fragments/Inventario/PendientesRevision/DialogoRevisionInventarios.xhtml"/>
+
+    </h:body>
 </html>

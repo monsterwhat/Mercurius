@@ -24,6 +24,10 @@
         <param-name>primefaces.THEME</param-name>
         <param-value>#{ThemeController.currentTheme}</param-value>
     </context-param>
+    <context-param>
+        <param-name>jakarta.faces.FAVICON</param-name>
+        <param-value>/resources/favicon/favicon.ico</param-value>
+    </context-param>
     
     <error-page>
     <error-code>403</error-code>

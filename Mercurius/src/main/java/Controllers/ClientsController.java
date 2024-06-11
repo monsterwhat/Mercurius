@@ -22,7 +22,6 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ClientsController implements Serializable {
     @Inject private ClientService clientService;
-    @Inject private ViewController viewManager;
     @Inject private SessionController currentSession;
 
     private List<Clients> clients;

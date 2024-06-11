@@ -4,11 +4,22 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
+    <h:head>
+        <p:link rel="apple-touch-icon" href="/resources/favicon/apple-touch-icon.png"/>
+        <p:link rel="icon" type="image/x-icon" href="/resources/favicon/favicon-32x32.png"/>
+        <p:link rel="icon" type="image/x-icon" href="/resources/favicon/favicon-16x16.png"/>
+        <p:link rel="icon" type="image/x-icon" href="/resources/favicon/favicon.ico"/>
+        
+    </h:head>
+    
     <p:card>
         <p:card>
             <p:panelGrid columns="3" style="align-content: center;">
-                <p:column>
-                    <p:graphicImage value="/resources/imgs/logo/Mercurius.png" height="100em"/>
+                <p:column rendered="#{SettingsController.logo eq null}">
+                    <p:graphicImage value="/resources/imgs/logo/Mercurius.png" height="100px" width="100px"/>
+                </p:column>
+                <p:column rendered="#{SettingsController.logo != null}">
+                    <p:graphicImage value="#{SettingsController.logo}" stream="false" height="100em"/>
                 </p:column>
                 <p:column>
                     <h1 style="color: var(--primary-color);">Bienvenid@, #{SessionController.currentUser.username}!</h1>

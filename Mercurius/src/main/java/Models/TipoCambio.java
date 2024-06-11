@@ -19,16 +19,9 @@ public class TipoCambio {
 
     @Column(nullable = false)
     private double valorVenta;
-
-    public TipoCambio() {
-    }
-
-    public TipoCambio(Long id, LocalDateTime fecha, double valorCompra, double valorVenta) {
-        this.id = id;
-        this.fecha = fecha;
-        this.valorCompra = valorCompra;
-        this.valorVenta = valorVenta;
-    }
+    
+    @Column(nullable = false)
+    private double diferencia;
 
     
 }

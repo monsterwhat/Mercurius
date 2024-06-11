@@ -20,17 +20,16 @@ import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
 @Data
-@Named(value = "FamiliasController")
+@Named(value = "FamiliasController")  
 @ViewScoped
 public class FamiliaController implements Serializable {
     @Inject private FamiliaService familiaService;
-    @Inject private ViewController viewManager;
     @Inject private SessionController currentSession;
 
     private List<Familia> familias;
     private Familia selectedFamilia;
     private Familia newFamilia;
-    private String familiaFilter;
+    private String familiaFilter; 
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 

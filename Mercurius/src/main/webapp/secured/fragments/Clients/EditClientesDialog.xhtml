@@ -7,7 +7,7 @@
         fitViewport="true" responsive="true" id="EditarClienteDialog" modal="true">
         <p:outputPanel rendered="#{not empty ClientsController.selectedClient}">
             <h:form id="editClientForm">
-                <p:panelGrid columns="1" style="width: 800px">
+                <p:panelGrid columns="1" layout="flex">
                     <p:panel header="Editar Cliente: #{ClientsController.selectedClient.name}">
                         <p:growl showDetail="true" showSummary="false"/>
 

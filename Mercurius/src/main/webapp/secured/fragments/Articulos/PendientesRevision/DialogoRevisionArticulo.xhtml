@@ -5,12 +5,12 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     
     <!-- Dialog for Revision de Articulo -->
-    <p:dialog header="Revision de Articulo" widgetVar="RevisionArticuloDialog" 
+    <p:dialog header="Revision de Articulo" widgetVar="RevisionArticuloDialog" modal="true"
               fitViewport="true" responsive="true">
         <p:outputPanel id="RevisionArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
             <h:form>
-                <p:panelGrid columns="1" style="width: 800px">
-                    <p:panel header="Revisar Artículo: #{ArticulosController.selectedArticulo.nombre}">
+                <p:panelGrid columns="1" layout="flex">
+                    <p:panel header="Revisar Artículo: #{ArticulosController.selectedArticulo.nombre}" >
                         <p:growl showDetail="true" showSummary="false"/>
                         <p:column>
                             <p:messages for="name" showSummary="false" showDetail="true" closable="true" />
@@ -41,7 +41,7 @@
                             <p:messages showDetail="true" for="codigoCabys" showSummary="false" closable="true" />
                             <label class="label" for="codigoCabys" style="color: var(--primary-color);">Código CABYS:</label>
                             <p:commandButton value="Seleccionar" id="selectCabysEdit" styleClass="ui-button-primary rounded-button" style="width: 100%"
-                                    onclick="PF('codigoCabysDialogEdit').show();">
+                                    onclick="PF('codigoCabysDialogEdit').show();" update="@this">
                                     <p:autoUpdate/>
                                 </p:commandButton>
                             <p:spacer height="1em"/>

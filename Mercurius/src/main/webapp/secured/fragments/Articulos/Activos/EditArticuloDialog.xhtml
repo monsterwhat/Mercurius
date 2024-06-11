@@ -10,7 +10,7 @@
                   widgetVar="EditArticuloDialog" fitViewport="true" responsive="true" modal="true">
             <p:outputPanel id="EditArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
                 <h:form>
-                    <p:panelGrid columns="1" style="width: 800px">
+                    <p:panelGrid columns="1" layout="flex">
                         <p:panel header="Editar Artículo: #{ArticulosController.selectedArticulo.nombre}">
                         <p:growl showDetail="true" showSummary="false"/>
                             <p:column>

@@ -24,7 +24,8 @@ public class TipoCambioService extends GService<TipoCambio> {
         return TipoCambio.class;
     }
 
-    public void getTipoCambioFromApi() {
+    public void getTipoCambioFromApi(double diferencia) {
+        
         // Get the current date without time
         LocalDate currentDate = LocalDate.now();
 
@@ -54,13 +55,14 @@ public class TipoCambioService extends GService<TipoCambio> {
 
                 double valorVenta = ventaNode.get("valor").asDouble();
                 valorVenta = Math.floor(valorVenta);
-                double valorCompra = compraNode.get("valor").asDouble() - 15; //Tipo de cambio de tributacion nunca es igual al del BN...
+                double valorCompra = compraNode.get("valor").asDouble() - diferencia;
                 valorCompra = Math.floor(valorCompra);
 
                 TipoCambio tipoCambio = new TipoCambio();
                 tipoCambio.setFecha(fechaVenta);
                 tipoCambio.setValorCompra(valorCompra);
                 tipoCambio.setValorVenta(valorVenta);
+                tipoCambio.setDiferencia(diferencia);
 
                 create(tipoCambio);
             } catch (JsonProcessingException e) {
@@ -85,7 +87,7 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
 
     
-    public TipoCambio getNewestTipoCambio() {
+    public TipoCambio getNewestTipoCambio(int diferencia) {
         try {
             TypedQuery<TipoCambio> query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.fecha DESC", TipoCambio.class);
             query.setMaxResults(1);
@@ -94,7 +96,7 @@ public class TipoCambioService extends GService<TipoCambio> {
                 return results.get(0);
             } else {
                 // If no records are found, fetch data from the API
-                getTipoCambioFromApi();
+                getTipoCambioFromApi(diferencia);
                 // Query the database again after fetching data from the API
                 query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.fecha DESC", TipoCambio.class);
                 query.setMaxResults(1);
