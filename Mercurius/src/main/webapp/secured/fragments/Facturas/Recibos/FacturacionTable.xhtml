@@ -49,22 +49,22 @@
                                 <h:outputText value="#{factura.id}"/>
                             </p:column>
                             <p:column headerText="Numero Consecutivo" >
-                                <h:outputText value="#{factura.numeroConsecutivo}"/>
+                                <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
                             </p:column>
                             <p:column headerText="Fecha" >
-                                <h:outputText value="#{factura.fechaEmision}"/>
+                                <h:outputText value="#{factura.encabezado.fechaEmision}"/>
                             </p:column>
                             <p:column headerText="Emisor: " >
-                                <h:outputText value="#{factura.emisor.nombre}"/>
+                                <h:outputText value="#{factura.encabezado.emisor.nombre}"/>
                             </p:column>
                             <p:column headerText="Condicion Venta" >
-                                <h:outputText value="#{factura.condicionVenta}"/>
+                                <h:outputText value="#{factura.encabezado.condicionVenta}"/>
                             </p:column>
                             <p:column headerText="Plazo Credito" >
-                                <h:outputText value="#{factura.plazoCredito}"/>
+                                <h:outputText value="#{factura.encabezado.plazoCredito}"/>
                             </p:column>
                             <p:column headerText="Medio Pago" >
-                                <h:outputText value="#{factura.medioPago}"/>
+                                <h:outputText value="#{factura.encabezado.medioPago}"/>
                             </p:column>
                             
                             <p:column headerText="Acciones" width="20%" exportable="false">

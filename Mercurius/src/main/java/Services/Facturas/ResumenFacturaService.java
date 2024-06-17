@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.Facturas.ResumenFactura;
+import Models.Comprobantes.Resumen.ResumenFactura;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;

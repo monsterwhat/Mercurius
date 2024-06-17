@@ -2,8 +2,25 @@ package Controllers;
 
 import Services.FacturaService;
 import Models.Articulos;
+import Models.Comprobantes.ComprobanteFinal;
+import Models.Comprobantes.Detalles.CodigoComercial;
+import Models.Comprobantes.Detalles.Descuento;
+import Models.Comprobantes.Detalles.DetalleServicio;
+import Models.Comprobantes.Detalles.Impuesto;
+import Models.Comprobantes.Detalles.LineaDetalle;
+import Models.Comprobantes.Encabezado.Emisor;
+import Models.Comprobantes.Encabezado.Encabezado;
+import Models.Comprobantes.Encabezado.Fax;
+import Models.Comprobantes.Encabezado.IdentificacionEmisor;
+import Models.Comprobantes.Encabezado.IdentificacionReceptor;
+import Models.Comprobantes.Encabezado.MedioPago;
+import Models.Comprobantes.Encabezado.Receptor;
+import Models.Comprobantes.Encabezado.Telefono;
+import Models.Comprobantes.Encabezado.Ubicacion;
+import Models.Comprobantes.Enums.MedioPagoEnum;
+import Models.Comprobantes.Resumen.CodigoTipoMoneda;
+import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Departamento;
-import Models.Facturas.*;
 import Models.Inventario;
 import Services.Facturas.*;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,7 +36,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -51,14 +72,19 @@ public class FacturasController implements Serializable {
     @Inject ArticulosController articuloController;
     @Inject InventarioController inventarioController;
     @Inject DepartamentoController departamentosController;
+    @Inject ImpuestoService impuestoService;
+    @Inject DescuentoService descuentoService;
+    @Inject CodigoComercialService codigoComercialService;
+    @Inject EncabezadoService encabezadoService;
+    @Inject MedioPagoService medioPagoService;
     
     private List<UploadedFile> files;
-    private List<Factura> facturas;
-    private List<Factura> facturasDetalladas;
-    private List<Factura> carritoCompras;
-    private Factura newFactura;
+    private List<ComprobanteFinal> facturas;
+    private List<ComprobanteFinal> facturasDetalladas;
+    private List<ComprobanteFinal> carritoCompras;
+    private ComprobanteFinal newFactura;
     
-    private Factura selectedFactura;
+    private ComprobanteFinal selectedFactura;
     private String facturaFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
@@ -67,18 +93,18 @@ public class FacturasController implements Serializable {
     public void init(){
         files = new ArrayList<>();
         filterBy = new ArrayList<>();
-        selectedFactura = new Factura();
+        selectedFactura = new ComprobanteFinal();
         carritoCompras = new ArrayList<>();
     }
     
-    public List<Factura> facturasList() {
+    public List<ComprobanteFinal> facturasList() {
         if (facturas == null) {
             facturas = facturaService.ListAllEnabled();
         }
         return facturas;
     }
     
-    public List<Factura> facturasListDetalladas() {
+    public List<ComprobanteFinal> facturasListDetalladas() {
         if(facturasDetalladas == null){
             facturasDetalladas = facturaService.listAll();
         }
@@ -113,7 +139,7 @@ public class FacturasController implements Serializable {
         facturasDetalladas = null;
     }
 
-    public List<Factura> getFilteredFacturas() {
+    public List<ComprobanteFinal> getFilteredFacturas() {
         if(facturas == null){
             facturas = facturaService.ListAllEnabled();
         }
@@ -126,7 +152,7 @@ public class FacturasController implements Serializable {
         }
     }
     
-    public List<Factura> getFilteredFacturasDetallados() {
+    public List<ComprobanteFinal> getFilteredFacturasDetallados() {
         try {
             if(facturasDetalladas == null){
             facturasDetalladas = facturaService.listAll();
@@ -151,18 +177,18 @@ public class FacturasController implements Serializable {
             return true;
         }
 
-        Factura factura = (Factura) value;
-        return factura.getCodigoActividad().toLowerCase().contains(filterText)
-                || factura.getCondicionVenta().toLowerCase().contains(filterText)
-                || factura.getEmisor().getNombre().toLowerCase().contains(filterText)
-                || factura.getEmisor().getCorreoElectronico().toLowerCase().contains(filterText)
-                || factura.getEmisor().getIdentificacionNumero().toLowerCase().contains(filterText)
-                || factura.getEmisor().getNombreComercial().toLowerCase().contains(filterText)
-                || factura.getFechaEmision().toLowerCase().contains(filterText)
-                || factura.getNumeroConsecutivo().toLowerCase().contains(filterText);
+        ComprobanteFinal factura = (ComprobanteFinal) value;
+        return factura.getEncabezado().getCodigoActividad().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getCondicionVenta().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getEmisor().getNombre().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getEmisor().getCorreoElectronico().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getEmisor().getIdentificacion().getNumero().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getEmisor().getNombreComercial().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getFechaEmision().toString().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getNumeroConsecutivo().toLowerCase().contains(filterText);
     }
 
-    public Factura findFacturaById(Integer number) {
+    public ComprobanteFinal findFacturaById(Integer number) {
         return facturaService.findById(number);
     }
     
@@ -212,6 +238,8 @@ public class FacturasController implements Serializable {
 
             String numeroConsecutivo = rootNode.path("NumeroConsecutivo").asText();
             
+            String clave = rootNode.path("Clave").asText();
+            
             if(facturaService.findByNumeroConsecutivo(numeroConsecutivo)){
                 System.out.println("La Factura ya existe.");
                 FacesMessage message = new FacesMessage("Factura Duplicada","Ya existe la factura: " + numeroConsecutivo);
@@ -219,135 +247,222 @@ public class FacturasController implements Serializable {
                 return;
             }
             
+            Encabezado encabezado = new Encabezado();
+            DetalleServicio detalles = new DetalleServicio();
+            
             Emisor emisor = new Emisor(); 
-            Receptor receptor = new Receptor(); 
-            DetalleServicio detalleServicio = new DetalleServicio();
-            detalleServicio.setEnabled(true);
+            Receptor receptor = new Receptor();
             ResumenFactura resumenFactura = new ResumenFactura();
             
             emisor = parseEmisor(rootNode.path("Emisor"));
+            if(emisor == null){
+                return;
+            }
+            
             receptor = parseReceptor(rootNode.path("Receptor"));
+            if(receptor == null){
+                return;
+            }
             
             String codigoActividad = rootNode.path("CodigoActividad").asText();
-            String fechaEmision = rootNode.path("FechaEmision").asText();
-
+            
+            LocalDateTime localDateTime = parseFechaEmision(rootNode.path("FechaEmision").asText());
+            if(localDateTime == null){
+                return;
+            }
+            
             String condicionVenta = rootNode.path("CondicionVenta").asText();
             String plazoCredito = rootNode.path("PlazoCredito").asText();
-            String medioPago = rootNode.path("MedioPago").asText();       
+            
+            List<MedioPago> medioPago = parseMedioPago(rootNode.path("MedioPago"), encabezado);
+            if(medioPago == null){
+                return;
+            }
 
             resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
+            if(resumenFactura == null){
+                return;
+            }
             
             Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
             Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
             List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
+            if(lineas == null){
+                return;
+            }
+            
             List<LineaDetalle> ServicioLineas = new ArrayList<>();
             
             for(LineaDetalle linea : lineas){
-                linea.setDetalleServicio(detalleServicio);
                 ServicioLineas.add(linea);
             }
             
-            detalleServicio.setLineasDetalle(ServicioLineas);
-            detalleServicioService.create(detalleServicio);
+            detalles.setLineasDetalle(ServicioLineas);
+            detalleServicioService.create(detalles);
             resumenFacturaService.create(resumenFactura);
-            Factura factura = new Factura();
+            ComprobanteFinal factura = new ComprobanteFinal();
             if(persistedEmisor != null){
-                factura.setEmisor(persistedEmisor);
+                encabezado.setEmisor(persistedEmisor);
             }
             if(persistedReceptor != null){
-                factura.setReceptor(persistedReceptor);
+                encabezado.setReceptor(persistedReceptor);
             }
-            factura.setCodigoActividad(codigoActividad);
-            factura.setNumeroConsecutivo(numeroConsecutivo);
-            factura.setFechaEmision(fechaEmision);
-            factura.setCondicionVenta(condicionVenta);
-            factura.setPlazoCredito(plazoCredito);
-            factura.setMedioPago(medioPago);
-            factura.setDetalleServicio(detalleServicio);
-            factura.setResumenFactura(resumenFactura);
+            
+            
+            encabezado.setCodigoActividad(codigoActividad);
+            encabezado.setNumeroConsecutivo(numeroConsecutivo);
+            encabezado.setFechaEmision(localDateTime);
+            encabezado.setCondicionVenta(condicionVenta);
+            encabezado.setPlazoCredito(plazoCredito);
+            encabezado.setMedioPago(medioPago);
+            encabezado.setClave(clave);
+            
+            encabezadoService.create(encabezado);
+            
+            factura.setEncabezado(encabezado);
+            factura.setDetalles(detalles);
+            factura.setResumen(resumenFactura);
             factura.setUser(currentSession.getCurrentUser());
             factura.setStatus(true);
             factura.setProcessed(false);
             
             facturaService.create(factura);
             
-        FacesMessage message = new FacesMessage("Exito","Se proceso exitosamente la facturas: " + factura.getNumeroConsecutivo());
+        FacesMessage message = new FacesMessage("Exito","Se proceso exitosamente la facturas: " + factura.getEncabezado().getNumeroConsecutivo());
         FacesContext.getCurrentInstance().addMessage(null, message);
             
         } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
             System.out.println("Error ParsingXML to Object: " + e.getMessage());
+        }
+    }
+    
+    private LocalDateTime parseFechaEmision(String fechaEmision) {
+        try {
+            if (fechaEmision == null || fechaEmision.isEmpty()) {
+                return null;
+            }
+
+            DateTimeFormatter[] formatters = {
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME,
+                DateTimeFormatter.ISO_OFFSET_DATE_TIME
+            };
+
+            for (DateTimeFormatter formatter : formatters) {
+                try {
+                    return LocalDateTime.parse(fechaEmision, formatter);
+                } catch (Exception ex) {
+                    // Ignore and try the next format
+                }
+            }
+
+            // If no format works, throw an exception
+            return null;
+        } catch (Exception e) {
+            System.out.println("Error parsing fecha emision: " + e.getMessage());
+            return null;
         }
     }
 
     private Emisor parseEmisor(JsonNode emisorNode) {
-        String nombre = emisorNode.path("Nombre").asText();
-        String identificacionTipo = emisorNode.path("Identificacion").path("Tipo").asText();
-        String identificacionNumero = emisorNode.path("Identificacion").path("Numero").asText();
-        String nombreComercial = emisorNode.path("NombreComercial").asText();
-        Ubicacion ubicacion = new Ubicacion();
-        Telefono telefono = new Telefono();
-        Fax fax = new Fax();
-        // Parse Ubicacion si existe
-        if (!emisorNode.path("Ubicacion").isMissingNode()) { 
-            ubicacion = parseUbicacion(emisorNode.path("Ubicacion"));
+        try {
+            String nombre = emisorNode.path("Nombre").asText();
+            String identificacionTipo = emisorNode.path("Identificacion").path("Tipo").asText();
+            String identificacionNumero = emisorNode.path("Identificacion").path("Numero").asText();
+            String nombreComercial = emisorNode.path("NombreComercial").asText();
+            Ubicacion ubicacion = new Ubicacion();
+            Telefono telefono = new Telefono();
+            Fax fax = new Fax();
+            // Parse Ubicacion si existe
+            if (!emisorNode.path("Ubicacion").isMissingNode()) { 
+                ubicacion = parseUbicacion(emisorNode.path("Ubicacion"));
+                if(ubicacion == null){
+                    return null;
+                }
+            }
+            // Parse Telefono si existe
+            if (!emisorNode.path("Telefono").isMissingNode()) {
+                telefono = parseTelefono(emisorNode.path("Telefono"));
+                if(telefono == null){
+                    return null;
+                }
+            }
+            // Parse Fax si existe
+            if (!emisorNode.path("Fax").isMissingNode()) {
+                fax = parseFax(emisorNode.path("Fax"));
+                if(fax == null){
+                    return null;
+                }
+            }
+            String correoElectronico = emisorNode.path("CorreoElectronico").asText();
+
+            Emisor emisor = new Emisor();
+            emisor.setNombre(nombre);
+
+            IdentificacionEmisor idEmisor = new IdentificacionEmisor();
+            idEmisor.setNumero(identificacionNumero);
+            idEmisor.setTipo(identificacionTipo);
+
+            emisor.setIdentificacion(idEmisor);
+            emisor.setNombreComercial(nombreComercial);
+            emisor.setUbicacion(ubicacion);
+            emisor.setTelefono(telefono);
+            emisor.setFax(fax);
+            emisor.setCorreoElectronico(correoElectronico);
+
+            return emisor;
+        } catch (Exception e) {
+            System.out.println("Error Parsing Emisor: " + e.getLocalizedMessage());
+            return null;
         }
-        // Parse Telefono si existe
-        if (!emisorNode.path("Telefono").isMissingNode()) {
-            telefono = parseTelefono(emisorNode.path("Telefono"));
-        }
-        // Parse Fax si existe
-        if (!emisorNode.path("Fax").isMissingNode()) {
-            fax = parseFax(emisorNode.path("Fax"));
-        }
-        String correoElectronico = emisorNode.path("CorreoElectronico").asText();
-        
-        Emisor emisor = new Emisor();
-        emisor.setNombre(nombre);
-        emisor.setIdentificacionTipo(identificacionTipo);
-        emisor.setIdentificacionNumero(identificacionNumero);
-        emisor.setNombreComercial(nombreComercial);
-        emisor.setUbicacion(ubicacion);
-        emisor.setTelefono(telefono);
-        emisor.setFax(fax);
-        emisor.setCorreoElectronico(correoElectronico);
-        
-        return emisor;
     }
 
     private Receptor parseReceptor(JsonNode receptorNode) {
-        String nombre = receptorNode.path("Nombre").asText();
-        String identificacionTipo = receptorNode.path("Identificacion").path("Tipo").asText();
-        String identeficacionNumero = receptorNode.path("Identificacion").path("Numero").asText();
-        String nombreComercial = receptorNode.path("NombreComercial").asText();
-        Ubicacion ubicacion = new Ubicacion();
-        Telefono telefono = new Telefono();
-        Fax fax = new Fax();
-        
-        if (!receptorNode.path("Ubicacion").isMissingNode()) {
-            ubicacion = parseUbicacion(receptorNode.path("Ubicacion"));
+        try {
+            String nombre = receptorNode.path("Nombre").asText();
+            String identificacionTipo = receptorNode.path("Identificacion").path("Tipo").asText();
+            String identeficacionNumero = receptorNode.path("Identificacion").path("Numero").asText();
+            String nombreComercial = receptorNode.path("NombreComercial").asText();
+            Ubicacion ubicacion = new Ubicacion();
+            Telefono telefono = new Telefono();
+            Fax fax = new Fax();
+
+            if (!receptorNode.path("Ubicacion").isMissingNode()) {
+                ubicacion = parseUbicacion(receptorNode.path("Ubicacion"));
+            }
+            if (!receptorNode.path("Telefono").isMissingNode()) {
+                telefono = parseTelefono(receptorNode.path("Telefono"));
+            }
+            if (!receptorNode.path("Fax").isMissingNode()) {
+                fax = parseFax(receptorNode.path("Fax"));
+            }
+            
+            String correoElectronico = receptorNode.path("CorreoElectronico").asText();
+
+            Receptor receptor = new Receptor();
+            receptor.setNombre(nombre);
+
+            IdentificacionReceptor idReceptor = new IdentificacionReceptor();
+            idReceptor.setNumero(identeficacionNumero);
+            idReceptor.setTipo(identificacionTipo);
+
+            receptor.setIdentificacion(idReceptor);
+            receptor.setNombreComercial(nombreComercial);
+            receptor.setUbicacion(ubicacion);
+            receptor.setTelefono(telefono);
+            receptor.setFax(fax);
+            receptor.setCorreoElectronico(correoElectronico);
+
+            return receptor;
+        } catch (Exception e) {
+            System.out.println("Error parsing receptor: " + e.getLocalizedMessage());
+            return null;
         }
-        if (!receptorNode.path("Telefono").isMissingNode()) {
-            telefono = parseTelefono(receptorNode.path("Telefono"));
-        }
-        if (!receptorNode.path("Fax").isMissingNode()) {
-            fax = parseFax(receptorNode.path("Fax"));
-        }
-        String correoElectronico = receptorNode.path("CorreoElectronico").asText();
-        
-        Receptor receptor = new Receptor();
-        receptor.setNombre(nombre);
-        receptor.setIdentificacionTipo(identificacionTipo);
-        receptor.setIdentificacionNumero(identeficacionNumero);
-        receptor.setNombreComercial(nombreComercial);
-        receptor.setUbicacion(ubicacion);
-        receptor.setTelefono(telefono);
-        receptor.setFax(fax);
-        receptor.setCorreoElectronico(correoElectronico);
-        
-        return receptor;
     }
 
     private Ubicacion parseUbicacion(JsonNode ubicacionNode) {
+        try {
         String provincia = ubicacionNode.path("Provincia").asText();
         String Canton = ubicacionNode.path("Canton").asText();
         String Distrito = ubicacionNode.path("Distrito").asText();
@@ -362,196 +477,362 @@ public class FacturasController implements Serializable {
         parsedUbicacion.setOtrasSenas(OtrasSenas);
         
         return parsedUbicacion;
+            
+        } catch (Exception e) {
+            System.out.println("Error parsing ubicacion: " + e.getLocalizedMessage());
+            return null;
+        }
     }
 
     private Telefono parseTelefono(JsonNode telefonoNode) {
-        String codigoPais = telefonoNode.path("CodigoPais").asText();
-        String numTelefono = telefonoNode.path("NumTelefono").asText();
-        
-        Telefono telefono = new Telefono();
-        telefono.setCodigoPaisTelefono(codigoPais);
-        telefono.setNumTelefono(numTelefono);
-        
-        return telefono;
+        try {
+            String codigoPais = telefonoNode.path("CodigoPais").asText();
+            String numTelefono = telefonoNode.path("NumTelefono").asText();
+
+            Telefono telefono = new Telefono();
+            telefono.setCodigoPais(Integer.valueOf(codigoPais));
+            telefono.setNumeroTelefono(Integer.valueOf(numTelefono));
+
+            return telefono;
+        } catch (Exception e) {
+            System.out.println("Error parsing telefono: " + e.getLocalizedMessage());
+            return null;
+        }
     }
 
     private Fax parseFax(JsonNode faxNode) {        
-        String codigoPais = faxNode.path("CodigoPais").asText();
-        String numTelefono = faxNode.path("NumFax").asText();
-        
-        Fax fax = new Fax();
-        fax.setCodigoPaisFax(codigoPais);
-        fax.setNumFax(numTelefono);
-        
-        return fax;
+        try {
+            String codigoPais = faxNode.path("CodigoPais").asText();
+            String numTelefono = faxNode.path("NumFax").asText();
+
+            Fax fax = new Fax();
+
+            if (!codigoPais.isEmpty()) {
+                fax.setCodigoPais(Integer.valueOf(codigoPais));
+            } else {
+                fax.setCodigoPais(null); // or set to a default value, if applicable
+            }
+
+            if (!numTelefono.isEmpty()) {
+                fax.setNumeroFax(Integer.valueOf(numTelefono));
+            } else {
+                fax.setNumeroFax(null); // or set to a default value, if applicable
+            }
+
+            return fax;
+        } catch (Exception e) {
+            System.out.println("Error parsing fax: " + e.getLocalizedMessage());
+            return null;
+        }
     }
+
     
     private List<LineaDetalle> parseDetalleServicio(JsonNode detalleServicio) {
-        List<LineaDetalle> lineasDetalle = new ArrayList<>();
+        try {
+            List<LineaDetalle> lineasDetalle = new ArrayList<>();
 
-        JsonNode lineasDetalleNode = detalleServicio.path("LineaDetalle");
-        if (lineasDetalleNode.isArray()) {
-            for (JsonNode lineaDetalleNode : lineasDetalleNode) {
-                LineaDetalle lineaDetalle = parseLineaDetalle(lineaDetalleNode);
-                lineasDetalle.add(lineaDetalle);
+            JsonNode lineasDetalleNode = detalleServicio.path("LineaDetalle");
+            if (lineasDetalleNode.isArray()) {
+                for (JsonNode lineaDetalleNode : lineasDetalleNode) {
+                    LineaDetalle lineaDetalle = parseLineaDetalle(lineaDetalleNode);
+                    if(lineaDetalle != null){
+                        lineasDetalle.add(lineaDetalle);
+                    }
+                }
+            }else if(!lineasDetalleNode.isMissingNode()){
+                LineaDetalle lineaDetalle = parseLineaDetalle(lineasDetalleNode);
+                if(lineaDetalle != null){
+                    lineasDetalle.add(lineaDetalle);
+                }
             }
-        }else if(!lineasDetalleNode.isMissingNode()){
-            LineaDetalle lineaDetalle = parseLineaDetalle(lineasDetalleNode);
-            lineasDetalle.add(lineaDetalle);
-        }
 
-        return lineasDetalle;
+            return lineasDetalle;
+        } catch (Exception e) {
+            System.out.println("Error parsing detalle Servicio: " + e.getLocalizedMessage());
+            return null;
+        }
+        
+    }
+    
+    private List<MedioPago> parseMedioPago(JsonNode medioPagoNode, Encabezado comprobante){
+        try {
+            List<MedioPago> mediosPago = new ArrayList<>();
+
+            if(medioPagoNode.isArray()){
+                for(JsonNode medioPago : medioPagoNode){
+                    var medioEnum = MedioPagoEnum.fromCodigo(medioPago.asText());
+                    MedioPago medioDePago = new MedioPago();
+                    medioDePago.setMedioPago(medioEnum.getCodigo());
+                    medioDePago.setComprobante(comprobante);
+                    mediosPago.add(medioDePago);
+                }
+            }else if(!medioPagoNode.isMissingNode()){
+                var medioEnum = MedioPagoEnum.fromCodigo(medioPagoNode.asText());
+                    MedioPago medioDePago = new MedioPago();
+                    medioDePago.setMedioPago(medioEnum.getCodigo());
+                    medioDePago.setComprobante(comprobante);
+                    mediosPago.add(medioDePago);
+            }
+
+            return mediosPago;
+        } catch (Exception e) {
+            System.out.println("Error parsing medio pago: " + e.getLocalizedMessage());
+            return null;
+        }
     }
         
     
     private LineaDetalle parseLineaDetalle(JsonNode lineaDetalleNode){
-        LineaDetalle lineaDetalle = new LineaDetalle();
+        try {
+            LineaDetalle lineaDetalle = new LineaDetalle();
 
-        int numeroLinea = lineaDetalleNode.path("NumeroLinea").asInt();
-        String codigo = lineaDetalleNode.path("Codigo").asText();
+            int numeroLinea = lineaDetalleNode.path("NumeroLinea").asInt();
+            String codigo = lineaDetalleNode.path("Codigo").asText();
 
-        List<CodigoComercial> codigosComerciales = new ArrayList<>();
-        // Parse multiple CodigoComercial if present
-        if (lineaDetalleNode.path("CodigoComercial").isArray()) {
-            for (JsonNode codigoComercialNode : lineaDetalleNode.path("CodigoComercial")) {
+            List<CodigoComercial> codigosComerciales = new ArrayList<>();
+            // Parse multiple CodigoComercial if present
+            if (lineaDetalleNode.path("CodigoComercial").isArray()) {
+                for (JsonNode codigoComercialNode : lineaDetalleNode.path("CodigoComercial")) {
+                    CodigoComercial codigoComercial = new CodigoComercial();
+                    codigoComercial = parseCodigoComercial(codigoComercialNode);
+                    if(codigoComercial != null){
+                        codigosComerciales.add(codigoComercial);
+                    }
+                }
+            } else if (!lineaDetalleNode.path("CodigoComercial").isMissingNode()) {
                 CodigoComercial codigoComercial = new CodigoComercial();
-                codigoComercial = parseCodigoComercial(codigoComercialNode);
-                codigosComerciales.add(codigoComercial);
+                codigoComercial = parseCodigoComercial(lineaDetalleNode.path("CodigoComercial"));
+                if(codigoComercial != null){
+                    codigosComerciales.add(codigoComercial);
+                }
             }
-        } else if (!lineaDetalleNode.path("CodigoComercial").isMissingNode()) {
-            CodigoComercial codigoComercial = new CodigoComercial();
-            codigoComercial = parseCodigoComercial(lineaDetalleNode.path("CodigoComercial"));
-            codigosComerciales.add(codigoComercial);
-        }
 
-        String cantidad = lineaDetalleNode.path("Cantidad").asText();
-        String unidadMedida = lineaDetalleNode.path("UnidadMedida").asText();
-        String unidadMedidaComercial = lineaDetalleNode.path("UnidadMedidaComercial").asText();
-        String detalle = lineaDetalleNode.path("Detalle").asText();
-        String precioUnitario =  lineaDetalleNode.path("PrecioUnitario").asText();
-        String montoTotal = lineaDetalleNode.path("MontoTotal").asText();
-        String subTotal =  lineaDetalleNode.path("SubTotal").asText();
-        Impuesto impuesto = new Impuesto();
-        List<Descuento> descuentos = new ArrayList<>();
+            String cantidad = lineaDetalleNode.path("Cantidad").asText();
+            String unidadMedida = lineaDetalleNode.path("UnidadMedida").asText();
+            String unidadMedidaComercial = lineaDetalleNode.path("UnidadMedidaComercial").asText();
+            String detalle = lineaDetalleNode.path("Detalle").asText();
+            String precioUnitario =  lineaDetalleNode.path("PrecioUnitario").asText();
+            String montoTotal = lineaDetalleNode.path("MontoTotal").asText();
+            String subTotal =  lineaDetalleNode.path("SubTotal").asText();
+            List<Impuesto> impuestos = new ArrayList<>();
+            List<Descuento> descuentos = new ArrayList<>();
 
-        // Parse Impuesto if present
-        if (!lineaDetalleNode.path("Impuesto").isMissingNode()) {
-            impuesto = parseImpuesto(lineaDetalleNode.path("Impuesto"));
-        }
+            // Parse Impuesto if present
+            if (lineaDetalleNode.path("Impuesto").isArray()) {
+                for(JsonNode ImpuestoNode : lineaDetalleNode.path("Impuesto")){
+                    Impuesto impuesto = new Impuesto();
+                    impuesto = parseImpuesto(ImpuestoNode);
+                    if(impuesto != null){
+                        impuestos.add(impuesto);
+                    }
+                }
+            }else if(!lineaDetalleNode.path("Impuesto").isMissingNode()){
+                Impuesto impuesto = new Impuesto();
+                impuesto = parseImpuesto(lineaDetalleNode.path("Impuesto"));
+                if(impuesto != null){
+                    impuestos.add(impuesto);
+                }
+            }
 
-        // Parse Descuento if present
-        if (lineaDetalleNode.path("Descuento").isArray()) {
-            for (JsonNode DescuentoNode : lineaDetalleNode.path("Descuento")){
+            // Parse Descuento if present
+            if (lineaDetalleNode.path("Descuento").isArray()) {
+                for (JsonNode DescuentoNode : lineaDetalleNode.path("Descuento")){
+                    Descuento descuento = new Descuento();
+                    descuento = parseDescuento(DescuentoNode);
+                    if(descuento != null){
+                        descuentos.add(descuento); 
+                    }
+                }
+            } else if (!lineaDetalleNode.path("Descuento").isMissingNode()){
                 Descuento descuento = new Descuento();
-                descuento = parseDescuento(DescuentoNode);
-                descuentos.add(descuento);
+                descuento = parseDescuento(lineaDetalleNode.path("Descuento"));
+                if(descuento != null){
+                    descuentos.add(descuento); 
+                }
             }
-        } else if (!lineaDetalleNode.path("Descuento").isMissingNode()){
-            Descuento descuento = new Descuento();
-            descuento = parseDescuento(lineaDetalleNode.path("Descuento"));
-            descuentos.add(descuento);
+            
+            for (CodigoComercial codigoComercial : codigosComerciales){
+                codigoComercialService.create(codigoComercial);
+            }
+            
+            for (Impuesto impuesto : impuestos) {
+                impuestoService.create(impuesto);
+            }
+            
+            for (Descuento descuento : descuentos){
+                descuentoService.create(descuento);
+            }
+            
+
+            String montoTotalLinea = lineaDetalleNode.path("MontoTotalLinea").asText();
+
+            lineaDetalle.setNumeroLinea(numeroLinea);
+            lineaDetalle.setCodigoCabys(codigo);
+            lineaDetalle.setCodigosComerciales(codigosComerciales);
+            lineaDetalle.setCantidad(new BigDecimal(cantidad));
+            lineaDetalle.setUnidadMedida(unidadMedida);
+            lineaDetalle.setUnidadMedidaComercial(unidadMedidaComercial);
+            lineaDetalle.setDetalle(detalle);
+            lineaDetalle.setPrecioUnitario(new BigDecimal(precioUnitario));
+            lineaDetalle.setMontoTotal(new BigDecimal(montoTotal));
+            lineaDetalle.setDescuentos(descuentos);
+            lineaDetalle.setSubTotal(new BigDecimal(subTotal));
+            lineaDetalle.setImpuestos(impuestos);
+            lineaDetalle.setMontoTotalLinea(new BigDecimal(montoTotalLinea));
+
+            return lineaDetalle;
+        } catch (Exception e) {
+            System.out.println("Error parsing linea detalle: " + e.getLocalizedMessage());
+            return null;
         }
-
-        String montoTotalLinea = lineaDetalleNode.path("MontoTotalLinea").asText();
-
-        lineaDetalle.setNumeroLinea(numeroLinea);
-        lineaDetalle.setCodigo(codigo);
-        lineaDetalle.setCodigosComerciales(codigosComerciales);
-        lineaDetalle.setCantidad(cantidad);
-        lineaDetalle.setUnidadMedida(unidadMedida);
-        lineaDetalle.setUnidadMedidaComercial(unidadMedidaComercial);
-        lineaDetalle.setDetalle(detalle);
-        lineaDetalle.setPrecioUnitario(precioUnitario);
-        lineaDetalle.setMontoTotal(montoTotal);
-        lineaDetalle.setDescuentos(descuentos);
-        lineaDetalle.setSubTotal(subTotal);
-        lineaDetalle.setImpuesto(impuesto);
-        lineaDetalle.setMontoTotalLinea(montoTotalLinea);
-                
-        return lineaDetalle;
+        
     }
 
 
     private CodigoComercial parseCodigoComercial(JsonNode codigoComercialNode) {
-        String tipo = codigoComercialNode.path("Tipo").asText();
-        String codigo = codigoComercialNode.path("Codigo").asText();
+        try {
+            String tipo = codigoComercialNode.path("Tipo").asText();
+            String codigo = codigoComercialNode.path("Codigo").asText();
+
+            CodigoComercial codigoComercial = new CodigoComercial();
+            codigoComercial.setTipo(tipo);
+            codigoComercial.setCodigo(codigo);
+
+            return codigoComercial;
+        } catch (Exception e) {
+            System.out.println("Error parsing codigo comercial: " + e.getLocalizedMessage());
+            return null;
+        }
         
-        CodigoComercial codigoComercial = new CodigoComercial();
-        codigoComercial.setTipoCodigo(tipo);
-        codigoComercial.setCodigoComercial(codigo);
-        
-        return codigoComercial;
     }
 
 
     private Impuesto parseImpuesto(JsonNode impuestoNode) {
-        String codigo = impuestoNode.path("Codigo").asText();
-        String codigoTarifa = impuestoNode.path("CodigoTarifa").asText();
-        String tarifa = impuestoNode.path("Tarifa").asText();
-        String monto = impuestoNode.path("Monto").asText();
+        try {
+            String codigo = impuestoNode.path("Codigo").asText();
+            String codigoTarifa = impuestoNode.path("CodigoTarifa").asText();
+            String tarifa = impuestoNode.path("Tarifa").asText();
+            String monto = impuestoNode.path("Monto").asText();
+
+            Impuesto impuesto = new Impuesto();
+            impuesto.setCodigo(codigo);
+            impuesto.setCodigoTarifa(codigoTarifa);
+            impuesto.setTarifa(new BigDecimal(tarifa));
+            impuesto.setMonto(new BigDecimal(monto));
+
+            return impuesto;
+        } catch (Exception e) {
+            System.out.println("Error parsing impuestos: " + e.getLocalizedMessage());
+            return null;
+        }
         
-        Impuesto impuesto = new Impuesto();
-        impuesto.setCodigoImpuesto(codigo);
-        impuesto.setCodigoTarifa(codigoTarifa);
-        impuesto.setTarifa(tarifa);
-        impuesto.setMonto(monto);
-        
-        return impuesto;
     }
 
     private ResumenFactura parseResumenFactura(JsonNode resumenFacturaNode) {
-        String codigoMoneda = resumenFacturaNode.path("CodigoMoneda").asText();
-        String tipoCambio = resumenFacturaNode.path("TipoCambio").asText();
-        String totalServiciosGravados = resumenFacturaNode.path("TotalServGravados").asText();
-        String totalServiciosExentos = resumenFacturaNode.path("TotalServExentos").asText();
-        String totalServiciosExonerados = resumenFacturaNode.path("TotalServExonerado").asText();
-        String totalMercanciasGravadas = resumenFacturaNode.path("TotalMercanciasGravadas").asText();
-        String totalMercanciasExentas = resumenFacturaNode.path("TotalMercanciasExentas").asText();
-        String totalMercanciaExonerada = resumenFacturaNode.path("TotalMercExonerada").asText();
-        String totalGravado = resumenFacturaNode.path("TotalGravado").asText();
-        String totalExento = resumenFacturaNode.path("TotalExento").asText();
-        String totalExonerado = resumenFacturaNode.path("TotalExonerado").asText();
-        String totalVenta = resumenFacturaNode.path("TotalVenta").asText();
-        String totalDescuentos = resumenFacturaNode.path("TotalDescuentos").asText();
-        String totalVentaNeta = resumenFacturaNode.path("TotalVentaNeta").asText();
-        String totalImpuesto = resumenFacturaNode.path("TotalImpuesto").asText();
-        String totalIVADevuelto = resumenFacturaNode.path("TotalIVADevuelto").asText();
-        String totalOtrosCargos = resumenFacturaNode.path("TotalOtrosCargos").asText();
-        String totalComprobante = resumenFacturaNode.path("TotalComprobante").asText();
+    try {
+            JsonNode codigoMonedaPath = resumenFacturaNode.path("CodigoTipoMoneda");
+            String codigoMonedaText = codigoMonedaPath.path("CodigoMoneda").asText();
+            String tipoCambioText = codigoMonedaPath.path("TipoCambio").asText();
+
+            CodigoTipoMoneda codigoMoneda = parseCodigoMoneda(codigoMonedaText, tipoCambioText);
+            if(codigoMoneda  == null){
+                System.out.println("Error parsing moneda");
+                return null;
+            }
+
+            // Extracting values
+            String totalServiciosGravados = resumenFacturaNode.path("TotalServGravados").asText();
+            String totalServiciosExentos = resumenFacturaNode.path("TotalServExentos").asText();
+            String totalServiciosExonerados = resumenFacturaNode.path("TotalServExonerado").asText();
+            String totalMercanciasGravadas = resumenFacturaNode.path("TotalMercanciasGravadas").asText();
+            String totalMercanciasExentas = resumenFacturaNode.path("TotalMercanciasExentas").asText();
+            String totalMercanciaExonerada = resumenFacturaNode.path("TotalMercExonerada").asText();
+            String totalGravado = resumenFacturaNode.path("TotalGravado").asText();
+            String totalExento = resumenFacturaNode.path("TotalExento").asText();
+            String totalExonerado = resumenFacturaNode.path("TotalExonerado").asText();
+            String totalVenta = resumenFacturaNode.path("TotalVenta").asText();
+            String totalDescuentos = resumenFacturaNode.path("TotalDescuentos").asText();
+            String totalVentaNeta = resumenFacturaNode.path("TotalVentaNeta").asText();
+            String totalImpuesto = resumenFacturaNode.path("TotalImpuesto").asText();
+            String totalIVADevuelto = resumenFacturaNode.path("TotalIVADevuelto").asText();
+            String totalOtrosCargos = resumenFacturaNode.path("TotalOtrosCargos").asText();
+            String totalComprobante = resumenFacturaNode.path("TotalComprobante").asText();
+
+            // Check for null or empty values before converting to BigDecimal
+            BigDecimal bigDecimalTotalServiciosGravados = totalServiciosGravados.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServiciosGravados);
+            BigDecimal bigDecimalTotalServiciosExentos = totalServiciosExentos.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServiciosExentos);
+            BigDecimal bigDecimalTotalServiciosExonerados = totalServiciosExonerados.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServiciosExonerados);
+            BigDecimal bigDecimalTotalMercanciasGravadas = totalMercanciasGravadas.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalMercanciasGravadas);
+            BigDecimal bigDecimalTotalMercanciasExentas = totalMercanciasExentas.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalMercanciasExentas);
+            BigDecimal bigDecimalTotalMercanciaExonerada = totalMercanciaExonerada.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalMercanciaExonerada);
+            BigDecimal bigDecimalTotalGravado = totalGravado.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalGravado);
+            BigDecimal bigDecimalTotalExento = totalExento.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalExento);
+            BigDecimal bigDecimalTotalExonerado = totalExonerado.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalExonerado);
+            BigDecimal bigDecimalTotalVenta = totalVenta.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalVenta);
+            BigDecimal bigDecimalTotalDescuentos = totalDescuentos.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalDescuentos);
+            BigDecimal bigDecimalTotalVentaNeta = totalVentaNeta.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalVentaNeta);
+            BigDecimal bigDecimalTotalImpuesto = totalImpuesto.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalImpuesto);
+            BigDecimal bigDecimalTotalIVADevuelto = totalIVADevuelto.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalIVADevuelto);
+            BigDecimal bigDecimalTotalOtrosCargos = totalOtrosCargos.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalOtrosCargos);
+            BigDecimal bigDecimalTotalComprobante = totalComprobante.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalComprobante);
+
+            ResumenFactura resumenFactura = new ResumenFactura();
+
+            resumenFactura.setCodigoMoneda(codigoMoneda);
+            resumenFactura.setTotalServGravados(bigDecimalTotalServiciosGravados);
+            resumenFactura.setTotalServExentos(bigDecimalTotalServiciosExentos);
+            resumenFactura.setTotalServExonerado(bigDecimalTotalServiciosExonerados);
+            resumenFactura.setTotalMercanciasGravadas(bigDecimalTotalMercanciasGravadas);
+            resumenFactura.setTotalMercanciasExentas(bigDecimalTotalMercanciasExentas);
+            resumenFactura.setTotalMercExonerada(bigDecimalTotalMercanciaExonerada);
+            resumenFactura.setTotalGravado(bigDecimalTotalGravado);
+            resumenFactura.setTotalExento(bigDecimalTotalExento);
+            resumenFactura.setTotalExonerado(bigDecimalTotalExonerado);
+            resumenFactura.setTotalVenta(bigDecimalTotalVenta);
+            resumenFactura.setTotalDescuentos(bigDecimalTotalDescuentos);
+            resumenFactura.setTotalVentaNeta(bigDecimalTotalVentaNeta);
+            resumenFactura.setTotalImpuesto(bigDecimalTotalImpuesto);
+            resumenFactura.setTotalIVADevuelto(bigDecimalTotalIVADevuelto);
+            resumenFactura.setTotalOtrosCargos(bigDecimalTotalOtrosCargos);
+            resumenFactura.setTotalComprobante(bigDecimalTotalComprobante);
+
+            return resumenFactura;
+
+        } catch (Exception e) {
+            System.out.println("Error parsing resumen factura: " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+
+    
+    private CodigoTipoMoneda parseCodigoMoneda(String codigo, String tipo){
+        try {
+            CodigoTipoMoneda codigoMoneda = new CodigoTipoMoneda();
+            codigoMoneda.setCodigoMoneda(codigo);
+            codigoMoneda.setTipoCambioMoneda(new BigDecimal(tipo));
+
+            return codigoMoneda;
+        } catch (Exception e) {
+            System.out.println("Error parsing codigo moneda: " + e.getLocalizedMessage());
+            return null;
+        }
         
-        ResumenFactura resumenFactura = new ResumenFactura();
-        resumenFactura.setCodigoMoneda(codigoMoneda);
-        resumenFactura.setTipoCambio(tipoCambio);
-        resumenFactura.setTotalServGravados(totalServiciosGravados);
-        resumenFactura.setTotalServExentos(totalServiciosExentos);
-        resumenFactura.setTotalServExonerado(totalServiciosExonerados);
-        resumenFactura.setTotalMercanciasGravadas(totalMercanciasGravadas);
-        resumenFactura.setTotalMercanciasExentas(totalMercanciasExentas);
-        resumenFactura.setTotalMercExonerada(totalMercanciaExonerada);
-        resumenFactura.setTotalGravado(totalGravado);
-        resumenFactura.setTotalExento(totalExento);
-        resumenFactura.setTotalExonerado(totalExonerado);
-        resumenFactura.setTotalVenta(totalVenta);
-        resumenFactura.setTotalDescuentos(totalDescuentos);
-        resumenFactura.setTotalVentaNeta(totalVentaNeta);
-        resumenFactura.setTotalImpuesto(totalImpuesto);
-        resumenFactura.setTotalIVADevuelto(totalIVADevuelto);
-        resumenFactura.setTotalOtrosCargos(totalOtrosCargos);
-        resumenFactura.setTotalComprobante(totalComprobante);
-        
-        return resumenFactura;
     }
 
     private Descuento parseDescuento(JsonNode descuentoNode) {
-        
-        String montoDescuento = descuentoNode.path("MontoDescuento").asText();
-        String naturalezaDescuento = descuentoNode.path("NaturalezaDescuento").asText();
-        
-        Descuento descuento = new Descuento();
-        descuento.setMonto(montoDescuento);
-        descuento.setNaturalezaDescuento(naturalezaDescuento);
-        
-        return descuento;
+        try {
+            String montoDescuento = descuentoNode.path("MontoDescuento").asText();
+            String naturalezaDescuento = descuentoNode.path("NaturalezaDescuento").asText();
+
+            Descuento descuento = new Descuento();
+            descuento.setMontoDescuento(new BigDecimal(montoDescuento));
+            descuento.setNaturalezaDescuento(naturalezaDescuento);
+
+            return descuento;
+        } catch (Exception e) {
+            System.out.println("Error parsing descuento: " + e.getLocalizedMessage());
+            return null;
+        }
     }
     
     public void processSelectedFactura(){
@@ -570,8 +851,9 @@ public class FacturasController implements Serializable {
         }
     }
         
-    private void processFactura(Factura factura){
-            List<LineaDetalle> lineasDetalle = factura.getDetalleServicio().getLineasDetalle();
+    private void processFactura(ComprobanteFinal factura){
+        try {
+            List<LineaDetalle> lineasDetalle = factura.getDetalles().getLineasDetalle();
                         
             for(LineaDetalle lineaDetalle : lineasDetalle){
                 String codigoBarra = "";
@@ -579,8 +861,8 @@ public class FacturasController implements Serializable {
                 List<CodigoComercial> codigosComercialesLineaDetalle = lineaDetalle.getCodigosComerciales();
 
                 for(CodigoComercial codigoComercial : codigosComercialesLineaDetalle){
-                    if(codigoComercial.getTipoCodigo().contains("03")){
-                        codigoBarra = codigoComercial.getCodigoComercial();
+                    if(codigoComercial.getTipo().contains("03")){
+                        codigoBarra = codigoComercial.getCodigo();
                         break;
                     }
                 }
@@ -589,19 +871,19 @@ public class FacturasController implements Serializable {
                         articuloController.findArticuloByName(nombre) :
                         articuloController.findArticuloByBarCode(codigoBarra);
                 
-                double cantidad = Double.parseDouble(lineaDetalle.getCantidad());
-                String codigoCabys = lineaDetalle.getCodigo();
+                var cantidad = lineaDetalle.getCantidad();
+                String codigoCabys = lineaDetalle.getCodigoCabys();
                 String unidadMedida = lineaDetalle.getUnidadMedida();
                 String unidadMedidaComercial = lineaDetalle.getUnidadMedidaComercial();
-                double montoTotalLinea = Double.parseDouble(lineaDetalle.getMontoTotalLinea());
-                double totalUnitario = montoTotalLinea/cantidad;
-                double precioUnitario = totalUnitario;
-                double UnidadesParseadas = parseUnidadComercial(unidadMedida, unidadMedidaComercial) * cantidad;
-                            
+                var montoTotalLinea = lineaDetalle.getMontoTotalLinea();
+                var totalUnitario = montoTotalLinea.divide(cantidad,20,RoundingMode.HALF_UP);
+                var precioUnitario = totalUnitario;
+                var UnidadesParseadas = parseUnidadComercial(unidadMedida, unidadMedidaComercial) * cantidad.doubleValue();
+                
                 Articulos articulo = new Articulos();
                 
                 Departamento departamento = new Departamento();
-                    departamento.setNombre(factura.getEmisor().getNombre());
+                    departamento.setNombre(factura.getEncabezado().getEmisor().getNombre());
                     departamento.setStatus(true);
                     departamento.setUsuario(currentSession.getCurrentUser());
                     Departamento persistedDepartamento = departamentosController.createSimpleDepartamento(departamento);
@@ -627,8 +909,8 @@ public class FacturasController implements Serializable {
                     articuloExistente.setStatus(true);
                     articuloExistente.setProcessed(false);
                     articuloExistente.setDepartamento(persistedDepartamento);
-                    articuloExistente.setPrecioFinal(0.0);
-                    articuloExistente.setPrecioCostoConIVA(0.0);
+                    articuloExistente.setPrecioFinal(new BigDecimal(0));
+                    articuloExistente.setPrecioCostoConIVA(new BigDecimal(0));
                     articuloController.updateSimpleArticulo(articuloExistente);
                 }
                 
@@ -646,7 +928,7 @@ public class FacturasController implements Serializable {
                 ajusteArticulo.setStatus(true);
                 ajusteArticulo.setProcessed(false);
                 ajusteArticulo.setCantidad(cantidad);
-                ajusteArticulo.setNotas((cantidad != 0) ? "Auto procesado por el sistema" : "No se pudo auto adquirir la cantidad");                
+                ajusteArticulo.setNotas((cantidad.doubleValue() != 0) ? "Auto procesado por el sistema" : "No se pudo auto adquirir la cantidad");                
                 
                 inventarioController.createSimpleInventario(ajusteArticulo);
             }
@@ -654,6 +936,10 @@ public class FacturasController implements Serializable {
             factura.setProcessed(true);
             facturaService.update(factura);
             clearCache();
+            
+        } catch (Exception e) {
+            System.out.println("Error procesing factura: " + e.getLocalizedMessage());
+        }
     }
     
     private double parseUnidadComercial(String unidad, String unidadComercial) {
@@ -684,7 +970,7 @@ public class FacturasController implements Serializable {
     }
     
     public void openNewFactura(){
-        newFactura = new Factura();
+        newFactura = new ComprobanteFinal();
     }
     
 }
