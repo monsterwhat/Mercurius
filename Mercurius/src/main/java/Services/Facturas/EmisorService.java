@@ -1,7 +1,7 @@
 
 package Services.Facturas;
 
-import Models.Facturas.Emisor;
+import Models.Comprobantes.Encabezado.Emisor;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
@@ -82,7 +82,7 @@ public class EmisorService extends GService<Emisor> {
     
     public List<Emisor> ListAllEnabled() {
         try {
-            TypedQuery<Emisor> query = em.createQuery("SELECT a FROM Emisor a WHERE a.status = true", Emisor.class);
+            TypedQuery<Emisor> query = em.createQuery("SELECT a FROM Emisor", Emisor.class);
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all enabled entities: " + e.toString());
@@ -92,9 +92,10 @@ public class EmisorService extends GService<Emisor> {
 
     public Emisor createIfNotExist(Emisor emisor) {
         try {
-            // Check if an Emisor with the same identification number already exists
-            TypedQuery<Emisor> query = em.createQuery("SELECT e FROM Emisor e WHERE e.identificacionNumero = :identificacionNumero", Emisor.class);
-            query.setParameter("identificacionNumero", emisor.getIdentificacionNumero());
+            // Correct query to join identificacion and check the identificacion.numero field
+            TypedQuery<Emisor> query = em.createQuery(
+                "SELECT e FROM Emisor e JOIN e.identificacion i WHERE i.numero = :identificacionNumero", Emisor.class);
+            query.setParameter("identificacionNumero", emisor.getIdentificacion().getNumero());
             List<Emisor> existingEmisors = query.getResultList();
 
             // If no Emisor with the same identification number exists, create a new one
@@ -112,6 +113,7 @@ public class EmisorService extends GService<Emisor> {
             return null;
         }
     }
+
 
 
 }

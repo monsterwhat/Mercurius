@@ -1,6 +1,6 @@
 package Services;
 
-import Models.Facturas.Factura;
+import Models.Comprobantes.ComprobanteFinal;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
@@ -8,11 +8,11 @@ import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @Named
-public class FacturaService extends GService<Factura> {
+public class FacturaService extends GService<ComprobanteFinal> {
     
     @Override
-    protected Class<Factura> getEntityClass() {
-        return Factura.class;
+    protected Class<ComprobanteFinal> getEntityClass() {
+        return ComprobanteFinal.class;
     }
 
     @PostConstruct
@@ -20,7 +20,7 @@ public class FacturaService extends GService<Factura> {
     }
 
     @Override
-    public void create(Factura entity) {
+    public void create(ComprobanteFinal entity) {
         try {
             em.persist(entity);
         } catch (Exception e) {
@@ -29,7 +29,7 @@ public class FacturaService extends GService<Factura> {
     }
 
     @Override
-    public void delete(Factura entity) {
+    public void delete(ComprobanteFinal entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -46,7 +46,7 @@ public class FacturaService extends GService<Factura> {
     }
 
     @Override
-    public void update(Factura entity) {
+    public void update(ComprobanteFinal entity) {
         try {
             em.merge(entity);
         } catch (Exception e) {
@@ -54,10 +54,10 @@ public class FacturaService extends GService<Factura> {
         }
     }
     
-    public void updateAndDisable(Factura entity) {
+    public void updateAndDisable(ComprobanteFinal entity) {
         try {
             // Find the existing item by its ID
-            Factura existingItem = em.find(getEntityClass(), entity.getId());
+            ComprobanteFinal existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
                 // Disable the existing item
@@ -75,10 +75,10 @@ public class FacturaService extends GService<Factura> {
     }
     
     
-    public void softDelete(Factura entity) {
+    public void softDelete(ComprobanteFinal entity) {
         try {
             // Find the item by its ID
-            Factura existingItem = em.find(getEntityClass(), entity.getId());
+            ComprobanteFinal existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
                 // Soft delete the item by setting its status to false
@@ -93,9 +93,9 @@ public class FacturaService extends GService<Factura> {
     }
 
     @Override
-    public List<Factura> listAll() {
+    public List<ComprobanteFinal> listAll() {
         try {
-            TypedQuery<Factura> query = em.createQuery("SELECT f FROM Factura f", Factura.class);
+            TypedQuery<ComprobanteFinal> query = em.createQuery("SELECT f FROM ComprobanteFinal f", ComprobanteFinal.class);
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());
@@ -103,7 +103,7 @@ public class FacturaService extends GService<Factura> {
         }
     }
     
-    public Factura findById(Integer id) {
+    public ComprobanteFinal findById(Integer id) {
     try {
         return em.find(getEntityClass(), id);
         } catch (Exception e) {
@@ -112,9 +112,9 @@ public class FacturaService extends GService<Factura> {
         }
     }
     
-    public List<Factura> ListAllEnabled() {
+    public List<ComprobanteFinal> ListAllEnabled() {
         try {
-            TypedQuery<Factura> query = em.createQuery("SELECT f FROM Factura f WHERE f.Status = true", Factura.class);
+            TypedQuery<ComprobanteFinal> query = em.createQuery("SELECT f FROM ComprobanteFinal f WHERE f.Status = true", ComprobanteFinal.class);
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all enabled entities: " + e.toString());
@@ -124,10 +124,10 @@ public class FacturaService extends GService<Factura> {
 
     public boolean findByNumeroConsecutivo(String numeroConsecutivo) {
         try {
-            TypedQuery<Factura> query = em.createQuery("SELECT f FROM Factura f WHERE f.numeroConsecutivo = :numeroConsecutivo", Factura.class);
+            TypedQuery<ComprobanteFinal> query = em.createQuery("SELECT f FROM ComprobanteFinal f WHERE f.encabezado.numeroConsecutivo = :numeroConsecutivo", ComprobanteFinal.class);
             query.setParameter("numeroConsecutivo", numeroConsecutivo);
             // Attempt to get a single result
-            Factura factura = query.getSingleResult();
+            ComprobanteFinal factura = query.getSingleResult();
             // If a result is found, return true
             return factura != null;
         } catch (NoResultException e) {

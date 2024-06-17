@@ -10,6 +10,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
 
@@ -34,7 +35,7 @@ public class Inventario implements Serializable {
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien realizo el ajuste
         
-    private double cantidad;
+    private BigDecimal cantidad;
     
     private double unidadesRecomendadasFactura;
     

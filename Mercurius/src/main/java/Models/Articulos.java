@@ -1,6 +1,7 @@
 package Models;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.Data;
 
 @Entity
@@ -34,16 +35,16 @@ public class Articulos {
     private Familia familia;
 
     @Column(name = "precio_costo_sin_iva")
-    private double precioCostoSinIVA;
+    private BigDecimal precioCostoSinIVA;
 
     @Column(name = "precio_costo_con_iva")
-    private double precioCostoConIVA;
+    private BigDecimal precioCostoConIVA;
 
     @Column(name = "porcentaje_utilidad")
-    private double porcentajeUtilidad;
+    private BigDecimal porcentajeUtilidad;
 
     @Column(name = "precio_final")
-    private double precioFinal;
+    private BigDecimal precioFinal;
     
     private boolean status;
     

@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.Facturas.Receptor;
+import Models.Comprobantes.Encabezado.Receptor;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
@@ -80,7 +80,7 @@ public class ReceptorService extends GService<Receptor> {
     
     public List<Receptor> ListAllEnabled() {
         try {
-            TypedQuery<Receptor> query = em.createQuery("SELECT a FROM Receptor a WHERE a.status = true", Receptor.class);
+            TypedQuery<Receptor> query = em.createQuery("SELECT a FROM Receptor", Receptor.class);
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all enabled entities: " + e.toString());
@@ -91,8 +91,11 @@ public class ReceptorService extends GService<Receptor> {
     public Receptor createIfNotExist(Receptor receptor) {
         try {
             // Check if a Receptor with the same identification number already exists
-            TypedQuery<Receptor> query = em.createQuery("SELECT r FROM Receptor r WHERE r.identificacionNumero = :identificacionNumero", Receptor.class);
-            query.setParameter("identificacionNumero", receptor.getIdentificacionNumero());
+            TypedQuery<Receptor> query = em.createQuery(
+                "SELECT r FROM Receptor r JOIN r.identificacion i WHERE i.numero = :identificacionNumero", 
+                Receptor.class
+            );
+            query.setParameter("identificacionNumero", receptor.getIdentificacion().getNumero());
             List<Receptor> existingReceptors = query.getResultList();
 
             // If no Receptor with the same identification number exists, create a new one
@@ -110,6 +113,7 @@ public class ReceptorService extends GService<Receptor> {
             return null;
         }
     }
+
 
 
 }

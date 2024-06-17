@@ -8,8 +8,8 @@
                   fitViewport="true" responsive="true" maximizable="true" modal="true">
             
             <h:form>
-                <p:dataTable value="#{facturasController.selectedFactura.detalleServicio.lineasDetalle}" 
-                             var="lineaDetalle" id="lineasDetalleTable" reflow="true">
+                <p:dataTable value="#{facturasController.selectedFactura.detalles.lineasDetalle}" 
+                             var="lineaDetalle" id="lineasDetalleTable" reflow="true" lazy="false">
                     <p:autoUpdate/>
 
                     <p:column headerText="Nombre">
@@ -33,7 +33,7 @@
                     <p:column headerText="Descuentos">
                         <p:dataTable value="#{lineaDetalle.descuentos}" emptyMessage="N/A" var="descuento" reflow="true">
                             <p:column headerText="Monto">
-                                <h:outputText value="#{descuento.monto}"/>
+                                <h:outputText value="#{descuento.montoDescuento}"/>
                             </p:column>
                         </p:dataTable>
                     </p:column>
@@ -41,10 +41,11 @@
                         <h:outputText value="#{lineaDetalle.subTotal}"/>
                     </p:column>
                     <p:column headerText="Impuesto">
-                        <h:outputText value="#{lineaDetalle.impuesto.monto}"/>
-                    </p:column>
-                    <p:column headerText="Impuesto Neto" rendered="false">
-                        <h:outputText value="#{lineaDetalle.impuestoNeto}"/>
+                        <p:dataTable value="#{lineaDetalle.impuestos}" emptyMessage="N/A" var="impuesto" reflow="true">
+                            <p:column headerText="Monto">
+                                <h:outputText value="#{impuesto.monto}"/>
+                            </p:column>
+                        </p:dataTable>
                     </p:column>
                     <p:column headerText="Monto total Linea">
                         <h:outputText value="#{lineaDetalle.montoTotalLinea}"/>

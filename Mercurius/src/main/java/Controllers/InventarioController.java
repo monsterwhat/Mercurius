@@ -7,7 +7,6 @@ import Services.ArticulosService;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Meta;
-import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfWriter;
@@ -148,7 +147,6 @@ public class InventarioController implements Serializable {
                     if(selectedInventario.getUsuario() != null){
                         Date today = new Date();
                         selectedInventario.setFechaMovimiento(today);
-                        System.out.println("Entity: " + selectedInventario.getArticulo().getNombre() + "id: " + selectedInventario.getCodigo());
                         inventarioService.updateAndDisable(selectedInventario);
                         clearSelectedInventario();
                         PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
@@ -176,7 +174,6 @@ public class InventarioController implements Serializable {
                     if(selectedInventario.getUsuario() != null){
                         Date today = new Date();
                         selectedInventario.setFechaMovimiento(today);
-                        System.out.println("Entity: " + selectedInventario.getArticulo().getNombre() + "id: " + selectedInventario.getCodigo());
                         inventarioService.updateAndDisable(selectedInventario);
                         clearSelectedInventario();
                         

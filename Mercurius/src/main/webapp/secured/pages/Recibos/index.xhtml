@@ -48,11 +48,11 @@
                             <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
                                          paginator="true" rows="8" paginatorPosition="bottom" id="FacturasTableData"
                                          emptyMessage="No se encontraron registros de factura con la critería proporcionada"
-                                         globalFilterFunction="#{facturasController.globalFilterFunction}"
+                                         globalFilterFunction="#{facturasController.globalFilterFunction}" lazy="false"
                                          filterBy="#{facturasController.filterBy}" reflow="true" selectionMode="single"
                                          selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
-                                <p:ajax event="rowSelect" update="@this recibos"/>
+                                <p:ajax event="rowSelect" update="recibos selectedFacturaDetallado"/>
 
                                 <p:autoUpdate/>
 
@@ -79,23 +79,27 @@
                                 <p:column headerText="Código" visible="false" >
                                     <h:outputText value="#{factura.id}"/>
                                 </p:column>
-                                <p:column headerText="Numero Consecutivo" sortBy="#{factura.numeroConsecutivo}">
-                                    <h:outputText value="#{factura.numeroConsecutivo}"/>
+                                <p:column headerText="Numero Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
                                 </p:column>
-                                <p:column headerText="Fecha" sortBy="#{factura.fechaEmision}">
-                                    <h:outputText value="#{factura.fechaEmision}"/>
+                                <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}"/>
                                 </p:column>
-                                <p:column headerText="Emisor: " sortBy="#{factura.emisor.nombre}">
-                                    <h:outputText value="#{factura.emisor.nombre}"/>
+                                <p:column headerText="Emisor: " sortBy="#{factura.encabezado.emisor.nombre}">
+                                    <h:outputText value="#{factura.encabezado.emisor.nombre}"/>
                                 </p:column>
-                                <p:column headerText="Condicion Venta" sortBy="#{factura.condicionVenta}">
-                                    <h:outputText value="#{factura.condicionVenta}"/>
+                                <p:column headerText="Condicion Venta" sortBy="#{factura.encabezado.condicionVenta}">
+                                    <h:outputText value="#{factura.encabezado.condicionVenta}"/>
                                 </p:column>
-                                <p:column headerText="Plazo Credito" sortBy="#{factura.plazoCredito}">
-                                    <h:outputText value="#{factura.plazoCredito}"/>
+                                <p:column headerText="Plazo Credito" sortBy="#{factura.encabezado.plazoCredito}">
+                                    <h:outputText value="#{factura.encabezado.plazoCredito}"/>
                                 </p:column>
-                                <p:column headerText="Medio Pago" sortBy="#{factura.medioPago}">
-                                    <h:outputText value="#{factura.medioPago}"/>
+                                <p:column headerText="Medio Pago">
+                                    <p:dataTable value="#{factura.encabezado.medioPago}" var="medio" reflow="true">
+                                        <p:column>
+                                            <h:outputText value="#{medio.medioPago}"/>
+                                        </p:column>
+                                    </p:dataTable>
                                 </p:column>
 
                                 <p:column headerText="Acciones" width="6%" exportable="false">

@@ -29,6 +29,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
@@ -428,118 +430,131 @@ public class ArticulosController implements Serializable {
                 || (articulo.getFamilia() != null && articulo.getFamilia().getNombre().toLowerCase().contains(filterText))
                 || (articulo.getUsuario() != null && articulo.getUsuario().getUsername().toLowerCase().contains(filterText));
     }
-    
+
     public void calcularPrecioConIVA() {
-        if (newArticulo != null) {
-            if (newArticulo.getPrecioFinal() != 0 && newArticulo.getCodigoCabys() != null) {
-                double impuesto = newArticulo.getCodigoCabys().getImpuesto();
-                double precioSinIVA = newArticulo.getPrecioFinal();
-                double IVA = precioSinIVA * (impuesto * 0.01);
-                double precioConIVA = precioSinIVA+IVA;
-                
-                precioConIVA = Math.ceil(precioConIVA);
-                
+        if (newArticulo != null && newArticulo.getPrecioFinal() != null && newArticulo.getCodigoCabys() != null) {
+            BigDecimal precioFinal = newArticulo.getPrecioFinal();
+            BigDecimal precio0 = BigDecimal.ZERO;
+
+            // Verificar si el precioFinal es distinto de cero
+            if (precioFinal.compareTo(precio0) != 0) {
+                BigDecimal impuesto = new BigDecimal(newArticulo.getCodigoCabys().getImpuesto());
+                BigDecimal precioSinIVA = newArticulo.getPrecioFinal();
+
+                // Calcular el IVA como porcentaje del precio sin IVA
+                BigDecimal factorIVA = impuesto.divide(new BigDecimal(100));
+                BigDecimal IVA = precioSinIVA.multiply(factorIVA);
+
+                // Calcular el precio con IVA sumando el IVA al precio sin IVA
+                BigDecimal precioConIVA = precioSinIVA.add(IVA);
+
+                // Redondear hacia arriba el precio con IVA utilizando RoundingMode.CEILING
+                precioConIVA = precioConIVA.setScale(2, RoundingMode.CEILING);
+
+                // Asignar el precio con IVA al artículo
                 newArticulo.setPrecioCostoConIVA(precioConIVA);
             }
         }
     }
-    
-    public void calcularPrecioConUtilidad(){
+
+    public void calcularPrecioConUtilidad() {
         try {
-        if (newArticulo != null) {
-            double porcentajeUtilidad = newArticulo.getPorcentajeUtilidad();
-            double precioCosto = newArticulo.getPrecioCostoSinIVA();
-            if(precioCosto >= 0 && porcentajeUtilidad >=0 ){
-                double Utilidad = precioCosto*(porcentajeUtilidad*0.01);
-                double precioConUtilidad = precioCosto+Utilidad;
-                
-                precioConUtilidad = Math.ceil(precioConUtilidad);
-                
-                newArticulo.setPrecioFinal(precioConUtilidad);
-                calcularPrecioConIVA();
-            }else{
-                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+            if (newArticulo != null) {
+                BigDecimal porcentajeUtilidad = newArticulo.getPorcentajeUtilidad();
+                BigDecimal precioCosto = newArticulo.getPrecioCostoSinIVA();
+
+                // Verificar que precioCosto y porcentajeUtilidad sean mayores o iguales a cero
+                if (precioCosto.compareTo(BigDecimal.ZERO) >= 0 && porcentajeUtilidad.compareTo(BigDecimal.ZERO) >= 0) {
+                    // Calcular la utilidad como porcentaje del precioCosto
+                    BigDecimal factorUtilidad = porcentajeUtilidad.divide(new BigDecimal(100), 4, RoundingMode.HALF_UP); // Ajustar la escala según sea necesario
+                    BigDecimal utilidad = precioCosto.multiply(factorUtilidad);
+
+                    // Calcular el precio con utilidad sumando la utilidad al precioCosto
+                    BigDecimal precioConUtilidad = precioCosto.add(utilidad);
+
+                    // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
+                    precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
+
+                    // Asignar el precio con utilidad al atributo precioFinal del artículo
+                    newArticulo.setPrecioFinal(precioConUtilidad);
+
+                    // Calcular el precio con IVA después de actualizar el precio final
+                    calcularPrecioConIVA();
+                } else {
+                    // Mostrar mensaje de error si precioCosto o porcentajeUtilidad son negativos
+                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+                }
             }
-        }
         } catch (Exception e) {
-            System.out.println("Error:" + e.getLocalizedMessage());
+            // Capturar y manejar excepciones generales
+            System.out.println("Error: " + e.getMessage());
         }
     }
     
-    public void calcularPrecioConUtilidadEdit(){
+    public void calcularPrecioConUtilidadEdit() {
         try {
             if (selectedArticulo != null) {
-                double porcentajeUtilidad = selectedArticulo.getPorcentajeUtilidad();
-                double precioCosto = selectedArticulo.getPrecioCostoSinIVA();
-                if(precioCosto >= 0 && porcentajeUtilidad >=0 ){
-                    double Utilidad = precioCosto*(porcentajeUtilidad*0.01);
-                    double precioConUtilidad = precioCosto+Utilidad;
+                BigDecimal porcentajeUtilidad = selectedArticulo.getPorcentajeUtilidad();
+                BigDecimal precioCosto = selectedArticulo.getPrecioCostoSinIVA();
 
-                    precioConUtilidad = Math.ceil(precioConUtilidad);
+                // Verificar que precioCosto y porcentajeUtilidad sean mayores o iguales a cero
+                if (precioCosto.compareTo(BigDecimal.ZERO) >= 0 && porcentajeUtilidad.compareTo(BigDecimal.ZERO) >= 0) {
+                    // Calcular la utilidad como porcentaje del precioCosto
+                    BigDecimal factorUtilidad = porcentajeUtilidad.divide(new BigDecimal(100), 4, RoundingMode.HALF_UP); // Ajustar la escala según sea necesario
+                    BigDecimal utilidad = precioCosto.multiply(factorUtilidad);
 
+                    // Calcular el precio con utilidad sumando la utilidad al precioCosto
+                    BigDecimal precioConUtilidad = precioCosto.add(utilidad);
+
+                    // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
+                    precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
+
+                    // Asignar el precio con utilidad al atributo precioFinal del artículo
                     selectedArticulo.setPrecioFinal(precioConUtilidad);
+
+                    // Calcular el precio con IVA después de actualizar el precio final
                     calcularPrecioConIVAEdit();
-                }else{
+                } else {
+                    // Mostrar mensaje de error si precioCosto o porcentajeUtilidad son negativos
                     FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
                 }
-            }else{
+            } else {
+                // Mostrar mensaje en consola si no hay artículo seleccionado
                 System.out.println("No hay articulo para editar...");
             }
         } catch (Exception e) {
-            System.out.println("Error:" + e.getLocalizedMessage());
+            // Capturar y manejar excepciones generales
+            System.out.println("Error: " + e.getMessage());
         }
-        
     }
     
     public void calcularPrecioConIVAEdit() {
         if (selectedArticulo != null) {
-            if (selectedArticulo.getPrecioFinal() != 0 && selectedArticulo.getCodigoCabys() != null) {
-                double impuesto = selectedArticulo.getCodigoCabys().getImpuesto();
-                double precioSinIVA = selectedArticulo.getPrecioFinal();
-                double IVA = precioSinIVA * (impuesto * 0.01);
-                double precioConIVA = precioSinIVA+IVA;
+            BigDecimal precioFinal = selectedArticulo.getPrecioFinal();
+            if (precioFinal != null && precioFinal.compareTo(BigDecimal.ZERO) != 0 && selectedArticulo.getCodigoCabys() != null) {
+                BigDecimal impuesto = new BigDecimal(selectedArticulo.getCodigoCabys().getImpuesto());
+                BigDecimal precioSinIVA = selectedArticulo.getPrecioFinal();
 
-                precioConIVA = Math.ceil(precioConIVA);
+                // Calcular el IVA como porcentaje del precio sin IVA
+                BigDecimal factorIVA = impuesto.divide(new BigDecimal(100));
+                BigDecimal IVA = precioSinIVA.multiply(factorIVA);
 
-                selectedArticulo.setPrecioCostoConIVA(precioConIVA); 
-            }else{
+                // Calcular el precio con IVA sumando el IVA al precio sin IVA
+                BigDecimal precioConIVA = precioSinIVA.add(IVA);
+
+                // Redondear hacia arriba el precio con IVA utilizando RoundingMode.CEILING
+                precioConIVA = precioConIVA.setScale(2, RoundingMode.CEILING);
+
+                // Asignar el precio con IVA al atributo correspondiente del artículo
+                selectedArticulo.setPrecioCostoConIVA(precioConIVA);
+            } else {
                 System.out.println("No hay Cabys o Precio final.");
             }
-        }else{
+        } else {
             System.out.println("No hay articulo.");
         }
     }
-    
-    public double calcularPrecioConIVAReturn(double precio, double tax) {
-        if (precio != 0) {
-            
-            double IVA = precio * (tax * 0.01);
-            double precioConIVA = precio+IVA;
-
-            precioConIVA = Math.ceil(precioConIVA);
-
-            return precioConIVA;
-        }
-        return 0;
-    }
-    
-    public double calcularPrecioConUtilidadReturn(double precio, double utilidad){
-        try {
-            if (precio != 0) {
-                if(precio >= 0 && utilidad >=0 ){
-                    double Utilidad = precio*(utilidad*0.01);
-                    double precioConUtilidad = precio+Utilidad;
-
-                    precioConUtilidad = Math.ceil(precioConUtilidad);
-                    return precioConUtilidad;
-                }
-            }
-        } catch (Exception e) {
-            System.out.println("Error:" + e.getLocalizedMessage());
-        }
-        return 0;
-    }
-    
+        
     private void updateDepartamentoAndFamiliaOptions() {
         departamentoOptions = departamentoService.listAll();
         familiaOptions = familiaService.listAll();
