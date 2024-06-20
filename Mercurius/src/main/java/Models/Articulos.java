@@ -20,6 +20,8 @@ public class Articulos {
     
     private String nombre;
     
+    private String detalles;
+    
     private String codigoBarra;
     
     private String UnidadMedida;

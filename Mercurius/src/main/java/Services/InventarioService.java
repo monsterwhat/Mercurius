@@ -4,6 +4,11 @@ import Models.Inventario;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.Date;
 import java.util.List;
 
 @Named
@@ -157,6 +162,17 @@ public class InventarioService extends GService<Inventario> {
         }     
     }
 
+    public List<Inventario> findByDateRangeAndUserIds(Date startDate, Date endDate, List<Integer> userIds) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);
+        Root<Inventario> inventario = cq.from(Inventario.class);
 
-    
+        Predicate datePredicate = cb.between(inventario.get("fechaMovimiento"), startDate, endDate);
+        Predicate userPredicate = inventario.get("usuario").get("id").in(userIds);
+        
+        cq.where(cb.and(datePredicate, userPredicate));
+
+        return em.createQuery(cq).getResultList();
+    }
+
 }
