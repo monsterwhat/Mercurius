@@ -59,23 +59,23 @@
         <p:row>
             <p:column rendered="#{!reportesDiariosController.status}">
                 <h:form>
-                    <p:card title="Seleccionador">
-                        <h:panelGrid columns="2">
-                            <p:selectCheckboxMenu id="checkboxMenu" label="Seleccionar Usuarios" 
-                                                  multiple="true" style="width: 100%;" value="#{reportesDiariosController.usuariosSeleccionados}">
-                                <p:ajax event="toggleSelect" listener="#{reportesDiariosController.onToggleSelect}"/>
-                                <p:ajax event="itemSelect" listener="#{reportesDiariosController.onItemSelect}"/>
-                                <p:ajax event="itemUnselect" listener="#{reportesDiariosController.onItemUnselect}"/>
-                                <f:selectItems value="#{reportesDiariosController.usuarios}" itemValue="#{usuarios.id}" var="usuarios" itemLabel="#{usuarios.username}"/>
-                            </p:selectCheckboxMenu>
+                    <p:card style="text-align: center;">
+                        <p:card title="Seleccione el usuario y las fechas a consultar" style="width: 50%; display: inline-block; text-align: left;">
+                            <h:panelGrid columns="2" style="text-align: center; width: 100%">
+                                <p:selectOneMenu id="selectOneMenu" label="Seleccionar Usuarios" style="width: 100%"
+                                                     value="#{reportesDiariosController.usuarioSelecionadoId}">
+                                    <f:selectItems value="#{reportesDiariosController.usuarios}" itemValue="#{usuarios.id}" var="usuarios" itemLabel="#{usuarios.username}"/>
+                                </p:selectOneMenu>
 
-                            <p:datePicker id="datePicker" value="#{reportesDiariosController.range}" readonlyInput="true" selectionMode="range" showButtonBar="true" locale="es" 
-                                          monthNavigator="true" yearNavigator="true" showWeek="true" style="width: 100%;"/>
-                        </h:panelGrid>
-
-                        <h:panelGroup>
-                            <p:commandButton value="Cargar Reportes" actionListener="#{reportesDiariosController.cargar()}" update="grid"/>
-                        </h:panelGroup>
+                                <p:datePicker id="datePicker" value="#{reportesDiariosController.range}" readonlyInput="true" selectionMode="range" showButtonBar="true" locale="es" 
+                                              monthNavigator="true" yearNavigator="true" showWeek="true" style="width: 100%"/>
+                            </h:panelGrid>
+                                <p:spacer height="1em"/>
+                            <h:panelGroup>
+                                <p:commandButton value="Cargar Reportes" actionListener="#{reportesDiariosController.cargar()}"
+                                                 update="grid" style="width: 100%" styleClass="ui-button-primary rounded-button"/>
+                            </h:panelGroup>
+                        </p:card>
                     </p:card>
                 </h:form>
             </p:column>
@@ -83,15 +83,10 @@
                 <h:form>
                     <p:card>
                     <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" 
-                                style="width: 50%" styleClass="ui-button-success rounded-button" ajax="false">
+                                style="width: 100%" styleClass="ui-button-success rounded-button" ajax="false">
                     <p:dataExporter type="xlsx" target="reportes" fileName="Reportes-Mercurius" />
                    </p:commandButton>
-                   <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf" 
-                                    style="width: 50%" styleClass="ui-button-warning rounded-button" ajax="false">
-                    <p:dataExporter type="pdf" target="reportes" fileName="Reportes-Mercurius" />
-                   </p:commandButton>
-
-                    
+                    <p:spacer height="1em"/>
                         <p:dataTable id="reportes" value="#{reportesDiariosController.movimientos}" reflow="true" var="movimiento">
                             <p:column>
                                 <h:outputText value="#{movimiento.articulo.nombre}"/>

@@ -12,8 +12,7 @@
     <packaging>war</packaging>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
     <dependencies>
@@ -21,12 +20,6 @@
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>
             <version>10.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.faces</groupId>
-            <artifactId>jakarta.faces-api</artifactId>
-            <version>4.1.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -42,7 +35,7 @@
         <dependency>
             <groupId>org.primefaces</groupId>
             <artifactId>primefaces</artifactId>
-            <version>14.0.0</version>
+            <version>13.0.10</version>
             <classifier>jakarta</classifier>
         </dependency>
          <dependency>
@@ -61,11 +54,13 @@
             <version>1.18.32</version>
             <scope>provided</scope>
         </dependency>
+        <!-- DataExporter (Excel XLS or XML) -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi</artifactId>
             <version>5.2.5</version>
         </dependency>
+        <!-- DataExporter (Excel XLSX Office 2003) -->
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
@@ -76,11 +71,13 @@
             <artifactId>log4j-core</artifactId>
             <version>3.0.0-beta2</version>
         </dependency>
+        <!-- DataExporter (PDF) -->
         <dependency>
             <groupId>com.github.librepdf</groupId>
             <artifactId>openpdf</artifactId>
             <version>2.0.2</version>
         </dependency>
+        
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>

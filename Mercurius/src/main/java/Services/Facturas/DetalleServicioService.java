@@ -58,10 +58,27 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         }
     }
 
+    public List<DetalleServicio> listAllOld() {
+        try {
+            TypedQuery<DetalleServicio> query = em.createQuery("SELECT d FROM DetalleServicio d", DetalleServicio.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all entities: " + e.toString());
+            return null;
+        }
+    }
+    
     @Override
     public List<DetalleServicio> listAll() {
         try {
-            TypedQuery<DetalleServicio> query = em.createQuery("SELECT d FROM DetalleServicio d", DetalleServicio.class);
+            TypedQuery<DetalleServicio> query = em.createQuery(
+                "SELECT d FROM DetalleServicio d " +
+                "JOIN FETCH d.lineasDetalle l " +
+                "JOIN FETCH l.codigosComerciales " +
+                "JOIN FETCH l.descuentos " +
+                "JOIN FETCH l.impuestos", 
+                DetalleServicio.class
+            );
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());
@@ -78,9 +95,27 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         }
     }
     
-    public List<DetalleServicio> ListAllEnabled() {
+    public List<DetalleServicio> ListAllEnabledOld() {
         try {
             TypedQuery<DetalleServicio> query = em.createQuery("SELECT a FROM DetalleServicio a WHERE a.status = true", DetalleServicio.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all enabled entities: " + e.toString());
+            return null;
+        }
+    }
+    
+     public List<DetalleServicio> ListAllEnabled() {
+        try {
+            TypedQuery<DetalleServicio> query = em.createQuery(
+                "SELECT a FROM DetalleServicio a " +
+                "JOIN FETCH a.lineasDetalle l " +
+                "JOIN FETCH l.codigosComerciales " +
+                "JOIN FETCH l.descuentos " +
+                "JOIN FETCH l.impuestos " +
+                "WHERE a.enabled = true", 
+                DetalleServicio.class
+            );
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all enabled entities: " + e.toString());

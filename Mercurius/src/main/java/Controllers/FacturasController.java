@@ -47,13 +47,14 @@ public class FacturasController implements Serializable {
     @Inject InventarioController inventarioController;
     @Inject DepartamentoController departamentosController;
     @Inject MedioPagoService medioPagoService;
+    @Inject Parser parser;
     
     private List<UploadedFile> files;
     private List<ComprobanteFinal> facturas;
     private List<ComprobanteFinal> facturasDetalladas;
     private List<ComprobanteFinal> carritoCompras;
     private ComprobanteFinal newFactura;
-    private Parser parser;
+    
     
     private ComprobanteFinal selectedFactura;
     private String facturaFilter;
@@ -214,8 +215,16 @@ public class FacturasController implements Serializable {
         
     private void processFactura(ComprobanteFinal factura){
         try {
+            
             List<LineaDetalle> lineasDetalle = factura.getDetalles().getLineasDetalle();
-                        
+            if(lineasDetalle.isEmpty()){
+                System.out.println("Empty factura?");
+                lineasDetalle = lineaDetalleService.listAllWhereID(factura.getDetalles().getId());
+                if(lineasDetalle.isEmpty() || lineasDetalle.equals(null)){
+                    return;
+                }
+            }
+            
             for(LineaDetalle lineaDetalle : lineasDetalle){
                 String codigoBarra = "";
                 String nombre = lineaDetalle.getDetalle();
@@ -240,9 +249,7 @@ public class FacturasController implements Serializable {
                 var totalUnitario = montoTotalLinea.divide(cantidad,20,RoundingMode.HALF_UP);
                 var precioUnitario = totalUnitario;
                 var UnidadesParseadas = parser.parseUnidadComercial(unidadMedida, unidadMedidaComercial) * cantidad.doubleValue();
-                var DetallesParseados = "";
-                //TODO PARSE ITEM DETALLES
-                
+
                 Articulos articulo = new Articulos();
                 
                 Departamento departamento = new Departamento();
@@ -259,7 +266,6 @@ public class FacturasController implements Serializable {
                     articulo.setUnidadMedida(unidadMedida);
                     articulo.setUnidadMedidaComercial(unidadMedidaComercial);
                     articulo.setPrecioCostoSinIVA(precioUnitario);
-                    articulo.setDetalles(DetallesParseados);
                     articulo.setUsuario(currentSession.getCurrentUser());
                     articulo.setStatus(true);
                     articulo.setProcessed(false);
@@ -270,11 +276,11 @@ public class FacturasController implements Serializable {
                     articuloExistente.setUsuario(currentSession.getCurrentUser());
                     articuloExistente.setUnidadMedida(unidadMedida);
                     articuloExistente.setUnidadMedidaComercial(unidadMedidaComercial);
-                    articuloExistente.setStatus(true);
-                    articuloExistente.setProcessed(false);
                     articuloExistente.setDepartamento(persistedDepartamento);
                     articuloExistente.setPrecioFinal(new BigDecimal(0));
                     articuloExistente.setPrecioCostoConIVA(new BigDecimal(0));
+                    articuloExistente.setStatus(true);
+                    articuloExistente.setProcessed(false);
                     articuloController.updateSimpleArticulo(articuloExistente);
                 }
                 
@@ -288,11 +294,11 @@ public class FacturasController implements Serializable {
                 ajusteArticulo.setUnidadesRecomendadasFactura(UnidadesParseadas);
                 ajusteArticulo.setUsuario(currentSession.getCurrentUser());
                 ajusteArticulo.setFechaMovimiento(new Date());
-                ajusteArticulo.setTipoMovimiento("Automatico");
+                ajusteArticulo.setTipoMovimiento("Ingreso Automatico por factura");
                 ajusteArticulo.setStatus(true);
                 ajusteArticulo.setProcessed(false);
                 ajusteArticulo.setCantidad(cantidad);
-                ajusteArticulo.setNotas((cantidad.doubleValue() != 0) ? "Auto procesado por el sistema" : "No se pudo auto adquirir la cantidad");                
+                ajusteArticulo.setNotas((cantidad.doubleValue() != 0) ? "Pendiente a revision" : "Pendiente a revision, No se pudo auto adquirir la cantidad");                
                 
                 inventarioController.createSimpleInventario(ajusteArticulo);
             }
