@@ -35,8 +35,8 @@
                                 <p:autoUpdate/>
                             </p:messages>
                                 <label class="label" for="groupName" style="color: var(--primary-color);">Permisos:</label>
-                                <p:selectManyCheckbox id="groupName" value="#{UsersController.selectedPuestos}"
-                                                    required="true" requiredMessage="El grupo no puede estar vacío"
+                                <p:selectManyCheckbox id="groupName" value="#{UsersController.selectedPuestos}" layout="responsive"
+                                                    required="true" requiredMessage="Los permisos no pueden estar vacíos" columns="1"
                                                     >
                                         <p:ajax listener="#{UsersController.selectedOptionsChanged}"/>
                                         <f:selectItem itemLabel="Administrativo" itemValue="admin" rendered="#{SessionController.admin}"/>

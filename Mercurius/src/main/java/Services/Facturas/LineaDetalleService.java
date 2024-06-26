@@ -70,7 +70,26 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
         }
     }
     
-    public LineaDetalle findById(Integer id) {
+    public List<LineaDetalle> listAllWhereID(Long comprobanteFinalId) {
+        try {
+            TypedQuery<LineaDetalle> query = em.createQuery(
+                "SELECT ld FROM LineaDetalle ld " +
+                "JOIN ld.detalleServicio ds " +
+                "JOIN ds.comprobanteFinal cf " +
+                "WHERE cf.id = :comprobanteFinalId",
+                LineaDetalle.class
+            );
+            query.setParameter("comprobanteFinalId", comprobanteFinalId);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing LineaDetalle by ComprobanteFinal ID: " + e.getMessage());
+            return null;
+        }
+    }
+
+
+    
+    public LineaDetalle findById(Long id) {
     try {
         return em.find(getEntityClass(), id);
         } catch (Exception e) {

@@ -92,10 +92,29 @@ public class FacturaService extends GService<ComprobanteFinal> {
         }
     }
 
+    public List<ComprobanteFinal> listAllOld() {
+        try {
+            TypedQuery<ComprobanteFinal> query = em.createQuery("SELECT f FROM ComprobanteFinal f", ComprobanteFinal.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing all entities: " + e.toString());
+            return null;
+        }
+    }
+    
     @Override
     public List<ComprobanteFinal> listAll() {
         try {
-            TypedQuery<ComprobanteFinal> query = em.createQuery("SELECT f FROM ComprobanteFinal f", ComprobanteFinal.class);
+            TypedQuery<ComprobanteFinal> query = em.createQuery(
+                "SELECT f FROM ComprobanteFinal f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle ld " +
+                "LEFT JOIN FETCH ld.codigosComerciales cc " +
+                "LEFT JOIN FETCH ld.descuentos des " +
+                "LEFT JOIN FETCH ld.impuestos imp " +
+                "LEFT JOIN FETCH d.otrosCargos oc",
+                ComprobanteFinal.class
+            );
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());

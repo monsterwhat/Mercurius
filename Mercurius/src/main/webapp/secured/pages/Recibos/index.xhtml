@@ -44,16 +44,19 @@
                                 </p:commandButton>
                             </div>
                         </div>
-
+                            <p:growl showDetail="true" showSummary="true" />
+                            
                             <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
-                                         paginator="true" rows="8" paginatorPosition="bottom" id="FacturasTableData"
+                                         paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
                                          emptyMessage="No se encontraron registros de factura con la critería proporcionada"
                                          globalFilterFunction="#{facturasController.globalFilterFunction}" lazy="false"
                                          filterBy="#{facturasController.filterBy}" reflow="true" selectionMode="single"
                                          selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
                                 <p:ajax event="rowSelect" update="recibos selectedFacturaDetallado"/>
-
+                                <p:ajax event="rowUnselect" update="recibos selectedFacturaDetallado" />
+                                <p:ajax event="toggleSelect" update="recibos selectedFacturaDetallado" />
+                                
                                 <p:autoUpdate/>
 
                                 <f:facet name="header">
@@ -61,6 +64,8 @@
                                         <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
                                                  placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                                 </f:facet>
+                                
+                                <p:column exportable="false" selectionMode="single"/>
 
                                 <p:column exportable="false">
                                     <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.status}"/>

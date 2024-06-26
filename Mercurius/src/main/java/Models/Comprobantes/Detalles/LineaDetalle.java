@@ -7,6 +7,7 @@ package Models.Comprobantes.Detalles;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,7 +38,7 @@ public class LineaDetalle {
     @Column(name = "codigoCabys", length = 13)
     private String codigoCabys;
 
-    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true)
+    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true, fetch = FetchType.EAGER)
     private List<CodigoComercial> codigosComerciales;
 
     @Column(name = "cantidad", precision = 16, scale = 3)
@@ -63,7 +64,7 @@ public class LineaDetalle {
     @Column(name = "monto_total", precision = 18, scale = 5)
     private BigDecimal montoTotal;
 
-    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true)
+    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Descuento> descuentos;
 
     @Column(name = "sub_total", precision = 18, scale = 5)
@@ -72,7 +73,7 @@ public class LineaDetalle {
     @Column(name = "base_imponible", precision = 18, scale = 5)
     private BigDecimal baseImponible;
 
-    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true)
+    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Impuesto> impuestos;
     
     //Monto total de linea

@@ -45,7 +45,9 @@
     <div class="container">
         <h:form rendered="#{not SessionController.isValid()}" >
             <p:panel styleClass="login-panel">
-                <h:graphicImage url="/resources/imgs/palmeras1.png" alt="Imagen" />
+                <p:graphicImage value="/resources/imgs/logo/Mercurius.png" alt="Imagen" rendered="#{SettingsController.logo eq null}"/>
+                <p:graphicImage value="#{SettingsController.logo}" alt="Imagen" stream="false" rendered="#{SettingsController.logo != null}"/>
+
                 <p:growl id="growl" showDetail="true" showSummary="false" />
                 <h:panelGrid columns="1" styleClass="full-width">
                     <p:inputText id="username" value="#{SessionController.username}" required="true" requiredMessage="El usuario no puede estar vacío" placeholder="Nombre de Usuario" styleClass="full-width"/>

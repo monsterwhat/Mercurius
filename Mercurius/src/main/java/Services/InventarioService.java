@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -162,17 +163,55 @@ public class InventarioService extends GService<Inventario> {
         }     
     }
 
-    public List<Inventario> findByDateRangeAndUserIds(Date startDate, Date endDate, List<Integer> userIds) {
+    public List<Inventario> findByDateRangeAndUserId(Date startDate, Date endDate, Long userId) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);
         Root<Inventario> inventario = cq.from(Inventario.class);
 
         Predicate datePredicate = cb.between(inventario.get("fechaMovimiento"), startDate, endDate);
-        Predicate userPredicate = inventario.get("usuario").get("id").in(userIds);
-        
+        Predicate userPredicate = cb.equal(inventario.get("usuario").get("id"), userId);
+
         cq.where(cb.and(datePredicate, userPredicate));
 
         return em.createQuery(cq).getResultList();
     }
+    
+    public Date getStartOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+
+    public Date getEndOfDay(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 59);
+        calendar.set(Calendar.SECOND, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        return calendar.getTime();
+    }
+
+    public List<Inventario> findByDateAndUserId(Date date, Long userId) {
+        Date startOfDay = getStartOfDay(date);
+        Date endOfDay = getEndOfDay(date);
+
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);
+        Root<Inventario> inventario = cq.from(Inventario.class);
+
+        Predicate datePredicate = cb.between(inventario.get("fechaMovimiento"), startOfDay, endOfDay);
+        Predicate userPredicate = cb.equal(inventario.get("usuario").get("id"), userId);
+
+        cq.where(cb.and(datePredicate, userPredicate));
+
+    return em.createQuery(cq).getResultList();
+}
+
+
 
 }

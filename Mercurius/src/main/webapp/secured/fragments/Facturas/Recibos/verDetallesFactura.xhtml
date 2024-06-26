@@ -9,46 +9,46 @@
             
             <h:form>
                 <p:dataTable value="#{facturasController.selectedFactura.detalles.lineasDetalle}" 
-                             var="lineaDetalle" id="lineasDetalleTable" reflow="true" lazy="false">
+                             var="linea" id="lineasDetalleTable" reflow="true">
                     <p:autoUpdate/>
 
                     <p:column headerText="Nombre">
-                        <h:outputText value="#{lineaDetalle.detalle}"/>
+                        <h:outputText value="#{linea.detalle}"/>
                     </p:column>
                     <p:column headerText="Cantidad">
-                        <h:outputText value="#{lineaDetalle.cantidad}"/>
+                        <h:outputText value="#{linea.cantidad}"/>
                     </p:column>
                     <p:column headerText="Unidad de Medida">
-                        <h:outputText value="#{lineaDetalle.unidadMedida}"/>
+                        <h:outputText value="#{linea.unidadMedida}"/>
                     </p:column>
                     <p:column headerText="Unidad de Medida Comercial">
-                        <h:outputText value="#{lineaDetalle.unidadMedidaComercial}"/>
+                        <h:outputText value="#{linea.unidadMedidaComercial}"/>
                     </p:column>
                     <p:column headerText="Precio Unitario">
-                        <h:outputText value="#{lineaDetalle.precioUnitario}"/>
+                        <h:outputText value="#{linea.precioUnitario}"/>
                     </p:column>
                     <p:column headerText="Monto Total">
-                        <h:outputText value="#{lineaDetalle.montoTotal}"/>
+                        <h:outputText value="#{linea.montoTotal}"/>
                     </p:column>
                     <p:column headerText="Descuentos">
-                        <p:dataTable value="#{lineaDetalle.descuentos}" emptyMessage="N/A" var="descuento" reflow="true">
+                        <p:dataTable value="#{linea.descuentos}" emptyMessage="N/A" var="descuento" reflow="true">
                             <p:column headerText="Monto">
                                 <h:outputText value="#{descuento.montoDescuento}"/>
                             </p:column>
                         </p:dataTable>
                     </p:column>
                     <p:column headerText="Subtotal">
-                        <h:outputText value="#{lineaDetalle.subTotal}"/>
+                        <h:outputText value="#{linea.subTotal}"/>
                     </p:column>
                     <p:column headerText="Impuesto">
-                        <p:dataTable value="#{lineaDetalle.impuestos}" emptyMessage="N/A" var="impuesto" reflow="true">
+                        <p:dataTable value="#{linea.impuestos}" emptyMessage="N/A" var="impuesto" reflow="true">
                             <p:column headerText="Monto">
                                 <h:outputText value="#{impuesto.monto}"/>
                             </p:column>
                         </p:dataTable>
                     </p:column>
                     <p:column headerText="Monto total Linea">
-                        <h:outputText value="#{lineaDetalle.montoTotalLinea}"/>
+                        <h:outputText value="#{linea.montoTotalLinea}"/>
                     </p:column>
                 </p:dataTable>
             </h:form>

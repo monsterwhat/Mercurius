@@ -26,13 +26,16 @@ import Services.Facturas.DetalleServicioService;
 import Services.Facturas.EmisorService;
 import Services.Facturas.EncabezadoService;
 import Services.Facturas.ImpuestoService;
+import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import jakarta.enterprise.context.RequestScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -48,6 +51,7 @@ import java.util.List;
  * @author Al
  */
 
+@RequestScoped
 public class Parser {
     
     @Inject DetalleServicioService detalleServicioService;    
@@ -60,6 +64,7 @@ public class Parser {
     @Inject ResumenFacturaService resumenFacturaService;
     @Inject EncabezadoService encabezadoService;
     @Inject SessionController currentSession;
+    @Inject LineaDetalleService lineaDetalleService;
     
     public LocalDateTime parseFechaEmision(String fechaEmision) {
         try {
@@ -386,7 +391,6 @@ public class Parser {
             for (Descuento descuento : descuentos){
                 descuentoService.create(descuento);
             }
-            
 
             String montoTotalLinea = lineaDetalleNode.path("MontoTotalLinea").asText();
 
@@ -576,6 +580,7 @@ public class Parser {
         }; // Default to 0 if no conversion defined
     }
     
+    @Transactional
     public void parseXML(InputStream inputStream) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             StringBuilder xmlContent = new StringBuilder();
@@ -588,11 +593,9 @@ public class Parser {
             JsonNode rootNode = xmlMapper.readTree(xmlContent.toString());
 
             String numeroConsecutivo = rootNode.path("NumeroConsecutivo").asText();
-            
             String clave = rootNode.path("Clave").asText();
             
             if(facturaService.findByNumeroConsecutivo(numeroConsecutivo)){
-                System.out.println("La Factura ya existe.");
                 FacesMessage message = new FacesMessage("Factura Duplicada","Ya existe la factura: " + numeroConsecutivo);
                 FacesContext.getCurrentInstance().addMessage(null, message);
                 return;
@@ -601,22 +604,17 @@ public class Parser {
             Encabezado encabezado = new Encabezado();
             DetalleServicio detalles = new DetalleServicio();
             
-            Emisor emisor = new Emisor(); 
-            Receptor receptor = new Receptor();
-            ResumenFactura resumenFactura = new ResumenFactura();
-            
-            emisor = parseEmisor(rootNode.path("Emisor"));
-            if(emisor == null){
+            Emisor emisor = parseEmisor(rootNode.path("Emisor"));
+            if (emisor == null) {
                 return;
             }
-            
-            receptor = parseReceptor(rootNode.path("Receptor"));
-            if(receptor == null){
+
+            Receptor receptor = parseReceptor(rootNode.path("Receptor"));
+            if (receptor == null) {
                 return;
             }
             
             String codigoActividad = rootNode.path("CodigoActividad").asText();
-            
             LocalDateTime localDateTime = parseFechaEmision(rootNode.path("FechaEmision").asText());
             if(localDateTime == null){
                 return;
@@ -624,41 +622,28 @@ public class Parser {
             
             String condicionVenta = rootNode.path("CondicionVenta").asText();
             String plazoCredito = rootNode.path("PlazoCredito").asText();
-            
             List<MedioPago> medioPago = parseMedioPago(rootNode.path("MedioPago"), encabezado);
             if(medioPago == null){
                 return;
             }
 
-            resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
+            ResumenFactura resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
             if(resumenFactura == null){
                 return;
             }
             
-            Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
-            Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
             List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
             if(lineas == null){
                 return;
             }
             
-            List<LineaDetalle> ServicioLineas = new ArrayList<>();
-            
+            //TODO PERSIST LINEASDETALLE.
             for(LineaDetalle linea : lineas){
-                ServicioLineas.add(linea);
+                linea.setDetalleServicio(detalles);
             }
             
-            detalles.setLineasDetalle(ServicioLineas);
-            detalleServicioService.create(detalles);
-            resumenFacturaService.create(resumenFactura);
-            ComprobanteFinal factura = new ComprobanteFinal();
-            if(persistedEmisor != null){
-                encabezado.setEmisor(persistedEmisor);
-            }
-            if(persistedReceptor != null){
-                encabezado.setReceptor(persistedReceptor);
-            }
-            
+            detalles.setLineasDetalle(lineas);
+            detalles.setEnabled(true);
             
             encabezado.setCodigoActividad(codigoActividad);
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
@@ -668,8 +653,21 @@ public class Parser {
             encabezado.setMedioPago(medioPago);
             encabezado.setClave(clave);
             
+            Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
+            Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
+            
+            if(persistedEmisor != null){
+                encabezado.setEmisor(persistedEmisor);
+            }
+            if(persistedReceptor != null){
+                encabezado.setReceptor(persistedReceptor);
+            }
+            
+            detalleServicioService.create(detalles);
+            resumenFacturaService.create(resumenFactura);
             encabezadoService.create(encabezado);
             
+            ComprobanteFinal factura = new ComprobanteFinal();
             factura.setEncabezado(encabezado);
             factura.setDetalles(detalles);
             factura.setResumen(resumenFactura);
@@ -679,14 +677,12 @@ public class Parser {
             
             facturaService.create(factura);
             
-        FacesMessage message = new FacesMessage("Exito","Se proceso exitosamente la facturas: " + factura.getEncabezado().getNumeroConsecutivo());
-        FacesContext.getCurrentInstance().addMessage(null, message);
+            FacesMessage message = new FacesMessage("Exito","Se proceso exitosamente la facturas: " + factura.getEncabezado().getNumeroConsecutivo());
+            FacesContext.getCurrentInstance().addMessage(null, message);
             
         } catch (Exception e) {
             System.out.println("Error: " + e.getLocalizedMessage());
             System.out.println("Error ParsingXML to Object: " + e.getMessage());
         }
     }
-
-    
 }
