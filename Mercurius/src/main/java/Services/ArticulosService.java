@@ -4,6 +4,11 @@ import Models.Articulos;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.Date;
 import java.util.List;
 
 @Named
@@ -174,5 +179,18 @@ public class ArticulosService extends GService<Articulos> {
             return null;
         }     
     }
+    
+    public List<Articulos> findArticulosAfterDate(Date fecha) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Articulos> cq = cb.createQuery(Articulos.class);
+        Root<Articulos> articulos = cq.from(Articulos.class);
+
+        Predicate datePredicate = cb.greaterThan(articulos.get("fecha"), fecha);
+        cq.where(datePredicate);
+
+        TypedQuery<Articulos> query = em.createQuery(cq);
+        return query.getResultList();
+    }
+
 
 }

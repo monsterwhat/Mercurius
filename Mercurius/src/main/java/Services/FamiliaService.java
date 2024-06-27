@@ -6,6 +6,11 @@ import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.Date;
 import java.util.List;
 
 @Named
@@ -154,4 +159,18 @@ public class FamiliaService extends GService<Familia> {
             System.out.println("Error soft deleting entity: " + e.toString());
         }
     }
+    
+    public List<Familia> findFamiliasAfterDate(Date fecha) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Familia> cq = cb.createQuery(Familia.class);
+        Root<Familia> familia = cq.from(Familia.class);
+
+        Predicate datePredicate = cb.greaterThan(familia.get("fecha"), fecha);
+        cq.where(datePredicate);
+
+        TypedQuery<Familia> query = em.createQuery(cq);
+        return query.getResultList();
+    }
+
+    
 }

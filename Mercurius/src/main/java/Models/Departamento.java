@@ -1,6 +1,7 @@
 package Models;
 
 import jakarta.persistence.*;
+import java.util.Date;
 import lombok.Data;
 
 @Entity
@@ -18,6 +19,10 @@ public class Departamento {
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el departamento
+    
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date fecha; //LOGS LOGS LOGS!!
 
     public Departamento() {
     }
@@ -29,4 +34,9 @@ public class Departamento {
         this.usuario = usuario;
     }
 
+    @PrePersist
+    protected void onCreate() {
+        fecha = new Date(); // Sets the current timestamp when creating the entity
+    }
+    
 }
