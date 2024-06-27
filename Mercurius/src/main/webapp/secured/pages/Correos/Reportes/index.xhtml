@@ -23,7 +23,7 @@
             <p:card>
                 <p:column width="30%">
                     <h:form id="Reportes">
-                        <p:dataTable value="#{reportesProgramadosController.filteredReportesProgramados}" var="reportes"  widgetVar="ReportesTableData"
+                        <p:dataTable value="#{reportesProgramadosController.filteredReportesProgramados}" var="reportes" widgetVar="ReportesTableData"
                                      paginator="true" rows="8" paginatorPosition="bottom" id="ReportesTableData"
                                      emptyMessage="No se encontraron reportes con la critería proporcionada"
                                      globalFilterFunction="#{reportesProgramadosController.globalFilterFunction}"
@@ -53,8 +53,8 @@
                             <p:column headerText="Correos" sortBy="#{reportes.correos}">
                                 <h:outputText value="#{reportes.correos}" />
                             </p:column>
-                            <p:column headerText="Tipo" sortBy="#{reportes.tipo}">
-                                <h:outputText value="#{reportes.tipo}" />
+                            <p:column headerText="Frecuencia" sortBy="#{reportes.frecuencia}">
+                                <h:outputText value="#{reportes.frecuencia}" />
                             </p:column>
                             <p:column headerText="Reportes" sortBy="#{reportes.reportes}">
                                 <h:outputText value="#{reportes.reportes}" />
@@ -69,7 +69,7 @@
                                         <f:setPropertyActionListener value="#{reportes}" target="#{reportesProgramadosController.selectedReporte}" />
                                     </p:commandButton>
                                     <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
-                                    actionListener="#{reportesProgramadosController.toggleReporte()}" process="@this" update="reportes">
+                                    actionListener="#{reportesProgramadosController.toggleReporte()}" process="@this" update="Reportes">
                                         <f:setPropertyActionListener value="#{reportes}" target="#{reportesProgramadosController.selectedReporte}" />
                                     </p:commandButton>
                                 </div>

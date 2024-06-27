@@ -8,6 +8,11 @@ import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.Date;
 import java.util.List;
 
 @Named
@@ -175,5 +180,18 @@ public class DepartamentoService extends GService<Departamento> {
             return null;
         }
     }
+    
+    public List<Departamento> findDepartamentosAfterDate(Date fecha) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Departamento> cq = cb.createQuery(Departamento.class);
+        Root<Departamento> departamento = cq.from(Departamento.class);
+
+        Predicate datePredicate = cb.greaterThan(departamento.get("fecha"), fecha);
+        cq.where(datePredicate);
+
+        TypedQuery<Departamento> query = em.createQuery(cq);
+        return query.getResultList();
+    }
+
 
 }

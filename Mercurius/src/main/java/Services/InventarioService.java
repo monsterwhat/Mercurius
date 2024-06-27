@@ -8,6 +8,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -121,11 +122,15 @@ public class InventarioService extends GService<Inventario> {
         try {
             // Query to sum up the quantities of inventory movements for items with the given barcode
             String queryString = "SELECT SUM(i.cantidad) FROM Inventario i WHERE i.articulo.codigoBarra = :barcode AND i.articulo.status = true AND i.articulo.processed = true";
-            Double result = em.createQuery(queryString, Double.class)
+            BigDecimal result = em.createQuery(queryString, BigDecimal.class)
                              .setParameter("barcode", barcode)
                              .getSingleResult();
-
-            return result != null ? result : 0.0; // Return the sum or 0.0 if result is null
+            
+            if(result != null){
+                return result.doubleValue();
+            }else{
+                return 0.0;
+            }
         } catch (Exception e) {
             System.out.println("Error calculating total stock for item by barcode: " + e.toString());
             return 0.0;
@@ -210,8 +215,19 @@ public class InventarioService extends GService<Inventario> {
         cq.where(cb.and(datePredicate, userPredicate));
 
     return em.createQuery(cq).getResultList();
-}
+    }
 
+    public List<Inventario> findInventariosAfterDate(Date fecha) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);
+        Root<Inventario> inventario = cq.from(Inventario.class);
+
+        Predicate datePredicate = cb.greaterThan(inventario.get("fechaMovimiento"), fecha);
+        cq.where(datePredicate);
+
+        TypedQuery<Inventario> query = em.createQuery(cq);
+        return query.getResultList();
+    }
 
 
 }

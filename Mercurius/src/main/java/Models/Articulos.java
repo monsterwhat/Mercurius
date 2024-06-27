@@ -2,6 +2,7 @@ package Models;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.Date;
 import lombok.Data;
 
 @Entity
@@ -52,8 +53,17 @@ public class Articulos {
     
     private boolean processed;
     
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date fecha; //LOGS LOGS LOGS!!
+    
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el Articulo
+    
+    @PrePersist
+    protected void onCreate() {
+        fecha = new Date(); // Sets the current timestamp when creating the entity
+    }
     
 }

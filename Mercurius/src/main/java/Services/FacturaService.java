@@ -1,10 +1,17 @@
 package Services;
 
 import Models.Comprobantes.ComprobanteFinal;
+import Models.Comprobantes.Encabezado.Encabezado;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import java.util.Date;
 import java.util.List;
 
 @Named
@@ -157,6 +164,20 @@ public class FacturaService extends GService<ComprobanteFinal> {
             return false;
         }
     }
+    
+    public List<ComprobanteFinal> findComprobantesAfterDate(Date fecha) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<ComprobanteFinal> cq = cb.createQuery(ComprobanteFinal.class);
+        Root<ComprobanteFinal> comprobanteFinal = cq.from(ComprobanteFinal.class);
+        Join<ComprobanteFinal, Encabezado> encabezado = comprobanteFinal.join("encabezado");
+
+        Predicate datePredicate = cb.greaterThan(encabezado.get("fechaEmision"), fecha);
+        cq.where(datePredicate);
+
+        TypedQuery<ComprobanteFinal> query = em.createQuery(cq);
+        return query.getResultList();
+    }
+
 
 
 }

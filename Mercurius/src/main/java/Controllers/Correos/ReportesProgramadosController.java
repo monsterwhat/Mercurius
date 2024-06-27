@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -68,6 +69,7 @@ public class ReportesProgramadosController implements Serializable {
 
     public void updateReporte() {
         if(currentSession.isValid()){
+            selectedReporte.setLastRun(new Date());
             reportesProgramadosService.update(selectedReporte);
             clearSelectedReporte();
             PrimeFaces.current().executeScript("PF('EditarReporteDialog').hide();");
@@ -79,6 +81,7 @@ public class ReportesProgramadosController implements Serializable {
             var exists = reportesProgramadosService.findByName(newReporte.getPerfil());
             if(!exists){
                 newReporte.setStatus(true);
+                newReporte.setLastRun(new Date());
                 reportesProgramadosService.create(newReporte);
                 clearSelectedReporte();    
                 PrimeFaces.current().executeScript("PF('CrearReporteDialog').hide();");
@@ -132,12 +135,13 @@ public class ReportesProgramadosController implements Serializable {
         return reporte.getPerfil().toLowerCase().contains(filterText)
                 || reporte.getCorreos().toString().toLowerCase().contains(filterText)
                 || reporte.getReportes().toString().toLowerCase().contains(filterText)
-                || reporte.getTipo().toString().toLowerCase().contains(filterText);
+                || reporte.getFrecuencia().toString().toLowerCase().contains(filterText);
     }
     
     public void updateReporteDialog() {
         if(currentSession.isValid()){
             if(selectedReporte != null){
+                selectedReporte.setLastRun(new Date());
                 reportesProgramadosService.updateAndDisable(selectedReporte);
                 clearSelectedReporte();
                 
@@ -156,6 +160,7 @@ public class ReportesProgramadosController implements Serializable {
         if(currentSession.isValid()){
             if(newReporte != null){
                 newReporte.setStatus(true);
+                newReporte.setLastRun(new Date());
                 var valid = reportesProgramadosService.createIfNotExists(newReporte);
                 if(valid){
                     clearSelectedReporte();
