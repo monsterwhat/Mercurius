@@ -51,7 +51,7 @@ public class CorreosScheduler {
     private List<ReporteProgramado> reportes;
     
     //Midnight everyday!
-    @Schedule(hour = "0", minute = "0", second = "0", persistent = false)
+    @Schedule(hour = "*", minute = "*/2", second = "0", persistent = false)
     public void checkReportesActivos() {
         reportes = rpService.listAll();
         
@@ -65,17 +65,19 @@ public class CorreosScheduler {
                     for (String frecuencia : frecuencias) {
                         Date fechaProximoReporte = calcularFechaProximoReporte(fechaUltimoReporte, frecuencia);
                         
-                        if (fechaUltimoReporte.before(fechaProximoReporte) || fechaUltimoReporte.equals(fechaProximoReporte)) {
+                        if (new Date().after(fechaProximoReporte) || new Date().equals(fechaProximoReporte)) {
                             checkChanges(reporte);
                         } else {
-                            // No hay que hacer nada nos vamos!
-                            return;
+                            // No need to do anything, move to the next frequency
+                            System.out.println("Report already generated.");
                         }
                     }
                 } else {
+                    System.out.println("Null fecha");
                     //Null fecha...
                 }
             }else{
+                System.out.println("Reporte is disabled.");
                 //Disabled Reporte...
             }
         }
@@ -95,7 +97,15 @@ public class CorreosScheduler {
                 return null;
             }
         }
-
+        
+        // Set the time to midnight
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        System.out.println("Next report date: " + sdf.format(calendar.getTime()));
         return calendar.getTime();
     }
     
