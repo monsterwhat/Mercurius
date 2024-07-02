@@ -1,6 +1,6 @@
 package Controllers.Correos;
 
-import Controllers.SettingsController;
+import Controllers.Settings.SettingsDirController;
 import Models.Articulos;
 import Models.Comprobantes.ComprobanteFinal;
 import Models.Correos.ReporteProgramado;
@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -43,7 +45,7 @@ public class CorreosScheduler {
     @Inject ArticulosService articuloService;
     @Inject DepartamentoService departamentosService;
     @Inject FamiliaService familiaService;
-    @Inject SettingsController settings;
+    @Inject SettingsDirController settings;
     @Inject private EmailService emailer;
     
     ExcelExporter exporter = new ExcelExporter();
@@ -112,38 +114,43 @@ public class CorreosScheduler {
     public void checkChanges(ReporteProgramado reporte) {
     List<String> tipos = reporte.getReportes();
 
+        // Log the entire list of report types for debugging
+        System.out.println("Report types list: " + tipos);
+
         for (String tipo : tipos) {
             try {
-                ReportesEnum reporteEnum = ReportesEnum.valueOf(tipo.toUpperCase());
-                    // Handle each enum value
-                    switch (reporteEnum) {
-                        case MOVIMIENTOS -> {
-                            processMovimientos(reporte);
-                        }
-                        case FACTURACION -> {
-                            processFacturas(reporte);
-                        }
-                        case ARTICULOS -> {
-                            processArticulos(reporte);
-                        }
-                        case DEPARTAMENTOS -> {
-                            processDepartamentos(reporte);
-                        }
-                        case FAMILIAS -> {
-                            processFamilias(reporte);
-                        }
-                        case INVENTARIOS -> {
-                            processInventarios(reporte);
-                        }
-                        default -> {
-                            return;
-                        }
+                String originalTipo = tipo; // Keep the original for logging
+                String normalizedTipo = tipo.toUpperCase().trim();
+
+                // Log before parsing
+                System.out.println("Original report type: " + originalTipo); 
+                System.out.println("Normalized report type: " + normalizedTipo); 
+
+                ReportesEnum reporteEnum = ReportesEnum.valueOf(normalizedTipo);
+
+                // Log after parsing
+                System.out.println("Parsed report type: " + reporteEnum);
+
+                // Handle each enum value
+                switch (reporteEnum) {
+                    case MOVIMIENTOS -> processMovimientos(reporte);
+                    case FACTURACION -> processFacturas(reporte);
+                    case ARTICULOS -> processArticulos(reporte);
+                    case DEPARTAMENTOS -> processDepartamentos(reporte);
+                    case FAMILIAS -> processFamilias(reporte);
+                    case INVENTARIOS -> processInventarios(reporte);
+                    default -> {
+                        return;
                     }
-                } catch (IllegalArgumentException e) {
+                }
+            } catch (IllegalArgumentException e) {
                 System.err.println("Invalid report type: " + tipo);
+                e.printStackTrace(); // Print the full stack trace for debugging
             }
         }
     }
+
+
     
     public void processMovimientos(ReporteProgramado reporte){
     List<Inventario> changes = inventarioService.findInventariosAfterDate(reporte.getLastRun());
@@ -290,15 +297,23 @@ public class CorreosScheduler {
         }
     }
     
+
     public void mailChanges(File changes, ReporteProgramado reporte){
         String correoElectronico = settings.getCurrentSettings().getCorreoElectronico();
         String contrasenaCorreo = settings.getCurrentSettings().getContrasenaCorreo();
         List<String> to = reporte.getCorreos();
         String nombreReporte = reporte.getPerfil();
-        String subject = "Reporte Automatico" + Date.from(Instant.MIN);
+
+        // Use current date and time for the subject
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String formattedDate = now.format(formatter);
+        String subject = "Reporte Automatico - " + formattedDate;
+
         String body = "Adjunto encontrara el reporte " + nombreReporte;
         emailer.sendEmailsWithAttachment(to, subject, body, correoElectronico, contrasenaCorreo, changes, this::handleEmailResult);
     }
+
     
     public void handleEmailResult(String emailResult) {
     // Handle the result of the email sending operation
