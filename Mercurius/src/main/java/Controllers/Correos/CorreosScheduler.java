@@ -24,7 +24,6 @@ import jakarta.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -150,8 +149,6 @@ public class CorreosScheduler {
         }
     }
 
-
-    
     public void processMovimientos(ReporteProgramado reporte){
     List<Inventario> changes = inventarioService.findInventariosAfterDate(reporte.getLastRun());
     if(changes != null && !changes.isEmpty()){
@@ -297,7 +294,6 @@ public class CorreosScheduler {
         }
     }
     
-
     public void mailChanges(File changes, ReporteProgramado reporte){
         String correoElectronico = settings.getCurrentSettings().getCorreoElectronico();
         String contrasenaCorreo = settings.getCurrentSettings().getContrasenaCorreo();
@@ -309,11 +305,14 @@ public class CorreosScheduler {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDate = now.format(formatter);
         String subject = "Reporte Automatico - " + formattedDate;
-
         String body = "Adjunto encontrara el reporte " + nombreReporte;
+        
         emailer.sendEmailsWithAttachment(to, subject, body, correoElectronico, contrasenaCorreo, changes, this::handleEmailResult);
+        
+        reporte.setLastRun(new Date());
+        rpService.update(reporte);
+        
     }
-
     
     public void handleEmailResult(String emailResult) {
     // Handle the result of the email sending operation

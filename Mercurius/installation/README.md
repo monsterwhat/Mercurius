@@ -21,10 +21,12 @@ Before getting started with the project, make sure you have the following prereq
 ### 2. NetBeans 18
 
 - Download NetBeans 18 from [here](https://netbeans.apache.org/).
+- Netbeans 21 has been tested and WORKS
 
 ### 3. Payara 6.2023.6
 
 - Download Payara 6.2023.6 from [here](https://www.payara.fish/downloads/payara-platform-community-edition/).
+- Payara Community 6.2024.6 WORKS.
 
 ### 4. MySQL 8 (Including JConnector)
 
@@ -47,11 +49,11 @@ Follow the steps below to install and set up the required components:
 2. Download Connector-J. It should download by default to 'Program Files (x86)\MySQL\Connector J 8.0'.
 
 3. Create the database and user to manage it. Execute the following SQL statements in your MySQL client:
-
+   
    ```sql
-   CREATE DATABASE jakarta;
-   CREATE USER 'jakarta'@'localhost' IDENTIFIED BY 'Jakarta@1!';
-   GRANT ALL PRIVILEGES ON jakarta.* TO 'jakarta'@'localhost';
+   CREATE DATABASE mercurius;
+   CREATE USER 'mercurius'@'localhost' IDENTIFIED BY 'Mercurius@1!';
+   GRANT ALL PRIVILEGES ON mercurius.* TO 'mercurius'@'localhost';
    FLUSH PRIVILEGES;
    ```
 
@@ -130,4 +132,4 @@ Follow the steps below to install and set up the required components:
 
 Once all the above steps are completed, you can open your project in NetBeans. Make sure there are no issues related to the Java Platform. You should now be able to run your project, and NetBeans will handle deploying the application to the Payara server.
 
-The web application should be available at [http://localhost:8080/Jakarta10/index.xhtml](http://localhost:8080/Jakarta10/index.xhtml).
+The web application should be available at [http://localhost:8080/Mercurius/](http://localhost:8080/Mercurius/).

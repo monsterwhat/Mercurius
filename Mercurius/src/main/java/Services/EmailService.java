@@ -150,7 +150,7 @@ public class EmailService implements Serializable{
                 message.setRecipients(Message.RecipientType.TO, toAddresses);
 
                 message.setSubject(subject);
-                message.setContent(body, "text/plain; charset=utf-8");
+                message.setContent(body, "text/plain");
 
                 // Attach file if provided
                 if (attachment != null) {
