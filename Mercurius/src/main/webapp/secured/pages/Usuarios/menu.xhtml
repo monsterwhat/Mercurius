@@ -34,6 +34,7 @@
                                      selection="#{UsersController.selectedUser}" rowKey="#{user.id}">
 
                             <p:ajax event="rowSelect" update="EditarUsuarioDialog"/>
+                            <p:ajax event="rowUnselect" update="EditarUsuarioDialog"/>
 
                             <f:facet name="header">
                                 <p:inputText id="globalFilter" onkeyup="PF('UsersTableData').filter()" style="color: var(--primary-color); width: 100%"

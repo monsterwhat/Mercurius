@@ -12,6 +12,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ExcelExporter {
 
@@ -229,4 +231,55 @@ public class ExcelExporter {
 
         return file;
     }
+    
+    public File exportMovimientosToExcel(List<Inventario> inventarios, String filePath) throws IOException {
+    Workbook workbook = new XSSFWorkbook();
+    
+        // Agrupar inventarios por usuario
+        Map<String, List<Inventario>> inventariosPorUsuario = inventarios.stream()
+                .collect(Collectors.groupingBy(inventario -> inventario.getUsuario().getUsername()));
+
+        for (Map.Entry<String, List<Inventario>> entry : inventariosPorUsuario.entrySet()) {
+            String usuario = entry.getKey();
+            List<Inventario> inventariosUsuario = entry.getValue();
+
+            Sheet sheet = workbook.createSheet(usuario);
+            String[] headers = {"Código", "Artículo", "Usuario", "Cantidad", "Unidades Recomendadas", "Tipo Movimiento", "Fecha Movimiento", "Notas", "Status", "Processed"};
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+            }
+
+            int rowNum = 1;
+            for (Inventario inventario : inventariosUsuario) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(inventario.getCodigo());
+                row.createCell(1).setCellValue(inventario.getArticulo().getNombre());
+                row.createCell(2).setCellValue(inventario.getUsuario().getUsername());
+                row.createCell(3).setCellValue(inventario.getCantidad().doubleValue());
+                row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura());
+                row.createCell(5).setCellValue(inventario.getTipoMovimiento());
+                row.createCell(6).setCellValue(inventario.getFechaMovimiento().toString());
+                row.createCell(7).setCellValue(inventario.getNotas());
+                row.createCell(8).setCellValue(inventario.getStatus());
+                row.createCell(9).setCellValue(inventario.getProcessed());
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+        }
+
+        File file = new File(filePath);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            workbook.write(fos);
+        } finally {
+            workbook.close();
+        }
+
+        return file;
+    }
+    
 }

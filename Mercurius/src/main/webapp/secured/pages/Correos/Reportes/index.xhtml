@@ -17,6 +17,7 @@
                 <ui:include src="/secured/fragments/userBar.xhtml" /> 
             </p:column>
         </p:panelGrid>
+            
         <p:growl showDetail="true" showSummary="true" />
         
         <p:panelGrid columns="1" layout="flex">
@@ -31,7 +32,8 @@
                                      selection="#{reportesProgramadosController.selectedReporte}" rowKey="#{reportes.id}">
 
                             <p:ajax event="rowSelect" update="EditarReporteDialog"/>
-
+                            <p:ajax event="rowUnselect" update="EditarReporteDialog"/>
+                            
                             <f:facet name="header">
                                 <p:inputText id="globalFilter" onkeyup="PF('ReportesTableData').filter()"
                                              placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
@@ -66,6 +68,10 @@
                                 <div class="buttons">
                                     <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil"
                                       process="@this" onclick="PF('EditarReporteDialog').show();">
+                                        <f:setPropertyActionListener value="#{reportes}" target="#{reportesProgramadosController.selectedReporte}" />
+                                    </p:commandButton>
+                                    <p:commandButton styleClass="rounded-button ui-button-help" icon="pi pi-envelope"
+                                    actionListener="#{reportesProgramadosController.sendReporte()}" process="@this" update="Reportes">
                                         <f:setPropertyActionListener value="#{reportes}" target="#{reportesProgramadosController.selectedReporte}" />
                                     </p:commandButton>
                                     <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
