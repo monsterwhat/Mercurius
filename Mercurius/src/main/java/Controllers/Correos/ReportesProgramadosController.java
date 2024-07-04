@@ -31,8 +31,8 @@ import org.primefaces.util.LangUtils;
 public class ReportesProgramadosController implements Serializable {
     
     @Inject ReportesProgramadosService reportesProgramadosService;
-    
     @Inject private SessionController currentSession;
+    @Inject CorreosHelper helper;
 
     private List<ReporteProgramado> reportes;
     private ReporteProgramado selectedReporte;
@@ -98,6 +98,12 @@ public class ReportesProgramadosController implements Serializable {
             }
             reportesProgramadosService.update(selectedReporte);
             clearSelectedReporte();
+        }
+    }
+    
+    public void sendReporte(){
+        if(selectedReporte != null){
+            helper.checkChanges(selectedReporte);
         }
     }
     
