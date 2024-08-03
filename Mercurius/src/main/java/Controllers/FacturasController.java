@@ -53,6 +53,8 @@ public class FacturasController implements Serializable {
     private List<ComprobanteFinal> facturas;
     private List<ComprobanteFinal> facturasDetalladas;
     private List<ComprobanteFinal> carritoCompras;
+    private List<ComprobanteFinal> facturasVencidas;
+    private List<ComprobanteFinal> facturasPendientes;
     private ComprobanteFinal newFactura;
     
     
@@ -81,6 +83,20 @@ public class FacturasController implements Serializable {
             facturasDetalladas = facturaService.listAll();
         }
         return facturasDetalladas;
+    }
+    
+    public List<ComprobanteFinal> facturasPenditenes(){
+        if(facturasPendientes == null){
+            facturasPendientes = facturaService.listPendientes();
+        }
+        return facturasPendientes;
+    }
+    
+    public List<ComprobanteFinal> facturasVencidas(){
+        if(facturasVencidas == null){
+            facturasVencidas = facturaService.listVencidas();
+        }
+        return facturasVencidas;
     }
     
     public long facturaCount() {
@@ -140,7 +156,42 @@ public class FacturasController implements Serializable {
             System.out.println("Error: " + e.getLocalizedMessage());
             return null;
         }
-        
+    }
+    
+    public List<ComprobanteFinal> getFilteredFacturasPendientes() {
+        try {
+            if(facturasPendientes == null){
+            facturasPendientes = facturaService.listPendientes();
+            }
+            if (facturaFilter != null && !facturaFilter.isEmpty()) {
+                return facturasPenditenes().stream()
+                        .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                        .collect(Collectors.toList());
+            } else {
+                return facturasPenditenes();
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
+    public List<ComprobanteFinal> getFilteredFacturasVencidas() {
+        try {
+            if(facturasVencidas == null){
+            facturasVencidas = facturaService.listVencidas();
+            }
+            if (facturaFilter != null && !facturaFilter.isEmpty()) {
+                return facturasVencidas().stream()
+                        .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                        .collect(Collectors.toList());
+            } else {
+                return facturasVencidas();
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+            return null;
+        }
     }
 
     public boolean globalFilterFunction(Object value, Object filter, Locale locale) {

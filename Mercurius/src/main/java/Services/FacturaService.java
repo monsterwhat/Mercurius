@@ -5,12 +5,16 @@ import Models.Comprobantes.Encabezado.Encabezado;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -177,6 +181,27 @@ public class FacturaService extends GService<ComprobanteFinal> {
         TypedQuery<ComprobanteFinal> query = em.createQuery(cq);
         return query.getResultList();
     }
+
+   public List<ComprobanteFinal> listPendientes() {
+        String sql = "SELECT t1.* FROM COMPROBANTEFINAL t1 " +
+                     "JOIN ENCABEZADO t0 ON t0.ID = t1.ENCABEZADO_ID " +
+                     "WHERE DATE_ADD(t0.fecha_emision, INTERVAL t0.plazo_credito DAY) > ?1";
+
+        Query query = em.createNativeQuery(sql, ComprobanteFinal.class);
+        query.setParameter(1, java.sql.Date.valueOf(LocalDate.now()));
+        return query.getResultList();
+    }
+
+    public List<ComprobanteFinal> listVencidas() {
+        String sql = "SELECT t1.* FROM COMPROBANTEFINAL t1 " +
+                     "JOIN ENCABEZADO t0 ON t0.ID = t1.ENCABEZADO_ID " +
+                     "WHERE DATE_ADD(t0.fecha_emision, INTERVAL t0.plazo_credito DAY) <= ?1";
+
+        Query query = em.createNativeQuery(sql, ComprobanteFinal.class);
+        query.setParameter(1, java.sql.Date.valueOf(LocalDate.now()));
+        return query.getResultList();
+    }
+
 
 
 
