@@ -12,7 +12,7 @@ import jakarta.security.enterprise.identitystore.DatabaseIdentityStoreDefinition
  */
 
 @DatabaseIdentityStoreDefinition(
-    dataSourceLookup = "jdbc/MySQL",
+    dataSourceLookup = "jdbc/Mercurius",
     callerQuery = "SELECT password FROM Users WHERE username = ? AND status = true",
     groupsQuery = "SELECT groupName FROM Users WHERE username = ? AND status = true"
 )

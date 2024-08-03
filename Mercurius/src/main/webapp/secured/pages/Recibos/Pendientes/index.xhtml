@@ -6,7 +6,7 @@
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
 <h:head>
-    <title>Menu Principal Recibos</title>
+    <title>Recibos Pendientes</title>
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
     <h:outputStylesheet name="primefaces/primefaces.css"/>
     <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
@@ -26,22 +26,9 @@
             <p:column>
                 <p:panel>
                     <h:form id="recibos">
-                        <div class="ui-g">
-                            <div class="ui-g-6">
-                                <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" 
-                                                 style="width: 100%;" styleClass="rounded-button ui-button-info"/>
-                            </div>
-
-                            <div class="ui-g-6">
-                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                                 style='width: 100%' ajax="false">
-                                    <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                                </p:commandButton>
-                            </div>
-                        </div>
                             <p:growl showDetail="true" showSummary="true" />
                             
-                            <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
+                            <p:dataTable value="#{facturasController.filteredFacturasPendientes}" var="factura" widgetVar="FacturasTableData"
                                          paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
                                          emptyMessage="No se encontraron registros de factura con la critería proporcionada"
                                          globalFilterFunction="#{facturasController.globalFilterFunction}" lazy="false"
@@ -103,18 +90,8 @@
                                 </p:column>
 
                                 <p:column headerText="Acciones" width="6%" exportable="false">
-                                        <p:commandButton id="buttonSync" styleClass="rounded-button ui-button-success" disabled="#{factura.processed}" process="@this"
-                                                         icon="pi pi-sync" actionListener="#{facturasController.processSelectedFactura()}" update="@this recibos">
-                                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
-                                        </p:commandButton>
-
                                         <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
                                                          icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
-                                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
-                                        </p:commandButton>
-
-                                        <p:commandButton id="buttonDelete" styleClass="rounded-button ui-button-danger" icon="pi pi-trash"
-                                                        actionListener="#{facturasController.deleteFactura()}" process="@this" update="@this recibos">
                                                         <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                         </p:commandButton>
                                 </p:column>
@@ -125,7 +102,6 @@
         </p:row>
     </p:panelGrid>
         <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
-        <ui:include src="/secured/fragments/Inventario/Upload/subirFacturas.xhtml"/>
         <ui:include src="/secured/fragments/Facturas/Recibos/verDetallesFactura.xhtml"/>
 </h:body>
 </html>
