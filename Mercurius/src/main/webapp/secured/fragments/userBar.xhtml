@@ -9,12 +9,11 @@
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-32x32.png']}"/>
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-16x16.png']}"/>
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon.ico']}"/>
-        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon.ico']}"/>
     </h:head>
     
     <p:card>
         <p:card>
-            <p:panelGrid columns="3" style="align-content: center;">
+            <p:panelGrid columns="3" style="text-align: center;">
                 <p:column rendered="#{SettingsController.logo eq null}">
                     <p:graphicImage value="/resources/imgs/logo/Mercurius.png" height="100px" width="100px"/>
                 </p:column>
@@ -31,9 +30,11 @@
                 </p:column>
             </p:panelGrid>
         </p:card>
-        <p:spacer height="1em"/>
-
-        <ui:include src="/secured/fragments/mainMenu.xhtml" />
+            
+        <p:panelGrid columns="1">
+            <ui:include src="/secured/fragments/mainMenu.xhtml" />
+        </p:panelGrid>
+        
     </p:card>
     
     <p:dialog header="Menu de Usuario" widgetVar="userSettingsDialog" modal="true"
