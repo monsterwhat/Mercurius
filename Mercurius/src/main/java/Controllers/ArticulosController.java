@@ -127,7 +127,19 @@ public class ArticulosController implements Serializable {
     public long articulosCount() {
         return articulosService.count();
     }
+    
+    public long articulosActivosCount(){
+        return articulosService.countActivos();
+    }
 
+    public long articulosInactivosCount(){
+        return articulosService.countInactivos();
+    }
+    
+    public long articulosPendientesCount(){
+        return articulosService.countPendientes();
+    }
+    
     public void openNewArticulo() {
         newArticulo = new Articulos();
         updateDepartamentoAndFamiliaOptions(); 
