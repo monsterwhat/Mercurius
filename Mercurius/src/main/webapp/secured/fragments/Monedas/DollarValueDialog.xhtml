@@ -6,7 +6,7 @@
 
     <h:body>
         <!-- Dialog for Tipo Cambio Dolares -->
-        <p:dialog header="Tipo de Cambio USD" widgetVar="dollarValueDialog" id="dollarValueDialog"
+        <p:dialog header="Tipo de Cambio USD + #{TipoCambioController.diferencia}" widgetVar="dollarValueDialog" id="dollarValueDialog"
                   fitViewport="true" blockScroll="true" responsive="true" 
                     modal="true" >
         
@@ -63,6 +63,9 @@
                         onsuccess="PF('dollarValueDialog').hide();" immediate="true"
                         />
             </p:card> 
+            <p:card rendered="#{SessionController.admin}">
+                <p:commandButton value="Cambiar" styleClass="rounded-button ui-button-help" style="width: 100%"/>
+            </p:card>
             
         </p:dialog>
     </h:body>

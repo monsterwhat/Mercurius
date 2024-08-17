@@ -6,67 +6,60 @@
     
     <p:dialog widgetVar="CrearFacturaDialog" closable="false" 
         fitViewport="true" responsive="true" id="CrearFacturaDialog" modal="true">
-        <p:outputPanel rendered="#{not empty ClientsController.newClient}">
+        <p:outputPanel rendered="#{not empty ClientsController.newClient}" layout="flex">
             <h:form id="createFactura">
                 <p:panel header="Crear Factura - #{SessionController.currentUser.username}" >
                     <p:growl showDetail="true" showSummary="false"/>
-                    <p:panelGrid columns="2" layout="flex">
-                        <p:row> 
-                           <p:column>
-                                <!-- Tipo Factura -->
-                                <p:selectOneMenu id="group" >
-                                    <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
-                                    <f:selectItems/>
-                                </p:selectOneMenu>
-                            </p:column>
-                            <p:column>
-                                <!-- Cliente -->
-                                <span class="ui-inputgroup">
-                                    <p:inputText placeholder="Cliente"/>
-                                    <p:commandButton icon="pi pi-address-book" styleClass="ui-button-warning"/>
-                                </span>
-                            </p:column>
-                        </p:row>
-                        <p:row>
-                            <p:column>
-                                <!-- Cantidad -->
-                                <div class="ui-input-icon-left">
-                                    <i class="pi pi-hashtag" />
-                                    <p:inputText placeholder="Cantidad"/>
-                                </div>
-                            </p:column>
-                            <p:column>
-                                <!-- CodigoBarra (Ingreso articulo) -->
-                                <div class="ui-inputgroup">
-                                     <p:inputText placeholder="Codigo de Barra"/>
-                                    <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning"/>
-                                </div>
-                            </p:column>
-                        </p:row>
-                    </p:panelGrid>
-                    <p:panelGrid columns="1" layout="flex">
-                        <p:row>
-                            <p:column>
-                                <!--Articulos-->
-                                <p:card>
-                                    <p:dataTable var="carrito" value="#{facturasController.carritoCompras}" scrollable="true" scrollHeight="250">
-                                        <p:autoUpdate/>
-                                        <p:column>
-                                            
-                                        </p:column>
-                                    </p:dataTable>
-                                </p:card>
-                            </p:column>
-                        </p:row>
-                        <p:row>
-                            <p:column>
+                        <p:card>
+                            <p:panelGrid columns="2" layout="flex">
+                                <p:column>
+                                    <!-- Tipo Factura -->
+                                    <div class="ui-inputgroup">
+                                        <p:selectOneMenu id="group" >
+                                            <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
+                                            <f:selectItems/>
+                                        </p:selectOneMenu>
+                                    <!-- Cliente -->
+                                        <span class="ui-inputgroup">
+                                            <p:inputText placeholder="Cliente" onkeydown="if (event.keyCode === 13) { event.preventDefault(); document.getElementById('CrearFacturaDialog:createFactura:cantidad').focus(); }"/>
+                                            <p:commandButton icon="pi pi-address-book" styleClass="ui-button-warning"/>
+                                        </span>
+                                    </div>
+                                </p:column>
+                                <p:column>
+                                    <div class="ui-inputgroup">
+                                        <!-- Cantidad -->
+                                        <div class="ui-input-icon-left">
+                                            <i class="pi pi-hashtag" />
+                                            <p:inputText id="cantidad" placeholder="Cantidad" onkeydown="if (event.keyCode === 13) { event.preventDefault();  }"/>
+                                        </div>
+                                        <!-- CodigoBarra (Ingreso articulo) -->
+                                        <div class="ui-inputgroup">
+                                            <p:inputText placeholder="Codigo de Barra" onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" />
+                                            <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning"/>
+                                        </div>
+                                    </div>
+                                </p:column>
+                            </p:panelGrid>
+
+                                <p:dataTable var="carrito" value="#{facturasController.carritoCompras}" reflow="true" 
+                                             showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
+                                         scrollable="true" scrollHeight="250">
+                                <p:autoUpdate/>
+                                <p:column>
+                                    
+                                </p:column>
+                            </p:dataTable>
+
+                        </p:card>
+                        
+                        <p:column>
                             <!--Total-->
                             <p:card>
 
                             </p:card>
-                            </p:column>
-                        </p:row>
-                    </p:panelGrid>
+                        </p:column>
+                            
                         
                     <p:commandButton style="width: 100%" styleClass="ui-button-secondary" icon="pi pi-times"  value="Cancelar"
                                  actionListener="#{facturasController.cancel()}" process="@form" update="@this"

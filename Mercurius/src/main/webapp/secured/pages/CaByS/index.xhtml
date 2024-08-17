@@ -59,7 +59,7 @@
                             
                         </p:panelGrid>
                     
-                        <p:dataTable value="#{CabysController.filteredCabys}" var="cabys"  widgetVar="CabysTable"
+                            <p:dataTable value="#{CabysController.filteredCabys}" var="cabys"  widgetVar="CabysTable" clientCache="true"
                                      paginator="true" rows="10" paginatorPosition="bottom" id="CabysTable" reflow="true"
                                      emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
                                      globalFilterFunction="#{CabysController.globalFilterFunction}" draggableColumns="true"

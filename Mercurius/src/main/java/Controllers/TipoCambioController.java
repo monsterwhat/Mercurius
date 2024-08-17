@@ -19,7 +19,7 @@ public class TipoCambioController implements Serializable {
     @Inject private SettingsController settings;
 
     private List<TipoCambio> tipoCambios;
-    
+    private int diferencia;
     private TipoCambio cambioActual;
     
     @PostConstruct
@@ -45,7 +45,7 @@ public class TipoCambioController implements Serializable {
     public void getTipoCambioFromApi(){
         var configuracion = settings.getCurrentSettings();
         if(configuracion != null){
-            var diferencia = configuracion.getDiferenciaCambio();
+            diferencia = configuracion.getDiferenciaCambio();
             tipoCambioService.getTipoCambioFromApi(diferencia);
         }
     }
@@ -53,7 +53,7 @@ public class TipoCambioController implements Serializable {
     public TipoCambio getTipoCambioActual(){
         var configuracion = settings.getCurrentSettings();
         if(configuracion != null){
-            var diferencia = configuracion.getDiferenciaCambio();
+            diferencia = configuracion.getDiferenciaCambio();
             return tipoCambioService.getNewestTipoCambio(diferencia);
         }else{
             return tipoCambioService.getNewestTipoCambio(0);

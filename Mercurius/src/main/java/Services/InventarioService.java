@@ -229,5 +229,34 @@ public class InventarioService extends GService<Inventario> {
         return query.getResultList();
     }
 
+    public Long countActivos() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return 0l;
+        }
+    }
+    
+    public Long countInactivos() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = false", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return 0l;
+        }
+    }
+    
+    public Long countPendientes() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true AND e.processed = false", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return 0l;
+        }
+    }
 
 }

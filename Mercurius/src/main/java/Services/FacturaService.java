@@ -102,6 +102,27 @@ public class FacturaService extends GService<ComprobanteFinal> {
             System.out.println("Error soft deleting entity: " + e.toString());
         }
     }
+    
+    public void toggle(ComprobanteFinal entity){
+        try {
+            // Find the item by its ID
+            ComprobanteFinal existingItem = em.find(getEntityClass(), entity.getId());
+
+            if (existingItem != null) {
+                //Toggle the item from state
+                if(existingItem.getStatus()){
+                    existingItem.setStatus(false);
+                }else{
+                    existingItem.setStatus(true);
+                }
+                em.merge(existingItem);
+            } else {
+                System.out.println("Entity not found");
+            }
+        } catch (Exception e) {
+            System.out.println("Error soft deleting entity: " + e.toString());
+        }
+    }
 
     public List<ComprobanteFinal> listAllOld() {
         try {

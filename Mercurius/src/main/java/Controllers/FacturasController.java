@@ -116,6 +116,12 @@ public class FacturasController implements Serializable {
             clearFactura();
         }
     }
+    
+    public void toggleFactura(){
+        if(selectedFactura != null){
+            facturaService.toggle(selectedFactura);
+        }
+    }
 
     public void clearFactura() {
         //new factura if it existed...

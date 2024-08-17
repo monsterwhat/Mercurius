@@ -113,8 +113,8 @@
                                                         <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                         </p:commandButton>
 
-                                        <p:commandButton id="buttonDelete" styleClass="rounded-button ui-button-danger" icon="pi pi-trash"
-                                                        actionListener="#{facturasController.deleteFactura()}" process="@this" update="@this recibos">
+                                        <p:commandButton id="buttonToggle" styleClass="rounded-button ui-button-danger" icon="pi pi-power-off"
+                                                        actionListener="#{facturasController.toggleFactura()}" process="@this" update="@this recibos FacturasTableData">
                                                         <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                         </p:commandButton>
                                 </p:column>
