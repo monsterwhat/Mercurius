@@ -105,6 +105,18 @@ public class InventarioController implements Serializable {
     public long inventarioCount() {
         return inventarioService.count();
     }
+    
+    public long inventarioActivoCount(){
+        return inventarioService.countActivos();
+    }
+
+    public long inventarioPendienteCount(){
+        return inventarioService.countInactivos();
+    }
+    
+    public long inventarioInactivoCount(){
+        return inventarioService.countPendientes();
+    }
 
     public void openNewInventario() {
         newInventario = new Inventario();

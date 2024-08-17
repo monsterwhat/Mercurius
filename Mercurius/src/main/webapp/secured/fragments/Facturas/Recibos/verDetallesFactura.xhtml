@@ -51,6 +51,64 @@
                         <h:outputText value="#{linea.montoTotalLinea}"/>
                     </p:column>
                 </p:dataTable>
+                    
+                    <p:card title="Resumen Factura">
+                        <p:dataTable var="Servicios" reflow="true" value="#{facturasController.selectedFactura.resumen}">
+                            <p:column headerText="Total Servicios Gravados">
+                                <h:outputText value="#{resumen.totalServGravados}"/>
+                            </p:column>
+                                <p:column headerText="Total Servicios Exentos">
+                                <h:outputText value="#{resumen.totalServExentos}"/>
+                            </p:column>
+                                <p:column headerText="Total Servicios Exonerados">
+                                <h:outputText value="#{resumen.totalServExonerado}"/>
+                            </p:column>
+                        </p:dataTable>
+                        <p:dataTable var="Mercancias" reflow="true" value="#{facturasController.selectedFactura.resumen}">
+                            <p:column headerText="Total Mercancias Gravadas">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalMercanciasGravadas}"/>
+                            </p:column>
+                            <p:column headerText="Total Mercancias Exentas">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalMercanciasExentas}"/>
+                            </p:column>
+                            <p:column headerText="Total Mercancias Exoneradas">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalMercExonerada}"/>
+                            </p:column>
+                        </p:dataTable>
+                        <p:dataTable var="Resumen" reflow="true" value="#{facturasController.selectedFactura.resumen}">
+                            <p:column headerText="Total Gravado">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalGravado}"/>
+                            </p:column>
+                            <p:column headerText="Total Exento">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalExento}"/>
+                            </p:column>
+                            <p:column headerText="Total Exonerado">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalExonerado}"/>
+                            </p:column>
+                            <p:column headerText="Total Venta">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalVenta}"/>
+                            </p:column>
+                            <p:column headerText="Total Descuentos">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalDescuentos}"/>
+                            </p:column>
+                            <p:column headerText="Total Venta Neta">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalVentaNeta}"/>
+                            </p:column>
+                            <p:column headerText="Total Impuesto">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalImpuesto}"/>
+                            </p:column>
+                            <p:column headerText="Total IVA Devuelto">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalIVADevuelto}"/>
+                            </p:column>
+                            <p:column headerText="Total Otros Cargos">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalOtrosCargos}"/>
+                            </p:column>
+                            <p:column headerText="Total Comprobante">
+                                <h:outputText value="#{facturasController.selectedFactura.resumen.totalComprobante}"/> 
+                            </p:column>
+                        </p:dataTable>
+                    </p:card>
+                    
             </h:form>
         </p:dialog>
 </ui:composition>

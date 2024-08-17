@@ -145,6 +145,10 @@ public class ArticulosController implements Serializable {
         updateDepartamentoAndFamiliaOptions(); 
         PrimeFaces.current().executeScript("PF('CrearArticuloDialog').show();");
     }
+    
+    public void openArticuloDetails(){
+        PrimeFaces.current().executeScript("PF('VerArticuloDialog').show();");
+    }
 
     public void updateArticulo() {
         if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
