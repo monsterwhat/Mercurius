@@ -239,13 +239,13 @@ public class Parser {
             if (!codigoPais.isEmpty()) {
                 fax.setCodigoPais(Integer.valueOf(codigoPais));
             } else {
-                fax.setCodigoPais(null); // or set to a default value, if applicable
+                fax.setCodigoPais(null);
             }
 
             if (!numTelefono.isEmpty()) {
                 fax.setNumeroFax(Integer.valueOf(numTelefono));
             } else {
-                fax.setNumeroFax(null); // or set to a default value, if applicable
+                fax.setNumeroFax(null);
             }
 
             return fax;
@@ -637,7 +637,6 @@ public class Parser {
                 return;
             }
             
-            //TODO PERSIST LINEASDETALLE.
             for(LineaDetalle linea : lineas){
                 linea.setDetalleServicio(detalles);
             }

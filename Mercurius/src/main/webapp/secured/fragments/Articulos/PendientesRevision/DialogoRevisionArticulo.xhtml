@@ -5,8 +5,8 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     
     <!-- Dialog for Revision de Articulo -->
-    <p:dialog header="Revision de Articulo" widgetVar="RevisionArticuloDialog" modal="true"
-              fitViewport="true" responsive="true">
+    <p:dialog header="Revision de Articulo #{ArticulosController.selectedArticulo.nombre}" widgetVar="RevisionArticuloDialog" modal="true"
+              fitViewport="true" responsive="true" dynamic="true">
         <p:outputPanel id="RevisionArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
             <h:form>
                 <p:panelGrid columns="1" layout="flex">
@@ -105,56 +105,55 @@
 
                                     </p:selectOneMenu>
                         </p:column>
+                        
                         <p:spacer height="1em"/>
-                        <p:column>
-                            <p:messages showDetail="true" for="precioCostoSinIVA" showSummary="false" closable="true" />
-                                <label class="label" for="precioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
-                                    <p:inputText id="precioCostoSinIVA" type="number" value="#{ArticulosController.selectedArticulo.precioCostoSinIVA}"
-                                                 required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
-                                                 style="width: 100%">
-                                        <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                                update="precioCostoSinIVA precioFinal precioFinalConIVA" process="@this"/>
-                                    </p:inputText>
-                        </p:column>
-                        <p:spacer height="1em"/>
-                        <p:column>
-                            <p:messages showDetail="true" for="porcentajeUtilidad" showSummary="false" closable="true" />
-                                <label class="label" for="porcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
-                                    <p:inputText id="porcentajeUtilidad" type="number" value="#{ArticulosController.selectedArticulo.porcentajeUtilidad}"
-                                                 required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
-                                                 style="width: 100%">
-                                                <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit()}"
-                                                        update="precioCostoSinIVA precioFinal precioFinalConIVA"/>
-                                    </p:inputText>
-                        </p:column>
-                        <p:spacer height="1em"/>
-                        <p:column>
-                            <p:messages showDetail="true" for="precioFinal" showSummary="false" closable="true" />
-                            <label class="label" for="precioFinal" style="color: var(--primary-color);">Precio Final:</label>
-                            <p:card>
-                                <p:outputLabel id="precioFinal" value="#{ArticulosController.selectedArticulo.precioFinal}"/>
-                            </p:card>
 
-
-                        </p:column>
-                        <p:spacer height="1em"/>
-                        <p:column>
-                            <p:messages showDetail="true" for="precioFinalConIVA" showSummary="false" closable="true"/>
-                            <label class="label" for="precioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
-                            <p:card>
-                                <p:outputLabel id="precioFinalConIVA" value="#{ArticulosController.selectedArticulo.precioCostoConIVA}">
-                                    <p:autoUpdate/>
-                                </p:outputLabel>
-                            </p:card>
-                            
-                        </p:column>
+                            <p:column>
+                                <p:messages showDetail="true" for="precioCostoSinIVA" showSummary="false" closable="true" />
+                                    <label class="label" for="precioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
+                                        <p:inputText id="precioCostoSinIVA" type="number" value="#{ArticulosController.lastPrecio.precioCostoSinIVA}"
+                                                     required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
+                                                     style="width: 100%">
+                                            <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                    update="precioCostoSinIVA precioFinal precioFinalConIVA" process="@this"/>
+                                        </p:inputText>
+                            </p:column>
+                            <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="porcentajeUtilidad" showSummary="false" closable="true" />
+                                    <label class="label" for="porcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
+                                        <p:inputText id="porcentajeUtilidad" type="number" value="#{ArticulosController.lastPrecio.porcentajeUtilidad}"
+                                                     required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
+                                                     style="width: 100%">
+                                                    <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                            update="precioCostoSinIVA precioFinal precioFinalConIVA"/>
+                                        </p:inputText>
+                            </p:column>
+                            <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="precioFinal" showSummary="false" closable="true" />
+                                <label class="label" for="precioFinal" style="color: var(--primary-color);">Precio Final:</label>
+                                <p:card>
+                                    <p:outputLabel id="precioFinal" value="#{ArticulosController.lastPrecio.precioFinal}"/>
+                                </p:card>
+                            </p:column>
+                            <p:spacer height="1em"/>
+                            <p:column>
+                                <p:messages showDetail="true" for="precioFinalConIVA" showSummary="false" closable="true"/>
+                                <label class="label" for="precioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
+                                <p:card>
+                                    <p:outputLabel id="precioFinalConIVA" value="#{ArticulosController.lastPrecio.precioCostoConIVA}">
+                                        <p:autoUpdate/>
+                                    </p:outputLabel>
+                                </p:card>
+                            </p:column>
                         <p:spacer height="2em"/>
+                        
                         <p:column>
                             <p:commandButton value="Actualizar datos" update="@form ArticulosPendientes" process="@form"
                                                      action="#{ArticulosController.updateArticuloRevision}"
                                                      styleClass="rounded-button ui-button-primary" style="width: 100%" />
                         </p:column>
-
                     </p:panel>
                 </p:panelGrid>
             </h:form>

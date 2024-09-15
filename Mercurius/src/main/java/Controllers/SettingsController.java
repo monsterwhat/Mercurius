@@ -44,6 +44,7 @@ public class SettingsController implements Serializable {
     @Inject AppSettingsService settingsService;
     @Inject private ServletContext servletContext;
     @Inject private EmailService emailer;
+    @Inject private TipoCambioController tipoCambioController;
     
     @PostConstruct
     private void init(){
@@ -270,7 +271,6 @@ public class SettingsController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Failed to send email: " + emailResult, null));
         }
     }
-
     
     public void saveTributacion(){
         if(currentSettings.getCompletedSteps() < 4){
@@ -278,6 +278,11 @@ public class SettingsController implements Serializable {
         }
         settingsService.update(currentSettings);
         reloadPage();
+    }
+    
+    public void saveCambio(){
+        settingsService.update(currentSettings);
+        tipoCambioController.recargar();
     }
 
     private void addMessage(FacesMessage.Severity severity, String summary, String detail) {

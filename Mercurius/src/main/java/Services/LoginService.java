@@ -38,6 +38,26 @@ public class LoginService extends GService<Users>{
         }
     }
     
+    public Long countActivos() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
+    public Long countInactivos() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
     public boolean verifyPassword(char[] password, String hashedPassword){
         return passwordHasher.verify(password, hashedPassword);
     }
@@ -111,17 +131,6 @@ public class LoginService extends GService<Users>{
             }
         } catch (Exception e) {
             System.out.println("Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString());
-        }
-    }
-    
-    public List<Users> listAllEnabledUsers() {
-        try {
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.status = true", Users.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all enabled users: " + e.getMessage());
-            e.printStackTrace(); // Print stack trace for debugging purposes
-            return null;
         }
     }
     

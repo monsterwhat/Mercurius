@@ -107,52 +107,49 @@
                                                            itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
                                         </p:selectOneMenu>
                             </p:column>
-                        
-                         <p:spacer height="1em"/>
-
+                        <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="precioCostoSinIVA" showSummary="false" closable="true" />
-                                    <label class="label" for="precioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
-                                        <p:inputText id="precioCostoSinIVA" type="number" value="#{ArticulosController.lastPrecio.precioCostoSinIVA}"
+                                <p:messages showDetail="true" for="editPrecioCostoSinIVA" showSummary="false" closable="true" />
+                                    <label class="label" for="editPrecioCostoSinIVA" style="color: var(--primary-color);">Precio Costo sin IVA:</label>
+                                        <p:inputText id="editPrecioCostoSinIVA" type="number" value="#{ArticulosController.lastPrecio.precioCostoSinIVA}"
                                                      required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
                                                      style="width: 100%">
                                             <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
-                                                    update="precioCostoSinIVA precioFinal precioFinalConIVA" process="@this"/>
+                                                    update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this"/>
                                         </p:inputText>
                             </p:column>
-                            <p:spacer height="1em"/>
+                        <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="porcentajeUtilidad" showSummary="false" closable="true" />
-                                    <label class="label" for="porcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
-                                        <p:inputText id="porcentajeUtilidad" type="number" value="#{ArticulosController.lastPrecio.porcentajeUtilidad}"
+                                <p:messages showDetail="true" for="editPorcentajeUtilidad" showSummary="false" closable="true" />
+                                    <label class="label" for="editPorcentajeUtilidad" style="color: var(--primary-color);">Porcentaje de Utilidad:</label>
+                                        <p:inputText id="editPorcentajeUtilidad" type="number" value="#{ArticulosController.lastPrecio.porcentajeUtilidad}"
                                                      required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
                                                      style="width: 100%">
                                                     <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
-                                                            update="precioCostoSinIVA precioFinal precioFinalConIVA"/>
+                                                            update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this" />
                                         </p:inputText>
                             </p:column>
-                            <p:spacer height="1em"/>
+                        <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="precioFinal" showSummary="false" closable="true" />
-                                <label class="label" for="precioFinal" style="color: var(--primary-color);">Precio Final:</label>
-                                <p:card>
-                                    <p:outputLabel id="precioFinal" value="#{ArticulosController.lastPrecio.precioFinal}"/>
-                                </p:card>
+                                <p:messages showDetail="true" for="editPrecioFinal" showSummary="false" closable="true" />
+                                    <label class="label" for="editPrecioFinal" style="color: var(--primary-color);">Precio Final:</label>
+                                    <p:card>
+                                        <p:outputLabel id="editPrecioFinal" value="#{ArticulosController.lastPrecio.precioFinal}"/>
+                                    </p:card>
+
                             </p:column>
-                            <p:spacer height="1em"/>
+                        <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="precioFinalConIVA" showSummary="false" closable="true"/>
-                                <label class="label" for="precioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
-                                <p:card>
-                                    <p:outputLabel id="precioFinalConIVA" value="#{ArticulosController.lastPrecio.precioCostoConIVA}">
-                                        <p:autoUpdate/>
-                                    </p:outputLabel>
-                                </p:card>
+                                <p:messages showDetail="true" for="editPrecioFinalConIVA" showSummary="false" closable="true"/>
+                                    <label class="label" for="editPrecioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
+                                    <p:card>
+                                        <p:outputLabel id="editPrecioFinalConIVA" value="#{ArticulosController.lastPrecio.precioCostoConIVA}"/>
+                                    </p:card>   
+
                             </p:column>
-                        <p:spacer height="2em"/>
-                        
+                        <p:spacer height="1em"/>
                             <p:column>
-                                 <p:commandButton value="Actualizar datos" update="@form ArticulosActivos" process="@form"
+                                 <p:commandButton value="Actualizar datos" update="@form Articulos" process="@form"
                                              action="#{ArticulosController.updateArticuloByDialog()}" 
                                              styleClass="rouded-button ui-button-primary" style="width: 100%"/>
                             </p:column>

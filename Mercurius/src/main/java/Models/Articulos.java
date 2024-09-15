@@ -3,6 +3,7 @@ package Models;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 import lombok.Data;
 
 @Entity
@@ -36,22 +37,13 @@ public class Articulos {
     @ManyToOne
     @JoinColumn(name = "familia_id")
     private Familia familia;
-
-    @Column(name = "precio_costo_sin_iva")
-    private BigDecimal precioCostoSinIVA;
-
-    @Column(name = "precio_costo_con_iva")
-    private BigDecimal precioCostoConIVA;
-
-    @Column(name = "porcentaje_utilidad")
-    private BigDecimal porcentajeUtilidad;
-
-    @Column(name = "precio_final")
-    private BigDecimal precioFinal;
     
     private boolean status;
     
     private boolean processed;
+    
+    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ArticuloPrecio> precios; // List of pricing details
     
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -64,6 +56,18 @@ public class Articulos {
     @PrePersist
     protected void onCreate() {
         fecha = new Date(); // Sets the current timestamp when creating the entity
+    }
+    
+    public ArticuloPrecio getLastPrecio() {
+        if (precios != null && !precios.isEmpty()) {
+            return precios.get(precios.size() - 1);
+        }
+        return null;
+    }
+    
+    public BigDecimal getLastPrecioArticulo(){
+        ArticuloPrecio lastPrecio = getLastPrecio();
+        return lastPrecio.getPrecioCostoConIVA();
     }
     
 }

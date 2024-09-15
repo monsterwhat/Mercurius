@@ -4,69 +4,174 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     
-    <p:dialog widgetVar="CrearFacturaDialog" closable="false" 
+    <script>
+        $(document).on('keydown', ':tabbable', function(e) {
+
+            if (e.key === "Enter") {
+                e.preventDefault();
+
+                var $canfocus = $(':tabbable:visible');
+                var index = $canfocus.index(document.activeElement) + 1;
+
+                if (index >= $canfocus.length) index = 0;
+                $canfocus.eq(index).focus();
+            }
+
+        });
+        </script>
+    
+    <p:dialog widgetVar="CrearFacturaDialog" closable="false" dynamic="true"
         fitViewport="true" responsive="true" id="CrearFacturaDialog" modal="true">
-        <p:outputPanel rendered="#{not empty ClientsController.newClient}" layout="flex">
+        <p:outputPanel rendered="#{not null facturasController.newFactura}" layout="flex">
             <h:form id="createFactura">
+                <h:inputHidden id="resetFlag" value="#{facturasController.resetFlag}" />
                 <p:panel header="Crear Factura - #{SessionController.currentUser.username}" >
-                    <p:growl showDetail="true" showSummary="false"/>
-                        <p:card>
-                            <p:panelGrid columns="2" layout="flex">
-                                <p:column>
-                                    <!-- Tipo Factura -->
-                                    <div class="ui-inputgroup">
-                                        <p:selectOneMenu id="group" >
-                                            <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
-                                            <f:selectItems/>
-                                        </p:selectOneMenu>
+                    <p:growl id="growl" showDetail="true" showSummary="true"/>
+                    <p:card>
+                        <p:panelGrid columns="2" layout="flex">
+                            <p:column>
+                                <!-- Tipo Factura -->
+                                <div class="ui-inputgroup">
+                                    <p:selectOneMenu id="group" >
+                                        <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
+                                        <f:selectItems/>
+                                    </p:selectOneMenu>
                                     <!-- Cliente -->
-                                        <span class="ui-inputgroup">
-                                            <p:inputText placeholder="Cliente" onkeydown="if (event.keyCode === 13) { event.preventDefault(); document.getElementById('CrearFacturaDialog:createFactura:cantidad').focus(); }"/>
-                                            <p:commandButton icon="pi pi-address-book" styleClass="ui-button-warning"/>
-                                        </span>
-                                    </div>
-                                </p:column>
-                                <p:column>
+                                    <span class="ui-inputgroup">
+                                        <p:inputText placeholder="Cliente"
+                                                     onkeydown="if (event.keyCode === 13) { event.preventDefault(); document.getElementById('CrearFacturaDialog:createFactura:cantidad').focus(); }"/>
+                                        <p:commandButton icon="pi pi-address-book"  styleClass="ui-button-warning" 
+                                                         oncomplete="PF('ClienteDialog').show();"/>
+                                    </span>
+                                </div>
+                            </p:column>
+                            <p:column>
+                                <div class="ui-inputgroup">
+                                    <!-- Cantidad -->
+                                    <span class="ui-input-icon-left">
+                                        <i class="pi pi-hastag" />
+                                        <p:inputNumber id="cantidad" placeholder="Cantidad:" value="#{facturasController.cantidadArticulos}" minValue="1" emptyValue="1"/>
+                                    </span>
+                                    <!-- CodigoBarra (Ingreso articulo) -->
                                     <div class="ui-inputgroup">
-                                        <!-- Cantidad -->
-                                        <div class="ui-input-icon-left">
-                                            <i class="pi pi-hashtag" />
-                                            <p:inputText id="cantidad" placeholder="Cantidad" onkeydown="if (event.keyCode === 13) { event.preventDefault();  }"/>
-                                        </div>
-                                        <!-- CodigoBarra (Ingreso articulo) -->
-                                        <div class="ui-inputgroup">
-                                            <p:inputText placeholder="Codigo de Barra" onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" />
-                                            <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning"/>
-                                        </div>
+                                        <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{facturasController.codigoBarra}"
+                                            onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" >
+                                            <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
+                                            listener="#{facturasController.processCodigoBarra}" update="@form"/>
+                                        </p:inputText>
+                                        <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning" 
+                                                         oncomplete="PF('CodigoBarraDialog').show();"/>
                                     </div>
-                                </p:column>
-                            </p:panelGrid>
+                                </div>
+                            </p:column>
+                        </p:panelGrid>
 
-                                <p:dataTable var="carrito" value="#{facturasController.carritoCompras}" reflow="true" 
-                                             showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
-                                         scrollable="true" scrollHeight="250">
-                                <p:autoUpdate/>
-                                <p:column>
-                                    
-                                </p:column>
-                            </p:dataTable>
-
+                        <p:dataTable id="carrito" var="carrito"  value="#{facturasController.articulosCarrito}" reflow="true" 
+                                     showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
+                                     scrollable="true" scrollHeight="250" >
+                            <p:autoUpdate/>
+                            <p:column headerText="Nombre">
+                                <h:outputText value="#{carrito.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Precio">
+                                <h:outputText value="#{carrito.lastPrecioArticulo}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </p:card>
+                    
+                    <p:column>
+                        <!--Total-->
+                        <p:card>
+                            <!-- Populate as needed -->
                         </p:card>
-                        
-                        <p:column>
-                            <!--Total-->
-                            <p:card>
+                    </p:column>
 
-                            </p:card>
-                        </p:column>
-                            
-                        
                     <p:commandButton style="width: 100%" styleClass="ui-button-secondary" icon="pi pi-times"  value="Cancelar"
-                                 actionListener="#{facturasController.cancel()}" process="@form" update="@this"
-                                 onclick="PF('CrearFacturaDialog').hide();"/>
+                                     actionListener="#{facturasController.cancel()}" process="@form" update="@this"
+                                     onclick="PF('CrearFacturaDialog').hide();"/>
                 </p:panel>
             </h:form>
         </p:outputPanel>           
     </p:dialog>
-</ui:composition>
+
+    <!-- Cliente Dialog -->
+    <p:dialog widgetVar="ClienteDialog" dynamic="true" closable="true" modal="true" header="Seleccionar Cliente">
+        <h:form id="clientes">
+            <p:dataTable value="#{ClientsController.filteredClients}" var="client"  widgetVar="ClientsTableData"
+                         paginator="true" rows="8" paginatorPosition="bottom" id="ClientsTableData"
+                         emptyMessage="No se encontraron clientes con la critería proporcionada"
+                         globalFilterFunction="#{ClientsController.globalFilterFunction}"  clientCache="true"
+                         filterBy="#{ClientsController.filterBy}" reflow="true" selectionMode="single"
+                         selection="#{ClientsController.selectedClient}" rowKey="#{client.code}">
+
+                <f:facet name="header">
+                    <p:inputText id="globalFilter" onkeyup="PF('ClientsTableData').filter()"
+                                 placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                </f:facet>
+
+                <p:column headerText="ID Cliente" visible="false">
+                    <h:outputText value="#{client.code}"/>
+                </p:column>
+                <p:column headerText="Nombre" sortBy="#{client.name}">
+                    <h:outputText value="#{client.name}"/>
+                </p:column>
+                <p:column headerText="Correo" sortBy="#{client.email}">
+                    <h:outputText value="#{client.email}" />
+                </p:column>
+                <p:column headerText="Número de Cédula" sortBy="#{client.idNumber}">
+                    <h:outputText value="#{client.idNumber}" />
+                </p:column>
+                <p:column headerText="Descuento" sortBy="#{client.discount}" visible="false">
+                    <h:outputText value="#{client.discount}" />
+                </p:column>
+                <p:column headerText="Número de Teléfono" sortBy="#{client.phoneNumber}">
+                    <h:outputText value="#{client.phoneNumber}" />
+                </p:column>
+            </p:dataTable>
+        </h:form>
+    </p:dialog>
+    
+    <!-- CodigoBarra Dialog -->
+    <p:dialog widgetVar="CodigoBarraDialog" dynamic="true" closable="true" modal="true" header="Codigo de Barra">
+        <h:form id="articulos">
+            <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
+                         paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData" size="small"
+                         emptyMessage="No se encontraron artículos con la critería proporcionada"
+                         globalFilterFunction="#{ArticulosController.globalFilterFunction}" clientCache="true"
+                         filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
+                         selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+
+                <f:facet name="header">
+                    <p:inputText id="globalFilter" onkeyup="PF('ArticulosActivosYProcesados').filter()"
+                                 placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                </f:facet>
+
+                <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                    <h:outputText value="#{articulo.codigoBarra}"/>
+                </p:column>                          
+                <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                    <h:outputText value="#{articulo.nombre}"/>
+                </p:column>
+                <p:column headerText="Precio" sortBy="#{articulo.lastPrecioArticulo}">
+                    <h:outputText value="#{articulo.lastPrecioArticulo}"/>
+                </p:column>
+                <p:column headerText="Stock" sortBy="#{ArticulosController.getStock(articulo)}">
+                    <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
+                </p:column>
+                
+                <f:facet name="footer">
+                    <p:commandButton value="Seleccionar Articulo" icon="pi pi-check"
+                         process="ArticulosTableData"
+                         update="@form"
+                         oncomplete="PF('CodigoBarraDialog').hide()"
+                         actionListener="#{facturasController.selectArticulo(ArticulosController.selectedArticulo)}" />
+                </f:facet>
+
+            </p:dataTable>   
+                <!-- Selection Button -->
         
+
+    </h:form>
+</p:dialog>
+
+</ui:composition>

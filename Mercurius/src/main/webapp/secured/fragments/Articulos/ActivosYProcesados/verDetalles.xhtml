@@ -1,14 +1,15 @@
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
-                xmlns:h="http://xmlns.jcp.org/jsf/html"
-                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
                 xmlns:p="http://primefaces.org/ui"
-                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+                xmlns:ui="jakarta.faces.facelets">
 
         <p:dialog header="Informacion de Articulo" widgetVar="ArticuloDetailsDialog" 
                   responsive="true" id="ArticuloDetailsDialog" modal="true">
         <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
             <p:card>
-                <p:dataTable id="selectedArticulo" var="articulo" reflow="true"
+                <p:dataTable id="selectedArticulo" clientCache="true" stripedRows="true"
+                             lazy="true" var="articulo" reflow="true"
                              value="#{ArticulosController.selectedArticulo}">
                     <p:column headerText="Código" visible="false">
                         <h:outputText value="#{articulo.nombre}"/>
@@ -31,17 +32,17 @@
                     <p:column headerText="Familia">
                         <h:outputText value="#{articulo.familia.nombre}" />
                     </p:column>
-                    <p:column headerText="Precio Costo" visible="false">
-                        <h:outputText value="#{articulo.precioCostoSinIVA}" />
+                    <p:column headerText="Precio Costo">
+                        <h:outputText value="#{articulo.lastPrecio.precioCostoSinIVA}" />
                     </p:column>
-                    <p:column headerText="Utilidad" visible="false">
-                        <h:outputText value="#{articulo.porcentajeUtilidad}" />
+                    <p:column headerText="Utilidad">
+                        <h:outputText value="#{articulo.lastPrecio.porcentajeUtilidad}" />
                     </p:column>
-                    <p:column headerText="Precio Sin Iva" visible="false">
-                        <h:outputText value="#{articulo.precioFinal}" />
+                    <p:column headerText="Precio Sin Iva">
+                        <h:outputText value="#{articulo.lastPrecio.precioFinal}" />
                     </p:column>
                     <p:column headerText="Precio Final">
-                        <h:outputText value="#{articulo.precioCostoConIVA}" />
+                        <h:outputText value="#{articulo.lastPrecio.precioCostoConIVA}" />
                     </p:column>
                     <p:column headerText="Creador">
                         <h:outputText value="#{articulo.usuario.username}" />

@@ -35,9 +35,7 @@
                                                  ajax="false" styleClass="rounded-button ui-button-primary"  style="width: 50%"
                                 oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
                                 <p:commandButton value="Exportar Excel" icon="pi pi-file-excel"
-                                    styleClass="rounded-button ui-button-success"  style="width: 25%"/>
-                                <p:commandButton value="Exportar PDF" icon="pi pi-file-pdf"
-                                                 styleClass="rounded-button ui-button-danger" style="width: 25%"/>
+                                    styleClass="rounded-button ui-button-success"  style="width: 50%"/>
                             </p:column>
                         </p:panelGrid>
                     </p:card>
@@ -82,18 +80,6 @@
                         </p:column>                            
                         <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
                             <h:outputText value="#{articulo.nombre}"/>
-                        </p:column>
-                        <p:column headerText="Precio Costo Sin IVA" sortBy="#{articulo.precioCostoSinIVA}" visible="false">
-                            <h:outputText value="#{articulo.precioCostoSinIVA}"/>
-                        </p:column>
-                        <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.porcentajeUtilidad}" visible="false">
-                            <h:outputText value="#{articulo.porcentajeUtilidad}"/>
-                        </p:column>
-                        <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}" visible="false">
-                            <h:outputText value="#{articulo.precioFinal}"/>
-                        </p:column>
-                        <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}">
-                            <h:outputText value="#{articulo.precioCostoConIVA}"/>
                         </p:column>
 
                         <p:column headerText="Acciones" exportable="false">

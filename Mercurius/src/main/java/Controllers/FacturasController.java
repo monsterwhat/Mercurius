@@ -1,11 +1,16 @@
 package Controllers;
 
+import Models.ArticuloPrecio;
 import Services.FacturaService;
 import Models.Articulos;
 import Models.Comprobantes.ComprobanteFinal;
 import Models.Comprobantes.Detalles.*;
+import Models.Comprobantes.Encabezado.Encabezado;
+import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Departamento;
 import Models.Inventario;
+import Models.Users;
+import Services.ArticuloPrecioService;
 import Services.Facturas.*;
 import Utils.Parsers.Parser;
 import jakarta.annotation.PostConstruct;
@@ -47,21 +52,58 @@ public class FacturasController implements Serializable {
     @Inject InventarioController inventarioController;
     @Inject DepartamentoController departamentosController;
     @Inject MedioPagoService medioPagoService;
+    @Inject ArticuloPrecioService precioService;
     @Inject Parser parser;
     
     private List<UploadedFile> files;
     private List<ComprobanteFinal> facturas;
     private List<ComprobanteFinal> facturasDetalladas;
     private List<ComprobanteFinal> carritoCompras;
+    private List<Articulos> articulosCarrito;
     private List<ComprobanteFinal> facturasVencidas;
     private List<ComprobanteFinal> facturasPendientes;
     private ComprobanteFinal newFactura;
+    private String codigoBarra;
+    private int cantidadArticulos;
+    private boolean resetFlag;
     
+    private DetalleServicio detalleCarrito;
+    private LineaDetalle lineaDetalle;
     
     private ComprobanteFinal selectedFactura;
     private String facturaFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
+    
+    public void processCodigoBarra() {
+        String codigo = this.codigoBarra;
+        if(codigo != null || !codigo.isBlank()){
+            Articulos articulo = articuloController.findArticuloByBarCode(codigo);
+            if (articulo != null) {
+                if(cantidadArticulos > 0){
+                    for (int i = 0; i < cantidadArticulos; i++) {
+                        articulosCarrito.add(articulo);
+                    }
+                    codigoBarra = "";
+                    cantidadArticulos = 1;
+                    resetFlag = !resetFlag; // Toggle the reset flag
+                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, cantidadArticulos + "# Artículo agregado", "El artículo fue agregado al carrito"));
+                } else {
+                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "No hay cantidad", "La cantidad es invalida"));
+                }
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Artículo no encontrado", "El código de barra no corresponde a un artículo válido"));
+            }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Codigo de Barra vacio o nulo", "El código de barra no corresponde a un artículo válido"));
+        }
+
+    }
+    
+    public void selectArticulo(Articulos articulo){
+        codigoBarra = articulo.getCodigoBarra();
+        processCodigoBarra();
+    }
     
     @PostConstruct
     public void init(){
@@ -69,6 +111,9 @@ public class FacturasController implements Serializable {
         filterBy = new ArrayList<>();
         selectedFactura = new ComprobanteFinal();
         carritoCompras = new ArrayList<>();
+        articulosCarrito = new ArrayList<>();
+        cantidadArticulos = 1;
+        codigoBarra = new String();
     }
     
     public List<ComprobanteFinal> facturasList() {
@@ -103,13 +148,6 @@ public class FacturasController implements Serializable {
         return facturaService.count();
     }
 
-    public void updateFactura() {
-        if(currentSession.isValid()){
-            facturaService.updateAndDisable(selectedFactura);
-            clearFactura();        
-        }
-    }
-
     public void deleteFactura() {
         if (selectedFactura != null) {
             facturaService.softDelete(selectedFactura);
@@ -124,7 +162,7 @@ public class FacturasController implements Serializable {
     }
 
     public void clearFactura() {
-        //new factura if it existed...
+        openNewFactura();
         selectedFactura = null;
     }
     
@@ -215,10 +253,6 @@ public class FacturasController implements Serializable {
                 || factura.getEncabezado().getEmisor().getNombreComercial().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getFechaEmision().toString().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getNumeroConsecutivo().toLowerCase().contains(filterText);
-    }
-
-    public ComprobanteFinal findFacturaById(Integer number) {
-        return facturaService.findById(number);
     }
     
     public void addFile(UploadedFile file){
@@ -322,20 +356,41 @@ public class FacturasController implements Serializable {
                     articulo.setDepartamento(persistedDepartamento);
                     articulo.setUnidadMedida(unidadMedida);
                     articulo.setUnidadMedidaComercial(unidadMedidaComercial);
-                    articulo.setPrecioCostoSinIVA(precioUnitario);
+                    
+                    ArticuloPrecio precioArticulo = new ArticuloPrecio();
+                    precioArticulo.setArticulo(articulo);
+                    precioArticulo.setPrecioCostoSinIVA(precioUnitario);
+
+                    List<ArticuloPrecio> preciosArticulos = new ArrayList<>();
+                    preciosArticulos.add(precioArticulo);
+
+                    articulo.setPrecios(preciosArticulos);
+                    
                     articulo.setUsuario(currentSession.getCurrentUser());
                     articulo.setStatus(true);
                     articulo.setProcessed(false);
                     articuloController.createSimpleArticulo(articulo);
                 }else{
                     articuloExistente.setRecomendacionCabys(codigoCabys);
-                    articuloExistente.setPrecioCostoSinIVA(precioUnitario);
                     articuloExistente.setUsuario(currentSession.getCurrentUser());
                     articuloExistente.setUnidadMedida(unidadMedida);
                     articuloExistente.setUnidadMedidaComercial(unidadMedidaComercial);
                     articuloExistente.setDepartamento(persistedDepartamento);
-                    articuloExistente.setPrecioFinal(new BigDecimal(0));
-                    articuloExistente.setPrecioCostoConIVA(new BigDecimal(0));
+                    
+                    ArticuloPrecio precioArticulo = new ArticuloPrecio();
+                    
+                    precioArticulo.setArticulo(articuloExistente);
+                    precioArticulo.setPrecioCostoSinIVA(precioUnitario);
+                    precioArticulo.setPrecioFinal(BigDecimal.ZERO);
+                    precioArticulo.setPrecioCostoConIVA(BigDecimal.ZERO);
+
+                    List<ArticuloPrecio> preciosArticulos = articuloExistente.getPrecios();
+                    if (preciosArticulos == null) {
+                        preciosArticulos = new ArrayList<>();
+                    }
+                    preciosArticulos.add(precioArticulo);
+                    
+                    articuloExistente.setPrecios(preciosArticulos);
                     articuloExistente.setStatus(true);
                     articuloExistente.setProcessed(false);
                     articuloController.updateSimpleArticulo(articuloExistente);
@@ -375,6 +430,17 @@ public class FacturasController implements Serializable {
     
     public void openNewFactura(){
         newFactura = new ComprobanteFinal();
+    }
+    
+    public void crearFactura(){
+        ComprobanteFinal comprobante = new ComprobanteFinal();
+        Encabezado encabezado = new Encabezado();
+        DetalleServicio detalles = new DetalleServicio();
+        ResumenFactura resumen = new ResumenFactura();
+        
+        boolean status, processed;
+        Users user;
+        
     }
     
 }

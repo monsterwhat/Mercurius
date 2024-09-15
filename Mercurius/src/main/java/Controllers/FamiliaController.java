@@ -51,6 +51,14 @@ public class FamiliaController implements Serializable {
     public long familiaCount() {
         return familiaService.count();
     }
+    
+    public long familiasActivasCount(){
+        return familiaService.countActivas();
+    }
+    
+    public long familiasInactivasCount(){
+        return familiaService.countInactivas();
+    }
 
     public void openNewFamilia() {
         newFamilia = new Familia();
@@ -132,12 +140,6 @@ public class FamiliaController implements Serializable {
         return familia.getNombre().toLowerCase().contains(filterText)
                 || String.valueOf(familia.getId()).contains(filterText)
                 || familia.getUsuario().getUsername().toLowerCase().contains(filterText);
-    }
-
-    public Familia findFamiliaById(Integer number) {
-        
-        return familiaService.findById(number);
-        
     }
 
 }

@@ -1,8 +1,10 @@
 package Controllers;
 
+import Models.ArticuloPrecio;
 import Models.Articulos;
 import Models.Departamento;
 import Models.Familia;
+import Services.ArticuloPrecioService;
 import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
@@ -51,6 +53,7 @@ import org.primefaces.util.LangUtils;
 public class ArticulosController implements Serializable {
     
     @Inject private ArticulosService articulosService;
+    @Inject private ArticuloPrecioService precioService;
     @Inject private DepartamentoService departamentoService;
     @Inject private FamiliaService familiaService;
     @Inject private InventarioService inventarioService;
@@ -73,9 +76,11 @@ public class ArticulosController implements Serializable {
     private List<Familia> familiaOptions;
     private int DepartamentoID,FamiliaID = 0;
     private String SelectedUnidadMedida, SelectedUnidadMedidaComercial;
+    private ArticuloPrecio precioArticulo;
 
     @PostConstruct
     public void init() {
+        precioArticulo = new ArticuloPrecio();
         newArticulo = new Articulos();
         selectedArticulo = new Articulos();
         filterBy = new ArrayList<>();
@@ -87,13 +92,6 @@ public class ArticulosController implements Serializable {
             articulosActivos = articulosService.ListAllEnabled();
         }
         return articulosActivos;
-    }
-    
-    public void getCabysSelection(){
-        if(cabysController.getSelectedCabys()!=null){
-            var selection = cabysController.getSelectedCabys();
-            selectedArticulo.setCodigoCabys(selection);
-        }
     }
     
     public List<Articulos> articulosFull() {
@@ -146,23 +144,6 @@ public class ArticulosController implements Serializable {
         PrimeFaces.current().executeScript("PF('CrearArticuloDialog').show();");
     }
     
-    public void openArticuloDetails(){
-        PrimeFaces.current().executeScript("PF('VerArticuloDialog').show();");
-    }
-
-    public void updateArticulo() {
-        if(DepartamentoID != 0 || FamiliaID != 0 && currentSession.isValid()){
-            selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
-            selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
-            selectedArticulo.setUsuario(currentSession.getCurrentUser());
-            selectedArticulo.setProcessed(true);
-            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                articulosService.updateAndDisable(selectedArticulo);
-                clearSelectedArticulo();
-            }
-        }
-    }
-    
     public void updateArticuloByDialog() {
         if(currentSession.isValid()){
             if(DepartamentoID != 0 || FamiliaID != 0){
@@ -171,7 +152,8 @@ public class ArticulosController implements Serializable {
             selectedArticulo.setUsuario(currentSession.getCurrentUser());
             selectedArticulo.setProcessed(true);
             if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                articulosService.updateAndDisable(selectedArticulo);
+                selectedArticulo.setProcessed(true);
+                articulosService.update(selectedArticulo);
                 clearCache();
                 clearArticulo();
                  
@@ -198,7 +180,8 @@ public class ArticulosController implements Serializable {
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
                 selectedArticulo.setProcessed(true);
                 if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                    articulosService.updateAndDisable(selectedArticulo);
+                    selectedArticulo.setProcessed(true);
+                    articulosService.update(selectedArticulo);
                     clearCache();
                     clearArticulo();
 
@@ -232,7 +215,8 @@ public class ArticulosController implements Serializable {
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
                 selectedArticulo.setProcessed(true);
                 if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null) {
-                    articulosService.updateAndDisable(selectedArticulo);
+                    selectedArticulo.setProcessed(true);
+                    articulosService.update(selectedArticulo);
                     clearCache();
 
                     // Load the next article or reset if none available
@@ -276,12 +260,9 @@ public class ArticulosController implements Serializable {
             PrimeFaces.current().executeScript("PF('RevisionArticulosDialog').hide();");
         }
     }
-
-
-
     
     public void updateSimpleArticulo(Articulos articulo){
-        articulosService.updateAndDisable(articulo);
+        articulosService.update(articulo);
     }
         
     public boolean isValidArticulo(){
@@ -303,20 +284,6 @@ public class ArticulosController implements Serializable {
             new FacesMessage(FacesMessage.SEVERITY_ERROR, "La sesion es invalida.", null));
         }
         return false;
-    }
-
-    public void createArticulo() {
-        if(isValidArticulo()){
-                newArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
-                newArticulo.setFamilia(familiaService.findById(FamiliaID));
-                newArticulo.setUsuario(currentSession.getCurrentUser());
-                selectedArticulo.setProcessed(true);
-                if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null && newArticulo.getUsuario() != null){
-                    newArticulo.setStatus(true);
-                    articulosService.create(newArticulo);
-                    clearSelectedArticulo();
-            }
-        }
     }
 
     public void createArticuloByDialog() {
@@ -447,15 +414,15 @@ public class ArticulosController implements Serializable {
                 || (articulo.getUsuario() != null && articulo.getUsuario().getUsername().toLowerCase().contains(filterText));
     }
 
-    public void calcularPrecioConIVA() {
-        if (newArticulo != null && newArticulo.getPrecioFinal() != null && newArticulo.getCodigoCabys() != null) {
-            BigDecimal precioFinal = newArticulo.getPrecioFinal();
+    public void calcularPrecioConIVA(ArticuloPrecio articuloPrecio) {
+        if (articuloPrecio != null && articuloPrecio.getPrecioFinal() != null && newArticulo.getCodigoCabys() != null) {
+            BigDecimal precioFinal = articuloPrecio.getPrecioFinal();
             BigDecimal precio0 = BigDecimal.ZERO;
 
             // Verificar si el precioFinal es distinto de cero
             if (precioFinal.compareTo(precio0) != 0) {
                 BigDecimal impuesto = new BigDecimal(newArticulo.getCodigoCabys().getImpuesto());
-                BigDecimal precioSinIVA = newArticulo.getPrecioFinal();
+                BigDecimal precioSinIVA = articuloPrecio.getPrecioFinal();
 
                 // Calcular el IVA como porcentaje del precio sin IVA
                 BigDecimal factorIVA = impuesto.divide(new BigDecimal(100));
@@ -467,38 +434,45 @@ public class ArticulosController implements Serializable {
                 // Redondear hacia arriba el precio con IVA utilizando RoundingMode.CEILING
                 precioConIVA = precioConIVA.setScale(2, RoundingMode.CEILING);
 
+                //Registrar quien ajusto el precio...
+                articuloPrecio.setUsuario(currentSession.getCurrentUser());
+                
                 // Asignar el precio con IVA al artículo
-                newArticulo.setPrecioCostoConIVA(precioConIVA);
+                articuloPrecio.setPrecioCostoConIVA(precioConIVA);
+                
+                
             }
         }
     }
 
-    public void calcularPrecioConUtilidad() {
+    public void calcularPrecioConUtilidad(ArticuloPrecio articuloPrecio) {
         try {
-            if (newArticulo != null) {
-                BigDecimal porcentajeUtilidad = newArticulo.getPorcentajeUtilidad();
-                BigDecimal precioCosto = newArticulo.getPrecioCostoSinIVA();
+            if (articuloPrecio != null) {
+                BigDecimal porcentajeUtilidad = articuloPrecio.getPorcentajeUtilidad();
+                BigDecimal precioCosto = articuloPrecio.getPrecioCostoSinIVA();
 
-                // Verificar que precioCosto y porcentajeUtilidad sean mayores o iguales a cero
-                if (precioCosto.compareTo(BigDecimal.ZERO) >= 0 && porcentajeUtilidad.compareTo(BigDecimal.ZERO) >= 0) {
-                    // Calcular la utilidad como porcentaje del precioCosto
-                    BigDecimal factorUtilidad = porcentajeUtilidad.divide(new BigDecimal(100), 4, RoundingMode.HALF_UP); // Ajustar la escala según sea necesario
-                    BigDecimal utilidad = precioCosto.multiply(factorUtilidad);
+                if(precioCosto != null && porcentajeUtilidad != null){
+                   // Verificar que precioCosto y porcentajeUtilidad sean mayores o iguales a cero
+                    if (precioCosto.compareTo(BigDecimal.ZERO) >= 0 && porcentajeUtilidad.compareTo(BigDecimal.ZERO) >= 0) {
+                        // Calcular la utilidad como porcentaje del precioCosto
+                        BigDecimal factorUtilidad = porcentajeUtilidad.divide(new BigDecimal(100), 4, RoundingMode.HALF_UP); // Ajustar la escala según sea necesario
+                        BigDecimal utilidad = precioCosto.multiply(factorUtilidad);
 
-                    // Calcular el precio con utilidad sumando la utilidad al precioCosto
-                    BigDecimal precioConUtilidad = precioCosto.add(utilidad);
+                        // Calcular el precio con utilidad sumando la utilidad al precioCosto
+                        BigDecimal precioConUtilidad = precioCosto.add(utilidad);
 
-                    // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
-                    precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
+                        // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
+                        precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
 
-                    // Asignar el precio con utilidad al atributo precioFinal del artículo
-                    newArticulo.setPrecioFinal(precioConUtilidad);
+                        // Asignar el precio con utilidad al atributo precioFinal del artículo
+                        articuloPrecio.setPrecioFinal(precioConUtilidad);
 
-                    // Calcular el precio con IVA después de actualizar el precio final
-                    calcularPrecioConIVA();
-                } else {
-                    // Mostrar mensaje de error si precioCosto o porcentajeUtilidad son negativos
-                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+                        // Calcular el precio con IVA después de actualizar el precio final
+                        calcularPrecioConIVA(articuloPrecio);
+                    } else {
+                        // Mostrar mensaje de error si precioCosto o porcentajeUtilidad son negativos
+                        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+                    } 
                 }
             }
         } catch (Exception e) {
@@ -507,36 +481,38 @@ public class ArticulosController implements Serializable {
         }
     }
     
-    public void calcularPrecioConUtilidadEdit() {
+    public void calcularPrecioConUtilidadEdit(ArticuloPrecio articuloPrecio) {
         try {
-            if (selectedArticulo != null) {
-                BigDecimal porcentajeUtilidad = selectedArticulo.getPorcentajeUtilidad();
-                BigDecimal precioCosto = selectedArticulo.getPrecioCostoSinIVA();
+            if (articuloPrecio != null) {
+                BigDecimal porcentajeUtilidad = articuloPrecio.getPorcentajeUtilidad();
+                BigDecimal precioCosto = articuloPrecio.getPrecioCostoSinIVA();
+                if(porcentajeUtilidad != null && precioCosto != null){
+                    // Verificar que precioCosto y porcentajeUtilidad sean mayores o iguales a cero
+                    if (precioCosto.compareTo(BigDecimal.ZERO) >= 0 && porcentajeUtilidad.compareTo(BigDecimal.ZERO) >= 0) {
+                        // Calcular la utilidad como porcentaje del precioCosto
+                        BigDecimal factorUtilidad = porcentajeUtilidad.divide(new BigDecimal(100), 4, RoundingMode.HALF_UP); // Ajustar la escala según sea necesario
+                        BigDecimal utilidad = precioCosto.multiply(factorUtilidad);
 
-                // Verificar que precioCosto y porcentajeUtilidad sean mayores o iguales a cero
-                if (precioCosto.compareTo(BigDecimal.ZERO) >= 0 && porcentajeUtilidad.compareTo(BigDecimal.ZERO) >= 0) {
-                    // Calcular la utilidad como porcentaje del precioCosto
-                    BigDecimal factorUtilidad = porcentajeUtilidad.divide(new BigDecimal(100), 4, RoundingMode.HALF_UP); // Ajustar la escala según sea necesario
-                    BigDecimal utilidad = precioCosto.multiply(factorUtilidad);
+                        // Calcular el precio con utilidad sumando la utilidad al precioCosto
+                        BigDecimal precioConUtilidad = precioCosto.add(utilidad);
 
-                    // Calcular el precio con utilidad sumando la utilidad al precioCosto
-                    BigDecimal precioConUtilidad = precioCosto.add(utilidad);
+                        // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
+                        precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
 
-                    // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
-                    precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
+                        // Asignar el precio con utilidad al atributo precioFinal del artículo
+                        articuloPrecio.setPrecioFinal(precioConUtilidad);
 
-                    // Asignar el precio con utilidad al atributo precioFinal del artículo
-                    selectedArticulo.setPrecioFinal(precioConUtilidad);
-
-                    // Calcular el precio con IVA después de actualizar el precio final
-                    calcularPrecioConIVAEdit();
-                } else {
-                    // Mostrar mensaje de error si precioCosto o porcentajeUtilidad son negativos
-                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+                        // Calcular el precio con IVA después de actualizar el precio final
+                        calcularPrecioConIVAEdit(articuloPrecio);
+                    } else {
+                        // Mostrar mensaje de error si precioCosto o porcentajeUtilidad son negativos
+                        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error en Validacion", "El precio costo o porcentaje de utilidad no pueden ser negativos"));
+                    }
+                }else{
+                    return;
                 }
             } else {
-                // Mostrar mensaje en consola si no hay artículo seleccionado
-                System.out.println("No hay articulo para editar...");
+                return;
             }
         } catch (Exception e) {
             // Capturar y manejar excepciones generales
@@ -544,12 +520,12 @@ public class ArticulosController implements Serializable {
         }
     }
     
-    public void calcularPrecioConIVAEdit() {
-        if (selectedArticulo != null) {
-            BigDecimal precioFinal = selectedArticulo.getPrecioFinal();
+    public void calcularPrecioConIVAEdit(ArticuloPrecio articuloPrecio) {
+        if (articuloPrecio != null) {
+            BigDecimal precioFinal = articuloPrecio.getPrecioFinal();
             if (precioFinal != null && precioFinal.compareTo(BigDecimal.ZERO) != 0 && selectedArticulo.getCodigoCabys() != null) {
                 BigDecimal impuesto = new BigDecimal(selectedArticulo.getCodigoCabys().getImpuesto());
-                BigDecimal precioSinIVA = selectedArticulo.getPrecioFinal();
+                BigDecimal precioSinIVA = articuloPrecio.getPrecioFinal();
 
                 // Calcular el IVA como porcentaje del precio sin IVA
                 BigDecimal factorIVA = impuesto.divide(new BigDecimal(100));
@@ -561,10 +537,13 @@ public class ArticulosController implements Serializable {
                 // Redondear hacia arriba el precio con IVA utilizando RoundingMode.CEILING
                 precioConIVA = precioConIVA.setScale(2, RoundingMode.CEILING);
 
+                //Registrar quien ajusto el precio...
+                articuloPrecio.setUsuario(currentSession.getCurrentUser());
+                
                 // Asignar el precio con IVA al atributo correspondiente del artículo
-                selectedArticulo.setPrecioCostoConIVA(precioConIVA);
+                articuloPrecio.setPrecioCostoConIVA(precioConIVA);
             } else {
-                System.out.println("No hay Cabys o Precio final.");
+                return;
             }
         } else {
             System.out.println("No hay articulo.");
@@ -578,8 +557,37 @@ public class ArticulosController implements Serializable {
     
     public double getStock(Articulos articulo){
         String codigoBarra = articulo.getCodigoBarra();
-        double totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
+        double totalStock = inventarioService.getStock(codigoBarra);
         return totalStock;
+    }
+    
+    //Returns the latest precio for an articulo.
+    public ArticuloPrecio getLastPrecio() {
+        List<ArticuloPrecio> precios = selectedArticulo.getPrecios();
+        if (precios != null && !precios.isEmpty()) {
+            return precios.get(precios.size() - 1);
+        }
+        return null;
+    }
+    
+    public ArticuloPrecio getLastPrecioNew() {
+        List<ArticuloPrecio> precios = newArticulo.getPrecios();
+        if (precios != null && !precios.isEmpty()) {
+            return precios.get(precios.size() - 1);
+        }else{
+            return precioArticulo;
+        }
+    }
+    
+    //Returns the latest precio for an articulo.
+    public ArticuloPrecio getLastPrecioFor(Articulos articulo) {
+        ArticuloPrecio precio = precioService.findByArticulo(articulo);
+        return precio;
+    }
+    
+    public List<ArticuloPrecio> getAllPreciosFor(Articulos articulo){
+        List<ArticuloPrecio> precios = precioService.findAllByArticulo(articulo);
+        return precios;
     }
     
     public Articulos findArticuloByName(String name){
@@ -640,14 +648,14 @@ public class ArticulosController implements Serializable {
     
     public void exportPDF(String table) throws IOException, DocumentException {
         FacesContext facesContext = FacesContext.getCurrentInstance();
-        
+
         // Generate a unique file name using timestamp
         LocalDateTime currentTime = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
         String timestamp = currentTime.format(formatter);
         String fileName = "reporteAjustesActivos_" + timestamp + ".pdf";
         File tempFile = File.createTempFile("reporteAjustesActivos_" + timestamp, ".pdf");
-        
+
         try (OutputStream os = new FileOutputStream(tempFile)) {
             Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
             PdfWriter.getInstance(document, os);
@@ -656,9 +664,9 @@ public class ArticulosController implements Serializable {
 
             // Set font size
             com.lowagie.text.Font font = new com.lowagie.text.Font();
-            font.setSize(8); // Set font size to 5 points
+            font.setSize(8); // Set font size to 8 points
 
-            //Add fancy title
+            // Add fancy title
             document.add(new Paragraph("Reporte de Articulos Activos", font));
             document.add(new Paragraph("-------------------------------------", font));
 
@@ -672,21 +680,30 @@ public class ArticulosController implements Serializable {
                 document.add(new Paragraph(itemInfo, font));
 
                 document.add(new Paragraph("Art: " + articulo.getNombre(), font));
-                if(articulo.getFamilia() !=null){
-                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + "Fam" + articulo.getFamilia().getNombre(), font));
-                }else{
-                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + "Familia sin definir", font));
+                if (articulo.getFamilia() != null) {
+                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + " Fam: " + articulo.getFamilia().getNombre(), font));
+                } else {
+                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + " Familia sin definir", font));
                 }
-                if(articulo.getCodigoCabys() != null){
+                if (articulo.getCodigoCabys() != null) {
                     document.add(new Paragraph("%Imp: " + articulo.getCodigoCabys().getCodigo(), font));
-                }else{
+                } else {
                     document.add(new Paragraph("Cabys sin definir", font));
                 }
-                document.add(new Paragraph("Und: " + articulo.getUnidadMedida() + " UndComercial " + articulo.getUnidadMedidaComercial(), font));
-                document.add(new Paragraph("Costo: " + articulo.getPrecioCostoSinIVA(), font));
-                document.add(new Paragraph("%Util: " + articulo.getPorcentajeUtilidad(), font));
-                document.add(new Paragraph("C/Iva: " + articulo.getPrecioFinal(), font));
-                document.add(new Paragraph("Venta: " + articulo.getPrecioCostoConIVA(), font));
+                document.add(new Paragraph("Und: " + articulo.getUnidadMedida() + " UndComercial: " + articulo.getUnidadMedidaComercial(), font));
+
+                // Show only the latest price, assuming it's the last in the list
+                if (articulo.getPrecios() != null && !articulo.getPrecios().isEmpty()) {
+                    ArticuloPrecio latestPrecio = articulo.getPrecios().get(articulo.getPrecios().size() - 1);
+
+                    document.add(new Paragraph("Costo: " + latestPrecio.getPrecioCostoSinIVA(), font));
+                    document.add(new Paragraph("%Util: " + latestPrecio.getPorcentajeUtilidad(), font));
+                    document.add(new Paragraph("C/Iva: " + latestPrecio.getPrecioFinal(), font));
+                    document.add(new Paragraph("Venta: " + latestPrecio.getPrecioCostoConIVA(), font));
+                } else {
+                    document.add(new Paragraph("No hay precios definidos", font));
+                }
+
                 document.add(new Paragraph("Creador: " + articulo.getUsuario().getUsername(), font));
                 document.add(new Paragraph("\n", font));
 
@@ -694,7 +711,7 @@ public class ArticulosController implements Serializable {
             }
             document.close();
         }
-        
+
         // Create the directory if it doesn't exist
         directoryConfig.createPdfSaveDirectoryIfNeeded();
 
@@ -702,9 +719,9 @@ public class ArticulosController implements Serializable {
         File permanentFile = new File(directoryConfig.getPdfSaveDirectory(), fileName);
         Files.move(tempFile.toPath(), permanentFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        //PDF has been saved print it!!!
+        // PDF has been saved, print it!!!
         printer.printPDFFile(permanentFile);
-        
+
         // Serve the PDF to the client with the unique name
         ExternalContext externalContext = facesContext.getExternalContext();
         HttpServletResponse response = (HttpServletResponse) externalContext.getResponse();
@@ -716,7 +733,7 @@ public class ArticulosController implements Serializable {
             Files.copy(permanentFile.toPath(), outStream);
             outStream.flush();
         }
-        
+
         facesContext.responseComplete();
     }
     

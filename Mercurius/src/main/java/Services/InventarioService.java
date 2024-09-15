@@ -1,7 +1,9 @@
 package Services;
 
+import Models.ArticuloStock;
 import Models.Inventario;
 import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -15,6 +17,7 @@ import java.util.List;
 
 @Named
 public class InventarioService extends GService<Inventario> {
+        
 
     @Override
     protected Class<Inventario> getEntityClass() {
@@ -29,6 +32,15 @@ public class InventarioService extends GService<Inventario> {
     public void create(Inventario entity) {
         try {
             em.persist(entity);
+        } catch (Exception e) {
+            System.out.println("Error creating entity: " + e.toString());
+        }
+    }
+    
+    public void createWithStock(Inventario entity) {
+        try {
+            em.persist(entity);
+            updateStock(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
         }
@@ -55,6 +67,7 @@ public class InventarioService extends GService<Inventario> {
     public void update(Inventario entity) {
         try {
             em.merge(entity);
+            updateStock(entity);
         } catch (Exception e) {
             System.out.println("Error updating entity: " + e.toString());
         }
@@ -72,6 +85,7 @@ public class InventarioService extends GService<Inventario> {
 
                 // Create a new item with the updated information
                 em.persist(entity);
+                updateStock(entity);
             } else {
                 System.out.println("Entity not found");
             }
@@ -117,6 +131,30 @@ public class InventarioService extends GService<Inventario> {
             System.out.println("Error soft deleting entity: " + e.toString());
         }
     }
+    
+    public double getStock(String barcode) {
+        try {
+            // Query to find the ArticuloStock entity by barcode
+            TypedQuery<BigDecimal> query = em.createQuery(
+                "SELECT a.stock FROM ArticuloStock a WHERE a.codigoBarra = :barcode", 
+                BigDecimal.class
+            );
+            query.setParameter("barcode", barcode);
+
+            // Get the result list
+            List<BigDecimal> results = query.getResultList();
+
+            // Return the stock as double
+            if (!results.isEmpty()) {
+                return results.get(0).doubleValue();
+            } else {
+                return 0.0; // Return 0 if no stock found
+            }
+        } catch (Exception e) {
+            System.out.println("Error getting stock for barcode: " + barcode + " - " + e.toString());
+            return 0.0;
+        }
+    }
 
     public double calculateTotalStockForItemByBarcode(String barcode) {
         try {
@@ -136,7 +174,6 @@ public class InventarioService extends GService<Inventario> {
             return 0.0;
         }
     }
-
 
     public List<Inventario> listAllSinProcesar() {
         try {
@@ -256,6 +293,31 @@ public class InventarioService extends GService<Inventario> {
         } catch (Exception e) {
             System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
             return 0l;
+        }
+    }
+    
+    public void updateStock(Inventario entity) {
+        try {
+            String codigoBarra = entity.getArticulo().getCodigoBarra();
+            // Find the existing stock record by barcode
+            ArticuloStock existingStock = em.createQuery(
+                "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = :barcode", 
+                ArticuloStock.class
+            ).setParameter("barcode", codigoBarra).getResultStream().findFirst().orElse(null);
+
+            if (existingStock != null) {
+                // Update the existing stock record
+                existingStock.setStock(existingStock.getStock().add(entity.getCantidad()));
+                em.merge(existingStock);
+            } else {
+                // Create a new stock record
+                ArticuloStock newStock = new ArticuloStock();
+                newStock.setCodigoBarra(codigoBarra);
+                newStock.setStock(entity.getCantidad()); // Set initial stock
+                em.persist(newStock);
+            }
+        } catch (Exception e) {
+            System.out.println("Error updating stock: " + e.toString());
         }
     }
 

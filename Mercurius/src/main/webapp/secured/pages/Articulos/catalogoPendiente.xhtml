@@ -65,18 +65,6 @@
                         </p:column>
                         <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
                             <h:outputText value="#{articulo.codigoCabys.codigo}"/>
-                        </p:column>                            
-                        <p:column headerText="Precio Costo Sin IVA" sortBy="#{articulo.precioCostoSinIVA}" visible="false">
-                            <h:outputText value="#{articulo.precioCostoSinIVA}"/>
-                        </p:column>
-                        <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.porcentajeUtilidad}" visible="false">
-                            <h:outputText value="#{articulo.porcentajeUtilidad}"/>
-                        </p:column>
-                        <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}" visible="false">
-                            <h:outputText value="#{articulo.precioFinal}"/>
-                        </p:column>
-                        <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}" visible="false">
-                            <h:outputText value="#{articulo.precioCostoConIVA}"/>
                         </p:column>
 
                     </p:dataTable>
@@ -90,7 +78,7 @@
                     <ui:include src="/secured/fragments/Articulos/PendientesRevision/DialogoRevisionArticulo.xhtml"/>
                 
                     <ui:include src="/secured/fragments/Articulos/PendientesRevision/DialogoRevisionArticulos.xhtml"/>
-                    
+                                        
                 </p:column>
             </p:row>
         </p:panelGrid>
