@@ -54,6 +54,14 @@ public class DepartamentoController implements Serializable {
     public long departamentoCount() {
         return departamentoService.count();
     }
+    
+    public long departamentosActivosCount(){
+        return departamentoService.countActivos();
+    }
+    
+    public long departamentosInactivosCount(){
+        return departamentoService.countInactivos();
+    }
 
     public void openNewDepartamento() {
         newDepartamento = new Departamento();

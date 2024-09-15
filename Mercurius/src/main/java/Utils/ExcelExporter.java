@@ -1,5 +1,6 @@
 package Utils;
 
+import Models.ArticuloPrecio;
 import Models.Articulos;
 import Models.Comprobantes.ComprobanteFinal;
 import Models.Comprobantes.Encabezado.Encabezado;
@@ -137,10 +138,20 @@ public class ExcelExporter {
             row.createCell(7).setCellValue(articulo.getUnidadMedidaComercial());
             row.createCell(8).setCellValue(articulo.getDepartamento() != null ? articulo.getDepartamento().getNombre() : "");
             row.createCell(9).setCellValue(articulo.getFamilia() != null ? articulo.getFamilia().getNombre() : "");
-            row.createCell(10).setCellValue(articulo.getPrecioCostoSinIVA().doubleValue());
-            row.createCell(11).setCellValue(articulo.getPrecioCostoConIVA().doubleValue());
-            row.createCell(12).setCellValue(articulo.getPorcentajeUtilidad().doubleValue());
-            row.createCell(13).setCellValue(articulo.getPrecioFinal().doubleValue());
+            // Show only the latest price, assuming it's the last in the list
+            if (articulo.getPrecios() != null && !articulo.getPrecios().isEmpty()) {
+                ArticuloPrecio latestPrecio = articulo.getPrecios().get(articulo.getPrecios().size() - 1);
+
+                row.createCell(10).setCellValue(latestPrecio.getPrecioCostoSinIVA().doubleValue());
+                row.createCell(11).setCellValue(latestPrecio.getPrecioCostoConIVA().doubleValue());
+                row.createCell(12).setCellValue(latestPrecio.getPorcentajeUtilidad().doubleValue());
+                row.createCell(13).setCellValue(latestPrecio.getPrecioFinal().doubleValue());
+            } else {
+                row.createCell(10).setCellValue(0.0);
+                row.createCell(11).setCellValue(0.0);
+                row.createCell(12).setCellValue(0.0);
+                row.createCell(13).setCellValue(0.0);
+            }
             row.createCell(14).setCellValue(articulo.isStatus());
             row.createCell(15).setCellValue(articulo.getFecha());
             row.createCell(16).setCellValue(articulo.getUsuario() != null ? articulo.getUsuario().getUsername(): "");

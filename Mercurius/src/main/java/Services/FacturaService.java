@@ -9,12 +9,10 @@ import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 
@@ -65,27 +63,6 @@ public class FacturaService extends GService<ComprobanteFinal> {
         }
     }
     
-    public void updateAndDisable(ComprobanteFinal entity) {
-        try {
-            // Find the existing item by its ID
-            ComprobanteFinal existingItem = em.find(getEntityClass(), entity.getId());
-
-            if (existingItem != null) {
-                // Disable the existing item
-                existingItem.setStatus(false);
-                em.merge(existingItem);
-
-                // Create a new item with the updated information
-                em.persist(entity);
-            } else {
-                System.out.println("Entity not found");
-            }
-        } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
-        }
-    }
-    
-    
     public void softDelete(ComprobanteFinal entity) {
         try {
             // Find the item by its ID
@@ -123,16 +100,6 @@ public class FacturaService extends GService<ComprobanteFinal> {
             System.out.println("Error soft deleting entity: " + e.toString());
         }
     }
-
-    public List<ComprobanteFinal> listAllOld() {
-        try {
-            TypedQuery<ComprobanteFinal> query = em.createQuery("SELECT f FROM ComprobanteFinal f", ComprobanteFinal.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
-            return null;
-        }
-    }
     
     @Override
     public List<ComprobanteFinal> listAll() {
@@ -150,15 +117,6 @@ public class FacturaService extends GService<ComprobanteFinal> {
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());
-            return null;
-        }
-    }
-    
-    public ComprobanteFinal findById(Integer id) {
-    try {
-        return em.find(getEntityClass(), id);
-        } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
             return null;
         }
     }

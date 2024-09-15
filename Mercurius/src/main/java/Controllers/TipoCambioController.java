@@ -3,16 +3,16 @@ package Controllers;
 import Models.TipoCambio;
 import Services.TipoCambioService;
 import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import jakarta.enterprise.context.SessionScoped;
 import java.io.Serializable;
 import java.util.List;
 import lombok.Data;
 
 @Data
 @Named(value = "TipoCambioController")
-@SessionScoped
+@ApplicationScoped
 public class TipoCambioController implements Serializable {
     
     @Inject private TipoCambioService tipoCambioService;

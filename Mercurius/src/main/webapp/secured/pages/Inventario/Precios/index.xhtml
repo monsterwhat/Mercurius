@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="jakarta.faces.facelets">
+
+<h:head>
+    <title>Menu Historico de Precios</title>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+    <h:outputStylesheet name="primefaces/primefaces.css"/>
+    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+</h:head>
+
+<h:body>
+    <p:panelGrid columns="1" layout="flex">
+        <p:row>
+            <p:column>
+                <ui:include src="/secured/fragments/userBar.xhtml" /> 
+            </p:column>
+        </p:row> 
+        
+        <p:growl showDetail="true" showSummary="true" />
+
+        <p:row>
+            
+            <p:column>
+                
+                <p:card>
+                    
+                    <h:form id="PreciosGenerales">
+                        
+                    <p:dataTable value="#{ArticulosPrecioController.filteredPrecios}" var="precio"  widgetVar="PreciosTable"
+                                 paginator="true" rows="8" paginatorPosition="bottom" id="PreciosTableData" clientCache="true"
+                                 emptyMessage="No se encontraron registros de precio con la critería proporcionada"
+                                 globalFilterFunction="#{ArticulosPrecioController.globalFilterFunction}"  
+                                 filterBy="#{ArticulosPrecioController.filterBy}" reflow="true" selectionMode="single"
+                                 selection="#{ArticulosPrecioController.selectedPrecio}" rowKey="#{precio.id}">
+
+                        <f:facet name="header">
+                            <div class="field columns is-mobile">
+                                <p:inputText id="globalFilter" onkeyup="PF('PreciosTable').filter()"
+                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                            </div>
+                        </f:facet>
+
+                        <p:column headerText="Código" visible="false">
+                            <h:outputText value="#{precio.id}"/>
+                        </p:column>
+                        <p:column headerText="Artículo" sortBy="#{precio.articulo.nombre}">
+                            <h:outputText value="#{precio.articulo.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Utilidad %" sortBy="#{precio.porcentajeUtilidad}">
+                            <h:outputText value="#{precio.porcentajeUtilidad}"/>
+                        </p:column>
+                        <p:column headerText="Costo S/IVA" sortBy="#{precio.precioCostoSinIVA}">
+                            <h:outputText value="#{precio.precioCostoSinIVA}"/>
+                        </p:column>
+                        <p:column headerText="Precio" sortBy="#{precio.precioFinal}">
+                            <h:outputText value="#{precio.precioFinal}"/>
+                        </p:column>
+                        <p:column headerText="Precio C/IVA">
+                            <h:outputText value="#{precio.precioCostoConIVA}"/>
+                        </p:column>
+                        <p:column headerText="Fecha">
+                            <h:outputText value="#{precio.fechaCompra}"/>
+                        </p:column>
+                        <p:column headerText="Usuario">
+                            <h:outputText value="#{precio.usuario.username}"/>
+                        </p:column>
+
+                    </p:dataTable>
+                        
+                    </h:form>
+                    
+                </p:card>
+            </p:column>
+        </p:row>
+    </p:panelGrid>
+        
+</h:body>
+    
+</html>

@@ -7,7 +7,7 @@
     <h:body>
             <!-- Dialog for Código CABYS -->
             <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialogEdit"
-                      responsive="true" fitViewport="true" modal="true" >
+                      responsive="true" fitViewport="true" modal="true" dynamic="true">
                 <p:outputPanel rendered="#{not empty CabysController.catalogo}" layout="flex">
                     <h:form>
                         <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" widgetVar="UpdateCabysTableEdit"
@@ -22,7 +22,6 @@
                                          placeholder="Búsqueda general de todos los campos"/>
                         </f:facet>
 
-                        <p:column selectionBox="true" style="width: 3%" />
                         <p:column headerText="Código" sortBy="#{cabys.codigo}">
                             <h:outputText value="#{cabys.codigo}" />
                         </p:column>

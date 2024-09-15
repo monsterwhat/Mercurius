@@ -65,6 +65,14 @@ public class UsersController implements Serializable{
         return userService.count();
     }
     
+    public long usuariosActivosCount(){
+        return userService.countActivos();
+    }
+    
+    public long usuariosInactivosCount(){
+        return userService.countInactivos();
+    }
+    
     public void openNewUser(){
         newUser = new Users();
     }

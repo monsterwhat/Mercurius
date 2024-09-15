@@ -38,33 +38,9 @@ public class UserService extends GService<Users>{
             InsertAdmin();
         }
     }
-    
-    public boolean verifyPassword(char[] password, String hashedPassword){
-        return passwordHasher.verify(password, hashedPassword);
-    }
-        
-    public Users getSession(String username) {
-        try {
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
-            query.setParameter("username", username);
-
-            List<Users> resultList = query.getResultList();
-
-            if (!resultList.isEmpty()) {
-                return resultList.get(0);
-            } else {
-                return null;
-            }
-        } catch (IllegalStateException | SecurityException e) {
-            System.out.println("Error: ");
-            System.out.println(e);
-            return null;
-        }
-    }
-    
+      
     public void InsertAdmin(){  
         try {
-            //
             
                 this.userTransaction.begin();
                 String username = "Admin";
@@ -86,7 +62,6 @@ public class UserService extends GService<Users>{
                     System.out.println("User already exists");
                     this.userTransaction.rollback();
                 }
-            
             
         } catch (HeuristicMixedException | HeuristicRollbackException | NotSupportedException | RollbackException | SystemException | IllegalStateException | SecurityException e) {
             System.out.println("Error in InsertAdmin! Error: " + e.toString());

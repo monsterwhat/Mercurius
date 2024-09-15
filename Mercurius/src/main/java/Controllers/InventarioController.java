@@ -111,45 +111,13 @@ public class InventarioController implements Serializable {
     }
 
     public long inventarioPendienteCount(){
-        return inventarioService.countInactivos();
+        return inventarioService.countPendientes();
     }
     
     public long inventarioInactivoCount(){
-        return inventarioService.countPendientes();
+        return inventarioService.countInactivos();
     }
 
-    public void openNewInventario() {
-        newInventario = new Inventario();
-    }
-
-    public void updateInventario() {
-        if(selectedInventario != null && ArticuloID != 0 && currentSession.isValid()){
-            selectedInventario.setArticulo(articuloService.findById(ArticuloID));
-            selectedInventario.setUsuario(currentSession.getCurrentUser());
-            selectedInventario.setProcessed(true);
-            if(selectedInventario.getArticulo() != null && selectedInventario.getUsuario() != null){
-                Date today = new Date();
-                selectedInventario.setFechaMovimiento(today);
-                inventarioService.updateAndDisable(selectedInventario);
-                clearSelectedInventario();      
-            }
-        }
-    }
-        
-    public void updateInventarioRevision() {
-        if(selectedInventario != null && currentSession.isValid()){
-            //Should find the active version of this item...
-            selectedInventario.setUsuario(currentSession.getCurrentUser());
-            selectedInventario.setProcessed(true);
-            if(selectedInventario.getArticulo() != null && selectedInventario.getUsuario() != null){
-                Date today = new Date();
-                selectedInventario.setFechaMovimiento(today);
-                inventarioService.updateAndDisable(selectedInventario);
-                clearSelectedInventario();
-            }
-        }
-    }
-    
     public void updateInventarioRevisionDialog() {
         if(currentSession.isValid()){
             if(selectedInventario != null){
@@ -159,6 +127,8 @@ public class InventarioController implements Serializable {
                     if(selectedInventario.getUsuario() != null){
                         Date today = new Date();
                         selectedInventario.setFechaMovimiento(today);
+                        selectedInventario.setTipoMovimiento("Stock por Factura");
+                        selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
                         inventarioService.updateAndDisable(selectedInventario);
                         clearSelectedInventario();
                         PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
@@ -175,7 +145,7 @@ public class InventarioController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion invalida", null));
         }
-    }
+    }    
     
     public void updateInventariosRevisionDialog() {
         if(currentSession.isValid()){
@@ -186,18 +156,19 @@ public class InventarioController implements Serializable {
                     if(selectedInventario.getUsuario() != null){
                         Date today = new Date();
                         selectedInventario.setFechaMovimiento(today);
+                        selectedInventario.setTipoMovimiento("Stock por Factura");
+                        selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
                         inventarioService.updateAndDisable(selectedInventario);
                         clearSelectedInventario();
                         
-                        // Load the next movimiento or reset if none available
-                        loadNextMovimiento();
-                        
+                        // Load the next ajuste or reset if none available
+                        loadNextAjuste();
+
                         FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el movimiento", null));
+                            new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el ajuste", null));
 
                         // Refresh the dialog instead of hiding it
-                        PrimeFaces.current().ajax().update("RevisionMovimientoDialog");
-
+                        PrimeFaces.current().ajax().update("RevisionMovimientosDialog");
                     }
                 }else{
                     FacesContext.getCurrentInstance().addMessage(null,
@@ -211,15 +182,16 @@ public class InventarioController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion invalida", null));
         }
-    }
+    }    
     
-    public void loadNextMovimiento(){
+    private void loadNextAjuste() {
+        
         sinProcesar = inventarioService.listAllSinProcesar();
         
         if (sinProcesar == null || sinProcesar.isEmpty()) {
             FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más movimientos para revisar", null));
-            PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
+            PrimeFaces.current().executeScript("PF('RevisionMovimientosDialog').hide();");
             return;
         }
 
@@ -227,33 +199,18 @@ public class InventarioController implements Serializable {
         
         selectedInventario = sinProcesar.get(0);
 
-        // Check if there are no more articles after the removal
+        // Check if there are no more ajustes after the removal
         if (selectedInventario == null) {
             FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más movimientos para revisar", null));
-            PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
+            PrimeFaces.current().executeScript("PF('RevisionMovimientosDialog').hide();");
         }
     }
+    
     
     public void procesadoRapido(){
         selectedInventario = sinProcesar.get(0);
     }
-
-    public void createInventario() {
-        if(newInventario != null && ArticuloID != 0 && currentSession.isValid()) {
-            newInventario.setArticulo(articuloService.findById(ArticuloID));
-            newInventario.setUsuario(currentSession.getCurrentUser());
-            newInventario.setProcessed(true);
-            if(newInventario.getArticulo() != null && newInventario.getUsuario() != null){
-                newInventario.setStatus(true);
-                Date today = new Date();
-                newInventario.setFechaMovimiento(today);
-                inventarioService.create(newInventario);
-                clearSelectedInventario();
-            }                
-        }
-    }
-    
     
     public void createInventarioDialog() {
         if(!currentSession.isValid()){
@@ -277,7 +234,7 @@ public class InventarioController implements Serializable {
                         newInventario.setStatus(true);
                         Date today = new Date();
                         newInventario.setFechaMovimiento(today);
-                        inventarioService.create(newInventario);
+                        inventarioService.createWithStock(newInventario);
                         clearSelectedInventario();
                         PrimeFaces.current().executeScript("PF('CrearAjusteDialog').hide();");
 
@@ -387,16 +344,6 @@ public class InventarioController implements Serializable {
                 || inventario.getUsuario().getUsername().toLowerCase().contains(filterText);
     }
     
-    public void articuloSelectedEdit() {
-        if (selectedArticulo != null) {
-            selectedInventario.setArticulo(selectedArticulo);
-        } else {
-            FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
-            FacesContext.getCurrentInstance().addMessage(null, message);
-        }
-    
-    }
-    
     public void articuloSelectedEditDialog() {
         if (selectedArticulo != null) {
             selectedInventario.setArticulo(selectedArticulo);
@@ -424,12 +371,6 @@ public class InventarioController implements Serializable {
             selectedInventario.setProcessed(false);
             inventarioService.update(selectedInventario);
         }
-    }
-    
-    public double getStock(Articulos articulo){
-        String codigoBarra = articulo.getCodigoBarra();
-        double totalStock = inventarioService.calculateTotalStockForItemByBarcode(codigoBarra);
-        return totalStock;
     }
     
     public void exportPDF() throws IOException, DocumentException {

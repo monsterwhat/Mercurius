@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
-import java.time.LocalDate;
 import java.util.List;
 
 @Named
@@ -26,11 +25,11 @@ public class TipoCambioService extends GService<TipoCambio> {
 
     public void getTipoCambioFromApi(double diferencia) {
         
-        // Get the current date without time
-        LocalDate currentDate = LocalDate.now();
+        // Get the current date
+        LocalDateTime currentDateTime = LocalDateTime.now();
 
         // Check if a TipoCambio record already exists for the current date
-        if (tipoCambioExistsForDate(currentDate)) {
+        if (tipoCambioExistsForDate(currentDateTime, diferencia)) {
             return; // Exit the method if a record already exists
         }
 
@@ -73,11 +72,12 @@ public class TipoCambioService extends GService<TipoCambio> {
         }
     }
 
-    private boolean tipoCambioExistsForDate(LocalDate date) {
+    private boolean tipoCambioExistsForDate(LocalDateTime date, Double differencia) {
         try {
             // Query the database to check if a TipoCambio record exists for the given date
-            TypedQuery<Long> query = em.createQuery("SELECT COUNT(t) FROM TipoCambio t WHERE FUNCTION('DATE', t.fecha) = :date", Long.class);
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(t) FROM TipoCambio t WHERE FUNCTION('DATE', t.fecha) = :date AND t.diferencia = :diff", Long.class);
             query.setParameter("date", date);
+            query.setParameter("diff", differencia);
             Long count = query.getSingleResult();
             return count > 0;
         } catch (Exception e) {
@@ -85,35 +85,25 @@ public class TipoCambioService extends GService<TipoCambio> {
             return false;
         }
     }
-
     
     public TipoCambio getNewestTipoCambio(int diferencia) {
         try {
-            TypedQuery<TipoCambio> query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.fecha DESC", TipoCambio.class);
-            query.setMaxResults(1);
-            List<TipoCambio> results = query.getResultList();
-            if (!results.isEmpty()) {
-                return results.get(0);
-            } else {
-                // If no records are found, fetch data from the API
                 getTipoCambioFromApi(diferencia);
-                // Query the database again after fetching data from the API
-                query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.fecha DESC", TipoCambio.class);
+                
+                TypedQuery<TipoCambio> query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.id DESC", TipoCambio.class);
                 query.setMaxResults(1);
+                List<TipoCambio> results = query.getResultList();
+                
                 results = query.getResultList();
                 if (!results.isEmpty()) {
                     return results.get(0);
                 } else {
-                    // If still no records are found, return null or handle the case accordingly
                     return null;
                 }
-            }
         } catch (Exception e) {
             System.err.println("Error retrieving newest TipoCambio: " + e.getMessage());
             return null;
         }
     }
-
-    
     
 }

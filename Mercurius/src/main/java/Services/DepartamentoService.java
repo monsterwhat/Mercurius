@@ -26,6 +26,26 @@ public class DepartamentoService extends GService<Departamento> {
     @PostConstruct
     public void init() {
     }
+    
+    public Long countActivos() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
+    public Long countInactivos() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
+        }
+    }
 
     @Override
     public void create(Departamento entity) {
@@ -35,27 +55,6 @@ public class DepartamentoService extends GService<Departamento> {
             System.out.println("Error creating entity: " + e.toString());
         }
     }
-    
-    public boolean createIfNotExists(Familia entity) {
-        try {
-            String queryStr = "SELECT COUNT(d) FROM Departamento d WHERE d.nombre = :nombre";
-            Long count = em.createQuery(queryStr, Long.class)
-                           .setParameter("nombre", entity.getNombre())
-                           .getSingleResult();
-
-            if (count > 0) {
-                return false;
-            } else {
-                em.persist(entity);
-                return true;
-            }
-
-        } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
-            return false;
-        }
-    }
-    
 
     @Override
     public void delete(Departamento entity) {
@@ -106,37 +105,6 @@ public class DepartamentoService extends GService<Departamento> {
         }
     }
     
-    public void updateAndDisable(Departamento entity) {
-        try {
-            // Find the existing item by its ID
-            Departamento existingItem = em.find(getEntityClass(), entity.getId());
-
-            if (existingItem != null) {
-                // Disable the existing item
-                existingItem.setStatus(false);
-                em.merge(existingItem);
-
-                // Create a new item with the updated information
-                em.persist(entity);
-                
-            } else {
-                System.out.println("Entity not found");
-            }
-        } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
-        }
-    }
-
-    public List<Departamento> ListAllEnabled() {
-        try {
-            TypedQuery<Departamento> query = em.createQuery("SELECT a FROM Departamento a WHERE a.status = true", Departamento.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
-            return null;
-        }
-    }
-
     public void softDelete(Departamento entity) {
         try {
             // Find the item by its ID

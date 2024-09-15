@@ -24,6 +24,26 @@ public class FamiliaService extends GService<Familia> {
     @PostConstruct
     public void init() {
     }
+    
+    public Long countActivas() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
+    public Long countInactivas() {
+        try {
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
+        }
+    }
 
     @Override
     public void create(Familia entity) {
@@ -123,16 +143,6 @@ public class FamiliaService extends GService<Familia> {
             }
         } catch (Exception e) {
             System.out.println("Error updating entity: " + e.toString());
-        }
-    }
-
-    public List<Familia> ListAllEnabled() {
-        try {
-            TypedQuery<Familia> query = em.createQuery("SELECT a FROM Familia a WHERE a.status = true", Familia.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
-            return null;
         }
     }
 

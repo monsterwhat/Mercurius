@@ -57,16 +57,6 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             System.out.println("Error updating entity: " + e.toString());
         }
     }
-
-    public List<DetalleServicio> listAllOld() {
-        try {
-            TypedQuery<DetalleServicio> query = em.createQuery("SELECT d FROM DetalleServicio d", DetalleServicio.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
-            return null;
-        }
-    }
     
     @Override
     public List<DetalleServicio> listAll() {
@@ -82,25 +72,6 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());
-            return null;
-        }
-    }
-    
-    public DetalleServicio findById(Integer id) {
-    try {
-        return em.find(getEntityClass(), id);
-        } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
-            return null;
-        }
-    }
-    
-    public List<DetalleServicio> ListAllEnabledOld() {
-        try {
-            TypedQuery<DetalleServicio> query = em.createQuery("SELECT a FROM DetalleServicio a WHERE a.status = true", DetalleServicio.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
             return null;
         }
     }

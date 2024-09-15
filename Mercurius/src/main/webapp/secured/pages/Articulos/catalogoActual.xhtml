@@ -63,23 +63,14 @@
                         <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
                             <h:outputText value="#{articulo.nombre}"/>
                         </p:column>
-                        <p:column headerText="Precio Costo Sin IVA" sortBy="#{articulo.precioCostoSinIVA}" visible="false">
-                            <h:outputText value="#{articulo.precioCostoSinIVA}"/>
-                        </p:column>
-                        <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.porcentajeUtilidad}" visible="false">
-                            <h:outputText value="#{articulo.porcentajeUtilidad}"/>
-                        </p:column>
-                        <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}" visible="false">
-                            <h:outputText value="#{articulo.precioFinal}"/>
-                        </p:column>
-                        <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}">
-                            <h:outputText value="#{articulo.precioCostoConIVA}"/>
-                        </p:column>
                         <p:column headerText="Creador" sortBy="#{articulo.usuario.username}" visible="false">
                             <h:outputText value="#{articulo.usuario.username}"/>
                         </p:column>
                         <p:column headerText="Stock" sortBy="#{ArticulosController.getStock(articulo)}">
                             <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
+                        </p:column>
+                        <p:column headerText="Precio" sortBy="#{ArticulosController.getLastPrecioFor(articulo).precioCostoConIVA}">
+                            <h:outputText value="#{ArticulosController.getLastPrecioFor(articulo).precioCostoConIVA}"/>
                         </p:column>
 
                         <p:column headerText="Acciones" exportable="false">

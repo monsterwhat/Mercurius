@@ -19,18 +19,6 @@
                     <p:column headerText="Nombre">
                         <h:outputText value="#{item.articulo.nombre}" />
                     </p:column>
-                    <p:column headerText="Precio Costo">
-                        <h:outputText value="#{item.articulo.precioCostoSinIVA}" />
-                    </p:column>
-                    <p:column headerText="Utilidad">
-                        <h:outputText value="#{item.articulo.porcentajeUtilidad}" />
-                    </p:column>
-                    <p:column headerText="Precio Sin Iva">
-                        <h:outputText value="#{item.articulo.precioFinal}" />
-                    </p:column>
-                    <p:column headerText="Precio Final">
-                        <h:outputText value="#{item.articulo.precioCostoConIVA}" />
-                    </p:column>
                     <p:column headerText="Cantidad">
                         <h:outputText value="#{item.cantidad}" />
                     </p:column>
@@ -46,7 +34,7 @@
                     <p:column headerText="Usuario">
                         <h:outputText value="#{item.usuario.username}" />
                     </p:column>
-                </p:dataTable>                
+                </p:dataTable>
         </p:outputPanel>
     </p:dialog>
     </h:body>

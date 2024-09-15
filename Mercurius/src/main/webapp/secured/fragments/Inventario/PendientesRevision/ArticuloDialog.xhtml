@@ -4,7 +4,7 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-        <p:dialog header="Seleccionar Articulo" widgetVar="ArticuloRevisionDialog" fitViewport="true">
+    <p:dialog header="Seleccionar Articulo" dynamic="true" widgetVar="ArticuloRevisionDialog" fitViewport="true">
             <h:form>
                 <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo" widgetVar="ArticuloTable"
                              paginator="true" rows="8" paginatorPosition="bottom" id="ArticuloTable" reflow="true"
@@ -12,12 +12,12 @@
                             globalFilterFunction="#{ArticulosController.globalFilterFunction}"
                             filterBy="#{ArticulosController.filterBy}" showGridlines="true"
                             selection="#{InventarioController.selectedArticulo}" rowKey="#{articulo.codigo}">
-
-                    <p:autoUpdate/>
+                    
+                    <p:ajax event="rowSelect" update="RevisionMovimientoDialog"/>
                     
                     <f:facet name="header">
                         <p:inputText id="globalFilter" onkeyup="PF('ArticuloTable').filter()" style="color: var(--primary-color); width: 100% "
-                                     placeholder="#{InventarioController.selectedInventario.articulo.nombre}"/>
+                                     placeholder="#{InventarioController.selectedInventario.articulo.nombre}" />
                     </f:facet>
 
                    <p:column style="width: 3%" />
