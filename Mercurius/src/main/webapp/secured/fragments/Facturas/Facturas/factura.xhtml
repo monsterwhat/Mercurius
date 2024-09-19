@@ -20,16 +20,19 @@
         });
         </script>
     
-    <p:dialog widgetVar="CrearFacturaDialog" closable="false" dynamic="true"
-        fitViewport="true" responsive="true" id="CrearFacturaDialog" modal="true">
-        <p:outputPanel rendered="#{not null facturasController.newFactura}" layout="flex">
-            <h:form id="createFactura">
-                <h:inputHidden id="resetFlag" value="#{facturasController.resetFlag}" />
-                <p:panel header="Crear Factura - #{SessionController.currentUser.username}" >
-                    <p:growl id="growl" showDetail="true" showSummary="true"/>
+    <p:dialog widgetVar="CrearFacturaDialog" maximizable="true" closable="false" dynamic="true" 
+        fitViewport="true" responsive="true" cache="false" id="CrearFacturaDialog">
+        <p:outputPanel deferred="true" rendered="#{not empty facturasController.newFactura}" layout="flex">
+            <p:panel header="Crear Factura - #{SessionController.currentUser.username}"  >
                     <p:card>
                         <p:panelGrid columns="2" layout="flex">
-                            <p:column>
+                            <h:form id="crearFactura">
+                                <p:autoUpdate/>
+                                <h:inputHidden id="resetFlag" value="#{facturasController.resetFlag}" />
+
+                                <p:growl id="growl" showDetail="true" showSummary="true"/>
+
+                                <p:column>
                                 <!-- Tipo Factura -->
                                 <div class="ui-inputgroup">
                                     <p:selectOneMenu id="group" >
@@ -44,45 +47,60 @@
                                                          oncomplete="PF('ClienteDialog').show();"/>
                                     </span>
                                 </div>
-                            </p:column>
-                            <p:column>
-                                <div class="ui-inputgroup">
-                                    <!-- Cantidad -->
-                                    <span class="ui-input-icon-left">
-                                        <i class="pi pi-hastag" />
-                                        <p:inputNumber id="cantidad" placeholder="Cantidad:" value="#{facturasController.cantidadArticulos}" minValue="1" emptyValue="1"/>
-                                    </span>
-                                    <!-- CodigoBarra (Ingreso articulo) -->
+                                </p:column>
+                                <p:column>
                                     <div class="ui-inputgroup">
-                                        <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{facturasController.codigoBarra}"
-                                            onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" >
-                                            <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
-                                            listener="#{facturasController.processCodigoBarra}" update="@form"/>
-                                        </p:inputText>
-                                        <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning" 
-                                                         oncomplete="PF('CodigoBarraDialog').show();"/>
+                                        <!-- Cantidad -->
+                                        <span class="ui-input-icon-left">
+                                            <i class="pi pi-hastag" />
+                                            <p:inputNumber id="cantidad" placeholder="Cantidad:" value="#{facturasController.cantidadArticulo}"
+                                                           minValue="1"  emptyValue="1" >
+                                                <p:ajax event="change" />
+                                            </p:inputNumber>
+                                        </span>
+                                        <!-- CodigoBarra (Ingreso articulo) -->
+                                        <div class="ui-inputgroup">
+                                            <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{facturasController.codigoBarra}"
+                                                onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" >
+                                                <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
+                                                listener="#{facturasController.processCodigoBarra}" update="@form"/>
+                                            </p:inputText>
+                                            <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning" 
+                                                             oncomplete="PF('CodigoBarraDialog').show();"/>
+                                        </div>
                                     </div>
-                                </div>
-                            </p:column>
+                                </p:column>
+                            </h:form>
+                            
                         </p:panelGrid>
 
-                        <p:dataTable id="carrito" var="carrito"  value="#{facturasController.articulosCarrito}" reflow="true" 
+                        <p:dataTable id="carrito" var="carrito"  value="#{facturasController.carrito}" reflow="true" 
                                      showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
                                      scrollable="true" scrollHeight="250" >
                             <p:autoUpdate/>
-                            <p:column headerText="Nombre">
-                                <h:outputText value="#{carrito.nombre}"/>
+                            <p:column headerText="Cantidad">
+                                <h:outputText value="#{carrito.cantidad}"/>
                             </p:column>
-                            <p:column headerText="Precio">
-                                <h:outputText value="#{carrito.lastPrecioArticulo}"/>
+                            <p:column headerText="Nombre">
+                                <h:outputText value="#{carrito.articulo.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Precio Unitario">
+                                <h:outputText value="#{carrito.articulo.lastPrecioArticulo}"/>
+                            </p:column>
+                            <p:column width="5%">
+                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" actionListener="#{facturasController.removeArticulo(carrito.articulo)}" />
                             </p:column>
                         </p:dataTable>
                     </p:card>
                     
                     <p:column>
                         <!--Total-->
-                        <p:card>
+                        <p:card >
                             <!-- Populate as needed -->
+                            <h:outputText value="Total Final: #{facturasController.getTotalCarritoConIva()}"/>
+                                
+                            <p:autoUpdate />
+                            
                         </p:card>
                     </p:column>
 
@@ -90,12 +108,11 @@
                                      actionListener="#{facturasController.cancel()}" process="@form" update="@this"
                                      onclick="PF('CrearFacturaDialog').hide();"/>
                 </p:panel>
-            </h:form>
         </p:outputPanel>           
     </p:dialog>
 
     <!-- Cliente Dialog -->
-    <p:dialog widgetVar="ClienteDialog" dynamic="true" closable="true" modal="true" header="Seleccionar Cliente">
+    <p:dialog widgetVar="ClienteDialog" dynamic="true" cache="false" closable="true" modal="true" header="Seleccionar Cliente">
         <h:form id="clientes">
             <p:dataTable value="#{ClientsController.filteredClients}" var="client"  widgetVar="ClientsTableData"
                          paginator="true" rows="8" paginatorPosition="bottom" id="ClientsTableData"
@@ -132,7 +149,7 @@
     </p:dialog>
     
     <!-- CodigoBarra Dialog -->
-    <p:dialog widgetVar="CodigoBarraDialog" dynamic="true" closable="true" modal="true" header="Codigo de Barra">
+    <p:dialog widgetVar="CodigoBarraDialog" dynamic="true" cache="false" closable="true" modal="true" header="Codigo de Barra">
         <h:form id="articulos">
             <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
                          paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData" size="small"
@@ -163,7 +180,7 @@
                     <p:commandButton value="Seleccionar Articulo" icon="pi pi-check"
                          process="ArticulosTableData"
                          update="@form"
-                         oncomplete="PF('CodigoBarraDialog').hide()"
+                         oncomplete="PF('CodigoBarraDialog').hide() "
                          actionListener="#{facturasController.selectArticulo(ArticulosController.selectedArticulo)}" />
                 </f:facet>
 
