@@ -35,7 +35,7 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             TypedQuery<ArticuloPrecio> query = em.createQuery("SELECT a FROM ArticuloPrecio a WHERE a.articulo = :articulo", ArticuloPrecio.class);
             query.setParameter("articulo", articulo);
             List<ArticuloPrecio> resultList = query.getResultList();
-            return resultList.isEmpty() ? null : resultList.get(0);
+            return resultList.isEmpty() ? null : resultList.get(resultList.size() - 1);
         } catch (Exception e) {
             System.out.println("Error " + e.getLocalizedMessage());
             return null;

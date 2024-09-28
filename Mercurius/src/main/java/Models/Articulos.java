@@ -67,7 +67,7 @@ public class Articulos {
     
     public BigDecimal getLastPrecioArticulo(){
         ArticuloPrecio lastPrecio = getLastPrecio();
-        return lastPrecio.getPrecioCostoConIVA();
+        return lastPrecio.getPrecioFinal();
     }
     
 }

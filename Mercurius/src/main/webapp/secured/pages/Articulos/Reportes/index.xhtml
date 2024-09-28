@@ -104,11 +104,11 @@
                     <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.lastPrecio.porcentajeUtilidad}" visible="false">
                         <h:outputText value="#{articulo.lastPrecio.porcentajeUtilidad}"/>
                     </p:column>
-                    <p:column headerText="Precio Final" sortBy="#{articulo.lastPrecio.precioFinal}" visible="false">
-                        <h:outputText value="#{articulo.lastPrecio.precioFinal}"/>
+                    <p:column headerText="Precio Final" sortBy="#{articulo.lastPrecio.precioConUtilidad}" visible="false">
+                        <h:outputText value="#{articulo.lastPrecio.precioConUtilidad}"/>
                     </p:column>
-                    <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.lastPrecio.precioCostoConIVA}">
-                        <h:outputText value="#{articulo.lastPrecio.precioCostoConIVA}"/>
+                    <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.lastPrecio.precioFinal}">
+                        <h:outputText value="#{articulo.lastPrecio.precioFinal}"/>
                     </p:column>
 
                     <p:column headerText="Acciones" exportable="false">

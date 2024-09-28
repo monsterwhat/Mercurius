@@ -69,8 +69,8 @@
                         <p:column headerText="Stock" sortBy="#{ArticulosController.getStock(articulo)}">
                             <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
                         </p:column>
-                        <p:column headerText="Precio" sortBy="#{ArticulosController.getLastPrecioFor(articulo).precioCostoConIVA}">
-                            <h:outputText value="#{ArticulosController.getLastPrecioFor(articulo).precioCostoConIVA}"/>
+                        <p:column headerText="Precio" sortBy="#{ArticulosController.getLastPrecioFor(articulo).precioFinal}">
+                            <h:outputText value="#{ArticulosController.getLastPrecioFor(articulo).precioFinal}"/>
                         </p:column>
 
                         <p:column headerText="Acciones" exportable="false">

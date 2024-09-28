@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
 
+//Tabla con el valor actual del stock de los articulos.
 @Entity
 @Data
 public class ArticuloStock {

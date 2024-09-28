@@ -20,106 +20,191 @@
         });
         </script>
     
-    <p:dialog widgetVar="CrearFacturaDialog" maximizable="true" closable="false" dynamic="true" 
-        fitViewport="true" responsive="true" cache="false" id="CrearFacturaDialog">
-        <p:outputPanel deferred="true" rendered="#{not empty facturasController.newFactura}" layout="flex">
+    <p:dialog widgetVar="CrearTiqueteDialog" maximizable="true" closable="false" dynamic="true" 
+        fitViewport="true" responsive="true" cache="false" id="CrearTiqueteDialog">
+        <p:outputPanel deferred="true" rendered="#{not empty crearTiqueteController.newFactura}" layout="flex">
             <p:panel header="Crear Factura - #{SessionController.currentUser.username}"  >
                     <p:card>
-                        <p:panelGrid columns="2" layout="flex">
-                            <h:form id="crearFactura">
-                                <p:autoUpdate/>
-                                <h:inputHidden id="resetFlag" value="#{facturasController.resetFlag}" />
-
-                                <p:growl id="growl" showDetail="true" showSummary="true"/>
-
-                                <p:column>
-                                <!-- Tipo Factura -->
-                                <div class="ui-inputgroup">
-                                    <p:selectOneMenu id="group" >
-                                        <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
-                                        <f:selectItems/>
-                                    </p:selectOneMenu>
-                                    <!-- Cliente -->
-                                    <span class="ui-inputgroup">
-                                        <p:inputText placeholder="Cliente"
-                                                     onkeydown="if (event.keyCode === 13) { event.preventDefault(); document.getElementById('CrearFacturaDialog:createFactura:cantidad').focus(); }"/>
-                                        <p:commandButton icon="pi pi-address-book"  styleClass="ui-button-warning" 
-                                                         oncomplete="PF('ClienteDialog').show();"/>
-                                    </span>
-                                </div>
-                                </p:column>
+                        <h:form id="crearTiquete">
+                            <p:growl id="growl" showDetail="true" showSummary="true"/>
+                        
+                                <!-- Tipo Factura y Cliente -->
                                 <p:column>
                                     <div class="ui-inputgroup">
-                                        <!-- Cantidad -->
-                                        <span class="ui-input-icon-left">
-                                            <i class="pi pi-hastag" />
-                                            <p:inputNumber id="cantidad" placeholder="Cantidad:" value="#{facturasController.cantidadArticulo}"
-                                                           minValue="1"  emptyValue="1" >
-                                                <p:ajax event="change" />
-                                            </p:inputNumber>
-                                        </span>
-                                        <!-- CodigoBarra (Ingreso articulo) -->
-                                        <div class="ui-inputgroup">
-                                            <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{facturasController.codigoBarra}"
-                                                onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" >
-                                                <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
-                                                listener="#{facturasController.processCodigoBarra}" update="@form"/>
-                                            </p:inputText>
-                                            <p:commandButton icon="pi pi-barcode" styleClass="ui-button-warning" 
-                                                             oncomplete="PF('CodigoBarraDialog').show();"/>
+                                        <div class="ui-inputgroup-addon">Tipo de Factura</div>
+                                        <p:selectOneMenu id="group" >
+                                            <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
+                                            <f:selectItems/>
+                                        </p:selectOneMenu>
+                                        <div class="ui-inputgroup-addon">Cliente</div>
+                                        <p:commandButton id="btnCliente" icon="pi pi-address-book" value="Seleccionar" styleClass="ui-button-warning" 
+                                                         oncomplete="PF('ClienteDialog').show();" rendered="#{!not empty crearTiqueteController.selectedClient.name}" />
+                                        <div class="ui-inputgroup-addon">
+                                            <h:outputText value="#{crearTiqueteController.selectedClient.name}  " rendered="#{not empty crearTiqueteController.selectedClient.name}" />
+                                            <p:commandButton icon="pi pi-times" actionListener="#{crearTiqueteController.resetClient()}"
+                                                             styleClass="rounded-button ui-button-danger" update="@this"
+                                                             style="height: 1.5em; width: 1.5em" process="@this"
+                                                             rendered="#{not empty crearTiqueteController.selectedClient.name}"/>
                                         </div>
                                     </div>
                                 </p:column>
-                            </h:form>
-                            
-                        </p:panelGrid>
+                                
+                                <p:spacer height="1em"/>
+                                
+                                <!-- Cantidad y codigoBarra -->
+                                <p:column>
+                                    <div class="ui-inputgroup">
+                                        <div class="ui-inputgroup-addon">Cantidad</div>
+                                        <p:inputNumber id="cantidad" value="#{crearTiqueteController.cantidadArticulo}"
+                                                        minValue="1"  emptyValue="1" >
+                                            <p:ajax event="change" />
+                                        </p:inputNumber>
+                                        <div class="ui-inputgroup-addon"><i class="pi pi-barcode"/></div>
+                                        <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{crearTiqueteController.codigoBarra}"
+                                            onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" >
+                                            <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
+                                            listener="#{crearTiqueteController.processCodigoBarra}" update="@form"/>
+                                        </p:inputText>
+                                        <p:commandButton icon="pi pi-search" styleClass="ui-button-warning" 
+                                                         oncomplete="PF('CodigoBarraDialog').show();"/>
+                                    </div>
+                                </p:column>
+                                    
+                                <p:spacer height="1em"/>
 
-                        <p:dataTable id="carrito" var="carrito"  value="#{facturasController.carrito}" reflow="true" 
-                                     showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
-                                     scrollable="true" scrollHeight="250" >
-                            <p:autoUpdate/>
-                            <p:column headerText="Cantidad">
-                                <h:outputText value="#{carrito.cantidad}"/>
-                            </p:column>
-                            <p:column headerText="Nombre">
-                                <h:outputText value="#{carrito.articulo.nombre}"/>
-                            </p:column>
-                            <p:column headerText="Precio Unitario">
-                                <h:outputText value="#{carrito.articulo.lastPrecioArticulo}"/>
-                            </p:column>
-                            <p:column width="5%">
-                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" actionListener="#{facturasController.removeArticulo(carrito.articulo)}" />
-                            </p:column>
-                        </p:dataTable>
+                            </h:form>
+
+                            <p:dataTable id="carrito" var="carrito"  value="#{crearTiqueteController.carrito}" reflow="true" 
+                                        showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
+                                        scrollable="true" scrollHeight="250" >
+                               <p:autoUpdate/>
+                               <p:column headerText="Cantidad">
+                                   <h:outputText value="#{carrito.cantidad}"/>
+                               </p:column>
+                               <p:column headerText="Nombre">
+                                   <h:outputText value="#{carrito.articulo.nombre}"/>
+                               </p:column>
+                               <p:column headerText="Precio Unitario">
+                                   <h:outputText value="#{carrito.articulo.lastPrecioArticulo}"/>
+                               </p:column>
+                               <p:column width="5%">
+                                   <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" 
+                                                    actionListener="#{crearTiqueteController.removeArticulo(carrito.articulo)}" />
+                               </p:column>
+                            </p:dataTable>
+
                     </p:card>
                     
                     <p:column>
                         <!--Total-->
-                        <p:card >
-                            <!-- Populate as needed -->
-                            <h:outputText value="Total Final: #{facturasController.getTotalCarritoConIva()}"/>
-                                
-                            <p:autoUpdate />
-                            
+                        <p:card style=" text-align: center">
+                            <p:panelGrid layout="grid" columns="3">
+                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Carrito: #{crearTiqueteController.getTotalCarrito()}"/>
+                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Descuento: #{crearTiqueteController.getTotalDescuento()}"/>
+                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Final: #{crearTiqueteController.getTotalCarritoConIva()}"/>
+                                <p:autoUpdate />
+                            </p:panelGrid>
                         </p:card>
                     </p:column>
+                    
+                    <p:panelGrid layout="grid" columns="2">
 
-                    <p:commandButton style="width: 100%" styleClass="ui-button-secondary" icon="pi pi-times"  value="Cancelar"
-                                     actionListener="#{facturasController.cancel()}" process="@form" update="@this"
-                                     onclick="PF('CrearFacturaDialog').hide();"/>
+                        <p:commandButton style="width: 100%" styleClass="ui-button-secondary" icon="pi pi-times"  value="Cancelar"
+                                     actionListener="#{crearTiqueteController.cancel()}" process="@form" update="@this"
+                                     onclick="PF('CrearTiqueteDialog').hide();"/>
+                        
+                        <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-check"  value="Facturar"
+                                     process="@form" update="@this" onclick="PF('PagoDialog').show();"/>
+                        
+                    </p:panelGrid>
+                    
+                    
+                    <p:autoUpdate/>
+                    <h:inputHidden id="resetFlag" value="#{crearTiqueteController.resetFlag}" />
                 </p:panel>
         </p:outputPanel>           
+    </p:dialog>
+    
+    <p:dialog widgetVar="PagoDialog" dynamic="true" cache="false" 
+              closable="false" modal="true" fitViewport="true" responsive="true">
+        
+        <h:form id="pago" >
+            
+            <p:card style="text-align: center;">
+                
+            <p:growl id="growl" showDetail="true" showSummary="true"/>
+                
+            <div>
+                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Factura"/>
+            </div>
+                
+                <p:spacer height="1em"/>
+                
+            <div>
+                <h:outputText style="font-weight: bold; font-size: 1.5em" value="#{crearTiqueteController.totalCarrito} Colones" ></h:outputText>
+            </div>
+                
+                <p:spacer height="1em"/>
+                
+            <div>
+                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Paga con:" ></h:outputText>
+            </div>
+                
+                <p:spacer height="1em"/>
+                
+            <div>
+                <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="colones" value="Colones: " />
+                <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="colones"
+                               decimalPlaces="0" minValue="0" required="true"
+                             value="#{crearTiqueteController.colones}" >
+                    <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@this"/>
+                </p:inputNumber>
+                
+                <p:spacer width="1em"/>
+                
+                <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="dolares" value="Dolares: "/>
+                <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="dolares" 
+                               decimalPlaces="0" minValue="0" required="true"
+                               value="#{crearTiqueteController.dolares}">
+                    <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@this"/>
+                </p:inputNumber>
+            </div>
+                
+            <p:spacer height="1em"/>
+            
+            <div>
+                <h:outputText style="font-weight: bold; font-size: 1.5em" value="#{crearTiqueteController.vueltoString}" />
+            </div>
+                
+            <p:autoUpdate />
+            
+            <p:spacer height="1em"/>
+
+
+            <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-receipt"  value="Facturar"
+                             actionListener="#{crearTiqueteController.verificarPago()}"
+                            process="@form" update="@this"/>
+            
+            <p:spacer height="1em"/>
+
+            <p:commandButton style="width: 100%"  styleClass="ui-button-danger" icon="pi pi-times" value="Cancelar"
+                             actionListener="#{crearTiqueteController.clearPago()}"
+                onclick="PF('PagoDialog').hide();" process="@form" update="@this"/>
+            
+            </p:card>
+            
+        </h:form>
     </p:dialog>
 
     <!-- Cliente Dialog -->
     <p:dialog widgetVar="ClienteDialog" dynamic="true" cache="false" closable="true" modal="true" header="Seleccionar Cliente">
         <h:form id="clientes">
-            <p:dataTable value="#{ClientsController.filteredClients}" var="client"  widgetVar="ClientsTableData"
+            <p:dataTable value="#{crearTiqueteController.filteredClients}" var="client"  widgetVar="ClientsTableData"
                          paginator="true" rows="8" paginatorPosition="bottom" id="ClientsTableData"
                          emptyMessage="No se encontraron clientes con la critería proporcionada"
-                         globalFilterFunction="#{ClientsController.globalFilterFunction}"  clientCache="true"
-                         filterBy="#{ClientsController.filterBy}" reflow="true" selectionMode="single"
-                         selection="#{ClientsController.selectedClient}" rowKey="#{client.code}">
+                         globalFilterFunction="#{crearTiqueteController.globalFilterFunction}"  clientCache="true"
+                         filterBy="#{crearTiqueteController.filterBy}" reflow="true" selectionMode="single"
+                         selection="#{crearTiqueteController.selectedClient}" rowKey="#{client.code}">
 
                 <f:facet name="header">
                     <p:inputText id="globalFilter" onkeyup="PF('ClientsTableData').filter()"
@@ -144,6 +229,15 @@
                 <p:column headerText="Número de Teléfono" sortBy="#{client.phoneNumber}">
                     <h:outputText value="#{client.phoneNumber}" />
                 </p:column>
+                
+                <f:facet name="footer">
+                    <p:commandButton value="Seleccionar Cliente" icon="pi pi-check"
+                         process="ClientsTableData"
+                         update="@form"
+                         oncomplete="PF('ClienteDialog').hide() "
+                         actionListener="#{crearTiqueteController.selectCliente(ClientsController.selectedClient)}" />
+                </f:facet>
+                
             </p:dataTable>
         </h:form>
     </p:dialog>
@@ -181,7 +275,7 @@
                          process="ArticulosTableData"
                          update="@form"
                          oncomplete="PF('CodigoBarraDialog').hide() "
-                         actionListener="#{facturasController.selectArticulo(ArticulosController.selectedArticulo)}" />
+                         actionListener="#{crearTiqueteController.selectArticulo(ArticulosController.selectedArticulo)}" />
                 </f:facet>
 
             </p:dataTable>   

@@ -143,9 +143,9 @@ public class ExcelExporter {
                 ArticuloPrecio latestPrecio = articulo.getPrecios().get(articulo.getPrecios().size() - 1);
 
                 row.createCell(10).setCellValue(latestPrecio.getPrecioCostoSinIVA().doubleValue());
-                row.createCell(11).setCellValue(latestPrecio.getPrecioCostoConIVA().doubleValue());
+                row.createCell(11).setCellValue(latestPrecio.getPrecioFinal().doubleValue());
                 row.createCell(12).setCellValue(latestPrecio.getPorcentajeUtilidad().doubleValue());
-                row.createCell(13).setCellValue(latestPrecio.getPrecioFinal().doubleValue());
+                row.createCell(13).setCellValue(latestPrecio.getPrecioConUtilidad().doubleValue());
             } else {
                 row.createCell(10).setCellValue(0.0);
                 row.createCell(11).setCellValue(0.0);

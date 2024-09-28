@@ -415,14 +415,14 @@ public class ArticulosController implements Serializable {
     }
 
     public void calcularPrecioConIVA(ArticuloPrecio articuloPrecio) {
-        if (articuloPrecio != null && articuloPrecio.getPrecioFinal() != null && newArticulo.getCodigoCabys() != null) {
-            BigDecimal precioFinal = articuloPrecio.getPrecioFinal();
+        if (articuloPrecio != null && articuloPrecio.getPrecioConUtilidad() != null && newArticulo.getCodigoCabys() != null) {
+            BigDecimal precioConUtilidad = articuloPrecio.getPrecioConUtilidad();
             BigDecimal precio0 = BigDecimal.ZERO;
 
-            // Verificar si el precioFinal es distinto de cero
-            if (precioFinal.compareTo(precio0) != 0) {
+            // Verificar si el precioConUtilidad es distinto de cero
+            if (precioConUtilidad.compareTo(precio0) != 0) {
                 BigDecimal impuesto = new BigDecimal(newArticulo.getCodigoCabys().getImpuesto());
-                BigDecimal precioSinIVA = articuloPrecio.getPrecioFinal();
+                BigDecimal precioSinIVA = articuloPrecio.getPrecioConUtilidad();
 
                 // Calcular el IVA como porcentaje del precio sin IVA
                 BigDecimal factorIVA = impuesto.divide(new BigDecimal(100));
@@ -438,7 +438,7 @@ public class ArticulosController implements Serializable {
                 articuloPrecio.setUsuario(currentSession.getCurrentUser());
                 
                 // Asignar el precio con IVA al artículo
-                articuloPrecio.setPrecioCostoConIVA(precioConIVA);
+                articuloPrecio.setPrecioFinal(precioConIVA);
                 
                 
             }
@@ -464,8 +464,8 @@ public class ArticulosController implements Serializable {
                         // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
                         precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
 
-                        // Asignar el precio con utilidad al atributo precioFinal del artículo
-                        articuloPrecio.setPrecioFinal(precioConUtilidad);
+                        // Asignar el precio con utilidad al atributo precioConUtilidad del artículo
+                        articuloPrecio.setPrecioConUtilidad(precioConUtilidad);
 
                         // Calcular el precio con IVA después de actualizar el precio final
                         calcularPrecioConIVA(articuloPrecio);
@@ -499,8 +499,8 @@ public class ArticulosController implements Serializable {
                         // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
                         precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
 
-                        // Asignar el precio con utilidad al atributo precioFinal del artículo
-                        articuloPrecio.setPrecioFinal(precioConUtilidad);
+                        // Asignar el precio con utilidad al atributo precioConUtilidad del artículo
+                        articuloPrecio.setPrecioConUtilidad(precioConUtilidad);
 
                         // Calcular el precio con IVA después de actualizar el precio final
                         calcularPrecioConIVAEdit(articuloPrecio);
@@ -522,10 +522,10 @@ public class ArticulosController implements Serializable {
     
     public void calcularPrecioConIVAEdit(ArticuloPrecio articuloPrecio) {
         if (articuloPrecio != null) {
-            BigDecimal precioFinal = articuloPrecio.getPrecioFinal();
-            if (precioFinal != null && precioFinal.compareTo(BigDecimal.ZERO) != 0 && selectedArticulo.getCodigoCabys() != null) {
+            BigDecimal precioConUtilidad = articuloPrecio.getPrecioConUtilidad();
+            if (precioConUtilidad != null && precioConUtilidad.compareTo(BigDecimal.ZERO) != 0 && selectedArticulo.getCodigoCabys() != null) {
                 BigDecimal impuesto = new BigDecimal(selectedArticulo.getCodigoCabys().getImpuesto());
-                BigDecimal precioSinIVA = articuloPrecio.getPrecioFinal();
+                BigDecimal precioSinIVA = articuloPrecio.getPrecioConUtilidad();
 
                 // Calcular el IVA como porcentaje del precio sin IVA
                 BigDecimal factorIVA = impuesto.divide(new BigDecimal(100));
@@ -541,7 +541,7 @@ public class ArticulosController implements Serializable {
                 articuloPrecio.setUsuario(currentSession.getCurrentUser());
                 
                 // Asignar el precio con IVA al atributo correspondiente del artículo
-                articuloPrecio.setPrecioCostoConIVA(precioConIVA);
+                articuloPrecio.setPrecioFinal(precioConIVA);
             } else {
                 return;
             }
@@ -698,8 +698,8 @@ public class ArticulosController implements Serializable {
 
                     document.add(new Paragraph("Costo: " + latestPrecio.getPrecioCostoSinIVA(), font));
                     document.add(new Paragraph("%Util: " + latestPrecio.getPorcentajeUtilidad(), font));
-                    document.add(new Paragraph("C/Iva: " + latestPrecio.getPrecioFinal(), font));
-                    document.add(new Paragraph("Venta: " + latestPrecio.getPrecioCostoConIVA(), font));
+                    document.add(new Paragraph("C/Util: " + latestPrecio.getPrecioConUtilidad(), font));
+                    document.add(new Paragraph("Venta: " + latestPrecio.getPrecioFinal(), font));
                 } else {
                     document.add(new Paragraph("No hay precios definidos", font));
                 }

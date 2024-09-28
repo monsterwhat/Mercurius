@@ -108,7 +108,7 @@
                                                      required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
                                                      style="width: 100%">
                                             <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad(ArticulosController.lastPrecioNew)}"
-                                                    update="newPrecioCostoSinIVA newPrecioFinal newPrecioFinalConIVA" process="@this"/>
+                                                    update="newPrecioCostoSinIVA newprecioConUtilidad newprecioFinal" process="@this"/>
                                         </p:inputText>
                             </p:column>
                             <p:spacer height="1em"/>
@@ -119,23 +119,23 @@
                                                      required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
                                                      style="width: 100%">
                                                     <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad(ArticulosController.lastPrecioNew)}"
-                                                            update="newPrecioCostoSinIVA newPrecioFinal newPrecioFinalConIVA"/>
+                                                            update="newPrecioCostoSinIVA newprecioConUtilidad newprecioFinal"/>
                                         </p:inputText>
                             </p:column>
                             <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="newPrecioFinal" showSummary="false" closable="true" />
-                                <label class="label" for="newPrecioFinal" style="color: var(--primary-color);">Precio Final:</label>
+                                <p:messages showDetail="true" for="newprecioConUtilidad" showSummary="false" closable="true" />
+                                <label class="label" for="newprecioConUtilidad" style="color: var(--primary-color);">Precio Final:</label>
                                 <p:card>
-                                    <p:outputLabel id="newPrecioFinal" value="#{ArticulosController.lastPrecioNew.precioFinal}"/>
+                                    <p:outputLabel id="newprecioConUtilidad" value="#{ArticulosController.lastPrecioNew.precioConUtilidad}"/>
                                 </p:card>
                             </p:column>
                             <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="newPrecioFinalConIVA" showSummary="false" closable="true"/>
-                                <label class="label" for="newPrecioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
+                                <p:messages showDetail="true" for="newprecioFinal" showSummary="false" closable="true"/>
+                                <label class="label" for="newprecioFinal" style="color: var(--primary-color);">Precio Final con IVA:</label>
                                 <p:card>
-                                    <p:outputLabel id="newPrecioFinalConIVA" value="#{ArticulosController.lastPrecioNew.precioCostoConIVA}">
+                                    <p:outputLabel id="newprecioFinal" value="#{ArticulosController.lastPrecioNew.precioFinal}">
                                         <p:autoUpdate/>
                                     </p:outputLabel>
                                 </p:card>

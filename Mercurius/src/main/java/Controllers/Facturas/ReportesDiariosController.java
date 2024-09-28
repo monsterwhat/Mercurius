@@ -21,7 +21,7 @@ import lombok.Data;
  */
 
 @Data
-@Named
+@Named("reportesDiariosController")
 @ViewScoped
 public class ReportesDiariosController implements Serializable{
     

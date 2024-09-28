@@ -1,9 +1,9 @@
 package Services;
 
 import Models.ArticuloStock;
+import Models.Articulos;
 import Models.Inventario;
 import jakarta.annotation.PostConstruct;
-import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;

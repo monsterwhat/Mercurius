@@ -38,10 +38,10 @@
                         <h:outputText value="#{articulo.lastPrecio.porcentajeUtilidad}" />
                     </p:column>
                     <p:column headerText="Precio Sin Iva" visible="false">
-                        <h:outputText value="#{articulo.lastPrecio.precioFinal}" />
+                        <h:outputText value="#{articulo.lastPrecio.precioConUtilidad}" />
                     </p:column>
                     <p:column headerText="Precio Final">
-                        <h:outputText value="#{articulo.lastPrecio.precioCostoConIVA}" />
+                        <h:outputText value="#{articulo.lastPrecio.precioFinal}" />
                     </p:column>
                     <p:column headerText="Creador">
                         <h:outputText value="#{articulo.usuario.username}" />
