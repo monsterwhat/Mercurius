@@ -56,16 +56,16 @@
                         <p:column headerText="Costo S/IVA" sortBy="#{precio.precioCostoSinIVA}">
                             <h:outputText value="#{precio.precioCostoSinIVA}"/>
                         </p:column>
-                        <p:column headerText="Precio" sortBy="#{precio.precioFinal}">
-                            <h:outputText value="#{precio.precioFinal}"/>
+                        <p:column headerText="Precio" sortBy="#{precio.precioConUtilidad}">
+                            <h:outputText value="#{precio.precioConUtilidad}"/>
                         </p:column>
                         <p:column headerText="Precio C/IVA">
-                            <h:outputText value="#{precio.precioCostoConIVA}"/>
+                            <h:outputText value="#{precio.precioFinal}"/>
                         </p:column>
-                        <p:column headerText="Fecha">
+                        <p:column headerText="Fecha" sortBy="#{precio.fechaCompra}">
                             <h:outputText value="#{precio.fechaCompra}"/>
                         </p:column>
-                        <p:column headerText="Usuario">
+                        <p:column headerText="Usuario" sortBy="#{precio.usuario.username}">
                             <h:outputText value="#{precio.usuario.username}"/>
                         </p:column>
 

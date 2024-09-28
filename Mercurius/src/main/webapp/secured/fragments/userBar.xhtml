@@ -20,7 +20,7 @@
                         if (event.key === 'F5') {
                             event.preventDefault();
                             
-                            PF('CrearFacturaDialog').show();
+                            PF('CrearTiqueteDialog').show();
                         }
                     }
                     document.addEventListener('keydown', handleKeyPress);
@@ -43,7 +43,7 @@
                                      icon="pi pi-receipt"/>
                         <p:menu overlay="true" trigger="FacturacionButton" my="left top" at="left bottom">
                             <p:submenu label="Facturación">
-                                <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" actionListener="#{facturasController.openNewFactura}" onclick="PF('CrearFacturaDialog').show();"/>
+                                <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" actionListener="#{crearTiqueteController.openNewFactura}" onclick="PF('CrearTiqueteDialog').show();"/>
                             </p:submenu>
                         </p:menu>
                         <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/>

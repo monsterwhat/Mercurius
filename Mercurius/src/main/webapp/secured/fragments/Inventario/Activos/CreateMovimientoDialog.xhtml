@@ -25,8 +25,8 @@
                                                  required="true" requiredMessage="El artículo es obligatorio"
                                                  widgetVar="articuloSelect" style="width: 100%;">
                                     <f:selectItem itemLabel="Seleccionar Articulo" itemValue="" />
-                                    <f:selectItems value="#{InventarioController.activosYProcesados}" var="inventario"
-                                                   itemLabel="#{inventario.articulo.nombre}" itemValue="#{inventario.articulo.codigo}"/>
+                                    <f:selectItems value="#{ArticulosController.filteredArticulosActivos}" var="articulo"
+                                                   itemLabel="#{articulo.nombre}" itemValue="#{articulo.codigo}"/>
                                 </p:selectOneMenu>
                             </div>
                         </div>

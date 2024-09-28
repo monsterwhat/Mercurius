@@ -11,6 +11,8 @@ import lombok.Data;
  * @author Al
  */
 
+//Se utiliza un array para mantener un historico de precios,
+//siempre el valor mas nuevo es el precio actual.
 @Entity
 @Data
 public class ArticuloPrecio {
@@ -26,14 +28,14 @@ public class ArticuloPrecio {
     @Column(name = "precio_costo_sin_iva")
     private BigDecimal precioCostoSinIVA;
 
-    @Column(name = "precio_costo_con_iva")
-    private BigDecimal precioCostoConIVA;
+    @Column(name = "precio_final")
+    private BigDecimal precioFinal;
 
     @Column(name = "porcentaje_utilidad")
     private BigDecimal porcentajeUtilidad;
 
-    @Column(name = "precio_final")
-    private BigDecimal precioFinal;
+    @Column(name = "precio_con_utilidad")
+    private BigDecimal precioConUtilidad;
 
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)

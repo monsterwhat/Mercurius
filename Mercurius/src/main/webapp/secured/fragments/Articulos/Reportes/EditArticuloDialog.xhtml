@@ -115,7 +115,7 @@
                                                      required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
                                                      style="width: 100%">
                                             <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
-                                                    update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this"/>
+                                                    update="editPrecioCostoSinIVA editprecioConUtilidad editprecioFinal" process="@this"/>
                                         </p:inputText>
                             </p:column>
                         <p:spacer height="1em"/>
@@ -126,24 +126,24 @@
                                                      required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
                                                      style="width: 100%">
                                                     <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
-                                                            update="editPrecioCostoSinIVA editPrecioFinal editPrecioFinalConIVA" process="@this" />
+                                                            update="editPrecioCostoSinIVA editprecioConUtilidad editprecioFinal" process="@this" />
                                         </p:inputText>
                             </p:column>
                         <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="editPrecioFinal" showSummary="false" closable="true" />
-                                    <label class="label" for="editPrecioFinal" style="color: var(--primary-color);">Precio Final:</label>
+                                <p:messages showDetail="true" for="editprecioConUtilidad" showSummary="false" closable="true" />
+                                    <label class="label" for="editprecioConUtilidad" style="color: var(--primary-color);">Precio Final:</label>
                                     <p:card>
-                                        <p:outputLabel id="editPrecioFinal" value="#{ArticulosController.lastPrecio.precioFinal}"/>
+                                        <p:outputLabel id="editprecioConUtilidad" value="#{ArticulosController.lastPrecio.precioConUtilidad}"/>
                                     </p:card>
 
                             </p:column>
                         <p:spacer height="1em"/>
                             <p:column>
-                                <p:messages showDetail="true" for="editPrecioFinalConIVA" showSummary="false" closable="true"/>
-                                    <label class="label" for="editPrecioFinalConIVA" style="color: var(--primary-color);">Precio Final con IVA:</label>
+                                <p:messages showDetail="true" for="editprecioFinal" showSummary="false" closable="true"/>
+                                    <label class="label" for="editprecioFinal" style="color: var(--primary-color);">Precio Final con IVA:</label>
                                     <p:card>
-                                        <p:outputLabel id="editPrecioFinalConIVA" value="#{ArticulosController.lastPrecio.precioCostoConIVA}"/>
+                                        <p:outputLabel id="editprecioFinal" value="#{ArticulosController.lastPrecio.precioFinal}"/>
                                     </p:card>   
 
                             </p:column>

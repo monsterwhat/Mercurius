@@ -7,6 +7,7 @@ import lombok.Data;
  * @author Al
  */
 
+//En Array representa el carrito con sus cantidades.
 @Data
 public class ArticuloCarrito {
     

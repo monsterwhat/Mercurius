@@ -58,11 +58,11 @@
                             <p:column headerText="Porcentaje Utilidad" sortBy="#{articulo.porcentajeUtilidad}" visible="false">
                                 <h:outputText value="#{articulo.porcentajeUtilidad}"/>
                             </p:column>
-                            <p:column headerText="Precio Final" sortBy="#{articulo.precioFinal}" visible="false">
-                                <h:outputText value="#{articulo.precioFinal}"/>
+                            <p:column headerText="Precio Final" sortBy="#{articulo.precioConUtilidad}" visible="false">
+                                <h:outputText value="#{articulo.precioConUtilidad}"/>
                             </p:column>
-                            <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioCostoConIVA}">
-                                <h:outputText value="#{articulo.precioCostoConIVA}"/>
+                            <p:column headerText="Precio Final Con IVA" sortBy="#{articulo.precioFinal}">
+                                <h:outputText value="#{articulo.precioFinal}"/>
                             </p:column>
                             <p:column headerText="Creador" sortBy="#{articulo.usuario.username}" visible="false">
                                 <h:outputText value="#{articulo.usuario.username}"/>

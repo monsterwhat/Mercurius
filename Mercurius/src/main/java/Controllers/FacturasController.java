@@ -4,6 +4,7 @@ import Models.ArticuloCarrito;
 import Models.ArticuloPrecio;
 import Services.FacturaService;
 import Models.Articulos;
+import Models.Clients;
 import Models.Comprobantes.ComprobanteFinal;
 import Models.Comprobantes.Detalles.*;
 import Models.Comprobantes.Encabezado.Encabezado;
@@ -37,11 +38,6 @@ import org.primefaces.model.FilterMeta;
 import org.primefaces.model.file.UploadedFile;
 import org.primefaces.util.LangUtils;
 
-/**
- *
- * @author Al
- */
-
 @Named
 @Data
 @ViewScoped
@@ -60,16 +56,9 @@ public class FacturasController implements Serializable {
     private List<UploadedFile> files;
     private List<ComprobanteFinal> facturas;
     private List<ComprobanteFinal> facturasDetalladas;
-    private List<ComprobanteFinal> carritoCompras;
-    private List<ArticuloCarrito> carrito;
     private List<ComprobanteFinal> facturasVencidas;
     private List<ComprobanteFinal> facturasPendientes;
-    private ComprobanteFinal newFactura;
-    private String codigoBarra;
-    private double cantidadArticulo = 1.0;
-    private boolean resetFlag;
     
-    private DetalleServicio detalleCarrito;
     private LineaDetalle lineaDetalle;
     
     private ComprobanteFinal selectedFactura;
@@ -77,135 +66,11 @@ public class FacturasController implements Serializable {
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     
-    public void processCodigoBarra() {
-    String codigo = this.codigoBarra;
-    double cantidad = this.cantidadArticulo;
-    System.out.println(cantidad);
-        if (codigo != null && !codigo.isBlank()) {
-            Articulos articulo = articuloController.findArticuloByBarCode(codigo);
-            if (articulo != null) {
-                if (cantidad > 0) {
-                    ArticuloCarrito articuloCarrito = new ArticuloCarrito(articulo);
-                    boolean found = false;
-
-                    // Recorremos el carrito para ver si ya existe el artículo
-                    for (ArticuloCarrito item : carrito) {
-                        if (item.getArticulo().getCodigo() == articulo.getCodigo()) { 
-                            item.setCantidad(item.getCantidad() + cantidad); // Sumamos la cantidad existente con la nueva
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    // Si no lo encontró en el carrito, lo agrega con la cantidad especificada
-                    if (!found) {
-                        articuloCarrito.setCantidad(cantidad);
-                        carrito.add(articuloCarrito);
-                    }
-
-                    // Limpiamos los campos
-                    codigoBarra = "";
-                    cantidadArticulo = 1;
-                    resetFlag = !resetFlag; // Toggle el reset flag
-
-                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Artículo agregado", "El artículo fue agregado al carrito"));
-                } else {
-                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "No hay cantidad", "La cantidad es inválida"));
-                }
-            } else {
-                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Artículo no encontrado", "El código de barra no corresponde a un artículo válido"));
-            }
-        } else {
-            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Código de barra vacío o nulo", "El código de barra no corresponde a un artículo válido"));
-        }
-    }
-
-    public BigDecimal getTotalCarritoConIva(){
-        if(carrito != null || !carrito.isEmpty()){
-            BigDecimal total = null;
-            for (ArticuloCarrito item : carrito) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioCostoConIVA();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
-                
-                if(total != null){
-                    total = total.add(precioUnidad.multiply(cantidadDecimal));
-                }else{
-                    total = precioUnidad.multiply(cantidadDecimal);
-                }
-            }
-            return total;
-        }
-        return new BigDecimal(0);
-    }
-    
-    public BigDecimal getTotalCarritoSinIva(){
-        if(carrito != null || !carrito.isEmpty()){
-            BigDecimal total = null;
-            for (ArticuloCarrito item : carrito) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioCostoSinIVA();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
-                
-                if(total != null){
-                    total = total.add(precioUnidad.multiply(cantidadDecimal));
-                }else{
-                    total = precioUnidad.multiply(cantidadDecimal);
-                }
-            }
-            return total;
-        }
-        return new BigDecimal(0);
-    }
-    
-    public BigDecimal getTotalPrecioFinalCarrito(){
-        if(carrito != null || !carrito.isEmpty()){
-            BigDecimal total = null;
-            for (ArticuloCarrito item : carrito) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioFinal();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
-                
-                if(total != null){
-                    total = total.add(precioUnidad.multiply(cantidadDecimal));
-                }else{
-                    total = precioUnidad.multiply(cantidadDecimal);
-                }
-            }
-            return total;
-        }
-        return new BigDecimal(0);
-    }
-    
-    public void selectArticulo(Articulos articulo){
-        codigoBarra = articulo.getCodigoBarra();
-        processCodigoBarra();
-    }
-    
-    public void removeArticulo(Articulos articulo){
-        if (carrito != null) {
-            Iterator<ArticuloCarrito> iterator = carrito.iterator();
-            while (iterator.hasNext()) {
-                ArticuloCarrito item = iterator.next();
-                if (item.getArticulo().equals(articulo)) {
-                    iterator.remove(); // Safely remove the item
-                }
-            }
-        }
-    }
-    
     @PostConstruct
     public void init(){
         files = new ArrayList<>();
         filterBy = new ArrayList<>();
         selectedFactura = new ComprobanteFinal();
-        newFactura = new ComprobanteFinal();
-        carritoCompras = new ArrayList<>();
-        carrito = new ArrayList<>();
-        codigoBarra = new String();
     }
     
     public List<ComprobanteFinal> facturasList() {
@@ -254,7 +119,6 @@ public class FacturasController implements Serializable {
     }
 
     public void clearFactura() {
-        openNewFactura();
         selectedFactura = null;
     }
     
@@ -473,8 +337,8 @@ public class FacturasController implements Serializable {
                     
                     precioArticulo.setArticulo(articuloExistente);
                     precioArticulo.setPrecioCostoSinIVA(precioUnitario);
+                    precioArticulo.setPrecioConUtilidad(BigDecimal.ZERO);
                     precioArticulo.setPrecioFinal(BigDecimal.ZERO);
-                    precioArticulo.setPrecioCostoConIVA(BigDecimal.ZERO);
 
                     List<ArticuloPrecio> preciosArticulos = articuloExistente.getPrecios();
                     if (preciosArticulos == null) {
@@ -520,11 +384,7 @@ public class FacturasController implements Serializable {
         System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + "Cancelo Factura");
     }
     
-    public void openNewFactura(){
-        newFactura = new ComprobanteFinal();
-    }
-    
-    public void crearFactura(){
+    public void crearTiquete(){
         ComprobanteFinal comprobante = new ComprobanteFinal();
         Encabezado encabezado = new Encabezado();
         DetalleServicio detalles = new DetalleServicio();
