@@ -2,7 +2,7 @@ package Controllers.Correos;
 
 import Controllers.Settings.SettingsDirController;
 import Models.Articulos;
-import Models.Comprobantes.ComprobanteFinal;
+import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Correos.ReporteProgramado;
 import Models.Correos.ReportesEnum;
 import static Models.Correos.ReportesEnum.ARTICULOS;
@@ -140,7 +140,7 @@ public class CorreosHelper {
 }
     
     public void processFacturas(ReporteProgramado reporte){
-        List<ComprobanteFinal> changes = facturaService.findComprobantesAfterDate(reporte.getLastRun());
+        List<ComprobantesRecibidos> changes = facturaService.findComprobantesAfterDate(reporte.getLastRun());
         if(changes != null && !changes.isEmpty()){
             try {
                 // Generate a unique file name based on timestamp

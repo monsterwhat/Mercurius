@@ -5,7 +5,7 @@ import Models.ArticuloPrecio;
 import Services.FacturaService;
 import Models.Articulos;
 import Models.Clients;
-import Models.Comprobantes.ComprobanteFinal;
+import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Detalles.*;
 import Models.Comprobantes.Encabezado.Encabezado;
 import Models.Comprobantes.Resumen.ResumenFactura;
@@ -54,14 +54,14 @@ public class FacturasController implements Serializable {
     @Inject Parser parser;
     
     private List<UploadedFile> files;
-    private List<ComprobanteFinal> facturas;
-    private List<ComprobanteFinal> facturasDetalladas;
-    private List<ComprobanteFinal> facturasVencidas;
-    private List<ComprobanteFinal> facturasPendientes;
+    private List<ComprobantesRecibidos> facturas;
+    private List<ComprobantesRecibidos> facturasDetalladas;
+    private List<ComprobantesRecibidos> facturasVencidas;
+    private List<ComprobantesRecibidos> facturasPendientes;
     
     private LineaDetalle lineaDetalle;
     
-    private ComprobanteFinal selectedFactura;
+    private ComprobantesRecibidos selectedFactura;
     private String facturaFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
@@ -70,31 +70,31 @@ public class FacturasController implements Serializable {
     public void init(){
         files = new ArrayList<>();
         filterBy = new ArrayList<>();
-        selectedFactura = new ComprobanteFinal();
+        selectedFactura = new ComprobantesRecibidos();
     }
     
-    public List<ComprobanteFinal> facturasList() {
+    public List<ComprobantesRecibidos> facturasList() {
         if (facturas == null) {
             facturas = facturaService.ListAllEnabled();
         }
         return facturas;
     }
     
-    public List<ComprobanteFinal> facturasListDetalladas() {
+    public List<ComprobantesRecibidos> facturasListDetalladas() {
         if(facturasDetalladas == null){
             facturasDetalladas = facturaService.listAll();
         }
         return facturasDetalladas;
     }
     
-    public List<ComprobanteFinal> facturasPenditenes(){
+    public List<ComprobantesRecibidos> facturasPenditenes(){
         if(facturasPendientes == null){
             facturasPendientes = facturaService.listPendientes();
         }
         return facturasPendientes;
     }
     
-    public List<ComprobanteFinal> facturasVencidas(){
+    public List<ComprobantesRecibidos> facturasVencidas(){
         if(facturasVencidas == null){
             facturasVencidas = facturaService.listVencidas();
         }
@@ -127,7 +127,7 @@ public class FacturasController implements Serializable {
         facturasDetalladas = null;
     }
 
-    public List<ComprobanteFinal> getFilteredFacturas() {
+    public List<ComprobantesRecibidos> getFilteredFacturas() {
         if(facturas == null){
             facturas = facturaService.ListAllEnabled();
         }
@@ -140,7 +140,7 @@ public class FacturasController implements Serializable {
         }
     }
     
-    public List<ComprobanteFinal> getFilteredFacturasDetallados() {
+    public List<ComprobantesRecibidos> getFilteredFacturasDetallados() {
         try {
             if(facturasDetalladas == null){
             facturasDetalladas = facturaService.listAll();
@@ -158,7 +158,7 @@ public class FacturasController implements Serializable {
         }
     }
     
-    public List<ComprobanteFinal> getFilteredFacturasPendientes() {
+    public List<ComprobantesRecibidos> getFilteredFacturasPendientes() {
         try {
             if(facturasPendientes == null){
             facturasPendientes = facturaService.listPendientes();
@@ -176,7 +176,7 @@ public class FacturasController implements Serializable {
         }
     }
     
-    public List<ComprobanteFinal> getFilteredFacturasVencidas() {
+    public List<ComprobantesRecibidos> getFilteredFacturasVencidas() {
         try {
             if(facturasVencidas == null){
             facturasVencidas = facturaService.listVencidas();
@@ -200,7 +200,7 @@ public class FacturasController implements Serializable {
             return true;
         }
 
-        ComprobanteFinal factura = (ComprobanteFinal) value;
+        ComprobantesRecibidos factura = (ComprobantesRecibidos) value;
         return factura.getEncabezado().getCodigoActividad().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getCondicionVenta().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getEmisor().getNombre().toLowerCase().contains(filterText)
@@ -260,7 +260,7 @@ public class FacturasController implements Serializable {
         }
     }
         
-    private void processFactura(ComprobanteFinal factura){
+    private void processFactura(ComprobantesRecibidos factura){
         try {
             
             List<LineaDetalle> lineasDetalle = factura.getDetalles().getLineasDetalle();
@@ -385,7 +385,7 @@ public class FacturasController implements Serializable {
     }
     
     public void crearTiquete(){
-        ComprobanteFinal comprobante = new ComprobanteFinal();
+        ComprobantesRecibidos comprobante = new ComprobantesRecibidos();
         Encabezado encabezado = new Encabezado();
         DetalleServicio detalles = new DetalleServicio();
         ResumenFactura resumen = new ResumenFactura();

@@ -2,11 +2,30 @@ package Controllers.Tiquetes;
 
 import Controllers.ArticulosController;
 import Controllers.SessionController;
+import Controllers.SettingsController;
 import Controllers.TipoCambioController;
+import Models.AppSettings;
 import Models.ArticuloCarrito;
 import Models.Articulos;
 import Models.Clients;
-import Models.Comprobantes.ComprobanteFinal;
+import Models.Comprobantes.ComprobantesEmitidos;
+import Models.Comprobantes.ComprobantesRecibidos;
+import Models.Comprobantes.Detalles.CodigoComercial;
+import Models.Comprobantes.Detalles.DetalleServicio;
+import Models.Comprobantes.Detalles.LineaDetalle;
+import Models.Comprobantes.Detalles.OtroCargo;
+import Models.Comprobantes.Encabezado.Emisor;
+import Models.Comprobantes.Encabezado.Encabezado;
+import Models.Comprobantes.Encabezado.Fax;
+import Models.Comprobantes.Encabezado.IdentificacionEmisor;
+import Models.Comprobantes.Encabezado.IdentificacionReceptor;
+import Models.Comprobantes.Encabezado.MedioPago;
+import Models.Comprobantes.Encabezado.Receptor;
+import Models.Comprobantes.Encabezado.Telefono;
+import Models.Comprobantes.Encabezado.Ubicacion;
+import Models.Comprobantes.Enums.CondicionVenta;
+import Models.Comprobantes.Resumen.CodigoTipoMoneda;
+import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Inventario;
 import Services.ClientService;
 import Services.InventarioService;
@@ -18,11 +37,13 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
@@ -39,8 +60,9 @@ public class CrearTiqueteController implements Serializable{
     @Inject private InventarioService inventario;
     @Inject private SessionController currentSession;
     @Inject private TipoCambioController tipoCambio;
+    @Inject private SettingsController settings;
     
-    private ComprobanteFinal newFactura;
+    private ComprobantesRecibidos newFactura;
     private Clients selectedClient;
     private double cantidadArticulo = 1.0;
     private String codigoBarra;
@@ -54,7 +76,7 @@ public class CrearTiqueteController implements Serializable{
     
     @PostConstruct
     public void init(){
-        newFactura = new ComprobanteFinal();
+        newFactura = new ComprobantesRecibidos();
         selectedClient = new Clients();
         codigoBarra = new String();
         carrito = new ArrayList<>();
@@ -330,7 +352,7 @@ public class CrearTiqueteController implements Serializable{
     }
     
     public void openNewFactura(){
-        newFactura = new ComprobanteFinal();
+        newFactura = new ComprobantesRecibidos();
     }
     
     public void verificarPago(){
@@ -350,6 +372,11 @@ public class CrearTiqueteController implements Serializable{
     }
     
     public void facturar(){
+        
+        AppSettings appSettings = this.settings.getCurrentSettings();
+        if(Objects.equals(appSettings.getEstatus(), Boolean.FALSE)){
+            return;
+        }
         
         //1. Hacer ajustes en inventario
         for (ArticuloCarrito articulo : carrito) {
@@ -371,24 +398,163 @@ public class CrearTiqueteController implements Serializable{
         }
         
         //2. Crear Comprobante y enviarlo a tributacion
+        
         //2.1 Encabezado
         
+            Encabezado encabezado = encabezadoTiqueteElectronico();
         
         //2.2 Detalles
-        
-        
+            
+            DetalleServicio detalles = new DetalleServicio();
+            List<LineaDetalle> lineasDetalle = new ArrayList<>();
+            for (int i = 0; i < carrito.size(); i++) {
+                ArticuloCarrito articulo = carrito.get(i);
+                LineaDetalle linea = new LineaDetalle();
+                linea.setNumeroLinea(i);
+                linea.setCodigoCabys(articulo.getArticulo().getCodigoCabys().getCodigo());
+                List<CodigoComercial> codigosComerciales = new ArrayList<>();
+                CodigoComercial codigoComercial = new CodigoComercial();
+                codigoComercial.setTipo("04");
+                codigoComercial.setCodigo(articulo.getArticulo().getCodigoBarra());
+                codigosComerciales.add(codigoComercial);
+
+            }
+            
+            List<OtroCargo> otrosCargos = new ArrayList<>();
+            OtroCargo otroCargo = new OtroCargo();
+            
+            //Agregar a comprobantesEmitidos...
+            
         //2.3 Resumen
         
+            ResumenFactura resumen = new ResumenFactura();
+            CodigoTipoMoneda moneda = new CodigoTipoMoneda();
+            BigDecimal totalServGravados;
+            BigDecimal totalServExentos;
+            BigDecimal totalServExonerado;
+            BigDecimal totalMercanciasGravadas;
+            BigDecimal totalMercanciasExentas;
+            BigDecimal totalMercExonerada;
+            BigDecimal totalGravado;
+            BigDecimal totalExento;
+            BigDecimal totalExonerado;
+            BigDecimal totalVenta;
+            BigDecimal totalDescuentos;
+            BigDecimal totalVentaNeta;
+            BigDecimal totalImpuesto;
+            BigDecimal totalIVADevuelto;
+            BigDecimal totalOtrosCargos;
+            BigDecimal totalComprobante;
+        
+        //2.4 Agregar a ComprobanteEmitidos.
+        ComprobantesEmitidos tiqueteElectronico = new ComprobantesEmitidos();
+        tiqueteElectronico.setEncabezado(encabezado);
+        tiqueteElectronico.setDetalles(detalles);
+        tiqueteElectronico.setResumen(resumen);
+        tiqueteElectronico.setUser(currentSession.getCurrentUser());
         
         //3. Guardar e imprimir Tiquete
         
         
+        
         //4. Guardar respuesta y limpiar valores de factura.
+        
+        encabezado = null;
+        detalles = null;
+        resumen = null;
+        tiqueteElectronico = null;
+        
         clearPago();
         carrito.clear();
         PrimeFaces.current().executeScript("PF('PagoDialog').hide(); PF('CrearTiqueteDialog').hide();");
 
+    }
+    
+    public DetalleServicio detallesTiqueteElectronico(){
+        return null;
+    }
+    
+    public Encabezado encabezadoTiqueteElectronico(){
         
+        AppSettings appSettings = this.settings.getCurrentSettings();
+        if(!Objects.equals(appSettings.getEstatus(), Boolean.FALSE)){
+            Encabezado encabezado = new Encabezado();
+            //Codigo actividad
+            String codigoActividad = "521202";
+            encabezado.setCodigoActividad(codigoActividad);
+            //Clave
+            String clave = ""; //Traer de Tributacion
+            encabezado.setClave(clave);
+            //Consecutivo
+            String numeroConsecutivo = ""; //Traer de Registros...
+            encabezado.setNumeroConsecutivo(numeroConsecutivo);
+            //Fecha y Hora
+            LocalDateTime emision = LocalDateTime.now();
+            encabezado.setFechaEmision(emision);
+            //CondicionVenta
+            String condicionVenta = CondicionVenta.OTROS.getCodigo();
+            encabezado.setCondicionVenta(condicionVenta);
+            //PlazoCredito
+            String plazoCredito = "";
+            encabezado.setPlazoCredito(plazoCredito);
+            //Medios de Pago
+            List<MedioPago> medioPago = new ArrayList<>();
+            MedioPago medio = new MedioPago();
+            medio.setMedioPago("01");
+            medioPago.add(medio);
+            encabezado.setMedioPago(medioPago);
+            //Emisor
+            Emisor emisor = new Emisor();
+            emisor.setNombre(appSettings.getNombre());
+            //Identificacion
+            IdentificacionEmisor emisorId = new IdentificacionEmisor();
+            emisorId.setNumero(appSettings.getIdentificacion());
+            emisorId.setTipo(appSettings.getTipoIdentificion());
+            emisor.setIdentificacion(emisorId);
+            //NombreComercial
+            emisor.setNombreComercial(appSettings.getNombreNegocio());
+            //Ubicacion
+            Ubicacion emisorUbicacion = new Ubicacion();
+            emisorUbicacion.setProvincia(appSettings.getProvincia());
+            emisorUbicacion.setCanton(appSettings.getCanton());
+            emisorUbicacion.setDistrito(appSettings.getDistrito());
+            emisorUbicacion.setBarrio(appSettings.getBarrio());
+            emisorUbicacion.setOtrasSenas(appSettings.getDireccionCompleta());
+            emisor.setUbicacion(emisorUbicacion);
+            //Telefono
+            Telefono emisorTelefono = new Telefono();
+            emisorTelefono.setCodigoPais(appSettings.getCodigoPais());
+            emisorTelefono.setNumeroTelefono(appSettings.getTelefono());
+            //Fax
+            Fax emisorFax = new Fax();
+            emisorFax.setCodigoPais(appSettings.getCodigoPaisFax());
+            emisorFax.setNumeroFax(appSettings.getTelefonoFax());
+            //CorreoElectronico
+            emisor.setCorreoElectronico(appSettings.getCorreoElectronicoTributacion());
+            //Guardamos info Emisor en encabezado
+            encabezado.setEmisor(emisor);
+            
+            Receptor receptor = new Receptor();
+            if(selectedClient != null){
+                receptor.setNombre(selectedClient.getName());
+                receptor.setNombreComercial(selectedClient.getName());
+                if(!"nacional".equals(selectedClient.getIdType().toLowerCase())){
+                    String idNumber = String.valueOf(selectedClient.getIdNumber());
+                    receptor.setIdentificacionExtranjero(idNumber);
+                }else{
+                    String idNumber = String.valueOf(selectedClient.getIdNumber());
+                    IdentificacionReceptor id = new IdentificacionReceptor();
+                    id.setNumero(idNumber);
+                    id.setTipo(selectedClient.getTipoIdentificacion());
+                    
+                    receptor.setIdentificacion(id);
+                }
+            }
+            //Guardamos info Receptor en encabezado
+            encabezado.setReceptor(receptor);
+            return encabezado;
+        }
+        return null;
     }
     
 }

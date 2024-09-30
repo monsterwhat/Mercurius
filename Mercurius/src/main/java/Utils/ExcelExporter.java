@@ -2,7 +2,7 @@ package Utils;
 
 import Models.ArticuloPrecio;
 import Models.Articulos;
-import Models.Comprobantes.ComprobanteFinal;
+import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Encabezado.Encabezado;
 import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Departamento;
@@ -59,7 +59,7 @@ public class ExcelExporter {
         return file;
     }
 
-    public File exportComprobantesToExcel(List<ComprobanteFinal> comprobantes, String filePath) throws IOException {
+    public File exportComprobantesToExcel(List<ComprobantesRecibidos> comprobantes, String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Comprobantes");
 
@@ -72,7 +72,7 @@ public class ExcelExporter {
         }
 
         int rowNum = 1;
-        for (ComprobanteFinal comprobante : comprobantes) {
+        for (ComprobantesRecibidos comprobante : comprobantes) {
             Row row = sheet.createRow(rowNum++);
 
             if (comprobante.getEncabezado() != null) {

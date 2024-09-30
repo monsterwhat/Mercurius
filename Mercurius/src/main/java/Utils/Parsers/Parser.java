@@ -1,7 +1,7 @@
 package Utils.Parsers;
 
 import Controllers.SessionController;
-import Models.Comprobantes.ComprobanteFinal;
+import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Detalles.CodigoComercial;
 import Models.Comprobantes.Detalles.Descuento;
 import Models.Comprobantes.Detalles.DetalleServicio;
@@ -219,8 +219,8 @@ public class Parser {
             String numTelefono = telefonoNode.path("NumTelefono").asText();
 
             Telefono telefono = new Telefono();
-            telefono.setCodigoPais(Integer.valueOf(codigoPais));
-            telefono.setNumeroTelefono(Integer.valueOf(numTelefono));
+            telefono.setCodigoPais(codigoPais);
+            telefono.setNumeroTelefono(numTelefono);
 
             return telefono;
         } catch (Exception e) {
@@ -237,13 +237,13 @@ public class Parser {
             Fax fax = new Fax();
 
             if (!codigoPais.isEmpty()) {
-                fax.setCodigoPais(Integer.valueOf(codigoPais));
+                fax.setCodigoPais(codigoPais);
             } else {
                 fax.setCodigoPais(null);
             }
 
             if (!numTelefono.isEmpty()) {
-                fax.setNumeroFax(Integer.valueOf(numTelefono));
+                fax.setNumeroFax(numTelefono);
             } else {
                 fax.setNumeroFax(null);
             }
@@ -642,7 +642,6 @@ public class Parser {
             }
             
             detalles.setLineasDetalle(lineas);
-            detalles.setEnabled(true);
             
             encabezado.setCodigoActividad(codigoActividad);
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
@@ -666,7 +665,7 @@ public class Parser {
             resumenFacturaService.create(resumenFactura);
             encabezadoService.create(encabezado);
             
-            ComprobanteFinal factura = new ComprobanteFinal();
+            ComprobantesRecibidos factura = new ComprobantesRecibidos();
             factura.setEncabezado(encabezado);
             factura.setDetalles(detalles);
             factura.setResumen(resumenFactura);

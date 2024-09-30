@@ -53,6 +53,9 @@ public class Clients {
     @Column
     private int zoneCode; // Codigo de Zona (Int)
     
+    @Column
+    private String TipoIdentificacion; //Tipo de identificacion Fisica/Juridica/DiMEX/NITE
+    
     private Boolean status; //En caso de querer archivar o desabilitar
 
     @ManyToOne

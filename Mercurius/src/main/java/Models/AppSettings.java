@@ -18,24 +18,35 @@ public class AppSettings {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int Id;
-    private String nombrePerfil; //Nombre del Perfil
-    @Lob private byte[] logo; //Logo de la empresa
-    private String logoMimeType; //Practicamente la extencion de la imagen.
-    private String correoElectronico; //Correo Electronico para enviar mensajes
-    private String contrasenaCorreo; //Contrasena del Correo
-    //Aqui deberian ir datos de tributacion...
+    private String NombrePerfil; //Nombre del Perfil
+    @Lob private byte[] Logo; //Logo de la empresa
+    private String LogoMimeType; //Practicamente la extencion de la imagen.
+    private String CorreoElectronico; //Correo Electronico para enviar mensajes
+    private String ContrasenaCorreo; //Contrasena del Correo
+    
+    private String Nombre; //Completo con apellidos
+    private String TipoIdentificion; //Tipo de ID
     private String Identificacion;
-    private String Nombre;
-    private String primerApellido;
-    private String segundoApellido;
+    private String NombreNegocio; //NombreComercial
+    private String Provincia;
+    private String Canton;
+    private String Distrito;
+    private String Barrio;
+    private String DireccionCompleta; //OtrasSenas
+    
+    private String CodigoPais;
+    private String Telefono;
+    
+    private String CodigoPaisFax;
+    private String TelefonoFax;
+    
+    private String correoElectronicoTributacion;
+    
     private String razonSocial;
-    private String nombreNegocio;
-    private String direccionCompleta;
+    
+    
     //
     private Boolean estatus; //Si se esta usando o no en el sistema
     private int completedSteps; //En que punto del setup esta...
-    private int diferenciaCambio; //Cuanto hay que cambiar el tipo de cambio por las fluctuaciones diarias.
-    
-    
     
 }

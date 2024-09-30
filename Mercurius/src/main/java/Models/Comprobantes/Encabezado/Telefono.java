@@ -22,8 +22,8 @@ public class Telefono {
     private Long id;
 
     @Column(name = "codigo_pais", length = 3)
-    private Integer codigoPais;
+    private String codigoPais;
 
     @Column(name = "numero_telefono", length = 20)
-    private Integer numeroTelefono;
+    private String numeroTelefono;
 }
