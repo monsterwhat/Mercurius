@@ -45,18 +45,16 @@ public class TipoCambioController implements Serializable {
     public void getTipoCambioFromApi(){
         var configuracion = settings.getCurrentSettings();
         if(configuracion != null){
-            diferencia = configuracion.getDiferenciaCambio();
-            tipoCambioService.getTipoCambioFromApi(diferencia);
+            tipoCambioService.getTipoCambioFromApi();
         }
     }
     
     public TipoCambio getTipoCambioActual(){
         var configuracion = settings.getCurrentSettings();
         if(configuracion != null){
-            diferencia = configuracion.getDiferenciaCambio();
-            return tipoCambioService.getNewestTipoCambio(diferencia);
+            return tipoCambioService.getNewestTipoCambio();
         }else{
-            return tipoCambioService.getNewestTipoCambio(0);
+            return tipoCambioService.getNewestTipoCambio();
         }
     }
     

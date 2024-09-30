@@ -23,13 +23,13 @@ public class TipoCambioService extends GService<TipoCambio> {
         return TipoCambio.class;
     }
 
-    public void getTipoCambioFromApi(double diferencia) {
+    public void getTipoCambioFromApi() {
         
         // Get the current date
         LocalDateTime currentDateTime = LocalDateTime.now();
 
         // Check if a TipoCambio record already exists for the current date
-        if (tipoCambioExistsForDate(currentDateTime, diferencia)) {
+        if (tipoCambioExistsForDate(currentDateTime)) {
             return; // Exit the method if a record already exists
         }
 
@@ -54,14 +54,13 @@ public class TipoCambioService extends GService<TipoCambio> {
 
                 double valorVenta = ventaNode.get("valor").asDouble();
                 valorVenta = Math.floor(valorVenta);
-                double valorCompra = compraNode.get("valor").asDouble() - diferencia;
+                double valorCompra = compraNode.get("valor").asDouble();
                 valorCompra = Math.floor(valorCompra);
 
                 TipoCambio tipoCambio = new TipoCambio();
                 tipoCambio.setFecha(fechaVenta);
                 tipoCambio.setValorCompra(valorCompra);
                 tipoCambio.setValorVenta(valorVenta);
-                tipoCambio.setDiferencia(diferencia);
 
                 create(tipoCambio);
             } catch (JsonProcessingException e) {
@@ -72,12 +71,11 @@ public class TipoCambioService extends GService<TipoCambio> {
         }
     }
 
-    private boolean tipoCambioExistsForDate(LocalDateTime date, Double differencia) {
+    private boolean tipoCambioExistsForDate(LocalDateTime date) {
         try {
             // Query the database to check if a TipoCambio record exists for the given date
-            TypedQuery<Long> query = em.createQuery("SELECT COUNT(t) FROM TipoCambio t WHERE FUNCTION('DATE', t.fecha) = :date AND t.diferencia = :diff", Long.class);
+            TypedQuery<Long> query = em.createQuery("SELECT COUNT(t) FROM TipoCambio t WHERE FUNCTION('DATE', t.fecha) = :date", Long.class);
             query.setParameter("date", date);
-            query.setParameter("diff", differencia);
             Long count = query.getSingleResult();
             return count > 0;
         } catch (Exception e) {
@@ -86,9 +84,9 @@ public class TipoCambioService extends GService<TipoCambio> {
         }
     }
     
-    public TipoCambio getNewestTipoCambio(int diferencia) {
+    public TipoCambio getNewestTipoCambio() {
         try {
-                getTipoCambioFromApi(diferencia);
+                getTipoCambioFromApi();
                 
                 TypedQuery<TipoCambio> query = em.createQuery("SELECT t FROM TipoCambio t ORDER BY t.id DESC", TipoCambio.class);
                 query.setMaxResults(1);

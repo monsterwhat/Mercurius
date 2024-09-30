@@ -20,7 +20,8 @@ import lombok.Data;
 
 @Entity
 @Data
-public class ComprobanteFinal {
+public class ComprobantesEmitidos {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Use auto-increment strategy
     private Long id;
@@ -36,7 +37,7 @@ public class ComprobanteFinal {
     private ResumenFactura resumen;
     
     private Boolean status;
-    private Boolean processed;
+    
     private Users user;
     
 }

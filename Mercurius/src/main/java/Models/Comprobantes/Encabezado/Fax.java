@@ -23,8 +23,8 @@ public class Fax {
     private Long id;
 
     @Column(name = "codigo_pais", length = 3)
-    private Integer codigoPais;
+    private String codigoPais;
 
     @Column(name = "numero_fax", length = 20)
-    private Integer numeroFax;
+    private String numeroFax;
 }

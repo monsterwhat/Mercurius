@@ -70,19 +70,19 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
         }
     }
     
-    public List<LineaDetalle> listAllWhereID(Long comprobanteFinalId) {
+    public List<LineaDetalle> listAllWhereID(Long ComprobantesRecibidosId) {
         try {
             TypedQuery<LineaDetalle> query = em.createQuery(
                 "SELECT ld FROM LineaDetalle ld " +
                 "JOIN ld.detalleServicio ds " +
-                "JOIN ds.comprobanteFinal cf " +
-                "WHERE cf.id = :comprobanteFinalId",
+                "JOIN ds.ComprobantesRecibidos cf " +
+                "WHERE cf.id = :ComprobantesRecibidos Id",
                 LineaDetalle.class
             );
-            query.setParameter("comprobanteFinalId", comprobanteFinalId);
+            query.setParameter("ComprobantesRecibidosId", ComprobantesRecibidosId);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing LineaDetalle by ComprobanteFinal ID: " + e.getMessage());
+            System.out.println("Error listing LineaDetalle by ComprobantesRecibidos ID: " + e.getMessage());
             return null;
         }
     }

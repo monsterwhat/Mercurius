@@ -13,7 +13,7 @@ public class ProgramadorTareas {
     //Media noche
     @Schedule(hour = "0", minute = "0", second = "0", persistent = false)
     public void actualizarTipoCambioUSD() {
-        tipoCambioService.getTipoCambioFromApi(0);
+        tipoCambioService.getTipoCambioFromApi();
     }
     
 }
