@@ -11,7 +11,9 @@ import Models.Clients;
 import Models.Comprobantes.ComprobantesEmitidos;
 import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Detalles.CodigoComercial;
+import Models.Comprobantes.Detalles.Descuento;
 import Models.Comprobantes.Detalles.DetalleServicio;
+import Models.Comprobantes.Detalles.Impuesto;
 import Models.Comprobantes.Detalles.LineaDetalle;
 import Models.Comprobantes.Detalles.OtroCargo;
 import Models.Comprobantes.Encabezado.Emisor;
@@ -106,7 +108,7 @@ public class CrearTiqueteController implements Serializable{
             Articulos articulo = articuloController.findArticuloByBarCode(codigo);
             if (articulo != null) {
                 if (cantidad > 0) {
-                    ArticuloCarrito articuloCarrito = new ArticuloCarrito(articulo);
+                    ArticuloCarrito articuloCarrito = new ArticuloCarrito(articulo, cantidad);
                     boolean found = false;
 
                     // Recorremos el carrito para ver si ya existe el artículo
@@ -401,50 +403,17 @@ public class CrearTiqueteController implements Serializable{
         
         //2.1 Encabezado
         
-            Encabezado encabezado = encabezadoTiqueteElectronico();
+        Encabezado encabezado = encabezadoTiqueteElectronico();
         
         //2.2 Detalles
             
-            DetalleServicio detalles = new DetalleServicio();
-            List<LineaDetalle> lineasDetalle = new ArrayList<>();
-            for (int i = 0; i < carrito.size(); i++) {
-                ArticuloCarrito articulo = carrito.get(i);
-                LineaDetalle linea = new LineaDetalle();
-                linea.setNumeroLinea(i);
-                linea.setCodigoCabys(articulo.getArticulo().getCodigoCabys().getCodigo());
-                List<CodigoComercial> codigosComerciales = new ArrayList<>();
-                CodigoComercial codigoComercial = new CodigoComercial();
-                codigoComercial.setTipo("04");
-                codigoComercial.setCodigo(articulo.getArticulo().getCodigoBarra());
-                codigosComerciales.add(codigoComercial);
+        DetalleServicio detalles = detallesTiqueteElectronico();
 
-            }
-            
-            List<OtroCargo> otrosCargos = new ArrayList<>();
-            OtroCargo otroCargo = new OtroCargo();
-            
-            //Agregar a comprobantesEmitidos...
+        //Agregar a comprobantesEmitidos...
             
         //2.3 Resumen
         
-            ResumenFactura resumen = new ResumenFactura();
-            CodigoTipoMoneda moneda = new CodigoTipoMoneda();
-            BigDecimal totalServGravados;
-            BigDecimal totalServExentos;
-            BigDecimal totalServExonerado;
-            BigDecimal totalMercanciasGravadas;
-            BigDecimal totalMercanciasExentas;
-            BigDecimal totalMercExonerada;
-            BigDecimal totalGravado;
-            BigDecimal totalExento;
-            BigDecimal totalExonerado;
-            BigDecimal totalVenta;
-            BigDecimal totalDescuentos;
-            BigDecimal totalVentaNeta;
-            BigDecimal totalImpuesto;
-            BigDecimal totalIVADevuelto;
-            BigDecimal totalOtrosCargos;
-            BigDecimal totalComprobante;
+        ResumenFactura resumen = resumenTiqueteElectronico();
         
         //2.4 Agregar a ComprobanteEmitidos.
         ComprobantesEmitidos tiqueteElectronico = new ComprobantesEmitidos();
@@ -470,8 +439,73 @@ public class CrearTiqueteController implements Serializable{
 
     }
     
+    public ResumenFactura resumenTiqueteElectronico(){
+        
+        ResumenFactura resumen = new ResumenFactura();
+
+        CodigoTipoMoneda moneda = new CodigoTipoMoneda();
+            BigDecimal totalServGravados;
+            BigDecimal totalServExentos;
+            BigDecimal totalServExonerado;
+            BigDecimal totalMercanciasGravadas;
+            BigDecimal totalMercanciasExentas;
+            BigDecimal totalMercExonerada;
+            BigDecimal totalGravado;
+            BigDecimal totalExento;
+            BigDecimal totalExonerado;
+            BigDecimal totalVenta;
+            BigDecimal totalDescuentos;
+            BigDecimal totalVentaNeta;
+            BigDecimal totalImpuesto;
+            BigDecimal totalIVADevuelto;
+            BigDecimal totalOtrosCargos;
+            BigDecimal totalComprobante;
+            
+        return resumen;
+    }
+    
     public DetalleServicio detallesTiqueteElectronico(){
-        return null;
+        
+        DetalleServicio detalles = new DetalleServicio();
+        
+        List<LineaDetalle> lineasDetalle = new ArrayList<>();
+            for (int i = 0; i < carrito.size(); i++) {
+                ArticuloCarrito articulo = carrito.get(i);
+                LineaDetalle linea = new LineaDetalle();
+                linea.setNumeroLinea(i);
+                linea.setCodigoCabys(articulo.getArticulo().getCodigoCabys().getCodigo());
+                List<CodigoComercial> codigosComerciales = new ArrayList<>();
+                CodigoComercial codigoComercial = new CodigoComercial();
+                codigoComercial.setTipo("04");
+                codigoComercial.setCodigo(articulo.getArticulo().getCodigoBarra());
+                codigosComerciales.add(codigoComercial);
+                var Cantidad = BigDecimal.valueOf(carrito.get(i).getCantidad());
+                linea.setCantidad(Cantidad);
+                linea.setUnidadMedida(articulo.getArticulo().getUnidadMedida());
+                linea.setUnidadMedidaComercial(articulo.getArticulo().getUnidadMedidaComercial());
+                linea.setDetalle(articulo.getArticulo().getNombre());
+                var precioUnitario = articulo.getArticulo().getLastPrecio().getPrecioConUtilidad();
+                linea.setPrecioUnitario(precioUnitario);
+                var montoTotal = precioUnitario.multiply(Cantidad);
+                linea.setMontoTotal(montoTotal);
+                
+                //Descuento/s
+                List<Descuento> descuentos = new ArrayList<>();
+                //MontoDescuento NaturalezaDescuento
+                
+                //Impuesto/s
+                List<Impuesto> impuestos = new ArrayList<>();
+                
+                //Codigo CodigoTarifa Tarifa Monto
+                
+                            
+                List<OtroCargo> otrosCargos = new ArrayList<>();
+                OtroCargo otroCargo = new OtroCargo();
+                
+                lineasDetalle.add(linea);
+            }
+        
+        return detalles;
     }
     
     public Encabezado encabezadoTiqueteElectronico(){

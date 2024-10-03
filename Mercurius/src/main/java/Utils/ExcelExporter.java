@@ -132,29 +132,28 @@ public class ExcelExporter {
             row.createCell(1).setCellValue(articulo.getCodigoCabys() != null ? articulo.getCodigoCabys().getCodigo() : "");
             row.createCell(2).setCellValue(articulo.getRecomendacionCabys());
             row.createCell(3).setCellValue(articulo.getNombre());
-            row.createCell(4).setCellValue(articulo.getDetalles());
-            row.createCell(5).setCellValue(articulo.getCodigoBarra());
-            row.createCell(6).setCellValue(articulo.getUnidadMedida());
-            row.createCell(7).setCellValue(articulo.getUnidadMedidaComercial());
-            row.createCell(8).setCellValue(articulo.getDepartamento() != null ? articulo.getDepartamento().getNombre() : "");
-            row.createCell(9).setCellValue(articulo.getFamilia() != null ? articulo.getFamilia().getNombre() : "");
+            row.createCell(4).setCellValue(articulo.getCodigoBarra());
+            row.createCell(5).setCellValue(articulo.getUnidadMedida());
+            row.createCell(6).setCellValue(articulo.getUnidadMedidaComercial());
+            row.createCell(7).setCellValue(articulo.getDepartamento() != null ? articulo.getDepartamento().getNombre() : "");
+            row.createCell(8).setCellValue(articulo.getFamilia() != null ? articulo.getFamilia().getNombre() : "");
             // Show only the latest price, assuming it's the last in the list
             if (articulo.getPrecios() != null && !articulo.getPrecios().isEmpty()) {
                 ArticuloPrecio latestPrecio = articulo.getPrecios().get(articulo.getPrecios().size() - 1);
 
-                row.createCell(10).setCellValue(latestPrecio.getPrecioCostoSinIVA().doubleValue());
-                row.createCell(11).setCellValue(latestPrecio.getPrecioFinal().doubleValue());
-                row.createCell(12).setCellValue(latestPrecio.getPorcentajeUtilidad().doubleValue());
-                row.createCell(13).setCellValue(latestPrecio.getPrecioConUtilidad().doubleValue());
+                row.createCell(9).setCellValue(latestPrecio.getPrecioCostoSinIVA().doubleValue());
+                row.createCell(10).setCellValue(latestPrecio.getPrecioFinal().doubleValue());
+                row.createCell(11).setCellValue(latestPrecio.getPorcentajeUtilidad().doubleValue());
+                row.createCell(12).setCellValue(latestPrecio.getPrecioConUtilidad().doubleValue());
             } else {
+                row.createCell(9).setCellValue(0.0);
                 row.createCell(10).setCellValue(0.0);
                 row.createCell(11).setCellValue(0.0);
                 row.createCell(12).setCellValue(0.0);
-                row.createCell(13).setCellValue(0.0);
             }
-            row.createCell(14).setCellValue(articulo.isStatus());
-            row.createCell(15).setCellValue(articulo.getFecha());
-            row.createCell(16).setCellValue(articulo.getUsuario() != null ? articulo.getUsuario().getUsername(): "");
+            row.createCell(13).setCellValue(articulo.isStatus());
+            row.createCell(14).setCellValue(articulo.getFecha());
+            row.createCell(15).setCellValue(articulo.getUsuario() != null ? articulo.getUsuario().getUsername(): "");
         }
 
         for (int i = 0; i < headers.length; i++) {

@@ -26,16 +26,16 @@ public class ArticuloPrecio {
     private Articulos articulo;
 
     @Column(name = "precio_costo_sin_iva")
-    private BigDecimal precioCostoSinIVA;
+    private BigDecimal precioCostoSinIVA; //Lo que costo sin agregar el IVA de nuestra parte
 
     @Column(name = "precio_final")
-    private BigDecimal precioFinal;
+    private BigDecimal precioFinal; // precioConUtilidad + el IVA;
 
     @Column(name = "porcentaje_utilidad")
-    private BigDecimal porcentajeUtilidad;
+    private BigDecimal porcentajeUtilidad; //% De utilidad
 
     @Column(name = "precio_con_utilidad")
-    private BigDecimal precioConUtilidad;
+    private BigDecimal precioConUtilidad; //Lo que costo + la utilidad (S/IVA)
 
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
