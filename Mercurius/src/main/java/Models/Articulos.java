@@ -22,8 +22,6 @@ public class Articulos {
     
     private String nombre;
     
-    private String detalles;
-    
     private String codigoBarra;
     
     private String UnidadMedida;
@@ -44,6 +42,9 @@ public class Articulos {
     
     @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ArticuloPrecio> precios; // List of pricing details
+    
+    @ManyToMany(mappedBy = "articulos", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    private List<Promocion> promociones;  // Lista de promociones relacionadas al artículo
     
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -69,5 +70,20 @@ public class Articulos {
         ArticuloPrecio lastPrecio = getLastPrecio();
         return lastPrecio.getPrecioFinal();
     }
+    
+    public Promocion getPromocionActiva() {
+        Date hoy = new Date();
+        for (Promocion promocion : this.getPromociones()) {
+            if (promocion.isActiva() && 
+                promocion.getFechaInicio().before(hoy) && 
+                promocion.getFechaFin().after(hoy)) {
+                return promocion;
+            }
+        }
+        return null; // Si no hay promoción activa
+    }
+
+    
+    
     
 }

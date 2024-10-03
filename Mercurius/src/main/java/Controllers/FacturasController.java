@@ -1,10 +1,8 @@
 package Controllers;
 
-import Models.ArticuloCarrito;
 import Models.ArticuloPrecio;
 import Services.FacturaService;
 import Models.Articulos;
-import Models.Clients;
 import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Detalles.*;
 import Models.Comprobantes.Encabezado.Encabezado;
@@ -28,7 +26,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -267,7 +264,7 @@ public class FacturasController implements Serializable {
             if(lineasDetalle.isEmpty()){
                 System.out.println("Empty factura?");
                 lineasDetalle = lineaDetalleService.listAllWhereID(factura.getDetalles().getId());
-                if(lineasDetalle.isEmpty() || lineasDetalle.equals(null)){
+                if(lineasDetalle.isEmpty() || lineasDetalle == null){
                     return;
                 }
             }

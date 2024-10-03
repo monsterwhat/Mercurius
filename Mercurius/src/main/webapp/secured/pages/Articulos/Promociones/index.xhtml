@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+<h:head>
+    <title>Catalago de Promociones</title>
+    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+    <h:outputStylesheet name="primefaces/primefaces.css"/>
+    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+</h:head>
+
+<h:body>
+    <p:panelGrid columns="1" >
+        <p:row>
+            <p:column>
+                <ui:include src="/secured/fragments/userBar.xhtml" /> 
+            </p:column>
+        </p:row> 
+        
+        <p:growl showDetail="true" showSummary="true" />
+
+        <p:row>
+            <p:column>
+                <p:card styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
+                    
+                    <h:form id="promociones">
+                        
+                    <p:dataTable value="#{PromocionesController.filteredPromocions}" var="promocion" 
+                            widgetVar="Promociones" paginator="true" rows="8" 
+                            paginatorPosition="bottom" id="PromocionesTableData"
+                            emptyMessage="No se encontraron promociones con la critería proporcionada"
+                            globalFilterFunction="#{PromocionesController.globalFilterFunction}"
+                            filterBy="#{PromocionesController.filterBy}" reflow="true" 
+                            selectionMode="single" selection="#{PromocionesController.selectedPromocion}" 
+                            rowKey="#{promocion.id}">
+
+                    <p:ajax event="rowSelect" update="@this"/>
+                        
+                   <f:facet name="header">
+                       <p:inputText id="globalFilter" onkeyup="PF('Promociones').filter()"
+                                    placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                   </f:facet>
+
+                   <p:column headerText="Código" sortBy="#{promocion.id}" visible="false">
+                       <h:outputText value="#{promocion.id}"/>
+                   </p:column>
+
+                   <p:column headerText="Nombre" sortBy="#{promocion.nombre}">
+                       <h:outputText value="#{promocion.nombre}"/>
+                   </p:column>
+
+                   <p:column headerText="Artículos">
+                        <p:commandButton value="Ver Artículos" 
+                                         onclick="PF('articulosDialog').show();"
+                                         process="@this">
+                            <f:setPropertyActionListener value="#{promocion}" 
+                                                         target="#{PromocionesController.selectedPromocion}" />
+                        </p:commandButton>
+                    </p:column>
+                        
+                    <p:column headerText="Tipo Promocion">
+                        <h:outputText value="#{promocion.tipoPromocion}"/>
+                    </p:column>
+                    
+                    <p:column headerText="Fecha Inicio">
+                        <h:outputText value="#{promocion.fechaInicio}"/>
+                    </p:column>
+                        
+                    <p:column headerText="Fecha Fin">
+                        <h:outputText value="#{promocion.fechaFin}"/>
+                    </p:column>
+                        
+                    <p:column headerText="Descuento">
+                        <h:outputText value="#{promocion.descuento}"/>
+                        <h:outputText value="No Aplica" rendered="#{promocion.descuento eq null}"/>
+                    </p:column>
+                        
+                    <p:column headerText="Precio Combo">
+                        <h:outputText value="#{promocion.precioCombo}"/>
+                        <h:outputText value="No Aplica" rendered="#{promocion.precioCombo eq null}"/>
+                    </p:column>
+                    
+                    
+                   <p:column headerText="Creador" sortBy="#{promocion.usuario.username}" visible="true">
+                       <h:outputText value="#{promocion.usuario.username}"/>
+                   </p:column>
+
+                   <p:column headerText="Estatus" visible="false">
+                       <h:outputText value="#{promocion.activa}"/>
+                   </p:column>
+                        
+                    
+                        
+               </p:dataTable>
+ 
+                        
+                        <p:commandButton value="Crear Promocion" actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
+                        update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
+                    
+                        
+                    </h:form>
+                    
+                </p:card>
+                    
+                </p:column>
+            </p:row>
+        </p:panelGrid>
+                    
+    <ui:include src="/secured/fragments/Articulos/Promociones/CreatePromocionDialog.xhtml"/>
+    
+    <!-- Dialog for displaying articulosCarrito -->
+    <p:dialog header="Artículos de Promoción" widgetVar="articulosDialog" modal="true" fitViewport="true" 
+              responsive="true" dynamic="true" cache="false" closable="true" closeOnEscape="true" appendTo="@(body)">
+        <h:form>
+            <p:dataTable value="#{PromocionesController.selectedPromocion.articulosCarrito}" 
+                         var="articuloCarrito" reflow="true" style="width:100%;">
+                <p:column headerText="Nombre Artículo">
+                    <h:outputText value="#{articuloCarrito.articulo.nombre}"/>
+                </p:column>
+                <p:column headerText="Cantidad">
+                    <h:outputText value="#{articuloCarrito.cantidad}"/>
+                </p:column>
+                <p:column headerText="Precio Regular">
+                    <h:outputText value="#{articuloCarrito.articulo.lastPrecio.precioFinal}"/>
+                </p:column>
+            </p:dataTable>
+        </h:form>
+    </p:dialog>
+
+</h:body>
+</html>

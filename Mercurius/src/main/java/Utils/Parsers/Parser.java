@@ -323,6 +323,7 @@ public class Parser {
             if (lineaDetalleNode.path("CodigoComercial").isArray()) {
                 for (JsonNode codigoComercialNode : lineaDetalleNode.path("CodigoComercial")) {
                     CodigoComercial codigoComercial = new CodigoComercial();
+                    codigoComercial.setLineaDetalle(lineaDetalle);
                     codigoComercial = parseCodigoComercial(codigoComercialNode);
                     if(codigoComercial != null){
                         codigosComerciales.add(codigoComercial);
@@ -330,6 +331,7 @@ public class Parser {
                 }
             } else if (!lineaDetalleNode.path("CodigoComercial").isMissingNode()) {
                 CodigoComercial codigoComercial = new CodigoComercial();
+                codigoComercial.setLineaDetalle(lineaDetalle);
                 codigoComercial = parseCodigoComercial(lineaDetalleNode.path("CodigoComercial"));
                 if(codigoComercial != null){
                     codigosComerciales.add(codigoComercial);
