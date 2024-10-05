@@ -54,4 +54,6 @@ public class ArticuloPrecio {
     public String toString(){
         return "";
     }
+    
+    
 }

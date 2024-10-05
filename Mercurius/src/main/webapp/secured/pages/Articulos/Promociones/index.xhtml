@@ -60,10 +60,6 @@
                                                          target="#{PromocionesController.selectedPromocion}" />
                         </p:commandButton>
                     </p:column>
-                        
-                    <p:column headerText="Tipo Promocion">
-                        <h:outputText value="#{promocion.tipoPromocion}"/>
-                    </p:column>
                     
                     <p:column headerText="Fecha Inicio">
                         <h:outputText value="#{promocion.fechaInicio}"/>
@@ -77,12 +73,6 @@
                         <h:outputText value="#{promocion.descuento}"/>
                         <h:outputText value="No Aplica" rendered="#{promocion.descuento eq null}"/>
                     </p:column>
-                        
-                    <p:column headerText="Precio Combo">
-                        <h:outputText value="#{promocion.precioCombo}"/>
-                        <h:outputText value="No Aplica" rendered="#{promocion.precioCombo eq null}"/>
-                    </p:column>
-                    
                     
                    <p:column headerText="Creador" sortBy="#{promocion.usuario.username}" visible="true">
                        <h:outputText value="#{promocion.usuario.username}"/>
@@ -91,15 +81,24 @@
                    <p:column headerText="Estatus" visible="false">
                        <h:outputText value="#{promocion.activa}"/>
                    </p:column>
-                        
                     
-                        
-               </p:dataTable>
+                    <p:column headerText="Acciones" exportable="false">
+                        <div class="buttons">
+                            <p:commandButton styleClass="rounded-button ui-button-success" process="@this" icon="pi pi-pencil"
+                                             actionListener="#{PromocionesController.editPromocion()}" update="EditPromocionDialog">
+                                <f:setPropertyActionListener value="#{promocion}" target="#{PromocionesController.selectedPromocion}" />
+                            </p:commandButton>
+                            <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
+                                actionListener="#{PromocionesController.deletePromocion()}" process="@this" update="@this">
+                                <f:setPropertyActionListener value="#{promocion}" target="#{PromocionesController.selectedPromocion}" />
+                            </p:commandButton>
+                        </div>
+                    </p:column>
+                                                
+                    </p:dataTable>
  
-                        
-                        <p:commandButton value="Crear Promocion" actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
-                        update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
-                    
+                    <p:commandButton value="Crear Promocion" actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
+                    update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
                         
                     </h:form>
                     
@@ -110,6 +109,7 @@
         </p:panelGrid>
                     
     <ui:include src="/secured/fragments/Articulos/Promociones/CreatePromocionDialog.xhtml"/>
+    <ui:include src="/secured/fragments/Articulos/Promociones/EditPromocionDialog.xhtml"/>
     
     <!-- Dialog for displaying articulosCarrito -->
     <p:dialog header="Artículos de Promoción" widgetVar="articulosDialog" modal="true" fitViewport="true" 
@@ -126,6 +126,7 @@
                 <p:column headerText="Precio Regular">
                     <h:outputText value="#{articuloCarrito.articulo.lastPrecio.precioFinal}"/>
                 </p:column>
+                
             </p:dataTable>
         </h:form>
     </p:dialog>

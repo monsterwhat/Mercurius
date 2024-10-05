@@ -22,11 +22,9 @@ public class Promocion {
 
     private String nombre;  // Nombre de la promoción
     
-    private String tipoPromocion;  // "DESCUENTO" o "COMBO"
-    
     private BigDecimal descuento; // Porcentaje o monto de descuento, puede ser nulo si es combo
     
-    private BigDecimal precioCombo; // Precio final si es un combo
+    private BigDecimal cantidad; // En caso de que sea hasta agotar existencias(Limitada)
     
     @ManyToMany
     @JoinTable(
@@ -53,33 +51,6 @@ public class Promocion {
     @JoinColumn(name = "usuario_id")
     private Users usuario; // Quien creó la promoción
     
-    // Validaciones de promociones
-    public boolean isDescuentoValid() {
-        return tipoPromocion.equals("DESCUENTO") && descuento != null;
-    }
-
-    public boolean isComboValid() {
-        return tipoPromocion.equals("COMBO") && precioCombo != null;
-    }
-
-    // Método para aplicar un descuento
-    public BigDecimal aplicarDescuento(ArticuloPrecio precioArticulo) {
-        if (isDescuentoValid()) {
-            BigDecimal descuentoAplicado = precioArticulo.getPrecioFinal()
-                .multiply(BigDecimal.ONE.subtract(descuento.divide(BigDecimal.valueOf(100))));
-            return descuentoAplicado;
-        }
-        return precioArticulo.getPrecioFinal(); // No aplicar descuento si no es válido
-    }
-
-    // Método para calcular el precio del combo
-    public BigDecimal calcularPrecioCombo() {
-        if (isComboValid()) {
-            return precioCombo;
-        }
-        return BigDecimal.ZERO; // O lanza una excepción si el combo no es válido
-    }
-    
     public BigDecimal getCantidad(Articulos articulo) {
         int index = articulos.indexOf(articulo);
         if (index != -1 && index < cantidades.size()) {
@@ -87,22 +58,43 @@ public class Promocion {
         }
         return BigDecimal.ZERO; // Or handle this case as needed
     }
+    
+    public List<Date> getFechas(){
+        List<Date> fechas = new ArrayList<>();
+            if(fechaInicio != null){
+                fechas.add(fechaInicio);
+            }
+            if(fechaFin != null){
+                fechas.add(fechaFin);
+            }
+        return fechas;
+    }
+    
+    public ArticuloCarrito returnPromocionAsArticuloCarrito(){
+        
+        ArticuloCarrito promocionAsArticulo = new ArticuloCarrito();
+        
+        return promocionAsArticulo;
+    }
 
 
     public List<ArticuloCarrito> getArticulosCarrito() {
     List<ArticuloCarrito> articulosCarrito = new ArrayList<>();
 
-        for (int i = 0; i < articulos.size(); i++) {
-            Articulos articulo = articulos.get(i);
-            Double cantidad = cantidades.get(i).doubleValue();
+        // Check if articulos and cantidades are not null before proceeding
+        if (this.articulos != null && this.cantidades != null) {
+            for (int i = 0; i < this.articulos.size(); i++) {
+                Articulos articulo = this.articulos.get(i);
+                Double cantidad = this.cantidades.get(i).doubleValue();
 
-            // Create a new ArticuloCarrito for each iteration
-            ArticuloCarrito articuloCarrito = new ArticuloCarrito();
-            articuloCarrito.setArticulo(articulo);
-            articuloCarrito.setCantidad(cantidad);
+                // Create a new ArticuloCarrito for each iteration
+                ArticuloCarrito articuloCarrito = new ArticuloCarrito();
+                articuloCarrito.setArticulo(articulo);
+                articuloCarrito.setCantidad(cantidad);
 
-            // Add the new ArticuloCarrito to the list
-            articulosCarrito.add(articuloCarrito);
+                // Add the new ArticuloCarrito to the list
+                articulosCarrito.add(articuloCarrito);
+            }
         }
 
         return articulosCarrito;
@@ -140,6 +132,46 @@ public class Promocion {
             throw new IllegalStateException("Mismatch between articulos and cantidades sizes.");
         }
     }
+    
+    public BigDecimal getTotalPromo(List<ArticuloCarrito> lista, BigDecimal descuento) {
+        try {
+            
+            BigDecimal totalPromo = BigDecimal.ZERO;
+
+            if(lista != null){
+                for (ArticuloCarrito articulo : lista) {
+                    BigDecimal precioConUtilidad = articulo.getArticulo().getLastPrecio().getPrecioConUtilidad();
+
+                    // Ensure that descuento is not null and handle cases where descuento is null or zero
+                    BigDecimal porcentajeDescuento = (descuento != null ? descuento : BigDecimal.ZERO).divide(BigDecimal.valueOf(100));
+
+                    // Apply discount
+                    BigDecimal descuentoPromo = precioConUtilidad.multiply(porcentajeDescuento);
+                    BigDecimal precioFinal = precioConUtilidad.subtract(descuentoPromo);
+
+                    // Calculate IVA
+                    BigDecimal porcentajeImpuesto = BigDecimal.valueOf(articulo.getArticulo().getCodigoCabys().getImpuesto()).divide(BigDecimal.valueOf(100));
+                    BigDecimal iva = precioFinal.multiply(porcentajeImpuesto);
+
+                    // Calculate final price including IVA
+                    BigDecimal precioConUtilidadEIVA = precioFinal.add(iva);
+
+                    // Multiply by the quantity of articles
+                    totalPromo = totalPromo.add(precioConUtilidadEIVA.multiply(BigDecimal.valueOf(articulo.getCantidad())));
+                }
+
+            return totalPromo;
+
+            }
+            return BigDecimal.ZERO;  // Return zero when empty
+
+        } catch (Exception e) {
+            System.err.println("Error calculating totalPromo: " + e.getMessage());
+            e.printStackTrace();
+            return BigDecimal.ZERO;  // Return zero instead of null for consistency
+        }
+    }
+
 
 
 
