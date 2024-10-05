@@ -46,6 +46,7 @@ public class PromocionesController implements Serializable {
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     private String selectedPromocionString;
+    private String totalDescuentoConIVA = "0";
     private List<Date> fechasPromocion;
     private Articulos selectedArticulo;
     private BigDecimal cantidad;
@@ -127,6 +128,25 @@ public class PromocionesController implements Serializable {
             clearSelectedPromocion();
         }
     }
+    
+    public void removeSelectedItemFromPromociones(Articulos articulo) {
+    ArticuloCarrito itemToRemove = null;
+
+        // Iterate through the list to find the matching articulo
+        for (ArticuloCarrito articuloCarrito : lista) {
+            if (articuloCarrito.getArticulo().equals(articulo)) {
+                itemToRemove = articuloCarrito;
+                break; // Exit loop once the item is found
+            }
+        }
+
+        // Remove the item from the list if found
+        if (itemToRemove != null) {
+            System.out.println(itemToRemove.getArticulo().getNombre());
+            lista.remove(itemToRemove);
+        }
+    }
+
 
     public void clearSelectedPromocion() {
         promociones = null;
@@ -212,7 +232,7 @@ public class PromocionesController implements Serializable {
         newPromocion.setFechaInicio(fechaInicio);
         newPromocion.setFechaFin(fechaFin);
         newPromocion.setActiva(true);
-
+        
         if (newPromocion.getUsuario() != null) {
             promoService.create(newPromocion);
             //Should save it in each item entity too...
@@ -231,21 +251,14 @@ public class PromocionesController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creó la promoción", null));
 
             PrimeFaces.current().executeScript("PF('CrearPromocionDialog').hide();");
+            
         }
     }
 
-    
-    public void createTipoPromocionChanged() {
-        String message = "Se selecciono: ";
-        selectedPromocionString = newPromocion.getTipoPromocion();
-        if (selectedPromocionString != null) {
-                message += selectedPromocionString;
-        }
-        
-        FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
-        
-        newPromocion.setTipoPromocion(selectedPromocionString);
+    public void editPromocion(){
+        PrimeFaces.current().executeScript("PF('EditPromocionDialog').show();");
+        lista = selectedPromocion.getArticulosCarrito();
+        fechasPromocion = selectedPromocion.getFechas();
     }
     
     public void articuloSelectedDialog() {
@@ -291,7 +304,7 @@ public class PromocionesController implements Serializable {
         }
     }
     
-    public BigDecimal totalLista(){
+    public BigDecimal totalListaConIVA(){
         
         BigDecimal total = BigDecimal.ZERO;
         
@@ -305,7 +318,94 @@ public class PromocionesController implements Serializable {
         
         return total;
     }
+    
+    public BigDecimal totalListaConUtilidad(){
+        
+        BigDecimal total = BigDecimal.ZERO;
+        
+        if(lista == null){
+            return BigDecimal.ZERO;
+        }
+        
+        for (ArticuloCarrito articulo : lista) {
+            BigDecimal precioFinal = articulo.getArticulo().getLastPrecio().getPrecioConUtilidad();
+            total = total.add(precioFinal.multiply(new BigDecimal(articulo.getCantidad())));        }
+        
+        return total;
+    }   
+    
+    public void updatePromocionByDialog() {
+        if (selectedPromocion == null) {
+            return;
+        }
 
+        if (lista == null || lista.isEmpty()) {
+            FacesContext.getCurrentInstance().addMessage(null, 
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay artículos en la promoción", null));
+            return;
+        }
+
+        selectedPromocion.setUsuario(currentSession.getCurrentUser());
+        selectedPromocion.setArticulosCarrito(lista);
+
+        if (fechasPromocion == null || fechasPromocion.isEmpty()) {
+            FacesContext.getCurrentInstance().addMessage(null, 
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No se seleccionaron fechas para la promoción", null));
+            return;
+        }
+
+        // Extract the start and end dates
+        Date fechaInicio = fechasPromocion.get(0);
+        Date fechaFin = fechasPromocion.get(fechasPromocion.size() - 1);
+
+        if (fechaInicio == null) {
+            FacesContext.getCurrentInstance().addMessage(null, 
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay fecha de inicio en la promoción", null));
+            return;
+        }
+
+        if (fechaFin == null) {
+            FacesContext.getCurrentInstance().addMessage(null, 
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay fecha de fin en la promoción", null));
+            return;
+        }
+
+        selectedPromocion.setFechaInicio(fechaInicio);
+        selectedPromocion.setFechaFin(fechaFin);
+        selectedPromocion.setActiva(true);
+        
+        if (selectedPromocion.getUsuario() != null) {
+            promoService.update(selectedPromocion);
+            //Should save it in each item entity too...
+            for (ArticuloCarrito articulo : lista) {
+                var articuloToUpdate = articulo.getArticulo();
+                List<Promocion> promociones = new ArrayList<>();
+                promociones.add(selectedPromocion);
+                
+                articuloToUpdate.setPromociones(promociones);
+                articuloService.update(articuloToUpdate);
+            }
+            
+            clearSelectedPromocion();
+
+            FacesContext.getCurrentInstance().addMessage(null, 
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se Actualizo la promoción", null));
+
+            PrimeFaces.current().executeScript("PF('EditPromocionDialog').hide();");
+        }
+    }
+    
+    public String createTotalDescuentoEIVAText(){
+        return selectedPromocion.getTotalPromo(lista,newPromocion.getDescuento()).toString();
+    }
+    
+    public String updateTotalDescuentoEIVAText(){
+        return newPromocion.getTotalPromo(lista, selectedPromocion.getDescuento()).toString();
+    }
+    
+    public void descuentoChanged(){
+        System.out.println("Descuento: " + newPromocion.getDescuento());
+    }
     
     
 }

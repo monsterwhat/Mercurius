@@ -74,7 +74,7 @@
 
                             </h:form>
 
-                            <p:dataTable id="carrito" var="carrito"  value="#{crearTiqueteController.carrito}" reflow="true" 
+                            <p:dataTable id="carrito" var="carrito"  value="#{crearTiqueteController.combinedCarrito}" reflow="true" 
                                         showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
                                         scrollable="true" scrollHeight="250" >
                                <p:autoUpdate/>
@@ -85,23 +85,24 @@
                                    <h:outputText value="#{carrito.articulo.nombre}"/>
                                </p:column>
                                <p:column headerText="Precio Unitario">
-                                   <h:outputText value="#{carrito.articulo.lastPrecioArticulo}"/>
+                                    <h:outputText value="#{carrito.articulo.lastPrecioArticulo}" rendered="#{!carrito.promo}"/>
+                                    <h:outputText value="#{carrito.precioConDescuento}" rendered="#{carrito.promo}"/>
                                </p:column>
                                <p:column width="5%">
                                    <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" 
                                                     actionListener="#{crearTiqueteController.removeArticulo(carrito.articulo)}" />
                                </p:column>
                             </p:dataTable>
-
+                        
                     </p:card>
                     
                     <p:column>
                         <!--Total-->
                         <p:card style=" text-align: center">
                             <p:panelGrid layout="grid" columns="3">
-                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Carrito: #{crearTiqueteController.getTotalCarrito()}"/>
-                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Descuento: #{crearTiqueteController.getTotalDescuento()}"/>
-                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Final: #{crearTiqueteController.getTotalCarritoConIva()}"/>
+                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Carrito: #{crearTiqueteController.calculateTotalCarritoSinIVA()}"/>
+                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Descuento: #{crearTiqueteController.calculateTotalCarritoDescuento()}"/>
+                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Final: #{crearTiqueteController.calculateTotalCarritoFinal()}"/>
                                 <p:autoUpdate />
                             </p:panelGrid>
                         </p:card>

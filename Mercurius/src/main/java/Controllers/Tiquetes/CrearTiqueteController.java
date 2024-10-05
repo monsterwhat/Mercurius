@@ -29,6 +29,7 @@ import Models.Comprobantes.Enums.CondicionVenta;
 import Models.Comprobantes.Resumen.CodigoTipoMoneda;
 import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Inventario;
+import Models.Promocion;
 import Services.ClientService;
 import Services.InventarioService;
 import jakarta.annotation.PostConstruct;
@@ -68,7 +69,7 @@ public class CrearTiqueteController implements Serializable{
     private Clients selectedClient;
     private double cantidadArticulo = 1.0;
     private String codigoBarra;
-    private List<ArticuloCarrito> carrito;
+    private List<ArticuloCarrito> carrito, carritoDescuento;
     private boolean resetFlag;
     private Clients cliente;
     private String clientsFilter;
@@ -82,6 +83,7 @@ public class CrearTiqueteController implements Serializable{
         selectedClient = new Clients();
         codigoBarra = new String();
         carrito = new ArrayList<>();
+        carritoDescuento = new ArrayList<>();
         cliente = new Clients();
         selectedClient = new Clients();
         clientsList();
@@ -101,11 +103,12 @@ public class CrearTiqueteController implements Serializable{
     }
         
     public void processCodigoBarra() {
-    String codigo = this.codigoBarra;
-    double cantidad = this.cantidadArticulo;
-    System.out.println(cantidad);
+        String codigo = this.codigoBarra;
+        double cantidad = this.cantidadArticulo;
+
         if (codigo != null && !codigo.isBlank()) {
             Articulos articulo = articuloController.findArticuloByBarCode(codigo);
+
             if (articulo != null) {
                 if (cantidad > 0) {
                     ArticuloCarrito articuloCarrito = new ArticuloCarrito(articulo, cantidad);
@@ -113,7 +116,7 @@ public class CrearTiqueteController implements Serializable{
 
                     // Recorremos el carrito para ver si ya existe el artículo
                     for (ArticuloCarrito item : carrito) {
-                        if (item.getArticulo().getCodigo() == articulo.getCodigo()) { 
+                        if (item.getArticulo().getCodigo() == articulo.getCodigo()) {
                             item.setCantidad(item.getCantidad() + cantidad); // Sumamos la cantidad existente con la nueva
                             found = true;
                             break;
@@ -122,24 +125,96 @@ public class CrearTiqueteController implements Serializable{
 
                     // Si no lo encontró en el carrito, lo agrega con la cantidad especificada
                     if (!found) {
-                        articuloCarrito.setCantidad(cantidad);
-                        carrito.add(articuloCarrito);
+                        carrito.add(articuloCarrito); // Add to carrito first
                     }
 
+                    // Check for active promotions in the entire cart
+                    validatePromotionsForCart();
+                    
                     // Limpiamos los campos
                     codigoBarra = "";
                     cantidadArticulo = 1;
                     resetFlag = !resetFlag; // Toggle el reset flag
 
-                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Artículo agregado", "El artículo fue agregado al carrito"));
+                    FacesContext.getCurrentInstance().addMessage(null, 
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Artículo agregado", 
+                                         "El artículo fue agregado al carrito"));
                 } else {
-                    FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "No hay cantidad", "La cantidad es inválida"));
+                    FacesContext.getCurrentInstance().addMessage(null, 
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "No hay cantidad", 
+                                         "La cantidad es inválida"));
                 }
             } else {
-                FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Artículo no encontrado", "El código de barra no corresponde a un artículo válido"));
+                FacesContext.getCurrentInstance().addMessage(null, 
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Artículo no encontrado", 
+                                     "El código de barra no corresponde a un artículo válido"));
             }
         } else {
-            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Código de barra vacío o nulo", "El código de barra no corresponde a un artículo válido"));
+            FacesContext.getCurrentInstance().addMessage(null, 
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Código de barra vacío o nulo", 
+                                 "El código de barra no corresponde a un artículo válido"));
+        }
+    }
+
+    private void validatePromotionsForCart() {
+
+        // Loop through all items in the cart
+        for (int i = 0; i < carrito.size(); i++) {
+            var item = carrito.get(i);
+            List<Promocion> promocionesActivas = item.getArticulo().getPromocionesActivas();
+
+            for (Promocion promocionActiva : promocionesActivas) {
+                // Check if the cart contains all the required items for the promotion
+                boolean allItemsPresent = true;
+
+                // Loop through the required items for the promotion
+                for (ArticuloCarrito articuloPromocion : promocionActiva.getArticulosCarrito()) {
+                    boolean itemFoundInCart = false;
+
+                    // Loop through the cart to see if the promotion item is present
+                    for (ArticuloCarrito itemInCart : carrito) {
+                        if (itemInCart.getArticulo().equals(articuloPromocion.getArticulo()) &&
+                            Objects.equals(itemInCart.getCantidad(), articuloPromocion.getCantidad())) {
+                            itemFoundInCart = true;
+                            break;
+                        }
+                    }
+
+                    // If one of the required items is missing, promotion does not apply
+                    if (!itemFoundInCart) {
+                        allItemsPresent = false;
+                        break;
+                    }
+                }
+
+                // If all required items are in the cart, apply the promotion
+                if (allItemsPresent) {
+                    BigDecimal precioDescuento = promocionActiva.getDescuento(); // Percentage discount
+                    BigDecimal precioConDescuento = item.getArticulo().getLastPrecio().getPrecioConUtilidad()
+                        .multiply(BigDecimal.ONE.subtract(precioDescuento.divide(BigDecimal.valueOf(100))));
+
+                    // Set the discounted price and promotion flag
+                    item.setPrecioConDescuento(precioConDescuento);
+                    item.setPromo(true);
+
+                    // Add to carritoDescuento and remove from the main cart
+                    if(carritoDescuento.contains(item)){ //If it exists we should grab the existing one and add one or the amount being carried
+                        var index = carritoDescuento.indexOf(item);
+                        var itemToModify = carritoDescuento.get(index);
+                        itemToModify.setCantidad(itemToModify.getCantidad()+item.getCantidad());
+                    }else{
+                        carritoDescuento.add(item);
+                    }
+                    
+                    carrito.remove(item);
+
+                    // Notify the user about the promotion
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Promoción aplicada",
+                                         "El artículo " + item.getArticulo().getNombre() + 
+                                         " tiene un descuento de " + precioDescuento + "%"));
+                }
+            }
         }
     }
     
@@ -161,132 +236,126 @@ public class CrearTiqueteController implements Serializable{
         }
     }
     
-    public BigDecimal getTotalCarritoConIva() {
+    // Helper method to calculate total from a given list
+    public BigDecimal calculateTotalCarritoSinIVA() {
+        BigDecimal total = BigDecimal.ZERO;
+
         if (carrito != null && !carrito.isEmpty()) {
-            BigDecimal total = null;
-
             for (ArticuloCarrito item : carrito) {
                 var articulo = item.getArticulo();
                 var cantidad = item.getCantidad();
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioFinal();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
-                BigDecimal precioConUtilidad = precioUnidad;
-
-                // Si hay un cliente con descuento, aplicar el descuento al precio del artículo
-                if (selectedClient != null && selectedClient.getDiscount() > 0) {
-                    BigDecimal descuento = BigDecimal.valueOf(selectedClient.getDiscount());
-                    BigDecimal porcentajeDescuento = descuento.divide(BigDecimal.valueOf(100));  // Convertimos el descuento a porcentaje
-                    BigDecimal descuentoAplicado = precioUnidad.multiply(BigDecimal.ONE.subtract(porcentajeDescuento));  // Aplicamos el descuento
-                    precioConUtilidad = descuentoAplicado;  // Asignamos el precio con descuento
-                }
-
-                // Calcular el subtotal del artículo (precio final * cantidad)
-                BigDecimal subtotal = precioConUtilidad.multiply(cantidadDecimal);
-
-                // Sumar al total
-                if (total != null) {
-                    total = total.add(subtotal);
-                } else {
-                    total = subtotal;
-                }
-            }
-            totalCarrito = total;
-            return total;
-        }
-        return BigDecimal.ZERO;
-    }
-    
-    public BigDecimal getTotalDescuento() {
-        
-        if (carrito != null && !carrito.isEmpty()) {
-            BigDecimal totalDescuento = BigDecimal.ZERO;  // Inicializamos el total de descuento
-
-            for (ArticuloCarrito item : carrito) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioFinal();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
-
-                // Si hay un cliente con descuento, calcular el descuento por artículo
-                if (selectedClient != null && selectedClient.getDiscount() > 0) {
-                    BigDecimal descuento = BigDecimal.valueOf(selectedClient.getDiscount());
-                    BigDecimal porcentajeDescuento = descuento.divide(BigDecimal.valueOf(100));  // Convertimos el descuento a porcentaje
-
-                    // Calculamos cuánto se descuenta del precio por cada unidad del artículo
-                    BigDecimal descuentoPorUnidad = precioUnidad.multiply(porcentajeDescuento);
-
-                    // Descuento total por artículo (descuento por unidad * cantidad)
-                    BigDecimal descuentoTotalArticulo = descuentoPorUnidad.multiply(cantidadDecimal);
-
-                    // Sumar al total de descuento
-                    totalDescuento = totalDescuento.add(descuentoTotalArticulo);
-                }
-            }
-
-            return totalDescuento;
-        }
-        return BigDecimal.ZERO;
-    }
-    
-    public BigDecimal getTotalCarrito(){
-        if(carrito != null || !carrito.isEmpty()){
-            BigDecimal total = null;
-            for (ArticuloCarrito item : carrito) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioFinal();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
-
-                if(total != null){
-                    total = total.add(precioUnidad.multiply(cantidadDecimal));
-                }else{
-                    total = precioUnidad.multiply(cantidadDecimal);
-                }
-            }
-            return total;
-        }
-        return new BigDecimal(0);
-    }
-
-    public BigDecimal getTotalCarritoSinIva(){
-        if(carrito != null || !carrito.isEmpty()){
-            BigDecimal total = null;
-            for (ArticuloCarrito item : carrito) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioCostoSinIVA();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
                 
-                if(total != null){
-                    total = total.add(precioUnidad.multiply(cantidadDecimal));
-                }else{
-                    total = precioUnidad.multiply(cantidadDecimal);
-                }
-            }
-            return total;
-        }
-        return new BigDecimal(0);
-    }
-    
-    public BigDecimal getTotalprecioConUtilidadCarrito(){
-        if(carrito != null || !carrito.isEmpty()){
-            BigDecimal total = null;
-            for (ArticuloCarrito item : carrito) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
                 BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioConUtilidad();
-                BigDecimal cantidadDecimal = new BigDecimal(cantidad);
                 
-                if(total != null){
-                    total = total.add(precioUnidad.multiply(cantidadDecimal));
-                }else{
-                    total = precioUnidad.multiply(cantidadDecimal);
-                }
+                BigDecimal cantidadDecimal = BigDecimal.valueOf(cantidad);
+                
+                BigDecimal precioFinal = precioUnidad;
+
+                // Calculate subtotal
+                BigDecimal subtotal = precioFinal.multiply(cantidadDecimal);
+                total = total.add(subtotal);
             }
-            return total;
         }
-        return new BigDecimal(0);
+        return total;
     }
+    
+    // Helper method to calculate total from a given list
+    public BigDecimal calculateTotalDescuento() {
+        BigDecimal total = BigDecimal.ZERO;
+
+        if (carritoDescuento != null && !carritoDescuento.isEmpty()) {
+            for (ArticuloCarrito item : carritoDescuento) {
+                
+            }
+        }
+        return total;
+    }
+    
+    // Helper method to calculate total from a given list
+    public BigDecimal calculateTotalCarritoDescuento() {
+        BigDecimal total = BigDecimal.ZERO;
+
+        if (carritoDescuento != null && !carritoDescuento.isEmpty()) {
+            for (ArticuloCarrito item : carritoDescuento) {
+                var articulo = item.getArticulo();
+                var cantidad = item.getCantidad();
+                var impuesto = item.getArticulo().getCodigoCabys().getImpuesto();
+                
+                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioConUtilidad();
+                
+                BigDecimal cantidadDecimal = BigDecimal.valueOf(cantidad);
+                
+                BigDecimal impuestoDecimal = new BigDecimal(impuesto);
+                
+                BigDecimal precioFinal = precioUnidad;
+
+                // Apply discount if applicable
+                if (selectedClient != null && selectedClient.getDiscount() > 0) {
+                    BigDecimal descuento = BigDecimal.valueOf(selectedClient.getDiscount());
+                    BigDecimal porcentajeDescuento = descuento.divide(BigDecimal.valueOf(100));
+                    BigDecimal descuentoAplicado = precioUnidad.multiply(BigDecimal.ONE.subtract(porcentajeDescuento));
+                    precioFinal = descuentoAplicado;
+                }
+
+                // Calculate subtotal
+                BigDecimal subtotal = precioFinal.multiply(cantidadDecimal);
+                total = total.add(subtotal);
+            }
+        }
+        return total;
+    }
+    
+    public BigDecimal calculateTotalCarritoFinal() {
+        BigDecimal total = BigDecimal.ZERO;
+
+        // Process normal cart items
+        if (carrito != null && !carrito.isEmpty()) {
+            total = calculateTotalForItems(carrito, total);
+        }
+
+        // Process discounted cart items
+        if (carritoDescuento != null && !carritoDescuento.isEmpty()) {
+            total = calculateTotalForItems(carritoDescuento, total);
+        }
+
+        return total;
+    }
+
+    public BigDecimal calculateTotalForItems(List<ArticuloCarrito> items, BigDecimal total) {
+        for (ArticuloCarrito item : items) {
+            var articulo = item.getArticulo();
+            var cantidad = item.getCantidad();
+            var impuesto = item.getArticulo().getCodigoCabys().getImpuesto();
+
+            BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioConUtilidad();
+            BigDecimal cantidadDecimal = BigDecimal.valueOf(cantidad);
+
+            // Convert impuesto from hundredths to decimal
+            BigDecimal impuestoDecimal = new BigDecimal(impuesto).divide(BigDecimal.valueOf(100));
+
+            // Calculate the final price after discount
+            BigDecimal precioFinal = precioUnidad;
+
+            // Apply discount if applicable
+            if (selectedClient != null && selectedClient.getDiscount() > 0) {
+                BigDecimal descuento = BigDecimal.valueOf(selectedClient.getDiscount());
+                BigDecimal porcentajeDescuento = descuento.divide(BigDecimal.valueOf(100));
+                BigDecimal descuentoAplicado = precioUnidad.multiply(BigDecimal.ONE.subtract(porcentajeDescuento));
+                precioFinal = descuentoAplicado;
+            }
+
+            // Calculate subtotal
+            BigDecimal subtotal = precioFinal.multiply(cantidadDecimal);
+
+            // Calculate total with tax
+            BigDecimal totalConImpuesto = subtotal.add(subtotal.multiply(impuestoDecimal));
+
+            // Add to total
+            total = total.add(totalConImpuesto);
+        }
+        return total;
+    }
+
     
     public void selectArticulo(Articulos articulo){
         codigoBarra = articulo.getCodigoBarra();
@@ -590,5 +659,22 @@ public class CrearTiqueteController implements Serializable{
         }
         return null;
     }
+    
+    public List<ArticuloCarrito> getCombinedCarrito() {
+        List<ArticuloCarrito> combinedCarrito = new ArrayList<>(); // Initialize a new list
+
+        // Add items from carrito if it's not null
+        if (carrito != null) {
+            combinedCarrito.addAll(carrito);
+        }
+
+        // Add items from carritoDescuento if it's not null
+        if (carritoDescuento != null) {
+            combinedCarrito.addAll(carritoDescuento);
+        }
+
+        return combinedCarrito; // Return the combined list
+    }
+
     
 }

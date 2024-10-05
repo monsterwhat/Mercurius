@@ -2,6 +2,7 @@ package Models;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import lombok.Data;
@@ -82,6 +83,22 @@ public class Articulos {
         }
         return null; // Si no hay promoción activa
     }
+    
+    public List<Promocion> getPromocionesActivas() {
+        Date hoy = new Date();
+        List<Promocion> promocionesActivas = new ArrayList<>();
+
+        for (Promocion promocion : this.getPromociones()) {
+            if (promocion.isActiva() && 
+                promocion.getFechaInicio().before(hoy) && 
+                promocion.getFechaFin().after(hoy)) {
+                promocionesActivas.add(promocion); // Add active promotions to the list
+            }
+        }
+
+        return promocionesActivas; // Return the list of active promotions
+    }
+
 
     
     
