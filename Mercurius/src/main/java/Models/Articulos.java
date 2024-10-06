@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import lombok.Data;
 
 @Entity
@@ -99,7 +100,22 @@ public class Articulos {
         return promocionesActivas; // Return the list of active promotions
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(codigo, nombre, codigoBarra, status, processed);
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Articulos that = (Articulos) obj;
+        return codigo == that.codigo &&
+               status == that.status &&
+               processed == that.processed &&
+               Objects.equals(nombre, that.nombre) &&
+               Objects.equals(codigoBarra, that.codigoBarra);
+    }
     
     
     

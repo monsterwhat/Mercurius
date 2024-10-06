@@ -43,10 +43,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
@@ -157,67 +160,119 @@ public class CrearTiqueteController implements Serializable{
     }
 
     private void validatePromotionsForCart() {
+        List<ArticuloCarrito> itemsToRemove = new ArrayList<>(); // To avoid concurrent modification
 
         // Loop through all items in the cart
-        for (int i = 0; i < carrito.size(); i++) {
-            var item = carrito.get(i);
+        for (ArticuloCarrito item : carrito) {
+            //Get all promociones for each item.
             List<Promocion> promocionesActivas = item.getArticulo().getPromocionesActivas();
 
             for (Promocion promocionActiva : promocionesActivas) {
-                // Check if the cart contains all the required items for the promotion
-                boolean allItemsPresent = true;
-
-                // Loop through the required items for the promotion
-                for (ArticuloCarrito articuloPromocion : promocionActiva.getArticulosCarrito()) {
-                    boolean itemFoundInCart = false;
-
-                    // Loop through the cart to see if the promotion item is present
-                    for (ArticuloCarrito itemInCart : carrito) {
-                        if (itemInCart.getArticulo().equals(articuloPromocion.getArticulo()) &&
-                            Objects.equals(itemInCart.getCantidad(), articuloPromocion.getCantidad())) {
-                            itemFoundInCart = true;
-                            break;
-                        }
-                    }
-
-                    // If one of the required items is missing, promotion does not apply
-                    if (!itemFoundInCart) {
-                        allItemsPresent = false;
-                        break;
-                    }
-                }
-
-                // If all required items are in the cart, apply the promotion
-                if (allItemsPresent) {
-                    BigDecimal precioDescuento = promocionActiva.getDescuento(); // Percentage discount
-                    BigDecimal precioConDescuento = item.getArticulo().getLastPrecio().getPrecioConUtilidad()
-                        .multiply(BigDecimal.ONE.subtract(precioDescuento.divide(BigDecimal.valueOf(100))));
-
-                    // Set the discounted price and promotion flag
-                    item.setPrecioConDescuento(precioConDescuento);
-                    item.setPromo(true);
-
-                    // Add to carritoDescuento and remove from the main cart
-                    if(carritoDescuento.contains(item)){ //If it exists we should grab the existing one and add one or the amount being carried
-                        var index = carritoDescuento.indexOf(item);
-                        var itemToModify = carritoDescuento.get(index);
-                        itemToModify.setCantidad(itemToModify.getCantidad()+item.getCantidad());
-                    }else{
-                        carritoDescuento.add(item);
-                    }
-                    
-                    carrito.remove(item);
-
-                    // Notify the user about the promotion
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Promoción aplicada",
-                                         "El artículo " + item.getArticulo().getNombre() + 
-                                         " tiene un descuento de " + precioDescuento + "%"));
+                if (isPromotionApplicable(item, promocionActiva)) {
+                    applyPromotion(item, promocionActiva, itemsToRemove);
                 }
             }
         }
+
+        // Remove items from the main cart outside the loop
+        carrito.removeAll(itemsToRemove);
     }
-    
+
+    private boolean isPromotionApplicable(ArticuloCarrito item, Promocion promocionActiva) {
+        for (ArticuloCarrito articuloPromocion : promocionActiva.getArticulosCarrito()) {
+            boolean itemFoundInCart = carrito.stream()
+                .anyMatch(itemInCart -> itemInCart.getArticulo().equals(articuloPromocion.getArticulo()) &&
+                    itemInCart.getCantidad().compareTo(articuloPromocion.getCantidad()) >= 0);
+
+            if (!itemFoundInCart) {
+                return false; // If one of the required items is missing, promotion does not apply
+            }
+        }
+        return !item.isPromo(); // Promotion can only apply if it's not already a promo item
+    }
+
+    private void applyPromotion(ArticuloCarrito item, Promocion promocionActiva, List<ArticuloCarrito> itemsToRemove) {
+        BigDecimal precioDescuento = promocionActiva.getDescuento(); // Percentage discount
+        Map<ArticuloCarrito, BigDecimal> itemsUsedInPromotion = new HashMap<>(); // Track quantities used in the promotion
+
+        // Loop through the required items for the promotion
+        for (ArticuloCarrito articuloPromocion : promocionActiva.getArticulosCarrito()) {
+            for (ArticuloCarrito itemInCart : carrito) {
+                if (itemInCart.getArticulo().equals(articuloPromocion.getArticulo()) &&
+                    itemInCart.getCantidad().compareTo(articuloPromocion.getCantidad()) >= 0) {
+
+                    // Track how many items are used for the promotion
+                    BigDecimal cantidadUsada = BigDecimal.valueOf(articuloPromocion.getCantidad());
+                    itemsUsedInPromotion.put(itemInCart, cantidadUsada);
+                    break;
+                }
+            }
+        }
+
+        // Apply the promotion to the required items
+        for (Map.Entry<ArticuloCarrito, BigDecimal> entry : itemsUsedInPromotion.entrySet()) {
+            ArticuloCarrito itemToDiscount = entry.getKey();
+            BigDecimal cantidadParaPromocion = entry.getValue();
+            BigDecimal precioConDescuento = calculateDiscountedPrice(itemToDiscount, precioDescuento);
+
+            Optional<ArticuloCarrito> existingPromotionItem = findExistingPromotionItem(itemToDiscount);
+
+            if (existingPromotionItem.isPresent()) {
+                updateExistingPromotion(existingPromotionItem.get(), cantidadParaPromocion);
+            } else {
+                handleNewPromotion(itemToDiscount, cantidadParaPromocion, precioConDescuento, itemsToRemove);
+            }
+
+            notifyUserOfPromotion(itemToDiscount, precioDescuento);
+        }
+    }
+
+    private BigDecimal calculateDiscountedPrice(ArticuloCarrito itemToDiscount, BigDecimal precioDescuento) {
+        return itemToDiscount.getArticulo().getLastPrecio().getPrecioConUtilidad()
+            .multiply(BigDecimal.ONE.subtract(precioDescuento.divide(BigDecimal.valueOf(100))));
+    }
+
+    private Optional<ArticuloCarrito> findExistingPromotionItem(ArticuloCarrito itemToDiscount) {
+        return carritoDescuento.stream()
+            .filter(descItem -> descItem.getArticulo().equals(itemToDiscount.getArticulo()) && descItem.isPromo())
+            .findFirst();
+    }
+
+    private void updateExistingPromotion(ArticuloCarrito existingItem, BigDecimal cantidadParaPromocion) {
+        existingItem.setCantidad(existingItem.getCantidad() + cantidadParaPromocion.doubleValue());
+    }
+
+    private void handleNewPromotion(ArticuloCarrito itemToDiscount, BigDecimal cantidadParaPromocion,
+                                     BigDecimal precioConDescuento, List<ArticuloCarrito> itemsToRemove) {
+        if (itemToDiscount.getCantidad().compareTo(cantidadParaPromocion.doubleValue()) > 0) {
+            // Create a new item for the discounted quantity
+            ArticuloCarrito discountedItem = new ArticuloCarrito(itemToDiscount.getArticulo(), cantidadParaPromocion.doubleValue());
+            discountedItem.setPrecioConDescuento(precioConDescuento);
+            discountedItem.setPromo(true);
+            carritoDescuento.add(discountedItem);
+
+            // Reduce the quantity of the original item
+            itemToDiscount.setCantidad(itemToDiscount.getCantidad() - cantidadParaPromocion.doubleValue());
+
+        } else {
+            // If exact quantity matches, apply discount to the whole item
+            itemToDiscount.setPrecioConDescuento(precioConDescuento);
+            itemToDiscount.setPromo(true);
+            carritoDescuento.add(itemToDiscount);
+            itemsToRemove.add(itemToDiscount); // Mark for removal
+        }
+    }
+
+    private void notifyUserOfPromotion(ArticuloCarrito itemToDiscount, BigDecimal precioDescuento) {
+        FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Promoción aplicada",
+                             "El artículo " + itemToDiscount.getArticulo().getNombre() + 
+                             " tiene un descuento de " + precioDescuento + "%"));
+    }
+
+
+
+
     public void calcularVuelto(){
         var cambio = this.tipoCambio.getTipoCambioActual().getValorCompra();
         
@@ -373,6 +428,16 @@ public class CrearTiqueteController implements Serializable{
                 ArticuloCarrito item = iterator.next();
                 if (item.getArticulo().equals(articulo)) {
                     iterator.remove(); // Safely remove the item
+                }
+            }
+        }else{
+            if(carritoDescuento != null){
+                Iterator<ArticuloCarrito> iterator = carritoDescuento.iterator();
+                while (iterator.hasNext()) {
+                    ArticuloCarrito item = iterator.next();
+                    if (item.getArticulo().equals(articulo)) {
+                        iterator.remove(); // Safely remove the item
+                    }
                 }
             }
         }

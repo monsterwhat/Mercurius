@@ -4,6 +4,7 @@ package Models;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.Objects;
 import lombok.Data;
 
 /**
@@ -53,6 +54,22 @@ public class ArticuloPrecio {
     @Override
     public String toString(){
         return "";
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, precioFinal, precioConUtilidad, fechaCompra);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ArticuloPrecio that = (ArticuloPrecio) obj;
+        return id == that.id &&
+               Objects.equals(precioFinal, that.precioFinal) &&
+               Objects.equals(precioConUtilidad, that.precioConUtilidad) &&
+               Objects.equals(fechaCompra, that.fechaCompra);
     }
     
     

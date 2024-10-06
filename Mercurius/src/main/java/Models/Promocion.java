@@ -69,14 +69,6 @@ public class Promocion {
             }
         return fechas;
     }
-    
-    public ArticuloCarrito returnPromocionAsArticuloCarrito(){
-        
-        ArticuloCarrito promocionAsArticulo = new ArticuloCarrito();
-        
-        return promocionAsArticulo;
-    }
-
 
     public List<ArticuloCarrito> getArticulosCarrito() {
     List<ArticuloCarrito> articulosCarrito = new ArrayList<>();
