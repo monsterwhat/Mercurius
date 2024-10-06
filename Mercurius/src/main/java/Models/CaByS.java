@@ -3,6 +3,7 @@ package Models;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import java.util.Objects;
 import lombok.Data;
 
 /**
@@ -39,6 +40,20 @@ public class Cabys {
         this.impuesto = impuesto;
         this.uri = uri;
         this.estado = estado;
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(codigo, descripcion);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Cabys that = (Cabys) obj;
+        return Objects.equals(codigo, that.codigo) &&
+               Objects.equals(descripcion, that.descripcion);
     }
     
 }
