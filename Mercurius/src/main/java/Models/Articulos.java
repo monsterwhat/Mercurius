@@ -117,6 +117,15 @@ public class Articulos {
                Objects.equals(codigoBarra, that.codigoBarra);
     }
     
-    
+    @Override
+    public String toString() {
+        return "Articulos{" +
+               "codigo=" + codigo +
+               ", nombre='" + nombre + '\'' +
+               ", codigoBarra='" + codigoBarra + '\'' +
+               ", status=" + status +
+               ", processed=" + processed +
+               '}';
+    }
     
 }
