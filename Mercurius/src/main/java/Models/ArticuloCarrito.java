@@ -1,6 +1,7 @@
 package Models;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import lombok.Data;
 
 //En Array representa el carrito con sus cantidades.
@@ -12,17 +13,39 @@ public class ArticuloCarrito {
 
     private Double cantidad;
     
-    private BigDecimal precioConDescuento;
+    private BigDecimal descuento;
     
     private boolean isPromo;
 
     public ArticuloCarrito(Articulos articulo, Double cantidad) {
         this.articulo = articulo;
         this.cantidad = cantidad;
+        this.isPromo = false; // Inicializamos isPromo en false por defecto
     }
 
     public ArticuloCarrito() {
         this.cantidad = 1.0;
+        this.isPromo = false; // Inicializamos isPromo en false por defecto
+    }
+    
+    @Override
+    public String toString(){
+        return "Art: " + articulo.getNombre() + " , Cant: " + cantidad + " , isPromo:" + isPromo;
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ArticuloCarrito that = (ArticuloCarrito) o;
+        return isPromo == that.isPromo && // Comparar también isPromo
+               Objects.equals(articulo, that.articulo) &&
+               Objects.equals(cantidad, that.cantidad);  // Compare both articulo and cantidad
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(articulo, cantidad, isPromo);  // Asegúrate de que el hash esté basado en articulo, cantidad e isPromo
     }
     
     

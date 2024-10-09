@@ -43,13 +43,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
@@ -72,7 +69,7 @@ public class CrearTiqueteController implements Serializable{
     private Clients selectedClient;
     private double cantidadArticulo = 1.0;
     private String codigoBarra;
-    private List<ArticuloCarrito> carrito, carritoDescuento;
+    private List<ArticuloCarrito> carrito;
     private boolean resetFlag;
     private Clients cliente;
     private String clientsFilter;
@@ -86,7 +83,6 @@ public class CrearTiqueteController implements Serializable{
         selectedClient = new Clients();
         codigoBarra = new String();
         carrito = new ArrayList<>();
-        carritoDescuento = new ArrayList<>();
         cliente = new Clients();
         selectedClient = new Clients();
         clientsList();
@@ -117,9 +113,9 @@ public class CrearTiqueteController implements Serializable{
                     ArticuloCarrito articuloCarrito = new ArticuloCarrito(articulo, cantidad);
                     boolean found = false;
 
-                    // Recorremos el carrito para ver si ya existe el artículo
+                    // Recorremos el carrito para ver si ya existe el artículo Y No es una promo...
                     for (ArticuloCarrito item : carrito) {
-                        if (item.getArticulo().getCodigo() == articulo.getCodigo()) {
+                        if (item.getArticulo().getCodigo() == articulo.getCodigo() && !item.isPromo()) {
                             item.setCantidad(item.getCantidad() + cantidad); // Sumamos la cantidad existente con la nueva
                             found = true;
                             break;
@@ -132,7 +128,7 @@ public class CrearTiqueteController implements Serializable{
                     }
 
                     // Check for active promotions in the entire cart
-                    validatePromotionsForCart();
+                    procesarPromocionesCarrito();
                     
                     // Limpiamos los campos
                     codigoBarra = "";
@@ -159,118 +155,85 @@ public class CrearTiqueteController implements Serializable{
         }
     }
 
-    private void validatePromotionsForCart() {
-        List<ArticuloCarrito> itemsToRemove = new ArrayList<>(); // To avoid concurrent modification
+    private void procesarPromocionesCarrito() {
+        List<ArticuloCarrito> listaArticulos = new ArrayList<>(carrito); // Crear una copia para evitar ConcurrentModificationException
+        List<ArticuloCarrito> articulosPromocionales = new ArrayList<>(); // Lista para almacenar artículos promocionales
 
-        // Loop through all items in the cart
-        for (ArticuloCarrito item : carrito) {
-            //Get all promociones for each item.
-            List<Promocion> promocionesActivas = item.getArticulo().getPromocionesActivas();
+        // Paso 1: Verificar y aplicar promociones aplicables
+        for (ArticuloCarrito articulo : listaArticulos) {
+            List<Promocion> promocionesActivas = articulo.getArticulo().getPromocionesActivas();
 
-            for (Promocion promocionActiva : promocionesActivas) {
-                if (isPromotionApplicable(item, promocionActiva)) {
-                    applyPromotion(item, promocionActiva, itemsToRemove);
+            for (Promocion promocion : promocionesActivas) {
+                boolean promocionAplicada = promocionAplica(promocion, listaArticulos, articulosPromocionales);
+                if (promocionAplicada) {
+                    System.out.println("Promoción aplicada: " + promocion.toString());
                 }
             }
         }
 
-        // Remove items from the main cart outside the loop
-        carrito.removeAll(itemsToRemove);
-    }
+        carrito.addAll(articulosPromocionales);
 
-    private boolean isPromotionApplicable(ArticuloCarrito item, Promocion promocionActiva) {
-        for (ArticuloCarrito articuloPromocion : promocionActiva.getArticulosCarrito()) {
-            boolean itemFoundInCart = carrito.stream()
-                .anyMatch(itemInCart -> itemInCart.getArticulo().equals(articuloPromocion.getArticulo()) &&
-                    itemInCart.getCantidad().compareTo(articuloPromocion.getCantidad()) >= 0);
-
-            if (!itemFoundInCart) {
-                return false; // If one of the required items is missing, promotion does not apply
+        // Paso 3: Eliminar artículos con cantidad 0
+        carrito.removeIf(articulo -> {
+            if (articulo.getCantidad() <= 0) {
+                return true; // Se marca para eliminar
             }
-        }
-        return !item.isPromo(); // Promotion can only apply if it's not already a promo item
+            return false;
+        });
     }
 
-    private void applyPromotion(ArticuloCarrito item, Promocion promocionActiva, List<ArticuloCarrito> itemsToRemove) {
-        BigDecimal precioDescuento = promocionActiva.getDescuento(); // Percentage discount
-        Map<ArticuloCarrito, BigDecimal> itemsUsedInPromotion = new HashMap<>(); // Track quantities used in the promotion
+    private boolean promocionAplica(Promocion promocion, List<ArticuloCarrito> articulos, List<ArticuloCarrito> articulosPromocionales) {
+        // Verificamos si todos los artículos requeridos por la promoción están en el carrito
+        boolean aplicable = promocion.getArticulosCarrito().stream()
+            .allMatch(itemPromocion -> articulos.stream()
+                .anyMatch(itemCarrito -> itemCarrito.getArticulo().equals(itemPromocion.getArticulo()) 
+                    && itemCarrito.getCantidad() >= itemPromocion.getCantidad() // Verifica si hay suficiente cantidad
+                    && !itemCarrito.isPromo() // Verifica que no esté ya en otra promoción
+                )
+            );
 
-        // Loop through the required items for the promotion
-        for (ArticuloCarrito articuloPromocion : promocionActiva.getArticulosCarrito()) {
-            for (ArticuloCarrito itemInCart : carrito) {
-                if (itemInCart.getArticulo().equals(articuloPromocion.getArticulo()) &&
-                    itemInCart.getCantidad().compareTo(articuloPromocion.getCantidad()) >= 0) {
+        if (aplicable) {
+            // Aplicamos las modificaciones a los artículos en el carrito
+            for (ArticuloCarrito itemPromocion : promocion.getArticulosCarrito()) {
+                double cantidadRequerida = itemPromocion.getCantidad();
+                double cantidadTotalDisponible = articulos.stream()
+                    .filter(itemCarrito -> itemCarrito.getArticulo().equals(itemPromocion.getArticulo()) && !itemCarrito.isPromo())
+                    .mapToDouble(ArticuloCarrito::getCantidad)
+                    .sum();
 
-                    // Track how many items are used for the promotion
-                    BigDecimal cantidadUsada = BigDecimal.valueOf(articuloPromocion.getCantidad());
-                    itemsUsedInPromotion.put(itemInCart, cantidadUsada);
-                    break;
+                // Solo aplica la promoción si hay suficiente cantidad
+                while (cantidadTotalDisponible >= cantidadRequerida) {
+                    // Crear nuevo artículo de promoción con la cantidad requerida
+                    ArticuloCarrito itemPromocionAplicado = new ArticuloCarrito(itemPromocion.getArticulo(), cantidadRequerida);
+                    itemPromocionAplicado.setPromo(true); // Marcamos el artículo como parte de una promoción
+                    itemPromocionAplicado.setDescuento(promocion.getDescuento()); // Establecemos el descuento
+                    articulosPromocionales.add(itemPromocionAplicado); // Añadimos el artículo promocionado a la lista temporal
+
+                    // Restar cantidad utilizada de los artículos en el carrito
+                    double cantidadRestante = cantidadRequerida; // Inicializamos la cantidad que se necesita restar
+                    for (ArticuloCarrito itemCarrito : articulos) {
+                        // Verificamos que el artículo del carrito sea el mismo que el de la promoción y que no esté ya en otra promoción
+                        if (itemCarrito.getArticulo().equals(itemPromocion.getArticulo()) && !itemCarrito.isPromo()) {
+                            double cantidadActual = itemCarrito.getCantidad(); // Obtenemos la cantidad actual del artículo en el carrito
+
+                            if (cantidadActual >= cantidadRestante) {
+                                // Si hay suficiente cantidad en el artículo del carrito
+                                itemCarrito.setCantidad(cantidadActual - cantidadRestante); // Restamos la cantidad requerida
+                                break; // Ya hemos consumido la cantidad necesaria, salimos del bucle
+                            } else {
+                                // Si no hay suficiente cantidad, consumimos todo lo que hay
+                                cantidadRestante -= cantidadActual; // Reducimos la cantidad que aún necesitamos restar
+                                itemCarrito.setCantidad(0.0); // Marcamos el artículo como completamente consumido
+                            }
+                        }
+                    }
+                    // Actualizamos la cantidad total disponible restando la cantidad requerida para esta iteración
+                    cantidadTotalDisponible -= cantidadRequerida;
                 }
             }
         }
-
-        // Apply the promotion to the required items
-        for (Map.Entry<ArticuloCarrito, BigDecimal> entry : itemsUsedInPromotion.entrySet()) {
-            ArticuloCarrito itemToDiscount = entry.getKey();
-            BigDecimal cantidadParaPromocion = entry.getValue();
-            BigDecimal precioConDescuento = calculateDiscountedPrice(itemToDiscount, precioDescuento);
-
-            Optional<ArticuloCarrito> existingPromotionItem = findExistingPromotionItem(itemToDiscount);
-
-            if (existingPromotionItem.isPresent()) {
-                updateExistingPromotion(existingPromotionItem.get(), cantidadParaPromocion);
-            } else {
-                handleNewPromotion(itemToDiscount, cantidadParaPromocion, precioConDescuento, itemsToRemove);
-            }
-
-            notifyUserOfPromotion(itemToDiscount, precioDescuento);
-        }
+        return aplicable;
     }
-
-    private BigDecimal calculateDiscountedPrice(ArticuloCarrito itemToDiscount, BigDecimal precioDescuento) {
-        return itemToDiscount.getArticulo().getLastPrecio().getPrecioConUtilidad()
-            .multiply(BigDecimal.ONE.subtract(precioDescuento.divide(BigDecimal.valueOf(100))));
-    }
-
-    private Optional<ArticuloCarrito> findExistingPromotionItem(ArticuloCarrito itemToDiscount) {
-        return carritoDescuento.stream()
-            .filter(descItem -> descItem.getArticulo().equals(itemToDiscount.getArticulo()) && descItem.isPromo())
-            .findFirst();
-    }
-
-    private void updateExistingPromotion(ArticuloCarrito existingItem, BigDecimal cantidadParaPromocion) {
-        existingItem.setCantidad(existingItem.getCantidad() + cantidadParaPromocion.doubleValue());
-    }
-
-    private void handleNewPromotion(ArticuloCarrito itemToDiscount, BigDecimal cantidadParaPromocion,
-                                     BigDecimal precioConDescuento, List<ArticuloCarrito> itemsToRemove) {
-        if (itemToDiscount.getCantidad().compareTo(cantidadParaPromocion.doubleValue()) > 0) {
-            // Create a new item for the discounted quantity
-            ArticuloCarrito discountedItem = new ArticuloCarrito(itemToDiscount.getArticulo(), cantidadParaPromocion.doubleValue());
-            discountedItem.setPrecioConDescuento(precioConDescuento);
-            discountedItem.setPromo(true);
-            carritoDescuento.add(discountedItem);
-
-            // Reduce the quantity of the original item
-            itemToDiscount.setCantidad(itemToDiscount.getCantidad() - cantidadParaPromocion.doubleValue());
-
-        } else {
-            // If exact quantity matches, apply discount to the whole item
-            itemToDiscount.setPrecioConDescuento(precioConDescuento);
-            itemToDiscount.setPromo(true);
-            carritoDescuento.add(itemToDiscount);
-            itemsToRemove.add(itemToDiscount); // Mark for removal
-        }
-    }
-
-    private void notifyUserOfPromotion(ArticuloCarrito itemToDiscount, BigDecimal precioDescuento) {
-        FacesContext.getCurrentInstance().addMessage(null,
-            new FacesMessage(FacesMessage.SEVERITY_INFO, "Promoción aplicada",
-                             "El artículo " + itemToDiscount.getArticulo().getNombre() + 
-                             " tiene un descuento de " + precioDescuento + "%"));
-    }
-
-
 
 
     public void calcularVuelto(){
@@ -291,36 +254,38 @@ public class CrearTiqueteController implements Serializable{
         }
     }
     
-    // Helper method to calculate total from a given list
-    public BigDecimal calculateTotalCarritoSinIVA() {
+    public BigDecimal calculateTotalCarrito() {
         BigDecimal total = BigDecimal.ZERO;
 
         if (carrito != null && !carrito.isEmpty()) {
             for (ArticuloCarrito item : carrito) {
                 var articulo = item.getArticulo();
                 var cantidad = item.getCantidad();
-                
+                var isPromo = item.isPromo();
+                var tax = articulo.getCodigoCabys().getImpuesto();
+                var taxDecimal = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
+
+                BigDecimal precioFinal;
                 BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioConUtilidad();
-                
                 BigDecimal cantidadDecimal = BigDecimal.valueOf(cantidad);
-                
-                BigDecimal precioFinal = precioUnidad;
 
-                // Calculate subtotal
+                // Determine final price based on promotional status
+                if (isPromo) {
+                    precioFinal = getArticuloConDescuento(item);  // Price after discount INCLUDES TAXES...
+                } else {
+                    precioFinal = precioUnidad;  // Regular price
+                    // Calculate total tax based on the final price after discount
+                    var totalImpuestos = precioFinal.multiply(taxDecimal);
+
+                    // Add tax to the final price to get the total price for the item
+                    precioFinal = precioFinal.add(totalImpuestos);
+                }                
+
+                // Calculate subtotal for this item based on quantity
                 BigDecimal subtotal = precioFinal.multiply(cantidadDecimal);
-                total = total.add(subtotal);
-            }
-        }
-        return total;
-    }
-    
-    // Helper method to calculate total from a given list
-    public BigDecimal calculateTotalDescuento() {
-        BigDecimal total = BigDecimal.ZERO;
 
-        if (carritoDescuento != null && !carritoDescuento.isEmpty()) {
-            for (ArticuloCarrito item : carritoDescuento) {
-                
+                // Add subtotal to the overall total
+                total = total.add(subtotal);
             }
         }
         return total;
@@ -330,52 +295,38 @@ public class CrearTiqueteController implements Serializable{
     public BigDecimal calculateTotalCarritoDescuento() {
         BigDecimal total = BigDecimal.ZERO;
 
-        if (carritoDescuento != null && !carritoDescuento.isEmpty()) {
-            for (ArticuloCarrito item : carritoDescuento) {
-                var articulo = item.getArticulo();
-                var cantidad = item.getCantidad();
-                var impuesto = item.getArticulo().getCodigoCabys().getImpuesto();
+        if (carrito != null && !carrito.isEmpty()) {
+            for (ArticuloCarrito item : carrito) {
                 
-                BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioConUtilidad();
+                var totalItem = getTotalDescuento(item);
+                var cantidad = BigDecimal.valueOf(item.getCantidad());
                 
-                BigDecimal cantidadDecimal = BigDecimal.valueOf(cantidad);
-                
-                BigDecimal impuestoDecimal = new BigDecimal(impuesto);
-                
-                BigDecimal precioFinal = precioUnidad;
-
-                // Apply discount if applicable
-                if (selectedClient != null && selectedClient.getDiscount() > 0) {
-                    BigDecimal descuento = BigDecimal.valueOf(selectedClient.getDiscount());
-                    BigDecimal porcentajeDescuento = descuento.divide(BigDecimal.valueOf(100));
-                    BigDecimal descuentoAplicado = precioUnidad.multiply(BigDecimal.ONE.subtract(porcentajeDescuento));
-                    precioFinal = descuentoAplicado;
-                }
-
                 // Calculate subtotal
-                BigDecimal subtotal = precioFinal.multiply(cantidadDecimal);
+                BigDecimal subtotal = totalItem.multiply(cantidad);
                 total = total.add(subtotal);
             }
         }
         return total;
     }
     
-    public BigDecimal calculateTotalCarritoFinal() {
+    // Helper method to calculate total from a given list
+    public BigDecimal calculateTotalCarritoImpuesto() {
         BigDecimal total = BigDecimal.ZERO;
 
-        // Process normal cart items
         if (carrito != null && !carrito.isEmpty()) {
-            total = calculateTotalForItems(carrito, total);
+            for (ArticuloCarrito item : carrito) {
+                
+                var totalItem = getTotalImpuesto(item);
+                var cantidad = BigDecimal.valueOf(item.getCantidad());
+                
+                // Calculate subtotal
+                BigDecimal subtotal = totalItem.multiply(cantidad);
+                total = total.add(subtotal);
+            }
         }
-
-        // Process discounted cart items
-        if (carritoDescuento != null && !carritoDescuento.isEmpty()) {
-            total = calculateTotalForItems(carritoDescuento, total);
-        }
-
         return total;
     }
-
+    
     public BigDecimal calculateTotalForItems(List<ArticuloCarrito> items, BigDecimal total) {
         for (ArticuloCarrito item : items) {
             var articulo = item.getArticulo();
@@ -421,23 +372,16 @@ public class CrearTiqueteController implements Serializable{
         this.cliente = cliente;
     }
     
-    public void removeArticulo(Articulos articulo){
+    public void removeArticulo(ArticuloCarrito articulo) {
         if (carrito != null) {
             Iterator<ArticuloCarrito> iterator = carrito.iterator();
-            while (iterator.hasNext()) {
-                ArticuloCarrito item = iterator.next();
-                if (item.getArticulo().equals(articulo)) {
-                    iterator.remove(); // Safely remove the item
-                }
-            }
-        }else{
-            if(carritoDescuento != null){
-                Iterator<ArticuloCarrito> iterator = carritoDescuento.iterator();
-                while (iterator.hasNext()) {
-                    ArticuloCarrito item = iterator.next();
-                    if (item.getArticulo().equals(articulo)) {
-                        iterator.remove(); // Safely remove the item
-                    }
+            boolean removed = false; // Variable para controlar si se eliminó un artículo
+
+            while (iterator.hasNext() && !removed) {
+                ArticuloCarrito articuloCarrito = iterator.next();
+                if (articuloCarrito.equals(articulo)) {
+                    iterator.remove(); // Elimina el artículo
+                    removed = true; // Marca que se ha realizado la eliminación
                 }
             }
         }
@@ -725,21 +669,86 @@ public class CrearTiqueteController implements Serializable{
         return null;
     }
     
-    public List<ArticuloCarrito> getCombinedCarrito() {
-        List<ArticuloCarrito> combinedCarrito = new ArrayList<>(); // Initialize a new list
+    public String getArticuloConDescuentoString(ArticuloCarrito articulo){
+        return getArticuloConDescuento(articulo).toString();
+    }
+    
+    public BigDecimal getArticuloConDescuento(ArticuloCarrito articulo) {
+        // Get the Articulo and necessary values
+        var Articulo = articulo.getArticulo();
+        var descuento = articulo.getDescuento();
+        var precioConUtilidad = Articulo.getLastPrecio().getPrecioConUtilidad();
+        double tax = Articulo.getCodigoCabys().getImpuesto();
 
-        // Add items from carrito if it's not null
-        if (carrito != null) {
-            combinedCarrito.addAll(carrito);
+        // Calculate the tax percentage and discount percentage
+        var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
+        var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
+
+        // Calculate the total discount and new price after discount
+        var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
+        var newPrecio = precioConUtilidad.subtract(descuentoTotal); // Subtract discount
+
+        // Calculate the applicable tax on the new price after discount
+        var applicableTax = newPrecio.multiply(taxPercentage);
+
+        // Calculate the final price
+        var precioFinal = newPrecio.add(applicableTax);
+
+        return precioFinal;
+    }
+    
+    public BigDecimal getTotalDescuento(ArticuloCarrito articulo) {
+        if(articulo.getDescuento() == null){
+            return BigDecimal.ZERO;
         }
+        // Obtener el Articulo y los valores necesarios
+        var Articulo = articulo.getArticulo();
+        var descuento = articulo.getDescuento();
+        var precioConUtilidad = Articulo.getLastPrecio().getPrecioConUtilidad();
 
-        // Add items from carritoDescuento if it's not null
-        if (carritoDescuento != null) {
-            combinedCarrito.addAll(carritoDescuento);
-        }
+        // Calcular el porcentaje de descuento
+        var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
 
-        return combinedCarrito; // Return the combined list
+        // Calcular el descuento total
+        var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
+
+        return descuentoTotal; // Retornar solo el total del descuento
     }
 
+    public BigDecimal getTotalImpuesto(ArticuloCarrito articulo) {
+        // Obtener el Articulo y los valores necesarios
+        var Articulo = articulo.getArticulo();
+        var descuento = articulo.getDescuento();
+        
+        var precioConUtilidad = Articulo.getLastPrecio().getPrecioConUtilidad();
+        double tax = Articulo.getCodigoCabys().getImpuesto();
+        
+        var applicableTax = BigDecimal.ZERO;
+        
+        // Calcular el porcentaje de impuesto
+        var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
+        if(descuento != null){
+            var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
+
+            // Calcular el descuento total
+            var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
+
+            // Calcular el nuevo precio después del descuento
+            var totalConDescuento = precioConUtilidad.subtract(descuentoTotal);
+            
+            applicableTax = totalConDescuento.multiply(taxPercentage);
+
+        }else{
+            // Calcular el impuesto aplicable sobre el nuevo precio después del descuento
+            applicableTax = precioConUtilidad.multiply(taxPercentage);
+        }
+
+        return applicableTax; // Retornar solo el total del impuesto
+    }
+
+    
+    
+
+    
     
 }

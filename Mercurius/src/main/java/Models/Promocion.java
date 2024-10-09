@@ -164,9 +164,38 @@ public class Promocion {
         }
     }
 
+    // In Promocion class
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Promocion{")
+          .append("id=").append(id)
+          .append(", nombre='").append(nombre).append('\'')
+          .append(", descuento=").append(descuento)
+          .append(", activa=").append(activa)
+          .append(", articulosCount=").append(articulos != null ? articulos.size() : 0)
+          .append('}');
 
+        return sb.toString();
+    }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        Promocion promocion = (Promocion) o;
+
+        // Use the primary key 'id' for equality check
+        return id == promocion.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id); // Generate hash based on 'id'
+    }
+
+    
 
 
 }
