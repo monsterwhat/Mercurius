@@ -16,6 +16,8 @@ public class ArticuloCarrito {
     private BigDecimal descuento;
     
     private boolean isPromo;
+    
+    private Promocion promocion;
 
     public ArticuloCarrito(Articulos articulo, Double cantidad) {
         this.articulo = articulo;
