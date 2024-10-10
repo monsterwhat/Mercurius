@@ -30,6 +30,8 @@ import Models.Comprobantes.Resumen.CodigoTipoMoneda;
 import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Inventario;
 import Models.Promocion;
+import Models.Registros.Alertas;
+import Services.AlertasService;
 import Services.ClientService;
 import Services.InventarioService;
 import jakarta.annotation.PostConstruct;
@@ -64,6 +66,7 @@ public class CrearTiqueteController implements Serializable{
     @Inject private SessionController currentSession;
     @Inject private TipoCambioController tipoCambio;
     @Inject private SettingsController settings;
+    @Inject private AlertasService alertaService;
     
     private ComprobantesRecibidos newFactura;
     private Clients selectedClient;
@@ -173,13 +176,11 @@ public class CrearTiqueteController implements Serializable{
 
         carrito.addAll(articulosPromocionales);
 
+        // Paso 2: Verificar si las promociones aplicadas siguen siendo válidas
+        verificarPromocionesCarrito();
+
         // Paso 3: Eliminar artículos con cantidad 0
-        carrito.removeIf(articulo -> {
-            if (articulo.getCantidad() <= 0) {
-                return true; // Se marca para eliminar
-            }
-            return false;
-        });
+        carrito.removeIf(articulo -> articulo.getCantidad() <= 0);
     }
 
     private boolean promocionAplica(Promocion promocion, List<ArticuloCarrito> articulos, List<ArticuloCarrito> articulosPromocionales) {
@@ -206,6 +207,7 @@ public class CrearTiqueteController implements Serializable{
                     // Crear nuevo artículo de promoción con la cantidad requerida
                     ArticuloCarrito itemPromocionAplicado = new ArticuloCarrito(itemPromocion.getArticulo(), cantidadRequerida);
                     itemPromocionAplicado.setPromo(true); // Marcamos el artículo como parte de una promoción
+                    itemPromocionAplicado.setPromocion(promocion);
                     itemPromocionAplicado.setDescuento(promocion.getDescuento()); // Establecemos el descuento
                     articulosPromocionales.add(itemPromocionAplicado); // Añadimos el artículo promocionado a la lista temporal
 
@@ -235,14 +237,61 @@ public class CrearTiqueteController implements Serializable{
         return aplicable;
     }
 
+    private void verificarPromocionesCarrito() {
+        // Paso 2: Verificar si las promociones aplicadas siguen siendo válidas
+        List<Promocion> promocionesAplicadas = obtenerPromocionesAplicadas(); // Método que retorna todas las promociones aplicadas
 
+        for (Promocion promocion : promocionesAplicadas) {
+            boolean promocionSigueValida = promocionSigueSiendoValida(promocion);
+
+            if (!promocionSigueValida) {
+                // Si la promoción ya no es válida, revertimos los descuentos aplicados
+                revertirPromocion(promocion, carrito);
+                System.out.println("Promocion revertida: " + promocion.getNombre());
+            }
+        }
+    }
+
+    private boolean promocionSigueSiendoValida(Promocion promocion) {
+        // Verificar si la promoción sigue siendo válida con la situación actual del carrito
+        return promocion.getArticulosCarrito().stream()
+            .allMatch(itemPromocion -> carrito.stream()
+                .anyMatch(itemCarrito -> itemCarrito.getArticulo().equals(itemPromocion.getArticulo()) 
+                    && itemCarrito.getCantidad() >= itemPromocion.getCantidad() 
+                    && itemCarrito.isPromo() // Aquí solo se verifican los artículos ya marcados como promociones
+                )
+            );
+    }
+
+    private void revertirPromocion(Promocion promocion, List<ArticuloCarrito> carrito) {
+        for (ArticuloCarrito articulo : carrito) {
+            if (articulo.getPromocion() == promocion) {
+                // Revertimos el descuento y el estado de promoción del artículo
+                articulo.setPromo(false);
+                articulo.setDescuento(BigDecimal.ZERO);
+                articulo.setPromocion(null); // Limpiamos la referencia a la promoción
+            }
+        }
+    }
+
+    // Método auxiliar para obtener todas las promociones aplicadas actualmente en el carrito
+    private List<Promocion> obtenerPromocionesAplicadas() {
+        return carrito.stream()
+            .filter(ArticuloCarrito::isPromo)
+            .map(ArticuloCarrito::getPromocion)
+            .distinct()
+            .collect(Collectors.toList());
+    }
+    
     public void calcularVuelto(){
         var cambio = this.tipoCambio.getTipoCambioActual().getValorCompra();
         
         if(dolares != null && colones != null){
             var totalDolaresEnColones = dolares.multiply(new BigDecimal(cambio));
         
-            vuelto = totalCarrito.subtract(colones).subtract(totalDolaresEnColones);
+            var total = calculateTotalCarrito();
+            
+            vuelto = total.subtract(colones).subtract(totalDolaresEnColones);
         }
     }
     
@@ -327,42 +376,6 @@ public class CrearTiqueteController implements Serializable{
         return total;
     }
     
-    public BigDecimal calculateTotalForItems(List<ArticuloCarrito> items, BigDecimal total) {
-        for (ArticuloCarrito item : items) {
-            var articulo = item.getArticulo();
-            var cantidad = item.getCantidad();
-            var impuesto = item.getArticulo().getCodigoCabys().getImpuesto();
-
-            BigDecimal precioUnidad = articulo.getLastPrecio().getPrecioConUtilidad();
-            BigDecimal cantidadDecimal = BigDecimal.valueOf(cantidad);
-
-            // Convert impuesto from hundredths to decimal
-            BigDecimal impuestoDecimal = new BigDecimal(impuesto).divide(BigDecimal.valueOf(100));
-
-            // Calculate the final price after discount
-            BigDecimal precioFinal = precioUnidad;
-
-            // Apply discount if applicable
-            if (selectedClient != null && selectedClient.getDiscount() > 0) {
-                BigDecimal descuento = BigDecimal.valueOf(selectedClient.getDiscount());
-                BigDecimal porcentajeDescuento = descuento.divide(BigDecimal.valueOf(100));
-                BigDecimal descuentoAplicado = precioUnidad.multiply(BigDecimal.ONE.subtract(porcentajeDescuento));
-                precioFinal = descuentoAplicado;
-            }
-
-            // Calculate subtotal
-            BigDecimal subtotal = precioFinal.multiply(cantidadDecimal);
-
-            // Calculate total with tax
-            BigDecimal totalConImpuesto = subtotal.add(subtotal.multiply(impuestoDecimal));
-
-            // Add to total
-            total = total.add(totalConImpuesto);
-        }
-        return total;
-    }
-
-    
     public void selectArticulo(Articulos articulo){
         codigoBarra = articulo.getCodigoBarra();
         processCodigoBarra();
@@ -380,21 +393,77 @@ public class CrearTiqueteController implements Serializable{
             while (iterator.hasNext() && !removed) {
                 ArticuloCarrito articuloCarrito = iterator.next();
                 if (articuloCarrito.equals(articulo)) {
+                    
+                    Alertas alerta = new Alertas();
+                    alerta.setMensaje("Cajero " + currentSession.getCurrentUser().getUsername() + " elimino articulo de carrito");
+                    alerta.setTipo("Modificacion Carrito");
+                    alerta.setAntes(articulo.toString());
+                    alerta.setDespues("");
+                    alerta.setVista(false);
+                    
+                    alertaService.create(alerta);
+                    
                     iterator.remove(); // Elimina el artículo
                     removed = true; // Marca que se ha realizado la eliminación
                 }
             }
+            procesarPromocionesCarrito();
         }
     }
     
-    public void cancel(){
-        System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + " - Cancelo Factura");
-        resetFlag = !resetFlag; // Toggle el reset flag
+    public void cancel() {
+        
+        String cajero = currentSession.getCurrentUser().getUsername();
+
+        Alertas alerta = new Alertas();
+
+        // Using StringBuilder to construct the message details
+        StringBuilder antesBuilder = new StringBuilder();
+
+        // Constructing the "Antes" part
+        antesBuilder.append("Items en Carrito: ");
+        if (carrito.isEmpty()) {
+            antesBuilder.append("Carrito vacío");
+        } else {
+            for (ArticuloCarrito articulo : carrito) {
+                antesBuilder.append("[Artículo: ")
+                             .append(articulo.getArticulo().getNombre())
+                             .append(", Cantidad: ")
+                             .append(articulo.getCantidad());
+
+                // Check if the item is part of a promotion
+                if (articulo.isPromo()) {
+                    antesBuilder.append(", Promoción: ")
+                                 .append(articulo.getPromocion().getDescuento());
+                } else {
+                    antesBuilder.append(", Sin promoción");
+                }
+                antesBuilder.append("], ");
+            }
+        }
+
+        antesBuilder.append("\nCliente: ").append(selectedClient != null ? selectedClient.getName() : "Ninguno");
+        antesBuilder.append("\nCantidad Articulo: ").append(cantidadArticulo);
+        antesBuilder.append("\nCódigo Barra: ").append(codigoBarra);
+
+        // Set the fields for alerta
+        alerta.setMensaje("Eliminacion Articulo en Carrito - Cajero: " + cajero);
+        alerta.setTipo("facturacion");
+        alerta.setAntes(antesBuilder.toString());
+        alerta.setDespues("Empty");
+        alerta.setVista(false);
+
+        // Save the alerta using the service
+        alertaService.create(alerta);
+
+        // Clear the carrito and reset fields
+        resetFlag = !resetFlag; // Toggle the reset flag
         codigoBarra = "";
         cantidadArticulo = 1;
-        selectedClient = new Clients();
-        carrito = new ArrayList<>(); //Clear el carrito...
+        selectedClient = new Clients(); // Reset the client
+        carrito = new ArrayList<>(); // Clear the carrito
     }
+
     
     public List<Clients> getFilteredClients() {
         if (clientsFilter != null && !clientsFilter.isEmpty()) {
@@ -647,7 +716,7 @@ public class CrearTiqueteController implements Serializable{
             encabezado.setEmisor(emisor);
             
             Receptor receptor = new Receptor();
-            if(selectedClient != null){
+            if(selectedClient.getName() != null){
                 receptor.setNombre(selectedClient.getName());
                 receptor.setNombreComercial(selectedClient.getName());
                 if(!"nacional".equals(selectedClient.getIdType().toLowerCase())){
@@ -669,9 +738,12 @@ public class CrearTiqueteController implements Serializable{
         return null;
     }
     
-    public String getArticuloConDescuentoString(ArticuloCarrito articulo){
+    public String getArticuloPrecioFinal(ArticuloCarrito articulo){
         return getArticuloConDescuento(articulo).toString();
     }
+    
+    //TODO ADD METHOD THAT RETURNS TOTAL OF PRECIO BASED ON THE AMOUNT OF ITEMS ONLY FOR NON PROMO
+    //ALSO ADD A FIELD ON THE TABLE THAT SHOWS THIS VALUE AND KEEP THE ONE THAT SHOWS THE PRICE FOR UNIT
     
     public BigDecimal getArticuloConDescuento(ArticuloCarrito articulo) {
         // Get the Articulo and necessary values
@@ -682,18 +754,29 @@ public class CrearTiqueteController implements Serializable{
 
         // Calculate the tax percentage and discount percentage
         var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
-        var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
+       
+        BigDecimal applicableTax, precioFinal;
+        
+        if(descuento != null){
+            var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
 
-        // Calculate the total discount and new price after discount
-        var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
-        var newPrecio = precioConUtilidad.subtract(descuentoTotal); // Subtract discount
+            // Calculate the total discount and new price after discount
+            var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
 
-        // Calculate the applicable tax on the new price after discount
-        var applicableTax = newPrecio.multiply(taxPercentage);
-
-        // Calculate the final price
-        var precioFinal = newPrecio.add(applicableTax);
-
+            var newPrecio = precioConUtilidad.subtract(descuentoTotal); // Subtract discount
+            
+            // Calculate the applicable tax on the new price after discount
+            applicableTax = newPrecio.multiply(taxPercentage);
+            
+            // Calculate the final price
+            precioFinal = newPrecio.add(applicableTax);
+        }else{
+            // Calculate the applicable tax on the new price after discount
+            applicableTax = precioConUtilidad.multiply(taxPercentage);
+            // Calculate the final price
+            precioFinal = precioConUtilidad.add(applicableTax);
+        }
+        
         return precioFinal;
     }
     
@@ -746,9 +829,4 @@ public class CrearTiqueteController implements Serializable{
         return applicableTax; // Retornar solo el total del impuesto
     }
 
-    
-    
-
-    
-    
 }

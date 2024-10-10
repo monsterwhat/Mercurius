@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import lombok.Data;
 
 /**
@@ -21,8 +22,14 @@ public class Alertas {
 
     private String mensaje;
     
+    private String tipo;
+    
+    @Lob
     private String antes; //Usada para guardar alguna entidad que se modifico (vieja).
     
+    @Lob
     private String despues; //la entidad con el cambio (nueva).
+    
+    private boolean vista; //Si ya se reviso o no...
     
 }
