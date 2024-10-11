@@ -20,6 +20,32 @@
         });
     </script>
     
+    <script type="text/javascript">
+        function printPDF(url) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.responseType = 'blob';
+            xhr.onload = function () {
+                if (xhr.status === 200) {
+                    var blob = xhr.response;
+                    var fileReader = new FileReader();
+                    fileReader.onload = function () {
+                        var data = this.result;
+                        var printWindow = window.open('', '_blank');
+                        printWindow.document.write('<iframe width="100%" height="100%" src="data:application/pdf;base64,' + btoa(data) + '"></iframe>');
+                        printWindow.document.close();
+                        printWindow.onload = function () {
+                            printWindow.focus();
+                            printWindow.print();
+                        };
+                    };
+                    fileReader.readAsBinaryString(blob);
+                }
+            };
+            xhr.send();
+        }
+    </script>
+    
     <p:dialog widgetVar="CrearTiqueteDialog" maximizable="true" closable="false" dynamic="true" 
         fitViewport="true" responsive="true" cache="false" id="CrearTiqueteDialog">
         <p:outputPanel deferred="true" rendered="#{not empty crearTiqueteController.newFactura}" layout="flex">
@@ -94,7 +120,7 @@
                                    <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" 
                                                     actionListener="#{crearTiqueteController.removeArticulo(carrito)}" />
                                </p:column>
-                            </p:dataTable>
+                        </p:dataTable>
                         
                     </p:card>
                     
@@ -185,8 +211,8 @@
 
 
             <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-receipt"  value="Facturar"
-                             actionListener="#{crearTiqueteController.verificarPago()}"
-                            process="@form" update="@this"/>
+                             actionListener="#{crearTiqueteController.verificarPago()}" process="@form" update="@this"
+                             />
             
             <p:spacer height="1em"/>
 

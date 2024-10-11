@@ -1,7 +1,7 @@
 package Controllers;
 
 import Models.ArticuloPrecio;
-import Services.FacturaService;
+import Services.ComprobantesRecibidosService;
 import Models.Articulos;
 import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Detalles.*;
@@ -40,7 +40,7 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class FacturasController implements Serializable {
     
-    @Inject FacturaService facturaService;
+    @Inject ComprobantesRecibidosService facturaService;
     @Inject LineaDetalleService lineaDetalleService;
     @Inject SessionController currentSession;
     @Inject ArticulosController articuloController;

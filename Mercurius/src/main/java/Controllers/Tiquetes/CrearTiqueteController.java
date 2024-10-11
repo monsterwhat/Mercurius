@@ -32,16 +32,37 @@ import Models.Inventario;
 import Models.Promocion;
 import Models.Registros.Alertas;
 import Services.AlertasService;
+import Services.AppSettingsService;
 import Services.ClientService;
+import Services.ComprobantesEmitidosService;
+import Services.Facturas.DetalleServicioService;
+import Services.Facturas.EmisorService;
+import Services.Facturas.EncabezadoService;
+import Services.Facturas.ReceptorService;
+import Services.Facturas.ResumenFacturaService;
 import Services.InventarioService;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Meta;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
+import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -66,7 +87,14 @@ public class CrearTiqueteController implements Serializable{
     @Inject private SessionController currentSession;
     @Inject private TipoCambioController tipoCambio;
     @Inject private SettingsController settings;
+    @Inject private AppSettingsService appSettings;
     @Inject private AlertasService alertaService;
+    @Inject private ComprobantesEmitidosService comprobanteService;
+    @Inject private EncabezadoService encabezadoService;
+    @Inject private DetalleServicioService detallesService;
+    @Inject private ResumenFacturaService resumenService;
+    @Inject private EmisorService emisorService;
+    @Inject private ReceptorService receptorService;
     
     private ComprobantesRecibidos newFactura;
     private Clients selectedClient;
@@ -78,7 +106,7 @@ public class CrearTiqueteController implements Serializable{
     private String clientsFilter;
     private List<Clients> clients;
     private List<FilterMeta> filterBy;
-    private BigDecimal totalCarrito, colones, dolares, vuelto;
+    private BigDecimal totalCarrito, colones, dolares, vuelto, pago;
     
     @PostConstruct
     public void init(){
@@ -288,10 +316,12 @@ public class CrearTiqueteController implements Serializable{
         
         if(dolares != null && colones != null){
             var totalDolaresEnColones = dolares.multiply(new BigDecimal(cambio));
+            
+            pago = totalDolaresEnColones.add(colones);
         
             var total = calculateTotalCarrito();
             
-            vuelto = total.subtract(colones).subtract(totalDolaresEnColones);
+            vuelto = total.subtract(pago);
         }
     }
     
@@ -503,6 +533,12 @@ public class CrearTiqueteController implements Serializable{
     public void openNewFactura(){
         newFactura = new ComprobantesRecibidos();
     }
+     
+    public void clearPago(){
+        vuelto = BigDecimal.ZERO;
+        dolares = BigDecimal.ZERO;
+        colones = BigDecimal.ZERO;
+    }
     
     public void verificarPago(){
         calcularVuelto();
@@ -514,24 +550,31 @@ public class CrearTiqueteController implements Serializable{
         }
     }
     
-    public void clearPago(){
-        vuelto = BigDecimal.ZERO;
-        dolares = BigDecimal.ZERO;
-        colones = BigDecimal.ZERO;
-    }
-    
     public void facturar(){
         
-        AppSettings appSettings = this.settings.getCurrentSettings();
-        if(Objects.equals(appSettings.getEstatus(), Boolean.FALSE)){
-            return;
+        AppSettings settings = appSettings.returnCurrent();;
+        if(Objects.equals(settings.getEstatus(), Boolean.FALSE)){
+            return ;
         }
         
         //1. Hacer ajustes en inventario
+        ajustarInventario();
+        
+        //2. Crear Comprobante y enviarlo a tributacion
+        ComprobantesEmitidos tiqueteElectronico = crearComprobante();
+        
+        if (tiqueteElectronico != null) {
+            generarPDF(tiqueteElectronico, settings);
+            return;
+        }
+        
+    }
+    
+    private void ajustarInventario() {
         for (ArticuloCarrito articulo : carrito) {
             var Articulo = articulo.getArticulo();
             var Cantidad = articulo.getCantidad();
-            
+
             Inventario movimiento = new Inventario();
             movimiento.setArticulo(Articulo);
             movimiento.setCantidad(BigDecimal.valueOf(Cantidad).negate());
@@ -540,50 +583,125 @@ public class CrearTiqueteController implements Serializable{
             movimiento.setProcessed(Boolean.TRUE);
             movimiento.setStatus(Boolean.TRUE);
             movimiento.setTipoMovimiento("Venta");
-            movimiento.setUnidadesRecomendadasFactura(Cantidad*-1);
+            movimiento.setUnidadesRecomendadasFactura(Cantidad * -1);
             movimiento.setUsuario(currentSession.getCurrentUser());
-            
+
             inventario.update(movimiento);
         }
-        
-        //2. Crear Comprobante y enviarlo a tributacion
-        
-        //2.1 Encabezado
-        
+    }
+    
+    private ComprobantesEmitidos crearComprobante() {
         Encabezado encabezado = encabezadoTiqueteElectronico();
-        
-        //2.2 Detalles
-            
-        DetalleServicio detalles = detallesTiqueteElectronico();
+        encabezadoService.create(encabezado);
 
-        //Agregar a comprobantesEmitidos...
-            
-        //2.3 Resumen
-        
+        DetalleServicio detalles = detallesTiqueteElectronico();
+        detallesService.create(detalles);
+
         ResumenFactura resumen = resumenTiqueteElectronico();
-        
-        //2.4 Agregar a ComprobanteEmitidos.
+        resumenService.create(resumen);
+
         ComprobantesEmitidos tiqueteElectronico = new ComprobantesEmitidos();
         tiqueteElectronico.setEncabezado(encabezado);
         tiqueteElectronico.setDetalles(detalles);
         tiqueteElectronico.setResumen(resumen);
         tiqueteElectronico.setUser(currentSession.getCurrentUser());
-        
-        //3. Guardar e imprimir Tiquete
-        
-        
-        
-        //4. Guardar respuesta y limpiar valores de factura.
-        
-        encabezado = null;
-        detalles = null;
-        resumen = null;
-        tiqueteElectronico = null;
-        
-        clearPago();
-        carrito.clear();
-        PrimeFaces.current().executeScript("PF('PagoDialog').hide(); PF('CrearTiqueteDialog').hide();");
 
+        comprobanteService.create(tiqueteElectronico);
+        return tiqueteElectronico;
+    }
+    
+    private void generarPDF(ComprobantesEmitidos tiqueteElectronico, AppSettings settings) {
+        // PDF generation logic here
+        try {
+            // Create a document with custom page size (width: 80mm, height: 200mm) and margins (5px)
+            //Document document = new Document(new Rectangle(80f, 200f), 5, 5, 5, 5);
+            
+            
+            Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PdfWriter.getInstance(document, baos);
+            document.add(new Meta("charset", "UTF-8"));
+            document.open();
+
+            // Set font size
+            com.lowagie.text.Font font = new com.lowagie.text.Font();
+            font.setSize(8); // Set font size to 5 points
+
+            document.add(new Paragraph(settings.getNombreNegocio(), font));
+            document.add(new Paragraph(settings.getNombre(), font));
+            document.add(new Paragraph(settings.getIdentificacion(), font));
+            document.add(new Paragraph(settings.getTelefono(), font));
+            document.add(new Paragraph(settings.getCorreoElectronicoTributacion(), font));
+            document.add(new Paragraph(settings.getDireccionCompleta(), font));
+
+            document.add(new Paragraph("",font));//HERE ADD FECHA LIKE DD/MM/YYYY HOUR:24HRCLOCK
+            document.add(new Paragraph("TIQUETE ELECTRONICO",font));//Tipo de Factura (TIQUETE ELECTRONICO)
+            document.add(new Paragraph("CONSECUTIVO: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo(),font));//CONSECUTIVO
+            document.add(new Paragraph("CLAVE NUMERICA: "+ tiqueteElectronico.getEncabezado().getClave(),font));//CLAVE NUMERICA
+            document.add(new Paragraph("NUMERO: "+ tiqueteElectronico.getId(),font));//NUMERO TIQUETE ELECTRONICO
+            document.add(new Paragraph(cliente.getName(),font));//NOMBRE CLIENTE
+            document.add(new Paragraph(currentSession.getUsername(),font));//CAJERO
+
+            PdfPTable table = new PdfPTable(4); // 4 columns
+            table.addCell("NOMBRE ART");
+            table.addCell("CANTIDAD");
+            table.addCell("P.VENTA");
+            table.addCell("TOTAL");
+
+            for (ArticuloCarrito articulo : carrito) {
+                table.addCell(articulo.getArticulo().getNombre());
+                table.addCell(articulo.getCantidad().toString());
+                table.addCell(articulo.getTotalArticulo().toString());
+                table.addCell(articulo.getTotalArticulos().toString());
+            }
+
+            document.add(table);
+
+            document.add(new Paragraph("****Ultima Linea****",font)); //Aviso ultima linea de articulos
+
+            document.add(new Paragraph("TOTAL GRAVADO: " + tiqueteElectronico.getResumen().getTotalGravado(),font));//TOTAL GRAVADO
+            document.add(new Paragraph("TOTAL EXENTO: " + tiqueteElectronico.getResumen().getTotalExento(),font));//TOTAL EXENTO
+            document.add(new Paragraph("TOTAL VENTA: " + tiqueteElectronico.getResumen().getTotalVenta(),font));//TOTAL VENTA
+            document.add(new Paragraph("TOTAL DESCUENTOS: " + tiqueteElectronico.getResumen().getTotalDescuentos(),font));//TOTAL DESCUENTOS
+            document.add(new Paragraph("TOTAL VENTA NETA: " + tiqueteElectronico.getResumen().getTotalVentaNeta(),font));//TOTAL VENTA NETA
+            document.add(new Paragraph("TOTAL IMPUESTOS: " + tiqueteElectronico.getResumen().getTotalImpuesto(),font));//TOTAL IMPUESTOS
+            document.add(new Paragraph("TOTAL COMPROBANTE: " + tiqueteElectronico.getResumen().getTotalComprobante(),font));//TOTAL COMPROBANTE
+
+            document.add(new Paragraph("PAGA CON: " + pago,font));//PAGA CON:
+            document.add(new Paragraph("VUELTO: " + vuelto,font));//VUELTO:
+
+            document.add(new Paragraph("* Articulo Exento",font));//* Articulo Exento
+            document.add(new Paragraph("Autorizado mediante resolucion No. DGT-R033-2019 del dia 20 de junio de 2019. Version FE 4.3",font));//Autorizado mediante resolucion No. DGT-R033-2019 del dia 20 de junio de 2019. Version FE 4.3
+
+            document.close();
+
+            FacesContext facesContext = FacesContext.getCurrentInstance();
+            HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
+
+            response.setContentType("application/pdf; charset=UTF-8");
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            response.setContentLength(baos.size());
+            response.setHeader("Content-disposition", "attachment; filename=tiqueteElectronico.pdf");
+
+            try (ServletOutputStream outputStream = response.getOutputStream()) {
+                baos.writeTo(outputStream);
+                outputStream.flush();
+            }
+            
+            facesContext.responseComplete();
+            clearPago();
+            carrito.clear();
+            PrimeFaces.current().executeScript("PF('PagoDialog').hide(); PF('CrearTiqueteDialog').hide();");
+            
+        } catch (DocumentException | IOException e) {
+            System.out.println(e.getLocalizedMessage());
+        }
+    }
+    
+    public String getContextPath() {
+        ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
+        HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
+        return request.getContextPath();
     }
     
     public ResumenFactura resumenTiqueteElectronico(){
@@ -682,6 +800,7 @@ public class CrearTiqueteController implements Serializable{
             List<MedioPago> medioPago = new ArrayList<>();
             MedioPago medio = new MedioPago();
             medio.setMedioPago("01");
+            medio.setComprobante(encabezado);
             medioPago.add(medio);
             encabezado.setMedioPago(medioPago);
             //Emisor
@@ -714,6 +833,7 @@ public class CrearTiqueteController implements Serializable{
             emisor.setCorreoElectronico(appSettings.getCorreoElectronicoTributacion());
             //Guardamos info Emisor en encabezado
             encabezado.setEmisor(emisor);
+            emisorService.create(emisor);
             
             Receptor receptor = new Receptor();
             if(selectedClient.getName() != null){
@@ -733,6 +853,8 @@ public class CrearTiqueteController implements Serializable{
             }
             //Guardamos info Receptor en encabezado
             encabezado.setReceptor(receptor);
+            receptorService.create(receptor);
+            
             return encabezado;
         }
         return null;

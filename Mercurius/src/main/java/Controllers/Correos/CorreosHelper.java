@@ -18,7 +18,7 @@ import Services.ArticulosService;
 import Services.Correos.ReportesProgramadosService;
 import Services.DepartamentoService;
 import Services.EmailService;
-import Services.FacturaService;
+import Services.ComprobantesRecibidosService;
 import Services.FamiliaService;
 import Services.InventarioService;
 import Utils.ExcelExporter;
@@ -48,7 +48,7 @@ import lombok.Data;
 public class CorreosHelper {
     
     @Inject InventarioService inventarioService;
-    @Inject FacturaService facturaService;
+    @Inject ComprobantesRecibidosService facturaService;
     @Inject ArticulosService articuloService;
     @Inject DepartamentoService departamentosService;
     @Inject FamiliaService familiaService;
