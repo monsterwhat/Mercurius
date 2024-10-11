@@ -50,5 +50,50 @@ public class ArticuloCarrito {
         return Objects.hash(articulo, cantidad, isPromo);  // Asegúrate de que el hash esté basado en articulo, cantidad e isPromo
     }
     
+    public BigDecimal getTotalArticulo(){
+        if(this.isPromo){
+            var discount = this.getDescuento() != null ? this.getDescuento() : BigDecimal.ZERO;
+            var articulo = this.getArticulo();
+            var tax = BigDecimal.valueOf(this.getArticulo().getCodigoCabys().getImpuesto());
+            
+            var precioArticulo = articulo.getLastPrecio().getPrecioConUtilidad();
+            var cantidadDescuento = precioArticulo.multiply(discount.divide(BigDecimal.valueOf(100)));
+            
+            var precioConDescuento = precioArticulo.subtract(cantidadDescuento);
+            
+            var cantidadImpuesto = precioConDescuento.multiply(tax.divide(BigDecimal.valueOf(100)));
+            var precioFinal = precioConDescuento.add(cantidadImpuesto);
+            
+            return precioFinal;
+            
+        }else{
+            var articulo = this.getArticulo();
+            var precioArticulo = articulo.getLastPrecio().getPrecioConUtilidad();
+            return precioArticulo;
+        }
+    }
+    
+    public BigDecimal getTotalArticulos(){
+        if(this.isPromo){
+            var discount = this.getDescuento() != null ? this.getDescuento() : BigDecimal.ZERO;
+            var articulo = this.getArticulo();
+            var tax = BigDecimal.valueOf(this.getArticulo().getCodigoCabys().getImpuesto());
+            
+            var precioArticulo = articulo.getLastPrecio().getPrecioConUtilidad();
+            var cantidadDescuento = precioArticulo.multiply(discount.divide(BigDecimal.valueOf(100)));
+            
+            var precioConDescuento = precioArticulo.subtract(cantidadDescuento);
+            
+            var cantidadImpuesto = precioConDescuento.multiply(tax.divide(BigDecimal.valueOf(100)));
+            var precioFinal = precioConDescuento.add(cantidadImpuesto);
+            
+            return precioFinal;
+            
+        }else{
+            var articulo = this.getArticulo();
+            var precioArticulo = articulo.getLastPrecio().getPrecioConUtilidad();
+            return precioArticulo.multiply(BigDecimal.valueOf(this.getCantidad()));
+        }
+    }
     
 }

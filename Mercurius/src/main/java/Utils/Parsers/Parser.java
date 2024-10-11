@@ -19,7 +19,7 @@ import Models.Comprobantes.Encabezado.Ubicacion;
 import Models.Comprobantes.Enums.MedioPagoEnum;
 import Models.Comprobantes.Resumen.CodigoTipoMoneda;
 import Models.Comprobantes.Resumen.ResumenFactura;
-import Services.FacturaService;
+import Services.ComprobantesRecibidosService;
 import Services.Facturas.CodigoComercialService;
 import Services.Facturas.DescuentoService;
 import Services.Facturas.DetalleServicioService;
@@ -56,7 +56,7 @@ public class Parser {
     
     @Inject DetalleServicioService detalleServicioService;    
     @Inject EmisorService emisorService;
-    @Inject FacturaService facturaService;
+    @Inject ComprobantesRecibidosService facturaService;
     @Inject ImpuestoService impuestoService;
     @Inject DescuentoService descuentoService;
     @Inject CodigoComercialService codigoComercialService;
