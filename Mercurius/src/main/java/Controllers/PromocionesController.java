@@ -396,7 +396,12 @@ public class PromocionesController implements Serializable {
     }
     
     public String createTotalDescuentoEIVAText(){
-        return selectedPromocion.getTotalPromo(lista,newPromocion.getDescuento()).toString();
+        if(selectedPromocion != null){
+            return selectedPromocion.getTotalPromo(lista,newPromocion.getDescuento()).toString();
+        }
+        else{
+            return "";
+        }
     }
     
     public String updateTotalDescuentoEIVAText(){

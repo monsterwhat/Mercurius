@@ -42,5 +42,21 @@ public enum CodigoImpuesto {
         }
         throw new IllegalArgumentException("Código de impuesto no válido: " + codigo);
     }
+    
+    // Método para obtener el código de letra según el impuesto
+    public static String getCodigoLetra(int porcentajeImpuesto) {
+        switch (porcentajeImpuesto) {
+            case 0:
+                return "E";
+            case 1:
+                return "U";
+            case 2:
+                return "D";
+            case 13:
+                return "T";
+            default:
+                throw new IllegalArgumentException("Porcentaje de impuesto no válido: " + porcentajeImpuesto);
+        }
+    }
 }
 

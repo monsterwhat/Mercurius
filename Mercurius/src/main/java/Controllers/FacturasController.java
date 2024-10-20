@@ -277,7 +277,6 @@ public class FacturasController implements Serializable {
                 for(CodigoComercial codigoComercial : codigosComercialesLineaDetalle){
                     if(codigoComercial.getTipo().contains("03")){
                         codigoBarra = codigoComercial.getCodigo();
-                        break;
                     }
                 }
                 
@@ -381,15 +380,5 @@ public class FacturasController implements Serializable {
         System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + "Cancelo Factura");
     }
     
-    public void crearTiquete(){
-        ComprobantesRecibidos comprobante = new ComprobantesRecibidos();
-        Encabezado encabezado = new Encabezado();
-        DetalleServicio detalles = new DetalleServicio();
-        ResumenFactura resumen = new ResumenFactura();
-        
-        boolean status, processed;
-        Users user;
-        
-    }
     
 }

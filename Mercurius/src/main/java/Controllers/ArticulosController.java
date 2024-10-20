@@ -1,5 +1,6 @@
 package Controllers;
 
+import Controllers.Settings.SettingsDirController;
 import Models.ArticuloPrecio;
 import Models.Articulos;
 import Models.Departamento;
@@ -10,7 +11,6 @@ import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.InventarioService;
 import Services.PrinterService;
-import Utils.directoryConfig;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Meta;
@@ -59,7 +59,7 @@ public class ArticulosController implements Serializable {
     @Inject private InventarioService inventarioService;
     @Inject private SessionController currentSession;
     @Inject private CabysController cabysController;
-    @Inject private directoryConfig directoryConfig;
+    @Inject private SettingsDirController directoryConfig;
     @Inject private PrinterService printer;
     
     private List<Articulos> articulosActivos;
@@ -77,6 +77,7 @@ public class ArticulosController implements Serializable {
     private int DepartamentoID,FamiliaID = 0;
     private String SelectedUnidadMedida, SelectedUnidadMedidaComercial;
     private ArticuloPrecio precioArticulo;
+
 
     @PostConstruct
     public void init() {
@@ -294,6 +295,15 @@ public class ArticulosController implements Serializable {
             newArticulo.setProcessed(true);
             if(newArticulo.getDepartamento() != null && newArticulo.getFamilia() != null && newArticulo.getUsuario() != null){
                 newArticulo.setStatus(true);
+                if(newArticulo.getPrecios()!=null){
+                    precioArticulo.setArticulo(newArticulo);
+                    newArticulo.getPrecios().add(precioArticulo);
+                }else{
+                    List<ArticuloPrecio> precios = new ArrayList<>();
+                    precioArticulo.setArticulo(newArticulo);
+                    precios.add(precioArticulo);
+                    newArticulo.setPrecios(precios);
+                }
                 articulosService.create(newArticulo);
                 clearCache();
                 clearArticulo();
@@ -713,10 +723,10 @@ public class ArticulosController implements Serializable {
         }
 
         // Create the directory if it doesn't exist
-        directoryConfig.createPdfSaveDirectoryIfNeeded();
+        directoryConfig.createReportesDir();
 
         // Move the temporary file to the permanent location with the unique name
-        File permanentFile = new File(directoryConfig.getPdfSaveDirectory(), fileName);
+        File permanentFile = new File(directoryConfig.getReportesDirPath(), fileName);
         Files.move(tempFile.toPath(), permanentFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         // PDF has been saved, print it!!!

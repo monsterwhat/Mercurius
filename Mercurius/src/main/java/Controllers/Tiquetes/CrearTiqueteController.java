@@ -2,6 +2,7 @@ package Controllers.Tiquetes;
 
 import Controllers.ArticulosController;
 import Controllers.SessionController;
+import Controllers.Settings.SettingsDirController;
 import Controllers.SettingsController;
 import Controllers.TipoCambioController;
 import Models.AppSettings;
@@ -26,7 +27,6 @@ import Models.Comprobantes.Encabezado.Receptor;
 import Models.Comprobantes.Encabezado.Telefono;
 import Models.Comprobantes.Encabezado.Ubicacion;
 import Models.Comprobantes.Enums.CondicionVenta;
-import Models.Comprobantes.Resumen.CodigoTipoMoneda;
 import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Inventario;
 import Models.Promocion;
@@ -41,28 +41,23 @@ import Services.Facturas.EncabezadoService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import Services.InventarioService;
-import com.lowagie.text.Document;
-import com.lowagie.text.DocumentException;
-import com.lowagie.text.Meta;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfPTable;
-import com.lowagie.text.pdf.PdfWriter;
+import Services.PrinterService;
+import Utils.PDFGenerator;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import jakarta.servlet.ServletOutputStream;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
@@ -72,8 +67,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Data;
-import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
+import org.primefaces.model.StreamedContent;
 import org.primefaces.util.LangUtils;
 
 @Named("crearTiqueteController")
@@ -95,6 +90,9 @@ public class CrearTiqueteController implements Serializable{
     @Inject private ResumenFacturaService resumenService;
     @Inject private EmisorService emisorService;
     @Inject private ReceptorService receptorService;
+    @Inject private PDFGenerator pdfGenerator;
+    @Inject SettingsDirController dirController;
+    @Inject private PrinterService printer;
     
     private ComprobantesRecibidos newFactura;
     private Clients selectedClient;
@@ -107,6 +105,8 @@ public class CrearTiqueteController implements Serializable{
     private List<Clients> clients;
     private List<FilterMeta> filterBy;
     private BigDecimal totalCarrito, colones, dolares, vuelto, pago;
+    private String pdfUrl;
+    private StreamedContent pdfStream;
     
     @PostConstruct
     public void init(){
@@ -196,9 +196,6 @@ public class CrearTiqueteController implements Serializable{
 
             for (Promocion promocion : promocionesActivas) {
                 boolean promocionAplicada = promocionAplica(promocion, listaArticulos, articulosPromocionales);
-                if (promocionAplicada) {
-                    System.out.println("Promoción aplicada: " + promocion.toString());
-                }
             }
         }
 
@@ -350,7 +347,7 @@ public class CrearTiqueteController implements Serializable{
 
                 // Determine final price based on promotional status
                 if (isPromo) {
-                    precioFinal = getArticuloConDescuento(item);  // Price after discount INCLUDES TAXES...
+                    precioFinal = item.getArticuloConDescuento();  // Price after discount INCLUDES TAXES...
                 } else {
                     precioFinal = precioUnidad;  // Regular price
                     // Calculate total tax based on the final price after discount
@@ -377,7 +374,7 @@ public class CrearTiqueteController implements Serializable{
         if (carrito != null && !carrito.isEmpty()) {
             for (ArticuloCarrito item : carrito) {
                 
-                var totalItem = getTotalDescuento(item);
+                var totalItem = item.getTotalDescuento();
                 var cantidad = BigDecimal.valueOf(item.getCantidad());
                 
                 // Calculate subtotal
@@ -395,7 +392,7 @@ public class CrearTiqueteController implements Serializable{
         if (carrito != null && !carrito.isEmpty()) {
             for (ArticuloCarrito item : carrito) {
                 
-                var totalItem = getTotalImpuesto(item);
+                var totalItem = item.getTotalImpuesto();
                 var cantidad = BigDecimal.valueOf(item.getCantidad());
                 
                 // Calculate subtotal
@@ -550,25 +547,59 @@ public class CrearTiqueteController implements Serializable{
         }
     }
     
-    public void facturar(){
+    public void facturar() {
         
-        AppSettings settings = appSettings.returnCurrent();;
-        if(Objects.equals(settings.getEstatus(), Boolean.FALSE)){
-            return ;
-        }
-        
-        //1. Hacer ajustes en inventario
-        ajustarInventario();
-        
-        //2. Crear Comprobante y enviarlo a tributacion
-        ComprobantesEmitidos tiqueteElectronico = crearComprobante();
-        
-        if (tiqueteElectronico != null) {
-            generarPDF(tiqueteElectronico, settings);
+        AppSettings settings = appSettings.returnCurrent();
+        if (Objects.equals(settings.getEstatus(), Boolean.FALSE)) {
             return;
         }
-        
+
+        // 1. Hacer ajustes en inventario
+        ajustarInventario();
+
+        // 2. Crear Comprobante y enviarlo a tributacion
+        ComprobantesEmitidos tiqueteElectronico = crearComprobante();
+
+        if (tiqueteElectronico != null) {
+            
+            try {
+                pdfGenerator.generarPDFTiqueteElectronico(
+                    tiqueteElectronico, 
+                    settings, 
+                    carrito, 
+                    cliente, 
+                    currentSession.getCurrentUser(), 
+                    pago, 
+                    vuelto
+                );
+                
+            pdfUrl = pdfGenerator.getPdfUrl();
+            
+            try {
+                URL url = new URL(pdfUrl);
+                File fileToPrint = new File("tiqueteElectronico_104.pdf");
+                try (InputStream in = url.openStream()) {
+                    Files.copy(in, fileToPrint.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+
+                printer.printPDFFile(fileToPrint);
+            } catch (MalformedURLException e) {
+                System.out.println("Malformed URL: " + e.getMessage());
+            } catch (IOException e) {
+                System.out.println("I/O Error while downloading or printing the PDF: " + e.getMessage());
+            }
+
+                
+            clearPago();
+            carrito.clear();
+                
+            } catch (Exception e) {
+                System.out.println("Error during PDF generation: " + e.getMessage());
+            }
+            return;
+        }
     }
+
     
     private void ajustarInventario() {
         for (ArticuloCarrito articulo : carrito) {
@@ -610,124 +641,80 @@ public class CrearTiqueteController implements Serializable{
         return tiqueteElectronico;
     }
     
-    private void generarPDF(ComprobantesEmitidos tiqueteElectronico, AppSettings settings) {
-        // PDF generation logic here
-        try {
-            // Create a document with custom page size (width: 80mm, height: 200mm) and margins (5px)
-            //Document document = new Document(new Rectangle(80f, 200f), 5, 5, 5, 5);
-            
-            
-            Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PdfWriter.getInstance(document, baos);
-            document.add(new Meta("charset", "UTF-8"));
-            document.open();
+    public ResumenFactura resumenTiqueteElectronico() {
+        // Inicializar variables
+        BigDecimal totalServGravados = BigDecimal.ZERO;
+        BigDecimal totalServExentos = BigDecimal.ZERO;
+        BigDecimal totalServExonerado = BigDecimal.ZERO;
+        BigDecimal totalMercanciasGravadas = BigDecimal.ZERO;
+        BigDecimal totalMercanciasExentas = BigDecimal.ZERO;
+        BigDecimal totalMercExonerada = BigDecimal.ZERO;
+        BigDecimal totalGravado = BigDecimal.ZERO;
+        BigDecimal totalExento = BigDecimal.ZERO;
+        BigDecimal totalExonerado = BigDecimal.ZERO;
+        BigDecimal totalVenta = BigDecimal.ZERO;
+        BigDecimal totalDescuentos = BigDecimal.ZERO;
+        BigDecimal totalVentaNeta = BigDecimal.ZERO;
+        BigDecimal totalImpuesto = BigDecimal.ZERO;
+        BigDecimal totalIVADevuelto = BigDecimal.ZERO;
+        BigDecimal totalOtrosCargos = BigDecimal.ZERO;
+        BigDecimal totalComprobante = BigDecimal.ZERO;
 
-            // Set font size
-            com.lowagie.text.Font font = new com.lowagie.text.Font();
-            font.setSize(8); // Set font size to 5 points
+        // Recorrer el carrito para calcular totales
+        for (ArticuloCarrito articuloCarrito : carrito) {
+            var articulo = articuloCarrito.getArticulo();
+            var precioFinal = articuloCarrito.getTotalArticulos(); // Total considerando descuentos y impuestos y cantidad
 
-            document.add(new Paragraph(settings.getNombreNegocio(), font));
-            document.add(new Paragraph(settings.getNombre(), font));
-            document.add(new Paragraph(settings.getIdentificacion(), font));
-            document.add(new Paragraph(settings.getTelefono(), font));
-            document.add(new Paragraph(settings.getCorreoElectronicoTributacion(), font));
-            document.add(new Paragraph(settings.getDireccionCompleta(), font));
+            // Determinar el impuesto y agregar a los totales correspondientes
+            var impuesto = BigDecimal.valueOf(articulo.getCodigoCabys().getImpuesto()).divide(BigDecimal.valueOf(100));
+            var totalImpuestoArticulo = precioFinal.multiply(impuesto);
 
-            document.add(new Paragraph("",font));//HERE ADD FECHA LIKE DD/MM/YYYY HOUR:24HRCLOCK
-            document.add(new Paragraph("TIQUETE ELECTRONICO",font));//Tipo de Factura (TIQUETE ELECTRONICO)
-            document.add(new Paragraph("CONSECUTIVO: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo(),font));//CONSECUTIVO
-            document.add(new Paragraph("CLAVE NUMERICA: "+ tiqueteElectronico.getEncabezado().getClave(),font));//CLAVE NUMERICA
-            document.add(new Paragraph("NUMERO: "+ tiqueteElectronico.getId(),font));//NUMERO TIQUETE ELECTRONICO
-            document.add(new Paragraph(cliente.getName(),font));//NOMBRE CLIENTE
-            document.add(new Paragraph(currentSession.getUsername(),font));//CAJERO
-
-            PdfPTable table = new PdfPTable(4); // 4 columns
-            table.addCell("NOMBRE ART");
-            table.addCell("CANTIDAD");
-            table.addCell("P.VENTA");
-            table.addCell("TOTAL");
-
-            for (ArticuloCarrito articulo : carrito) {
-                table.addCell(articulo.getArticulo().getNombre());
-                table.addCell(articulo.getCantidad().toString());
-                table.addCell(articulo.getTotalArticulo().toString());
-                table.addCell(articulo.getTotalArticulos().toString());
+            // Determinar si el artículo es gravado o exento
+            if (articulo.getCodigoCabys().getImpuesto() != 0) {
+                totalServGravados = totalServGravados.add(precioFinal);
+                totalImpuesto = totalImpuesto.add(totalImpuestoArticulo);
+            } else if (articulo.getCodigoCabys().getImpuesto() == 0) {
+                totalServExentos = totalServExentos.add(precioFinal);
             }
 
-            document.add(table);
-
-            document.add(new Paragraph("****Ultima Linea****",font)); //Aviso ultima linea de articulos
-
-            document.add(new Paragraph("TOTAL GRAVADO: " + tiqueteElectronico.getResumen().getTotalGravado(),font));//TOTAL GRAVADO
-            document.add(new Paragraph("TOTAL EXENTO: " + tiqueteElectronico.getResumen().getTotalExento(),font));//TOTAL EXENTO
-            document.add(new Paragraph("TOTAL VENTA: " + tiqueteElectronico.getResumen().getTotalVenta(),font));//TOTAL VENTA
-            document.add(new Paragraph("TOTAL DESCUENTOS: " + tiqueteElectronico.getResumen().getTotalDescuentos(),font));//TOTAL DESCUENTOS
-            document.add(new Paragraph("TOTAL VENTA NETA: " + tiqueteElectronico.getResumen().getTotalVentaNeta(),font));//TOTAL VENTA NETA
-            document.add(new Paragraph("TOTAL IMPUESTOS: " + tiqueteElectronico.getResumen().getTotalImpuesto(),font));//TOTAL IMPUESTOS
-            document.add(new Paragraph("TOTAL COMPROBANTE: " + tiqueteElectronico.getResumen().getTotalComprobante(),font));//TOTAL COMPROBANTE
-
-            document.add(new Paragraph("PAGA CON: " + pago,font));//PAGA CON:
-            document.add(new Paragraph("VUELTO: " + vuelto,font));//VUELTO:
-
-            document.add(new Paragraph("* Articulo Exento",font));//* Articulo Exento
-            document.add(new Paragraph("Autorizado mediante resolucion No. DGT-R033-2019 del dia 20 de junio de 2019. Version FE 4.3",font));//Autorizado mediante resolucion No. DGT-R033-2019 del dia 20 de junio de 2019. Version FE 4.3
-
-            document.close();
-
-            FacesContext facesContext = FacesContext.getCurrentInstance();
-            HttpServletResponse response = (HttpServletResponse) facesContext.getExternalContext().getResponse();
-
-            response.setContentType("application/pdf; charset=UTF-8");
-            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-            response.setContentLength(baos.size());
-            response.setHeader("Content-disposition", "attachment; filename=tiqueteElectronico.pdf");
-
-            try (ServletOutputStream outputStream = response.getOutputStream()) {
-                baos.writeTo(outputStream);
-                outputStream.flush();
+            // Calcular total de mercancías
+            if (articulo.getCodigoCabys().getImpuesto() != 0) {
+                totalMercanciasGravadas = totalMercanciasGravadas.add(precioFinal);
+            } else if (articulo.getCodigoCabys().getImpuesto() == 0) {
+                totalMercanciasExentas = totalMercanciasExentas.add(precioFinal);
             }
-            
-            facesContext.responseComplete();
-            clearPago();
-            carrito.clear();
-            PrimeFaces.current().executeScript("PF('PagoDialog').hide(); PF('CrearTiqueteDialog').hide();");
-            
-        } catch (DocumentException | IOException e) {
-            System.out.println(e.getLocalizedMessage());
+
+            // Calcular totales
+            totalVenta = totalVenta.add(precioFinal);
+            totalDescuentos = totalDescuentos.add(articuloCarrito.getTotalDescuento());
         }
-    }
-    
-    public String getContextPath() {
-        ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
-        HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
-        return request.getContextPath();
-    }
-    
-    public ResumenFactura resumenTiqueteElectronico(){
-        
-        ResumenFactura resumen = new ResumenFactura();
 
-        CodigoTipoMoneda moneda = new CodigoTipoMoneda();
-            BigDecimal totalServGravados;
-            BigDecimal totalServExentos;
-            BigDecimal totalServExonerado;
-            BigDecimal totalMercanciasGravadas;
-            BigDecimal totalMercanciasExentas;
-            BigDecimal totalMercExonerada;
-            BigDecimal totalGravado;
-            BigDecimal totalExento;
-            BigDecimal totalExonerado;
-            BigDecimal totalVenta;
-            BigDecimal totalDescuentos;
-            BigDecimal totalVentaNeta;
-            BigDecimal totalImpuesto;
-            BigDecimal totalIVADevuelto;
-            BigDecimal totalOtrosCargos;
-            BigDecimal totalComprobante;
-            
+        // Calcular total neto de venta
+        totalVentaNeta = totalVenta.subtract(totalDescuentos);
+        totalComprobante = totalVentaNeta.add(totalImpuesto);
+
+        // Crear objeto ResumenFactura y asignar valores
+        ResumenFactura resumen = new ResumenFactura();
+        resumen.setTotalServGravados(totalServGravados);
+        resumen.setTotalServExentos(totalServExentos);
+        resumen.setTotalServExonerado(totalServExonerado);
+        resumen.setTotalMercanciasGravadas(totalMercanciasGravadas);
+        resumen.setTotalMercanciasExentas(totalMercanciasExentas);
+        resumen.setTotalMercExonerada(totalMercExonerada);
+        resumen.setTotalGravado(totalGravado);
+        resumen.setTotalExento(totalExento);
+        resumen.setTotalExonerado(totalExonerado);
+        resumen.setTotalVenta(totalVenta);
+        resumen.setTotalDescuentos(totalDescuentos);
+        resumen.setTotalVentaNeta(totalVentaNeta);
+        resumen.setTotalImpuesto(totalImpuesto);
+        resumen.setTotalIVADevuelto(totalIVADevuelto);
+        resumen.setTotalOtrosCargos(totalOtrosCargos);
+        resumen.setTotalComprobante(totalComprobante);
+
         return resumen;
     }
+
     
     public DetalleServicio detallesTiqueteElectronico(){
         
@@ -756,13 +743,36 @@ public class CrearTiqueteController implements Serializable{
                 
                 //Descuento/s
                 List<Descuento> descuentos = new ArrayList<>();
-                //MontoDescuento NaturalezaDescuento
+                for (ArticuloCarrito articuloCarrito : carrito) {
+                    if(articuloCarrito.isPromo()){
+                        Descuento descuento = new Descuento();
+                        descuento.setLineaDetalle(linea);
+                        descuento.setMontoDescuento(articuloCarrito.getTotalDescuento());
+                        descuento.setNaturalezaDescuento(articuloCarrito.getPromocion().getNombre());
+                        descuentos.add(descuento);
+                    }
+                }
+                
+                linea.setDescuentos(descuentos);
                 
                 //Impuesto/s
                 List<Impuesto> impuestos = new ArrayList<>();
+                for (ArticuloCarrito articuloCarrito : carrito) {
+                    if(!articuloCarrito.getTotalImpuesto().equals(BigDecimal.ZERO)){
+                        Impuesto impuesto = new Impuesto();
+                        impuesto.setCodigo("");
+                        impuesto.setCodigoTarifa("");
+                        impuesto.setExoneracion(null);
+                        impuesto.setFactorIVA(BigDecimal.ZERO);
+                        impuesto.setLineaDetalle(linea);
+                        impuesto.setMonto(vuelto);
+                        impuesto.setMontoExportacion(BigDecimal.ZERO);
+                        impuesto.setTarifa(BigDecimal.ZERO);
+                        impuestos.add(impuesto);
+                    }
+                }
                 
-                //Codigo CodigoTarifa Tarifa Monto
-                
+                linea.setImpuestos(impuestos);
                             
                 List<OtroCargo> otrosCargos = new ArrayList<>();
                 OtroCargo otroCargo = new OtroCargo();
@@ -809,7 +819,7 @@ public class CrearTiqueteController implements Serializable{
             //Identificacion
             IdentificacionEmisor emisorId = new IdentificacionEmisor();
             emisorId.setNumero(appSettings.getIdentificacion());
-            emisorId.setTipo(appSettings.getTipoIdentificion());
+            emisorId.setTipo(appSettings.getTipoIdentificacion());
             emisor.setIdentificacion(emisorId);
             //NombreComercial
             emisor.setNombreComercial(appSettings.getNombreNegocio());
@@ -861,94 +871,9 @@ public class CrearTiqueteController implements Serializable{
     }
     
     public String getArticuloPrecioFinal(ArticuloCarrito articulo){
-        return getArticuloConDescuento(articulo).toString();
+        return articulo.getArticuloConDescuento().toString();
     }
     
-    //TODO ADD METHOD THAT RETURNS TOTAL OF PRECIO BASED ON THE AMOUNT OF ITEMS ONLY FOR NON PROMO
-    //ALSO ADD A FIELD ON THE TABLE THAT SHOWS THIS VALUE AND KEEP THE ONE THAT SHOWS THE PRICE FOR UNIT
     
-    public BigDecimal getArticuloConDescuento(ArticuloCarrito articulo) {
-        // Get the Articulo and necessary values
-        var Articulo = articulo.getArticulo();
-        var descuento = articulo.getDescuento();
-        var precioConUtilidad = Articulo.getLastPrecio().getPrecioConUtilidad();
-        double tax = Articulo.getCodigoCabys().getImpuesto();
-
-        // Calculate the tax percentage and discount percentage
-        var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
-       
-        BigDecimal applicableTax, precioFinal;
-        
-        if(descuento != null){
-            var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
-
-            // Calculate the total discount and new price after discount
-            var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
-
-            var newPrecio = precioConUtilidad.subtract(descuentoTotal); // Subtract discount
-            
-            // Calculate the applicable tax on the new price after discount
-            applicableTax = newPrecio.multiply(taxPercentage);
-            
-            // Calculate the final price
-            precioFinal = newPrecio.add(applicableTax);
-        }else{
-            // Calculate the applicable tax on the new price after discount
-            applicableTax = precioConUtilidad.multiply(taxPercentage);
-            // Calculate the final price
-            precioFinal = precioConUtilidad.add(applicableTax);
-        }
-        
-        return precioFinal;
-    }
     
-    public BigDecimal getTotalDescuento(ArticuloCarrito articulo) {
-        if(articulo.getDescuento() == null){
-            return BigDecimal.ZERO;
-        }
-        // Obtener el Articulo y los valores necesarios
-        var Articulo = articulo.getArticulo();
-        var descuento = articulo.getDescuento();
-        var precioConUtilidad = Articulo.getLastPrecio().getPrecioConUtilidad();
-
-        // Calcular el porcentaje de descuento
-        var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
-
-        // Calcular el descuento total
-        var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
-
-        return descuentoTotal; // Retornar solo el total del descuento
-    }
-
-    public BigDecimal getTotalImpuesto(ArticuloCarrito articulo) {
-        // Obtener el Articulo y los valores necesarios
-        var Articulo = articulo.getArticulo();
-        var descuento = articulo.getDescuento();
-        
-        var precioConUtilidad = Articulo.getLastPrecio().getPrecioConUtilidad();
-        double tax = Articulo.getCodigoCabys().getImpuesto();
-        
-        var applicableTax = BigDecimal.ZERO;
-        
-        // Calcular el porcentaje de impuesto
-        var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
-        if(descuento != null){
-            var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
-
-            // Calcular el descuento total
-            var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
-
-            // Calcular el nuevo precio después del descuento
-            var totalConDescuento = precioConUtilidad.subtract(descuentoTotal);
-            
-            applicableTax = totalConDescuento.multiply(taxPercentage);
-
-        }else{
-            // Calcular el impuesto aplicable sobre el nuevo precio después del descuento
-            applicableTax = precioConUtilidad.multiply(taxPercentage);
-        }
-
-        return applicableTax; // Retornar solo el total del impuesto
-    }
-
 }
