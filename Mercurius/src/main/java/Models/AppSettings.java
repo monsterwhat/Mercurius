@@ -25,7 +25,7 @@ public class AppSettings {
     private String ContrasenaCorreo; //Contrasena del Correo
     
     private String Nombre; //Completo con apellidos
-    private String TipoIdentificion; //Tipo de ID
+    private String TipoIdentificacion; //Tipo de ID
     private String Identificacion;
     private String NombreNegocio; //NombreComercial
     private String Provincia;

@@ -20,13 +20,11 @@ import Models.Comprobantes.Enums.MedioPagoEnum;
 import Models.Comprobantes.Resumen.CodigoTipoMoneda;
 import Models.Comprobantes.Resumen.ResumenFactura;
 import Services.ComprobantesRecibidosService;
-import Services.Facturas.CodigoComercialService;
 import Services.Facturas.DescuentoService;
 import Services.Facturas.DetalleServicioService;
 import Services.Facturas.EmisorService;
 import Services.Facturas.EncabezadoService;
 import Services.Facturas.ImpuestoService;
-import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -59,12 +57,10 @@ public class Parser {
     @Inject ComprobantesRecibidosService facturaService;
     @Inject ImpuestoService impuestoService;
     @Inject DescuentoService descuentoService;
-    @Inject CodigoComercialService codigoComercialService;
     @Inject ReceptorService receptorService;
     @Inject ResumenFacturaService resumenFacturaService;
     @Inject EncabezadoService encabezadoService;
     @Inject SessionController currentSession;
-    @Inject LineaDetalleService lineaDetalleService;
     
     public LocalDateTime parseFechaEmision(String fechaEmision) {
         try {
@@ -383,7 +379,7 @@ public class Parser {
             }
             
             for (CodigoComercial codigoComercial : codigosComerciales){
-                codigoComercialService.create(codigoComercial);
+                codigoComercial.setLineaDetalle(lineaDetalle);
             }
             
             for (Impuesto impuesto : impuestos) {
@@ -443,8 +439,8 @@ public class Parser {
             Impuesto impuesto = new Impuesto();
             impuesto.setCodigo(codigo);
             impuesto.setCodigoTarifa(codigoTarifa);
-            impuesto.setTarifa(new BigDecimal(tarifa));
-            impuesto.setMonto(new BigDecimal(monto));
+            impuesto.setTarifa(new BigDecimal(tarifa.trim()));
+            impuesto.setMonto(new BigDecimal(monto.trim()));
 
             return impuesto;
         } catch (Exception e) {

@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:ui="jakarta.faces.facelets">
 
     <h:head>
         <title>Menu Principal de la Aplicacion</title>
@@ -108,15 +109,110 @@
                                     <p:column id="Tributacion" title="Tributacion" rendered="#{SettingsController.currentSettings.completedSteps eq 3}" style="width: 100%">
                                         <p:panel header="Tributacion">
                                             <h:form>
-                                                <p:panelGrid columns="1" style="text-align: center; width: 100%" layout="flex">
-                                                    <p:commandButton styleClass="ui-button-primary rounded-button" value="Siguiente" process="@form" update="mainColumn"
-                                                                     actionListener="#{SettingsController.saveTributacion()}" style="width: 100%"/>
-                                                    <p:commandButton styleClass="ui-button-secondary rounded-button" value="Atras" process="@form" update="mainColumn"
-                                                                     actionListener="#{SettingsController.backOneStep()}" style="width: 100%"/>
+                                                <p:panelGrid columns="1" style="text-align: center; width: 100%" layout="grid">
+                                                    
+                                                    <p:outputLabel value="Tipo de Identificación:" for="tipoIdentificacion" style="color: var(--primary-color);" />
+                                                    <p:selectOneMenu id="tipoIdentificacion" value="#{SettingsController.currentSettings.tipoIdentificacion}" required="true" 
+                                                                     requiredMessage="El tipo de identificación es obligatorio">
+                                                        <f:selectItem itemLabel="Seleccione..." itemValue="" noSelectionOption="true" />
+                                                        <f:selectItem itemLabel="Nacional" itemValue="1" />
+                                                        <f:selectItem itemLabel="Internacional" itemValue="2" />
+                                                    </p:selectOneMenu>
+                                                    
+                                                    <p:outputLabel value="Identificación:" for="identificacion" style="color: var(--primary-color);" />
+                                                    <p:inputText id="identificacion" value="#{SettingsController.currentSettings.identificacion}" maxlength="12" required="true"
+                                                                 requiredMessage="La identificación es obligatoria y no puede tener más de 12 caracteres" />
+
+                                                    <p:outputLabel value="Nombre:" for="nombre1" style="color: var(--primary-color);" />
+                                                    <p:inputText id="nombre1" value="#{SettingsController.currentSettings.nombre}" maxlength="100" required="true"
+                                                                 requiredMessage="El nombre es obligatorio y no puede tener más de 100 caracteres" />
+
+                                                    <p:outputLabel value="Nombre del Negocio:" for="nombreNegocio" style="color: var(--primary-color);" />
+                                                    <p:inputText id="nombreNegocio" value="#{SettingsController.currentSettings.nombreNegocio}" maxlength="80" required="true"
+                                                                 requiredMessage="El nombre del negocio es obligatorio y no puede tener más de 80 caracteres" />
+
+                                                    <p:outputLabel value="Código País:" for="codigoPais" style="color: var(--primary-color);" />
+                                                    <p:inputText id="codigoPais" value="#{SettingsController.currentSettings.codigoPais}" maxlength="3" required="true"
+                                                                 requiredMessage="El código del país es obligatorio y debe tener máximo 3 dígitos" />
+
+                                                    <p:outputLabel value="Teléfono:" for="telefono" style="color: var(--primary-color);" />
+                                                    <p:inputText id="telefono" value="#{SettingsController.currentSettings.telefono}" maxlength="20" required="true"
+                                                                 requiredMessage="El teléfono es obligatorio y no puede tener más de 20 caracteres" />
+
+                                                    <p:outputLabel value="Código País Fax:" for="codigoPaisFax" style="color: var(--primary-color);" />
+                                                    <p:inputText id="codigoPaisFax" value="#{SettingsController.currentSettings.codigoPaisFax}" maxlength="3" required="true"
+                                                                 requiredMessage="El código del país para fax es obligatorio y debe tener máximo 3 dígitos" />
+                                                    
+                                                    <p:outputLabel value="Teléfono Fax:" for="telefonoFax" style="color: var(--primary-color);" />
+                                                    <p:inputText id="telefonoFax" value="#{SettingsController.currentSettings.telefonoFax}" maxlength="20" required="true"
+                                                                 requiredMessage="El teléfono de fax es obligatorio y no puede tener más de 20 caracteres" />
+
+                                                    <p:outputLabel value="Correo Electrónico Tributación:" for="correoElectronicoTributacion" style="color: var(--primary-color);" />
+                                                    <p:inputText id="correoElectronicoTributacion" value="#{SettingsController.currentSettings.correoElectronicoTributacion}"
+                                                                 maxlength="160" required="true"
+                                                                 requiredMessage="El correo electrónico es obligatorio y no puede tener más de 160 caracteres" />
+                                                    
+                                                    <p:outputLabel value="Provincia:" for="provincia" style="color: var(--primary-color);" />
+                                                    <p:selectOneMenu id="provincia" value="#{SettingsController.currentSettings.provincia}" required="true" 
+                                                                     requiredMessage="La provincia es obligatoria">
+                                                        <f:selectItem itemLabel="Seleccione la provincia" itemValue="" noSelectionOption="true" />
+                                                        <f:selectItem itemLabel="San José" itemValue="1" />
+                                                        <f:selectItem itemLabel="Alajuela" itemValue="2" />
+                                                        <f:selectItem itemLabel="Cartago" itemValue="3" />
+                                                        <f:selectItem itemLabel="Heredia" itemValue="4" />
+                                                        <f:selectItem itemLabel="Guanacaste" itemValue="5" />
+                                                        <f:selectItem itemLabel="Puntarenas" itemValue="6" />
+                                                        <f:selectItem itemLabel="Limón" itemValue="7" />
+                                                    </p:selectOneMenu>
+                                                    
+                                                    <p:outputLabel value="Canton:" for="canton" style="color: var(--primary-color);" />
+                                                    <p:selectOneMenu id="canton" value="#{SettingsController.currentSettings.canton}" required="true" 
+                                                                     requiredMessage="El cantón es obligatorio">
+                                                        <f:selectItem itemLabel="Seleccione el cantón" itemValue="" noSelectionOption="true" />
+                                                        <!-- Add options based on selected Provincia, e.g. -->
+                                                        <f:selectItem itemLabel="Cantón de Ejemplo 1" itemValue="01" />
+                                                        <f:selectItem itemLabel="Cantón de Ejemplo 2" itemValue="02" />
+                                                        <!-- Add more cantones as needed -->
+                                                    </p:selectOneMenu>
+                                                    
+                                                    <p:outputLabel value="Distrito:" for="distrito" style="color: var(--primary-color);" />
+                                                    <p:selectOneMenu id="distrito" value="#{SettingsController.currentSettings.distrito}" required="true" 
+                                                                     requiredMessage="El distrito es obligatorio">
+                                                        <f:selectItem itemLabel="Seleccione el distrito" itemValue="" noSelectionOption="true" />
+                                                        <!-- Add options based on selected Canton, e.g. -->
+                                                        <f:selectItem itemLabel="Distrito de Ejemplo 1" itemValue="01" />
+                                                        <f:selectItem itemLabel="Distrito de Ejemplo 2" itemValue="02" />
+                                                        <!-- Add more distritos as needed -->
+                                                    </p:selectOneMenu>
+
+                                                    <p:outputLabel value="Barrio:" for="barrio" style="color: var(--primary-color);" />
+                                                    <p:selectOneMenu id="barrio" value="#{SettingsController.currentSettings.barrio}" required="true" 
+                                                                     requiredMessage="El barrio es obligatorio">
+                                                        <f:selectItem itemLabel="Seleccione el barrio" itemValue="" noSelectionOption="true" />
+                                                        <!-- Add options based on selected Distrito, e.g. -->
+                                                        <f:selectItem itemLabel="Barrio de Ejemplo 1" itemValue="01" />
+                                                        <f:selectItem itemLabel="Barrio de Ejemplo 2" itemValue="02" />
+                                                        <!-- Add more barrios as needed -->
+                                                    </p:selectOneMenu>
+                                                    
+                                                    <p:outputLabel value="Dirección Completa:" for="direccionCompleta" style="color: var(--primary-color);" />
+                                                    <p:inputTextarea id="direccionCompleta" value="#{SettingsController.currentSettings.direccionCompleta}" maxlength="250"
+                                                                     autoResize="true" required="true" requiredMessage="La dirección es obligatoria y no puede tener más de 250 caracteres" />
+                                                    
+                                                    <p:outputLabel value="Razón Social:" for="razonSocial" style="color: var(--primary-color);" />
+                                                    <p:inputText id="razonSocial" value="#{SettingsController.currentSettings.razonSocial}" maxlength="100" 
+                                                                 required="false" placeholder="Puede dejarse vacío"
+                                                                 title="Razón social de la empresa, puede ser opcional" />
                                                 </p:panelGrid>
+
+                                                <p:commandButton styleClass="ui-button-primary rounded-button" value="Siguiente" process="@form" update="mainColumn"
+                                                                 actionListener="#{SettingsController.saveTributacion()}" style="width: 100%"/>
+                                                <p:commandButton styleClass="ui-button-secondary rounded-button" value="Atras" process="@form" update="mainColumn"
+                                                                 actionListener="#{SettingsController.backOneStep()}" style="width: 100%"/>
                                             </h:form>
                                         </p:panel>
                                     </p:column>
+
                                     <p:column id="Confirmacion" title="Confirmacion" rendered="#{SettingsController.currentSettings.completedSteps eq 4}" style="width: 100%">
                                         <p:panel header="Confirmacion">
                                             <h:form>

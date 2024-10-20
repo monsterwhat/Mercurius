@@ -5,6 +5,7 @@ package Models.Comprobantes.Detalles;
  * @author Al
  */
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -38,7 +39,7 @@ public class LineaDetalle {
     @Column(name = "codigoCabys", length = 13)
     private String codigoCabys;
 
-    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "lineaDetalle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<CodigoComercial> codigosComerciales;
 
     @Column(name = "cantidad", precision = 16, scale = 3)

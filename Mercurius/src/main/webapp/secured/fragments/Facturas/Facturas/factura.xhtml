@@ -1,8 +1,8 @@
 <ui:composition xmlns="http://www.w3.org/1999/xhtml"
-                xmlns:h="http://xmlns.jcp.org/jsf/html"
-                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
                 xmlns:p="http://primefaces.org/ui"
-                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+                xmlns:ui="jakarta.faces.facelets">
     
     <script>
         $(document).on('keydown', ':tabbable', function(e) {
@@ -20,31 +20,17 @@
         });
     </script>
     
-    <script type="text/javascript">
-        function printPDF(url) {
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', url, true);
-            xhr.responseType = 'blob';
-            xhr.onload = function () {
-                if (xhr.status === 200) {
-                    var blob = xhr.response;
-                    var fileReader = new FileReader();
-                    fileReader.onload = function () {
-                        var data = this.result;
-                        var printWindow = window.open('', '_blank');
-                        printWindow.document.write('<iframe width="100%" height="100%" src="data:application/pdf;base64,' + btoa(data) + '"></iframe>');
-                        printWindow.document.close();
-                        printWindow.onload = function () {
-                            printWindow.focus();
-                            printWindow.print();
-                        };
-                    };
-                    fileReader.readAsBinaryString(blob);
-                }
+    <script>
+        function openAndPrintPDF(pdfUrl) {
+            var pdfWindow = window.open(pdfUrl, '_blank');
+            pdfWindow.onload = function() {
+                pdfWindow.print();
             };
-            xhr.send();
         }
     </script>
+    
+    <script src="https://printjs-4de6.kxcdn.com/print.min.js"></script>
+    
     
     <p:dialog widgetVar="CrearTiqueteDialog" maximizable="true" closable="false" dynamic="true" 
         fitViewport="true" responsive="true" cache="false" id="CrearTiqueteDialog">
@@ -211,8 +197,8 @@
 
 
             <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-receipt"  value="Facturar"
-                             actionListener="#{crearTiqueteController.verificarPago()}" process="@form" update="@this"
-                             />
+                             actionListener="#{crearTiqueteController.verificarPago()}" process="@form" update="@form"
+                             onsuccess="PF('PagoDialog').hide(); PF('CrearTiqueteDialog').hide();"/>
             
             <p:spacer height="1em"/>
 
@@ -312,6 +298,16 @@
         
 
     </h:form>
-</p:dialog>
+        
+    </p:dialog>
+
+    <p:dialog widgetVar="PdfViewerDialog" cache="false" dynamic="true" 
+              modal="true" resizable="true" width="60%" height="80%" header="Tiquete Electronico">
+        <h:form id="pdfViewerForm">
+            <p:media id="tiqueteElectronico" value="#{crearTiqueteController.pdfUrl}" cache="false" 
+                     width="100%" height="100%" player="pdf" />
+        </h:form>
+    </p:dialog>
+
 
 </ui:composition>

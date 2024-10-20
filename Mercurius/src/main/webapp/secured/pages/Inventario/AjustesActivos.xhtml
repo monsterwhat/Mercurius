@@ -14,27 +14,35 @@
         function printPDF(url) {
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
-            xhr.responseType = 'blob';
+            xhr.responseType = 'blob'; // Set the response type to blob
             xhr.onload = function () {
                 if (xhr.status === 200) {
                     var blob = xhr.response;
                     var fileReader = new FileReader();
                     fileReader.onload = function () {
                         var data = this.result;
+                        // Create a new window for printing
                         var printWindow = window.open('', '_blank');
-                        printWindow.document.write('<iframe width="100%" height="100%" src="data:application/pdf;base64,' + btoa(data) + '"></iframe>');
+                        printWindow.document.write('<iframe width="100%" height="100%" src="data:application/pdf;base64,' + btoa(data) + '" frameborder="0" allowfullscreen="true"></iframe>');
                         printWindow.document.close();
                         printWindow.onload = function () {
                             printWindow.focus();
                             printWindow.print();
+                            printWindow.close(); // Close the print window after printing
                         };
                     };
-                    fileReader.readAsBinaryString(blob);
+                    fileReader.readAsArrayBuffer(blob); // Read the blob as an ArrayBuffer
+                } else {
+                    console.error('Failed to fetch PDF: ' + xhr.statusText);
                 }
+            };
+            xhr.onerror = function () {
+                console.error('Network error occurred while fetching the PDF.');
             };
             xhr.send();
         }
     </script>
+
     
 </h:head>
 
@@ -50,12 +58,12 @@
 
         <p:row>
             <p:column>
-                <p:card  >
+                <p:card>
                     <h:form id="AjustesActivos">
                         
                     <p:commandButton value="Imprimir" icon="pi pi-print" 
                                      action="#{InventarioController.exportPDF}" ajax="false" styleClass="rounded-button ui-button-help" style="width: 100%"
-                                oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')"/>
+                                    oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')"/>
         
         
                     <p:dataTable value="#{InventarioController.filteredInventario}" var="inventario"  widgetVar="InventarioTable"
