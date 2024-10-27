@@ -41,5 +41,21 @@ public enum TarifaIVA {
         }
         throw new IllegalArgumentException("Código de tarifa de IVA no válido: " + codigo);
     }
+    
+    public static TarifaIVA getTarifa(String codigoImpuesto) {
+        TarifaIVA tarifa;
+        switch (codigoImpuesto) {
+            case "", "0" -> tarifa = TarifaIVA.TARIFA_0_EXENTO;
+            case "0.5" -> tarifa = TarifaIVA.TARIFA_REDUCIDA_05;
+            case "1" -> tarifa = TarifaIVA.TARIFA_REDUCIDA_1;
+            case "2" -> tarifa = TarifaIVA.TARIFA_REDUCIDA_2;
+            case "4" -> tarifa = TarifaIVA.TARIFA_REDUCIDA_4;
+            case "8" -> tarifa = TarifaIVA.TRANSITORIO_8;
+            case "13" -> tarifa = TarifaIVA.TARIFA_GENERAL_13;
+            default -> throw new IllegalArgumentException("Código de impuesto no válido: " + codigoImpuesto);
+        }
+        return tarifa;
+    }
+
 }
 

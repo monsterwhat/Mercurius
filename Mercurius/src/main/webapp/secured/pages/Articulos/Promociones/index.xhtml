@@ -37,7 +37,7 @@
                             selectionMode="single" selection="#{PromocionesController.selectedPromocion}" 
                             rowKey="#{promocion.id}">
 
-                    <p:ajax event="rowSelect" update="@this"/>
+                   <p:ajax event="rowSelect" update="@this"/>
                         
                    <f:facet name="header">
                        <p:inputText id="globalFilter" onkeyup="PF('Promociones').filter()"

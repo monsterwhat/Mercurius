@@ -27,7 +27,7 @@
                     <h:form id="inventarioPendiente">
                         
                     <p:dataTable value="#{InventarioController.filteredInventarioSinProcesar}" var="movimiento"  widgetVar="InventariosPendientesTable"
-                                 paginator="true" rows="8" paginatorPosition="bottom" id="InventariosPendientesTableData"
+                                 paginator="true" rows="8" clientCache="true" lazy="true" id="InventariosPendientesTableData"
                                  emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"
                                  globalFilterFunction="#{InventarioController.globalFilterFunction}" reflow="true"
                                  filterBy="#{InventarioController.filterBy}" touchable="false" selectionMode="single"

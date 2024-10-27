@@ -7,7 +7,7 @@
         <ui:include src="/secured/fragments/CaByS/CabysDialog.xhtml"/>  
 
         <!-- Dialog for Crear Articulo -->
-        <p:dialog header="Crear Articulo" modal="true"
+        <p:dialog header="Crear Articulo" modal="true" dynamic="true" cache="false" 
                   widgetVar="CrearArticuloDialog" fitViewport="true" responsive="true">                   
             <p:outputPanel id="CrearArticuloDialog" rendered="#{not empty ArticulosController.newArticulo}">
                 <h:form>

@@ -4,7 +4,8 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="jakarta.faces.facelets">
 
-        <p:dialog header="Informacion de Articulo" widgetVar="ArticuloDetailsDialog" 
+        <p:dialog header="Informacion de Articulo"
+                  dynamic="true" cache="false" widgetVar="ArticuloDetailsDialog" 
                   responsive="true" id="ArticuloDetailsDialog" modal="true">
         <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
             <p:card>

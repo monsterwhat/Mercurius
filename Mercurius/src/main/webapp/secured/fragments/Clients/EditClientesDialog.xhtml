@@ -3,7 +3,7 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
     xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-    <p:dialog header="Editar Cliente" widgetVar="EditarClienteDialog" 
+    <p:dialog header="Editar Cliente" widgetVar="EditarClienteDialog" dynamic="true" cache="false" 
         fitViewport="true" responsive="true" id="EditarClienteDialog" modal="true">
         <p:outputPanel rendered="#{not empty ClientsController.selectedClient}">
             <h:form id="editClientForm">

@@ -7,7 +7,7 @@
     <h:body>
         <!-- Dialog for Código CABYS -->
         <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialog" fitViewport="true" blockScroll="true"
-         resizable="false" draggable="false" style="overflow-y: auto;">
+         resizable="false" draggable="false" dynamic="true" cache="false" style="overflow-y: auto;">
                         
             <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" liveScroll="true"  widgetVar="CabysTable"
                         paginator="true" rows="5" paginatorPosition="bottom" id="CabysTable" touchable="true"

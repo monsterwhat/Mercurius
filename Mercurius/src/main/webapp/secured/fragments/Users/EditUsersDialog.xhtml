@@ -3,7 +3,7 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
     xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-    <p:dialog header="Editar Usuario" widgetVar="EditarUsuarioDialog" 
+    <p:dialog header="Editar Usuario" widgetVar="EditarUsuarioDialog" dynamic="true" cache="false" 
         fitViewport="true" responsive="true" id="EditarUsuarioDialog" modal="true">
         <p:outputPanel rendered="#{not empty UsersController.selectedUser}">
         

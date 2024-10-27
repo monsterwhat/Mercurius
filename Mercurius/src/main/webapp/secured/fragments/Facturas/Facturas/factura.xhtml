@@ -20,18 +20,6 @@
         });
     </script>
     
-    <script>
-        function openAndPrintPDF(pdfUrl) {
-            var pdfWindow = window.open(pdfUrl, '_blank');
-            pdfWindow.onload = function() {
-                pdfWindow.print();
-            };
-        }
-    </script>
-    
-    <script src="https://printjs-4de6.kxcdn.com/print.min.js"></script>
-    
-    
     <p:dialog widgetVar="CrearTiqueteDialog" maximizable="true" closable="false" dynamic="true" 
         fitViewport="true" responsive="true" cache="false" id="CrearTiqueteDialog">
         <p:outputPanel deferred="true" rendered="#{not empty crearTiqueteController.newFactura}" layout="flex">
@@ -262,7 +250,7 @@
         <h:form id="articulos">
             <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
                          paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData" size="small"
-                         emptyMessage="No se encontraron artículos con la critería proporcionada"
+                         emptyMessage="No se encontraron artículos con la critería proporcionada" 
                          globalFilterFunction="#{ArticulosController.globalFilterFunction}" clientCache="true"
                          filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
                          selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
@@ -294,20 +282,7 @@
                 </f:facet>
 
             </p:dataTable>   
-                <!-- Selection Button -->
-        
-
-    </h:form>
-        
-    </p:dialog>
-
-    <p:dialog widgetVar="PdfViewerDialog" cache="false" dynamic="true" 
-              modal="true" resizable="true" width="60%" height="80%" header="Tiquete Electronico">
-        <h:form id="pdfViewerForm">
-            <p:media id="tiqueteElectronico" value="#{crearTiqueteController.pdfUrl}" cache="false" 
-                     width="100%" height="100%" player="pdf" />
         </h:form>
     </p:dialog>
-
-
+    
 </ui:composition>

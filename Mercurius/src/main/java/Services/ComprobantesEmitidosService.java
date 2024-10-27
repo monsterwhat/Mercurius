@@ -104,7 +104,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     public List<ComprobantesEmitidos> listAll() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
-                "SELECT f FROM ComprobantesRecibidos f " +
+                "SELECT f FROM ComprobantesEmitidos f " +
                 "LEFT JOIN FETCH f.detalles d " +
                 "LEFT JOIN FETCH d.lineasDetalle ld " +
                 "LEFT JOIN FETCH ld.codigosComerciales cc " +
@@ -116,16 +116,6 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());
-            return null;
-        }
-    }
-    
-    public List<ComprobantesEmitidos> ListAllEnabled() {
-        try {
-            TypedQuery<ComprobantesEmitidos> query = em.createQuery("SELECT f FROM ComprobantesRecibidos f WHERE f.Status = true", ComprobantesEmitidos.class);
-            return query.getResultList();
-        } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
             return null;
         }
     }

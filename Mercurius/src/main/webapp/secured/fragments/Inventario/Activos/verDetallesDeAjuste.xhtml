@@ -6,7 +6,7 @@
 
     <h:body>
         <!-- Dialog for Informacion de Ajuste -->
-        <p:dialog header="Informacion de Ajuste" widgetVar="AjusteDetailsDialog" 
+        <p:dialog header="Informacion de Ajuste" widgetVar="AjusteDetailsDialog" dynamic="true" cache="false" 
                   fitViewport="true" responsive="true" id="AjusteDetailsDialog" modal="true" >
             <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}" layout="flex">
                 <p:dataTable id="selectedArticulo" var="item" reflow="true" value="#{InventarioController.selectedInventario}" lazy="false">

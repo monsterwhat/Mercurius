@@ -3,7 +3,7 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
     xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-    <p:dialog header="Crear Usuario" widgetVar="CrearUsuarioDialog" 
+    <p:dialog header="Crear Usuario" widgetVar="CrearUsuarioDialog" dynamic="true" cache="false" 
         fitViewport="true" responsive="true" id="CrearUsuarioDialog" modal="true">
         <p:outputPanel rendered="#{not empty UsersController.newUser}">
             <h:form>

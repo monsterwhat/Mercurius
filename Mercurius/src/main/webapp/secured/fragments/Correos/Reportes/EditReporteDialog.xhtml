@@ -4,7 +4,7 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     
-    <p:dialog header="Editar Reporte Programado" widgetVar="EditarReporteDialog" 
+    <p:dialog header="Editar Reporte Programado" widgetVar="EditarReporteDialog" dynamic="true" cache="false" 
               fitViewport="true" responsive="true" id="EditarReporteDialog" modal="true">
         <p:outputPanel rendered="#{not empty reportesProgramadosController.selectedReporte}">
             <h:form id="editReporte">

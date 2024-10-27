@@ -4,7 +4,8 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-    <p:dialog header="Seleccionar Articulo" dynamic="true" widgetVar="ArticuloRevisionDialog" fitViewport="true">
+    <p:dialog header="Seleccionar Articulo"  widgetVar="ArticuloRevisionDialog" 
+              dynamic="true" cache="false"  fitViewport="true">
             <h:form>
                 <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo" widgetVar="ArticuloTable"
                              paginator="true" rows="8" paginatorPosition="bottom" id="ArticuloTable" reflow="true"

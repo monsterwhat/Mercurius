@@ -6,7 +6,8 @@
     
     <h:body>
         <!-- Dialog for Código CABYS -->
-        <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialogCreate" responsive="true" fitViewport="true">
+        <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialogCreate" 
+                  dynamic="true" cache="false" responsive="true" fitViewport="true">
             <p:outputPanel rendered="#{not empty CabysController.catalogo}">
                 <h:form>
                 <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" widgetVar="CabysTableCreate"

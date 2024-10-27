@@ -5,7 +5,8 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-        <p:dialog header="Subir Facturas" widgetVar="facturasUpload" fitViewport="true" responsive="true">
+        <p:dialog header="Subir Facturas" widgetVar="facturasUpload" 
+                  dynamic="true" cache="false" fitViewport="true" responsive="true">
             <h:form id="upload">
                 <div class="box">
                     <p:growl id="messages" showDetail="true" keepAlive="true"/>

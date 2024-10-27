@@ -8,7 +8,7 @@
 
     <!-- Dialog for Revision de Movimiento -->
     <p:dialog header="Revision de Movimiento" widgetVar="RevisionMovimientoDialog"
-              responsive="true" modal="true" fitViewport="true">
+              responsive="true" modal="true" dynamic="true" cache="false"  fitViewport="true">
         <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}" >
             <h:form id="RevisionMovimientoDialog">
                 <p:panelGrid columns="1" layout="flex">

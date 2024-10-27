@@ -26,7 +26,9 @@ import Models.Comprobantes.Encabezado.MedioPago;
 import Models.Comprobantes.Encabezado.Receptor;
 import Models.Comprobantes.Encabezado.Telefono;
 import Models.Comprobantes.Encabezado.Ubicacion;
+import Models.Comprobantes.Enums.CodigoImpuesto;
 import Models.Comprobantes.Enums.CondicionVenta;
+import Models.Comprobantes.Enums.TarifaIVA;
 import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Inventario;
 import Models.Promocion;
@@ -35,9 +37,12 @@ import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.ClientService;
 import Services.ComprobantesEmitidosService;
+import Services.Facturas.DescuentoService;
 import Services.Facturas.DetalleServicioService;
 import Services.Facturas.EmisorService;
 import Services.Facturas.EncabezadoService;
+import Services.Facturas.ImpuestoService;
+import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import Services.InventarioService;
@@ -93,6 +98,9 @@ public class CrearTiqueteController implements Serializable{
     @Inject private PDFGenerator pdfGenerator;
     @Inject SettingsDirController dirController;
     @Inject private PrinterService printer;
+    @Inject private ImpuestoService impuestoService;
+    @Inject private LineaDetalleService lineaService;
+    @Inject private DescuentoService descuentoService;
     
     private ComprobantesRecibidos newFactura;
     private Clients selectedClient;
@@ -719,66 +727,87 @@ public class CrearTiqueteController implements Serializable{
     public DetalleServicio detallesTiqueteElectronico(){
         
         DetalleServicio detalles = new DetalleServicio();
+
+        List<OtroCargo> otrosCargos = new ArrayList<>();
         
         List<LineaDetalle> lineasDetalle = new ArrayList<>();
             for (int i = 0; i < carrito.size(); i++) {
-                ArticuloCarrito articulo = carrito.get(i);
+                ArticuloCarrito articulo = new ArticuloCarrito();
+                articulo = carrito.get(i);
+                
                 LineaDetalle linea = new LineaDetalle();
                 linea.setNumeroLinea(i);
                 linea.setCodigoCabys(articulo.getArticulo().getCodigoCabys().getCodigo());
-                List<CodigoComercial> codigosComerciales = new ArrayList<>();
-                CodigoComercial codigoComercial = new CodigoComercial();
-                codigoComercial.setTipo("04");
-                codigoComercial.setCodigo(articulo.getArticulo().getCodigoBarra());
-                codigosComerciales.add(codigoComercial);
+                
+                    List<CodigoComercial> codigosComerciales = new ArrayList<>();
+                        CodigoComercial codigoComercial = new CodigoComercial();
+                        codigoComercial.setTipo("04");
+                        codigoComercial.setCodigo(articulo.getArticulo().getCodigoBarra());
+
+                    codigosComerciales.add(codigoComercial);
+                        
+                linea.setCodigosComerciales(codigosComerciales);
+                
                 var Cantidad = BigDecimal.valueOf(carrito.get(i).getCantidad());
                 linea.setCantidad(Cantidad);
+                
                 linea.setUnidadMedida(articulo.getArticulo().getUnidadMedida());
                 linea.setUnidadMedidaComercial(articulo.getArticulo().getUnidadMedidaComercial());
                 linea.setDetalle(articulo.getArticulo().getNombre());
+                
                 var precioUnitario = articulo.getArticulo().getLastPrecio().getPrecioConUtilidad();
                 linea.setPrecioUnitario(precioUnitario);
+                
                 var montoTotal = precioUnitario.multiply(Cantidad);
                 linea.setMontoTotal(montoTotal);
                 
-                //Descuento/s
-                List<Descuento> descuentos = new ArrayList<>();
-                for (ArticuloCarrito articuloCarrito : carrito) {
-                    if(articuloCarrito.isPromo()){
-                        Descuento descuento = new Descuento();
-                        descuento.setLineaDetalle(linea);
-                        descuento.setMontoDescuento(articuloCarrito.getTotalDescuento());
-                        descuento.setNaturalezaDescuento(articuloCarrito.getPromocion().getNombre());
-                        descuentos.add(descuento);
-                    }
-                }
+                linea.setSubTotal(montoTotal);
                 
+                //Descuento/s TODO DESCUENTOS GET REPEATED...
+                List<Descuento> descuentos = new ArrayList<>();
+                if (articulo.isPromo()) {
+                    Descuento descuento = new Descuento();
+                    descuento.setMontoDescuento(articulo.getTotalDescuento());
+                    descuento.setNaturalezaDescuento(articulo.getPromocion().getNombre());
+                    descuentoService.create(descuento);
+                    descuentos.add(descuento);
+                }
                 linea.setDescuentos(descuentos);
                 
-                //Impuesto/s
+                //Impuesto/s TODO IMPUESTOS GET REPEATED...
                 List<Impuesto> impuestos = new ArrayList<>();
-                for (ArticuloCarrito articuloCarrito : carrito) {
-                    if(!articuloCarrito.getTotalImpuesto().equals(BigDecimal.ZERO)){
-                        Impuesto impuesto = new Impuesto();
-                        impuesto.setCodigo("");
-                        impuesto.setCodigoTarifa("");
-                        impuesto.setExoneracion(null);
-                        impuesto.setFactorIVA(BigDecimal.ZERO);
-                        impuesto.setLineaDetalle(linea);
-                        impuesto.setMonto(vuelto);
-                        impuesto.setMontoExportacion(BigDecimal.ZERO);
-                        impuesto.setTarifa(BigDecimal.ZERO);
-                        impuestos.add(impuesto);
-                    }
+                if (!articulo.getTotalImpuesto().equals(BigDecimal.ZERO)) {
+                    Impuesto impuesto = new Impuesto();
+                    String codigoImpuesto = String.valueOf(articulo.getArticulo().getCodigoCabys().getImpuesto());
+                    impuesto.setCodigo("01");
+
+                    TarifaIVA tarifa = TarifaIVA.getTarifa(codigoImpuesto);
+                    impuesto.setCodigoTarifa(tarifa.getCodigo());
+                    impuesto.setTarifa(new BigDecimal(codigoImpuesto));
+                    impuesto.setMonto(articulo.getTotalImpuesto());
+
+                    impuestoService.create(impuesto);
+                    impuestos.add(impuesto);
                 }
                 
-                linea.setImpuestos(impuestos);
-                            
-                List<OtroCargo> otrosCargos = new ArrayList<>();
                 OtroCargo otroCargo = new OtroCargo();
+                otrosCargos.add(otroCargo);
+                
+                linea.setMontoTotalLinea(montoTotal);
+                
+                linea.setImpuestos(impuestos);
+                
+                lineaService.create(linea);
+                
+                linea.setDetalleServicio(detalles);
                 
                 lineasDetalle.add(linea);
+                
             }
+            
+            detalles.setLineasDetalle(lineasDetalle);
+            detalles.setOtrosCargos(otrosCargos);
+            detalles.setStatus(true);
         
         return detalles;
     }
@@ -846,24 +875,27 @@ public class CrearTiqueteController implements Serializable{
             emisorService.create(emisor);
             
             Receptor receptor = new Receptor();
-            if(selectedClient.getName() != null){
+            if(selectedClient != null){
+                if(selectedClient.getName() != null){
                 receptor.setNombre(selectedClient.getName());
                 receptor.setNombreComercial(selectedClient.getName());
-                if(!"nacional".equals(selectedClient.getIdType().toLowerCase())){
-                    String idNumber = String.valueOf(selectedClient.getIdNumber());
-                    receptor.setIdentificacionExtranjero(idNumber);
-                }else{
+                    if(!"nacional".equals(selectedClient.getIdType().toLowerCase())){
+                        String idNumber = String.valueOf(selectedClient.getIdNumber());
+                        receptor.setIdentificacionExtranjero(idNumber);
+                    }else{
                     String idNumber = String.valueOf(selectedClient.getIdNumber());
                     IdentificacionReceptor id = new IdentificacionReceptor();
                     id.setNumero(idNumber);
                     id.setTipo(selectedClient.getTipoIdentificacion());
                     
                     receptor.setIdentificacion(id);
+                    }
+                    
+                    //Guardamos info Receptor en encabezado
+                    encabezado.setReceptor(receptor);
+                    receptorService.createIfNotExist(receptor);
                 }
             }
-            //Guardamos info Receptor en encabezado
-            encabezado.setReceptor(receptor);
-            receptorService.create(receptor);
             
             return encabezado;
         }

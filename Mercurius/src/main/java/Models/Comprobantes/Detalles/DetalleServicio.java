@@ -9,7 +9,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import java.util.Date;
 import java.util.List;
 import lombok.Data;
 
@@ -39,5 +38,31 @@ public class DetalleServicio {
     protected void onCreate() {
         status = Boolean.TRUE;
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DetalleServicio that = (DetalleServicio) o;
+
+        // Compare by ID if it's not null
+        return id != null ? id.equals(that.id) : that.id == null;
+    }
+
+    @Override
+    public int hashCode() {
+        // Hash based on the ID if available
+        return id != null ? id.hashCode() : 0;
+    }
+
+    @Override
+    public String toString() {
+        return "DetalleServicio{" +
+                "id=" + id +
+                ", status=" + status +
+                '}';
+    }
+
 
 }
