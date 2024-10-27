@@ -3,7 +3,7 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
     xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-    <p:dialog header="Crear Cliente" widgetVar="CrearClienteDialog" 
+    <p:dialog header="Crear Cliente" widgetVar="CrearClienteDialog" dynamic="true" cache="false" 
         fitViewport="true" responsive="true" id="CrearClienteDialog" modal="true">
         <p:outputPanel rendered="#{not empty ClientsController.newClient}">
             <h:form id="createClients">

@@ -7,6 +7,7 @@ import lombok.*;
 @Entity
 @Data
 public class TipoCambio {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -20,8 +21,6 @@ public class TipoCambio {
     @Column(nullable = false)
     private double valorVenta;
     
-    @Column(nullable = false)
-    private double diferencia;
-
+    
     
 }

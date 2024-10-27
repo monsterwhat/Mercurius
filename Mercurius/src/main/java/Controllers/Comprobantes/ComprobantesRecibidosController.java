@@ -1,5 +1,6 @@
-package Controllers;
+package Controllers.Comprobantes;
 
+import Controllers.*;
 import Models.ArticuloPrecio;
 import Services.ComprobantesRecibidosService;
 import Models.Articulos;
@@ -35,7 +36,7 @@ import org.primefaces.util.LangUtils;
 @Named
 @Data
 @ViewScoped
-public class FacturasController implements Serializable {
+public class ComprobantesRecibidosController implements Serializable {
     
     @Inject ComprobantesRecibidosService facturaService;
     @Inject LineaDetalleService lineaDetalleService;

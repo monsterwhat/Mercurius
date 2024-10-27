@@ -6,7 +6,7 @@
 
         <!-- Dialog for Crear Promocion -->
         <p:dialog header="Crear Promocion" modal="true" 
-                  widgetVar="CrearPromocionDialog" fitViewport="true" responsive="true">                   
+                  widgetVar="CrearPromocionDialog" fitViewport="true" dynamic="true" cache="false" >                   
             <p:outputPanel id="CrearPromocionDialog" rendered="#{not empty PromocionesController.newPromocion}">
                 <h:form id="createPromocion">
                     <p:panelGrid columns="1" layout="grid">

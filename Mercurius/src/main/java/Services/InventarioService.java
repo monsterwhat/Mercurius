@@ -218,6 +218,19 @@ public class InventarioService extends GService<Inventario> {
         return em.createQuery(cq).getResultList();
     }
     
+    public List<Inventario> findVentasByDateRangeAndUserId(Date startDate, Date endDate, Long userId) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<Inventario> cq = cb.createQuery(Inventario.class);
+        Root<Inventario> inventario = cq.from(Inventario.class);
+
+        Predicate datePredicate = cb.between(inventario.get("fechaMovimiento"), startDate, endDate);
+        Predicate userPredicate = cb.equal(inventario.get("usuario").get("id"), userId);
+
+        cq.where(cb.and(datePredicate, userPredicate));
+
+        return em.createQuery(cq).getResultList();
+    }
+    
     public Date getStartOfDay(Date date) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);

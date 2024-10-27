@@ -10,30 +10,46 @@
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-32x32.png']}"/>
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-16x16.png']}"/>
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon.ico']}"/>
+        
+        <style>
+            .rounded-button {
+                border-radius: 7px !important;
+                margin: 3px !important;
+            }
+        </style>
+        
     </h:head>
     
     <h:form id="MainMenu">
-        <p:panel>
+        <p:card style="margin: 0px;">
             
-                <h:outputScript>
-                    function handleKeyPress(event) {
-                        if (event.key === 'F5') {
-                            event.preventDefault();
-                            
-                            PF('CrearTiqueteDialog').show();
-                        }
-                    }
-                    document.addEventListener('keydown', handleKeyPress);
-                </h:outputScript>
+            <h:outputScript>
+                function handleKeyPress(event) {
+                    if (event.key === 'F5') {
+                        event.preventDefault();
 
-                <h1 style="color: var(--primary-color); text-align: center;">Bienvenid@, #{SessionController.currentUser.username}!</h1>
+                        PF('CrearTiqueteDialog').show();
+                    }
+                }
+                document.addEventListener('keydown', handleKeyPress);
+            </h:outputScript>
+
+            <p:panelGrid layout="grid" columns="1" columnClasses="ui-g-2, ui-g-6, ui-g-4">
+                
+                <div>
+                    <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100px" width="100px"/>
+                    <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100px" width="100px" />
+                </div>
+                
+                <div>
+                    <h1 style="color: var(--primary-color); ">Bienvenid@, #{SessionController.currentUser.username}!</h1>
+                </div>
+                
+            </p:panelGrid>
             
                 <p:toolbar>
                     
                     <p:toolbarGroup align="left">
-                        
-                        <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100px" width="100px"/>
-                        <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100px" width="100px" />
                         
                         <p:spacer width="1em"/>
                         
@@ -46,7 +62,7 @@
                                 <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" actionListener="#{crearTiqueteController.openNewFactura}" onclick="PF('CrearTiqueteDialog').show();"/>
                             </p:submenu>
                         </p:menu>
-                        <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/>
+                            <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/>
                         </p:column>
 
                         <p:column rendered="#{SessionController.inventarios}">
@@ -120,12 +136,13 @@
                             <p:menu overlay="true" trigger="RegistrosButton" my="left top" at="left bottom" collision="fit">
                                 <p:submenu label="Reportes Facturación">
                                     <p:menuitem value="Movimientos" icon="pi pi-calendar" url="/Mercurius/secured/pages/Articulos/Reportes/Fechas/"/>
-                                    <p:menuitem value="Facturación de Artículos" icon="pi pi-box" disabled="true"/>
+                                    <p:menuitem value="Facturación de Artículos" icon="pi pi-box" url="/Mercurius/secured/pages/Articulos/Reportes/Ventas/"/>
+                                    <p:menuitem value="Todas las Facturas" icon="pi pi-receipt" url="/Mercurius/secured/pages/Facturas/Reportes"/>
                                 </p:submenu>
                                 <p:submenu label="Recibos">
-                                    <p:menuitem value="Todas las Facturas" icon="pi pi-book" url="/Mercurius/secured/pages/Recibos/"/>
-                                    <p:menuitem value="Facturas Vigentes" icon="pi pi-calendar-clock" url="/Mercurius/secured/pages/Recibos/Pendientes/"/>
-                                    <p:menuitem value="Facturas Vencidas" icon="pi pi-calendar-times" url="/Mercurius/secured/pages/Recibos/Vencidos/"/>
+                                    <p:menuitem value="Todas los Recibos" icon="pi pi-book" url="/Mercurius/secured/pages/Recibos/"/>
+                                    <p:menuitem value="Recibos Vigentes" icon="pi pi-calendar-clock" url="/Mercurius/secured/pages/Recibos/Pendientes/"/>
+                                    <p:menuitem value="Recibos Vencidos" icon="pi pi-calendar-times" url="/Mercurius/secured/pages/Recibos/Vencidos/"/>
                                 </p:submenu>
                                 <p:submenu label="Reportes Inventarios">
                                     <p:menuitem value="Articulos" icon="pi pi-box"  url="/Mercurius/secured/pages/Articulos/Reportes/"/>
@@ -166,16 +183,15 @@
                     </p:toolbarGroup>
 
                 </p:toolbar>
-        </p:panel>
+        </p:card>
     </h:form>
 
-    
     <p:dialog header="Menu de Usuario" widgetVar="userSettingsDialog" modal="true"
-              fitViewport="true" responsive="true" dynamic="true">
+              fitViewport="true" responsive="true" dynamic="true" cache="false" >
         <h:form id="userSettingsForm" >
             <p:growl showDetail="true" showSummary="true" />
                 <p:card>
-                    <p:panelGrid columns="3" layout="flex">
+                    <p:panelGrid columns="3" layout="grid">
                         <p:outputPanel styleClass="ui-text-align-center">
                             <h:outputText value="Nombre de usuario:"/>
                         </p:outputPanel>
@@ -217,7 +233,7 @@
         </h:form>
     </p:dialog>
     
-    <p:dialog header="Cambiar Tema" widgetVar="themeDialog" dynamic="true" modal="true">
+    <p:dialog header="Cambiar Tema" widgetVar="themeDialog" dynamic="true" cache="false" modal="true">
         <h:form>
             <p:panelGrid columns="2" layout="flex">
                 <h:outputText value="Seleccionar Tema:" />
@@ -241,7 +257,7 @@
     </p:dialog>
     
     <!-- Dialog for changing Name -->
-    <p:dialog header="Cambiar Nombre de Usuario" dynamic="true" widgetVar="nameDialog" modal="true" 
+    <p:dialog header="Cambiar Nombre de Usuario" dynamic="true" cache="false" widgetVar="nameDialog" modal="true" 
               fitViewport="true" responsive="true">
         <h:form class="ui-g p-4">
             <p:growl showDetail="true" showSummary="true" />
@@ -253,7 +269,7 @@
     </p:dialog>
 
     <!-- Dialog for changing Email -->
-    <p:dialog header="Cambiar correo electronico" dynamic="true"  widgetVar="emailDialog" modal="true"
+    <p:dialog header="Cambiar correo electronico" dynamic="true" cache="false"  widgetVar="emailDialog" modal="true"
               fitViewport="true" responsive="true">
         <h:form class="ui-g p-4">
             <p:growl showDetail="true" showSummary="true" />
@@ -265,7 +281,7 @@
     </p:dialog>
     
     <!-- Dialog for changing Password -->
-    <p:dialog header="Change Password" dynamic="true" widgetVar="passwordDialog" modal="true"
+    <p:dialog header="Change Password" dynamic="true" cache="false"  widgetVar="passwordDialog" modal="true"
               fitViewport="true" responsive="true">
         <h:form>
             <p:growl showDetail="true" showSummary="true" />

@@ -19,20 +19,19 @@ public class TipoCambioController implements Serializable {
     @Inject private SettingsController settings;
 
     private List<TipoCambio> tipoCambios;
-    private int diferencia;
     private TipoCambio cambioActual;
     
     @PostConstruct
     public void init() {
-        tipoCambioList();
+        loadTipoCambios();
         cambioActual = getTipoCambioActual();
     }
 
-    public List<TipoCambio> tipoCambioList() {
-        if(tipoCambios == null){
+    public List<TipoCambio> loadTipoCambios() {
+        if (tipoCambios == null) {
             tipoCambios = tipoCambioService.listAll();
-            if(tipoCambios == null){
-                getTipoCambioFromApi();
+            if (tipoCambios == null || tipoCambios.isEmpty()) {
+                fetchTipoCambioFromApi();
             }
         }
         return tipoCambios;
@@ -42,20 +41,16 @@ public class TipoCambioController implements Serializable {
         cambioActual = getTipoCambioActual();
     }
     
-    public void getTipoCambioFromApi(){
-        var configuracion = settings.getCurrentSettings();
-        if(configuracion != null){
+    private void fetchTipoCambioFromApi() {
+        if (settings.getCurrentSettings() != null) {
             tipoCambioService.getTipoCambioFromApi();
         }
     }
     
-    public TipoCambio getTipoCambioActual(){
-        var configuracion = settings.getCurrentSettings();
-        if(configuracion != null){
-            return tipoCambioService.getNewestTipoCambio();
-        }else{
-            return tipoCambioService.getNewestTipoCambio();
-        }
+    public TipoCambio getTipoCambioActual() {
+        return settings.getCurrentSettings() != null ? 
+               tipoCambioService.getNewestTipoCambio() : 
+               null;
     }
     
 }

@@ -4,7 +4,7 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     
-    <p:dialog header="Editar Familia" widgetVar="EditarFamiliaDialog" 
+    <p:dialog header="Editar Familia" widgetVar="EditarFamiliaDialog" dynamic="true" cache="false" 
         fitViewport="true" responsive="true" id="EditarFamiliaDialog" modal="true">
         <p:outputPanel rendered="#{not empty FamiliasController.selectedFamilia}">
             <h:form id="editFamilia">

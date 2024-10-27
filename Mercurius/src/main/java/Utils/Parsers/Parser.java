@@ -25,6 +25,7 @@ import Services.Facturas.DetalleServicioService;
 import Services.Facturas.EmisorService;
 import Services.Facturas.EncabezadoService;
 import Services.Facturas.ImpuestoService;
+import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,6 +62,7 @@ public class Parser {
     @Inject ResumenFacturaService resumenFacturaService;
     @Inject EncabezadoService encabezadoService;
     @Inject SessionController currentSession;
+    @Inject LineaDetalleService lineaDetalleService;
     
     public LocalDateTime parseFechaEmision(String fechaEmision) {
         try {
@@ -384,10 +386,12 @@ public class Parser {
             
             for (Impuesto impuesto : impuestos) {
                 impuestoService.create(impuesto);
+                impuesto.setLineaDetalle(lineaDetalle);
             }
             
             for (Descuento descuento : descuentos){
                 descuentoService.create(descuento);
+                descuento.setLineaDetalle(lineaDetalle);
             }
 
             String montoTotalLinea = lineaDetalleNode.path("MontoTotalLinea").asText();
@@ -405,6 +409,8 @@ public class Parser {
             lineaDetalle.setSubTotal(new BigDecimal(subTotal));
             lineaDetalle.setImpuestos(impuestos);
             lineaDetalle.setMontoTotalLinea(new BigDecimal(montoTotalLinea));
+            
+            lineaDetalleService.create(lineaDetalle);
 
             return lineaDetalle;
         } catch (Exception e) {
@@ -635,10 +641,6 @@ public class Parser {
                 return;
             }
             
-            for(LineaDetalle linea : lineas){
-                linea.setDetalleServicio(detalles);
-            }
-            
             detalles.setLineasDetalle(lineas);
             
             encabezado.setCodigoActividad(codigoActividad);
@@ -660,6 +662,13 @@ public class Parser {
             }
             
             detalleServicioService.create(detalles);
+            
+            for (LineaDetalle linea : lineas) {
+                linea.setDetalleServicio(detalles);
+            }
+            
+            detalleServicioService.update(detalles);
+            
             resumenFacturaService.create(resumenFactura);
             encabezadoService.create(encabezado);
             

@@ -5,7 +5,7 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
     
         <!-- Dialog for Editar Promocion -->
-        <p:dialog header="Editar Promocion" modal="true" 
+        <p:dialog header="Editar Promocion" modal="true" dynamic="true" cache="false" 
                   widgetVar="EditPromocionDialog" fitViewport="true" responsive="true">                   
             <p:outputPanel id="EditPromocionDialog" rendered="#{not empty PromocionesController.selectedPromocion}">
                 <h:form id="editPromocion">

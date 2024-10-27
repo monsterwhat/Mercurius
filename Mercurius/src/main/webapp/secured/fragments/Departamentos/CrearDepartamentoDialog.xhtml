@@ -3,7 +3,7 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
     xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-    <p:dialog header="Crear Departamento" widgetVar="CrearDepartamentoDialog" 
+    <p:dialog header="Crear Departamento" widgetVar="CrearDepartamentoDialog" dynamic="true" cache="false" 
         fitViewport="true" responsive="true" id="CrearDepartamentoDialog" modal="true">
         <p:outputPanel rendered="#{not empty DepartamentosController.newDepartamento}">
             <h:form>

@@ -56,11 +56,34 @@ public class ReportesDiariosController implements Serializable{
         }
     }
     
+    public void cargarVentas(){
+        if(range != null && !range.isEmpty()){
+            if(usuarioSelecionadoId != null){
+                status = true;
+                listReportesVentas(range, usuarioSelecionadoId);
+            }else{
+                FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono un usuario", null));
+            }
+        }else{
+            FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono el rango de fechas", null));
+        }
+    }
+    
     public void listReportes(List<Date> range, Long userId) {
         Date startDate = range.get(0);
         Date endDate = range.get(1);
         if (startDate != null && endDate != null) {
             movimientos = inventarioService.findByDateRangeAndUserId(startDate, endDate, userId);
+        }
+    }
+    
+    public void listReportesVentas(List<Date> range, Long userId) {
+        Date startDate = range.get(0);
+        Date endDate = range.get(1);
+        if (startDate != null && endDate != null) {
+            movimientos = inventarioService.findVentasByDateRangeAndUserId(startDate, endDate, userId);
         }
     }
     

@@ -6,7 +6,7 @@
     
     <!-- Dialog for Revision de Articulo -->
     <p:dialog header="Articulo" widgetVar="VerArticuloDialog" modal="true"
-              fitViewport="true" responsive="true" closeOnEscape="true">
+              fitViewport="true" responsive="true" dynamic="true" cache="false" closeOnEscape="true">
         <p:outputPanel id="VerArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
             <h:form>
                 <p:panelGrid columns="1" layout="flex">

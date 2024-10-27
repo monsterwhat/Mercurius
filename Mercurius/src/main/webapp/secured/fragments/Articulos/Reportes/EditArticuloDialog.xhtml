@@ -7,7 +7,7 @@
         <ui:include src="/secured/fragments/CaByS/CabysDialogEdit.xhtml"/>      
         <!-- Dialog for Edit Articulo -->
         <p:dialog header="Editar Artículo: #{ArticulosController.selectedArticulo.nombre}" 
-                  widgetVar="EditArticuloDialog" fitViewport="true" responsive="true" modal="true">
+                  widgetVar="EditArticuloDialog" fitViewport="true" dynamic="true" cache="false" responsive="true" modal="true">
             <p:outputPanel id="EditArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
                 <h:form>
                     <p:panelGrid columns="1" layout="flex">

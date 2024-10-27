@@ -5,7 +5,7 @@
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
         <p:dialog header="Informacion de Articulo" widgetVar="ArticuloDetailsDialog" 
-                  responsive="true" id="ArticuloDetailsDialog" modal="true">
+                  responsive="true" id="ArticuloDetailsDialog" dynamic="true" cache="false" modal="true">
         <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
             <p:card>
                 <p:dataTable id="selectedArticulo" var="articulo" reflow="true"

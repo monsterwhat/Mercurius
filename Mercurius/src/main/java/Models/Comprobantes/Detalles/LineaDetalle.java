@@ -81,5 +81,45 @@ public class LineaDetalle {
     @Column(name = "monto_total_de_linea", precision = 18, scale = 5)
     private BigDecimal montoTotalLinea;
 
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        LineaDetalle that = (LineaDetalle) o;
+
+        // Compare by ID if it's not null; otherwise, compare relevant fields
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        return numeroLinea != null ? numeroLinea.equals(that.numeroLinea) : that.numeroLinea == null;
+    }
+
+    @Override
+    public int hashCode() {
+        // Hash based on the ID if available, otherwise use `numeroLinea`
+        int result = id != null ? id.hashCode() : 0;
+        result = 31 * result + (numeroLinea != null ? numeroLinea.hashCode() : 0);
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "LineaDetalle{" +
+                "id=" + id +
+                ", numeroLinea=" + numeroLinea +
+                ", partidaArancelaria='" + partidaArancelaria + '\'' +
+                ", codigoCabys='" + codigoCabys + '\'' +
+                ", cantidad=" + cantidad +
+                ", unidadMedida='" + unidadMedida + '\'' +
+                ", detalle='" + detalle + '\'' +
+                ", precioUnitario=" + precioUnitario +
+                ", montoTotal=" + montoTotal +
+                ", subTotal=" + subTotal +
+                ", baseImponible=" + baseImponible +
+                ", montoTotalLinea=" + montoTotalLinea +
+                '}';
+    }
+
+    
 }
 
