@@ -3,6 +3,7 @@ package Services;
 import Models.Comprobantes.ComprobantesEmitidos;
 import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Encabezado.Encabezado;
+import Models.Users;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
@@ -119,6 +120,28 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             return null;
         }
     }
+     
+    public List<ComprobantesEmitidos> listAllEmitidosBy(Users user) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle ld " +
+                "LEFT JOIN FETCH ld.codigosComerciales cc " +
+                "LEFT JOIN FETCH ld.descuentos des " +
+                "LEFT JOIN FETCH ld.impuestos imp " +
+                "LEFT JOIN FETCH d.otrosCargos oc " +
+                "WHERE f.user = :user",
+                ComprobantesEmitidos.class
+            );
+            query.setParameter("user", user);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing entities for user: " + e.toString());
+            return null;
+        }
+    }
+
 
     public boolean findByNumeroConsecutivo(String numeroConsecutivo) {
         try {

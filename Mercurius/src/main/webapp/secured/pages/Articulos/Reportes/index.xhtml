@@ -49,10 +49,10 @@
                     <p:panelGrid columns="1">
                         <p:column>
                             <p:commandButton value="Imprimir" icon="pi pi-print" action="#{ArticulosController.exportPDF('Articulos:ArticulosTableData')}" 
-                                             ajax="false" styleClass="rounded-button ui-button-primary"  style="width: 50%"
+                                             ajax="false" styleClass="rounded-button ui-button-primary"  style="width: 100%"
                             oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulos.pdf')"/>
                             <p:commandButton value="Exportar Excel" icon="pi pi-file-excel"
-                                styleClass="rounded-button ui-button-success"  style="width: 50%"/>
+                                styleClass="rounded-button ui-button-success"  style="width: 100%"/>
                         </p:column>
                     </p:panelGrid>
                 </p:card>

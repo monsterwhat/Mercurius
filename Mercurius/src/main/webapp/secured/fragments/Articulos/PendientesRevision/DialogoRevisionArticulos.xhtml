@@ -67,7 +67,7 @@
                             <p:messages showDetail="true" for="codigoCabysR" showSummary="false" closable="true" />
                             <label class="label" for="codigoCabysR" style="color: var(--primary-color);">Código CABYS:</label>
                             <p:commandButton value="Seleccionar" id="selectCabysEdit" styleClass="ui-button-primary rounded-button" style="width: 100%"
-                                    onclick="PF('codigoCabysDialogEdit').show();">
+                                             onclick="PF('codigoCabysDialogEdit').show();" >
                                     <p:autoUpdate/>
                                 </p:commandButton>
                             <p:spacer height="1em"/>
@@ -126,6 +126,7 @@
                                                      required="true" requiredMessage="La Familia no puede estar vacía"
                                                      widgetVar="familiaR" style="width: 100%">
                                         <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                        
                                         <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
                                                        itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
 

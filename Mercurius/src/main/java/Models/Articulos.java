@@ -71,7 +71,27 @@ public class Articulos {
     public BigDecimal getLastPrecioArticulo(){
         ArticuloPrecio lastPrecio = getLastPrecio();
         return lastPrecio.getPrecioFinal();
+    }   
+    
+    public BigDecimal getPrecioFinalBetweenDates(Date startDate, Date endDate) {
+        // Check if there are precios available
+        if (precios != null && !precios.isEmpty()) {
+            for (ArticuloPrecio precio : precios) {
+                // Ensure the precio has a date to compare
+                if (precio.getFechaCompra()!= null) {
+                    Date precioFecha = precio.getFechaCompra();
+
+                    // Check if the date falls within the startDate and endDate (inclusive)
+                    if (!precioFecha.before(startDate) && !precioFecha.after(endDate)) {
+                        return precio.getPrecioFinal();
+                    }
+                }
+            }
+        }
+
+        return BigDecimal.ZERO; // Return 0 if no precio matches the date range
     }
+
     
     public Promocion getPromocionActiva() {
         Date hoy = new Date();

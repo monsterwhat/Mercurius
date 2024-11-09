@@ -709,7 +709,7 @@ public class CrearTiqueteController implements Serializable{
         resumen.setTotalMercanciasGravadas(totalMercanciasGravadas);
         resumen.setTotalMercanciasExentas(totalMercanciasExentas);
         resumen.setTotalMercExonerada(totalMercExonerada);
-        resumen.setTotalGravado(totalGravado);
+        resumen.setTotalGravado(totalMercanciasGravadas);
         resumen.setTotalExento(totalExento);
         resumen.setTotalExonerado(totalExonerado);
         resumen.setTotalVenta(totalVenta);
@@ -827,7 +827,7 @@ public class CrearTiqueteController implements Serializable{
             String numeroConsecutivo = ""; //Traer de Registros...
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
             //Fecha y Hora
-            LocalDateTime emision = LocalDateTime.now();
+            LocalDateTime emision = LocalDateTime.now().withNano(0);
             encabezado.setFechaEmision(emision);
             //CondicionVenta
             String condicionVenta = CondicionVenta.OTROS.getCodigo();

@@ -3,17 +3,23 @@ package Services;
 import Models.ArticuloStock;
 import Models.Articulos;
 import Models.Inventario;
+import Models.ReportesFamiliasYDepartamentos;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
+import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Named
 public class InventarioService extends GService<Inventario> {
@@ -226,8 +232,10 @@ public class InventarioService extends GService<Inventario> {
         Predicate datePredicate = cb.between(inventario.get("fechaMovimiento"), startDate, endDate);
         Predicate userPredicate = cb.equal(inventario.get("usuario").get("id"), userId);
 
-        cq.where(cb.and(datePredicate, userPredicate));
-
+        Predicate tipoMovimientoPredicate = cb.equal(inventario.get("tipoMovimiento"), "Venta");        
+        
+        cq.where(cb.and(datePredicate, userPredicate, tipoMovimientoPredicate));
+        
         return em.createQuery(cq).getResultList();
     }
     
@@ -333,5 +341,115 @@ public class InventarioService extends GService<Inventario> {
             System.out.println("Error updating stock: " + e.toString());
         }
     }
+    
+    public List<Inventario> getMovementsByUserAndTipo(String userId) {
+        String jpql = "SELECT i FROM Inventario i WHERE i.tipoMovimiento = 'Venta' AND i.usuario.id = :userId";
+        TypedQuery<Inventario> query = em.createQuery(jpql, Inventario.class);
+        query.setParameter("userId", userId);
+
+        return query.getResultList();
+    }
+    
+    // Method for querying by date range
+    public List<Inventario> getMovementsByUserAndDateRange(String userId, Date startDate, Date endDate) {
+        String jpql = "SELECT i FROM Inventario i WHERE i.tipoMovimiento = 'Venta' " +
+                      "AND i.usuario.id = :userId " +
+                      "AND i.fechaMovimiento BETWEEN :startDate AND :endDate";
+        TypedQuery<Inventario> query = em.createQuery(jpql, Inventario.class);
+        query.setParameter("userId", userId);
+        query.setParameter("startDate", startDate);
+        query.setParameter("endDate", endDate);
+        return query.getResultList();
+    }
+    
+    public List<ReportesFamiliasYDepartamentos> getTotalSalesByDepartamento(Date startDate, Date endDate) {
+        String jpql = "SELECT d.nombre, SUM(ap.precioFinal * i.cantidad) " +
+                      "FROM Inventario i " +
+                      "JOIN i.articulo a " +
+                      "JOIN a.departamento d " +
+                      "JOIN ArticuloPrecio ap ON ap.articulo.codigo = a.codigo " +
+                      "WHERE i.tipoMovimiento = 'Venta' " +
+                      "AND ap.fechaCompra = (SELECT MAX(ap2.fechaCompra) FROM ArticuloPrecio ap2 WHERE ap2.articulo.codigo = a.codigo) " +
+                      "AND i.fechaMovimiento BETWEEN :startDate AND :endDate " +
+                      "GROUP BY d.nombre";
+
+        Query query = em.createQuery(jpql);
+        query.setParameter("startDate", startDate);
+        query.setParameter("endDate", endDate);
+        List<Object[]> results = query.getResultList();
+
+        // Calculate the grand total
+        BigDecimal grandTotal = BigDecimal.ZERO;
+        for (Object[] result : results) {
+            BigDecimal totalSales = (BigDecimal) result[1]; 
+            // Handle null by initializing to BigDecimal.ZERO if necessary
+            totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
+            grandTotal = grandTotal.add(totalSales);
+        }
+
+        // Create a list to store ReportesFamiliasYDepartamentos
+        List<ReportesFamiliasYDepartamentos> totalSalesByDepartamento = new ArrayList<>();
+        for (Object[] result : results) {
+            String departamentoName = (String) result[0];
+            BigDecimal totalSales = (BigDecimal) result[1];
+            // Handle null by initializing to BigDecimal.ZERO if necessary
+            totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
+            BigDecimal percentage = (grandTotal.compareTo(BigDecimal.ZERO) == 0) 
+                ? BigDecimal.ZERO 
+                : totalSales.divide(grandTotal, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+
+            // Create ReportesFamiliasYDepartamentos object and add to the list
+            ReportesFamiliasYDepartamentos reporte = new ReportesFamiliasYDepartamentos(departamentoName, totalSales, percentage);
+            totalSalesByDepartamento.add(reporte);
+        }
+
+        return totalSalesByDepartamento;
+    }
+
+    public List<ReportesFamiliasYDepartamentos> getTotalSalesByFamilia(Date startDate, Date endDate) {
+        String jpql = "SELECT f.nombre, SUM(ap.precioFinal * i.cantidad) " +
+                      "FROM Inventario i " +
+                      "JOIN i.articulo a " +
+                      "JOIN a.familia f " +
+                      "JOIN ArticuloPrecio ap ON ap.articulo.codigo = a.codigo " +
+                      "WHERE i.tipoMovimiento = 'Venta' " +
+                      "AND ap.fechaCompra = (SELECT MAX(ap2.fechaCompra) FROM ArticuloPrecio ap2 WHERE ap2.articulo.codigo = a.codigo) " +
+                      "AND i.fechaMovimiento BETWEEN :startDate AND :endDate " +
+                      "GROUP BY f.nombre";
+
+        Query query = em.createQuery(jpql);
+        query.setParameter("startDate", startDate);
+        query.setParameter("endDate", endDate);
+        List<Object[]> results = query.getResultList();
+
+        // Calculate the grand total
+        BigDecimal grandTotal = BigDecimal.ZERO;
+        for (Object[] result : results) {
+            BigDecimal totalSales = (BigDecimal) result[1]; 
+            // Handle null by initializing to BigDecimal.ZERO if necessary
+            totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
+            grandTotal = grandTotal.add(totalSales);
+        }
+
+        // Create a list to store ReportesFamiliasYDepartamentos
+        List<ReportesFamiliasYDepartamentos> totalSalesByFamilia = new ArrayList<>();
+        for (Object[] result : results) {
+            String familiaName = (String) result[0];
+            BigDecimal totalSales = (BigDecimal) result[1]; 
+            // Handle null by initializing to BigDecimal.ZERO if necessary
+            totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
+
+            BigDecimal percentage = (grandTotal.compareTo(BigDecimal.ZERO) == 0) 
+                ? BigDecimal.ZERO 
+                : totalSales.divide(grandTotal, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+
+            // Create ReportesFamiliasYDepartamentos object and add to the list
+            ReportesFamiliasYDepartamentos reporte = new ReportesFamiliasYDepartamentos(familiaName, totalSales, percentage);
+            totalSalesByFamilia.add(reporte);
+        }
+
+        return totalSalesByFamilia;
+    }
+ 
 
 }
