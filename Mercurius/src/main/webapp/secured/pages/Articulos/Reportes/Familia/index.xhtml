@@ -6,7 +6,7 @@
       xmlns:f="jakarta.faces.core">
 
 <h:head>
-    <title>Reportes de Ventas por Fechas</title>
+    <title>Reportes de Ventas por Familia por Fechas</title>
     <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
     <h:outputStylesheet name="primefaces/primefaces.css"/>
     <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
@@ -71,7 +71,7 @@
                             </h:panelGrid>
                                 <p:spacer height="1em"/>
                             <h:panelGroup>
-                                <p:commandButton value="Cargar Reportes" actionListener="#{reportesDiariosController.cargarVentasPorCajero()}"
+                                <p:commandButton value="Cargar Reportes" actionListener="#{reportesDiariosController.cargarVentasFamilias()}"
                                                  update="grid" style="width: 100%" styleClass="ui-button-primary rounded-button"/>
                             </h:panelGroup>
                         </p:card>
@@ -82,39 +82,42 @@
             <p:column rendered="#{reportesDiariosController.status}">
                 <h:form>
                     <p:card>
-                    <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" 
-                                style="width: 100%" styleClass="ui-button-success rounded-button" ajax="false">
-                    <p:dataExporter type="xlsx" target="reportes" fileName="Reportes-Mercurius" />
-                   </p:commandButton>
-                    <p:commandButton value="Imprimir" icon="pi pi-file-excel" actionListener="#{reportesDiariosController.imprimirReporteVentasXCajero()}"
-                                    style="width: 100%" styleClass="ui-button-success rounded-button" ajax="false">
-                    </p:commandButton>
+                        <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" 
+                                        style="width: 100%" styleClass="ui-button-success rounded-button" ajax="false">
+                            <p:dataExporter type="xlsx" target="reportes" fileName="Reportes-Mercurius" />
+                        </p:commandButton>
+                        <p:commandButton value="Imprimir" icon="pi pi-file-excel" actionListener="#{reportesDiariosController.imprimirReporteFamilias()}"
+                                        style="width: 100%" styleClass="ui-button-success rounded-button" ajax="false">
+                        </p:commandButton>
+                        
                     <p:spacer height="1em"/>
-                    <p:dataTable id="reportes" showGridlines="true"  stripedRows="true" value="#{reportesDiariosController.lineasDetalle}" reflow="true" var="detalles">
-                            <f:facet name="header">
-                                <p:outputLabel  value="Reportes de #{reportesDiariosController.getFecha(0)} hasta #{reportesDiariosController.getFecha(1)}"/>
-                            </f:facet>
+                    
+                    <p:dataTable id="reportes" showGridlines="true"  stripedRows="true" value="#{reportesDiariosController.reportes}" reflow="true" var="value">
                         
-                            <p:column headerText="Nombre">
-                                <h:outputText value="#{detalles.detalle}"/>
-                            </p:column>
-                            <p:column headerText="Cantidad">
-                                <h:outputText value="#{detalles.cantidad}"/>
-                            </p:column>                            
-                            <p:column headerText="Precio">
-                                <h:outputText value="#{detalles.montoTotalLinea}"/>
-                            </p:column>
+                        <f:facet name="header">
+                            <p:outputLabel value="Reportes de #{reportesDiariosController.getFecha(0)} hasta #{reportesDiariosController.getFecha(1)}"/>
+                        </f:facet>
                         
-                            <f:facet name="footer">
-                            <p:outputLabel  value="Total #{reportesDiariosController.totalReporteVentasXCajero()}"/>
-                            </f:facet>
-                        </p:dataTable>
+                        <p:column headerText="Familia">
+                            <h:outputText value="#{value.nombre}"/>
+                        </p:column>
+                        <p:column headerText="Total">
+                            <h:outputText value="#{value.cantidad}"/>
+                        </p:column>
+                        <p:column headerText="Porcentaje">
+                            <h:outputText value="#{value.porcentaje}"/>
+                        </p:column>
+                        
+                        <f:facet name="footer">
+                            <p:outputLabel  value="Total #{reportesDiariosController.totalReportes()}"/>
+                        </f:facet>
+                    </p:dataTable>
                     </p:card>
                 </h:form>
                 
             </p:column>
         </p:row>
     </p:panelGrid>
-            
+    
 </h:body>
 </html>

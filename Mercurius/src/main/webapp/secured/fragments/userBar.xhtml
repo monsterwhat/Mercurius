@@ -16,6 +16,16 @@
                 border-radius: 7px !important;
                 margin: 3px !important;
             }
+            
+            @media (max-width: 1200px) {
+                .responsive-toolbar {
+                    justify-content: center !important; /* Center the content on smaller screens */
+                    margin: 0 auto; /* Center the toolbar group itself */
+                    display: flex; /* Ensure flexbox for centering */
+                }
+            }
+
+
         </style>
         
     </h:head>
@@ -33,25 +43,17 @@
                 }
                 document.addEventListener('keydown', handleKeyPress);
             </h:outputScript>
-
-            <p:panelGrid layout="grid" columns="1" columnClasses="ui-g-2, ui-g-6, ui-g-4">
-                
-                <div>
-                    <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100px" width="100px"/>
-                    <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100px" width="100px" />
-                </div>
-                
-                <div>
-                    <h1 style="color: var(--primary-color); ">Bienvenid@, #{SessionController.currentUser.username}!</h1>
-                </div>
-                
-            </p:panelGrid>
             
                 <p:toolbar>
                     
-                    <p:toolbarGroup align="left">
-                        
-                        <p:spacer width="1em"/>
+                    <p:toolbarGroup align="left" styleClass="responsive-toolbar">
+                        <div>
+                            <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100px" width="100px"/>
+                            <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100px" width="100px" />
+                        </div>
+                    </p:toolbarGroup>
+                    
+                    <p:toolbarGroup>
                         
                         <p:column rendered="#{SessionController.facturacion}">
                         <p:commandButton id="FacturacionButton" value="Facturación" style="flex: 1; width: 100%;"
@@ -137,6 +139,8 @@
                                 <p:submenu label="Reportes Facturación">
                                     <p:menuitem value="Movimientos" icon="pi pi-calendar" url="/Mercurius/secured/pages/Articulos/Reportes/Fechas/"/>
                                     <p:menuitem value="Facturación de Artículos" icon="pi pi-box" url="/Mercurius/secured/pages/Articulos/Reportes/Ventas/"/>
+                                    <p:menuitem value="Ventas por Familia" icon="pi pi-users" url="/Mercurius/secured/pages/Articulos/Reportes/Familia/"/>
+                                    <p:menuitem value="Ventas por Departamento" icon="pi pi-truck" url="/Mercurius/secured/pages/Articulos/Reportes/Departamento/"/>
                                     <p:menuitem value="Todas las Facturas" icon="pi pi-receipt" url="/Mercurius/secured/pages/Facturas/Reportes"/>
                                 </p:submenu>
                                 <p:submenu label="Recibos">

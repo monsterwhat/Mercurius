@@ -5,8 +5,11 @@ import Models.AppSettings;
 import Models.ArticuloCarrito;
 import Models.Clients;
 import Models.Comprobantes.ComprobantesEmitidos;
+import Models.Comprobantes.Detalles.LineaDetalle;
 import Models.Comprobantes.Enums.CodigoImpuesto;
+import Models.ReportesFamiliasYDepartamentos;
 import Models.Users;
+import Services.PrinterService;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
@@ -28,12 +31,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import lombok.Data;
+import lombok.Data; 
 
 /**
  *
@@ -370,6 +375,205 @@ public class PDFGenerator {
         // Construct the URL to serve the PDF
         this.pdfUrl = baseUrl + "/facturas/" + fileName;
     }
+    
+    public File generarPDFReportesDepartamentos(List<ReportesFamiliasYDepartamentos> reportes, List<Date> range) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        File pdfFile = null; // Initialize the File object
+        BigDecimal totalSum = BigDecimal.ZERO; // Variable to store the total sum
+
+        try {
+            try ( // Create the PDF document
+                    Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5)) {
+                PdfWriter.getInstance(document, baos);
+                document.add(new Meta("charset", "UTF-8"));
+                document.open();
+                // Set font size
+                com.lowagie.text.Font font = new com.lowagie.text.Font();
+                font.setSize(8);
+                // Title
+                Paragraph title = new Paragraph("Reporte de Ventas por Departamentos del " + range.get(0) + " hasta el " + range.get(1), font);
+                title.setAlignment(Element.ALIGN_CENTER);
+                title.setLeading(10f);
+                document.add(title);
+                // Blank separator
+                document.add(new Paragraph("\n"));
+                // Create table for report data
+                PdfPTable reportTable = new PdfPTable(new float[]{2, 2, 1}); // Adjust column ratios as needed
+                reportTable.setWidthPercentage(100);
+                reportTable.setSpacingBefore(10f);
+                // Table headers
+                reportTable.addCell(new Phrase("Departamento", font));
+                reportTable.addCell(new Phrase("Total", font));
+                reportTable.addCell(new Phrase("Porcentaje", font));
+                // Add data to the table
+                for (ReportesFamiliasYDepartamentos reporte : reportes) {
+                    reportTable.addCell(new Phrase(reporte.getNombre(), font));
+                    reportTable.addCell(new Phrase(reporte.getCantidad().toString(), font));
+                    reportTable.addCell(new Phrase(reporte.getPorcentaje().toString(), font));
+
+                    // Sum the totals
+                    totalSum = totalSum.add(reporte.getCantidad());
+                }
+                // Add total sum row
+                reportTable.addCell(new Phrase("Total", font));
+                reportTable.addCell(new Phrase(totalSum.toString(), font));
+                reportTable.addCell(new Phrase("100.00", font)); // Empty cell for percentage
+
+                document.add(reportTable);
+                // Close the document
+            }
+
+            // Save the PDF to the file system
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd_MM_yyyy_HH_mm");
+            String formattedDate = ZonedDateTime.now().format(formatter);
+            pdfFile = savePdfToFileSystem(baos, "ReporteVentasXDepartamento_" + formattedDate); // Get the File
+
+        } catch (DocumentException e) {
+            System.out.println("Error generating PDF: " + e.getLocalizedMessage());
+        }
+
+        return pdfFile; // Return the created File
+    }
+
+    public File generarPDFReportesFamilias(List<ReportesFamiliasYDepartamentos> reportes, List<Date> range) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        File pdfFile = null; // Initialize the File object
+        BigDecimal totalSum = BigDecimal.ZERO; // Variable to store the total sum
+
+        try {
+            try ( // Create the PDF document
+                    Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5)) {
+                PdfWriter.getInstance(document, baos);
+                document.add(new Meta("charset", "UTF-8"));
+                document.open();
+                // Set font size
+                com.lowagie.text.Font font = new com.lowagie.text.Font();
+                font.setSize(8);
+                // Title
+                Paragraph title = new Paragraph("Reporte de Ventas por Familias del " + range.get(0) + " hasta el " + range.get(1), font);
+                title.setAlignment(Element.ALIGN_CENTER);
+                title.setLeading(10f);
+                document.add(title);
+                // Blank separator
+                document.add(new Paragraph("\n"));
+                // Create table for report data
+                PdfPTable reportTable = new PdfPTable(new float[]{2, 2, 1}); // Adjust column ratios as needed
+                reportTable.setWidthPercentage(100);
+                reportTable.setSpacingBefore(10f);
+                // Table headers
+                reportTable.addCell(new Phrase("Familia", font));
+                reportTable.addCell(new Phrase("Total", font));
+                reportTable.addCell(new Phrase("Porcentaje", font));
+                // Add data to the table
+                for (ReportesFamiliasYDepartamentos reporte : reportes) {
+                    reportTable.addCell(new Phrase(reporte.getNombre(), font));
+                    reportTable.addCell(new Phrase(reporte.getCantidad().toString(), font));
+                    reportTable.addCell(new Phrase(reporte.getPorcentaje().toString(), font));
+
+                    // Sum the totals
+                    totalSum = totalSum.add(reporte.getCantidad());
+                }
+                // Add total sum row
+                reportTable.addCell(new Phrase("Total", font));
+                reportTable.addCell(new Phrase(totalSum.toString(), font));
+                reportTable.addCell(new Phrase("100.00", font)); // Empty cell for percentage
+
+                document.add(reportTable);
+                // Close the document
+            }
+
+            // Save the PDF to the file system
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd_MM_yyyy_HH_mm");
+            String formattedDate = ZonedDateTime.now().format(formatter);
+            pdfFile = savePdfToFileSystem(baos, "ReporteVentasXFamilia_" + formattedDate); // Get the File
+
+        } catch (DocumentException e) {
+            System.out.println("Error generating PDF: " + e.getLocalizedMessage());
+        }
+
+        return pdfFile; // Return the created File
+    }
+
+
+    private File savePdfToFileSystem(ByteArrayOutputStream baos, String filename) {
+        File pdfFile = null; // Initialize the File object
+        try {
+            pdfFile = new File(dirController.getPDFDirPath(), filename + ".pdf");
+            try (FileOutputStream fos = new FileOutputStream(pdfFile)) {
+                baos.writeTo(fos);
+            }
+        } catch (IOException e) {
+            System.out.println("Error saving PDF to file system: " + e.getLocalizedMessage());
+        }
+        return pdfFile; // Return the created File
+    }
+    
+    public File generarPDFReportesVentasXCajero(List<ComprobantesEmitidos> reportes, String username, List<Date> range) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            File pdfFile = null; // Initialize the File object
+            BigDecimal totalSum = BigDecimal.ZERO; // Variable to store the total sum
+
+            try {
+                try ( // Create the PDF document
+                        Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5)) {
+                    PdfWriter.getInstance(document, baos);
+                    document.add(new Meta("charset", "UTF-8"));
+                    document.open();
+                    // Set font size
+                    com.lowagie.text.Font font = new com.lowagie.text.Font();
+                    font.setSize(8);
+                    // Title
+                    Paragraph title = new Paragraph("Reporte de Ventas por Cajero del " + range.get(0) + " hasta " + range.get(1), font);
+                    title.setAlignment(Element.ALIGN_CENTER);
+                    title.setLeading(10f);
+                    document.add(title);
+                    // Blank separator
+                    document.add(new Paragraph("\n"));
+                    // Create table for report data
+                    PdfPTable reportTable = new PdfPTable(new float[]{2, 1, 2}); // Adjust column ratios as needed
+                    reportTable.setWidthPercentage(100);
+                    reportTable.setSpacingBefore(10f);
+                    // Table headers
+                    reportTable.addCell(new Phrase("Articulo", font));
+                    reportTable.addCell(new Phrase("Cantidad", font));
+                    reportTable.addCell(new Phrase("Total", font));
+                    // Add data to the table
+                    
+                    for (ComprobantesEmitidos facturaEmitida : reportes) {
+                        if (facturaEmitida.getDetalles() != null && facturaEmitida.getDetalles().getLineasDetalle() != null) {
+                            for (LineaDetalle linea : facturaEmitida.getDetalles().getLineasDetalle()) {
+                                if (linea.getMontoTotalLinea()!= null) { 
+                                    totalSum = totalSum.add(linea.getMontoTotalLinea());
+                                    reportTable.addCell(new Phrase(linea.getDetalle(), font));
+                                    reportTable.addCell(new Phrase(linea.getCantidad().toString(), font));
+                                    reportTable.addCell(new Phrase(linea.getMontoTotalLinea().toString(), font));
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Add total sum row
+                    reportTable.addCell(new Phrase("TOTAL FINAL", font));
+                    reportTable.addCell(new Phrase("*", font));
+                    reportTable.addCell(new Phrase(totalSum.toString(), font));
+
+                    document.add(reportTable);
+                    // Close the document
+                }
+
+                // Save the PDF to the file system
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd_MM_yyyy_HH_mm");
+                String formattedDate = ZonedDateTime.now().format(formatter);
+                pdfFile = savePdfToFileSystem(baos, "ReporteVentasXCajero_" + username + "_" + formattedDate); // Get the File
+
+            } catch (DocumentException e) {
+                System.out.println("Error generating PDF: " + e.getLocalizedMessage());
+            }
+
+            return pdfFile; // Return the created File
+        }
 
     
+    
+     
 }

@@ -27,12 +27,10 @@
                 <p:panel>
                     <h:form id="recibos">
                         <div class="ui-g">
-                            <div class="ui-g-6">
-                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                                 style='width: 100%' ajax="false">
-                                    <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                                </p:commandButton>
-                            </div>
+                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
+                                             style='width: 100%' ajax="false">
+                                <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                            </p:commandButton>
                         </div>
                             <p:growl showDetail="true" showSummary="true" />
                             
@@ -56,14 +54,6 @@
                                 </f:facet>
                                 
                                 <p:column exportable="false" selectionMode="single"/>
-
-                                <p:column exportable="false">
-                                    <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.status}"/>
-                                    <p:tooltip for="ActiveChip" value="Activa" position="top"/>
-
-                                    <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!factura.status}"/>
-                                    <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
-                                </p:column>
 
                                 <p:column headerText="Código" visible="false" >
                                     <h:outputText value="#{factura.id}"/>

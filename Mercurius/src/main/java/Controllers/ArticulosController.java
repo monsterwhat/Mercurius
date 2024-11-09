@@ -153,14 +153,19 @@ public class ArticulosController implements Serializable {
             selectedArticulo.setUsuario(currentSession.getCurrentUser());
             selectedArticulo.setProcessed(true);
             if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                selectedArticulo.setProcessed(true);
-                articulosService.update(selectedArticulo);
-                clearCache();
-                clearArticulo();
-                 
-                FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizo el articulo", null));
-                PrimeFaces.current().executeScript("PF('EditArticuloDialog').hide();");
+                if(selectedArticulo.getCodigoCabys() != null){
+                    selectedArticulo.setProcessed(true);
+                    articulosService.update(selectedArticulo);
+                    clearCache();
+                    clearArticulo();
+
+                    FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizo el articulo", null));
+                    PrimeFaces.current().executeScript("PF('EditArticuloDialog').hide();");
+                }else{
+                    FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono un codigo del CABYS", null));
+                }
             }
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -181,16 +186,25 @@ public class ArticulosController implements Serializable {
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
                 selectedArticulo.setProcessed(true);
                 if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                    selectedArticulo.setProcessed(true);
-                    articulosService.update(selectedArticulo);
-                    clearCache();
-                    clearArticulo();
+                    if(selectedArticulo.getCodigoCabys() != null){
+                        if(selectedArticulo.getLastPrecio().getPrecioFinal() != null){
+                            selectedArticulo.setProcessed(true);
+                            articulosService.update(selectedArticulo);
+                            clearCache();
+                            clearArticulo();
 
-                    FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
-                    
-                    PrimeFaces.current().executeScript("PF('RevisionArticuloDialog').hide();");
+                            FacesContext.getCurrentInstance().addMessage(null,
+                            new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
 
+                            PrimeFaces.current().executeScript("PF('RevisionArticuloDialog').hide();");
+                        }else{
+                            FacesContext.getCurrentInstance().addMessage(null,
+                            new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay precio final", "se debe re-ajustar la utilidad y verificar que el codigo cabys sea correcto"));
+                        }
+                    }else{
+                        FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono un codigo del CABYS", null));
+                    }
                 }
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -216,18 +230,28 @@ public class ArticulosController implements Serializable {
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
                 selectedArticulo.setProcessed(true);
                 if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null) {
-                    selectedArticulo.setProcessed(true);
-                    articulosService.update(selectedArticulo);
-                    clearCache();
+                    if(selectedArticulo.getCodigoCabys() != null){
+                        if(selectedArticulo.getLastPrecio().getPrecioFinal() != null){
+                            selectedArticulo.setProcessed(true);
+                            articulosService.update(selectedArticulo);
+                            clearCache();
 
-                    // Load the next article or reset if none available
-                    loadNextArticulo();
+                            // Load the next article or reset if none available
+                            loadNextArticulo();
 
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
+                            FacesContext.getCurrentInstance().addMessage(null,
+                            new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
 
-                    // Refresh the dialog instead of hiding it
-                    PrimeFaces.current().ajax().update("RevisionArticulosDialog");
+                            // Refresh the dialog instead of hiding it
+                            PrimeFaces.current().ajax().update("RevisionArticulosDialog");
+                        }else{
+                            FacesContext.getCurrentInstance().addMessage(null,
+                            new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay precio final", "se debe re-ajustar la utilidad y verificar que el codigo cabys sea correcto"));
+                        }
+                    }else{
+                        FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono un codigo del CABYS", null));
+                    }                    
                 }
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -253,6 +277,20 @@ public class ArticulosController implements Serializable {
         // Retrieve the first unprocessed article
         
         selectedArticulo = sinProcesar.get(0);
+        
+        if(selectedArticulo.getDepartamento() != null){
+            var selectedDepartamento = selectedArticulo.getDepartamento().getId();
+            this.DepartamentoID = selectedDepartamento;
+        }else{
+            this.DepartamentoID = 0;
+        }
+        
+        if(selectedArticulo.getFamilia() != null){
+            var selectedFamilia = selectedArticulo.getFamilia().getId();
+            this.FamiliaID = selectedFamilia;
+        }else{
+            this.FamiliaID = 0;
+        }
 
         // Check if there are no more articles after the removal
         if (selectedArticulo == null) {
@@ -442,7 +480,7 @@ public class ArticulosController implements Serializable {
                 BigDecimal precioConIVA = precioSinIVA.add(IVA);
 
                 // Redondear hacia arriba el precio con IVA utilizando RoundingMode.CEILING
-                precioConIVA = precioConIVA.setScale(2, RoundingMode.CEILING);
+                precioConIVA = precioConIVA.setScale(0, RoundingMode.CEILING);
 
                 //Registrar quien ajusto el precio...
                 articuloPrecio.setUsuario(currentSession.getCurrentUser());
@@ -472,7 +510,7 @@ public class ArticulosController implements Serializable {
                         BigDecimal precioConUtilidad = precioCosto.add(utilidad);
 
                         // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
-                        precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
+                        precioConUtilidad = precioConUtilidad.setScale(0, RoundingMode.CEILING);
 
                         // Asignar el precio con utilidad al atributo precioConUtilidad del artículo
                         articuloPrecio.setPrecioConUtilidad(precioConUtilidad);
@@ -507,7 +545,7 @@ public class ArticulosController implements Serializable {
                         BigDecimal precioConUtilidad = precioCosto.add(utilidad);
 
                         // Redondear hacia arriba el precio con utilidad utilizando RoundingMode.CEILING
-                        precioConUtilidad = precioConUtilidad.setScale(2, RoundingMode.CEILING);
+                        precioConUtilidad = precioConUtilidad.setScale(0, RoundingMode.CEILING);
 
                         // Asignar el precio con utilidad al atributo precioConUtilidad del artículo
                         articuloPrecio.setPrecioConUtilidad(precioConUtilidad);
@@ -545,7 +583,7 @@ public class ArticulosController implements Serializable {
                 BigDecimal precioConIVA = precioSinIVA.add(IVA);
 
                 // Redondear hacia arriba el precio con IVA utilizando RoundingMode.CEILING
-                precioConIVA = precioConIVA.setScale(2, RoundingMode.CEILING);
+                precioConIVA = precioConIVA.setScale(0, RoundingMode.CEILING);
 
                 //Registrar quien ajusto el precio...
                 articuloPrecio.setUsuario(currentSession.getCurrentUser());

@@ -37,8 +37,10 @@
 
                         </p:dataTable>
 
-                        <p:commandButton value="Seleccionar" process="@form" update="@form" action="#{CabysController.selectCabysEdit}" 
-                                 onclick="PF('codigoCabysDialogEdit').hide();" style="width: 100%"/>
+                        <p:commandButton value="Seleccionar" process="@form" update="@this" action="#{CabysController.selectCabysEdit()}" 
+                                         onclick="PF('codigoCabysDialogEdit').hide();" style="width: 100%">
+                            <p:resetInput target="@form" />
+                        </p:commandButton>
                     </h:form>
             </p:outputPanel>
         </p:dialog>
