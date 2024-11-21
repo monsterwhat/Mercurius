@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="jakarta.faces.facelets">
+
+<h:head>
+    <title>Registros</title>
+    <h:outputStylesheet name="primefaces/primefaces.css"/>
+    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+    
+    <style>
+        .card-container {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px;
+            text-align: center;
+            flex-wrap: wrap;
+        }
+
+        .custom-card {
+            width: 25%; /* Adjust card width to fit next to each other */
+            margin-bottom: 10px;
+        }
+
+        .card-buttons {
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            gap: 10px; /* Optional: Add some space between buttons */
+            margin-top: 20px;
+        }
+
+        .p-button {
+            width: 100%; /* Make the buttons full-width if needed */
+        }
+    </style>
+
+</h:head>
+
+    <h:body>
+    <p:column>
+        <ui:include src="/secured/fragments/userBar.xhtml" /> 
+        <p:growl showDetail="true" showSummary="true" />
+    </p:column>
+
+    <p:card style="text-align: center">
+        <f:facet name="title">
+            Reportes
+        </f:facet>
+
+        <div class="card-container">
+            <!-- Reportes Facturación -->
+            <p:card class="custom-card">
+                <f:facet name="title">
+                    Reportes de Facturación
+                </f:facet>
+
+                <div class="card-buttons">
+                    <p:button value="Movimientos" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Fechas/" icon="pi pi-calendar" />
+                    <p:button value="Facturación de Artículos" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Ventas/" icon="pi pi-box" />
+                    <p:button value="Ventas por Familia" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Familia/" icon="pi pi-users" />
+                    <p:button value="Ventas por Departamento" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Departamento/" icon="pi pi-truck" />
+                    <p:button value="Todas las Facturas" styleClass="ui-button-info" href="/Mercurius/secured/pages/Facturas/Reportes" icon="pi pi-receipt" />
+                </div>
+            </p:card>
+
+            <!-- Reportes Recibos -->
+            <p:card class="custom-card">
+                <f:facet name="title">
+                    Reportes de Recibos
+                </f:facet>
+
+                <div class="card-buttons">
+                    <p:button value="Todas los Recibos" styleClass="ui-button-help" href="/Mercurius/secured/pages/Recibos/" icon="pi pi-book" />
+                    <p:button value="Recibos Vigentes" styleClass="ui-button-help"  href="/Mercurius/secured/pages/Recibos/Pendientes/" icon="pi pi-calendar-clock" />
+                    <p:button value="Recibos Vencidos" styleClass="ui-button-help"  href="/Mercurius/secured/pages/Recibos/Vencidos/" icon="pi pi-calendar-times" />
+                </div>
+            </p:card>
+
+            <!-- Reportes Inventarios -->
+            <p:card class="custom-card">
+                <f:facet name="title">
+                    Reportes de Inventarios
+                </f:facet>
+
+                <div class="card-buttons">
+                    <p:button value="Articulos" styleClass="ui-button-success" href="/Mercurius/secured/pages/Articulos/Reportes/" icon="pi pi-box" />
+                    <p:button value="Departamentos" styleClass="ui-button-success" href="/Mercurius/secured/pages/Departamentos/Reportes/" icon="pi pi-truck" />
+                    <p:button value="Familias" styleClass="ui-button-success" href="/Mercurius/secured/pages/Familias/Reportes/" icon="pi pi-users" />
+                    <p:button value="Inventarios" styleClass="ui-button-success" href="/Mercurius/secured/pages/Inventario/Reportes/" icon="pi pi-warehouse" />
+                    <p:button value="Generar Etiquetas" styleClass="ui-button-success" disabled="true" icon="pi pi-ticket" />
+                </div>
+            </p:card>
+
+            <!-- Reportes de Usuarios -->
+            <p:card class="custom-card">
+                <f:facet name="title">
+                    Reportes de Usuarios
+                </f:facet>
+
+                <div class="card-buttons">
+                    <p:button value="Usuarios Detallados" styleClass="ui-button-warning" href="/Mercurius/secured/pages/Usuarios/Reportes/" icon="pi pi-user-plus" />
+                </div>
+            </p:card>
+        </div>
+    </p:card>
+        
+    
+</h:body>
+
+</html>

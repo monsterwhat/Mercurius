@@ -30,7 +30,7 @@ import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import jakarta.enterprise.context.RequestScoped;
+import jakarta.ejb.Stateless; 
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
@@ -50,7 +50,7 @@ import java.util.List;
  * @author Al
  */
 
-@RequestScoped
+@Stateless
 public class Parser {
     
     @Inject DetalleServicioService detalleServicioService;    

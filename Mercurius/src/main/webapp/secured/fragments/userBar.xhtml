@@ -132,33 +132,9 @@
                         </p:column>
 
                         <p:column rendered="#{SessionController.registros}">
-                            <p:commandButton id="RegistrosButton" value="Registros" style="flex: 1; width: 100%;"
+                            <p:button id="RegistrosButton" value="Reportes" style="flex: 1; width: 100%;"
                                              styleClass="rounded-button ui-button-warning" 
-                                             icon="pi pi-book"/>
-                            <p:menu overlay="true" trigger="RegistrosButton" my="left top" at="left bottom" collision="fit">
-                                <p:submenu label="Reportes Facturación">
-                                    <p:menuitem value="Movimientos" icon="pi pi-calendar" url="/Mercurius/secured/pages/Articulos/Reportes/Fechas/"/>
-                                    <p:menuitem value="Facturación de Artículos" icon="pi pi-box" url="/Mercurius/secured/pages/Articulos/Reportes/Ventas/"/>
-                                    <p:menuitem value="Ventas por Familia" icon="pi pi-users" url="/Mercurius/secured/pages/Articulos/Reportes/Familia/"/>
-                                    <p:menuitem value="Ventas por Departamento" icon="pi pi-truck" url="/Mercurius/secured/pages/Articulos/Reportes/Departamento/"/>
-                                    <p:menuitem value="Todas las Facturas" icon="pi pi-receipt" url="/Mercurius/secured/pages/Facturas/Reportes"/>
-                                </p:submenu>
-                                <p:submenu label="Recibos">
-                                    <p:menuitem value="Todas los Recibos" icon="pi pi-book" url="/Mercurius/secured/pages/Recibos/"/>
-                                    <p:menuitem value="Recibos Vigentes" icon="pi pi-calendar-clock" url="/Mercurius/secured/pages/Recibos/Pendientes/"/>
-                                    <p:menuitem value="Recibos Vencidos" icon="pi pi-calendar-times" url="/Mercurius/secured/pages/Recibos/Vencidos/"/>
-                                </p:submenu>
-                                <p:submenu label="Reportes Inventarios">
-                                    <p:menuitem value="Articulos" icon="pi pi-box"  url="/Mercurius/secured/pages/Articulos/Reportes/"/>
-                                    <p:menuitem value="Departamentos" icon="pi pi-truck" url="/Mercurius/secured/pages/Departamentos/Reportes/"/>
-                                    <p:menuitem value="Familias" icon="pi pi-users" url="/Mercurius/secured/pages/Familias/Reportes/"/>
-                                    <p:menuitem value="Inventarios" icon="pi pi-warehouse" url="/Mercurius/secured/pages/Inventario/Reportes/"/>
-                                    <p:menuitem value="Generar Etiquetas" icon="pi pi-ticket" disabled="true"/>
-                                </p:submenu>
-                                <p:submenu label="Reportes de Usuarios">
-                                    <p:menuitem value="Usuarios Detallados" icon="pi pi-user-plus"  url="/Mercurius/secured/pages/Usuarios/Reportes/"/>
-                                </p:submenu>
-                            </p:menu>
+                                             icon="pi pi-book" href="/Mercurius/secured/pages/Registros/" />
                         </p:column>
 
                         <p:column rendered="#{SessionController.admin}">

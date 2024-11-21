@@ -2,6 +2,7 @@ package Services;
 
 import Models.Registros.Alertas;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;
 
 /**
@@ -10,6 +11,7 @@ import jakarta.inject.Named;
  */
 
 @Named
+@Stateless
 public class AlertasService extends GService<Alertas> {
 
     @Override

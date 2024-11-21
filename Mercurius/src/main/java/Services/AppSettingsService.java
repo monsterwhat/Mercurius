@@ -1,6 +1,7 @@
 package Services;
 
 import Models.AppSettings;
+import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
@@ -11,6 +12,7 @@ import jakarta.persistence.TypedQuery;
  */
 
 @Named
+@Stateless
 public class AppSettingsService extends GService<AppSettings> {
 
     @Override

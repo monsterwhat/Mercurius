@@ -2,6 +2,7 @@ package Services;
 
 import Models.Familia;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
@@ -14,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 
 @Named
+@Stateless
 public class FamiliaService extends GService<Familia> {
 
     @Override

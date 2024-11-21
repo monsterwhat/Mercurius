@@ -2,6 +2,7 @@ package Services.Correos;
 
 import Models.Correos.ReporteProgramado;
 import Services.GService;
+import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -11,6 +12,7 @@ import jakarta.persistence.TypedQuery;
  * @author Al
  */
 
+@Stateless
 public class ReportesProgramadosService extends GService<ReporteProgramado>{
     
     @PersistenceContext EntityManager em;
