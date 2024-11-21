@@ -1,8 +1,8 @@
 package Services;
 
-import Models.Departamento;
-import Models.Familia;
+import Models.Departamento; 
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless; 
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
@@ -16,6 +16,7 @@ import java.util.Date;
 import java.util.List;
 
 @Named
+@Stateless
 public class DepartamentoService extends GService<Departamento> {
 
     @Override

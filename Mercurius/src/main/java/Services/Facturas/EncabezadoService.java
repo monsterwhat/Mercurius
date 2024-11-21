@@ -2,6 +2,7 @@ package Services.Facturas;
 
 import Models.Comprobantes.Encabezado.Encabezado;
 import Services.GService;
+import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -10,6 +11,7 @@ import jakarta.persistence.PersistenceContext;
  * @author Al
  */
 
+@Stateless
 public class EncabezadoService extends GService<Encabezado> {
     
     @PersistenceContext EntityManager em;

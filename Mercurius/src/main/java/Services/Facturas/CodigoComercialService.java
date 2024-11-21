@@ -2,6 +2,7 @@ package Services.Facturas;
 
 import Models.Comprobantes.Detalles.CodigoComercial;
 import Services.GService;
+import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -9,6 +10,8 @@ import jakarta.persistence.PersistenceContext;
  *
  * @author Al
  */
+
+@Stateless
 public class CodigoComercialService extends GService<CodigoComercial>{
     
      @PersistenceContext EntityManager em;

@@ -4,6 +4,7 @@ package Services.Facturas;
 import Models.Comprobantes.Encabezado.Emisor;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -12,6 +13,7 @@ import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @Named
+@Stateless
 public class EmisorService extends GService<Emisor> {
     
     @PersistenceContext EntityManager em;

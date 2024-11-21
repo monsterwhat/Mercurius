@@ -1,18 +1,12 @@
 package Services;
 
 import Models.Users;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
+import jakarta.annotation.PostConstruct; 
+import jakarta.ejb.Stateless;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
-import jakarta.security.enterprise.identitystore.Pbkdf2PasswordHash;
-import jakarta.transaction.HeuristicMixedException;
-import jakarta.transaction.HeuristicRollbackException;
-import jakarta.transaction.NotSupportedException;
-import jakarta.transaction.RollbackException;
-import jakarta.transaction.SystemException;
-import jakarta.transaction.UserTransaction;
+import jakarta.security.enterprise.identitystore.Pbkdf2PasswordHash; 
 import java.util.List;
 
 /**
@@ -21,10 +15,10 @@ import java.util.List;
  */
 
 @Named
+@Stateless
 public class LoginService extends GService<Users>{
         
     @Inject Pbkdf2PasswordHash passwordHasher;
-    @Resource UserTransaction userTransaction;
     
     @Override
     protected Class<Users> getEntityClass(){
@@ -82,8 +76,7 @@ public class LoginService extends GService<Users>{
     }
     
     public void InsertAdmin(){  
-        try {
-            this.userTransaction.begin();
+        try { 
             String username = "Admin";
             
             TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
@@ -97,11 +90,10 @@ public class LoginService extends GService<Users>{
                 user.setGroupName("admin");
                 user.setStatus(true);
                 
-                em.persist(user);
-                this.userTransaction.commit();
+                em.persist(user); 
                 System.out.println("Default Admin Saved!");
             }
-        } catch (HeuristicMixedException | HeuristicRollbackException | NotSupportedException | RollbackException | SystemException | IllegalStateException | SecurityException e) {
+        } catch (IllegalStateException | SecurityException e) {
             System.out.println("Error in InsertAdmin! Error: " + e.toString());
         }
     }

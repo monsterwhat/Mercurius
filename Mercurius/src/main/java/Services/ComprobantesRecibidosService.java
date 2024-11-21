@@ -3,6 +3,7 @@ package Services;
 import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Encabezado.Encabezado;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.Query;
@@ -17,6 +18,7 @@ import java.util.Date;
 import java.util.List;
 
 @Named
+@Stateless
 public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos> {
     
     @Override

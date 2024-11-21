@@ -3,13 +3,15 @@ package Services.Facturas;
 import Models.Comprobantes.Detalles.DetalleServicio;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 
-@Named
+@Named 
+@Stateless
 public class DetalleServicioService extends GService<DetalleServicio> {
     
     @PersistenceContext EntityManager em;

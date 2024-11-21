@@ -2,6 +2,7 @@ package Services.Facturas;
 
 import Models.Comprobantes.Detalles.Impuesto;
 import Services.GService;
+import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -10,6 +11,7 @@ import jakarta.persistence.PersistenceContext;
  * @author Al
  */
 
+@Stateless
 public class ImpuestoService extends GService<Impuesto>{
     
     @PersistenceContext EntityManager em;

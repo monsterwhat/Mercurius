@@ -1,10 +1,10 @@
 package Services;
 
-import Models.ArticuloStock;
-import Models.Articulos;
+import Models.ArticuloStock; 
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
@@ -16,12 +16,11 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Date; 
+import java.util.List; 
 
 @Named
+@Stateless
 public class InventarioService extends GService<Inventario> {
         
 

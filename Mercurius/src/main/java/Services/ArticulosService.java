@@ -2,6 +2,7 @@ package Services;
 
 import Models.Articulos;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -12,6 +13,7 @@ import java.util.Date;
 import java.util.List;
 
 @Named
+@Stateless
 public class ArticulosService extends GService<Articulos> {
 
     @Override

@@ -2,6 +2,7 @@ package Services;
 
 import Models.Promocion;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
  */
 
 @Named
+@Stateless
 public class PromocionesService extends GService<Promocion> {
 
     @Override

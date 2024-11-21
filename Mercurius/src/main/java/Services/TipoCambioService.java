@@ -1,8 +1,7 @@
 package Services;
 
 import Models.TipoCambio;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import jakarta.transaction.Transactional;
+import com.fasterxml.jackson.core.JsonProcessingException; 
 import java.time.LocalDateTime;
 import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
@@ -10,11 +9,12 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 
-@Named
-@Transactional
+@Named 
+@Stateless
 public class TipoCambioService extends GService<TipoCambio> {
 
     @Override

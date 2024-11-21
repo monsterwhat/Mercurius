@@ -32,7 +32,7 @@
                                 <p:column>
                                     <div class="ui-inputgroup">
                                         <div class="ui-inputgroup-addon">Tipo de Factura</div>
-                                        <p:selectOneMenu id="group" >
+                                        <p:selectOneMenu id="group" disabled="true" >
                                             <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
                                             <f:selectItems/>
                                         </p:selectOneMenu>
@@ -61,7 +61,7 @@
                                         </p:inputNumber>
                                         <div class="ui-inputgroup-addon"><i class="pi pi-barcode"/></div>
                                         <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{crearTiqueteController.codigoBarra}"
-                                            onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" >
+                                                     onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" tabindex="0" >
                                             <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
                                             listener="#{crearTiqueteController.processCodigoBarra}" update="@form"/>
                                         </p:inputText>

@@ -1,6 +1,6 @@
 package Services;
 
-import jakarta.faces.view.ViewScoped;
+import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
@@ -18,7 +18,7 @@ import org.apache.pdfbox.printing.PDFPageable;
  * @author Al
  */
 
-@ViewScoped
+@Stateless
 @Named
 public class PrinterService implements Serializable{
 

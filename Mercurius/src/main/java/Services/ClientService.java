@@ -2,11 +2,13 @@ package Services;
 
 import Models.Clients;
 import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 
 @Named
+@Stateless
 public class ClientService extends GService<Clients> {
 
     @Override
