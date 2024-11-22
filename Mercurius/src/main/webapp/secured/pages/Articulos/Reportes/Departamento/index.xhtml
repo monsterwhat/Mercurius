@@ -58,7 +58,7 @@
                 <h:form>
                     <p:growl showDetail="true" showSummary="true" />
                     <p:messages/>
-                    <p:card style="text-align: center;">
+                    <p:card style="text-align: center;" title="Reporte de ventas por departamentos">
                         <p:card title="Seleccione el usuario y las fechas a consultar" style="width: 50%; display: inline-block; text-align: left;">
                             <h:panelGrid columns="2" style="text-align: center; width: 100%">
                                 <p:selectOneMenu id="selectOneMenu" label="Seleccionar Usuarios" style="width: 100%"
@@ -81,7 +81,7 @@
             </p:column>
             <p:column rendered="#{reportesDiariosController.status}">
                 <h:form>
-                    <p:card>
+                    <p:card style="text-align: center;" title="Reporte de ventas por departamentos">
                     <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" 
                                 style="width: 100%" styleClass="ui-button-success rounded-button" ajax="false">
                         <p:dataExporter type="xlsx" target="reportes" fileName="Reportes-Mercurius" />

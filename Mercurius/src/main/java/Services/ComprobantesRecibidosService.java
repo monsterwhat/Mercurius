@@ -176,7 +176,8 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     public List<ComprobantesRecibidos> listVencidas() {
         String sql = "SELECT t1.* FROM ComprobantesRecibidos t1 " +
                      "JOIN ENCABEZADO t0 ON t0.ID = t1.ENCABEZADO_ID " +
-                     "WHERE DATE_ADD(t0.fecha_emision, INTERVAL t0.plazo_credito DAY) <= ?1";
+                     "WHERE DATE_ADD(t0.fecha_emision, INTERVAL t0.plazo_credito DAY) <= ?1 " +
+                     "AND t1.paid = 0";
 
         Query query = em.createNativeQuery(sql, ComprobantesRecibidos.class);
         query.setParameter(1, java.sql.Date.valueOf(LocalDate.now()));

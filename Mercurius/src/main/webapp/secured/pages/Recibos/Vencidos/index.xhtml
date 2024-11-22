@@ -24,7 +24,7 @@
 
         <p:row>
             <p:column>
-                <p:panel>
+                <p:card title="Recibos Vencidos" style="text-align: center">
                     <h:form id="recibos">
                             <p:growl showDetail="true" showSummary="true" />
                             
@@ -61,6 +61,12 @@
 
                                     <p:chip id="unProcessedChip" icon="pi pi-clock" style="background: var(--yellow-500)" rendered="#{!factura.processed}"/>
                                     <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
+                                    
+                                    <p:chip id="PaidChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.paid}"/>
+                                    <p:tooltip for="PaidChip" value="Pagada" position="top"/>
+
+                                    <p:chip id="unPaidChip" icon="pi pi-clock" style="background: var(--red-500)" rendered="#{!factura.paid}"/>
+                                    <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
                                 </p:column>
 
                                 <p:column headerText="Código" visible="false" >
@@ -97,7 +103,7 @@
                                 </p:column>
                             </p:dataTable>
                         </h:form>
-                </p:panel>
+                </p:card>
             </p:column>
         </p:row>
     </p:panelGrid>

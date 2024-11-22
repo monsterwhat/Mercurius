@@ -43,7 +43,7 @@
     </p:panelGrid>
     
     <p:panelGrid columns="1">
-        <p:card>
+        <p:card title="Menu General de Articulos" style="text-align: center">
             <h:form id="Articulos">
                 <p:card rendered="#{SessionController.registros}" >
                     <p:panelGrid columns="1">
@@ -51,8 +51,10 @@
                             <p:commandButton value="Imprimir" icon="pi pi-print" action="#{ArticulosController.exportPDF('Articulos:ArticulosTableData')}" 
                                              ajax="false" styleClass="rounded-button ui-button-primary"  style="width: 100%"
                             oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulos.pdf')"/>
-                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel"
-                                styleClass="rounded-button ui-button-success"  style="width: 100%"/>
+                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" 
+                                styleClass="rounded-button ui-button-success"  style="width: 100%">
+                                <p:dataExporter type="xls" target="ArticulosTableData" fileName="articulos"/>
+                            </p:commandButton>
                         </p:column>
                     </p:panelGrid>
                 </p:card>
@@ -71,7 +73,7 @@
                                      placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                     </f:facet>
 
-                    <p:column>
+                    <p:column exportable="false">
                         <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
                                 rendered="#{articulo.processed}"/>
                         <p:tooltip for="processedChip" value="Procesada" position="top"/>

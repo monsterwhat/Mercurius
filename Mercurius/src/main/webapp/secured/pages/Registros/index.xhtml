@@ -11,30 +11,54 @@
     <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
     
     <style>
+        
+        .header-bar {
+            color: white; /* Ensure text contrasts with the background */
+            padding: 5px 10px;
+            text-align: center;
+            border-radius: 4px 4px 0 0; /* Rounded corners at the top */
+            font-weight: bold;
+        } 
+        
         .card-container {
             display: flex;
-            justify-content: space-between;
-            margin: 5px;
-            text-align: center;
             flex-wrap: wrap;
+            margin: 5px;
+            gap: 10px; /* Add spacing between cards */
+            justify-content: center; /* Center cards when wrapping */
         }
 
         .custom-card {
-            width: 25%; /* Adjust card width to fit next to each other */
+            width: 100%; /* Default to full width for mobile */
             margin-bottom: 10px;
+        }
+
+        /* Tablet screens: show 2 cards per row */
+        @media (min-width: 768px) {
+            .custom-card {
+                width: 48%; /* Adjust width to fit 2 cards per row with some gap */
+            }
+        }
+
+        /* Desktop screens: show 4 cards per row */
+        @media (min-width: 1024px) {
+            .custom-card {
+                width: 23%; /* Adjust width to fit 4 cards per row with some gap */
+            }
         }
 
         .card-buttons {
             display: flex;
-            flex-direction: column; /* Stack buttons vertically */
-            gap: 10px; /* Optional: Add some space between buttons */
+            flex-direction: column;
+            gap: 10px;
             margin-top: 20px;
         }
 
         .p-button {
-            width: 100%; /* Make the buttons full-width if needed */
+            width: 100%; /* Make the buttons full-width */
         }
     </style>
+
 
 </h:head>
 
@@ -52,6 +76,11 @@
         <div class="card-container">
             <!-- Reportes Facturación -->
             <p:card class="custom-card">
+                
+                <f:facet name="header">
+                    <div class="header-bar" style="background-color: var(--blue-500)"/>
+                </f:facet>
+                
                 <f:facet name="title">
                     Reportes de Facturación
                 </f:facet>
@@ -63,10 +92,16 @@
                     <p:button value="Ventas por Departamento" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Departamento/" icon="pi pi-truck" />
                     <p:button value="Todas las Facturas" styleClass="ui-button-info" href="/Mercurius/secured/pages/Facturas/Reportes" icon="pi pi-receipt" />
                 </div>
+                      
             </p:card>
 
             <!-- Reportes Recibos -->
             <p:card class="custom-card">
+                
+                <f:facet name="header">
+                    <div class="header-bar" style="background-color: var(--purple-500)"/>
+                </f:facet>
+                
                 <f:facet name="title">
                     Reportes de Recibos
                 </f:facet>
@@ -76,10 +111,16 @@
                     <p:button value="Recibos Vigentes" styleClass="ui-button-help"  href="/Mercurius/secured/pages/Recibos/Pendientes/" icon="pi pi-calendar-clock" />
                     <p:button value="Recibos Vencidos" styleClass="ui-button-help"  href="/Mercurius/secured/pages/Recibos/Vencidos/" icon="pi pi-calendar-times" />
                 </div>
+                  
             </p:card>
 
             <!-- Reportes Inventarios -->
             <p:card class="custom-card">
+                
+                <f:facet name="header">
+                    <div class="header-bar" style="background-color: var(--green-500)"/>
+                </f:facet>
+                
                 <f:facet name="title">
                     Reportes de Inventarios
                 </f:facet>
@@ -95,6 +136,11 @@
 
             <!-- Reportes de Usuarios -->
             <p:card class="custom-card">
+                
+                <f:facet name="header">
+                    <div class="header-bar" style="background-color: var(--yellow-500)"/>
+                </f:facet>
+                
                 <f:facet name="title">
                     Reportes de Usuarios
                 </f:facet>
