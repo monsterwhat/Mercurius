@@ -253,6 +253,24 @@ public class FacturasController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null, message);
         }
     }
+    
+    public void paySelectedFactura(){
+        if(selectedFactura != null){
+            if(!selectedFactura.getPaid() && selectedFactura.getStatus()){
+                selectedFactura.setPaid(Boolean.TRUE);
+                facturaService.update(selectedFactura);
+                clearCache();
+                FacesMessage message = new FacesMessage("Exito","Se marco la factura como pagada!");
+                FacesContext.getCurrentInstance().addMessage(null, message);
+            }else{
+                FacesMessage message = new FacesMessage("Oops!","La factura ya fue pagada.");
+                FacesContext.getCurrentInstance().addMessage(null, message);
+            }
+        }else{
+            FacesMessage message = new FacesMessage("Error","No hay una factura seleccionada");
+            FacesContext.getCurrentInstance().addMessage(null, message);
+        }
+    }
         
     private void processFactura(ComprobantesRecibidos factura){
         try {

@@ -4,6 +4,7 @@ import Models.Comprobantes.Detalles.DetalleServicio;
 import Models.Comprobantes.Encabezado.Encabezado;
 import Models.Comprobantes.Resumen.ResumenFactura;
 import Models.Users;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
@@ -38,6 +39,10 @@ public class ComprobantesRecibidos {
     
     private Boolean status;
     private Boolean processed;
+    
+    @Column(nullable = false) // Ensures the field cannot be null in the database
+    private Boolean paid = false; // Default value for the field
+    
     private Users user;
     
 }
