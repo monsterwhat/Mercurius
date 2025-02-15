@@ -5,11 +5,11 @@
                 xmlns:ui="jakarta.faces.facelets">
 
         <p:dialog header="Informacion de Articulo"
-                  dynamic="true" cache="false" widgetVar="ArticuloDetailsDialog" 
-                  responsive="true" id="ArticuloDetailsDialog" modal="true">
+                  dynamic="true" cache="false" widgetVar="ArticuloActivoYProcesadoDetailsDialog" 
+                  responsive="true" id="ArticuloActivoYProcesadoDetailsDialog" modal="true">
         <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
             <p:card>
-                <p:dataTable id="selectedArticulo" clientCache="true" stripedRows="true"
+                <p:dataTable id="selectedArticuloActivoYProcesado" clientCache="true" stripedRows="true"
                              lazy="true" var="articulo" reflow="true"
                              value="#{ArticulosController.selectedArticulo}">
                     <p:column headerText="Código" visible="false">

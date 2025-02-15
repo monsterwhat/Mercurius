@@ -3,6 +3,7 @@ package Controllers;
 import Models.ArticuloCarrito;
 import Models.Articulos;
 import Models.Promocion;
+import Services.AlertasService;
 import Services.ArticulosService;
 import Services.PromocionesService;
 import jakarta.annotation.PostConstruct;
@@ -36,6 +37,7 @@ public class PromocionesController implements Serializable {
     
     @Inject private SessionController currentSession;
     @Inject private PromocionesService promoService;
+    @Inject private AlertasService alertas;
     @Inject private ArticulosService articuloService;
 
     private List<Promocion> promociones;
@@ -89,8 +91,10 @@ public class PromocionesController implements Serializable {
     public void updatePromocion() {
         if(currentSession.isValid()){
             if(selectedPromocion !=null ){
+                var oldPromocion = selectedPromocion;
                 selectedPromocion.setUsuario(currentSession.getCurrentUser());
                 promoService.update(selectedPromocion);
+                alertas.registrarAlerta("Promocion Actualizada", "Se actualizo la promocion: " + selectedPromocion.getNombre(), currentSession.getCurrentUser(), 0, "updatePromocion()", oldPromocion.toString(), selectedPromocion.toString());
                 clearSelectedPromocion();
                 
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -110,6 +114,7 @@ public class PromocionesController implements Serializable {
                 newPromocion.setActiva(true);
                 newPromocion.setUsuario(currentSession.getCurrentUser());
                 promoService.create(newPromocion);
+                alertas.registrarAlerta("Promocion Creada", "Se creo la promocion: " + newPromocion.getNombre(), currentSession.getCurrentUser(), 0, "createPromocion()", null, newPromocion.toString());
                 clearSelectedPromocion(); 
                 FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo la promocion", null));
@@ -124,7 +129,9 @@ public class PromocionesController implements Serializable {
 
     public void deletePromocion() {
         if (selectedPromocion != null) {
+            var oldPromo = selectedPromocion;
             promoService.delete(selectedPromocion);
+            alertas.registrarAlerta("Promocion Eliminada", "Se elimino la promocion: " + selectedPromocion.getNombre(), currentSession.getCurrentUser(), 0, "deletePromocion()", oldPromo.toString(), selectedPromocion.toString());
             clearSelectedPromocion();
         }
     }
@@ -235,7 +242,7 @@ public class PromocionesController implements Serializable {
         
         if (newPromocion.getUsuario() != null) {
             promoService.create(newPromocion);
-            //Should save it in each item entity too...
+            alertas.registrarAlerta("Promocion Creada", "Se creó la promoción: " + newPromocion.getNombre(), currentSession.getCurrentUser(), 0, "createPromocionByDialog()", null, newPromocion.toString());
             for (ArticuloCarrito articulo : lista) {
                 var articuloToUpdate = articulo.getArticulo();
                 List<Promocion> promociones = new ArrayList<>();
@@ -376,7 +383,7 @@ public class PromocionesController implements Serializable {
         
         if (selectedPromocion.getUsuario() != null) {
             promoService.update(selectedPromocion);
-            //Should save it in each item entity too...
+            alertas.registrarAlerta("Promocion Actualizada", "Se actualizó la promoción: " + selectedPromocion.getNombre(), currentSession.getCurrentUser(), 0, "updatePromocionByDialog()", null, selectedPromocion.toString());
             for (ArticuloCarrito articulo : lista) {
                 var articuloToUpdate = articulo.getArticulo();
                 List<Promocion> promociones = new ArrayList<>();
@@ -389,7 +396,7 @@ public class PromocionesController implements Serializable {
             clearSelectedPromocion();
 
             FacesContext.getCurrentInstance().addMessage(null, 
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se Actualizo la promoción", null));
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se Actualizó la promoción", null));
 
             PrimeFaces.current().executeScript("PF('EditPromocionDialog').hide();");
         }

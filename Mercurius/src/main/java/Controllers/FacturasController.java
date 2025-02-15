@@ -7,6 +7,7 @@ import Models.Comprobantes.ComprobantesRecibidos;
 import Models.Comprobantes.Detalles.*;
 import Models.Departamento;
 import Models.Inventario;
+import Services.AlertasService;
 import Services.ArticuloPrecioService;
 import Services.Facturas.*;
 import Utils.Parsers.Parser;
@@ -46,6 +47,7 @@ public class FacturasController implements Serializable {
     @Inject MedioPagoService medioPagoService;
     @Inject ArticuloPrecioService precioService;
     @Inject Parser parser;
+    @Inject AlertasService alertas;
     
     private List<UploadedFile> files;
     private List<ComprobantesRecibidos> facturas;
@@ -101,14 +103,18 @@ public class FacturasController implements Serializable {
 
     public void deleteFactura() {
         if (selectedFactura != null) {
+            var oldFactura = selectedFactura;
             facturaService.softDelete(selectedFactura);
+            alertas.registrarAlerta("Factura eliminada", "La factura #" + selectedFactura.getId() + "fue eliminada", currentSession.getCurrentUser(), 0, "deleteFactura()", oldFactura.toString(), selectedFactura.toString());
             clearFactura();
         }
     }
     
     public void toggleFactura(){
         if(selectedFactura != null){
+            var oldFactura = selectedFactura;
             facturaService.toggle(selectedFactura);
+            alertas.registrarAlerta("Factura toggled", "Se cambio el estado de la factura", currentSession.getCurrentUser(), 0, "toggleFactura()", oldFactura.toString(), selectedFactura.toString());
         }
     }
 
@@ -217,6 +223,7 @@ public class FacturasController implements Serializable {
             InputStream inputStream = uploadedFile.getInputStream();    
             parser.parseXML(inputStream);
         } catch (IOException e) {
+            //TODO ALERT OF ERROR
             System.out.println("Error" + e.getLocalizedMessage());
         }
     }
@@ -232,6 +239,7 @@ public class FacturasController implements Serializable {
             PrimeFaces.current().executeScript("PF('facturasUpload').hide();");            
             FacesContext.getCurrentInstance().addMessage(null,
             new FacesMessage(FacesMessage.SEVERITY_INFO, "Se procesaron las facturas", null));
+            alertas.registrarAlerta("Facturas Procesadas", "Se procesaron las facturas", currentSession.getCurrentUser(), 0, "processFacturas()", null, null);
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
             new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay facturas por procesar!", null));
@@ -244,6 +252,7 @@ public class FacturasController implements Serializable {
                 processFactura(selectedFactura);
                 FacesMessage message = new FacesMessage("Exito","Se procesaron los articulos de la factura!");
                 FacesContext.getCurrentInstance().addMessage(null, message);
+                alertas.registrarAlerta("Factura Procesada", "Se procesaron los articulos de la factura #" + selectedFactura.getId(), currentSession.getCurrentUser(), 0, "processSelectedFactura()", selectedFactura.toString(), null);
             }else{
                 FacesMessage message = new FacesMessage("Oops!","La factura ya fue procesada.");
                 FacesContext.getCurrentInstance().addMessage(null, message);
@@ -262,6 +271,7 @@ public class FacturasController implements Serializable {
                 clearCache();
                 FacesMessage message = new FacesMessage("Exito","Se marco la factura como pagada!");
                 FacesContext.getCurrentInstance().addMessage(null, message);
+                alertas.registrarAlerta("Factura Pagada", "Se marco la factura #" + selectedFactura.getId() + " como pagada", currentSession.getCurrentUser(), 0, "paySelectedFactura()", selectedFactura.toString(), null);
             }else{
                 FacesMessage message = new FacesMessage("Oops!","La factura ya fue pagada.");
                 FacesContext.getCurrentInstance().addMessage(null, message);
@@ -384,15 +394,18 @@ public class FacturasController implements Serializable {
             
             factura.setProcessed(true);
             facturaService.update(factura);
+            alertas.registrarAlerta("Factura Procesada", "Se procesaron los artículos de la factura #" + factura.getId(), currentSession.getCurrentUser(), 0, "processFactura()", factura.toString(), null);
             clearCache();
             
         } catch (Exception e) {
+            //TODO ALERT OF ERROR
             System.out.println("Error procesing factura: " + e.getLocalizedMessage());
         }
     }
     
     public void cancel(){
         System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + "Cancelo Factura");
+        alertas.registrarAlerta("Factura eliminada", "Se elimino una factura pendiente", currentSession.getCurrentUser(), 0, "cancel()", "", "");
     }
     
     

@@ -1,8 +1,6 @@
 package Controllers.Facturas;
 
-import Controllers.SessionController;
-import Models.ArticuloPrecio;
-import Models.Articulos;
+import Controllers.SessionController; 
 import Models.Comprobantes.ComprobantesEmitidos;
 import Models.Comprobantes.Detalles.LineaDetalle;
 import Models.Inventario;
@@ -13,6 +11,7 @@ import Services.ComprobantesEmitidosService;
 import Services.InventarioService;
 import Services.PrinterService;
 import Services.UserService;
+import Services.AlertasService;
 import Utils.PDFGenerator;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -45,6 +44,7 @@ public class ReportesDiariosController implements Serializable{
     @Inject PDFGenerator pdfGenerator;
     @Inject PrinterService printer;
     @Inject ComprobantesEmitidosService comprobanteService;
+    @Inject AlertasService alertasService;
     
     private Long usuarioSelecionadoId;
     private List<Users> usuarios;
@@ -67,6 +67,10 @@ public class ReportesDiariosController implements Serializable{
             if(usuarioSelecionadoId != null){
                 status = true;
                 listReportes(range, usuarioSelecionadoId);
+                
+                // Save an alert (log) for loading the report
+                alertasService.registrarAlerta("Reporte cargado", "Se ha cargado el reporte para el usuario: " + usuarioSelecionadoId, currentSession.getCurrentUser(), 0, "ReportesDiariosController.cargar", null, null);
+                
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono un usuario", null));
@@ -82,6 +86,10 @@ public class ReportesDiariosController implements Serializable{
             if(usuarioSelecionadoId != null){
                 status = true;
                 listReportesVentasXCajero(range, usuarioSelecionadoId);
+                
+                // Save an alert (log) for loading sales report by cashier
+                alertasService.registrarAlerta("Reporte de ventas por cajero cargado", "Se ha cargado el reporte de ventas por cajero para el usuario: " + usuarioSelecionadoId, currentSession.getCurrentUser(), 0, "ReportesDiariosController.cargarVentasPorCajero", null, null);
+                
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono un usuario", null));
@@ -97,6 +105,10 @@ public class ReportesDiariosController implements Serializable{
             if(usuarioSelecionadoId != null){
                 status = true;
                 listReportesVentasXFamilia(range, usuarioSelecionadoId);
+                
+                // Save an alert (log) for loading sales report by family
+                alertasService.registrarAlerta("Reporte de ventas por familia cargado", "Se ha cargado el reporte de ventas por familia para el usuario: " + usuarioSelecionadoId, currentSession.getCurrentUser(), 0, "ReportesDiariosController.cargarVentasFamilias", null, null);
+                
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono un usuario", null));
@@ -112,6 +124,10 @@ public class ReportesDiariosController implements Serializable{
             if(usuarioSelecionadoId != null){
                 status = true;
                 listReportesVentasXDepartamento(range, usuarioSelecionadoId);
+                
+                // Save an alert (log) for loading sales report by department
+                alertasService.registrarAlerta("Reporte de ventas por departamento cargado", "Se ha cargado el reporte de ventas por departamento para el usuario: " + usuarioSelecionadoId, currentSession.getCurrentUser(), 0, "ReportesDiariosController.cargarVentasDepartamento", null, null);
+                
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono un usuario", null));

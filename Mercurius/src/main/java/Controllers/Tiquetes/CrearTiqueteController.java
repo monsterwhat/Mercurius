@@ -25,8 +25,7 @@ import Models.Comprobantes.Encabezado.IdentificacionReceptor;
 import Models.Comprobantes.Encabezado.MedioPago;
 import Models.Comprobantes.Encabezado.Receptor;
 import Models.Comprobantes.Encabezado.Telefono;
-import Models.Comprobantes.Encabezado.Ubicacion;
-import Models.Comprobantes.Enums.CodigoImpuesto;
+import Models.Comprobantes.Encabezado.Ubicacion; 
 import Models.Comprobantes.Enums.CondicionVenta;
 import Models.Comprobantes.Enums.TarifaIVA;
 import Models.Comprobantes.Resumen.ResumenFactura;
@@ -428,18 +427,11 @@ public class CrearTiqueteController implements Serializable{
             while (iterator.hasNext() && !removed) {
                 ArticuloCarrito articuloCarrito = iterator.next();
                 if (articuloCarrito.equals(articulo)) {
-                    
-                    Alertas alerta = new Alertas();
-                    alerta.setMensaje("Cajero " + currentSession.getCurrentUser().getUsername() + " elimino articulo de carrito");
-                    alerta.setTipo("Modificacion Carrito");
-                    alerta.setAntes(articulo.toString());
-                    alerta.setDespues("");
-                    alerta.setVista(false);
-                    
-                    alertaService.create(alerta);
-                    
+                      
+                    alertaService.registrarAlerta("Modificacion Carrito", "Cajero " + currentSession.getCurrentUser().getUsername() + " elimino articulo de carrito", currentSession.getCurrentUser(), 0, "CrearTiqueteController.removeArticulo", articulo.toString(), null);
+                     
                     iterator.remove(); // Elimina el artículo
-                    removed = true; // Marca que se ha realizado la eliminación
+                    removed = true; // Marca que se ha realizado la eliminación 
                 }
             }
             procesarPromocionesCarrito();
@@ -489,7 +481,7 @@ public class CrearTiqueteController implements Serializable{
         alerta.setVista(false);
 
         // Save the alerta using the service
-        alertaService.create(alerta);
+        alertaService.create(alerta); 
 
         // Clear the carrito and reset fields
         resetFlag = !resetFlag; // Toggle the reset flag

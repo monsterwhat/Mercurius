@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Familia;
+import Services.AlertasService;
 import Services.FamiliaService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -23,6 +24,8 @@ import org.primefaces.util.LangUtils;
 @Named(value = "FamiliasController")  
 @ViewScoped
 public class FamiliaController implements Serializable {
+    
+    @Inject private AlertasService alertas;
     @Inject private FamiliaService familiaService;
     @Inject private SessionController currentSession;
 
@@ -67,9 +70,11 @@ public class FamiliaController implements Serializable {
     public void updateFamiliaDialog() {
         if(currentSession.isValid()){
             if(selectedFamilia != null){
+                var oldFamilia = selectedFamilia;
                 selectedFamilia.setUsuario(currentSession.getCurrentUser());
                 selectedFamilia.setFecha(new Date());
                 familiaService.updateAndDisable(selectedFamilia);
+                alertas.registrarAlerta("Familia actualizada", "Se ha actualizado la familia: " + selectedFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.updateFamiliaDialog", oldFamilia.toString(), selectedFamilia.toString());
                 clearSelectedFamilia();
                 
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -91,6 +96,7 @@ public class FamiliaController implements Serializable {
                 newFamilia.setFecha(new Date());
                 var valid = familiaService.createIfNotExists(newFamilia);
                 if(valid){
+                    alertas.registrarAlerta("Familia creada", "Se ha creado la familia: " + newFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.createFamiliaDialog", null, newFamilia.toString());
                     clearSelectedFamilia();
                     FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo la familia", null));
@@ -109,7 +115,9 @@ public class FamiliaController implements Serializable {
     
     public void deleteFamilia() {
         if (selectedFamilia != null) {
+            var oldFamilia = selectedFamilia;
             familiaService.softDelete(selectedFamilia);
+            alertas.registrarAlerta("Familia eliminada", "Se ha eliminado la familia: " + selectedFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.deleteFamilia", oldFamilia.toString() , selectedFamilia.toString());
             clearSelectedFamilia();
         }
     }

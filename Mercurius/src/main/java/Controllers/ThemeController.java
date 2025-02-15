@@ -19,12 +19,12 @@ public class ThemeController implements Serializable {
     
     public void changeTheme(String theme) {
         setCurrentTheme(theme);
-    }
+     }
     
     public void updateTheme(){
         if(!selectedTheme.isBlank()){
             currentTheme = selectedTheme;
-            reloadCurrentPage();
+             reloadCurrentPage();
         }
     }
         

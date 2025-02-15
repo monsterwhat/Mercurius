@@ -26,7 +26,7 @@
             <p:column>
                 <p:card styleClass="ui-panel ui-widget ui-widget-content ui-corner-all">
                     
-                    <h:form>
+                    <h:form id="catalogoActual">
                         
                     <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
                                  paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
@@ -75,7 +75,7 @@
 
                         <p:column headerText="Acciones" exportable="false">
                             <div class="buttons has-addons">
-                                <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloDetailsDialog').show();"
+                                <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloActivoYProcesadoDetailsDialog').show();"
                                                  icon="pi pi-eye" process="@this" update="selectedArticulo">
                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                 </p:commandButton>

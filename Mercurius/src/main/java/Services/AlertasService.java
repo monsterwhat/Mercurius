@@ -1,9 +1,12 @@
 package Services;
 
 import Models.Registros.Alertas;
+import Models.Users;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;
+import java.time.LocalDateTime;
+import java.util.Date;
 
 /**
  *
@@ -33,5 +36,18 @@ public class AlertasService extends GService<Alertas> {
         }
     }
     
-    
+    public void registrarAlerta(String tipo, String Mensaje, Users user, int codigo, String source, String antes, String despues){
+            Alertas alerta = new Alertas();
+            alerta.setTipo(tipo);
+            alerta.setMensaje(Mensaje);
+            alerta.setTimestamp(LocalDateTime.now());
+            alerta.setUser(user);
+            alerta.setVista(false);
+            alerta.setCodigo(codigo);
+            alerta.setSource(source);
+            alerta.setAntes(antes);
+            alerta.setDespues(despues);
+            
+            create(alerta);
+    }  
 }

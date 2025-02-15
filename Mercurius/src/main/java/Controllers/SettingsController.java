@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.AppSettings;
+import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.EmailService;
 import jakarta.annotation.PostConstruct;
@@ -45,6 +46,8 @@ public class SettingsController implements Serializable {
     @Inject private ServletContext servletContext;
     @Inject private EmailService emailer;
     @Inject private TipoCambioController tipoCambioController;
+    @Inject private AlertasService alertas;
+    @Inject private SessionController currentSession;
     
     @PostConstruct
     private void init(){
@@ -60,7 +63,7 @@ public class SettingsController implements Serializable {
             var nombre = currentSettings.getNombrePerfil();
             if(nombre != null){
                 if(!nombre.isBlank()){
-                    if(currentSettings.getCompletedSteps() < 1){
+                    if(currentSettings.getCompletedSteps() == 0){
                         dirInit();
                         createDirectories();
                         currentSettings.setEstatus(true);
@@ -68,6 +71,7 @@ public class SettingsController implements Serializable {
                         settingsService.create(currentSettings);
                     }else{
                         settingsService.update(currentSettings);
+                        alertas.registrarAlerta("Nombre de Usuario Actualizado", "Se actualizó el nombre de usuario a: " + currentSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "saveUsername()", null, currentSettings.getNombrePerfil());
                     }
                     reloadPage();
                     
@@ -137,11 +141,15 @@ public class SettingsController implements Serializable {
     }
     
     public void updateSelectedSettings(){
+        var oldSettings = selectedSettings;
         settingsService.update(selectedSettings);
+        alertas.registrarAlerta("Configuración Actualizada", "Se actualizó la configuración seleccionada", currentSession.getCurrentUser(), 0, "updateSelectedSettings()", oldSettings.toString(), selectedSettings.toString());
     }
     
     public void disableSelectedSettings(){
+        var oldSettings = selectedSettings;
         settingsService.disable(selectedSettings);
+        alertas.registrarAlerta("Configuración Deshabilitada", "Se deshabilitó la configuración seleccionada", currentSession.getCurrentUser(), 0, "disableSelectedSettings()", oldSettings.toString(), selectedSettings.toString());
     }
     
     public String getMainDirectory(){
@@ -202,7 +210,7 @@ public class SettingsController implements Serializable {
                 
                 currentSettings.setLogo(logoBytes);
                 currentSettings.setLogoMimeType(imagen.getContentType());
-                if(currentSettings.getCompletedSteps() < 2){
+                if(currentSettings.getCompletedSteps() == 1){
                     currentSettings.setCompletedSteps(2);
                 }
                 settingsService.update(currentSettings);
@@ -236,10 +244,11 @@ public class SettingsController implements Serializable {
         }
 
         try {
-            if(currentSettings.getCompletedSteps() < 3){
+            if(currentSettings.getCompletedSteps() == 2){
                     currentSettings.setCompletedSteps(3);
             }
             settingsService.update(currentSettings);
+            alertas.registrarAlerta("Correo Actualizado", "Se actualizó el correo electrónico a: " + currentSettings.getCorreoElectronico(), currentSession.getCurrentUser(), 0, "saveCorreo()", correoElectronico, currentSettings.getCorreoElectronico());
 
             sendWelcomeMail();
             reloadPage();
@@ -273,15 +282,19 @@ public class SettingsController implements Serializable {
     }
     
     public void saveTributacion(){
-        if(currentSettings.getCompletedSteps() < 4){
+        if(currentSettings.getCompletedSteps() == 3){
             currentSettings.setCompletedSteps(4);
         }
+        var oldSettings = currentSettings;
         settingsService.update(currentSettings);
+        alertas.registrarAlerta("Tributación Actualizada", "Se actualizó la tributación", currentSession.getCurrentUser(), 0, "saveTributacion()", oldSettings.toString(), currentSettings.toString());
         reloadPage();
     }
     
     public void saveCambio(){
+        var oldSettings = currentSettings;
         settingsService.update(currentSettings);
+        alertas.registrarAlerta("Tipo de Cambio Actualizado", "Se actualizó el tipo de cambio", currentSession.getCurrentUser(), 0, "saveCambio()", oldSettings.toString(), currentSettings.toString());
         tipoCambioController.recargar();
     }
 
@@ -290,10 +303,12 @@ public class SettingsController implements Serializable {
     }
     
     public void saveProfile(){
-        if(currentSettings.getCompletedSteps() < 5){
+        if(currentSettings.getCompletedSteps() == 4){
             currentSettings.setCompletedSteps(5);
         }
+        var oldSettings = currentSettings;
         settingsService.update(currentSettings);
+        alertas.registrarAlerta("Perfil Actualizado", "Se actualizó el perfil", currentSession.getCurrentUser(), 0, "saveProfile()", oldSettings.toString(), currentSettings.toString());
         reloadPage();
     }
     

@@ -2,6 +2,7 @@ package Controllers.Correos;
 
 import Controllers.SessionController;
 import Models.Correos.ReporteProgramado;
+import Services.AlertasService;
 import Services.Correos.ReportesProgramadosService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -33,6 +34,7 @@ public class ReportesProgramadosController implements Serializable {
     @Inject ReportesProgramadosService reportesProgramadosService;
     @Inject private SessionController currentSession;
     @Inject CorreosHelper helper;
+    @Inject private AlertasService alertasService;
 
     private List<ReporteProgramado> reportes;
     private ReporteProgramado selectedReporte;
@@ -69,8 +71,13 @@ public class ReportesProgramadosController implements Serializable {
 
     public void updateReporte() {
         if(currentSession.isValid()){
+            var oldReporte = selectedReporte;
             selectedReporte.setLastRun(new Date());
             reportesProgramadosService.update(selectedReporte);
+            
+            // Save an alert (log) for updating the scheduled report
+            alertasService.registrarAlerta("Reporte programado actualizado", "Se ha actualizado el reporte programado: " + selectedReporte.getPerfil(), currentSession.getCurrentUser(), 0, "ReportesProgramadosController.updateReporte", oldReporte.toString(), selectedReporte.toString());
+            
             clearSelectedReporte();
             PrimeFaces.current().executeScript("PF('EditarReporteDialog').hide();");
         }
@@ -83,6 +90,10 @@ public class ReportesProgramadosController implements Serializable {
                 newReporte.setStatus(true);
                 newReporte.setLastRun(new Date());
                 reportesProgramadosService.create(newReporte);
+                
+                // Save an alert (log) for creating the scheduled report
+                alertasService.registrarAlerta("Reporte programado creado", "Se ha creado el reporte programado: " + newReporte.getPerfil(), currentSession.getCurrentUser(), 0, "ReportesProgramadosController.createReporte", null, newReporte.toString());
+                
                 clearSelectedReporte();    
                 PrimeFaces.current().executeScript("PF('CrearReporteDialog').hide();");
             }
@@ -97,6 +108,11 @@ public class ReportesProgramadosController implements Serializable {
                 enableReporte();
             }
             reportesProgramadosService.update(selectedReporte);
+            
+            // Save an alert (log) for toggling the scheduled report status
+            String action = selectedReporte.isStatus() ? "habilitado" : "deshabilitado";
+            alertasService.registrarAlerta("Estado del reporte programado cambiado", "Se ha " + action + " el reporte programado: " + selectedReporte.getPerfil(), currentSession.getCurrentUser(), 0, "ReportesProgramadosController.toggleReporte", null, null);
+            
             clearSelectedReporte();
         }
     }
@@ -169,11 +185,12 @@ public class ReportesProgramadosController implements Serializable {
                 newReporte.setLastRun(new Date());
                 var valid = reportesProgramadosService.createIfNotExists(newReporte);
                 if(valid){
+                    alertasService.registrarAlerta("Reporte programado creado", "Se ha creado el reporte programado: " + newReporte.getPerfil(), currentSession.getCurrentUser(), 0, "createReporteDialog()", null, newReporte.toString());
                     clearSelectedReporte();
                     FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo el reporte programado", null));
 
-                    PrimeFaces.current().executeScript("PF('CrearReporteDialog').hide();");
+                    PrimeFaces.current().executeScript("PF('CrearReporteDialog').hide()");
                 }else{
                     FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_WARN, "Ya existe un reporte programado con ese nombre!", null));

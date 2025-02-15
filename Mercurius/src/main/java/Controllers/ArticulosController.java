@@ -4,13 +4,14 @@ import Controllers.Settings.SettingsDirController;
 import Models.ArticuloPrecio;
 import Models.Articulos;
 import Models.Departamento;
-import Models.Familia;
+import Models.Familia; 
 import Services.ArticuloPrecioService;
 import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.InventarioService;
 import Services.PrinterService;
+import Services.AlertasService;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Meta;
@@ -61,6 +62,7 @@ public class ArticulosController implements Serializable {
     @Inject private CabysController cabysController;
     @Inject private SettingsDirController directoryConfig;
     @Inject private PrinterService printer;
+    @Inject private AlertasService alertasService;
     
     private List<Articulos> articulosActivos;
     private List<Articulos> articulos;
@@ -148,6 +150,7 @@ public class ArticulosController implements Serializable {
     public void updateArticuloByDialog() {
         if(currentSession.isValid()){
             if(DepartamentoID != 0 || FamiliaID != 0){
+            var oldArticulo = selectedArticulo;
             selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
             selectedArticulo.setUsuario(currentSession.getCurrentUser());
@@ -156,6 +159,7 @@ public class ArticulosController implements Serializable {
                 if(selectedArticulo.getCodigoCabys() != null){
                     selectedArticulo.setProcessed(true);
                     articulosService.update(selectedArticulo);
+                    alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", oldArticulo.toString(), selectedArticulo.toString());
                     clearCache();
                     clearArticulo();
 
@@ -181,6 +185,7 @@ public class ArticulosController implements Serializable {
     public void updateArticuloRevision() {
         if(currentSession.isValid()){
             if(DepartamentoID != 0 || FamiliaID != 0){
+                var oldArticulo = selectedArticulo;
                 selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
                 selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
@@ -190,6 +195,7 @@ public class ArticulosController implements Serializable {
                         if(selectedArticulo.getLastPrecio().getPrecioFinal() != null){
                             selectedArticulo.setProcessed(true);
                             articulosService.update(selectedArticulo);
+                            alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", oldArticulo.toString(), selectedArticulo.toString());
                             clearCache();
                             clearArticulo();
 
@@ -225,6 +231,7 @@ public class ArticulosController implements Serializable {
     public void updateArticulosRevision() {
         if(currentSession.isValid()) {
             if(DepartamentoID != 0 || FamiliaID != 0) {
+                var oldArticulo = selectedArticulo;
                 selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
                 selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
@@ -234,6 +241,8 @@ public class ArticulosController implements Serializable {
                         if(selectedArticulo.getLastPrecio().getPrecioFinal() != null){
                             selectedArticulo.setProcessed(true);
                             articulosService.update(selectedArticulo);
+                             
+                            alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "updateArticulosRevision()", oldArticulo.toString(), selectedArticulo.toString());
                             clearCache();
 
                             // Load the next article or reset if none available
@@ -343,6 +352,7 @@ public class ArticulosController implements Serializable {
                     newArticulo.setPrecios(precios);
                 }
                 articulosService.create(newArticulo);
+                alertasService.registrarAlerta("Artículo creado", "Se ha creado el artículo: " + newArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.createArticulo", null, newArticulo.toString());
                 clearCache();
                 clearArticulo();
                 
@@ -356,7 +366,9 @@ public class ArticulosController implements Serializable {
 
     public void deleteArticulo() {
         if (selectedArticulo != null) {
+            var oldArticulo = selectedArticulo;
             articulosService.softDelete(selectedArticulo);
+            alertasService.registrarAlerta("Artículo eliminado", "Se ha eliminado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.deleteArticulo", oldArticulo.toString() , selectedArticulo.toString());
             clearSelectedArticulo();
         }
     }
@@ -523,8 +535,8 @@ public class ArticulosController implements Serializable {
                     } 
                 }
             }
-        } catch (Exception e) {
-            // Capturar y manejar excepciones generales
+        } catch (Exception e) {  
+            alertasService.registrarAlerta("Error al calcular el precio con utilidad", "", currentSession.getCurrentUser(), 0, "calcularPrecioConUtilidad()", null, e.getLocalizedMessage());
             System.out.println("Error: " + e.getMessage());
         }
     }
@@ -563,7 +575,7 @@ public class ArticulosController implements Serializable {
                 return;
             }
         } catch (Exception e) {
-            // Capturar y manejar excepciones generales
+            alertasService.registrarAlerta("Error al calcular el precio con utilidad", "", currentSession.getCurrentUser(), 0, "calcularPrecioConUtilidadEdit()", null, e.getLocalizedMessage());
             System.out.println("Error: " + e.getMessage());
         }
     }

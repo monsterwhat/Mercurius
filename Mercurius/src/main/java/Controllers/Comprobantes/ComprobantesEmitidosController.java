@@ -8,15 +8,21 @@ import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+
 import lombok.Data;
+
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.file.UploadedFile;
 import org.primefaces.util.LangUtils;
+
+import Controllers.SessionController; 
+import Services.AlertasService; 
 
 @Named("ComprobantesEmitidosController")
 @Data
@@ -24,6 +30,8 @@ import org.primefaces.util.LangUtils;
 public class ComprobantesEmitidosController implements Serializable {
     
     @Inject ComprobantesEmitidosService comprobanteEmitidoService;
+    @Inject SessionController sessionController;
+    @Inject AlertasService alertasService;
     
     private List<UploadedFile> files;
     private List<ComprobantesEmitidos> comprobantesEmitidos;
@@ -55,14 +63,26 @@ public class ComprobantesEmitidosController implements Serializable {
 
     public void deleteFactura() {
         if (selectedComprobanteEmitido != null) {
-            comprobanteEmitidoService.softDelete(selectedComprobanteEmitido);
-            clearFactura();
+            try {
+                var oldComprobante = selectedComprobanteEmitido;
+                comprobanteEmitidoService.softDelete(selectedComprobanteEmitido);
+                alertasService.registrarAlerta("Factura eliminada", "La factura ha sido eliminada correctamente.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.deleteFactura", oldComprobante.toString(), selectedComprobanteEmitido.toString());
+                clearFactura();
+            } catch (Exception e) {
+                alertasService.registrarAlerta("Error", "Error al eliminar la factura.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.deleteFactura", selectedComprobanteEmitido.toString(), e.getMessage());
+            }
         }
     }
     
     public void toggleFactura(){
         if(selectedComprobanteEmitido != null){
-            comprobanteEmitidoService.toggle(selectedComprobanteEmitido);
+            try {
+                var oldComprobante = selectedComprobanteEmitido;
+                comprobanteEmitidoService.toggle(selectedComprobanteEmitido);
+                alertasService.registrarAlerta("Estado de factura cambiado", "El estado de la factura ha sido cambiado correctamente.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.toggleFactura", oldComprobante.toString(), selectedComprobanteEmitido.toString());
+            } catch (Exception e) {
+                alertasService.registrarAlerta("Error", "Error al cambiar el estado de la factura.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.toggleFactura", selectedComprobanteEmitido.toString(), e.getMessage());
+            }
         }
     }
 

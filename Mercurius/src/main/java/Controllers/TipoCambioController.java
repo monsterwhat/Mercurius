@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.TipoCambio;
+import Services.AlertasService;
 import Services.TipoCambioService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -17,6 +18,8 @@ public class TipoCambioController implements Serializable {
     
     @Inject private TipoCambioService tipoCambioService;
     @Inject private SettingsController settings;
+    @Inject private AlertasService alertasService;
+    @Inject private SessionController currentSession;
 
     private List<TipoCambio> tipoCambios;
     private TipoCambio cambioActual;
@@ -24,7 +27,7 @@ public class TipoCambioController implements Serializable {
     @PostConstruct
     public void init() {
         loadTipoCambios();
-        cambioActual = getTipoCambioActual();
+        cambioActual = getTipoCambioActual(); 
     }
 
     public List<TipoCambio> loadTipoCambios() {
@@ -32,6 +35,7 @@ public class TipoCambioController implements Serializable {
             tipoCambios = tipoCambioService.listAll();
             if (tipoCambios == null || tipoCambios.isEmpty()) {
                 fetchTipoCambioFromApi();
+                alertasService.registrarAlerta("Tipo de Cambio Cargado", "Se cargó el tipo de cambio desde la API", currentSession.getCurrentUser(), 0, "loadTipoCambios()", null, null);
             }
         }
         return tipoCambios;
@@ -39,6 +43,7 @@ public class TipoCambioController implements Serializable {
     
     public void recargar(){
         cambioActual = getTipoCambioActual();
+        alertasService.registrarAlerta("Tipo de Cambio Recargado", "Se recargo el tipo de cambio", currentSession.getCurrentUser(), 0, "recargar()", null, cambioActual.toString());
     }
     
     private void fetchTipoCambioFromApi() {
