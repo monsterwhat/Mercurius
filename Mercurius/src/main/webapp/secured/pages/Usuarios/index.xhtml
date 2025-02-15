@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui" 
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets">
 
 <h:head>
     <title>Menu Principal Usuarios</title>
@@ -10,20 +11,114 @@
     <script src="../../../resources/css/style.css"/>
     <h:outputStylesheet name="primefaces/primefaces.css"/>
     <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+    
+    <style>
+        
+        .header-bar {
+            color: white; /* Ensure text contrasts with the background */
+            padding: 5px 10px;
+            text-align: center;
+            border-radius: 4px 4px 0 0; /* Rounded corners at the top */
+            font-weight: bold;
+        } 
+        
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 5px;
+            gap: 10px; /* Add spacing between cards */
+            justify-content: center; /* Center cards when wrapping */
+        }
+
+        .custom-card {
+            width: 100%; /* Default to full width for mobile */
+            margin-bottom: 10px;
+        }
+
+        /* Tablet screens: show 2 cards per row */
+        @media (min-width: 768px) {
+            .custom-card {
+                width: 48%; /* Adjust width to fit 2 cards per row with some gap */
+            }
+        }
+
+        /* Desktop screens: show 4 cards per row */
+        @media (min-width: 1024px) {
+            .custom-card {
+                width: 23%; /* Adjust width to fit 4 cards per row with some gap */
+            }
+        }
+
+        .card-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .p-button {
+            width: 100%; /* Make the buttons full-width */
+        }
+           
+    </style>
+    
 </h:head>
 
 <h:body>
-    <p:panelGrid columns="1">
-        <p:row>
-            <p:column>
-                <ui:include src="/secured/fragments/userBar.xhtml" />
-            </p:column>
-        </p:row>
-        <p:row>
-            <p:column>
-                <p:growl id="growl" showDetail="true" showSummary="true" />
-            </p:column>
-        </p:row>
-    </p:panelGrid>
+    
+    <ui:include src="/secured/fragments/userBar.xhtml" />
+    <p:growl id="growl" showDetail="true" showSummary="true" />
+     
+    <p:spacer height="1em"/>
+    
+    <p:card style="text-align: center">
+        
+        <f:facet name="header">
+            <div class="main-header-bar"/>
+        </f:facet>
+        
+        <f:facet name="title">
+            Usuarios
+        </f:facet>
+
+        <div class="card-container">
+            <!-- Reportes Facturación -->
+            <p:card class="custom-card">
+                
+                <f:facet name="header">
+                    <div class="header-bar" style="background-color: var(--blue-500)"/>
+                </f:facet>
+                
+                <f:facet name="title">
+                    Usuarios
+                </f:facet>
+
+                <div class="card-buttons"> 
+                    <p:button value="Todas las Facturas" styleClass="ui-button-info" href="/Mercurius/secured/pages/Facturas/Reportes" icon="pi pi-receipt" />
+                </div>
+                      
+            </p:card>
+
+            <!-- Reportes Recibos -->
+            <p:card class="custom-card">
+                
+                <f:facet name="header">
+                    <div class="header-bar" style="background-color: var(--purple-500)"/>
+                </f:facet>
+                
+                <f:facet name="title">
+                    Clientes
+                </f:facet>
+
+                <div class="card-buttons">
+                    <p:button value="Todas los Recibos" styleClass="ui-button-help" href="/Mercurius/secured/pages/Recibos/" icon="pi pi-book" />
+                 </div>
+                  
+            </p:card>
+
+             
+        </div>
+    </p:card>
+     
 </h:body>
 </html>

@@ -12,22 +12,18 @@
     </h:head>
 
     <h:body>
-        <p:panelGrid columns="1" layout="flex">
-            <p:column>
-                <ui:include src="/secured/fragments/userBar.xhtml" /> 
-            </p:column>
-        </p:panelGrid>
+         
+        <ui:include src="/secured/fragments/userBar.xhtml" /> 
+            
         <p:growl showDetail="true" showSummary="true" />
 
-        <p:panelGrid columns="1" layout="flex">
-            <p:card>
+             <div class="card">
                 <p:column width="30%">
                     
                 </p:column>
                 <p:column width="70%">
                     
                 </p:column>
-            </p:card>
-        </p:panelGrid>
-    </h:body>
+            </div>
+     </h:body>
 </html>

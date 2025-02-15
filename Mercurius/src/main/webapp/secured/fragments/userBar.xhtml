@@ -9,210 +9,260 @@
         <link rel="apple-touch-icon" href="#{resource['favicon/apple-touch-icon.png']}"/>
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-32x32.png']}"/>
         <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-16x16.png']}"/>
-        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon.ico']}"/>
-        
-        <style>
-            .rounded-button {
-                border-radius: 7px !important;
-                margin: 3px !important;
-            }
-            
-            @media (max-width: 1200px) {
-                .responsive-toolbar {
-                    justify-content: center !important; /* Center the content on smaller screens */
-                    margin: 0 auto; /* Center the toolbar group itself */
-                    display: flex; /* Ensure flexbox for centering */
+        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon.ico']}"/> 
+        <h:outputStylesheet name="css/theme.css" /> 
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const burger = document.querySelector('.navbar-burger');
+                const menu = document.querySelector('#navbarMenu');
+
+                if (burger) {
+                    burger.addEventListener('click', () => {
+                        burger.classList.toggle('is-active');
+                        menu.classList.toggle('is-active');
+                    });
                 }
-            }
-
-
-        </style>
-        
+            });
+        </script>
     </h:head>
-    
+
     <h:form id="MainMenu">
-        <p:card style="margin: 0px;">
-            
-            <h:outputScript>
-                function handleKeyPress(event) {
-                    if (event.key === 'F5') {
-                        event.preventDefault();
 
-                        PF('CrearTiqueteDialog').show();
-                    }
-                }
-                document.addEventListener('keydown', handleKeyPress);
-            </h:outputScript>
-            
-                <p:toolbar>
+        <h:outputScript>
+            function handleKeyPress(event) {
+            if (event.key === 'F5') {
+            event.preventDefault();
+
+            PF('CrearTiqueteDialog').show();
+            }
+            }
+            document.addEventListener('keydown', handleKeyPress);
+        </h:outputScript>
+
+        <nav class="navbar is-black" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <!-- Left-aligned items (empty here) -->
+                <a class="navbar-item" href="https://github.com/monsterwhat/Mercurius">
+                    <!-- SVG Logo (or Text) -->
+                    <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100%"  />
+                    <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100%"  />
+                </a>
+                <div class="navbar-burger burger" data-target="navbarMenu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+            <div id="navbarMenu" class="navbar-menu">
+                <div class="navbar-start">
+                    <a class="navbar-item" href="/Mercurius/secured/">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="pi pi-home"></i>
+                            </span>
+                            <span>
+                                Inicio
+                            </span>
+                        </span> 
+                    </a>
+
+
+                    <a class="navbar-item">
+                        <p class="control">
+                            <p:commandButton icon="pi pi-receipt" rendered="#{SessionController.facturacion}" styleClass="button is-dark" actionListener="#{crearTiqueteController.openNewFactura}" onsuccess="PF('CrearTiqueteDialog').show();"/>
+                        </p>
+                    </a>
                     
-                    <p:toolbarGroup align="left" styleClass="responsive-toolbar">
-                        <div>
-                            <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100px" width="100px"/>
-                            <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100px" width="100px" />
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.inventarios}">
+                        <a class="navbar-link">
+                            <span>
+                                Articulos
+                            </span>
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Articulos/">
+                                <span class="icon-text">
+                                    <i class="pi pi-box"/>
+                                </span>
+                                <span>
+                                     Articulos
+                                </span>
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Categorias/">
+                                <span class="icon-text">
+                                    <i class="pi pi-truck"/>
+                                </span>
+                                <span>
+                                    Categorias
+                                </span>
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Inventario/">
+                                <span class="icon-text">
+                                    <i class="pi pi-warehouse"/>
+                                </span>
+                                <span>
+                                    Inventarios
+                                </span>
+                            </a>
+                        </div> 
+                    </p:outputPanel>
+                     
+                    <a class="navbar-item" href="/Mercurius/secured/pages/Usuarios/">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="pi pi-user"></i>
+                            </span>
+                            <span>
+                                Usuarios
+                            </span>
+                        </span> 
+                    </a> 
+
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.tributacion}">
+                        <a class="navbar-link">
+                            Tributacion
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item">
+                                <span class="icon-text">
+                                    <i class="pi pi-building-columns"/>
+                                </span>
+                                <span>
+                                    Consultas
+                                </span>
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/CaByS/">
+                                <span class="icon-text">
+                                    <i class="pi pi-book"/>
+                                </span>
+                                <span>
+                                    CaByS
+                                </span>
+                            </a>
+                            <a class="navbar-item">
+                                <span class="icon-text">
+                                    <i class="pi pi-dollar"/>
+                                </span>
+                                <span onclick="PF('dollarValueDialog').show();">
+                                    Tipo de cambio
+                                </span>
+                            </a>
                         </div>
-                    </p:toolbarGroup>
-                    
-                    <p:toolbarGroup>
-                        
-                        <p:column rendered="#{SessionController.facturacion}">
-                        <p:commandButton id="FacturacionButton" value="Facturación" style="flex: 1; width: 100%;"
-                                     styleClass="rounded-button ui-button-primary" 
-                                     icon="pi pi-receipt"/>
-                        <p:menu overlay="true" trigger="FacturacionButton" my="left top" at="left bottom">
-                            <p:submenu label="Facturación">
-                                <p:menuitem value="Crear Facturas" icon="pi pi-cart-plus" actionListener="#{crearTiqueteController.openNewFactura}" onclick="PF('CrearTiqueteDialog').show();"/>
-                            </p:submenu>
-                        </p:menu>
-                            <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/>
-                        </p:column>
 
-                        <p:column rendered="#{SessionController.inventarios}">
-                            <p:commandButton id="ArticulosButton" value="Articulos" style="flex: 1; width: 100%;"
-                                             styleClass="rounded-button ui-button-success" 
-                                             icon="pi pi-box" />
-                            <p:menu overlay="true" trigger="ArticulosButton" my="left top" at="left bottom">
-                                <p:submenu label="Categorias">
-                                    <p:menuitem value="Ver Departamentos" icon="pi pi-truck" url="/Mercurius/secured/pages/Departamentos/"/>
-                                    <p:menuitem value="Ver Familias" icon="pi pi-th-large" url="/Mercurius/secured/pages/Familias/"/>
-                                </p:submenu>
-                                <p:submenu label="Artículos">
-                                    <p:menuitem value="Catalogo Actual" icon="pi pi-check-circle" url="/Mercurius/secured/pages/Articulos/catalogoActual"/>
-                                    <p:menuitem value="Catalogo Pendiente" icon="pi pi-hourglass" url="/Mercurius/secured/pages/Articulos/catalogoPendiente"/>
-                                    <p:menuitem value="Artículos Activos" icon="pi pi-check" url="/Mercurius/secured/pages/Articulos/ArticulosActivos"/>
-                                    <p:menuitem value="Artículos Inactivos" icon="pi pi-times" url="/Mercurius/secured/pages/Articulos/ArticulosInactivos"/>
-                                </p:submenu>
-                                <p:submenu label="Promociones">
-                                    <p:menuitem value="Promociones" icon="pi pi-sparkles" url="/Mercurius/secured/pages/Articulos/Promociones"/>
-                                </p:submenu>
-                            </p:menu>
-                        </p:column>
+                    </p:outputPanel>
 
-                        <p:column rendered="#{SessionController.inventarios}">
-                            <p:commandButton id="InventariosButton" value="Inventarios" style="flex: 1; width: 100%;"
-                                             styleClass="rounded-button ui-button-info" 
-                                             icon="pi pi-warehouse" />
-                            <p:menu overlay="true" trigger="InventariosButton" my="left top" at="left bottom">
-                                <p:submenu label="Movimientos">
-                                    <p:menuitem value="Ajustes Actuales" icon="pi pi-check-circle" url="/Mercurius/secured/pages/Inventario/AjustesActuales"/>
-                                    <p:menuitem value="Ajustes Pendientes" icon="pi pi-hourglass" url="/Mercurius/secured/pages/Inventario/AjustesPendientes"/>
-                                    <p:menuitem value="Ajustes Activos" icon="pi pi-check" url="/Mercurius/secured/pages/Inventario/AjustesActivos"/>
-                                    <p:menuitem value="Ajustes Inactivos" icon="pi pi-times" url="/Mercurius/secured/pages/Inventario/AjustesInactivos"/>
-                                </p:submenu>
-                                <p:submenu label="Historico Precios">
-                                    <p:menuitem value="Articulos" icon="pi pi-chart-bar" url="/Mercurius/secured/pages/Inventario/Precios"/>
-                                </p:submenu>
-                            </p:menu>
-                        </p:column>
+                    <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
 
-                        <p:column rendered="#{SessionController.usuarios}">
-                            <p:commandButton id="UsuariosButton" value="Usuarios" style="flex: 1; width: 100%;"
-                                             styleClass="rounded-button ui-button-help" 
-                                             icon="pi pi-user" />
-                            <p:menu overlay="true" trigger="UsuariosButton" my="left top" at="left bottom">
-                                <p:submenu label="Usuarios">
-                                    <p:menuitem value="Ver Usuarios" icon="pi pi-users" url="/Mercurius/secured/pages/Usuarios/menu.xhtml"/>
-                                    <p:menuitem value="Ver Clientes" icon="pi pi-id-card" url="/Mercurius/secured/pages/Clientes/"/>
-                                </p:submenu>
-                            </p:menu>
-                        </p:column>
+                    <p:outputPanel class="navbar-item"  rendered="#{SessionController.registros}">
+                        <a style="color: white" href="/Mercurius/secured/pages/Registros/">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="pi pi-book"></i>
+                            </span>
+                            <span>
+                                Reportes
+                            </span>
+                        </span> 
+                    </a>  
+                    </p:outputPanel> 
 
-                        <p:column rendered="#{SessionController.tributacion}">
-                            <p:commandButton id="TributacionButton" value="Tributación" style="flex: 1; width: 100%;"
-                                             styleClass="rounded-button ui-button-danger" 
-                                             icon="pi pi-money-bill" />
-                            <p:menu overlay="true" trigger="TributacionButton" my="left top" at="left bottom">
-                                <p:submenu label="Tributación">
-                                    <p:menuitem value="Consultas" icon="pi pi-book" disabled="true"/>
-                                    <p:menuitem value="CaByS" icon="pi pi-book" url="/Mercurius/secured/pages/CaByS/"/>
-                                    <p:menuitem value="Tipo de Cambio" icon="pi pi-dollar" onclick="PF('dollarValueDialog').show();"/>
-                                </p:submenu>
-                            </p:menu>
-                            <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
-                        </p:column>
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.admin}">
+                        <a class="navbar-link">
+                            Ajustes
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Impresoras/">
+                                <span class="icon-text">
+                                    <i class="pi pi-print"/>
+                                </span>
+                                <span>
+                                    Menu de Impresoras
+                                </span>
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Correos/Reportes">
+                                <span class="icon-text">
+                                    <i class="pi pi-at"/>
+                                </span>
+                                <span>
+                                    Menu de Correos
+                                </span>
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Aplicacion/">
+                                <span class="icon-text">
+                                    <i class="pi pi-crown"/>
+                                </span>
+                                <span>
+                                    Menu de Aplicacion
+                                </span>
+                            </a>
+                        </div>
 
-                        <p:column rendered="#{SessionController.registros}">
-                            <p:button id="RegistrosButton" value="Reportes" style="flex: 1; width: 100%;"
-                                             styleClass="rounded-button ui-button-warning" 
-                                             icon="pi pi-book" href="/Mercurius/secured/pages/Registros/" />
-                        </p:column>
+                    </p:outputPanel>
 
-                        <p:column rendered="#{SessionController.admin}">
-                            <p:commandButton id="SettingsButton" value="Ajustes" style="flex: 1; width: 100%;"
-                                             styleClass="rounded-button ui-button-secondary" 
-                                             icon="pi pi-cog"/>
-                            <p:menu overlay="true" trigger="SettingsButton" my="left top" at="left bottom" collision="fit">
-                                <p:submenu label="Ajustes de impresion">
-                                    <p:menuitem value="Menu de Impresoras" icon="pi pi-print" url="/Mercurius/secured/pages/Impresoras/"/>
-                                </p:submenu>
-                                <p:submenu label="Ajustes de Correos">
-                                    <p:menuitem value="Menu de Reportes" icon="pi pi-at"  url="/Mercurius/secured/pages/Correos/Reportes"/>
-                                </p:submenu>
-                                <p:submenu label="Ajustes de Aplicacion">
-                                    <p:menuitem value="Menu de Aplicacion" icon="pi pi-crown"  url="/Mercurius/secured/pages/Aplicacion/"/>
-                                </p:submenu>
-                            </p:menu>
-                        </p:column>
-                        
-                    </p:toolbarGroup>
-                    
-                    <p:toolbarGroup align="right">
+                </div>
+
+                <div class="navbar-end">
+                    <!-- Logout Button -->
+                    <div class="navbar-item logout-button">
                         <p:commandButton styleClass="rounded-button ui-button-secondary" 
                                          icon="pi pi-user" label="Menu"
                                          value="Perfil" oncomplete="PF('userSettingsDialog').show()" />
-                    </p:toolbarGroup>
-
-                </p:toolbar>
-        </p:card>
+                    </div>
+                </div>
+            </div>
+        </nav>
     </h:form>
 
     <p:dialog header="Menu de Usuario" widgetVar="userSettingsDialog" modal="true"
               fitViewport="true" responsive="true" dynamic="true" cache="false" >
         <h:form id="userSettingsForm" >
             <p:growl showDetail="true" showSummary="true" />
-                <p:card>
-                    <p:panelGrid columns="3" layout="grid">
-                        <p:outputPanel styleClass="ui-text-align-center">
-                            <h:outputText value="Nombre de usuario:"/>
-                        </p:outputPanel>
-                        <p:outputPanel styleClass="ui-text-align-center">
-                            <h:outputText value="#{SessionController.currentUser.username}"/>
-                        </p:outputPanel>
-                        <p:outputPanel>
-                            <p:commandButton icon="pi pi-pencil" oncomplete="PF('nameDialog').show()" 
-                                             styleClass="rounded-button ui-button-help"
-                                             actionListener="#{SessionController.openUsername()}"/>
-                        </p:outputPanel>
+            <p:card>
+                <p:panelGrid columns="3" layout="grid">
+                    <p:outputPanel styleClass="ui-text-align-center">
+                        <h:outputText value="Nombre de usuario:"/>
+                    </p:outputPanel>
+                    <p:outputPanel styleClass="ui-text-align-center">
+                        <h:outputText value="#{SessionController.currentUser.username}"/>
+                    </p:outputPanel>
+                    <p:outputPanel>
+                        <p:commandButton icon="pi pi-pencil" oncomplete="PF('nameDialog').show()" 
+                                         styleClass="rounded-button ui-button-help"
+                                         actionListener="#{SessionController.openUsername()}"/>
+                    </p:outputPanel>
 
-                        <p:outputPanel styleClass="ui-text-align-center">
-                            <h:outputText value="Correo Electronico:"/>
-                        </p:outputPanel>
-                        <p:outputPanel styleClass="ui-text-align-center">
-                            <h:outputText value="#{SessionController.currentUser.email}"/>
-                        </p:outputPanel>
-                        <p:outputPanel styleClass="ui-text-align-center">
-                            <p:commandButton icon="pi pi-pencil" oncomplete="PF('emailDialog').show()"
-                                             styleClass="rounded-button ui-button-help"
-                                             actionListener="#{SessionController.openEmail()}"/>
-                        </p:outputPanel>
-                    </p:panelGrid>
-                </p:card>
-            
-                <p:card>
-                    <p:commandButton icon="pi pi-heart-fill" value="Cambiar Estilo Visual" onclick="PF('themeDialog').show()" 
+                    <p:outputPanel styleClass="ui-text-align-center">
+                        <h:outputText value="Correo Electronico:"/>
+                    </p:outputPanel>
+                    <p:outputPanel styleClass="ui-text-align-center">
+                        <h:outputText value="#{SessionController.currentUser.email}"/>
+                    </p:outputPanel>
+                    <p:outputPanel styleClass="ui-text-align-center">
+                        <p:commandButton icon="pi pi-pencil" oncomplete="PF('emailDialog').show()"
+                                         styleClass="rounded-button ui-button-help"
+                                         actionListener="#{SessionController.openEmail()}"/>
+                    </p:outputPanel>
+                </p:panelGrid>
+            </p:card>
+
+            <p:card>
+                <p:commandButton icon="pi pi-heart-fill" value="Cambiar Estilo Visual" onclick="PF('themeDialog').show()" 
                                  styleClass="rounded-button ui-button-info" style="width: 100%;"/>
-                    <p:spacer height="10"/>
-                    <p:commandButton icon="pi pi-key" value="Cambiar Contrasena" oncomplete="PF('passwordDialog').show()" 
-                             styleClass="rounded-button ui-button-help" style="width: 100%;"
-                             actionListener="#{SessionController.openPassword()}"/> 
-                    <p:spacer height="10"/>
-                    <p:commandButton value="Cerrar Session" styleClass="rounded-button ui-button-danger" 
-                     icon="pi pi-power-off" actionListener="#{SessionController.logOut()}" style="width: 100%;" />
-                </p:card>
-            
+                <p:spacer height="10"/>
+                <p:commandButton icon="pi pi-key" value="Cambiar Contrasena" oncomplete="PF('passwordDialog').show()" 
+                                 styleClass="rounded-button ui-button-help" style="width: 100%;"
+                                 actionListener="#{SessionController.openPassword()}"/> 
+                <p:spacer height="10"/>
+                <p:commandButton value="Cerrar Session" styleClass="rounded-button ui-button-danger" 
+                                 icon="pi pi-power-off" actionListener="#{SessionController.logOut()}" style="width: 100%;" />
+            </p:card>
+
         </h:form>
     </p:dialog>
-    
+
     <p:dialog header="Cambiar Tema" widgetVar="themeDialog" dynamic="true" cache="false" modal="true">
         <h:form>
             <p:panelGrid columns="2" layout="flex">
@@ -228,14 +278,15 @@
                     <f:selectItem itemLabel="Nova Colored" itemValue="nova-colored" />
                     <f:selectItem itemLabel="Nova Dark" itemValue="nova-dark" />
                     <f:selectItem itemLabel="Nova Light" itemValue="nova-light" />
+                    <f:selectItem itemLabel="Bulma" itemValue="none"/>
                 </p:selectOneMenu>
             </p:panelGrid>
-                <br/>
+            <br/>
             <p:commandButton value="Seleccionar" actionListener="#{ThemeController.updateTheme()}"
                              styleClass="rounded-button ui-button-info" style="width: 100%;" />
         </h:form>
     </p:dialog>
-    
+
     <!-- Dialog for changing Name -->
     <p:dialog header="Cambiar Nombre de Usuario" dynamic="true" cache="false" widgetVar="nameDialog" modal="true" 
               fitViewport="true" responsive="true">
@@ -259,7 +310,7 @@
             </div>
         </h:form>
     </p:dialog>
-    
+
     <!-- Dialog for changing Password -->
     <p:dialog header="Change Password" dynamic="true" cache="false"  widgetVar="passwordDialog" modal="true"
               fitViewport="true" responsive="true">
@@ -292,4 +343,6 @@
         </h:form>
     </p:dialog>
 
+    <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/> 
+    
 </ui:composition>

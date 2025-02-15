@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Cabys;
+import Services.AlertasService;
 import Services.CabysService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -24,7 +25,9 @@ import org.primefaces.util.LangUtils;
 public class CabysController implements Serializable {
     
     @Inject private CabysService cabysService;
+    @Inject private SessionController currentSession;
     @Inject private ArticulosController articulos;
+    @Inject private AlertasService alertas;
 
     private List<Cabys> catalogo;
     private Cabys selectedCabys;
@@ -75,12 +78,16 @@ public class CabysController implements Serializable {
     }
 
     public void updateCabys() {
+        var oldCabys = selectedCabys;
         cabysService.update(selectedCabys);
+        alertas.registrarAlerta("CABYS actualizado", "Se ha actualizado el CABYS: " + selectedCabys.getCodigo(), currentSession.getCurrentUser(), 0, "CabysController.updateCabys", oldCabys.toString(), selectedCabys.toString());
         clearSelectedCabys();
     }
 
     public void createCabys() {
         cabysService.create(newCabys);
+        //Over 300000 codes exist...
+        //alertas.registrarAlerta("CABYS creado", "Se ha creado el CABYS: " + newCabys.getCodigo(), currentSession.getCurrentUser(), 0, "CabysController.createCabys", null, newCabys.toString());
         clearSelectedCabys();
     }
 
@@ -88,6 +95,7 @@ public class CabysController implements Serializable {
         if (selectedCabys != null) {
             if (!selectedCabys.getCodigo().isBlank()) {
                 cabysService.delete(selectedCabys);
+                alertas.registrarAlerta("CABYS eliminado", "Se ha eliminado el CABYS: " + selectedCabys.getCodigo(), currentSession.getCurrentUser(), 0, "CabysController.deleteCabys", selectedCabys.toString(), null);
                 clearSelectedCabys();
             }
         }

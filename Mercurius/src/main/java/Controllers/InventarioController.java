@@ -4,6 +4,7 @@ import Models.Inventario;
 import Models.Articulos;
 import Services.InventarioService;
 import Services.ArticulosService;
+import Services.AlertasService;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Meta;
@@ -41,6 +42,7 @@ public class InventarioController implements Serializable {
     
     @Inject private InventarioService inventarioService;
     @Inject private ArticulosService articuloService;
+    @Inject private AlertasService alertasService;
     @Inject private SessionController currentSession;
     
     private List<Inventario> inventarioActivo;
@@ -121,6 +123,7 @@ public class InventarioController implements Serializable {
     public void updateInventarioRevisionDialog() {
         if(currentSession.isValid()){
             if(selectedInventario != null){
+                var oldInventario = selectedInventario;
                 selectedInventario.setUsuario(currentSession.getCurrentUser());
                 selectedInventario.setProcessed(true);
                 if(selectedInventario.getArticulo() != null){
@@ -130,6 +133,7 @@ public class InventarioController implements Serializable {
                         selectedInventario.setTipoMovimiento("Stock por Factura");
                         selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
                         inventarioService.updateAndDisable(selectedInventario);
+                        alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventarioRevisionDialog", oldInventario.toString(), selectedInventario.toString());
                         clearSelectedInventario();
                         PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
                     }
@@ -150,6 +154,7 @@ public class InventarioController implements Serializable {
     public void updateInventariosRevisionDialog() {
         if(currentSession.isValid()){
             if(selectedInventario != null){
+                var oldInventario = selectedInventario;
                 selectedInventario.setUsuario(currentSession.getCurrentUser());
                 selectedInventario.setProcessed(true);
                 if(selectedInventario.getArticulo() != null){
@@ -159,6 +164,8 @@ public class InventarioController implements Serializable {
                         selectedInventario.setTipoMovimiento("Stock por Factura");
                         selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
                         inventarioService.updateAndDisable(selectedInventario);
+                        // Save an alert (log) for updating an inventory item
+                        alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventariosRevisionDialog", oldInventario.toString(), selectedInventario.toString());
                         clearSelectedInventario();
                         
                         // Load the next ajuste or reset if none available
@@ -235,6 +242,8 @@ public class InventarioController implements Serializable {
                         Date today = new Date();
                         newInventario.setFechaMovimiento(today);
                         inventarioService.createWithStock(newInventario);
+                        // Save an alert (log) for creating an inventory item
+                        alertasService.registrarAlerta("Inventario creado", "Se ha creado el inventario: " + newInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.createInventarioDialog", null, newInventario.toString());
                         clearSelectedInventario();
                         PrimeFaces.current().executeScript("PF('CrearAjusteDialog').hide();");
 
@@ -252,7 +261,10 @@ public class InventarioController implements Serializable {
 
     public void deleteInventario() {
         if (selectedInventario != null) {
+            var oldInventario = selectedInventario;
             inventarioService.softDelete(selectedInventario);
+            // Save an alert (log) for deleting an inventory item
+            alertasService.registrarAlerta("Inventario eliminado", "Se ha eliminado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.deleteInventario", oldInventario.toString() , selectedInventario.toString());
             clearSelectedInventario();
         }
     }
@@ -375,7 +387,7 @@ public class InventarioController implements Serializable {
     
     public void exportPDF() throws IOException, DocumentException {
         FacesContext facesContext = FacesContext.getCurrentInstance();
-        DataTable dataTable = (DataTable) facesContext.getViewRoot().findComponent("AjustesActivos:InventarioTableData");
+        DataTable dataTable = (DataTable) facesContext.getViewRoot().findComponent("Inventarios:AjustesActivos:InventarioTableData");
 
         // Create a document with custom page size (width: 80mm, height: 200mm) and margins (5px)
         //Document document = new Document(new Rectangle(80f, 200f), 5, 5, 5, 5);

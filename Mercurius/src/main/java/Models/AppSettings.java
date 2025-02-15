@@ -5,6 +5,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
 /**
@@ -13,11 +15,14 @@ import lombok.Data;
 
 @Data
 @Entity
+@Table(name = "appsettings",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"NombrePerfil"}))
 public class AppSettings {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int Id;
+    
     private String NombrePerfil; //Nombre del Perfil
     @Lob private byte[] Logo; //Logo de la empresa
     private String LogoMimeType; //Practicamente la extencion de la imagen.

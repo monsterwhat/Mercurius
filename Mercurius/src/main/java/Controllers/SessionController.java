@@ -1,7 +1,9 @@
 package Controllers;
 
 import Models.Users;
+import Services.AlertasService;
 import Services.LoginService;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.ExternalContext;
@@ -46,9 +48,16 @@ public class SessionController implements Serializable{
     private String confirmPassword;
     
     @Inject private LoginService loginService;
+    
     @Inject FacesContext facesContext;
     @Inject SecurityContext securityContext;
+    @Inject private AlertasService alerta;
 
+    @PostConstruct
+    public void init(){
+        loginService.init();
+    }
+    
     public void executeLogin(){
         try {
             switch (processAuthentication()) {
@@ -59,6 +68,7 @@ public class SessionController implements Serializable{
                 case SUCCESS -> {
                     if(securityContext.getCallerPrincipal().getName() != null){
                         currentUser = loginService.getSession(securityContext.getCallerPrincipal().getName());
+                        alerta.registrarAlerta("Usuario Conectado", "El usuario se conectó", currentUser, 0, "executeLogin()", null, null);
                         redirectToSecuredArea();
                     }
                 }   
@@ -69,6 +79,7 @@ public class SessionController implements Serializable{
             }
             
         } catch (IOException e) {
+            //TODO ALERT OF ERROR
             System.out.println("Error logging in " + e.getLocalizedMessage());
         }
     }
@@ -83,10 +94,13 @@ public class SessionController implements Serializable{
             ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
             ec.redirect(ec.getRequestContextPath() + "/index");
             ec.invalidateSession(); // Invalidate the session
+            alerta.registrarAlerta("Usuario Desconectado", "El usuario se desconectó", getCurrentUser(), 0, "logOut()", null, null);
             this.currentUser = null;
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Logout successful!"));
+            
         } catch (IOException e) {
             // Handle the IOException
+            //TODO ALERT OF ERROR
             e.printStackTrace();
         }
     }
@@ -162,6 +176,7 @@ public class SessionController implements Serializable{
         if(newUsername != null){
             if(!newUsername.isBlank()){
                 if(!currentUser.getUsername().equals(newUsername)){
+                    alerta.registrarAlerta("Nombre de Usuario Cambiado", "Se cambió el nombre de usuario a: " + newUsername, getCurrentUser(), 0, "changeName()", currentUser.getUsername(), newUsername);
                     loginService.updateUsername(currentUser, newUsername);
                     infoMessage("Se actualizo el nombre de usuario.");
                     newUsername = null;
@@ -178,6 +193,7 @@ public class SessionController implements Serializable{
         if(newEmail != null){
             if(!newEmail.isBlank()){
                 if(!currentUser.getEmail().equals(newEmail)){
+                    alerta.registrarAlerta("Correo Electrónico Cambiado", "Se cambió el correo electrónico a: " + newEmail, getCurrentUser(), 0, "changeEmail()", currentUser.getEmail(), newEmail);
                     loginService.updateEmail(currentUser, newEmail);
                     infoMessage("Se actualizo el correo electronico.");
                     newEmail = null;
@@ -195,6 +211,7 @@ public class SessionController implements Serializable{
             if(!newPassword.isBlank()){
                 if(newPassword.equals(confirmPassword)){
                     loginService.updatePassword(currentUser, newPassword);
+                    alerta.registrarAlerta("Contraseña Cambiada", "Se cambió la contraseña", getCurrentUser(), 0, "changePassword()", null, null);
                     infoMessage("Se actualizo la contrasena.");
                     newPassword = null;
                 }else{

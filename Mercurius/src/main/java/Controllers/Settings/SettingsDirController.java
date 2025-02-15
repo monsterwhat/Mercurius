@@ -1,8 +1,10 @@
 package Controllers.Settings;
 
+import Controllers.SessionController;
 import Models.AppSettings;
 import Services.AppSettingsService;
 import Services.EmailService;
+import Services.AlertasService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -35,6 +37,8 @@ public class SettingsDirController implements Serializable {
     @Inject AppSettingsService settingsService;
     @Inject private ServletContext servletContext;
     @Inject private EmailService emailer;
+    @Inject private AlertasService alertasService;
+    @Inject private SessionController currentSession;
     
     @PostConstruct
     private void init(){
@@ -97,11 +101,19 @@ public class SettingsDirController implements Serializable {
     }
     
     public void updateSelectedSettings(){
+        var oldSettings = selectedSettings;
         settingsService.update(selectedSettings);
+        
+        // Save an alert (log) for updating the selected settings
+        alertasService.registrarAlerta("Configuración actualizada", "Se ha actualizado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.updateSelectedSettings", oldSettings.toString(), selectedSettings.toString());
     }
     
     public void disableSelectedSettings(){
+        var oldSettings = selectedSettings;
         settingsService.disable(selectedSettings);
+        
+        // Save an alert (log) for disabling the selected settings
+        alertasService.registrarAlerta("Configuración deshabilitada", "Se ha deshabilitado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.disableSelectedSettings", oldSettings.toString(), selectedSettings.toString());
     }
     
     public String getMainDirectory(){

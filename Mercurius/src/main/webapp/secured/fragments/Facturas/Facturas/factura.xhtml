@@ -3,9 +3,9 @@
                 xmlns:f="jakarta.faces.core"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="jakarta.faces.facelets">
-    
+
     <script>
-        $(document).on('keydown', ':tabbable', function(e) {
+        $(document).on('keydown', ':tabbable', function (e) {
 
             if (e.key === "Enter") {
                 e.preventDefault();
@@ -13,188 +13,192 @@
                 var $canfocus = $(':tabbable:visible');
                 var index = $canfocus.index(document.activeElement) + 1;
 
-                if (index >= $canfocus.length) index = 0;
+                if (index >= $canfocus.length)
+                    index = 0;
                 $canfocus.eq(index).focus();
             }
 
         });
     </script>
-    
+
     <p:dialog widgetVar="CrearTiqueteDialog" maximizable="true" closable="false" dynamic="true" 
-        fitViewport="true" responsive="true" cache="false" id="CrearTiqueteDialog">
+              fitViewport="true" responsive="true" cache="false" id="CrearTiqueteDialog">
         <p:outputPanel deferred="true" rendered="#{not empty crearTiqueteController.newFactura}" layout="flex">
             <p:panel header="Crear Factura - #{SessionController.currentUser.username}"  >
-                    <p:card>
-                        <h:form id="crearTiquete">
-                            <p:growl id="growl" showDetail="true" showSummary="true"/>
-                        
-                                <!-- Tipo Factura y Cliente -->
-                                <p:column>
-                                    <div class="ui-inputgroup">
-                                        <div class="ui-inputgroup-addon">Tipo de Factura</div>
-                                        <p:selectOneMenu id="group" disabled="true" >
-                                            <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
-                                            <f:selectItems/>
-                                        </p:selectOneMenu>
-                                        <div class="ui-inputgroup-addon">Cliente</div>
-                                        <p:commandButton id="btnCliente" icon="pi pi-address-book" value="Seleccionar" styleClass="ui-button-warning" 
-                                                         oncomplete="PF('ClienteDialog').show();" rendered="#{!not empty crearTiqueteController.selectedClient.name}" />
-                                        <div class="ui-inputgroup-addon">
-                                            <h:outputText value="#{crearTiqueteController.selectedClient.name}  " rendered="#{not empty crearTiqueteController.selectedClient.name}" />
-                                            <p:commandButton icon="pi pi-times" actionListener="#{crearTiqueteController.resetClient()}"
-                                                             styleClass="rounded-button ui-button-danger" update="@this"
-                                                             style="height: 1.5em; width: 1.5em" process="@this"
-                                                             rendered="#{not empty crearTiqueteController.selectedClient.name}"/>
-                                        </div>
-                                    </div>
-                                </p:column>
-                                
-                                <p:spacer height="1em"/>
-                                
-                                <!-- Cantidad y codigoBarra -->
-                                <p:column>
-                                    <div class="ui-inputgroup">
-                                        <div class="ui-inputgroup-addon">Cantidad</div>
-                                        <p:inputNumber id="cantidad" value="#{crearTiqueteController.cantidadArticulo}"
-                                                        minValue="1"  emptyValue="1" >
-                                            <p:ajax event="change" />
-                                        </p:inputNumber>
-                                        <div class="ui-inputgroup-addon"><i class="pi pi-barcode"/></div>
-                                        <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{crearTiqueteController.codigoBarra}"
-                                                     onkeydown="if (event.keyCode === 13) { event.preventDefault(); }" tabindex="0" >
-                                            <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
-                                            listener="#{crearTiqueteController.processCodigoBarra}" update="@form"/>
-                                        </p:inputText>
-                                        <p:commandButton icon="pi pi-search" styleClass="ui-button-warning" 
-                                                         oncomplete="PF('CodigoBarraDialog').show();"/>
-                                    </div>
-                                </p:column>
-                                    
-                                <p:spacer height="1em"/>
+                <p:card>
+                    <h:form id="crearTiquete">
+                        <p:growl id="growl" showDetail="true" showSummary="true"/>
 
-                            </h:form>
+                        <!-- Tipo Factura y Cliente -->
+                        <p:column>
+                            <div class="ui-inputgroup">
+                                <div class="ui-inputgroup-addon">Tipo de Factura</div>
+                                <p:selectOneMenu id="group" disabled="true" >
+                                    <f:selectItem itemLabel="Tipo Contado" itemValue="contado"/>
+                                    <f:selectItems/>
+                                </p:selectOneMenu>
+                                <div class="ui-inputgroup-addon">Cliente</div>
+                                <p:commandButton id="btnCliente" icon="pi pi-address-book" value="Seleccionar" styleClass="ui-button-warning" 
+                                                 oncomplete="PF('ClienteDialog').show();" rendered="#{!not empty crearTiqueteController.selectedClient.name}" />
+                                <div class="ui-inputgroup-addon">
+                                    <h:outputText value="#{crearTiqueteController.selectedClient.name}  " rendered="#{not empty crearTiqueteController.selectedClient.name}" />
+                                    <p:commandButton icon="pi pi-times" actionListener="#{crearTiqueteController.resetClient()}"
+                                                     styleClass="rounded-button ui-button-danger" update="@this"
+                                                     style="height: 1.5em; width: 1.5em" process="@this"
+                                                     rendered="#{not empty crearTiqueteController.selectedClient.name}"/>
+                                </div>
+                            </div>
+                        </p:column>
+
+                        <p:spacer height="1em"/>
+
+                        <!-- Cantidad y codigoBarra -->
+                        <p:column>
+                            <div class="ui-inputgroup">
+                                <div class="ui-inputgroup-addon">Cantidad</div>
+                                <p:inputNumber id="cantidad" value="#{crearTiqueteController.cantidadArticulo}"
+                                               minValue="1"  emptyValue="1" >
+                                    <p:ajax event="change" />
+                                </p:inputNumber>
+                                <div class="ui-inputgroup-addon"><i class="pi pi-barcode"/></div>
+                                <p:inputText id="codigoBarra" placeholder="Codigo de Barra" value="#{crearTiqueteController.codigoBarra}"
+                                             onkeydown="if (event.keyCode === 13) {
+                                                                 event.preventDefault();
+                                                             }" tabindex="0" >
+                                    <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
+                                            listener="#{crearTiqueteController.processCodigoBarra}" update="crearTiquete"/>
+                                </p:inputText>
+                                <p:commandButton icon="pi pi-search" styleClass="ui-button-warning" 
+                                                 oncomplete="PF('CodigoBarraDialog').show();"/>
+                            </div>
+                        </p:column>
+
+                        <p:spacer height="1em"/>
+
 
                         <p:dataTable id="carrito" var="carrito"  value="#{crearTiqueteController.carrito}" reflow="true" 
-                                        showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
-                                        scrollable="true" scrollHeight="250" >
-                               <p:autoUpdate/>
-                               <p:column headerText="Cantidad">
-                                   <h:outputText value="#{carrito.cantidad}"/>
-                               </p:column>
-                               <p:column headerText="Nombre">
-                                   <h:outputText value="#{carrito.articulo.nombre}"/>
-                               </p:column>
-                               <p:column headerText="Descuento">
-                                   <h:outputText value="#{carrito.descuento}"/>
-                               </p:column>
-                               <p:column headerText="Precio">
-                                    <h:outputText value="#{crearTiqueteController.getArticuloPrecioFinal(carrito)}"/>
-                               </p:column>
-                               <p:column width="5%">
-                                   <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" 
-                                                    actionListener="#{crearTiqueteController.removeArticulo(carrito)}" />
-                               </p:column>
+                                     showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
+                                     scrollable="true" scrollHeight="250" >
+                            <p:autoUpdate/>
+                            <p:column headerText="Cantidad">
+                                <h:outputText value="#{carrito.cantidad}"/>
+                            </p:column>
+                            <p:column headerText="Nombre">
+                                <h:outputText value="#{carrito.articulo.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Descuento">
+                                <h:outputText value="#{carrito.descuento}"/>
+                            </p:column>
+                            <p:column headerText="Precio">
+                                <h:outputText value="#{crearTiqueteController.getArticuloPrecioFinal(carrito)}"/>
+                            </p:column>
+                            <p:column width="5%">
+                                <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" 
+                                                 actionListener="#{crearTiqueteController.removeArticulo(carrito)}" />
+                            </p:column>
                         </p:dataTable>
-                        
-                    </p:card>
-                    
-                    <p:column>
-                        <!--Total-->
-                        <p:card style=" text-align: center">
-                            <p:panelGrid layout="grid" columns="3">
-                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Descuento: #{crearTiqueteController.calculateTotalCarritoDescuento()}"/>
-                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total IVA: #{crearTiqueteController.calculateTotalCarritoImpuesto()}"/>
-                                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Carrito: #{crearTiqueteController.calculateTotalCarrito()}"/>
-                                <p:autoUpdate />
-                            </p:panelGrid>
-                        </p:card>
-                    </p:column>
-                    
-                    <p:panelGrid layout="grid" columns="2">
 
-                        <p:commandButton style="width: 100%" styleClass="ui-button-secondary" icon="pi pi-times"  value="Cancelar"
-                                     actionListener="#{crearTiqueteController.cancel()}" process="@form" update="@this"
-                                     onclick="PF('CrearTiqueteDialog').hide();"/>
-                        
-                        <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-check"  value="Facturar"
-                                     process="@form" update="@this" onclick="PF('PagoDialog').show();"/>
-                        
-                    </p:panelGrid>
-                    
-                    <p:autoUpdate/>
-                    <h:inputHidden id="resetFlag" value="#{crearTiqueteController.resetFlag}" />
-                </p:panel>
+                        <p:column>
+                            <!--Total-->
+                            <p:card style=" text-align: center">
+                                <p:panelGrid layout="grid" columns="3">
+                                    <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Descuento: #{crearTiqueteController.calculateTotalCarritoDescuento()}"/>
+                                    <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total IVA: #{crearTiqueteController.calculateTotalCarritoImpuesto()}"/>
+                                    <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Carrito: #{crearTiqueteController.calculateTotalCarrito()}"/>
+                                    <p:autoUpdate />
+                                </p:panelGrid>
+                            </p:card>
+                        </p:column>
+
+
+                        <p:panelGrid layout="grid" columns="2">
+
+                            <p:commandButton style="width: 100%" styleClass="ui-button-secondary" icon="pi pi-times"  value="Cancelar"
+                                             actionListener="#{crearTiqueteController.cancel()}" process="@form" update="@this"
+                                             onclick="PF('CrearTiqueteDialog').hide();"/>
+
+                            <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-check"  value="Facturar"
+                                             process="@form" update="pago" onclick="PF('PagoDialog').show();"/>
+
+                        </p:panelGrid>
+
+                        <p:autoUpdate/>
+                        <h:inputHidden id="resetFlag" value="#{crearTiqueteController.resetFlag}" />
+                    </h:form>
+                </p:card>
+
+            </p:panel>
         </p:outputPanel>           
     </p:dialog>
-    
+
     <p:dialog widgetVar="PagoDialog" dynamic="true" cache="false" 
               closable="false" modal="true" fitViewport="true" responsive="true">
-        
+
         <h:form id="pago" >
-            
+
             <p:card style="text-align: center;">
-                
-            <p:growl id="growl" showDetail="true" showSummary="true"/>
-                
-            <div>
-                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Factura"/>
-            </div>
-                
+
+                <p:growl id="growl" showDetail="true" showSummary="true"/>
+
+                <div>
+                    <h:outputText style="font-weight: bold; font-size: 1.5em" value="Total Factura"/>
+                </div>
+
                 <p:spacer height="1em"/>
-                
-            <div>
-                <h:outputText style="font-weight: bold; font-size: 1.5em" value="#{crearTiqueteController.calculateTotalCarrito()} Colones" ></h:outputText>
-            </div>
-                
+
+                <div>
+                    <h:outputText style="font-weight: bold; font-size: 1.5em" value="#{crearTiqueteController.calculateTotalCarrito()} Colones" ></h:outputText>
+                </div>
+
                 <p:spacer height="1em"/>
-                
-            <div>
-                <h:outputText style="font-weight: bold; font-size: 1.5em" value="Paga con:" ></h:outputText>
-            </div>
-                
+
+                <div>
+                    <h:outputText style="font-weight: bold; font-size: 1.5em" value="Paga con:" ></h:outputText>
+                </div>
+
                 <p:spacer height="1em"/>
-                
-            <div>
-                <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="colones" value="Colones: " />
-                <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="colones"
-                               decimalPlaces="0" minValue="0" required="true"
-                             value="#{crearTiqueteController.colones}" >
-                    <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@this"/>
-                </p:inputNumber>
-                
-                <p:spacer width="1em"/>
-                
-                <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="dolares" value="Dolares: "/>
-                <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="dolares" 
-                               decimalPlaces="0" minValue="0" required="true"
-                               value="#{crearTiqueteController.dolares}">
-                    <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@this"/>
-                </p:inputNumber>
-            </div>
-                
-            <p:spacer height="1em"/>
-            
-            <div>
-                <h:outputText style="font-weight: bold; font-size: 1.5em" value="#{crearTiqueteController.vueltoString}" />
-            </div>
-                
-            <p:autoUpdate />
-            
-            <p:spacer height="1em"/>
+
+                <div>
+                    <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="colones" value="Colones: " />
+                    <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="colones"
+                                   decimalPlaces="0" minValue="0" required="true"
+                                   value="#{crearTiqueteController.colones}" >
+                        <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@this"/>
+                    </p:inputNumber>
+
+                    <p:spacer width="1em"/>
+
+                    <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="dolares" value="Dolares: "/>
+                    <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="dolares" 
+                                   decimalPlaces="0" minValue="0" required="true"
+                                   value="#{crearTiqueteController.dolares}">
+                        <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@this"/>
+                    </p:inputNumber>
+                </div>
+
+                <p:spacer height="1em"/>
+
+                <div>
+                    <h:outputText style="font-weight: bold; font-size: 1.5em" value="#{crearTiqueteController.vueltoString}" />
+                </div>
+
+                <p:autoUpdate />
+
+                <p:spacer height="1em"/>
 
 
-            <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-receipt"  value="Facturar"
-                             actionListener="#{crearTiqueteController.verificarPago()}" process="@form" update="@form"
-                             onsuccess="PF('PagoDialog').hide(); PF('CrearTiqueteDialog').hide();"/>
-            
-            <p:spacer height="1em"/>
+                <p:commandButton style="width: 100%" styleClass="ui-button-primary" icon="pi pi-receipt"  value="Facturar"
+                                 actionListener="#{crearTiqueteController.verificarPago()}" process="@form" update="@this"
+                                 onsuccess="PF('PagoDialog').hide(); PF('CrearTiqueteDialog').hide();"/>
 
-            <p:commandButton style="width: 100%"  styleClass="ui-button-danger" icon="pi pi-times" value="Cancelar"
-                             actionListener="#{crearTiqueteController.clearPago()}"
-                onclick="PF('PagoDialog').hide();" process="@form" update="@this"/>
-            
+                <p:spacer height="1em"/>
+
+                <p:commandButton style="width: 100%"  styleClass="ui-button-danger" icon="pi pi-times" value="Cancelar"
+                                 actionListener="#{crearTiqueteController.clearPago()}"
+                                 onclick="PF('PagoDialog').hide();" process="@form" update="pago"/>
+
             </p:card>
-            
+
         </h:form>
     </p:dialog>
 
@@ -231,19 +235,19 @@
                 <p:column headerText="Número de Teléfono" sortBy="#{client.phoneNumber}">
                     <h:outputText value="#{client.phoneNumber}" />
                 </p:column>
-                
+
                 <f:facet name="footer">
                     <p:commandButton value="Seleccionar Cliente" icon="pi pi-check"
-                         process="ClientsTableData"
-                         update="@form"
-                         oncomplete="PF('ClienteDialog').hide() "
-                         actionListener="#{crearTiqueteController.selectCliente(ClientsController.selectedClient)}" />
+                                     process="@form"
+                                     update="clientes"
+                                     oncomplete="PF('ClienteDialog').hide() "
+                                     actionListener="#{crearTiqueteController.selectCliente(ClientsController.selectedClient)}" />
                 </f:facet>
-                
+
             </p:dataTable>
         </h:form>
     </p:dialog>
-    
+
     <!-- CodigoBarra Dialog -->
     <p:dialog widgetVar="CodigoBarraDialog" dynamic="true" cache="false" closable="true" modal="true" header="Codigo de Barra">
         <h:form id="articulos">
@@ -271,17 +275,17 @@
                 <p:column headerText="Stock" sortBy="#{ArticulosController.getStock(articulo)}">
                     <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
                 </p:column>
-                
+
                 <f:facet name="footer">
                     <p:commandButton value="Seleccionar Articulo" icon="pi pi-check"
-                         process="ArticulosTableData"
-                         update="@form"
-                         oncomplete="PF('CodigoBarraDialog').hide() "
-                         actionListener="#{crearTiqueteController.selectArticulo(ArticulosController.selectedArticulo)}" />
+                                     process="@form"
+                                     update="articulos" 
+                                     oncomplete="PF('CodigoBarraDialog').hide() "
+                                     actionListener="#{crearTiqueteController.selectArticulo(ArticulosController.selectedArticulo)}" />
                 </f:facet>
 
             </p:dataTable>   
         </h:form>
     </p:dialog>
-    
+
 </ui:composition>

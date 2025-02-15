@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Users;
+import Services.AlertasService;
 import Services.LoginService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -27,7 +28,10 @@ import org.primefaces.util.LangUtils;
 @Named(value = "UsersController")
 @ViewScoped
 public class UsersController implements Serializable{
+    
+    @Inject private AlertasService alertas;
     @Inject private LoginService userService;
+    @Inject private SessionController currentSession;
 
     private List<Users> users;
     private Users selectedUser;
@@ -78,7 +82,9 @@ public class UsersController implements Serializable{
     }
     
     public void updateUser(){
+        var oldUser = selectedUser;
         userService.update(selectedUser);
+        alertas.registrarAlerta("Usuario Actualizado", "Se actualizo el usuario: " + selectedUser.getUsername(), currentSession.getCurrentUser(), 0, "updateUser()", oldUser.toString(), selectedUser.toString());
         clearSelectedUser();
         PrimeFaces.current().executeScript("PF('EditarUsuarioDialog').hide();");
     }
@@ -89,6 +95,7 @@ public class UsersController implements Serializable{
             if(!exists){
                 newUser.setStatus(true);
                 userService.create(newUser);
+                alertas.registrarAlerta("Usuario Creado", "Se creo el usuario: " + newUser.getUsername(), currentSession.getCurrentUser(), 0, "createUser()", null, newUser.toString());
                 clearSelectedUser();
                 PrimeFaces.current().executeScript("PF('CrearUsuarioDialog').hide();");
             }else{
@@ -102,12 +109,14 @@ public class UsersController implements Serializable{
     public void toggleUser(){
         if(selectedUser != null){
             if(selectedUser.getId()!=null){
+                var oldUser = selectedUser;
                 if(selectedUser.getStatus()){
                     disableUser();
                 }else{
                     enableUser();
                 }
                 userService.update(selectedUser);
+                alertas.registrarAlerta("Estado de Usuario Cambiado", "Se cambio el estado del usuario: " + selectedUser.getUsername(), currentSession.getCurrentUser(), 0, "toggleUser()", oldUser.toString(), selectedUser.toString());
                 clearSelectedUser();        
             }
         }

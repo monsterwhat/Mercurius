@@ -2,6 +2,7 @@ package Controllers;
 
 import Models.ArticuloPrecio;
 import Services.ArticuloPrecioService;
+import Services.AlertasService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -27,6 +28,8 @@ import org.primefaces.util.LangUtils;
 public class ArticuloPrecioController implements Serializable  {
     
     @Inject ArticuloPrecioService precioService;
+    @Inject private AlertasService alertasService;
+    @Inject private SessionController currentSession;
     
     List<ArticuloPrecio> precios;
     private String preciosFilter;
@@ -34,6 +37,9 @@ public class ArticuloPrecioController implements Serializable  {
     private ArticuloPrecio selectedPrecio;
     private String selection;
     
+    /**
+     *
+     */
     @PostConstruct
     public void init() {
         precios = null;
@@ -42,11 +48,17 @@ public class ArticuloPrecioController implements Serializable  {
         selection = null;
     }
     
+    /**
+     *
+     */
     public void selectGeneral(){
         selection = "general";
         System.out.println("Selected General " + selection);
     }
     
+    /**
+     *
+     */
     public void selectArticulos(){
         selection = "articulos";
     }
@@ -84,6 +96,16 @@ public class ArticuloPrecioController implements Serializable  {
                 || (precio.getArticulo().getDepartamento() != null && precio.getArticulo().getDepartamento().getNombre().toLowerCase().contains(filterText))
                 || (precio.getArticulo().getFamilia() != null && precio.getArticulo().getFamilia().getNombre().toLowerCase().contains(filterText))
                 || (precio.getUsuario() != null && precio.getUsuario().getUsername().toLowerCase().contains(filterText));
+    }
+    
+    public void updateSelectedPrecio() {
+        try {
+            var oldPrecio = selectedPrecio;
+            precioService.update(selectedPrecio);
+            alertasService.registrarAlerta("Precio actualizado", "Se ha actualizado el precio del artículo: " + selectedPrecio.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "ArticuloPrecioController.updateSelectedPrecio", oldPrecio.toString() , selectedPrecio.toString());
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error al actualizar el precio del artículo: " + selectedPrecio.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "ArticuloPrecioController.updateSelectedPrecio", selectedPrecio.toString(), e.getMessage());
+        }
     }
     
 }

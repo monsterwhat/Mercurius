@@ -10,7 +10,8 @@ import Models.Departamento;
 import Models.Inventario;
 import Services.ArticuloPrecioService;
 import Services.Facturas.*;
-import Utils.Parsers.Parser;
+import Utils.Parsers.Parser;   
+import Services.AlertasService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -47,6 +48,7 @@ public class ComprobantesRecibidosController implements Serializable {
     @Inject MedioPagoService medioPagoService;
     @Inject ArticuloPrecioService precioService;
     @Inject Parser parser;
+    @Inject AlertasService alertaService;
     
     private List<UploadedFile> files;
     private List<ComprobantesRecibidos> facturas;
@@ -102,14 +104,19 @@ public class ComprobantesRecibidosController implements Serializable {
 
     public void deleteFactura() {
         if (selectedFactura != null) {
+            var oldFactura = selectedFactura;
             facturaService.softDelete(selectedFactura);
+             alertaService.registrarAlerta("Exito", "La factura recibida ha sido eliminada correctamente.", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.deleteFactura()", oldFactura.toString(), selectedFactura.toString());
+
             clearFactura();
         }
     }
     
     public void toggleFactura(){
         if(selectedFactura != null){
+            var oldFactura = selectedFactura;
             facturaService.toggle(selectedFactura);
+            alertaService.registrarAlerta("Exito", "El estado de la factura recibida ha sido cambiado correctamente.", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.toggleFactura()", oldFactura.toString(), selectedFactura.toString());
         }
     }
 
@@ -218,6 +225,7 @@ public class ComprobantesRecibidosController implements Serializable {
             InputStream inputStream = uploadedFile.getInputStream();    
             parser.parseXML(inputStream);
         } catch (IOException e) {
+            alertaService.registrarAlerta("Error parsing xml from uploaded file", "", currentSession.getCurrentUser(), 0, "parseXMLFromUploadedFile()", null, e.getLocalizedMessage());
             System.out.println("Error" + e.getLocalizedMessage());
         }
     }
@@ -371,6 +379,7 @@ public class ComprobantesRecibidosController implements Serializable {
             
         } catch (Exception e) {
             System.out.println("Error procesing factura: " + e.getLocalizedMessage());
+            alertaService.registrarAlerta("Error procesando factura", "", currentSession.getCurrentUser(), 0, "processFactura()", null, e.getLocalizedMessage());
         }
     }
     

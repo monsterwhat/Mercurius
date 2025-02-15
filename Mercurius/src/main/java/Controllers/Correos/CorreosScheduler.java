@@ -1,6 +1,7 @@
 package Controllers.Correos;
 
-import Models.Correos.ReporteProgramado;
+import Models.Correos.ReporteProgramado; 
+import Services.AlertasService;
 import Services.Correos.ReportesProgramadosService;
 import jakarta.ejb.Schedule;
 import jakarta.ejb.Singleton;
@@ -18,6 +19,7 @@ public class CorreosScheduler {
     
     @Inject ReportesProgramadosService rpService;    
     @Inject CorreosHelper helper;
+    @Inject AlertasService alertasService;
     
     private List<ReporteProgramado> reportes;
     
@@ -38,6 +40,7 @@ public class CorreosScheduler {
                         
                         if (new Date().after(fechaProximoReporte) || new Date().equals(fechaProximoReporte)) {
                             helper.checkChanges(reporte);
+                             
                         } 
                     }
                 } else {
@@ -48,7 +51,4 @@ public class CorreosScheduler {
             }
         }
     }
-    
-    
-    
 }

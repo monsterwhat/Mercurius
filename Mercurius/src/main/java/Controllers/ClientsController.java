@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Clients;
+import Services.AlertasService;
 import Services.ClientService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
@@ -21,8 +22,10 @@ import org.primefaces.util.LangUtils;
 @Named(value = "ClientsController")
 @ViewScoped
 public class ClientsController implements Serializable {
+    
     @Inject private ClientService clientService;
     @Inject private SessionController currentSession;
+    @Inject private AlertasService alertas;
 
     private List<Clients> clients;
     private Clients selectedClient;
@@ -59,8 +62,10 @@ public class ClientsController implements Serializable {
 
     public void updateClient() {
         if(currentSession.isValid()){
+            var oldClient = selectedClient;
             selectedClient.setUsuario(currentSession.getCurrentUser());
             clientService.update(selectedClient);
+            alertas.registrarAlerta("Cliente Actualizado", "Se actualizo el cliente: " + selectedClient.getName(), currentSession.getCurrentUser(), 0, "updateClient()", oldClient.toString() , selectedClient.toString());
             clearSelectedClient();
             PrimeFaces.current().executeScript("PF('EditarClienteDialog').hide();");
         }
@@ -69,10 +74,12 @@ public class ClientsController implements Serializable {
     public void createClient() {
         if(currentSession.isValid()){
             var exists = clientService.checkClientName(newClient.getName());
+            var oldClient = newClient;
             if(!exists){
                 newClient.setUsuario(currentSession.getCurrentUser());
                 newClient.setStatus(true);
                 clientService.create(newClient);
+                alertas.registrarAlerta("Se creo el cliente", "Se creo el cliente: " + newClient.getName(), currentSession.getCurrentUser(), 0, "createClient()", oldClient.toString(), newClient.toString());
                 clearSelectedClient();    
                 PrimeFaces.current().executeScript("PF('CrearClienteDialog').hide();");
             }
@@ -81,12 +88,14 @@ public class ClientsController implements Serializable {
 
     public void toggleClient() {
         if (selectedClient != null) {
+            var oldClient = selectedClient;
             if(selectedClient.getStatus()){
                 disableCliente();
             }else{
                 enableCliente();
             }
             clientService.update(selectedClient);
+            alertas.registrarAlerta("Se cambio el status del cliente", "El estatus cambio", currentSession.getCurrentUser(), 0, "toggleClient()", oldClient.toString(), selectedClient.toString());
             clearSelectedClient();
         }
     }

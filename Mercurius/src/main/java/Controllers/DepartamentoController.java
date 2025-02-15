@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Departamento;
+import Services.AlertasService;
 import Services.DepartamentoService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -22,9 +23,11 @@ import org.primefaces.util.LangUtils;
 @Named(value = "DepartamentosController")
 @ViewScoped
 public class DepartamentoController implements Serializable {
+    
     @Inject private DepartamentoService departamentoService;
     @Inject private SessionController currentSession;
-
+    @Inject private AlertasService alertas;
+    
     private List<Departamento> departamentos;
     private Departamento selectedDepartamento;
     private Departamento newDepartamento;
@@ -70,12 +73,14 @@ public class DepartamentoController implements Serializable {
     public void updateDepartamento() {
         if(currentSession.isValid()){
             if(selectedDepartamento !=null ){
+                var oldDepartamento = selectedDepartamento;
                 selectedDepartamento.setUsuario(currentSession.getCurrentUser());
                 departamentoService.update(selectedDepartamento);
+                alertas.registrarAlerta("Departamento Actualizado", "Se actualizó el departamento: " + selectedDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "updateDepartamento()", oldDepartamento.toString(), selectedDepartamento.toString());
                 clearSelectedDepartamento();
                 
                 FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizo el departamento!", null));
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizó el departamento!", null));
                 PrimeFaces.current().executeScript("PF('EditarDepartamentoDialog').hide();");
 
             }
@@ -91,9 +96,10 @@ public class DepartamentoController implements Serializable {
                 newDepartamento.setStatus(true);
                 newDepartamento.setUsuario(currentSession.getCurrentUser());
                 departamentoService.create(newDepartamento);
+                alertas.registrarAlerta("Departamento Creado", "Se creó el departamento: " + newDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "createDepartamento()", "", newDepartamento.toString());
                 clearSelectedDepartamento(); 
                 FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo el departamento", null));
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creó el departamento", null));
                 PrimeFaces.current().executeScript("PF('CrearDepartamentoDialog').hide();");
 
             }
@@ -114,7 +120,9 @@ public class DepartamentoController implements Serializable {
 
     public void deleteDepartamento() {
         if (selectedDepartamento != null) {
+            var oldDepartamento = selectedDepartamento;
             departamentoService.softDelete(selectedDepartamento);
+            alertas.registrarAlerta("Departamento Eliminado", "Se eliminó el departamento: " + oldDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "deleteDepartamento()", oldDepartamento.toString(), selectedDepartamento.toString());
             clearSelectedDepartamento();
         }
     }

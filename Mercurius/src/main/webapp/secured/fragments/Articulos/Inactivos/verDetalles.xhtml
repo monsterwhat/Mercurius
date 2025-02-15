@@ -4,12 +4,12 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-        <p:dialog header="Informacion de Articulo" widgetVar="ArticuloDetailsDialog" 
-                  responsive="true" id="ArticuloDetailsDialog" modal="true"
+        <p:dialog header="Informacion de Articulo" widgetVar="ArticuloInactivoDetailsDialog" 
+                  responsive="true" id="ArticuloInactivoDetailsDialog" modal="true"
                   dynamic="true" cache="false" >
         <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
             <p:card>
-                <p:dataTable id="selectedArticulo" var="articulo" reflow="true"
+                <p:dataTable id="selectedArticuloInactivo" var="articulo" reflow="true"
                              value="#{ArticulosController.selectedArticulo}">
                     <p:column headerText="Código" visible="false">
                         <h:outputText value="#{articulo.nombre}"/>
