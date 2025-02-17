@@ -17,9 +17,13 @@
 
         <p:growl id="growl" showDetail="true" showSummary="true" />
 
-        <div class="card">
+        <p:card class="card">
+            <f:facet name="title">
+                <p style="text-align: center">Articulos </p> 
+            </f:facet>
+            
             <p:tabView cache="false" dynamic="true" id="Articulos">
-                <p:tab title="Articulos Activos">
+                <p:tab title="Activos">
                     <div class="card">
                         <h:form id="ArticulosActivos">  
                         <p:dataTable value="#{ArticulosController.filteredArticulosActivos}" var="articulo"  widgetVar="ArticulosTable"
@@ -97,7 +101,7 @@
                     </h:form>
                     </div> 
                 </p:tab>
-                <p:tab title="Articulos Inactivos" >
+                <p:tab title="Inactivos" >
                     <div class="card">
                         <h:form id="ArticulosInactivos">   
                         <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"
@@ -167,7 +171,7 @@
                     </h:form>
                     </div> 
                 </p:tab>
-                <p:tab title="Catalogo Actual" >
+                <p:tab title="Procesados" >
                     <div class="card">
                         <h:form id="catalogoActual"> 
                         <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
@@ -227,7 +231,7 @@
                     </h:form>
                     </div> 
                 </p:tab>
-                <p:tab title="Catalogo Pendiente" >
+                <p:tab title="Pendientes" >
                     <div class="card">
                         <h:form id="ArticulosPendientes"> 
                         <p:dataTable value="#{ArticulosController.filteredArticulosSinProcesar}" var="articulo"  widgetVar="ArticulosRevisionTable"
@@ -360,7 +364,7 @@
                     </div> 
                 </p:tab> 
             </p:tabView>
-        </div> 
+        </p:card> 
 
         <ui:include src="/secured/fragments/CaByS/CabysDialogEdit.xhtml"/>  
         <ui:include src="/secured/fragments/Articulos/PendientesRevision/DialogoRevisionArticulo.xhtml"/>

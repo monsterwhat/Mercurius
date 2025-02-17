@@ -17,7 +17,10 @@
 
         <p:growl id="growl" showDetail="true" showSummary="true" />
 
-        <div class="card">
+        <p:card class="card">
+            <f:facet name="title">
+                <p style="text-align: center">Departamentos y Familias </p> 
+            </f:facet>
             <p:tabView cache="false" dynamic="true" id="Categorias">
                 <p:tab title="Departamentos">
                     <div class="card">
@@ -127,7 +130,7 @@
                     </div> 
                 </p:tab>
             </p:tabView>
-        </div> 
+        </p:card> 
 
         <ui:include src="/secured/fragments/Departamentos/CrearDepartamentoDialog.xhtml"/>
         <ui:include src="/secured/fragments/Departamentos/EditDepartamentoDialog.xhtml"/>
