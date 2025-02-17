@@ -5,48 +5,44 @@
       xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-<h:head>
-    <title>Menu Principal Reportes de Familia</title>
-    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-    <h:outputStylesheet name="primefaces/primefaces.css"/>
-    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
-</h:head>
+    <h:head>
+        <title>Menu Principal Reportes de Familia</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <h:outputStylesheet name="primefaces/primefaces.css"/>
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+    </h:head>
 
-<h:body>
-    <p:growl id="growl" showDetail="true" showSummary="true" />
+    <h:body>
+        <p:growl id="growl" showDetail="true" showSummary="true" />
 
-    <p:panelGrid columns="1">
-        <p:column>
-            <ui:include src="/secured/fragments/userBar.xhtml" />
-        </p:column>
-    </p:panelGrid>
-                
-    <p:panelGrid columns="2">
-        <p:card>
-            <p:badge value="#{FamiliasController.familiasActivasCount()}" severity="success">
-                <i class="pi pi-check-circle" style="font-size: 2rem"/>
-            </p:badge>
-            <p:tag styleClass="mr-2" severity="success" value="Familias Activas" rounded="true"></p:tag>
-        </p:card>
-        <p:card>
-            <p:badge value="#{FamiliasController.familiasInactivasCount()}" severity="danger">
-                <i class="pi pi-times-circle" style="font-size: 2rem" />
-            </p:badge>
-            <p:tag styleClass="mr-2" severity="danger" value="Familias Inactivas" rounded="true"></p:tag>
-        </p:card>
-    </p:panelGrid>
-    
-    <p:panelGrid columns="1">
-        <p:card title="Menu General de Familias" style="text-align: center">
-            <h:form id="familias">
-                <p:dataTable value="#{FamiliasController.filteredFamilias}" var="familia"  widgetVar="FamiliasTable"
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:panelGrid columns="2">
+            <p:card>
+                <p:badge value="#{FamiliasController.familiasActivasCount()}" severity="success">
+                    <i class="pi pi-check-circle" style="font-size: 2rem"/>
+                </p:badge>
+                <p:tag styleClass="mr-2" severity="success" value="Familias Activas" rounded="true"></p:tag>
+            </p:card>
+            <p:card>
+                <p:badge value="#{FamiliasController.familiasInactivasCount()}" severity="danger">
+                    <i class="pi pi-times-circle" style="font-size: 2rem" />
+                </p:badge>
+                <p:tag styleClass="mr-2" severity="danger" value="Familias Inactivas" rounded="true"></p:tag>
+            </p:card>
+        </p:panelGrid>
+
+        <p:panelGrid columns="1">
+            <p:card title="Menu General de Familias" style="text-align: center">
+                <h:form id="familias">
+                    <p:dataTable value="#{FamiliasController.filteredFamilias}" var="familia"  widgetVar="FamiliasTable"
                                  paginator="true" rows="8" paginatorPosition="bottom" id="FamiliasTableData"
                                  emptyMessage="No se encontraron familias con la critería proporcionada"
                                  globalFilterFunction="#{FamiliasController.globalFilterFunction}"
                                  filterBy="#{FamiliasController.filterBy}" reflow="true" selectionMode="single"
                                  selection="#{FamiliasController.selectedFamilia}" rowKey="#{familia.id}">
 
-                    <p:ajax event="rowSelect" update="@form"/>
+                        <p:ajax event="rowSelect" update="@form"/>
 
                         <f:facet name="header">
                             <p:inputText id="globalFilter" onkeyup="PF('FamiliasTable').filter()"
@@ -75,7 +71,7 @@
                                     <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
                                 </p:commandButton>
                                 <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
-                                actionListener="#{FamiliasController.deleteFamilia()}" process="@this" update="familias">
+                                                 actionListener="#{FamiliasController.deleteFamilia()}" process="@this" update="familias">
                                     <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
                                 </p:commandButton>
                             </div>
@@ -87,13 +83,13 @@
                                      onclick="PF('CrearFamiliaDialog').show();"/>
 
                 </h:form>
-        </p:card>
-            
-    </p:panelGrid>
-    
-    <ui:include src="/secured/fragments/Familias/CreateFamiliaDialog.xhtml"/>
+            </p:card>
 
-    <ui:include src="/secured/fragments/Familias/EditFamiliasDialog.xhtml"/>
-    
-</h:body>
+        </p:panelGrid>
+
+        <ui:include src="/secured/fragments/Familias/CreateFamiliaDialog.xhtml"/>
+
+        <ui:include src="/secured/fragments/Familias/EditFamiliasDialog.xhtml"/>
+
+    </h:body>
 </html>

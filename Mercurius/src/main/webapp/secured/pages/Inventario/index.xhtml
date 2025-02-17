@@ -52,7 +52,12 @@
 
         <p:growl showDetail="true" showSummary="true" />
 
-        <div class="card">
+        <p:card class="card">
+            
+            <f:facet name="title">
+                <p style="text-align: center">Inventarios </p> 
+            </f:facet>
+            
             <p:tabView id="Inventarios">
                 <p:tab title="Activos">
                     <div class="card">
@@ -140,8 +145,65 @@
                             </p:dataTable> 
                         </h:form>
                     </div> 
+                </p:tab> 
+                <p:tab title="Inactivos">
+                    <div class="card">
+                        <h:form id="ajustesInactivos">
+
+                            <p:dataTable value="#{InventarioController.filteredInventarioInactivo}" var="movimiento"  widgetVar="InventarioInactivoTable"
+                                         paginator="true" rows="8" paginatorPosition="bottom" id="InventarioInactivoTableData"
+                                         emptyMessage="No se encontraron artículos con la critería proporcionada"
+                                         globalFilterFunction="#{InventarioController.globalFilterFunction}"
+                                         filterBy="#{InventarioController.filterBy}" reflow="true" selectionMode="single"
+                                         selection="#{InventarioController.selectedInventario}" rowKey="#{movimiento.codigo}">
+                                <p:autoUpdate/>
+
+
+                                <p:ajax event="rowSelect" update="selectedArticulo"/>
+
+                                <f:facet name="header">
+                                    <p:inputText id="globalFilter" onkeyup="PF('InventarioInactivoTable').filter()"
+                                                 placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                </f:facet>
+
+                                <p:column exportable="false">
+                                    <p:chip id="sinProcesar" icon="pi pi-exclamation-circle"  style="background: var(--yellow-500)" rendered="#{!movimiento.processed}"/>
+                                    <p:tooltip for="sinProcesar" value="Sin Procesar" position="top"/>                            
+                                    <p:chip id="inactivo" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!movimiento.status}"/>
+                                    <p:tooltip for="inactivo" value="Inactiva" position="top"/>
+                                </p:column>
+
+                                <p:column headerText="Código" sortBy="#{movimiento.codigo}" visible="false">
+                                    <h:outputText value="#{movimiento.codigo}"/>
+                                </p:column>
+                                <p:column headerText="Articulo" sortBy="#{movimiento.articulo.nombre}">
+                                    <h:outputText value="#{movimiento.articulo.nombre}"/>
+                                </p:column>
+                                <p:column headerText="Codigo Barra" sortBy="#{movimiento.articulo.codigoBarra}">
+                                    <h:outputText value="#{movimiento.articulo.codigoBarra}"/>
+                                </p:column>
+                                <p:column headerText="Cantidad" sortBy="#{movimiento.cantidad}">
+                                    <h:outputText value="#{movimiento.cantidad}"/>
+                                </p:column>
+                                <p:column headerText="Fecha" sortBy="#{movimiento.fechaMovimiento}">
+                                    <h:outputText value="#{movimiento.fechaMovimiento}"/>
+                                </p:column>
+
+                                <p:column exportable="false">
+                                    <div class="buttons">
+                                        <p:commandButton styleClass="rounded-button ui-button-info" icon="pi pi-eye" process="@this"
+                                                         onclick="PF('AjusteDetailsDialog').show();" update="selectedArticulo">
+                                            <f:setPropertyActionListener value="#{movimiento}" target="#{InventarioController.selectedInventario}" />
+                                        </p:commandButton>
+                                    </div>
+                                </p:column>
+                            </p:dataTable>
+
+                        </h:form>
+                    </div>
+
                 </p:tab>
-                <p:tab title="Actuales">
+                <p:tab title="Procesados">
                     <div class="card">
                         <h:form id="ajustesActuales">
 
@@ -212,63 +274,6 @@
                         </h:form>
                     </div> 
                 </p:tab>
-                <p:tab title="Inactivos">
-                    <div class="card">
-                        <h:form id="ajustesInactivos">
-
-                            <p:dataTable value="#{InventarioController.filteredInventarioInactivo}" var="movimiento"  widgetVar="InventarioInactivoTable"
-                                         paginator="true" rows="8" paginatorPosition="bottom" id="InventarioInactivoTableData"
-                                         emptyMessage="No se encontraron artículos con la critería proporcionada"
-                                         globalFilterFunction="#{InventarioController.globalFilterFunction}"
-                                         filterBy="#{InventarioController.filterBy}" reflow="true" selectionMode="single"
-                                         selection="#{InventarioController.selectedInventario}" rowKey="#{movimiento.codigo}">
-                                <p:autoUpdate/>
-
-
-                                <p:ajax event="rowSelect" update="selectedArticulo"/>
-
-                                <f:facet name="header">
-                                    <p:inputText id="globalFilter" onkeyup="PF('InventarioInactivoTable').filter()"
-                                                 placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-                                </f:facet>
-
-                                <p:column exportable="false">
-                                    <p:chip id="sinProcesar" icon="pi pi-exclamation-circle"  style="background: var(--yellow-500)" rendered="#{!movimiento.processed}"/>
-                                    <p:tooltip for="sinProcesar" value="Sin Procesar" position="top"/>                            
-                                    <p:chip id="inactivo" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!movimiento.status}"/>
-                                    <p:tooltip for="inactivo" value="Inactiva" position="top"/>
-                                </p:column>
-
-                                <p:column headerText="Código" sortBy="#{movimiento.codigo}" visible="false">
-                                    <h:outputText value="#{movimiento.codigo}"/>
-                                </p:column>
-                                <p:column headerText="Articulo" sortBy="#{movimiento.articulo.nombre}">
-                                    <h:outputText value="#{movimiento.articulo.nombre}"/>
-                                </p:column>
-                                <p:column headerText="Codigo Barra" sortBy="#{movimiento.articulo.codigoBarra}">
-                                    <h:outputText value="#{movimiento.articulo.codigoBarra}"/>
-                                </p:column>
-                                <p:column headerText="Cantidad" sortBy="#{movimiento.cantidad}">
-                                    <h:outputText value="#{movimiento.cantidad}"/>
-                                </p:column>
-                                <p:column headerText="Fecha" sortBy="#{movimiento.fechaMovimiento}">
-                                    <h:outputText value="#{movimiento.fechaMovimiento}"/>
-                                </p:column>
-
-                                <p:column exportable="false">
-                                    <div class="buttons">
-                                        <p:commandButton styleClass="rounded-button ui-button-info" icon="pi pi-eye" process="@this"
-                                                         onclick="PF('AjusteDetailsDialog').show();" update="selectedArticulo">
-                                            <f:setPropertyActionListener value="#{movimiento}" target="#{InventarioController.selectedInventario}" />
-                                        </p:commandButton>
-                                    </div>
-                                </p:column>
-                            </p:dataTable>
-
-                        </h:form>
-                    </div>
-
-                </p:tab>
                 <p:tab title="Pendientes">
                     <div class="card">
                         <h:form id="inventarioPendiente">
@@ -324,7 +329,7 @@
 
                 </p:tab>
             </p:tabView>
-        </div>
+        </p:card>
 
         <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
         <ui:include src="/secured/fragments/Inventario/Activos/CreateMovimientoDialog.xhtml"/>    

@@ -13,12 +13,10 @@
     <h:body>
 
         <ui:include src="/secured/fragments/userBar.xhtml" /> 
-
-        <p:spacer height="1em"/>
-
+  
         <div class="card"> 
             <p:outputPanel id="mainPanel">
-                <div class="card">
+                <p:card class="card">
                     <p:panel rendered="#{SettingsController.currentSettings.completedSteps lt 5}">
                         <p:steps activeIndex="#{SettingsController.currentSettings.completedSteps}">
                             <p:menuitem value="Perfil" />
@@ -30,9 +28,15 @@
                     </p:panel>
 
                     <h:form rendered="#{SettingsController.currentSettings.completedSteps eq 0}">
+                        
+                        <p:spacer height="1em"/>
+                        
                         <h1 style="text-align: center"> Configuracion de Aplicacion </h1>
+                        
+                        <p:spacer height="1em"/>
+
                         <p:panel header="Perfil">
-                            <p:panelGrid columns="1" layout="flex">
+                            <p:panelGrid columns="1" layout="grid">
                                 <p:growl showDetail="true" showSummary="true"/>
                                 <p:messages for="nombre"/>
 
@@ -63,7 +67,7 @@
                     <h:form id="Correo" rendered="#{SettingsController.currentSettings.completedSteps eq 2}"  >
 
                         <div class="columns is-half is-centered is-mobile"> 
-                            <div class="card">
+                            <p:card class="card">
                                 <div class="column">
                                     <p:messages for="correo"/>
                                     <p:outputLabel value="Correo Electronico Principal: " for="correo" style="color: var(--primary-color);"/>
@@ -86,7 +90,7 @@
                                                          actionListener="#{SettingsController.backOneStep()}" />
                                     </div>
                                 </div> 
-                            </div> 
+                            </p:card> 
                         </div> 
 
                     </h:form>
@@ -94,7 +98,7 @@
                     <h:form id="Tributacion" rendered="#{SettingsController.currentSettings.completedSteps eq 3}">
 
                         <div class="columns is-half is-centered is-mobile"> 
-                            <div class="card">
+                            <p:card class="card">
                                 <div class="column">
                                     <p:outputLabel value="Tipo de Identificación:" for="tipoIdentificacion" style="color: var(--primary-color);" />
                                     <p:selectOneMenu id="tipoIdentificacion" value="#{SettingsController.currentSettings.tipoIdentificacion}" required="true" 
@@ -213,13 +217,13 @@
 
                                 </div>
 
-                            </div>
+                            </p:card>
                         </div> 
                     </h:form> 
 
                     <h:form id="Confirmacion" rendered="#{SettingsController.currentSettings.completedSteps eq 4}">
                         <div class="columns is-half is-centered is-mobile"> 
-                            <div class="card">
+                            <p:card class="card">
                                 <div class="column">
                                     <p:outputLabel value="Nombre del perfil: #{SettingsController.currentSettings.nombrePerfil}" style="color: var(--primary-color);"/>
                                 </div>
@@ -240,7 +244,7 @@
                                                          actionListener="#{SettingsController.backOneStep()}"  />
                                     </div> 
                                 </div>
-                            </div>
+                            </p:card>
                         </div> 
                     </h:form>  
 
@@ -289,7 +293,7 @@
                             </div>
                         </div> 
                     </h:form> 
-                </div>
+                </p:card>
             </p:outputPanel>
         </div> 
     </h:body>

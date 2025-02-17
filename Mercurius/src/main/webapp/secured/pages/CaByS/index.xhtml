@@ -18,7 +18,11 @@
 
         <p:growl showDetail="true" showSummary="true" />
 
-        <div class="card">
+        <p:card class="card">
+            <f:facet name="title">
+                <p style="text-align: center">Catalogo de Articulos, Bienes Y Servicios (CAByS)</p> 
+            </f:facet>
+            
             <h:form id="cabys">
 
                 <p:outputPanel rendered="#{empty CabysController.catalogo}">
@@ -97,6 +101,6 @@
                     </div>
                 </p:outputPanel> 
             </h:form>
-        </div>  
+        </p:card>  
     </h:body>
 </html>
