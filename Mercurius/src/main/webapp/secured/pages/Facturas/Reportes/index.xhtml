@@ -18,14 +18,14 @@
 
         <p:growl showDetail="true" showSummary="true" />
 
-        <p:card style="text-align: center" title="Facturas Emitidas">
+        <p:card styleClass="card">
+
+            <f:facet name="title">
+                <p style="text-align: center">Facturas Emitidas</p> 
+            </f:facet> 
+
             <h:form id="recibos">
-                <div class="ui-g">
-                    <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                     style='width: 100%' ajax="false">
-                        <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                    </p:commandButton>
-                </div>
+
                 <p:growl showDetail="true" showSummary="true" />
 
                 <p:dataTable value="#{ComprobantesEmitidosController.filteredComprobantesEmitidos}" var="factura" widgetVar="FacturasTableData"
@@ -41,10 +41,18 @@
 
                     <p:autoUpdate/>
 
-                    <f:facet name="header">
+                    <f:facet name="header"> 
+                        
+                        <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
+                                         style='width: 100%' ajax="false">
+                            <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                        </p:commandButton>
+                        
+                        <p:spacer height="1em"/>
 
                         <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
                                      placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                         
                     </f:facet>
 
                     <p:column exportable="false" selectionMode="single"/>

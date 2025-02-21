@@ -20,19 +20,7 @@
 
         <p:card title="Facturas Recibidas" style="text-align: center">
             <h:form id="recibos">
-                <div class="ui-g">
-                    <div class="ui-g-6">
-                        <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" 
-                                         style="width: 100%;" styleClass="rounded-button ui-button-info"/>
-                    </div>
-
-                    <div class="ui-g-6">
-                        <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                         style='width: 100%' ajax="false">
-                            <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                        </p:commandButton>
-                    </div>
-                </div>
+                  
                 <p:growl showDetail="true" showSummary="true" />
 
                 <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
@@ -49,7 +37,19 @@
                     <p:autoUpdate/>
 
                     <f:facet name="header">
-
+                        <div class="columns">
+                            <div class="column">
+                                <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" 
+                                         style="width: 100%;" styleClass="rounded-button ui-button-info"/>
+                            </div>
+                            <div class="column">
+                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
+                                         style='width: 100%' ajax="false">
+                                    <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                                </p:commandButton>
+                            </div>
+                        </div>
+                         
                         <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
                                      placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                     </f:facet>
@@ -94,7 +94,7 @@
                     <p:column headerText="Plazo Credito" sortBy="#{factura.encabezado.plazoCredito}">
                         <h:outputText value="#{factura.encabezado.plazoCredito}"/>
                     </p:column>
-                    <p:column headerText="Medio Pago">
+                    <p:column headerText="Medio Pago" exportable="false">
                         <p:dataTable value="#{factura.encabezado.medioPago}" var="medio" reflow="true">
                             <p:column>
                                 <h:outputText value="#{medio.medioPago}"/>

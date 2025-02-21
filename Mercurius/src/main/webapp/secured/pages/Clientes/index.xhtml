@@ -18,7 +18,11 @@
 
         <p:growl showDetail="true" showSummary="true" />
 
-        <div class="card">
+        <p:card class="card">
+            
+            <f:facet name="title">
+                <p style="text-align: center">Clientes</p> 
+            </f:facet>
 
             <h:form id="clientesForm">
  
@@ -32,14 +36,14 @@
                     <p:ajax event="rowSelect" update="EditarClienteDialog"/>
 
                     <f:facet name="header">
-                        <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}"  styleClass="button is-fullwidth ui-button-help" ajax="false">
+                        <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}" styleClass="rounded-button ui-button-help" style="width: 100%" ajax="false">
                             <p:dataExporter type="xlsx" target="ClientsTableData" fileName="Clientes-Mercurius-Excel" />
                         </p:commandButton>
                         
                         <p:spacer height="1em"/>
                         
-                        <p:commandButton value="Crear Cliente" onclick="PF('CrearClienteDialog').show();" actionListener="#{ClientsController.openNewClient}" 
-                                 styleClass="button ui-button-primary is-fullwidth"  />
+                        <p:commandButton value="Crear Cliente" icon="pi pi-plus" onclick="PF('CrearClienteDialog').show();" actionListener="#{ClientsController.openNewClient}" 
+                                 styleClass="rounded-button ui-button-primary" style="width:100%"  />
                         
                         <p:spacer height="1em"/> 
                         
@@ -107,7 +111,7 @@
 
             </h:form>
 
-        </div>   
+        </p:card>   
 
         <ui:include src="/secured/fragments/Clients/CrearClientesDialog.xhtml" />
         <ui:include src="/secured/fragments/Clients/EditClientesDialog.xhtml" />

@@ -16,24 +16,31 @@
         <p:growl id="growl" showDetail="true" showSummary="true" />
 
         <ui:include src="/secured/fragments/userBar.xhtml" />
+        <p:card styleClass="card">
+            <f:facet name="title">
+                <p style="text-align: center">Usuarios</p> 
+            </f:facet> 
 
-        <p:panelGrid columns="2">
-            <p:card>
-                <p:badge value="#{UsersController.usuariosActivosCount()}" severity="success">
-                    <i class="pi pi-check-circle" style="font-size: 2rem"/>
-                </p:badge>
-                <p:tag styleClass="mr-2" severity="success" value="Usuarios Activos" rounded="true"></p:tag>
-            </p:card>
-            <p:card>
-                <p:badge value="#{UsersController.usuariosInactivosCount()}" severity="danger">
-                    <i class="pi pi-times-circle" style="font-size: 2rem" />
-                </p:badge>
-                <p:tag styleClass="mr-2" severity="danger" value="Usuarios Inactivos" rounded="true"></p:tag>
-            </p:card>
-        </p:panelGrid>
+            <div class="columns">
+                <div class="column">
+                    <p:card class="card">
+                        <p:badge value="#{UsersController.usuariosActivosCount()}" severity="success">
+                            <i class="pi pi-check-circle" style="font-size: 2rem"/>
+                        </p:badge>
+                        <p:tag styleClass="mr-2" severity="success" value="Usuarios Activos" rounded="true"></p:tag>
+                    </p:card> 
+                </div>
+                <div class="column">
+                    <p:card class="card">
+                        <p:badge value="#{UsersController.usuariosInactivosCount()}" severity="danger">
+                            <i class="pi pi-times-circle" style="font-size: 2rem" />
+                        </p:badge>
+                        <p:tag styleClass="mr-2" severity="danger" value="Usuarios Inactivos" rounded="true"></p:tag>
+                    </p:card> 
+                </div>
+            </div>  
 
-        <p:panelGrid columns="1">
-            <p:card>
+            <p:card styleClass="card">
                 <h:form id="usuarios">
                     <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTableData"
                                  paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"
@@ -48,6 +55,11 @@
                         <f:facet name="header">
                             <p:inputText id="globalFilter" onkeyup="PF('UsersTableData').filter()" style="color: var(--primary-color); width: 100%"
                                          placeholder="Búsqueda general de todos los campos" />
+
+                            <p:spacer height="1em"/>
+                            <p:commandButton value="Crear Usuario" onclick="PF('CrearUsuarioDialog').show();" style="width: 100%"
+                                             actionListener="#{UsersController.openNewUser}" styleClass="ui-button-primary rounded-button"/>
+
                         </f:facet>
 
                         <p:column exportable="false">
@@ -87,16 +99,11 @@
                         </p:column>
                     </p:dataTable>
 
-                    <div class="ui-g">
-                        <div class="ui-g-12">
-                            <p:commandButton value="Crear Usuario" onclick="PF('CrearUsuarioDialog').show();" style="width: 100%"
-                                             actionListener="#{UsersController.openNewUser}" styleClass="ui-button-primary rounded-button"/>
-                        </div>
-                    </div>
                 </h:form>
             </p:card>
 
-        </p:panelGrid>
+        </p:card>
+
 
         <ui:include src="/secured/fragments/Users/CreateUsersDialog.xhtml"/>
         <ui:include src="/secured/fragments/Users/EditUsersDialog.xhtml"/>
