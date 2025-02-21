@@ -1,6 +1,5 @@
 # Mercurius
 
-Mercurius 
 ![Screenshot](Mercurius.png)
 
 ## Descripción
@@ -15,14 +14,16 @@ Mercurius es un programa de inventarios diseñado para ayudar a las empresas a g
 - Jakarta Faces 4.0
 - Java 21
 
-## Caracteristicas
+## Características
 
 ### Artículos
-| Caracteristica                | Estado       | Comentario                                    |
+| Característica                | Estado       | Comentario                                    |
 |-------------------------------|--------------|-----------------------------------------------|
 | Gestión de productos          | Implementado |                                               |
 | Categorías                    | Implementado |                                               |
 | Inventarios                   | Implementado |                                               |
+| Búsqueda avanzada             | Implementado | Permite búsquedas por un criterio en todas las características del artículo (nombre, precio, descripción, código CABYS, etc.) |
+| Importación/Exportación       | Rechazado    | Solo exportación de datos implementada         |
 
 #### Subcategorías de Artículos
 | Subcategoría                  | Estado       | Comentario                                    | Descripción                                                                 |
@@ -52,26 +53,31 @@ Mercurius es un programa de inventarios diseñado para ayudar a las empresas a g
 |-------------------------------|--------------|-----------------------------------------------|-----------------------------------------------------------------------------|
 | Usuarios del Sistema          | Implementado |                                               | Usuarios que tienen acceso al sistema para gestionar inventarios y otras funcionalidades |
 | Clientes                      | Implementado |                                               | Usuarios que interactúan con el sistema para realizar compras y ver el estado de sus pedidos |
+| Administradores               | Implementado |                                               | Usuarios con permisos avanzados para gestionar configuraciones del sistema  |
 
 ### Tributación
-| Caracteristica                | Estado       | Comentario                                    |
+| Característica                | Estado       | Comentario                                    |
 |-------------------------------|--------------|-----------------------------------------------|
 | Consultas                     | Pendiente    | Consultas de facturas                         |
 | Cabys                         | Implementado | Trae el catálogo completo de tributación y lo ingresa al sistema |
 | Tipo de Cambio                | Implementado | Consulta directamente a tributación el tipo de cambio de manera diaria |
+| Declaraciones                 | Rechazado    | No es una prioridad hasta tener facturación electrónica funcional |
 
 ### Reportes
-| Caracteristica                | Estado       | Comentario                                    |
+| Característica                | Estado       | Comentario                                    |
 |-------------------------------|--------------|-----------------------------------------------|
 | Reportes de Facturación       | Implementado | Incluye movimientos, facturación de artículos, ventas por familia, ventas por departamento y todas las facturas |
 | Reportes de Recibos           | Implementado | Incluye todos los recibos, recibos vigentes y recibos vencidos |
 | Reportes de Inventarios       | Implementado | Incluye artículos, departamentos, familias, inventarios y generar etiquetas (sin implementar) |
 | Reportes de Usuarios          | Implementado | Incluye usuarios detallados                   |
+| Reportes Personalizados       | Pendiente    | Permitir la creación de reportes personalizados según las necesidades del usuario |
+| Reportes Automáticos por Correo | Implementado | Enviar reportes automáticos a correos específicos |
 
 ### Otras Características
-| Caracteristica                | Estado       | Comentario                                    |
+| Característica                | Estado       | Comentario                                    |
 |-------------------------------|--------------|-----------------------------------------------|
 | Integración con facturación electrónica | Implementada   | Procesa cualquier factura electrónica válida de manera correcta |
 | Interfaz multilingüe          | Rechazado    | No es una prioridad en este momento           |
+| Backup Automático             | Pendiente    | Realizar copias de seguridad automáticas de la base de datos |
 
 
