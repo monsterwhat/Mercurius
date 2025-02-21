@@ -78,28 +78,28 @@
                     <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" 
                                      style="width: 100%" styleClass="ui-button-success rounded-button" ajax="false">
                         <p:dataExporter type="xlsx" target="reportes" fileName="Reportes-Mercurius" />
-                    </p:commandButton>
+                    </p:commandButton> 
                     <p:spacer height="1em"/>
                     <p:dataTable id="reportes" showGridlines="true"  stripedRows="true" value="#{reportesDiariosController.movimientos}" reflow="true" var="movimiento">
-                        <p:column headerText="Fecha">
+                        <p:column headerText="Fecha" sortBy="#{movimiento.fechaMovimiento}">
                             <h:outputText value="#{movimiento.fechaMovimiento}"/>
                         </p:column>
-                        <p:column headerText="Cod.Barra">
+                        <p:column headerText="Cod.Barra" sortBy="#{movimiento.articulo.codigoBarra}">
                             <h:outputText value="#{movimiento.articulo.codigoBarra}"/>
                         </p:column> 
-                        <p:column headerText="Articulo">
+                        <p:column headerText="Articulo" sortBy="#{movimiento.articulo.nombre}">
                             <h:outputText value="#{movimiento.articulo.nombre}"/>
                         </p:column> 
-                        <p:column headerText="Cantidad">
+                        <p:column headerText="Cantidad" sortBy="#{movimiento.cantidad}">
                             <h:outputText value="#{movimiento.cantidad}"/>
                         </p:column>
-                        <p:column headerText="Usuario">
+                        <p:column headerText="Usuario" sortBy="#{movimiento.usuario.username}">
                             <h:outputText value="#{movimiento.usuario.username}"/>
                         </p:column>
-                        <p:column headerText="Tipo">
+                        <p:column headerText="Tipo" sortBy="#{movimiento.tipoMovimiento}">
                             <h:outputText value="#{movimiento.tipoMovimiento}"/>
                         </p:column>
-                        <p:column headerText="Detalles">
+                        <p:column headerText="Detalles" sortBy="#{movimiento.notas}">
                             <h:outputText value="#{movimiento.notas}"/>
                         </p:column>
                     </p:dataTable>

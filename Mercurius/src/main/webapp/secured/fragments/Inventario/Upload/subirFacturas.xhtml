@@ -5,30 +5,33 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-        <p:dialog header="Subir Facturas" widgetVar="facturasUpload" 
-                  dynamic="true" cache="false" fitViewport="true" responsive="true">
+    <p:dialog header="Subir Facturas" widgetVar="facturasUpload" 
+              dynamic="true" cache="false" fitViewport="true" responsive="true">
+        <div class="box">
             <h:form id="upload">
-                <div class="box">
-                    <p:growl id="messages" showDetail="true" keepAlive="true"/>
-                    <div class="columns">
-                        <p:fileUpload value="#{uploadController.file}" mode="advanced"
-                                      multiple="true" update="messages uploadedFiles" styleClass="column"
-                                    sizeLimit="100000" allowTypes="/(\.|\/)(xml)$/" 
-                                    listener="#{uploadController.handleFileUpload}"/>                                
-                    </div>
+
+                <p:growl id="messages" showDetail="true" keepAlive="true"/>
+                <div class="columns">
+                    <p:fileUpload value="#{uploadController.file}" mode="advanced"
+                                  multiple="true" update="messages uploadedFiles" styleClass="column"
+                                  sizeLimit="100000" allowTypes="/(\.|\/)(xml)$/" 
+                                  listener="#{uploadController.handleFileUpload}"/>      
                     <div class="column">
-                        <p:dataTable id="uploadedFiles" value="#{facturasController.files}" reflow="true" widgetVar="uploadedFiles" var="file" lazy="false">
+                        <p:dataTable id="uploadedFiles" value="#{facturasController.files}" 
+                                     reflow="true" widgetVar="uploadedFiles" var="file" lazy="false">
                             <p:column headerText="Nombre:">
                                 <h:outputText value="#{file.fileName}"/>
                             </p:column>
                         </p:dataTable>
                     </div>
-                </div>
+                </div> 
             </h:form>
             <div class="column has-text-centered">
                 <p:commandButton value="Procesar Facturas" actionListener="#{facturasController.processFacturas}"
-                                 styleClass="ui-button-primary rounded-button" style="width: 100%" update="upload:uploadedFiles"/>
+                                 styleClass="ui-button-primary rounded-button" style="width: 100%" update="upload:uploadedFiles @this"/>
             </div>
-        </p:dialog>
+        </div>
+
+    </p:dialog>
 
 </ui:composition>
