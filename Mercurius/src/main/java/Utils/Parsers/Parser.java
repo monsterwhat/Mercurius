@@ -1,24 +1,25 @@
 package Utils.Parsers;
 
 import Controllers.SessionController;
-import Models.Comprobantes.ComprobantesRecibidos;
-import Models.Comprobantes.Detalles.CodigoComercial;
-import Models.Comprobantes.Detalles.Descuento;
-import Models.Comprobantes.Detalles.DetalleServicio;
-import Models.Comprobantes.Detalles.Impuesto;
-import Models.Comprobantes.Detalles.LineaDetalle;
-import Models.Comprobantes.Encabezado.Emisor;
-import Models.Comprobantes.Encabezado.Encabezado;
-import Models.Comprobantes.Encabezado.Fax;
-import Models.Comprobantes.Encabezado.IdentificacionEmisor;
-import Models.Comprobantes.Encabezado.IdentificacionReceptor;
-import Models.Comprobantes.Encabezado.MedioPago;
-import Models.Comprobantes.Encabezado.Receptor;
-import Models.Comprobantes.Encabezado.Telefono;
-import Models.Comprobantes.Encabezado.Ubicacion;
-import Models.Comprobantes.Enums.MedioPagoEnum;
-import Models.Comprobantes.Resumen.CodigoTipoMoneda;
-import Models.Comprobantes.Resumen.ResumenFactura;
+import Models.ComprobantesV44.ComprobantesRecibidos;
+import Models.ComprobantesV44.Detalles.CodigoComercial;
+import Models.ComprobantesV44.Detalles.Descuento;
+import Models.ComprobantesV44.Detalles.DetalleServicio;
+import Models.ComprobantesV44.Detalles.Impuesto;
+import Models.ComprobantesV44.Detalles.LineaDetalle;
+import Models.ComprobantesV44.Encabezado.CorreoElectronicoEmisor;
+import Models.ComprobantesV44.Encabezado.Emisor;
+import Models.ComprobantesV44.Encabezado.Encabezado;
+import Models.ComprobantesV44.Encabezado.Fax;
+import Models.ComprobantesV44.Encabezado.IdentificacionEmisor;
+import Models.ComprobantesV44.Encabezado.IdentificacionReceptor;
+import Models.ComprobantesV44.Encabezado.MedioPago;
+import Models.ComprobantesV44.Encabezado.Receptor;
+import Models.ComprobantesV44.Encabezado.Telefono;
+import Models.ComprobantesV44.Encabezado.Ubicacion;
+import Models.ComprobantesV44.Enums.Tipo_MedioPago;
+import Models.ComprobantesV44.Resumen.CodigoTipoMoneda;
+import Models.ComprobantesV44.Resumen.ResumenFactura;
 import Services.ComprobantesRecibidosService;
 import Services.Facturas.DescuentoService;
 import Services.Facturas.DetalleServicioService;
@@ -30,12 +31,16 @@ import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import jakarta.ejb.Stateless; 
+import jakarta.ejb.Stateless;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
@@ -49,21 +54,45 @@ import java.util.List;
  *
  * @author Al
  */
-
 @Stateless
 public class Parser {
-    
-    @Inject DetalleServicioService detalleServicioService;    
-    @Inject EmisorService emisorService;
-    @Inject ComprobantesRecibidosService facturaService;
-    @Inject ImpuestoService impuestoService;
-    @Inject DescuentoService descuentoService;
-    @Inject ReceptorService receptorService;
-    @Inject ResumenFacturaService resumenFacturaService;
-    @Inject EncabezadoService encabezadoService;
-    @Inject SessionController currentSession;
-    @Inject LineaDetalleService lineaDetalleService;
-    
+
+    @Inject
+    DetalleServicioService detalleServicioService;
+    @Inject
+    EmisorService emisorService;
+    @Inject
+    ComprobantesRecibidosService facturaService;
+    @Inject
+    ImpuestoService impuestoService;
+    @Inject
+    DescuentoService descuentoService;
+    @Inject
+    ReceptorService receptorService;
+    @Inject
+    ResumenFacturaService resumenFacturaService;
+    @Inject
+    EncabezadoService encabezadoService;
+    @Inject
+    SessionController currentSession;
+    @Inject
+    LineaDetalleService lineaDetalleService;
+
+    public ComprobantesRecibidos parseComprobanteXML(File xmlFile) {
+        try {
+            JAXBContext context = JAXBContext.newInstance(ComprobantesRecibidos.class);
+
+            // Create an unmarshaller instance
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+
+            // Parse the XML file into the ComprobantesRecibidos object
+            return (ComprobantesRecibidos) unmarshaller.unmarshal(xmlFile);
+        } catch (JAXBException e) {
+            System.out.println("Error!" + e.getLocalizedMessage());
+            return null;
+        }
+    }
+
     public LocalDateTime parseFechaEmision(String fechaEmision) {
         try {
             if (fechaEmision == null || fechaEmision.isEmpty()) {
@@ -102,30 +131,38 @@ public class Parser {
             Telefono telefono = new Telefono();
             Fax fax = new Fax();
             // Parse Ubicacion si existe
-            if (!emisorNode.path("Ubicacion").isMissingNode()) { 
+            if (!emisorNode.path("Ubicacion").isMissingNode()) {
                 ubicacion = parseUbicacion(emisorNode.path("Ubicacion"));
-                if(ubicacion == null){
+                if (ubicacion == null) {
                     return null;
                 }
             }
             // Parse Telefono si existe
             if (!emisorNode.path("Telefono").isMissingNode()) {
                 telefono = parseTelefono(emisorNode.path("Telefono"));
-                if(telefono == null){
+                if (telefono == null) {
                     return null;
                 }
             }
             // Parse Fax si existe
             if (!emisorNode.path("Fax").isMissingNode()) {
                 fax = parseFax(emisorNode.path("Fax"));
-                if(fax == null){
+                if (fax == null) {
                     return null;
                 }
             }
-            String correoElectronico = emisorNode.path("CorreoElectronico").asText();
-
+             
             Emisor emisor = new Emisor();
             emisor.setNombre(nombre);
+            
+            List<CorreoElectronicoEmisor> correosElectronicos = new ArrayList<>();
+            List<String> Correos = parseEmail(emisorNode.path("CorreoElectronico"));
+            for (String Correo : Correos) {
+                CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
+                correo.setCorreo(Correo);
+                correo.setEmisor(emisor);
+                correosElectronicos.add(correo);
+             }
 
             IdentificacionEmisor idEmisor = new IdentificacionEmisor();
             idEmisor.setNumero(identificacionNumero);
@@ -136,7 +173,7 @@ public class Parser {
             emisor.setUbicacion(ubicacion);
             emisor.setTelefono(telefono);
             emisor.setFax(fax);
-            emisor.setCorreoElectronico(correoElectronico);
+            emisor.setCorreosElectronicos(correosElectronicos);
 
             return emisor;
         } catch (Exception e) {
@@ -164,7 +201,7 @@ public class Parser {
             if (!receptorNode.path("Fax").isMissingNode()) {
                 fax = parseFax(receptorNode.path("Fax"));
             }
-            
+
             String correoElectronico = receptorNode.path("CorreoElectronico").asText();
 
             Receptor receptor = new Receptor();
@@ -190,21 +227,21 @@ public class Parser {
 
     public Ubicacion parseUbicacion(JsonNode ubicacionNode) {
         try {
-        String provincia = ubicacionNode.path("Provincia").asText();
-        String Canton = ubicacionNode.path("Canton").asText();
-        String Distrito = ubicacionNode.path("Distrito").asText();
-        String Barrio = ubicacionNode.path("Barrio").asText();
-        String OtrasSenas = ubicacionNode.path("OtrasSenas").asText();
-        
-        Ubicacion parsedUbicacion = new Ubicacion();
-        parsedUbicacion.setProvincia(provincia);
-        parsedUbicacion.setCanton(Canton);
-        parsedUbicacion.setDistrito(Distrito);
-        parsedUbicacion.setBarrio(Barrio);
-        parsedUbicacion.setOtrasSenas(OtrasSenas);
-        
-        return parsedUbicacion;
-            
+            String provincia = ubicacionNode.path("Provincia").asText();
+            String Canton = ubicacionNode.path("Canton").asText();
+            String Distrito = ubicacionNode.path("Distrito").asText();
+            String Barrio = ubicacionNode.path("Barrio").asText();
+            String OtrasSenas = ubicacionNode.path("OtrasSenas").asText();
+
+            Ubicacion parsedUbicacion = new Ubicacion();
+            parsedUbicacion.setProvincia(provincia);
+            parsedUbicacion.setCanton(Canton);
+            parsedUbicacion.setDistrito(Distrito);
+            parsedUbicacion.setBarrio(Barrio);
+            parsedUbicacion.setOtrasSenas(OtrasSenas);
+
+            return parsedUbicacion;
+
         } catch (Exception e) {
             System.out.println("Error parsing ubicacion: " + e.getLocalizedMessage());
             return null;
@@ -227,7 +264,7 @@ public class Parser {
         }
     }
 
-    public Fax parseFax(JsonNode faxNode) {        
+    public Fax parseFax(JsonNode faxNode) {
         try {
             String codigoPais = faxNode.path("CodigoPais").asText();
             String numTelefono = faxNode.path("NumFax").asText();
@@ -253,7 +290,25 @@ public class Parser {
         }
     }
 
-    
+    public List<String> parseEmail(JsonNode emailNode) {
+        try {
+            List<String> emails = new ArrayList<>();
+            if (emailNode.isArray()) {
+                for (JsonNode email : emailNode) {
+                    String emailAddress = email.asText();
+                    emails.add(emailAddress);
+                }
+            } else if (!emailNode.isMissingNode()) {
+                String emailAddress = emailNode.asText();
+                emails.add(emailAddress);
+            }
+            return emails;
+        } catch (Exception e) {
+            System.out.println("Error parsing emails: " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+
     public List<LineaDetalle> parseDetalleServicio(JsonNode detalleServicio) {
         try {
             List<LineaDetalle> lineasDetalle = new ArrayList<>();
@@ -262,13 +317,13 @@ public class Parser {
             if (lineasDetalleNode.isArray()) {
                 for (JsonNode lineaDetalleNode : lineasDetalleNode) {
                     LineaDetalle lineaDetalle = parseLineaDetalle(lineaDetalleNode);
-                    if(lineaDetalle != null){
+                    if (lineaDetalle != null) {
                         lineasDetalle.add(lineaDetalle);
                     }
                 }
-            }else if(!lineasDetalleNode.isMissingNode()){
+            } else if (!lineasDetalleNode.isMissingNode()) {
                 LineaDetalle lineaDetalle = parseLineaDetalle(lineasDetalleNode);
-                if(lineaDetalle != null){
+                if (lineaDetalle != null) {
                     lineasDetalle.add(lineaDetalle);
                 }
             }
@@ -278,27 +333,27 @@ public class Parser {
             System.out.println("Error parsing detalle Servicio: " + e.getLocalizedMessage());
             return null;
         }
-        
+
     }
-    
-    public List<MedioPago> parseMedioPago(JsonNode medioPagoNode, Encabezado comprobante){
+
+    public List<MedioPago> parseMedioPago(JsonNode medioPagoNode, Encabezado comprobante) {
         try {
             List<MedioPago> mediosPago = new ArrayList<>();
 
-            if(medioPagoNode.isArray()){
-                for(JsonNode medioPago : medioPagoNode){
-                    var medioEnum = MedioPagoEnum.fromCodigo(medioPago.asText());
+            if (medioPagoNode.isArray()) {
+                for (JsonNode medioPago : medioPagoNode) {
+                    var medioEnum = Tipo_MedioPago.fromCodigo(medioPago.asText());
                     MedioPago medioDePago = new MedioPago();
                     medioDePago.setMedioPago(medioEnum.getCodigo());
                     medioDePago.setComprobante(comprobante);
                     mediosPago.add(medioDePago);
                 }
-            }else if(!medioPagoNode.isMissingNode()){
-                var medioEnum = MedioPagoEnum.fromCodigo(medioPagoNode.asText());
-                    MedioPago medioDePago = new MedioPago();
-                    medioDePago.setMedioPago(medioEnum.getCodigo());
-                    medioDePago.setComprobante(comprobante);
-                    mediosPago.add(medioDePago);
+            } else if (!medioPagoNode.isMissingNode()) {
+                var medioEnum = Tipo_MedioPago.fromCodigo(medioPagoNode.asText());
+                MedioPago medioDePago = new MedioPago();
+                medioDePago.setMedioPago(medioEnum.getCodigo());
+                medioDePago.setComprobante(comprobante);
+                mediosPago.add(medioDePago);
             }
 
             return mediosPago;
@@ -307,9 +362,8 @@ public class Parser {
             return null;
         }
     }
-        
-    
-    public LineaDetalle parseLineaDetalle(JsonNode lineaDetalleNode){
+
+    public LineaDetalle parseLineaDetalle(JsonNode lineaDetalleNode) {
         try {
             LineaDetalle lineaDetalle = new LineaDetalle();
 
@@ -323,7 +377,7 @@ public class Parser {
                     CodigoComercial codigoComercial = new CodigoComercial();
                     codigoComercial.setLineaDetalle(lineaDetalle);
                     codigoComercial = parseCodigoComercial(codigoComercialNode);
-                    if(codigoComercial != null){
+                    if (codigoComercial != null) {
                         codigosComerciales.add(codigoComercial);
                     }
                 }
@@ -331,7 +385,7 @@ public class Parser {
                 CodigoComercial codigoComercial = new CodigoComercial();
                 codigoComercial.setLineaDetalle(lineaDetalle);
                 codigoComercial = parseCodigoComercial(lineaDetalleNode.path("CodigoComercial"));
-                if(codigoComercial != null){
+                if (codigoComercial != null) {
                     codigosComerciales.add(codigoComercial);
                 }
             }
@@ -340,56 +394,56 @@ public class Parser {
             String unidadMedida = lineaDetalleNode.path("UnidadMedida").asText();
             String unidadMedidaComercial = lineaDetalleNode.path("UnidadMedidaComercial").asText();
             String detalle = lineaDetalleNode.path("Detalle").asText();
-            String precioUnitario =  lineaDetalleNode.path("PrecioUnitario").asText();
+            String precioUnitario = lineaDetalleNode.path("PrecioUnitario").asText();
             String montoTotal = lineaDetalleNode.path("MontoTotal").asText();
-            String subTotal =  lineaDetalleNode.path("SubTotal").asText();
+            String subTotal = lineaDetalleNode.path("SubTotal").asText();
             List<Impuesto> impuestos = new ArrayList<>();
             List<Descuento> descuentos = new ArrayList<>();
 
             // Parse Impuesto if present
             if (lineaDetalleNode.path("Impuesto").isArray()) {
-                for(JsonNode ImpuestoNode : lineaDetalleNode.path("Impuesto")){
+                for (JsonNode ImpuestoNode : lineaDetalleNode.path("Impuesto")) {
                     Impuesto impuesto = new Impuesto();
                     impuesto = parseImpuesto(ImpuestoNode);
-                    if(impuesto != null){
+                    if (impuesto != null) {
                         impuestos.add(impuesto);
                     }
                 }
-            }else if(!lineaDetalleNode.path("Impuesto").isMissingNode()){
+            } else if (!lineaDetalleNode.path("Impuesto").isMissingNode()) {
                 Impuesto impuesto = new Impuesto();
                 impuesto = parseImpuesto(lineaDetalleNode.path("Impuesto"));
-                if(impuesto != null){
+                if (impuesto != null) {
                     impuestos.add(impuesto);
                 }
             }
 
             // Parse Descuento if present
             if (lineaDetalleNode.path("Descuento").isArray()) {
-                for (JsonNode DescuentoNode : lineaDetalleNode.path("Descuento")){
+                for (JsonNode DescuentoNode : lineaDetalleNode.path("Descuento")) {
                     Descuento descuento = new Descuento();
                     descuento = parseDescuento(DescuentoNode);
-                    if(descuento != null){
-                        descuentos.add(descuento); 
+                    if (descuento != null) {
+                        descuentos.add(descuento);
                     }
                 }
-            } else if (!lineaDetalleNode.path("Descuento").isMissingNode()){
+            } else if (!lineaDetalleNode.path("Descuento").isMissingNode()) {
                 Descuento descuento = new Descuento();
                 descuento = parseDescuento(lineaDetalleNode.path("Descuento"));
-                if(descuento != null){
-                    descuentos.add(descuento); 
+                if (descuento != null) {
+                    descuentos.add(descuento);
                 }
             }
-            
-            for (CodigoComercial codigoComercial : codigosComerciales){
+
+            for (CodigoComercial codigoComercial : codigosComerciales) {
                 codigoComercial.setLineaDetalle(lineaDetalle);
             }
-            
+
             for (Impuesto impuesto : impuestos) {
                 impuestoService.create(impuesto);
                 impuesto.setLineaDetalle(lineaDetalle);
             }
-            
-            for (Descuento descuento : descuentos){
+
+            for (Descuento descuento : descuentos) {
                 descuentoService.create(descuento);
                 descuento.setLineaDetalle(lineaDetalle);
             }
@@ -409,7 +463,7 @@ public class Parser {
             lineaDetalle.setSubTotal(new BigDecimal(subTotal));
             lineaDetalle.setImpuestos(impuestos);
             lineaDetalle.setMontoTotalLinea(new BigDecimal(montoTotalLinea));
-            
+
             lineaDetalleService.create(lineaDetalle);
 
             return lineaDetalle;
@@ -444,7 +498,7 @@ public class Parser {
 
             Impuesto impuesto = new Impuesto();
             impuesto.setCodigo(codigo);
-            impuesto.setCodigoTarifa(codigoTarifa);
+            impuesto.setCodigoTarifaIVA(codigoTarifa);
             impuesto.setTarifa(new BigDecimal(tarifa.trim()));
             impuesto.setMonto(new BigDecimal(monto.trim()));
 
@@ -456,13 +510,13 @@ public class Parser {
     }
 
     public ResumenFactura parseResumenFactura(JsonNode resumenFacturaNode) {
-    try {
+        try {
             JsonNode codigoMonedaPath = resumenFacturaNode.path("CodigoTipoMoneda");
             String codigoMonedaText = codigoMonedaPath.path("CodigoMoneda").asText();
             String tipoCambioText = codigoMonedaPath.path("TipoCambio").asText();
 
             CodigoTipoMoneda codigoMoneda = parseCodigoMoneda(codigoMonedaText, tipoCambioText);
-            if(codigoMoneda  == null){
+            if (codigoMoneda == null) {
                 System.out.println("Error parsing moneda");
                 return null;
             }
@@ -530,8 +584,8 @@ public class Parser {
             return null;
         }
     }
-    
-    public CodigoTipoMoneda parseCodigoMoneda(String codigo, String tipo){
+
+    public CodigoTipoMoneda parseCodigoMoneda(String codigo, String tipo) {
         try {
             CodigoTipoMoneda codigoMoneda = new CodigoTipoMoneda();
             codigoMoneda.setCodigoMoneda(codigo);
@@ -559,31 +613,43 @@ public class Parser {
             return null;
         }
     }
-    
-    
+
     public double parseUnidadComercial(String unidad, String unidadComercial) {
         return switch (unidad) {
-            case "Otros" -> parseUnidadComercial(unidadComercial);
-            case "Unid" -> parseUnidadComercial(unidadComercial);
-            case "g" -> parseUnidadComercial(unidadComercial);
-            default -> 0;
+            case "Otros" ->
+                parseUnidadComercial(unidadComercial);
+            case "Unid" ->
+                parseUnidadComercial(unidadComercial);
+            case "g" ->
+                parseUnidadComercial(unidadComercial);
+            default ->
+                0;
         }; // Default to 0 if no specific conversion found
     }
 
     public double parseUnidadComercial(String unidadComercial) {
         return switch (unidadComercial) {
-            case "BOT" -> 1;
-            case "LT" -> 1;
-            case "ST" -> 6;
-            case "Pieza" -> 1;
-            case "UN" -> 1;
-            case "Unid" -> 1;
-            case "UND" -> 1;
-            case "" -> 1;
-            default -> 0;
+            case "BOT" ->
+                1;
+            case "LT" ->
+                1;
+            case "ST" ->
+                6;
+            case "Pieza" ->
+                1;
+            case "UN" ->
+                1;
+            case "Unid" ->
+                1;
+            case "UND" ->
+                1;
+            case "" ->
+                1;
+            default ->
+                0;
         }; // Default to 0 if no conversion defined
     }
-    
+
     @Transactional
     public void parseXML(InputStream inputStream) {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
@@ -598,16 +664,16 @@ public class Parser {
 
             String numeroConsecutivo = rootNode.path("NumeroConsecutivo").asText();
             String clave = rootNode.path("Clave").asText();
-            
-            if(facturaService.findByNumeroConsecutivo(numeroConsecutivo)){
-                FacesMessage message = new FacesMessage("Factura Duplicada","Ya existe la factura: " + numeroConsecutivo);
+
+            if (facturaService.findByNumeroConsecutivo(numeroConsecutivo)) {
+                FacesMessage message = new FacesMessage("Factura Duplicada", "Ya existe la factura: " + numeroConsecutivo);
                 FacesContext.getCurrentInstance().addMessage(null, message);
                 return;
             }
-            
+
             Encabezado encabezado = new Encabezado();
             DetalleServicio detalles = new DetalleServicio();
-            
+
             Emisor emisor = parseEmisor(rootNode.path("Emisor"));
             if (emisor == null) {
                 return;
@@ -617,61 +683,61 @@ public class Parser {
             if (receptor == null) {
                 return;
             }
-            
+
             String codigoActividad = rootNode.path("CodigoActividad").asText();
             LocalDateTime localDateTime = parseFechaEmision(rootNode.path("FechaEmision").asText());
-            if(localDateTime == null){
+            if (localDateTime == null) {
                 return;
             }
-            
+
             String condicionVenta = rootNode.path("CondicionVenta").asText();
             String plazoCredito = rootNode.path("PlazoCredito").asText();
             List<MedioPago> medioPago = parseMedioPago(rootNode.path("MedioPago"), encabezado);
-            if(medioPago == null){
+            if (medioPago == null) {
                 return;
             }
 
             ResumenFactura resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
-            if(resumenFactura == null){
+            if (resumenFactura == null) {
                 return;
             }
-            
+
             List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
-            if(lineas == null){
+            if (lineas == null) {
                 return;
             }
-            
+
             detalles.setLineasDetalle(lineas);
-            
-            encabezado.setCodigoActividad(codigoActividad);
+
+            encabezado.setCodigoActividadEmisor(codigoActividad);
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
             encabezado.setFechaEmision(localDateTime);
             encabezado.setCondicionVenta(condicionVenta);
             encabezado.setPlazoCredito(plazoCredito);
             encabezado.setMedioPago(medioPago);
             encabezado.setClave(clave);
-            
+
             Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
             Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
-            
-            if(persistedEmisor != null){
+
+            if (persistedEmisor != null) {
                 encabezado.setEmisor(persistedEmisor);
             }
-            if(persistedReceptor != null){
+            if (persistedReceptor != null) {
                 encabezado.setReceptor(persistedReceptor);
             }
-            
+
             detalleServicioService.create(detalles);
-            
+
             for (LineaDetalle linea : lineas) {
                 linea.setDetalleServicio(detalles);
             }
-            
+
             detalleServicioService.update(detalles);
-            
+
             resumenFacturaService.create(resumenFactura);
             encabezadoService.create(encabezado);
-            
+
             ComprobantesRecibidos factura = new ComprobantesRecibidos();
             factura.setEncabezado(encabezado);
             factura.setDetalles(detalles);
@@ -679,12 +745,12 @@ public class Parser {
             factura.setUser(currentSession.getCurrentUser());
             factura.setStatus(true);
             factura.setProcessed(false);
-            
+
             facturaService.create(factura);
-            
-            FacesMessage message = new FacesMessage("Exito","Se proceso exitosamente la facturas: " + factura.getEncabezado().getNumeroConsecutivo());
+
+            FacesMessage message = new FacesMessage("Exito", "Se proceso exitosamente la facturas: " + factura.getEncabezado().getNumeroConsecutivo());
             FacesContext.getCurrentInstance().addMessage(null, message);
-            
+
         } catch (Exception e) {
             System.out.println("Error: " + e.getLocalizedMessage());
             System.out.println("Error ParsingXML to Object: " + e.getMessage());

@@ -1,7 +1,7 @@
 package Services.Facturas;
 
 
-import Models.Comprobantes.Detalles.LineaDetalle;
+import Models.ComprobantesV44.Detalles.LineaDetalle;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless;

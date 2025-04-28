@@ -3,121 +3,125 @@
       xmlns:h="jakarta.faces.html"
       xmlns:p="http://primefaces.org/ui" 
       xmlns:f="jakarta.faces.core"
-      xmlns:ui="jakarta.faces.facelets">
+      xmlns:ui="jakarta.faces.facelets"
+      class="#{ThemeController.currentTheme}">
 
-<h:head>
-    <title>Menu Principal Usuarios</title>
-    <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-    <script src="../../../resources/css/style.css"/>
-    <h:outputStylesheet name="primefaces/primefaces.css"/>
-    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
-    
-    <style>
-        
-        .header-bar {
-            color: white; /* Ensure text contrasts with the background */
-            padding: 5px 10px;
-            text-align: center;
-            border-radius: 4px 4px 0 0; /* Rounded corners at the top */
-            font-weight: bold;
-        } 
-        
-        .card-container {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 5px;
-            gap: 10px; /* Add spacing between cards */
-            justify-content: center; /* Center cards when wrapping */
-        }
+    <h:head>
+        <title>Menu Principal Usuarios</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <script src="../../../resources/css/style.css"/>
+        <h:outputStylesheet name="primefaces/primefaces.css"/>
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
 
-        .custom-card {
-            width: 100%; /* Default to full width for mobile */
-            margin-bottom: 10px;
-        }
+        <style>
 
-        /* Tablet screens: show 2 cards per row */
-        @media (min-width: 768px) {
-            .custom-card {
-                width: 48%; /* Adjust width to fit 2 cards per row with some gap */
+            .header-bar {
+                color: white; /* Ensure text contrasts with the background */
+                padding: 5px 10px;
+                text-align: center;
+                border-radius: 4px 4px 0 0; /* Rounded corners at the top */
+                font-weight: bold;
             }
-        }
 
-        /* Desktop screens: show 4 cards per row */
-        @media (min-width: 1024px) {
-            .custom-card {
-                width: 23%; /* Adjust width to fit 4 cards per row with some gap */
+            .card-container {
+                display: flex;
+                flex-wrap: wrap;
+                margin: 5px;
+                gap: 10px; /* Add spacing between cards */
+                justify-content: center; /* Center cards when wrapping */
             }
-        }
 
-        .card-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
+            .custom-card {
+                width: 100%; /* Default to full width for mobile */
+                margin-bottom: 10px;
+            }
 
-        .p-button {
-            width: 100%; /* Make the buttons full-width */
-        }
-           
-    </style>
-    
-</h:head>
+            /* Tablet screens: show 2 cards per row */
+            @media (min-width: 768px) {
+                .custom-card {
+                    width: 48%; /* Adjust width to fit 2 cards per row with some gap */
+                }
+            }
 
-<h:body>
-    
-    <ui:include src="/secured/fragments/userBar.xhtml" />
-    <p:growl id="growl" showDetail="true" showSummary="true" />
-      
-    
-    <p:card style="text-align: center">
-        
-        <f:facet name="header">
-            <div class="main-header-bar"/>
-        </f:facet>
-        
-        <f:facet name="title">
-            Usuarios
-        </f:facet>
+            /* Desktop screens: show 4 cards per row */
+            @media (min-width: 1024px) {
+                .custom-card {
+                    width: 23%; /* Adjust width to fit 4 cards per row with some gap */
+                }
+            }
 
-        <div class="card-container">
-            <!-- Reportes Facturación -->
-            <p:card class="custom-card">
-                
-                <f:facet name="header">
-                    <div class="header-bar" style="background-color: var(--blue-500)"/>
-                </f:facet>
-                
-                <f:facet name="title">
-                    Usuarios
-                </f:facet>
+            .card-buttons {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                margin-top: 20px;
+            }
 
-                <div class="card-buttons"> 
-                    <p:button value="Menu de Usuarios" styleClass="ui-button-info" href="/Mercurius/secured/pages/Usuarios/Reportes" icon="pi pi-users" />
+            .p-button {
+                width: 100%; /* Make the buttons full-width */
+            }
+
+        </style>
+
+    </h:head>
+
+    <h:body>
+
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+            <div class="columns is-multiline is-vcentered is-centered has-text-centered">
+                <div class="column is-full">
+                    <p class="title is-5"> Usuarios</p>
                 </div>
-                      
-            </p:card>
 
-            <!-- Reportes Recibos -->
-            <p:card class="custom-card">
-                
-                <f:facet name="header">
-                    <div class="header-bar" style="background-color: var(--purple-500)"/>
-                </f:facet>
-                
-                <f:facet name="title">
-                    Clientes
-                </f:facet>
+                <div class="column is-half"> 
+                    <div class="columns"> 
+                        <div class="column">
+                            <div class="card">
+                                <div class="header-bar" style="background-color: var(--bulma-warning)"/>
+                                <br/>
+                                <p class="title is-5">Clientes</p>
 
-                <div class="card-buttons">
-                    <p:button value="Menu de Clientes" styleClass="ui-button-help" href="/Mercurius/secured/pages/Clientes/" icon="pi pi-address-book" />
-                 </div>
-                  
-            </p:card>
+                                <div class="buttons">
+                                    <p:link styleClass="button is-warning is-fullwidth" href="/Mercurius/secured/pages/Clientes/" >
+                                        <span class="icon-text">
+                                            <span class="icon">
+                                                <i class="pi pi-address-book"></i>
+                                            </span>
+                                            <span>
+                                                Menu de Clientes
+                                            </span>
+                                        </span> 
+                                    </p:link>
+                                </div>
+                            </div> 
+                        </div>
+                        <div class="column">
+                            <div class="card">
+                                <div class="header-bar" style="background-color: var(--blue-500)"/>
+                                <br/>
+                                <p class="title is-5">Usuarios</p>
 
-             
-        </div>
-    </p:card>
-     
-</h:body>
+                                <div class="buttons"> 
+                                    <p:link styleClass="button is-info is-fullwidth" href="/Mercurius/secured/pages/Usuarios/Reportes" >
+                                        <span class="icon-text">
+                                            <span class="icon">
+                                                <i class="pi pi-users"></i>
+                                            </span>
+                                            <span>
+                                                Menu de Usuarios
+                                            </span>
+                                        </span> 
+                                    </p:link>
+                                </div> 
+                            </div> 
+                        </div>
+                    </div> 
+                </div> 
+            </div>
+        </section> 
+
+    </h:body>
 </html>

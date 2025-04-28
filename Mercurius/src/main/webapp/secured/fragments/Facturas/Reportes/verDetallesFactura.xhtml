@@ -4,111 +4,114 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
 
-        <p:dialog rendered="#{not empty ComprobantesEmitidosController.selectedComprobanteEmitido}" widgetVar="selectedComprobanteEmitidoDetallado" id="selectedComprobanteEmitidoDetallado" width="100%"
-                  fitViewport="true" responsive="true" maximizable="true" dynamic="true" cache="false" modal="true">
-            
-            <h:form>
-                <p:card title="Resumen ComprobanteEmitido">
-                    <p:dataTable var="Servicios" reflow="true" value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen}">
-                        <p:column headerText="Total Servicios Gravados">
-                            <h:outputText value="#{resumen.totalServGravados}"/>
-                        </p:column>
-                            <p:column headerText="Total Servicios Exentos">
-                            <h:outputText value="#{resumen.totalServExentos}"/>
-                        </p:column>
-                            <p:column headerText="Total Servicios Exonerados">
-                            <h:outputText value="#{resumen.totalServExonerado}"/>
-                        </p:column>
-                    </p:dataTable>
-                    <p:dataTable var="Mercancias" reflow="true" value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen}">
-                        <p:column headerText="Total Mercancias Gravadas">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalMercanciasGravadas}"/>
-                        </p:column>
-                        <p:column headerText="Total Mercancias Exentas">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalMercanciasExentas}"/>
-                        </p:column>
-                        <p:column headerText="Total Mercancias Exoneradas">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalMercExonerada}"/>
-                        </p:column>
-                    </p:dataTable>
-                    <p:dataTable var="Resumen" reflow="true" value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen}">
-                        <p:column headerText="Total Gravado">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalGravado}"/>
-                        </p:column>
-                        <p:column headerText="Total Exento">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalExento}"/>
-                        </p:column>
-                        <p:column headerText="Total Exonerado">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalExonerado}"/>
-                        </p:column>
-                        <p:column headerText="Total Venta">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalVenta}"/>
-                        </p:column>
-                        <p:column headerText="Total Descuentos">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalDescuentos}"/>
-                        </p:column>
-                        <p:column headerText="Total Venta Neta">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalVentaNeta}"/>
-                        </p:column>
-                        <p:column headerText="Total Impuesto">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalImpuesto}"/>
-                        </p:column>
-                        <p:column headerText="Total IVA Devuelto">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalIVADevuelto}"/>
-                        </p:column>
-                        <p:column headerText="Total Otros Cargos">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalOtrosCargos}"/>
-                        </p:column>
-                        <p:column headerText="Total Comprobante">
-                            <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalComprobante}"/> 
-                        </p:column>
-                    </p:dataTable>
-                </p:card>
-                <p:card title="Articulos">
-                    <p:dataTable value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.detalles.lineasDetalle}" 
-                             var="linea" id="lineasDetalleTable" reflow="true">
-                        <p:autoUpdate/>
+    <p:dialog rendered="#{not empty ComprobantesEmitidosController.selectedComprobanteEmitido}" widgetVar="selectedComprobanteEmitidoDetallado" id="selectedComprobanteEmitidoDetallado" width="100%"
+              fitViewport="true" responsive="true" maximizable="true" dynamic="true" cache="false" modal="true">
 
-                        <p:column headerText="Nombre">
-                            <h:outputText value="#{linea.detalle}"/>
-                        </p:column>
-                        <p:column headerText="Cantidad">
-                            <h:outputText value="#{linea.cantidad}"/>
-                        </p:column>
-                        <p:column headerText="Unidad de Medida">
-                            <h:outputText value="#{linea.unidadMedida}"/>
-                        </p:column>
-                        <p:column headerText="Unidad de Medida Comercial">
-                            <h:outputText value="#{linea.unidadMedidaComercial}"/>
-                        </p:column>
-                        <p:column headerText="Precio Unitario">
-                            <h:outputText value="#{linea.precioUnitario}"/>
-                        </p:column>
-                        <p:column headerText="Monto Total">
-                            <h:outputText value="#{linea.montoTotal}"/>
-                        </p:column>
-                        <p:column headerText="Descuentos">
-                            <p:dataTable value="#{linea.descuentos}" emptyMessage="N/A" var="descuento" reflow="true">
-                                <p:column headerText="Monto">
-                                    <h:outputText value="#{descuento.montoDescuento}"/>
-                                </p:column>
-                            </p:dataTable>
-                        </p:column>
-                        <p:column headerText="Subtotal">
-                            <h:outputText value="#{linea.subTotal}"/>
-                        </p:column>
-                        <p:column headerText="Impuesto">
-                            <p:dataTable value="#{linea.impuestos}" emptyMessage="N/A" var="impuesto" reflow="true">
-                                <p:column headerText="Monto">
-                                    <h:outputText value="#{impuesto.monto}"/>
-                                </p:column>
-                            </p:dataTable>
-                        </p:column>
-                        <p:column headerText="Monto total Linea">
-                            <h:outputText value="#{linea.montoTotalLinea}"/>
-                        </p:column>
-                    </p:dataTable>
-                </p:card>
-            </h:form>
-        </p:dialog>
+        <h:form>
+            <p:card styleClass="has-text-centered" title="Resumen ComprobanteEmitido">
+                <p:dataTable var="Servicios" reflow="true" value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen}">
+                    <p:column styleClass="has-text-centered" headerText="Total Servicios Gravados">
+                        <h:outputText value="#{resumen.totalServGravados}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Servicios Exentos">
+                        <h:outputText value="#{resumen.totalServExentos}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Servicios Exonerados">
+                        <h:outputText value="#{resumen.totalServExonerado}"/>
+                    </p:column>
+                </p:dataTable>
+                <p:dataTable var="Mercancias" reflow="true" value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen}">
+                    <p:column styleClass="has-text-centered" headerText="Total Mercancias Gravadas">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalMercanciasGravadas}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Mercancias Exentas">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalMercanciasExentas}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Mercancias Exoneradas">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalMercExonerada}"/>
+                    </p:column>
+                </p:dataTable>
+                <p:dataTable var="Resumen" reflow="true" value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen}">
+                    <p:column styleClass="has-text-centered" headerText="Total Gravado">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalGravado}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Exento">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalExento}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Exonerado">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalExonerado}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Venta">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalVenta}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Descuentos">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalDescuentos}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Venta Neta">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalVentaNeta}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Impuesto">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalImpuesto}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total IVA Devuelto">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalIVADevuelto}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Otros Cargos">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalOtrosCargos}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Total Comprobante">
+                        <h:outputText value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.resumen.totalComprobante}"/> 
+                    </p:column>
+                </p:dataTable>
+            </p:card>
+            
+            <br/> 
+            
+            <p:card styleClass="has-text-centered" title="Articulos">
+                <p:dataTable value="#{ComprobantesEmitidosController.selectedComprobanteEmitido.detalles.lineasDetalle}" 
+                             var="linea" id="lineasDetalleTable" reflow="true">
+                    <p:autoUpdate/>
+
+                    <p:column styleClass="has-text-centered" headerText="Nombre">
+                        <h:outputText value="#{linea.detalle}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Cantidad">
+                        <h:outputText value="#{linea.cantidad}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Unidad de Medida">
+                        <h:outputText value="#{linea.unidadMedida}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Unidad de Medida Comercial">
+                        <h:outputText value="#{linea.unidadMedidaComercial}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Precio Unitario">
+                        <h:outputText value="#{linea.precioUnitario}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Monto Total">
+                        <h:outputText value="#{linea.montoTotal}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Descuentos">
+                        <p:dataTable value="#{linea.descuentos}" emptyMessage="N/A" var="descuento" reflow="true">
+                            <p:column headerText="Monto">
+                                <h:outputText value="#{descuento.montoDescuento}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Subtotal">
+                        <h:outputText value="#{linea.subTotal}"/>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Impuesto">
+                        <p:dataTable value="#{linea.impuestos}" emptyMessage="N/A" var="impuesto" reflow="true">
+                            <p:column headerText="Monto">
+                                <h:outputText value="#{impuesto.monto}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </p:column>
+                    <p:column styleClass="has-text-centered" headerText="Monto total Linea">
+                        <h:outputText value="#{linea.montoTotalLinea}"/>
+                    </p:column>
+                </p:dataTable>
+            </p:card>
+        </h:form>
+    </p:dialog>
 </ui:composition>

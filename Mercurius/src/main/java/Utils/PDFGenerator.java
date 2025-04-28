@@ -2,14 +2,13 @@ package Utils;
 
 import Controllers.Settings.SettingsDirController;
 import Models.AppSettings;
-import Models.ArticuloCarrito;
+import Models.Articulos.ArticuloCarrito;
 import Models.Clients;
-import Models.Comprobantes.ComprobantesEmitidos;
-import Models.Comprobantes.Detalles.LineaDetalle;
-import Models.Comprobantes.Enums.CodigoImpuesto;
+import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesV44.Detalles.LineaDetalle;
+import Models.ComprobantesV44.Enums.Tipo_CodigoImpuesto;
 import Models.ReportesFamiliasYDepartamentos;
-import Models.Users;
-import Services.PrinterService;
+import Models.Users; 
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
@@ -178,7 +177,7 @@ public class PDFGenerator {
         // Agregar filas a la tabla
         for (ArticuloCarrito articulo : carrito) {
             int impuesto = articulo.getArticulo().getCodigoCabys().getImpuesto();
-            String codigoLetra = CodigoImpuesto.getCodigoLetra(impuesto);
+            String codigoLetra = Tipo_CodigoImpuesto.getCodigoLetra(impuesto);
 
             // Create and configure the cell for Cantidad
             PdfPCell cantidadCell = new PdfPCell(new Phrase(articulo.getCantidad().toString(), font));

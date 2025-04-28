@@ -1,10 +1,10 @@
 package Utils;
 
-import Models.ArticuloPrecio;
-import Models.Articulos;
-import Models.Comprobantes.ComprobantesRecibidos;
-import Models.Comprobantes.Encabezado.Encabezado;
-import Models.Comprobantes.Resumen.ResumenFactura;
+import Models.Articulos.ArticuloPrecio;
+import Models.Articulos.Articulos;
+import Models.ComprobantesV44.ComprobantesRecibidos;
+import Models.ComprobantesV44.Encabezado.Encabezado;
+import Models.ComprobantesV44.Resumen.ResumenFactura;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
@@ -78,7 +78,7 @@ public class ExcelExporter {
             if (comprobante.getEncabezado() != null) {
                 Encabezado encabezado = comprobante.getEncabezado();
                 row.createCell(0).setCellValue(comprobante.getId());
-                row.createCell(1).setCellValue(encabezado.getCodigoActividad());
+                row.createCell(1).setCellValue(encabezado.getCodigoActividadEmisor());
                 row.createCell(2).setCellValue(encabezado.getClave());
                 row.createCell(3).setCellValue(encabezado.getNumeroConsecutivo());
                 row.createCell(4).setCellValue(encabezado.getFechaEmision());

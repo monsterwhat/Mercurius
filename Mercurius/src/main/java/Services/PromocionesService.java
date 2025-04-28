@@ -1,6 +1,6 @@
 package Services;
 
-import Models.Promocion;
+import Models.Articulos.Promocion;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Named;

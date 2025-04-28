@@ -1,6 +1,6 @@
 package Services;
 
-import Models.ArticuloStock; 
+import Models.Articulos.ArticuloStock; 
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
 import jakarta.annotation.PostConstruct;

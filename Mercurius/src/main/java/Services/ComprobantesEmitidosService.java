@@ -1,8 +1,8 @@
 package Services;
 
-import Models.Comprobantes.ComprobantesEmitidos;
-import Models.Comprobantes.ComprobantesRecibidos;
-import Models.Comprobantes.Encabezado.Encabezado;
+import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesV44.ComprobantesRecibidos;
+import Models.ComprobantesV44.Encabezado.Encabezado;
 import Models.Users;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless; 

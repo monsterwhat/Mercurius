@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.Comprobantes.Resumen.ResumenFactura;
+import Models.ComprobantesV44.Resumen.ResumenFactura;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless;

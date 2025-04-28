@@ -26,6 +26,172 @@
                 }
             });
         </script>
+        <style>
+            body .ui-commandlink, body .ui-link{
+                color: black !important;
+            }
+            .section{
+                background: var(--bulma-background) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+            .ui-card{
+                background: var(--bulma-scheme-main) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+            .ui-tabs .ui-tabs-nav{
+                background: var(--bulma-info-soft) !important;
+            }
+            .ui-tabs.ui-tabs-top .ui-tabs-nav li.ui-tabs-header.ui-state-active{
+                border-color: var(--bulma-info-soft) !important;
+            }
+            .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active{
+                background: var(--bulma-info-soft) !important;
+            }
+            .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a{
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            .ui-tabs .ui-tabs-nav li.ui-tabs-header{
+                color: var(--bulma-text-title-l) !important;
+                background: var(--bulma-info-soft) !important;
+            }
+            .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui.state-hover a{
+                color:  var(--bulma-text-title-l) !important;
+            }
+            .ui-tabs .ui-tabs-panels{
+                background: var(--bulma-info-soft) !important;
+                border-bottom-left-radius: 1em !important;
+                border-bottom-right-radius: 1em !important;
+            }
+            .ui-tabs .ui-tabs-top .ui-tabs-nav li.ui-tabs-header a{
+                background: var(--bulma-info-soft) !important;
+                color:  var(--bulma-text-title-l) !important;
+            }
+            .ui-tabs.ui-tabs-top .ui-tabs-nav{
+                border-radius: 1em !important;
+            }
+            .ui-tabs.ui-tabs-top .ui-tabs-nav li.ui-tabs-header{
+                border-top-left-radius: 1em !important;
+            }
+            .ui-datatable thead th{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+            body .ui-datatable .ui-datatable-header{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+                border: none !important;
+                border-width: unset !important;
+            }
+            .ui-paginator {
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+                border: none !important;
+                border-width: unset !important;
+            }
+            body .ui-datatable .ui-datatable-data > tr {
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+            .ui-datatable .ui-datatable-data tr td{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+        </style>
+        <style>
+
+            body .ui-datatable .ui-datatable-footer{
+                background:  var(--bulma-background-l) !important;
+                color: var(--bulma-text-title-l) !important;
+                border: unset !important;
+            }
+
+            body .ui-radiobutton .ui-radiobutton-box.ui-state-active .ui-icon-bullet{
+                background: var(--bulma-primary) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-radiobutton .ui-radiobutton-box{
+                background: var(--bulma-scheme-main) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body select{
+                background: var(--bulma-scheme-main) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-datepicker .ui-datepicker-header{
+                background: var(--bulma-scheme-main) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-datepicker{
+                background: var(--bulma-scheme-main) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-selectonemenu{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-inputgroup .ui-inputgroup-addon{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-datatable .ui-datatable-scrollable-header{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-panelgrid .ui-panelgrid-cell{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-datatable thead th{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-panel .ui-panel-titlebar{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            body .ui-panel .ui-panel-content{
+                background: var(--bulma-scheme-main-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+            .ui-commandlink{
+                color: var(--bulma-text-title-l) !important;
+            }
+            .ui-commandlink:hover{
+                color: var(--bulma-text-title-l) !important;
+                text-decoration: none !important;
+            }
+            .ui-inputfield{
+                background:  var(--bulma-background-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+            .ui-dialog .ui-dialog-content{
+                background:  var(--bulma-background) !important;
+                color: var(--bulma-text-title-l) !important;
+                padding: 1rem !important;
+            }
+            .ui-password-panel{
+                background:  var(--bulma-background-l) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+            .ui-dialog .ui-dialog-titlebar {
+                background: var(--bulma-background) !important;
+                color: var(--bulma-text-title-l) !important;
+            }
+
+        </style> 
     </h:head>
 
     <h:form id="MainMenu">
@@ -44,10 +210,21 @@
         <nav class="navbar is-black" role="navigation" aria-label="main navigation">
             <div class="navbar-brand">
                 <!-- Left-aligned items (empty here) -->
-                <a class="navbar-item" href="https://github.com/monsterwhat/Mercurius">
+                <a class="navbar-item" href="/Mercurius/secured/">
                     <!-- SVG Logo (or Text) -->
                     <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100%"  />
                     <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100%"  />
+
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="pi pi-home"></i>
+                        </span>
+                        <span>
+                            Inicio
+                        </span>
+                    </span> 
+
+
                 </a>
                 <div class="navbar-burger burger" data-target="navbarMenu">
                     <span></span>
@@ -57,25 +234,21 @@
             </div>
 
             <div id="navbarMenu" class="navbar-menu">
-                <div class="navbar-start">
-                    <a class="navbar-item" href="/Mercurius/secured/">
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="pi pi-home"></i>
-                            </span>
-                            <span>
-                                Inicio
-                            </span>
-                        </span> 
-                    </a>
 
+                <div class="navbar-start">   
+                    <p:commandLink class="navbar-item" id="themeToggleButton" actionListener="#{ThemeController.switchThemeAndSave()}"
+                                   onsuccess="window.location.reload(); return false;"> 
+                        #{ThemeController.currentThemeToIcon()}️
+                    </p:commandLink> 
+                </div>
 
+                <div class="navbar-end"> 
                     <a class="navbar-item">
                         <p class="control">
                             <p:commandButton icon="pi pi-receipt" rendered="#{SessionController.facturacion}" styleClass="button is-dark" actionListener="#{crearTiqueteController.openNewFactura}" onsuccess="PF('CrearTiqueteDialog').show();"/>
                         </p>
                     </a>
-                    
+
                     <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.inventarios}">
                         <a class="navbar-link">
                             <span>
@@ -88,7 +261,7 @@
                                     <i class="pi pi-box"/>
                                 </span>
                                 <span>
-                                     Articulos
+                                    Articulos
                                 </span>
                             </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/Categorias/">
@@ -109,7 +282,7 @@
                             </a>
                         </div> 
                     </p:outputPanel>
-                     
+
                     <a class="navbar-item" href="/Mercurius/secured/pages/Usuarios/">
                         <span class="icon-text">
                             <span class="icon">
@@ -158,15 +331,15 @@
 
                     <p:outputPanel class="navbar-item"  rendered="#{SessionController.registros}">
                         <a style="color: white" href="/Mercurius/secured/pages/Registros/">
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="pi pi-book"></i>
-                            </span>
-                            <span>
-                                Reportes
-                            </span>
-                        </span> 
-                    </a>  
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="pi pi-book"></i>
+                                </span>
+                                <span>
+                                    Reportes
+                                </span>
+                            </span> 
+                        </a>  
                     </p:outputPanel> 
 
                     <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.admin}">
@@ -201,10 +374,6 @@
                         </div>
 
                     </p:outputPanel>
-
-                </div>
-
-                <div class="navbar-end">
                     <!-- Logout Button -->
                     <div class="navbar-item logout-button">
                         <p:commandButton styleClass="rounded-button ui-button-secondary" 
@@ -214,79 +383,66 @@
                 </div>
             </div>
         </nav>
-        
+
         <p:spacer height="1em"/>
-        
+
     </h:form>
 
-    <p:dialog header="Menu de Usuario" widgetVar="userSettingsDialog" modal="true"
+    <p:dialog widgetVar="userSettingsDialog" modal="true"
               fitViewport="true" responsive="true" dynamic="true" cache="false" >
+
         <h:form id="userSettingsForm" >
+
             <p:growl showDetail="true" showSummary="true" />
-            <p:card>
-                <p:panelGrid columns="3" layout="grid">
-                    <p:outputPanel styleClass="ui-text-align-center">
-                        <h:outputText value="Nombre de usuario:"/>
-                    </p:outputPanel>
-                    <p:outputPanel styleClass="ui-text-align-center">
-                        <h:outputText value="#{SessionController.currentUser.username}"/>
-                    </p:outputPanel>
-                    <p:outputPanel>
-                        <p:commandButton icon="pi pi-pencil" oncomplete="PF('nameDialog').show()" 
-                                         styleClass="rounded-button ui-button-help"
-                                         actionListener="#{SessionController.openUsername()}"/>
-                    </p:outputPanel>
 
-                    <p:outputPanel styleClass="ui-text-align-center">
-                        <h:outputText value="Correo Electronico:"/>
-                    </p:outputPanel>
-                    <p:outputPanel styleClass="ui-text-align-center">
-                        <h:outputText value="#{SessionController.currentUser.email}"/>
-                    </p:outputPanel>
-                    <p:outputPanel styleClass="ui-text-align-center">
-                        <p:commandButton icon="pi pi-pencil" oncomplete="PF('emailDialog').show()"
-                                         styleClass="rounded-button ui-button-help"
-                                         actionListener="#{SessionController.openEmail()}"/>
-                    </p:outputPanel>
-                </p:panelGrid>
-            </p:card>
+            <div class="card">
+                <div class="columns is-centered is-vcentered is-multiline has-text-centered">
+                    <div class="column is-full">
+                        <p class="title is-5">Menu de Usuario</p>
+                    </div>
 
-            <p:card>
-                <p:commandButton icon="pi pi-heart-fill" value="Cambiar Estilo Visual" onclick="PF('themeDialog').show()" 
-                                 styleClass="rounded-button ui-button-info" style="width: 100%;"/>
-                <p:spacer height="10"/>
-                <p:commandButton icon="pi pi-key" value="Cambiar Contrasena" oncomplete="PF('passwordDialog').show()" 
-                                 styleClass="rounded-button ui-button-help" style="width: 100%;"
-                                 actionListener="#{SessionController.openPassword()}"/> 
-                <p:spacer height="10"/>
-                <p:commandButton value="Cerrar Session" styleClass="rounded-button ui-button-danger" 
-                                 icon="pi pi-power-off" actionListener="#{SessionController.logOut()}" style="width: 100%;" />
-            </p:card>
+                    <div class="column is-full">
 
-        </h:form>
-    </p:dialog>
-
-    <p:dialog header="Cambiar Tema" widgetVar="themeDialog" dynamic="true" cache="false" modal="true">
-        <h:form>
-            <p:panelGrid columns="2" layout="flex">
-                <h:outputText value="Seleccionar Tema:" />
-                <p:selectOneMenu value="#{ThemeController.selectedTheme}">
-                    <f:selectItem itemLabel="Saga" itemValue="saga" />
-                    <f:selectItem itemLabel="Vela" itemValue="vela" />
-                    <f:selectItem itemLabel="Arya" itemValue="arya" />
-                    <f:selectItem itemLabel="Luna Amber" itemValue="luna-amber" />
-                    <f:selectItem itemLabel="Luna Blue" itemValue="luna-blue" />
-                    <f:selectItem itemLabel="Luna Green" itemValue="luna-green" />
-                    <f:selectItem itemLabel="Luna Pink" itemValue="luna-pink" />
-                    <f:selectItem itemLabel="Nova Colored" itemValue="nova-colored" />
-                    <f:selectItem itemLabel="Nova Dark" itemValue="nova-dark" />
-                    <f:selectItem itemLabel="Nova Light" itemValue="nova-light" />
-                    <f:selectItem itemLabel="Bulma" itemValue="none"/>
-                </p:selectOneMenu>
-            </p:panelGrid>
-            <br/>
-            <p:commandButton value="Seleccionar" actionListener="#{ThemeController.updateTheme()}"
-                             styleClass="rounded-button ui-button-info" style="width: 100%;" />
+                        <div class="columns is-multiline">
+                            <div class="column is-one-third">
+                                <h:outputText value="Nombre de usuario:"/>
+                            </div>
+                            <div class="column is-one-third">
+                                <h:outputText value="#{SessionController.currentUser.username}"/>
+                            </div>
+                            <div class="column is-one-third">
+                                <p:commandButton icon="pi pi-pencil" oncomplete="PF('nameDialog').show()" 
+                                                 styleClass="rounded-button ui-button-help"
+                                                 actionListener="#{SessionController.openUsername()}"/>
+                            </div>
+                            <div class="column is-one-third">
+                                <h:outputText value="Correo Electronico:"/>
+                            </div>
+                            <div class="column is-one-third">
+                                <h:outputText value="#{SessionController.currentUser.email}"/>
+                            </div>
+                            <div class="column is-one-third">
+                                <p:commandButton icon="pi pi-pencil" oncomplete="PF('emailDialog').show()"
+                                                 styleClass="rounded-button ui-button-help"
+                                                 actionListener="#{SessionController.openEmail()}"/>
+                            </div> 
+                        </div>
+                    </div> 
+                </div>
+                <div class="column is-full">
+                    <div class="columns is-multiline is-centered is-vcentered">
+                        <div class="column is-full">
+                            <div class="buttons">
+                                <p:commandLink  value="Cambiar Contrasena" oncomplete="PF('passwordDialog').show()" 
+                                                styleClass="button is-rounded is-info is-fullwidth"
+                                                actionListener="#{SessionController.openPassword()}"/> 
+                                <p:commandLink value="Cerrar Session" styleClass="button is-rounded is-danger is-fullwidth" 
+                                               actionListener="#{SessionController.logOut()}"  />
+                            </div> 
+                        </div> 
+                    </div> 
+                </div>
+            </div> 
         </h:form>
     </p:dialog>
 
@@ -347,5 +503,5 @@
     </p:dialog>
 
     <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/> 
-    
+
 </ui:composition>

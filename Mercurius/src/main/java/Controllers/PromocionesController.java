@@ -1,8 +1,8 @@
 package Controllers;
 
-import Models.ArticuloCarrito;
-import Models.Articulos;
-import Models.Promocion;
+import Models.Articulos.ArticuloCarrito;
+import Models.Articulos.Articulos;
+import Models.Articulos.Promocion;
 import Services.AlertasService;
 import Services.ArticulosService;
 import Services.PromocionesService;

@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.Comprobantes.Detalles.CodigoComercial;
+import Models.ComprobantesV44.Detalles.CodigoComercial;
 import Services.GService;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;

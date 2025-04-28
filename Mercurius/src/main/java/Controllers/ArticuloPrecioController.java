@@ -1,6 +1,6 @@
 package Controllers;
 
-import Models.ArticuloPrecio;
+import Models.Articulos.ArticuloPrecio;
 import Services.ArticuloPrecioService;
 import Services.AlertasService;
 import jakarta.annotation.PostConstruct;

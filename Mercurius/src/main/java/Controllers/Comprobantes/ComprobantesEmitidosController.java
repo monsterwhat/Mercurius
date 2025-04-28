@@ -1,8 +1,8 @@
 package Controllers.Comprobantes;
 
+import Models.ComprobantesV44.Detalles.LineaDetalle;
 import Services.ComprobantesEmitidosService;
-import Models.Comprobantes.ComprobantesEmitidos;
-import Models.Comprobantes.Detalles.*;
+import Models.ComprobantesV44.ComprobantesEmitidos;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -114,10 +114,10 @@ public class ComprobantesEmitidosController implements Serializable {
         }
 
         ComprobantesEmitidos comprobanteEmitido = (ComprobantesEmitidos) value;
-        return comprobanteEmitido.getEncabezado().getCodigoActividad().toLowerCase().contains(filterText)
+        return comprobanteEmitido.getEncabezado().getCodigoActividadEmisor().toLowerCase().contains(filterText)
                 || comprobanteEmitido.getEncabezado().getCondicionVenta().toLowerCase().contains(filterText)
                 || comprobanteEmitido.getEncabezado().getEmisor().getNombre().toLowerCase().contains(filterText)
-                || comprobanteEmitido.getEncabezado().getEmisor().getCorreoElectronico().toLowerCase().contains(filterText)
+                || comprobanteEmitido.getEncabezado().getEmisor().getCorreosElectronicos().contains(filterText.toLowerCase())
                 || comprobanteEmitido.getEncabezado().getEmisor().getIdentificacion().getNumero().toLowerCase().contains(filterText)
                 || comprobanteEmitido.getEncabezado().getEmisor().getNombreComercial().toLowerCase().contains(filterText)
                 || comprobanteEmitido.getEncabezado().getFechaEmision().toString().toLowerCase().contains(filterText)

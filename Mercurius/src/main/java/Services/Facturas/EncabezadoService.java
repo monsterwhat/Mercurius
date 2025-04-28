@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.Comprobantes.Encabezado.Encabezado;
+import Models.ComprobantesV44.Encabezado.Encabezado;
 import Services.GService;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;

@@ -1,7 +1,7 @@
 package Services;
 
-import Models.ArticuloPrecio;
-import Models.Articulos;
+import Models.Articulos.ArticuloPrecio;
+import Models.Articulos.Articulos;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless; 
 import jakarta.inject.Named;

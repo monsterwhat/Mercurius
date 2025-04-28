@@ -1,10 +1,11 @@
 package Controllers;
 
-import Models.ArticuloPrecio;
+import Models.ComprobantesV44.Detalles.LineaDetalle;
+import Models.ComprobantesV44.Detalles.CodigoComercial;
+import Models.Articulos.ArticuloPrecio;
 import Services.ComprobantesRecibidosService;
-import Models.Articulos;
-import Models.Comprobantes.ComprobantesRecibidos;
-import Models.Comprobantes.Detalles.*;
+import Models.Articulos.Articulos;
+import Models.ComprobantesV44.ComprobantesRecibidos;
 import Models.Departamento;
 import Models.Inventario;
 import Services.AlertasService;
@@ -201,10 +202,10 @@ public class FacturasController implements Serializable {
         }
 
         ComprobantesRecibidos factura = (ComprobantesRecibidos) value;
-        return factura.getEncabezado().getCodigoActividad().toLowerCase().contains(filterText)
+        return factura.getEncabezado().getCodigoActividadEmisor().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getCondicionVenta().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getEmisor().getNombre().toLowerCase().contains(filterText)
-                || factura.getEncabezado().getEmisor().getCorreoElectronico().toLowerCase().contains(filterText)
+                || factura.getEncabezado().getEmisor().getCorreosElectronicos().contains(filterText.toLowerCase())
                 || factura.getEncabezado().getEmisor().getIdentificacion().getNumero().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getEmisor().getNombreComercial().toLowerCase().contains(filterText)
                 || factura.getEncabezado().getFechaEmision().toString().toLowerCase().contains(filterText)
