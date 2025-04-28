@@ -3,158 +3,212 @@
       xmlns:h="jakarta.faces.html"
       xmlns:f="jakarta.faces.core"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="jakarta.faces.facelets">
+      xmlns:ui="jakarta.faces.facelets"
+      class="#{ThemeController.currentTheme}">
 
-<h:head>
-    <title>Registros</title>
-    <h:outputStylesheet name="primefaces/primefaces.css"/>
-    <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
-    
-    <style>
-        
-        .header-bar {
-            color: white; /* Ensure text contrasts with the background */
-            padding: 5px 10px;
-            text-align: center;
-            border-radius: 4px 4px 0 0; /* Rounded corners at the top */
-            font-weight: bold;
-        } 
-        
-        .card-container {
-            display: flex;
-            flex-wrap: wrap;
-            margin: 5px;
-            gap: 10px; /* Add spacing between cards */
-            justify-content: center; /* Center cards when wrapping */
-        }
+    <h:head>
+        <title>Registros</title>
+        <h:outputStylesheet name="primefaces/primefaces.css"/>
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
 
-        .custom-card {
-            width: 100%; /* Default to full width for mobile */
-            margin-bottom: 10px;
-        }
-
-        /* Tablet screens: show 2 cards per row */
-        @media (min-width: 768px) {
-            .custom-card {
-                width: 48%; /* Adjust width to fit 2 cards per row with some gap */
+        <style>
+            .header-bar {
+                padding: 5px 10px;
+                border-radius: 4px 4px 0 0; /* Rounded corners at the top */
             }
-        }
-
-        /* Desktop screens: show 4 cards per row */
-        @media (min-width: 1024px) {
-            .custom-card {
-                width: 23%; /* Adjust width to fit 4 cards per row with some gap */
-            }
-        }
-
-        .card-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .p-button {
-            width: 100%; /* Make the buttons full-width */
-        }
-           
-    </style>
-
-
-</h:head>
+        </style>
+ 
+    </h:head>
 
     <h:body>
-    <p:column>
+
         <ui:include src="/secured/fragments/userBar.xhtml" /> 
         <p:growl showDetail="true" showSummary="true" />
-    </p:column>
 
-    <p:card style="text-align: center">
-          
-        <f:facet name="title">
-            Reportes
-        </f:facet>
-
-        <div class="card-container">
-            <!-- Reportes Facturación -->
-            <p:card class="custom-card">
-                
-                <f:facet name="header">
-                    <div class="header-bar" style="background-color: var(--blue-500)"/>
-                </f:facet>
-                
-                <f:facet name="title">
-                    Reportes de Facturación
-                </f:facet>
-
-                <div class="card-buttons">
-                    <p:button value="Movimientos" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Fechas/" icon="pi pi-calendar" />
-                    <p:button value="Facturación de Artículos" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Ventas/" icon="pi pi-box" />
-                    <p:button value="Ventas por Familia" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Familia/" icon="pi pi-users" />
-                    <p:button value="Ventas por Departamento" styleClass="ui-button-info" href="/Mercurius/secured/pages/Articulos/Reportes/Departamento/" icon="pi pi-truck" />
-                    <p:button value="Todas las Facturas" styleClass="ui-button-info" href="/Mercurius/secured/pages/Facturas/Reportes" icon="pi pi-receipt" />
+        <section class="section">
+            <div class="columns is-centered is-vcentered is-multiline has-text-centered">
+                <div class="column is-full">
+                    <p class="title is-3">Reportes</p>
                 </div>
-                      
-            </p:card>
-
-            <!-- Reportes Recibos -->
-            <p:card class="custom-card">
-                
-                <f:facet name="header">
-                    <div class="header-bar" style="background-color: var(--purple-500)"/>
-                </f:facet>
-                
-                <f:facet name="title">
-                    Reportes de Recibos
-                </f:facet>
-
-                <div class="card-buttons">
-                    <p:button value="Todas los Recibos" styleClass="ui-button-help" href="/Mercurius/secured/pages/Recibos/" icon="pi pi-book" />
-                    <p:button value="Recibos Vigentes" styleClass="ui-button-help"  href="/Mercurius/secured/pages/Recibos/Pendientes/" icon="pi pi-calendar-clock" />
-                    <p:button value="Recibos Vencidos" styleClass="ui-button-help"  href="/Mercurius/secured/pages/Recibos/Vencidos/" icon="pi pi-calendar-times" />
+                <div class="column is-one-quarter">
+                    <!-- Reportes Facturación -->
+                    <div class="card">
+                        <div class="header-bar" style="background-color: var(--bulma-info)"/>
+                        <br/>
+                        <div class="columns is-multiline is-centered is-vcentered has-text-centered">
+                            <div class="column is-full"> 
+                                <p class="title is-5">Reportes de Facturación</p>
+                            </div>
+                            <div class="column">
+                                <div class="buttons">
+                                    <p:link styleClass="button is-info is-fullwidth" href="/Mercurius/secured/pages/Articulos/Reportes/Fechas/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-calendar"></i>
+                                        </span>
+                                        <span>
+                                            Movimientos
+                                        </span>
+                                    </p:link>
+                                    <p:link  styleClass="button is-info is-fullwidth" href="/Mercurius/secured/pages/Articulos/Reportes/Ventas/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-box"></i>
+                                        </span>
+                                        <span>
+                                            Facturación de Artículos
+                                        </span>
+                                    </p:link>
+                                    <p:link  styleClass="button is-info is-fullwidth" href="/Mercurius/secured/pages/Articulos/Reportes/Familia/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-users"></i>
+                                        </span>
+                                        <span>
+                                            Ventas por Familia
+                                        </span>
+                                    </p:link>
+                                    <p:link  styleClass="button is-info is-fullwidth" href="/Mercurius/secured/pages/Articulos/Reportes/Departamento/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-truck"></i>
+                                        </span>
+                                        <span>
+                                            Ventas por Departamento
+                                        </span>
+                                    </p:link>
+                                    <p:link styleClass="button is-info is-fullwidth" href="/Mercurius/secured/pages/Facturas/Reportes" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-receipt"></i>
+                                        </span>
+                                        <span>
+                                            Todas las Facturas
+                                        </span>
+                                    </p:link>
+                                </div> 
+                            </div>
+                        </div>
+                    </div> 
                 </div>
-                  
-            </p:card>
-
-            <!-- Reportes Inventarios -->
-            <p:card class="custom-card">
-                
-                <f:facet name="header">
-                    <div class="header-bar" style="background-color: var(--green-500)"/>
-                </f:facet>
-                
-                <f:facet name="title">
-                    Reportes de Inventarios
-                </f:facet>
-
-                <div class="card-buttons">
-                    <p:button value="Articulos" styleClass="ui-button-success" href="/Mercurius/secured/pages/Articulos/Reportes/" icon="pi pi-box" />
-                    <p:button value="Departamentos" styleClass="ui-button-success" href="/Mercurius/secured/pages/Departamentos/Reportes/" icon="pi pi-truck" />
-                    <p:button value="Familias" styleClass="ui-button-success" href="/Mercurius/secured/pages/Familias/Reportes/" icon="pi pi-users" />
-                    <p:button value="Inventarios" styleClass="ui-button-success" href="/Mercurius/secured/pages/Inventario/Reportes/" icon="pi pi-warehouse" />
-                    <p:button value="Generar Etiquetas" styleClass="ui-button-success" disabled="true" icon="pi pi-ticket" />
+                <div class="column is-one-quarter">
+                    <!-- Reportes Recibos -->
+                    <div class="card">
+                        <div class="header-bar" style="background-color: var(--bulma-primary)"/>
+                        <br/>
+                        <div class="columns is-multiline is-centered is-vcentered has-text-centered">
+                            <div class="column is-full">
+                                <p class="title is-5">Reportes de Recibos</p>
+                            </div>
+                            <div class="column">
+                                <div class="buttons">
+                                    <p:link styleClass="button is-primary is-fullwidth" href="/Mercurius/secured/pages/Recibos/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-book"></i>
+                                        </span>
+                                        <span>
+                                            Todas los Recibos
+                                        </span>
+                                    </p:link>
+                                    <p:link styleClass="button is-primary is-fullwidth"  href="/Mercurius/secured/pages/Recibos/Pendientes/"  >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-calendar-clock"></i>
+                                        </span>
+                                        <span>
+                                            Recibos Vigentes
+                                        </span>
+                                    </p:link>
+                                    <p:link styleClass="button is-primary is-fullwidth"  href="/Mercurius/secured/pages/Recibos/Vencidos/"  >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-calendar-times"></i>
+                                        </span>
+                                        <span>
+                                            Recibos Vencidos
+                                        </span>
+                                    </p:link>
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
                 </div>
-            </p:card>
+                <div class="column is-one-quarter">
+                    <!-- Reportes Inventarios -->
+                    <div class="card">
+                        <div class="header-bar" style="background-color: var(--bulma-danger)"/>
+                        <br/> 
+                        <div class="columns is-multiline is-centered is-vcentered has-text-centered">
+                            <div class="column is-full">
 
-            <!-- Reportes de Usuarios -->
-            <p:card class="custom-card">
-                
-                <f:facet name="header">
-                    <div class="header-bar" style="background-color: var(--yellow-500)"/>
-                </f:facet>
-                
-                <f:facet name="title">
-                    Reportes de Usuarios
-                </f:facet>
-
-                <div class="card-buttons">
-                    <p:button value="Usuarios Detallados" styleClass="ui-button-warning" href="/Mercurius/secured/pages/Usuarios/Reportes/" icon="pi pi-user-plus" />
+                                <p class="title is-5">Reportes de Inventarios</p>
+                            </div>
+                            <div class="column">
+                                <div class="buttons">
+                                    <p:link styleClass="button is-danger is-fullwidth" href="/Mercurius/secured/pages/Articulos/Reportes/"  >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-box"></i>
+                                        </span>
+                                        <span>
+                                            Articulos
+                                        </span>
+                                    </p:link>
+                                    <p:link styleClass="button is-danger is-fullwidth" href="/Mercurius/secured/pages/Departamentos/Reportes/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-truck"></i>
+                                        </span>
+                                        <span>
+                                            Departamentos
+                                        </span>
+                                    </p:link>
+                                    <p:link styleClass="button is-danger is-fullwidth" href="/Mercurius/secured/pages/Familias/Reportes/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-users"></i>
+                                        </span>
+                                        <span>
+                                            Familias
+                                        </span>
+                                    </p:link>
+                                    <p:link styleClass="button is-danger is-fullwidth" href="/Mercurius/secured/pages/Inventario/Reportes/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-warehouse"></i>
+                                        </span>
+                                        <span>
+                                            Inventarios
+                                        </span>
+                                    </p:link>
+                                    <p:link styleClass="button is-danger is-fullwidth" disabled="true" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-ticket"></i>
+                                        </span>
+                                        <span>
+                                            Generar Etiquetas
+                                        </span>
+                                    </p:link>
+                                </div> 
+                            </div>
+                        </div>
+                    </div> 
                 </div>
-            </p:card>
-        </div>
-    </p:card>
-        
-    
-</h:body>
+                <div class="column is-one-quarter">
+                    <!-- Reportes de Usuarios --> 
+                    <div class="card">
+                        <div class="header-bar" style="background-color: var(--bulma-warning)"/>
+                        <br/>
+                        <div class="columns is-multiline is-centered is-vcentered has-text-centered">
+                            <div class="column is-full"> 
+                                <p class="title is-5">Reportes de Usuarios</p>
+                            </div>
+                            <div class="column">
+                                <div class="buttons">
+                                    <p:link styleClass="button is-warning is-fullwidth" href="/Mercurius/secured/pages/Usuarios/Reportes/" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-user-plus"></i>
+                                        </span>
+                                        <span>
+                                            Usuarios Detallados
+                                        </span>
+                                    </p:link>
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
+                </div> 
+            </div>
+        </section>  
+    </h:body>
 
 </html>

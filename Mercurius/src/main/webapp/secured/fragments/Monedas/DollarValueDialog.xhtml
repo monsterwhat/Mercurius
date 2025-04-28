@@ -6,65 +6,70 @@
 
     <h:body>
         <!-- Dialog for Tipo Cambio Dolares -->
-        <p:dialog header="Tipo de Cambio USD" widgetVar="dollarValueDialog" id="dollarValueDialog"
+        <p:dialog widgetVar="dollarValueDialog" id="dollarValueDialog"
                   fitViewport="true" blockScroll="true" responsive="true" dynamic="true" cache="false" 
-                    modal="false" >
-        
-            <p:card>
-                <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarValueTable" 
-                             widgetVar="dollarValueTable" var="cambio" reflow="true">
-                    
-                <p:column headerText="Fecha">
-                    <h:outputText value="#{cambio.fecha}"/>
-                </p:column>
-                    
-                <p:column headerText="Compra">
-                    <h:outputText value="#{cambio.valorCompra}"/>
-                </p:column>
-                    
-                <p:column headerText="Venta">
-                    <h:outputText value="#{cambio.valorVenta}"/>
-                </p:column>
-                    
-                </p:dataTable>
-                
-                <br/>
-                
-                <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarTable"
-                             widgetVar="dollarTable" var="cambio" reflow="true">
-                    
-                <p:column headerText="1$">
-                    <h:outputText value="#{cambio.valorCompra}"/>
-                </p:column>
-                    
-                <p:column headerText="5$">
-                    <h:outputText value="#{cambio.valorCompra*5}"/>
-                </p:column>
-                    
-                <p:column headerText="10$">
-                    <h:outputText value="#{cambio.valorCompra*10}"/>
-                </p:column>
-                    
-                <p:column headerText="20$">
-                    <h:outputText value="#{cambio.valorCompra*20}"/>
-                </p:column>    
-                    
-                <p:column headerText="50$">
-                    <h:outputText value="#{cambio.valorCompra*50}"/>
-                </p:column>   
-                    
-                    
-                </p:dataTable>
-                <br/>
-                
-                <p:commandButton icon="pi pi-refresh" value="Recargar" styleClass="rounded-button ui-button-warning" style="width: 100%"
-                        actionListener="#{TipoCambioController.recargar()}" update="dollarValueTable dollarTable"/>
-                <p:commandButton value="Ok" styleClass="rounded-button ui-button-primary" style="width: 100%"
-                        onsuccess="PF('dollarValueDialog').hide();" immediate="true"
-                        />
-            </p:card> 
-            
-            
+                  modal="false" >
+
+            <div class="columns is-multiline has-text-centered">
+                <div class="column is-full">
+                    <p class="title ">Tipo de Cambio USD</p>
+                </div>
+                <div class="column is-full">
+                    <div class="card">
+                        <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarValueTable" 
+                                     widgetVar="dollarValueTable" var="cambio" reflow="true">
+
+                            <p:column styleClass="has-text-centered" headerText="Fecha">
+                                <h:outputText value="#{cambio.fecha}"/>
+                            </p:column>
+
+                            <p:column styleClass="has-text-centered" headerText="Compra">
+                                <h:outputText value="#{cambio.valorCompra}"/>
+                            </p:column>
+
+                            <p:column styleClass="has-text-centered" headerText="Venta">
+                                <h:outputText value="#{cambio.valorVenta}"/>
+                            </p:column>
+
+                        </p:dataTable>
+
+                        <br/>
+
+                        <p:dataTable value="#{TipoCambioController.cambioActual}" id="dollarTable"
+                                     widgetVar="dollarTable" var="cambio" reflow="true">
+
+                            <p:column styleClass="has-text-centered" headerText="1$">
+                                <h:outputText value="#{cambio.valorCompra}"/>
+                            </p:column>
+
+                            <p:column styleClass="has-text-centered" headerText="5$">
+                                <h:outputText value="#{cambio.valorCompra*5}"/>
+                            </p:column>
+
+                            <p:column styleClass="has-text-centered" headerText="10$">
+                                <h:outputText value="#{cambio.valorCompra*10}"/>
+                            </p:column>
+
+                            <p:column styleClass="has-text-centered" headerText="20$">
+                                <h:outputText value="#{cambio.valorCompra*20}"/>
+                            </p:column>    
+
+                            <p:column styleClass="has-text-centered" headerText="50$">
+                                <h:outputText value="#{cambio.valorCompra*50}"/>
+                            </p:column>   
+ 
+                        </p:dataTable>
+                        <br/>
+
+                    </div> 
+                    <p:commandLink value="Recargar" styleClass="button is-rounded is-warning is-fullwidth"  
+                                     actionListener="#{TipoCambioController.recargar()}" update="dollarValueTable dollarTable"/>
+                    <hr/>
+                    <p:commandLink value="Ok" styleClass="button is-rounded is-primary is-fullwidth"  
+                                     onsuccess="PF('dollarValueDialog').hide();" immediate="true"
+                                     />
+                </div>
+            </div> 
         </p:dialog>
     </h:body>
 

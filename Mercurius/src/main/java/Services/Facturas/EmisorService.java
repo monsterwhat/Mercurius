@@ -1,7 +1,7 @@
 
 package Services.Facturas;
 
-import Models.Comprobantes.Encabezado.Emisor;
+import Models.ComprobantesV44.Encabezado.Emisor;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.ejb.Stateless;

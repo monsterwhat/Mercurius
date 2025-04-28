@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog" prefer="system">
+    <system systemId="https://atv.hacienda.go.cr/ATV/ComprobanteElectronico/docs/esquemas/2024/v4.4/FacturaElectronica_V4.4.xsd" uri="src/main/resources/jaxb/FacturaElectronica/atv.hacienda.go.cr/ATV/ComprobanteElectronico/docs/esquemas/2024/v4.4/FacturaElectronica_V4.4.xsd"/>
+    <system systemId="file:/D:/Documents/GitHub/Mercurius/Mercurius/../../../../Desktop/FacturaElectronica_V4.4.xsd" uri="src/main/resources/jaxb/FacturaElectronica44/FacturaElectronica_V4.4.xsd"/>
+</catalog>

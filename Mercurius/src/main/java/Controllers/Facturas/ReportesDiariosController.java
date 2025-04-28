@@ -1,8 +1,8 @@
 package Controllers.Facturas;
 
 import Controllers.SessionController; 
-import Models.Comprobantes.ComprobantesEmitidos;
-import Models.Comprobantes.Detalles.LineaDetalle;
+import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesV44.Detalles.LineaDetalle;
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
 import Models.Users;

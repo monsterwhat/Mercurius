@@ -1,8 +1,8 @@
 package Controllers;
 
 import Controllers.Settings.SettingsDirController;
-import Models.ArticuloPrecio;
-import Models.Articulos;
+import Models.Articulos.ArticuloPrecio;
+import Models.Articulos.Articulos;
 import Models.Departamento;
 import Models.Familia; 
 import Services.ArticuloPrecioService;

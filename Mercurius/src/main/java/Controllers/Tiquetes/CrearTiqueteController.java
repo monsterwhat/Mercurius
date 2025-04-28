@@ -6,31 +6,32 @@ import Controllers.Settings.SettingsDirController;
 import Controllers.SettingsController;
 import Controllers.TipoCambioController;
 import Models.AppSettings;
-import Models.ArticuloCarrito;
-import Models.Articulos;
+import Models.Articulos.ArticuloCarrito;
+import Models.Articulos.Articulos;
 import Models.Clients;
-import Models.Comprobantes.ComprobantesEmitidos;
-import Models.Comprobantes.ComprobantesRecibidos;
-import Models.Comprobantes.Detalles.CodigoComercial;
-import Models.Comprobantes.Detalles.Descuento;
-import Models.Comprobantes.Detalles.DetalleServicio;
-import Models.Comprobantes.Detalles.Impuesto;
-import Models.Comprobantes.Detalles.LineaDetalle;
-import Models.Comprobantes.Detalles.OtroCargo;
-import Models.Comprobantes.Encabezado.Emisor;
-import Models.Comprobantes.Encabezado.Encabezado;
-import Models.Comprobantes.Encabezado.Fax;
-import Models.Comprobantes.Encabezado.IdentificacionEmisor;
-import Models.Comprobantes.Encabezado.IdentificacionReceptor;
-import Models.Comprobantes.Encabezado.MedioPago;
-import Models.Comprobantes.Encabezado.Receptor;
-import Models.Comprobantes.Encabezado.Telefono;
-import Models.Comprobantes.Encabezado.Ubicacion; 
-import Models.Comprobantes.Enums.CondicionVenta;
-import Models.Comprobantes.Enums.TarifaIVA;
-import Models.Comprobantes.Resumen.ResumenFactura;
+import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesV44.ComprobantesRecibidos;
+import Models.ComprobantesV44.Detalles.CodigoComercial;
+import Models.ComprobantesV44.Detalles.Descuento;
+import Models.ComprobantesV44.Detalles.DetalleServicio;
+import Models.ComprobantesV44.Detalles.Impuesto;
+import Models.ComprobantesV44.Detalles.LineaDetalle;
+import Models.ComprobantesV44.Detalles.OtroCargo;
+import Models.ComprobantesV44.Encabezado.Emisor;
+import Models.ComprobantesV44.Encabezado.Encabezado;
+import Models.ComprobantesV44.Encabezado.Fax;
+import Models.ComprobantesV44.Encabezado.IdentificacionEmisor;
+import Models.ComprobantesV44.Encabezado.IdentificacionReceptor;
+import Models.ComprobantesV44.Encabezado.MedioPago;
+import Models.ComprobantesV44.Encabezado.Receptor;
+import Models.ComprobantesV44.Encabezado.Telefono;
+import Models.ComprobantesV44.Encabezado.Ubicacion;  
+import Models.ComprobantesV44.Resumen.ResumenFactura;
 import Models.Inventario;
-import Models.Promocion;
+import Models.Articulos.Promocion;
+import Models.ComprobantesV44.Encabezado.CorreoElectronicoEmisor;
+import Models.ComprobantesV44.Enums.Tipo_CondicionVenta;
+import Models.ComprobantesV44.Enums.Tipo_TarifaIVA;
 import Models.Registros.Alertas;
 import Services.AlertasService;
 import Services.AppSettingsService;
@@ -773,8 +774,8 @@ public class CrearTiqueteController implements Serializable{
                     String codigoImpuesto = String.valueOf(articulo.getArticulo().getCodigoCabys().getImpuesto());
                     impuesto.setCodigo("01");
 
-                    TarifaIVA tarifa = TarifaIVA.getTarifa(codigoImpuesto);
-                    impuesto.setCodigoTarifa(tarifa.getCodigo());
+                    Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(codigoImpuesto);
+                    impuesto.setCodigoTarifaIVA(tarifa.getCodigo());
                     impuesto.setTarifa(new BigDecimal(codigoImpuesto));
                     impuesto.setMonto(articulo.getTotalImpuesto());
 
@@ -811,7 +812,7 @@ public class CrearTiqueteController implements Serializable{
             Encabezado encabezado = new Encabezado();
             //Codigo actividad
             String codigoActividad = "521202";
-            encabezado.setCodigoActividad(codigoActividad);
+            encabezado.setCodigoActividadEmisor(codigoActividad);
             //Clave
             String clave = ""; //Traer de Tributacion
             encabezado.setClave(clave);
@@ -822,7 +823,7 @@ public class CrearTiqueteController implements Serializable{
             LocalDateTime emision = LocalDateTime.now().withNano(0);
             encabezado.setFechaEmision(emision);
             //CondicionVenta
-            String condicionVenta = CondicionVenta.OTROS.getCodigo();
+            String condicionVenta = Tipo_CondicionVenta.OTROS.getCodigo();
             encabezado.setCondicionVenta(condicionVenta);
             //PlazoCredito
             String plazoCredito = "";
@@ -861,7 +862,14 @@ public class CrearTiqueteController implements Serializable{
             emisorFax.setCodigoPais(appSettings.getCodigoPaisFax());
             emisorFax.setNumeroFax(appSettings.getTelefonoFax());
             //CorreoElectronico
-            emisor.setCorreoElectronico(appSettings.getCorreoElectronicoTributacion());
+            List<CorreoElectronicoEmisor> correosElectronicos = new ArrayList<>();
+            CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
+            correo.setCorreo(appSettings.getCorreoElectronicoTributacion());
+            correo.setEmisor(emisor);
+            
+            correosElectronicos.add(correo);
+            
+            emisor.setCorreosElectronicos(correosElectronicos);
             //Guardamos info Emisor en encabezado
             encabezado.setEmisor(emisor);
             emisorService.create(emisor);

@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.Comprobantes.Detalles.Descuento;
+import Models.ComprobantesV44.Detalles.Descuento;
 import Services.GService;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;

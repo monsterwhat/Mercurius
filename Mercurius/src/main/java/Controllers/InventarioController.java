@@ -1,7 +1,7 @@
 package Controllers;
 
 import Models.Inventario;
-import Models.Articulos;
+import Models.Articulos.Articulos;
 import Services.InventarioService;
 import Services.ArticulosService;
 import Services.AlertasService;

@@ -3,7 +3,8 @@
       xmlns:h="jakarta.faces.html"
       xmlns:f="jakarta.faces.core"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="jakarta.faces.facelets">
+      xmlns:ui="jakarta.faces.facelets"
+      class="#{ThemeController.currentTheme}">
 
     <h:head>
         <title>Menu Principal Articulos</title>
@@ -12,359 +13,364 @@
         <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
     </h:head>
 
-    <h:body >
+    <h:body>
+
         <ui:include src="/secured/fragments/userBar.xhtml" />
 
         <p:growl id="growl" showDetail="true" showSummary="true" />
 
-        <p:card class="card">
-            <f:facet name="title">
-                <p style="text-align: center">Articulos </p> 
-            </f:facet>
-            
-            <p:tabView cache="false" dynamic="true" id="Articulos">
-                <p:tab title="Activos">
-                    <div class="card">
-                        <h:form id="ArticulosActivos">  
-                        <p:dataTable value="#{ArticulosController.filteredArticulosActivos}" var="articulo"  widgetVar="ArticulosTable"
-                                     paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
-                                     emptyMessage="No se encontraron artículos con la critería proporcionada"
-                                     globalFilterFunction="#{ArticulosController.globalFilterFunction}"
-                                     filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
-                                     selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+        <section class="section">
 
-                            <p:ajax event="rowSelect" update="EditArticuloDialog"/>
+            <div class="columns is-multiline has-text-centered">
+                <div class="column is-full">
+                    <p class="title is-3">Articulos</p> 
+                </div>
+                <div class="column">
 
-                            <f:facet name="header">
-                                
-                                <p:commandButton value="Imprimir" icon="pi pi-print" action="#{ArticulosController.exportPDF('ArticulosActivos:ArticulosTableData')}" 
-                                                     ajax="false" styleClass="rounded-button ui-button-help"  style="width: 50%" rendered="#{SessionController.registros}"
-                                                     oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
-                                  
-                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}"
-                                                     styleClass="rounded-button ui-button-success"  style="width: 50%"/>
-    
-                                <p:spacer height="1em"/>
+                    <p:tabView cache="false" dynamic="true" id="Articulos">
+                        <p:tab title="Activos">
+                            <div class="card">
+                                <h:form id="ArticulosActivos">  
+                                    <p:dataTable value="#{ArticulosController.filteredArticulosActivos}" var="articulo"  widgetVar="ArticulosTable"
+                                                 paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
+                                                 emptyMessage="No se encontraron artículos con la critería proporcionada"
+                                                 globalFilterFunction="#{ArticulosController.globalFilterFunction}"
+                                                 filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
+                                                 selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
 
-                                
-                                <p:commandButton value="Crear Artículo" actionListener="#{ArticulosController.openNewArticulo()}" process="@this"
-                                                 update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
+                                        <p:ajax event="rowSelect" update="EditArticuloDialog"/>
 
-                                <p:spacer height="1em"/>
+                                        <f:facet name="header">
 
-                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosTable').filter()"
-                                             placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                            <p:commandButton value="Imprimir" icon="pi pi-print" action="#{ArticulosController.exportPDF('ArticulosActivos:ArticulosTableData')}" 
+                                                             ajax="false" styleClass="rounded-button ui-button-help"  style="width: 50%" rendered="#{SessionController.registros}"
+                                                             oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
 
-                            </f:facet>
+                                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}"
+                                                             styleClass="rounded-button ui-button-success"  style="width: 50%"/>
 
-                            <p:column>
-                                <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
-                                        rendered="#{articulo.processed}"/>
-                                <p:tooltip for="processedChip" value="Procesada" position="top"/>
-                                <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" style="background: var(--yellow-500)"
-                                        rendered="#{!articulo.processed}"/>
-                                <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
-                                <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
-                                        rendered="#{articulo.status}"/>
-                                <p:tooltip for="ActiveChip" value="Activa" position="top"/>
-                                <p:chip id="InactiveChip" icon="pi pi-times" style="background: var(--red-500);"
-                                        rendered="#{!articulo.status}"/>
-                                <p:tooltip for="InactiveChip" value="Inactiva" position="top"/>
-                            </p:column>
-
-                            <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
-                                <h:outputText value="#{articulo.codigo}"/>
-                            </p:column>
-                            <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
-                                <h:outputText value="#{articulo.codigoBarra}"/>
-                            </p:column>
-                            <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}">
-                                <h:outputText value="#{articulo.codigoCabys.codigo}"/>
-                            </p:column>                            
-                            <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
-                                <h:outputText value="#{articulo.nombre}"/>
-                            </p:column>
-
-                            <p:column headerText="Acciones" exportable="false">
-                                <div class="buttons">
-                                    <p:commandButton styleClass="rounded-button ui-button-success" process="@this" icon="pi pi-pencil"
-                                                     onclick="PF('EditArticuloDialog').show();" update="EditArticuloDialog">
-                                        <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                    </p:commandButton>
-                                    <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
-                                                     actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="@this">
-                                        <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                    </p:commandButton>
-                                </div>
-                            </p:column>
-                        </p:dataTable> 
-                    </h:form>
-                    </div> 
-                </p:tab>
-                <p:tab title="Inactivos" >
-                    <div class="card">
-                        <h:form id="ArticulosInactivos">   
-                        <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"
-                                     paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
-                                     emptyMessage="No se encontraron artículos con la critería proporcionada"
-                                     globalFilterFunction="#{ArticulosController.globalFilterFunction}"
-                                     filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
-                                     selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
-
-                            <f:facet name="header">
-                                <p:commandButton value="Imprimir" icon="pi pi-print" rendered="#{SessionController.registros}"
-                                                     action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" 
-                                                     styleClass="rounded-button ui-button-help" style='width: 100%'
-                                                     oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
-                                    
-                                <p:spacer height="1em"/>
-                                
-                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}"
-                                                     styleClass="rounded-button ui-button-success" style='width: 100%'/>
-                                
-                                <p:spacer height="1em"/>
-                                
-                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosInactivos').filter()"
-                                             placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-                            </f:facet>
-
-                            <p:column>
-                                <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
-                                        rendered="#{articulo.processed}"/>
-                                <p:tooltip for="processedChip" value="Procesado" position="top"/>
-                                <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" style="background: var(--yellow-500)"
-                                        rendered="#{!articulo.processed}"/>
-                                <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
-                                <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
-                                        rendered="#{articulo.status}"/>
-                                <p:tooltip for="ActiveChip" value="Activo" position="top"/>
-                                <p:chip id="InactiveChip" icon="pi pi-times" style="background: var(--red-500);"
-                                        rendered="#{!articulo.status}"/>
-                                <p:tooltip for="InactiveChip" value="Inactivo" position="top"/>
-                            </p:column>
-
-                            <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
-                                <h:outputText value="#{articulo.codigo}"/>
-                            </p:column>
-                            <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
-                                <h:outputText value="#{articulo.codigoBarra}"/>
-                            </p:column>
-                            <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
-                                <h:outputText value="#{articulo.codigoCabys.codigo}"/>
-                            </p:column>                            
-                            <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
-                                <h:outputText value="#{articulo.nombre}"/>
-                            </p:column>
-                            <p:column headerText="Creador" sortBy="#{articulo.usuario.username}" visible="false">
-                                <h:outputText value="#{articulo.usuario.username}"/>
-                            </p:column>
-
-                            <p:column headerText="Acciones" exportable="false">
-                                <div class="buttons has-addons">
-                                    <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloInactivoDetailsDialog').show();"
-                                                     icon="pi pi-eye" process="@this" update="selectedArticuloInactivo">
-                                        <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                    </p:commandButton>
-                                </div>
-                            </p:column>
-                        </p:dataTable> 
-                    </h:form>
-                    </div> 
-                </p:tab>
-                <p:tab title="Procesados" >
-                    <div class="card">
-                        <h:form id="catalogoActual"> 
-                        <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
-                                     paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
-                                     emptyMessage="No se encontraron artículos con la critería proporcionada"
-                                     globalFilterFunction="#{ArticulosController.globalFilterFunction}"
-                                     filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
-                                     selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
-
-                            <p:ajax event="rowSelect" update="selectedArticuloActivoYProcesado"/>
-
-                            <f:facet name="header">
-                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosActivosYProcesados').filter()"
-                                             placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-                            </f:facet>
-
-                            <p:column>
-                                <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
-                                        rendered="#{articulo.processed}"/>
-                                <p:tooltip for="processedChip" value="Procesado" position="top"/>
-                                <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
-                                        rendered="#{articulo.status}"/>
-                                <p:tooltip for="ActiveChip" value="Activo" position="top"/>
-                            </p:column>
-
-                            <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
-                                <h:outputText value="#{articulo.codigo}"/>
-                            </p:column>
-                            <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
-                                <h:outputText value="#{articulo.codigoBarra}"/>
-                            </p:column>
-                            <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
-                                <h:outputText value="#{articulo.codigoCabys.codigo}"/>
-                            </p:column>                            
-                            <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
-                                <h:outputText value="#{articulo.nombre}"/>
-                            </p:column>
-                            <p:column headerText="Creador" sortBy="#{articulo.usuario.username}" visible="false">
-                                <h:outputText value="#{articulo.usuario.username}"/>
-                            </p:column>
-                            <p:column headerText="Stock" sortBy="#{ArticulosController.getStock(articulo)}">
-                                <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
-                            </p:column>
-                            <p:column headerText="Precio" sortBy="#{ArticulosController.getLastPrecioFor(articulo).precioFinal}">
-                                <h:outputText value="#{ArticulosController.getLastPrecioFor(articulo).precioFinal}"/>
-                            </p:column>
-
-                            <p:column headerText="Acciones" exportable="false">
-                                <div class="buttons has-addons">
-                                    <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloActivoYProcesadoDetailsDialog').show();"
-                                                     icon="pi pi-eye" process="@this" update="selectedArticuloActivoYProcesado">
-                                        <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                    </p:commandButton>
-                                </div>
-                            </p:column>
-                        </p:dataTable>    
-                    </h:form>
-                    </div> 
-                </p:tab>
-                <p:tab title="Pendientes" >
-                    <div class="card">
-                        <h:form id="ArticulosPendientes"> 
-                        <p:dataTable value="#{ArticulosController.filteredArticulosSinProcesar}" var="articulo"  widgetVar="ArticulosRevisionTable"
-                                     paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosRevisionTable"
-                                     emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"
-                                     globalFilterFunction="#{ArticulosController.globalFilterFunction}" reflow="true"
-                                     filterBy="#{ArticulosController.filterBy}" selectionMode="single"
-                                     selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
-
-                            <p:ajax event="rowSelect"  update="RevisionArticuloDialog"/>
-
-                            <f:facet name="header">
-                                <p:commandButton style="width: 100%" value="Procesado Rapido" actionListener="#{ArticulosController.procesadoRapido}" styleClass="ui-button-primary rounded-button"
-                                                 process="@this" update="RevisionArticulosDialog" onclick="PF('RevisionArticulosDialog').show();"/>
-
-                                <p:spacer height="1em"/>
-
-                                <p:inputText id="globalFilter" onkeyup="PF('ArticulosRevisionTable').filter()"
-                                             placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-
-                            </f:facet>
-
-                            <p:column exportable="false">
-                                <div class="buttons">
-                                    <p:commandButton value="Procesar" styleClass="rounded-button ui-button-secondary" process="@this" update="RevisionArticuloDialog"
-                                                     icon="pi pi-sync" onclick="PF('RevisionArticuloDialog').show();" >
-                                        <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                    </p:commandButton>
-                                </div>
-                            </p:column>
-
-                            <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
-                                <h:outputText value="#{articulo.codigo}"/>
-                            </p:column>
-                            <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
-                                <h:outputText value="#{articulo.nombre}"/>
-                            </p:column>
-                            <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
-                                <h:outputText value="#{articulo.codigoBarra}"/>
-                            </p:column>
-                            <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
-                                <h:outputText value="#{articulo.codigoCabys.codigo}"/>
-                            </p:column>
-
-                        </p:dataTable>
-
-                    </h:form>
-                    </div> 
-                </p:tab>
-                <p:tab title="Promociones">
-                    <div class="card">
-                        <h:form id="promociones"> 
-                        <p:dataTable value="#{PromocionesController.filteredPromocions}" var="promocion" 
-                                     widgetVar="Promociones" paginator="true" rows="8" 
-                                     paginatorPosition="bottom" id="PromocionesTableData"
-                                     emptyMessage="No se encontraron promociones con la critería proporcionada"
-                                     globalFilterFunction="#{PromocionesController.globalFilterFunction}"
-                                     filterBy="#{PromocionesController.filterBy}" reflow="true" 
-                                     selectionMode="single" selection="#{PromocionesController.selectedPromocion}" 
-                                     rowKey="#{promocion.id}">
-
-                            <p:ajax event="rowSelect" update="@this"/>
-
-                            <f:facet name="header">
-                                <p:commandButton value="Crear Promocion" actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
-                                                 update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
-
-                                <p:spacer height="1em"/>
-
-                                <p:inputText id="globalFilter" onkeyup="PF('Promociones').filter()"
-                                             placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-                            </f:facet>
-
-                            <p:column headerText="Código" sortBy="#{promocion.id}" visible="false">
-                                <h:outputText value="#{promocion.id}"/>
-                            </p:column>
-
-                            <p:column headerText="Nombre" sortBy="#{promocion.nombre}">
-                                <h:outputText value="#{promocion.nombre}"/>
-                            </p:column>
-
-                            <p:column headerText="Artículos">
-                                <p:commandButton value="Ver Artículos" 
-                                                 onclick="PF('articulosDialog').show();"
-                                                 process="@this">
-                                    <f:setPropertyActionListener value="#{promocion}" 
-                                                                 target="#{PromocionesController.selectedPromocion}" />
-                                </p:commandButton>
-                            </p:column>
-
-                            <p:column headerText="Fecha Inicio">
-                                <h:outputText value="#{promocion.fechaInicio}"/>
-                            </p:column>
-
-                            <p:column headerText="Fecha Fin">
-                                <h:outputText value="#{promocion.fechaFin}"/>
-                            </p:column>
-
-                            <p:column headerText="Descuento">
-                                <h:outputText value="#{promocion.descuento}"/>
-                                <h:outputText value="No Aplica" rendered="#{promocion.descuento eq null}"/>
-                            </p:column>
-
-                            <p:column headerText="Creador" sortBy="#{promocion.usuario.username}" visible="true">
-                                <h:outputText value="#{promocion.usuario.username}"/>
-                            </p:column>
-
-                            <p:column headerText="Estatus" visible="false">
-                                <h:outputText value="#{promocion.activa}"/>
-                            </p:column>
-
-                            <p:column headerText="Acciones" exportable="false">
-                                <div class="buttons">
-                                    <p:commandButton styleClass="rounded-button ui-button-success" process="@this" icon="pi pi-pencil"
-                                                     actionListener="#{PromocionesController.editPromocion()}" update="EditPromocionDialog">
-                                        <f:setPropertyActionListener value="#{promocion}" target="#{PromocionesController.selectedPromocion}" />
-                                    </p:commandButton>
-                                    <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
-                                                     actionListener="#{PromocionesController.deletePromocion()}" process="@this" update="@this">
-                                        <f:setPropertyActionListener value="#{promocion}" target="#{PromocionesController.selectedPromocion}" />
-                                    </p:commandButton>
-                                </div>
-                            </p:column>
-
-                        </p:dataTable>
+                                            <p:spacer height="1em"/>
 
 
+                                            <p:commandButton value="Crear Artículo" actionListener="#{ArticulosController.openNewArticulo()}" process="@this"
+                                                             update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
 
-                    </h:form>
-                    </div> 
-                </p:tab> 
-            </p:tabView>
-        </p:card> 
+                                            <p:spacer height="1em"/>
+
+                                            <p:inputText id="globalFilter" onkeyup="PF('ArticulosTable').filter()"
+                                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+
+                                        </f:facet>
+
+                                        <p:column>
+                                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
+                                                    rendered="#{articulo.processed}"/>
+                                            <p:tooltip for="processedChip" value="Procesada" position="top"/>
+                                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" style="background: var(--yellow-500)"
+                                                    rendered="#{!articulo.processed}"/>
+                                            <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
+                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
+                                                    rendered="#{articulo.status}"/>
+                                            <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+                                            <p:chip id="InactiveChip" icon="pi pi-times" style="background: var(--red-500);"
+                                                    rendered="#{!articulo.status}"/>
+                                            <p:tooltip for="InactiveChip" value="Inactiva" position="top"/>
+                                        </p:column>
+
+                                        <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
+                                            <h:outputText value="#{articulo.codigo}"/>
+                                        </p:column>
+                                        <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                                            <h:outputText value="#{articulo.codigoBarra}"/>
+                                        </p:column>
+                                        <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}">
+                                            <h:outputText value="#{articulo.codigoCabys.codigo}"/>
+                                        </p:column>                            
+                                        <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                                            <h:outputText value="#{articulo.nombre}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Acciones" exportable="false">
+                                            <div class="buttons">
+                                                <p:commandButton styleClass="rounded-button ui-button-success" process="@this" icon="pi pi-pencil"
+                                                                 onclick="PF('EditArticuloDialog').show();" update="EditArticuloDialog">
+                                                    <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
+                                                </p:commandButton>
+                                                <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
+                                                                 actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="@this">
+                                                    <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable> 
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                        <p:tab title="Inactivos" >
+                            <div class="card">
+                                <h:form id="ArticulosInactivos">   
+                                    <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"
+                                                 paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
+                                                 emptyMessage="No se encontraron artículos con la critería proporcionada"
+                                                 globalFilterFunction="#{ArticulosController.globalFilterFunction}"
+                                                 filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
+                                                 selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+
+                                        <f:facet name="header">
+                                            <p:commandButton value="Imprimir" icon="pi pi-print" rendered="#{SessionController.registros}"
+                                                             action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" 
+                                                             styleClass="rounded-button ui-button-help" style='width: 100%'
+                                                             oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
+
+                                            <p:spacer height="1em"/>
+
+                                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}"
+                                                             styleClass="rounded-button ui-button-success" style='width: 100%'/>
+
+                                            <p:spacer height="1em"/>
+
+                                            <p:inputText id="globalFilter" onkeyup="PF('ArticulosInactivos').filter()"
+                                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                        </f:facet>
+
+                                        <p:column>
+                                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
+                                                    rendered="#{articulo.processed}"/>
+                                            <p:tooltip for="processedChip" value="Procesado" position="top"/>
+                                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" style="background: var(--yellow-500)"
+                                                    rendered="#{!articulo.processed}"/>
+                                            <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
+                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
+                                                    rendered="#{articulo.status}"/>
+                                            <p:tooltip for="ActiveChip" value="Activo" position="top"/>
+                                            <p:chip id="InactiveChip" icon="pi pi-times" style="background: var(--red-500);"
+                                                    rendered="#{!articulo.status}"/>
+                                            <p:tooltip for="InactiveChip" value="Inactivo" position="top"/>
+                                        </p:column>
+
+                                        <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
+                                            <h:outputText value="#{articulo.codigo}"/>
+                                        </p:column>
+                                        <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                                            <h:outputText value="#{articulo.codigoBarra}"/>
+                                        </p:column>
+                                        <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
+                                            <h:outputText value="#{articulo.codigoCabys.codigo}"/>
+                                        </p:column>                            
+                                        <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                                            <h:outputText value="#{articulo.nombre}"/>
+                                        </p:column>
+                                        <p:column headerText="Creador" sortBy="#{articulo.usuario.username}" visible="false">
+                                            <h:outputText value="#{articulo.usuario.username}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Acciones" exportable="false">
+                                            <div class="buttons has-addons">
+                                                <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloInactivoDetailsDialog').show();"
+                                                                 icon="pi pi-eye" process="@this" update="selectedArticuloInactivo">
+                                                    <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable> 
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                        <p:tab title="Procesados" >
+                            <div class="card">
+                                <h:form id="catalogoActual"> 
+                                    <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
+                                                 paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
+                                                 emptyMessage="No se encontraron artículos con la critería proporcionada"
+                                                 globalFilterFunction="#{ArticulosController.globalFilterFunction}"
+                                                 filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
+                                                 selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+
+                                        <p:ajax event="rowSelect" update="selectedArticuloActivoYProcesado"/>
+
+                                        <f:facet name="header">
+                                            <p:inputText id="globalFilter" onkeyup="PF('ArticulosActivosYProcesados').filter()"
+                                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                        </f:facet>
+
+                                        <p:column>
+                                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
+                                                    rendered="#{articulo.processed}"/>
+                                            <p:tooltip for="processedChip" value="Procesado" position="top"/>
+                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
+                                                    rendered="#{articulo.status}"/>
+                                            <p:tooltip for="ActiveChip" value="Activo" position="top"/>
+                                        </p:column>
+
+                                        <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
+                                            <h:outputText value="#{articulo.codigo}"/>
+                                        </p:column>
+                                        <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                                            <h:outputText value="#{articulo.codigoBarra}"/>
+                                        </p:column>
+                                        <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
+                                            <h:outputText value="#{articulo.codigoCabys.codigo}"/>
+                                        </p:column>                            
+                                        <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                                            <h:outputText value="#{articulo.nombre}"/>
+                                        </p:column>
+                                        <p:column headerText="Creador" sortBy="#{articulo.usuario.username}" visible="false">
+                                            <h:outputText value="#{articulo.usuario.username}"/>
+                                        </p:column>
+                                        <p:column headerText="Stock" sortBy="#{ArticulosController.getStock(articulo)}">
+                                            <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
+                                        </p:column>
+                                        <p:column headerText="Precio" sortBy="#{ArticulosController.getLastPrecioFor(articulo).precioFinal}">
+                                            <h:outputText value="#{ArticulosController.getLastPrecioFor(articulo).precioFinal}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Acciones" exportable="false">
+                                            <div class="buttons has-addons">
+                                                <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloActivoYProcesadoDetailsDialog').show();"
+                                                                 icon="pi pi-eye" process="@this" update="selectedArticuloActivoYProcesado">
+                                                    <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable>    
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                        <p:tab title="Pendientes" >
+                            <div class="card">
+                                <h:form id="ArticulosPendientes"> 
+                                    <p:dataTable value="#{ArticulosController.filteredArticulosSinProcesar}" var="articulo"  widgetVar="ArticulosRevisionTable"
+                                                 paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosRevisionTable"
+                                                 emptyMessage="No se encontraron artículos con la critería proporcionada" stripedRows="true"
+                                                 globalFilterFunction="#{ArticulosController.globalFilterFunction}" reflow="true"
+                                                 filterBy="#{ArticulosController.filterBy}" selectionMode="single"
+                                                 selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+
+                                        <p:ajax event="rowSelect"  update="RevisionArticuloDialog"/>
+
+                                        <f:facet name="header">
+                                            <p:commandButton style="width: 100%" value="Procesado Rapido" actionListener="#{ArticulosController.procesadoRapido}" styleClass="ui-button-primary rounded-button"
+                                                             process="@this" update="RevisionArticulosDialog" onclick="PF('RevisionArticulosDialog').show();"/>
+
+                                            <p:spacer height="1em"/>
+
+                                            <p:inputText id="globalFilter" onkeyup="PF('ArticulosRevisionTable').filter()"
+                                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+
+                                        </f:facet>
+
+                                        <p:column exportable="false">
+                                            <div class="buttons">
+                                                <p:commandButton value="Procesar" styleClass="rounded-button ui-button-secondary" process="@this" update="RevisionArticuloDialog"
+                                                                 icon="pi pi-sync" onclick="PF('RevisionArticuloDialog').show();" >
+                                                    <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+
+                                        <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
+                                            <h:outputText value="#{articulo.codigo}"/>
+                                        </p:column>
+                                        <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                                            <h:outputText value="#{articulo.nombre}"/>
+                                        </p:column>
+                                        <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                                            <h:outputText value="#{articulo.codigoBarra}"/>
+                                        </p:column>
+                                        <p:column headerText="Código Cabys" sortBy="#{articulo.codigoCabys}" visible="false">
+                                            <h:outputText value="#{articulo.codigoCabys.codigo}"/>
+                                        </p:column>
+
+                                    </p:dataTable>
+
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                        <p:tab title="Promociones">
+                            <div class="card">
+                                <h:form id="promociones"> 
+                                    <p:dataTable value="#{PromocionesController.filteredPromocions}" var="promocion" 
+                                                 widgetVar="Promociones" paginator="true" rows="8" 
+                                                 paginatorPosition="bottom" id="PromocionesTableData"
+                                                 emptyMessage="No se encontraron promociones con la critería proporcionada"
+                                                 globalFilterFunction="#{PromocionesController.globalFilterFunction}"
+                                                 filterBy="#{PromocionesController.filterBy}" reflow="true" 
+                                                 selectionMode="single" selection="#{PromocionesController.selectedPromocion}" 
+                                                 rowKey="#{promocion.id}">
+
+                                        <p:ajax event="rowSelect" update="@this"/>
+
+                                        <f:facet name="header">
+                                            <p:commandButton value="Crear Promocion" actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
+                                                             update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
+
+                                            <p:spacer height="1em"/>
+
+                                            <p:inputText id="globalFilter" onkeyup="PF('Promociones').filter()"
+                                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                        </f:facet>
+
+                                        <p:column headerText="Código" sortBy="#{promocion.id}" visible="false">
+                                            <h:outputText value="#{promocion.id}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Nombre" sortBy="#{promocion.nombre}">
+                                            <h:outputText value="#{promocion.nombre}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Artículos">
+                                            <p:commandButton value="Ver Artículos" 
+                                                             onclick="PF('articulosDialog').show();"
+                                                             process="@this">
+                                                <f:setPropertyActionListener value="#{promocion}" 
+                                                                             target="#{PromocionesController.selectedPromocion}" />
+                                            </p:commandButton>
+                                        </p:column>
+
+                                        <p:column headerText="Fecha Inicio">
+                                            <h:outputText value="#{promocion.fechaInicio}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Fecha Fin">
+                                            <h:outputText value="#{promocion.fechaFin}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Descuento">
+                                            <h:outputText value="#{promocion.descuento}"/>
+                                            <h:outputText value="No Aplica" rendered="#{promocion.descuento eq null}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Creador" sortBy="#{promocion.usuario.username}" visible="true">
+                                            <h:outputText value="#{promocion.usuario.username}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Estatus" visible="false">
+                                            <h:outputText value="#{promocion.activa}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Acciones" exportable="false">
+                                            <div class="buttons">
+                                                <p:commandButton styleClass="rounded-button ui-button-success" process="@this" icon="pi pi-pencil"
+                                                                 actionListener="#{PromocionesController.editPromocion()}" update="EditPromocionDialog">
+                                                    <f:setPropertyActionListener value="#{promocion}" target="#{PromocionesController.selectedPromocion}" />
+                                                </p:commandButton>
+                                                <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
+                                                                 actionListener="#{PromocionesController.deletePromocion()}" process="@this" update="@this">
+                                                    <f:setPropertyActionListener value="#{promocion}" target="#{PromocionesController.selectedPromocion}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+
+                                    </p:dataTable>
+
+                                </h:form>
+                            </div> 
+                        </p:tab> 
+                    </p:tabView>
+                </div>
+            </div>
+
+        </section>
 
         <ui:include src="/secured/fragments/CaByS/CabysDialogEdit.xhtml"/>  
         <ui:include src="/secured/fragments/Articulos/PendientesRevision/DialogoRevisionArticulo.xhtml"/>

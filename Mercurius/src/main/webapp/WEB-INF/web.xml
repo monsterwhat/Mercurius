@@ -19,11 +19,7 @@
     <context-param>
         <param-name>jakarta.faces.AUTOMATIC_EXTENSIONLESS_MAPPING</param-name>
         <param-value>true</param-value>
-    </context-param>
-    <context-param>
-        <param-name>primefaces.THEME</param-name>
-        <param-value>#{ThemeController.currentTheme}</param-value>
-    </context-param>
+    </context-param> 
     <context-param>
         <param-name>jakarta.faces.FAVICON</param-name>
         <param-value>/resources/favicon/favicon.ico</param-value>
