@@ -33,7 +33,7 @@ public class OtroCargo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+ 
     @XmlElement(name = "DetalleServicio")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

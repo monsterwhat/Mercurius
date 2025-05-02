@@ -1,0 +1,13 @@
+body,
+.section,
+.ui-card {
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-commandlink,
+.ui-link,
+.ui-commandlink:hover {
+    color: var(--bulma-text-title-l) !important;
+    text-decoration: none !important;
+}

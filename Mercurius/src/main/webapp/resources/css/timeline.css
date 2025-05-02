@@ -1,0 +1,62 @@
+.timeline-frame {
+    border-color: var(--bulma-border) !important;
+    border-radius: 5px;
+} 
+.timeline-axis {
+    background: linear-gradient(to bottom, #5D99C3, #3A6DA0), var(--bulma-primary);
+    border-color: #5D99C3;
+    opacity: 1;
+}
+
+.timeline-axis-text {
+    color: var(--bulma-text-title-l) !important;
+}
+
+.timeline-groups-axis {
+    border-color: var(--bulma-border) !important;
+}
+
+.timeline-groups-axis-onleft {
+    border-style: none solid none none;
+}
+
+.timeline-event {
+    color: var(--bulma-text-title-l) !important;
+    border-radius: 5px !important;
+}
+
+.timeline-event-content {
+    padding: 5px;
+    text-shadow: none;
+}
+
+.timeline-event-selected {
+    background: #E61FC0 !important;
+    border-color: #AA008A !important;
+}
+
+.timeline-event.Equipment {
+    background: #ffdd8f !important;
+    border-color: #C4A65B !important;
+}
+
+.timeline-event.Property {
+    background: #99e0ff !important;
+    border-color: #60A9C6 !important;
+}
+.vis-timeline .vis-item.vis-selected{
+    background: var(--bulma-primary) !important;
+    color: var(--bulma-text-title) !important;
+}
+.vis-timeline .vis-item{
+    background: var(--bulma-success-60) !important;
+    color: var(--bulma-text-title) !important;
+}
+
+.vis-timeline {
+    background: var(--bulma-scheme-main) !important;
+}
+
+.vis-time-axis .vis-text {
+    color: var(--bulma-text-title-l) !important;
+}

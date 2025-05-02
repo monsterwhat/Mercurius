@@ -31,8 +31,7 @@ public class MedioPago {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @XmlElement(name = "Comprobante")
+ 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne

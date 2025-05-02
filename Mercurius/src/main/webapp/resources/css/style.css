@@ -1,10 +1,11 @@
-.inactive-row {
-    background-color: #999999 !important;
-    color: #ffffff !important;
+.side-panel {
+    width: 200px !important;
+    overflow-y: auto !important;
+    display: none !important; /* Hidden in mobile by default */
 }
-.full-width {
-    width: 100%;
-}
-.is-rounded {
-    border-radius: 20%;
-}
+
+@media screen and (min-width: 768px) {
+    .side-panel {
+        display: block !important; /* Visible on larger screens */
+    }
+} 
