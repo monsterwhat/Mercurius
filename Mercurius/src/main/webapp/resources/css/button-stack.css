@@ -1,0 +1,36 @@
+.button-stack {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+}
+
+.edit-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+}
+
+.edit-text {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    display: inline-block;
+    transform: translateX(5px);
+    transition: opacity 0.3s ease, transform 0.3s ease, max-width 0.3s ease;
+    white-space: nowrap;
+}
+
+@media (min-width: 769px) {
+    .edit-btn:hover .edit-text {
+        opacity: 1;
+        transform: translateX(0);
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .edit-text {
+        opacity: 1;
+        transform: translateX(0);
+        max-width: 200px;
+    }
+}

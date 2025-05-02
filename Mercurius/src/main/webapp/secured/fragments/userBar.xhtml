@@ -13,6 +13,15 @@
         <h:outputStylesheet name="css/theme.css" /> 
         <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
         <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+
+        <link rel="stylesheet" href="../../resources/css/base-theme.css"/> 
+        <link rel="stylesheet" href="../../resources/css/button-stack.css"/> 
+        <link rel="stylesheet" href="../../resources/css/datatable.css"/> 
+        <link rel="stylesheet" href="../../resources/css/dialog.css"/>
+        <link rel="stylesheet" href="../../resources/css/form-elements.css"/>
+        <link rel="stylesheet" href="../../resources/css/tabs.css"/>
+        <link rel="stylesheet" href="../../resources/css/timeline.css"/> 
+
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const burger = document.querySelector('.navbar-burger');
@@ -25,173 +34,7 @@
                     });
                 }
             });
-        </script>
-        <style>
-            body .ui-commandlink, body .ui-link{
-                color: black !important;
-            }
-            .section{
-                background: var(--bulma-background) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-            .ui-card{
-                background: var(--bulma-scheme-main) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-            .ui-tabs .ui-tabs-nav{
-                background: var(--bulma-info-soft) !important;
-            }
-            .ui-tabs.ui-tabs-top .ui-tabs-nav li.ui-tabs-header.ui-state-active{
-                border-color: var(--bulma-info-soft) !important;
-            }
-            .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active{
-                background: var(--bulma-info-soft) !important;
-            }
-            .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a{
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            .ui-tabs .ui-tabs-nav li.ui-tabs-header{
-                color: var(--bulma-text-title-l) !important;
-                background: var(--bulma-info-soft) !important;
-            }
-            .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui.state-hover a{
-                color:  var(--bulma-text-title-l) !important;
-            }
-            .ui-tabs .ui-tabs-panels{
-                background: var(--bulma-info-soft) !important;
-                border-bottom-left-radius: 1em !important;
-                border-bottom-right-radius: 1em !important;
-            }
-            .ui-tabs .ui-tabs-top .ui-tabs-nav li.ui-tabs-header a{
-                background: var(--bulma-info-soft) !important;
-                color:  var(--bulma-text-title-l) !important;
-            }
-            .ui-tabs.ui-tabs-top .ui-tabs-nav{
-                border-radius: 1em !important;
-            }
-            .ui-tabs.ui-tabs-top .ui-tabs-nav li.ui-tabs-header{
-                border-top-left-radius: 1em !important;
-            }
-            .ui-datatable thead th{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-            body .ui-datatable .ui-datatable-header{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-                border: none !important;
-                border-width: unset !important;
-            }
-            .ui-paginator {
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-                border: none !important;
-                border-width: unset !important;
-            }
-            body .ui-datatable .ui-datatable-data > tr {
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-            .ui-datatable .ui-datatable-data tr td{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-        </style>
-        <style>
-
-            body .ui-datatable .ui-datatable-footer{
-                background:  var(--bulma-background-l) !important;
-                color: var(--bulma-text-title-l) !important;
-                border: unset !important;
-            }
-
-            body .ui-radiobutton .ui-radiobutton-box.ui-state-active .ui-icon-bullet{
-                background: var(--bulma-primary) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-radiobutton .ui-radiobutton-box{
-                background: var(--bulma-scheme-main) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body select{
-                background: var(--bulma-scheme-main) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-datepicker .ui-datepicker-header{
-                background: var(--bulma-scheme-main) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-datepicker{
-                background: var(--bulma-scheme-main) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-selectonemenu{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-inputgroup .ui-inputgroup-addon{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-datatable .ui-datatable-scrollable-header{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-panelgrid .ui-panelgrid-cell{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-datatable thead th{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-panel .ui-panel-titlebar{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            body .ui-panel .ui-panel-content{
-                background: var(--bulma-scheme-main-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-            .ui-commandlink{
-                color: var(--bulma-text-title-l) !important;
-            }
-            .ui-commandlink:hover{
-                color: var(--bulma-text-title-l) !important;
-                text-decoration: none !important;
-            }
-            .ui-inputfield{
-                background:  var(--bulma-background-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-            .ui-dialog .ui-dialog-content{
-                background:  var(--bulma-background) !important;
-                color: var(--bulma-text-title-l) !important;
-                padding: 1rem !important;
-            }
-            .ui-password-panel{
-                background:  var(--bulma-background-l) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-            .ui-dialog .ui-dialog-titlebar {
-                background: var(--bulma-background) !important;
-                color: var(--bulma-text-title-l) !important;
-            }
-
-        </style> 
+        </script> 
     </h:head>
 
     <h:form id="MainMenu">

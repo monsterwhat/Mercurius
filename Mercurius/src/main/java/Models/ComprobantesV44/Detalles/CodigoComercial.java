@@ -32,7 +32,7 @@ public class CodigoComercial {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+ 
     @XmlElement(name = "LineaDetalle")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

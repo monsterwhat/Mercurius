@@ -40,8 +40,17 @@
                                         <p:ajax event="rowSelect" update="@form"/>
 
                                         <f:facet name="header">
-                                            <p:commandButton value="Crear Departamento" actionListener="#{DepartamentosController.openNewDepartamento()}" 
-                                                             styleClass="rounded-button ui-button-primary" style="width: 100%" onclick="PF('CrearDepartamentoDialog').show();"/>
+                                            <p:commandLink actionListener="#{DepartamentosController.openNewDepartamento()}" 
+                                                           styleClass="button is-rounded is-success is-fullwidth" onclick="PF('CrearDepartamentoDialog').show();">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-plus"></i>
+                                                    </span>
+                                                    <span>
+                                                        Crear Departamento
+                                                    </span>
+                                                </span>
+                                            </p:commandLink>
 
                                             <p:spacer height="1em"/>
 
@@ -93,9 +102,18 @@
                                         <p:ajax event="rowSelect" update="@form"/>
 
                                         <f:facet name="header">
-                                            <p:commandButton value="Crear Familia" actionListener="#{FamiliasController.openNewFamilia}"
-                                                             styleClass="rounded-button ui-button-primary" style="width: 100%"
-                                                             onclick="PF('CrearFamiliaDialog').show();"/>
+                                            <p:commandLink actionListener="#{FamiliasController.openNewFamilia}"
+                                                           styleClass="button is-rounded is-success is-fullwidth"
+                                                           onclick="PF('CrearFamiliaDialog').show();">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-plus"></i>
+                                                    </span>
+                                                    <span>
+                                                        Crear Familia
+                                                    </span>
+                                                </span>
+                                            </p:commandLink>
 
                                             <p:spacer height="1em"/>
 
@@ -138,7 +156,7 @@
                 </div>
             </div>
         </section>
- 
+
         <ui:include src="/secured/fragments/Departamentos/CrearDepartamentoDialog.xhtml"/>
         <ui:include src="/secured/fragments/Departamentos/EditDepartamentoDialog.xhtml"/>
         <ui:include src="/secured/fragments/Familias/CreateFamiliaDialog.xhtml"/>

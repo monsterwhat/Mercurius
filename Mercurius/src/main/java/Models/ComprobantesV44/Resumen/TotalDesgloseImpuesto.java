@@ -45,8 +45,7 @@ public class TotalDesgloseImpuesto {
     @XmlElement(name = "TotalMontoImpuesto")
     @Column(name = "total_monto_impuesto", precision = 18, scale = 5)
     private BigDecimal totalMontoImpuesto;
-    
-    @XmlElement(name = "ResumenFactura")
+     
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(fetch = FetchType.LAZY)

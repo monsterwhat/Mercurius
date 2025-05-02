@@ -1,0 +1,26 @@
+.ui-radiobutton .ui-radiobutton-box {
+    background: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-radiobutton .ui-radiobutton-box.ui-state-active .ui-icon-bullet {
+    background: var(--bulma-primary) !important;
+}
+
+select,
+.ui-datepicker,
+.ui-datepicker .ui-datepicker-header,
+.ui-selectonemenu,
+.ui-inputgroup .ui-inputgroup-addon,
+.ui-panelgrid .ui-panelgrid-cell,
+.ui-panel .ui-panel-titlebar,
+.ui-panel .ui-panel-content {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-inputfield,
+.ui-password-panel {
+    background: var(--bulma-background-l) !important;
+    color: var(--bulma-text-title-l) !important;
+}

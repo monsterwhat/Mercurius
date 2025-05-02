@@ -1,0 +1,22 @@
+.ui-datatable thead th,
+.ui-datatable .ui-datatable-data tr td {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-datatable .ui-datatable-header,
+.ui-paginator {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+    border: none !important;
+}
+
+.ui-datatable .ui-datatable-footer {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+    border: unset !important;
+}
+.ui-datatable .ui-datatable-data > tr {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+}

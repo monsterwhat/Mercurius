@@ -8,9 +8,7 @@
 
     <h:head>
         <title>Menu Principal Inventario</title>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-        <h:outputStylesheet name="primefaces/primefaces.css"/>
-        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
 
         <script type="text/javascript">
             function printPDF(url) {
@@ -74,18 +72,32 @@
                                         <p:ajax event="rowSelect" update="selectedArticulo"/>
 
                                         <f:facet name="header">
+                                            <div class="buttons">
+                                                <p:commandLink action="#{InventarioController.exportPDF}" ajax="false" 
+                                                               styleClass="button is-rounded is-info is-fullwidth" 
+                                                               oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')">
+                                                    <span class="icon-text">
+                                                        <span class="icon">
+                                                            <i class="pi pi-print"></i>
+                                                        </span>
+                                                        <span>
+                                                            Imprimir
+                                                        </span>
+                                                    </span>
+                                                </p:commandLink>
 
-                                            <p:commandButton value="Imprimir" icon="pi pi-print" 
-                                                             action="#{InventarioController.exportPDF}" ajax="false" styleClass="rounded-button ui-button-help" style="width: 100%"
-                                                             oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')"/>
-
-                                            <p:spacer height="1em"/>
-
-                                            <p:commandButton value="Crear Ajuste" onclick="PF('CrearAjusteDialog').show();" 
-                                                             update="crearAjuste" styleClass="rounded-button ui-button-primary" 
-                                                             style="width: 100%"/>
-
-                                            <p:spacer height="1em"/>
+                                                <p:commandLink onclick="PF('CrearAjusteDialog').show();"  update="crearAjuste" 
+                                                               styleClass="button is-rounded is-success is-fullwidth" >
+                                                    <span class="icon-text">
+                                                        <span class="icon">
+                                                            <i class="pi pi-plus"></i>
+                                                        </span>
+                                                        <span>
+                                                            Crear Ajuste
+                                                        </span>
+                                                    </span>   
+                                                </p:commandLink>
+                                            </div>
 
                                             <p:inputText id="globalFilter" onkeyup="PF('InventarioTable').filter()"
                                                          placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
@@ -290,9 +302,18 @@
 
                                         <f:facet name="header">
 
-                                            <p:commandButton value="Procesado Rapido" actionListener="#{InventarioController.procesadoRapido()}" 
-                                                             styleClass="rounded-button ui-button-primary" update="RevisionMovimientoDialog" style="width: 100%"
-                                                             icon="pi pi-sync" onclick="PF('RevisionMovimientosDialog').show();" process="@this"/>
+                                            <p:commandLink actionListener="#{InventarioController.procesadoRapido()}" 
+                                                             styleClass="button is-success is-rounded is-fullwidth" update="RevisionMovimientoDialog"
+                                                              onclick="PF('RevisionMovimientosDialog').show();" process="@this">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-sync"></i>
+                                                    </span>
+                                                    <span>
+                                                        Procesado Rapido
+                                                    </span>
+                                                </span>
+                                            </p:commandLink>
 
                                             <p:spacer height="1em"/>
 

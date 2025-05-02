@@ -1,0 +1,9 @@
+.ui-dialog .ui-dialog-content,
+.ui-dialog .ui-dialog-titlebar {
+    background: var(--bulma-primary) !important;
+    color: var(--bulma-text-light) !important;
+}
+
+.ui-dialog .ui-dialog-content {
+    padding: 1rem !important;
+}

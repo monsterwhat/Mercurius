@@ -1,0 +1,32 @@
+.ui-tabs .ui-tabs-nav,
+.ui-tabs .ui-tabs-nav li.ui-tabs-header, 
+.ui-tabs .ui-tabs-top .ui-tabs-nav li.ui-tabs-header a {
+    background: var(--bulma-scheme-main) !important; 
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a{
+    color: var(--bulma-warning) !important;
+} 
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header a{
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active {
+    border-color: var(--bulma-warning) !important;
+}
+
+
+.ui-tabs .ui-tabs-panels {
+    background: var(--bulma-scheme-main) !important;
+    border-bottom-left-radius: 1em !important;
+    border-bottom-right-radius: 1em !important;
+}
+
+.ui-tabs.ui-tabs-top .ui-tabs-nav {
+    border-radius: 1em !important;
+}
+
+.ui-tabs.ui-tabs-top .ui-tabs-nav li.ui-tabs-header {
+    border-top-left-radius: 1em !important;
+}

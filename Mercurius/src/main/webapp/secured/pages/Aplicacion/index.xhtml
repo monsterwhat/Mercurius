@@ -15,8 +15,10 @@
 
         <ui:include src="/secured/fragments/userBar.xhtml" /> 
 
-        <div class="card"> 
-            <p:outputPanel id="mainPanel" class="card">
+
+        <section class="section">
+
+            <p:outputPanel id="mainPanel" >
                 <p:panel rendered="#{SettingsController.currentSettings.completedSteps lt 5}">
                     <p:steps activeIndex="#{SettingsController.currentSettings.completedSteps}">
                         <p:menuitem value="Perfil" />
@@ -303,7 +305,10 @@
                         </div> 
                     </p:outputPanel> 
                 </h:form> 
-            </p:outputPanel>
-        </div> 
+            </p:outputPanel> 
+
+        </section>
+
+
     </h:body>
 </html>

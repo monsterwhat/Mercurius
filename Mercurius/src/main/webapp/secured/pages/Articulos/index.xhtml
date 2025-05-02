@@ -25,12 +25,49 @@
                 <div class="column is-full">
                     <p class="title is-3">Articulos</p> 
                 </div>
-                <div class="column">
-
+                <div class="column"> 
                     <p:tabView cache="false" dynamic="true" id="Articulos">
                         <p:tab title="Activos">
                             <div class="card">
                                 <h:form id="ArticulosActivos">  
+
+                                    <div class="buttons p-2 ">
+                                        <p:commandLink action="#{ArticulosController.exportPDF('ArticulosActivos:ArticulosTableData')}" 
+                                                       ajax="false" styleClass="button is-rounded is-info is-fullwidth" rendered="#{SessionController.registros}"
+                                                       oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')">
+                                            <span class="icon-text">
+                                                <span class="icon">
+                                                    <i class="pi pi-print"></i>
+                                                </span>
+                                                <span>
+                                                    Imprimir
+                                                </span>
+                                            </span> 
+                                        </p:commandLink>
+                                        <p:commandLink rendered="#{SessionController.registros}"
+                                                       styleClass="button is-rounded is-primary is-fullwidth">
+                                            <span class="icon-text">
+                                                <span class="icon">
+                                                    <i class="pi pi-file-excel"></i>
+                                                </span>
+                                                <span>
+                                                    Exportar Excel
+                                                </span>
+                                            </span> 
+                                        </p:commandLink>
+                                        <p:commandLink actionListener="#{ArticulosController.openNewArticulo()}" process="@this"
+                                                       update="@this" styleClass="button is-rounded is-success is-fullwidth">
+                                            <span class="icon-text">
+                                                <span class="icon">
+                                                    <i class="pi pi-plus"></i>
+                                                </span>
+                                                <span>
+                                                    Crear Artículo
+                                                </span>
+                                            </span> 
+                                        </p:commandLink>
+                                    </div> 
+
                                     <p:dataTable value="#{ArticulosController.filteredArticulosActivos}" var="articulo"  widgetVar="ArticulosTable"
                                                  paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
                                                  emptyMessage="No se encontraron artículos con la critería proporcionada"
@@ -41,25 +78,8 @@
                                         <p:ajax event="rowSelect" update="EditArticuloDialog"/>
 
                                         <f:facet name="header">
-
-                                            <p:commandButton value="Imprimir" icon="pi pi-print" action="#{ArticulosController.exportPDF('ArticulosActivos:ArticulosTableData')}" 
-                                                             ajax="false" styleClass="rounded-button ui-button-help"  style="width: 50%" rendered="#{SessionController.registros}"
-                                                             oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
-
-                                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}"
-                                                             styleClass="rounded-button ui-button-success"  style="width: 50%"/>
-
-                                            <p:spacer height="1em"/>
-
-
-                                            <p:commandButton value="Crear Artículo" actionListener="#{ArticulosController.openNewArticulo()}" process="@this"
-                                                             update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
-
-                                            <p:spacer height="1em"/>
-
                                             <p:inputText id="globalFilter" onkeyup="PF('ArticulosTable').filter()"
                                                          placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-
                                         </f:facet>
 
                                         <p:column>
@@ -109,6 +129,34 @@
                         <p:tab title="Inactivos" >
                             <div class="card">
                                 <h:form id="ArticulosInactivos">   
+
+                                    <div class="buttons p-2">
+                                        <p:commandLink rendered="#{SessionController.registros}"
+                                                       action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" 
+                                                       styleClass="button is-info is-rounded is-fullwidth"  
+                                                       oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')">
+                                            <span class="icon-text">
+                                                <span class="icon">
+                                                    <i class="pi pi-print"></i>
+                                                </span>
+                                                <span>
+                                                    Imprimir
+                                                </span>
+                                            </span> 
+                                        </p:commandLink>
+                                        <p:commandLink rendered="#{SessionController.registros}"
+                                                       styleClass="button is-success is-rounded is-fullwidth" style='width: 100%'>
+                                            <span class="icon-text">
+                                                <span class="icon">
+                                                    <i class="pi pi-file-excel"></i>
+                                                </span>
+                                                <span>
+                                                    Exportar Excel
+                                                </span>
+                                            </span> 
+                                        </p:commandLink>
+                                    </div>
+
                                     <p:dataTable value="#{ArticulosController.filteredArticulosInactivos}" var="articulo"  widgetVar="ArticulosInactivos"
                                                  paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData"
                                                  emptyMessage="No se encontraron artículos con la critería proporcionada"
@@ -116,19 +164,7 @@
                                                  filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
                                                  selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
 
-                                        <f:facet name="header">
-                                            <p:commandButton value="Imprimir" icon="pi pi-print" rendered="#{SessionController.registros}"
-                                                             action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" 
-                                                             styleClass="rounded-button ui-button-help" style='width: 100%'
-                                                             oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')"/>
-
-                                            <p:spacer height="1em"/>
-
-                                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}"
-                                                             styleClass="rounded-button ui-button-success" style='width: 100%'/>
-
-                                            <p:spacer height="1em"/>
-
+                                        <f:facet name="header"> 
                                             <p:inputText id="globalFilter" onkeyup="PF('ArticulosInactivos').filter()"
                                                          placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                                         </f:facet>
@@ -249,8 +285,18 @@
                                         <p:ajax event="rowSelect"  update="RevisionArticuloDialog"/>
 
                                         <f:facet name="header">
-                                            <p:commandButton style="width: 100%" value="Procesado Rapido" actionListener="#{ArticulosController.procesadoRapido}" styleClass="ui-button-primary rounded-button"
-                                                             process="@this" update="RevisionArticulosDialog" onclick="PF('RevisionArticulosDialog').show();"/>
+                                            <p:commandLink actionListener="#{ArticulosController.procesadoRapido}" 
+                                                           styleClass="button is-rounded is-primary is-fullwidth"
+                                                           process="@this" update="RevisionArticulosDialog" onclick="PF('RevisionArticulosDialog').show();">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-plus"></i>
+                                                    </span>
+                                                    <span>
+                                                        Procesado Rapido
+                                                    </span>
+                                                </span> 
+                                            </p:commandLink>
 
                                             <p:spacer height="1em"/>
 
@@ -301,8 +347,17 @@
                                         <p:ajax event="rowSelect" update="@this"/>
 
                                         <f:facet name="header">
-                                            <p:commandButton value="Crear Promocion" actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
-                                                             update="@this" styleClass="rounded-button ui-button-primary" style="width: 100%" />
+                                            <p:commandLink actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
+                                                             update="@this" styleClass="button is-rounded is-primary is-fullwidth">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-plus"></i>
+                                                    </span>
+                                                    <span>
+                                                        Crear Promocion
+                                                    </span>
+                                                </span>
+                                            </p:commandLink>
 
                                             <p:spacer height="1em"/>
 
