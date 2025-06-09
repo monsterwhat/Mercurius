@@ -37,7 +37,7 @@ public class ExcelExporter {
             row.createCell(1).setCellValue(inventario.getArticulo().getNombre());
             row.createCell(2).setCellValue(inventario.getUsuario().getUsername());
             row.createCell(3).setCellValue(inventario.getCantidad().doubleValue());
-            row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura());
+            row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura().doubleValue());
             row.createCell(5).setCellValue(inventario.getTipoMovimiento());
             row.createCell(6).setCellValue(inventario.getFechaMovimiento().toString());
             row.createCell(7).setCellValue(inventario.getNotas());
@@ -269,7 +269,7 @@ public class ExcelExporter {
                 row.createCell(1).setCellValue(inventario.getArticulo().getNombre());
                 row.createCell(2).setCellValue(inventario.getUsuario().getUsername());
                 row.createCell(3).setCellValue(inventario.getCantidad().doubleValue());
-                row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura());
+                row.createCell(4).setCellValue(inventario.getUnidadesRecomendadasFactura().doubleValue());
                 row.createCell(5).setCellValue(inventario.getTipoMovimiento());
                 row.createCell(6).setCellValue(inventario.getFechaMovimiento().toString());
                 row.createCell(7).setCellValue(inventario.getNotas());

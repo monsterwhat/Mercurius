@@ -15,6 +15,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  *
@@ -29,17 +31,21 @@ public class Inventario implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int codigo;
     
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "articulo_codigo")
     private Articulos articulo; //Referencia al articulo (Al valido en el momento del ajuste)
     
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien realizo el ajuste
         
     private BigDecimal cantidad;
     
-    private double unidadesRecomendadasFactura;
+    private BigDecimal unidadesRecomendadasFactura;
     
     private String tipoMovimiento;
     

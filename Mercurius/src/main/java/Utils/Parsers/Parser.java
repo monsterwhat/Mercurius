@@ -614,7 +614,7 @@ public class Parser {
         }
     }
 
-    public double parseUnidadComercial(String unidad, String unidadComercial) {
+    public BigDecimal parseUnidadComercial(String unidad, String unidadComercial) {
         return switch (unidad) {
             case "Otros" ->
                 parseUnidadComercial(unidadComercial);
@@ -623,30 +623,30 @@ public class Parser {
             case "g" ->
                 parseUnidadComercial(unidadComercial);
             default ->
-                0;
+                BigDecimal.ZERO;
         }; // Default to 0 if no specific conversion found
     }
 
-    public double parseUnidadComercial(String unidadComercial) {
+    public BigDecimal parseUnidadComercial(String unidadComercial) {
         return switch (unidadComercial) {
             case "BOT" ->
-                1;
+                BigDecimal.ONE;
             case "LT" ->
-                1;
+                BigDecimal.ONE;
             case "ST" ->
-                6;
+                BigDecimal.valueOf(6);
             case "Pieza" ->
-                1;
+                BigDecimal.ONE;
             case "UN" ->
-                1;
+                BigDecimal.ONE;
             case "Unid" ->
-                1;
+                BigDecimal.ONE;
             case "UND" ->
-                1;
+                BigDecimal.ONE;
             case "" ->
-                1;
+                BigDecimal.ONE;
             default ->
-                0;
+                BigDecimal.ZERO;
         }; // Default to 0 if no conversion defined
     }
 

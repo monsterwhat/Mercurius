@@ -3,6 +3,8 @@ package Models;
 import jakarta.persistence.*;
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Data
@@ -20,6 +22,8 @@ public class Familia {
     @Temporal(TemporalType.TIMESTAMP)
     private Date fecha; //LOGS LOGS LOGS!!
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo la familia

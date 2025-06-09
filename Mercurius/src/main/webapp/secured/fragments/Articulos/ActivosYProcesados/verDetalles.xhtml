@@ -4,52 +4,149 @@
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="jakarta.faces.facelets">
 
-        <p:dialog header="Informacion de Articulo"
-                  dynamic="true" cache="false" widgetVar="ArticuloActivoYProcesadoDetailsDialog" 
-                  responsive="true" id="ArticuloActivoYProcesadoDetailsDialog" modal="true">
-        <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
-            <p:card>
-                <p:dataTable id="selectedArticuloActivoYProcesado" clientCache="true" stripedRows="true"
-                             lazy="true" var="articulo" reflow="true"
-                             value="#{ArticulosController.selectedArticulo}">
-                    <p:column headerText="Código" visible="false">
-                        <h:outputText value="#{articulo.nombre}"/>
-                    </p:column>
-                    <p:column headerText="Código Barra">
-                        <h:outputText value="#{articulo.codigoBarra}" />
-                    </p:column>
-                    <p:column headerText="Nombre">
-                        <h:outputText value="#{articulo.nombre}" />
-                    </p:column>
-                    <p:column headerText="Unidad Medida">
-                        <h:outputText value="#{articulo.unidadMedida}" />
-                    </p:column>
-                    <p:column headerText="Unidad Medida Comercial">
-                        <h:outputText value="#{articulo.unidadMedidaComercial}" />
-                    </p:column>
-                    <p:column headerText="Departamento">
-                        <h:outputText value="#{articulo.departamento.nombre}" />
-                    </p:column>
-                    <p:column headerText="Familia">
-                        <h:outputText value="#{articulo.familia.nombre}" />
-                    </p:column>
-                    <p:column headerText="Precio Costo">
-                        <h:outputText value="#{articulo.lastPrecio.precioCostoSinIVA}" />
-                    </p:column>
-                    <p:column headerText="Utilidad">
-                        <h:outputText value="#{articulo.lastPrecio.porcentajeUtilidad}" />
-                    </p:column>
-                    <p:column headerText="Precio Sin Iva">
-                        <h:outputText value="#{articulo.lastPrecio.precioConUtilidad}" />
-                    </p:column>
-                    <p:column headerText="Precio Final">
-                        <h:outputText value="#{articulo.lastPrecio.precioFinal}" />
-                    </p:column>
-                    <p:column headerText="Creador">
-                        <h:outputText value="#{articulo.usuario.username}" />
-                    </p:column>
-                </p:dataTable>
-            </p:card>
+    <p:dialog header="Informacion de Articulo"
+              dynamic="true" fitViewport="true" cache="false" widgetVar="ArticuloActivoYProcesadoDetailsDialog" 
+              responsive="true" id="ArticuloActivoYProcesadoDetailsDialog" modal="true">
+        <p:outputPanel id="selectedArticuloActivoYProcesado" rendered="#{not empty ArticulosController.selectedArticulo}">
+            
+            <section class="section"> 
+                
+                <div class="columns is-multiline has-text-centered">
+                    
+                    <div class="column is-full" >
+                        <div class="columns is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Código</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.codigo}</p> 
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Código Barra</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.codigoBarra}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Nombre</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.nombre}</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Unidad Medida</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.unidadMedida}</p>    
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Unidad Medida Comercial</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.unidadMedidaComercial}</p>    
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Departamento</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.departamento.nombre}</p> 
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Familia</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.familia.nombre}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Precio Costo</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.precioCostoSinIVA}</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Utilidad</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.porcentajeUtilidad} %</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Precio Sin Iva</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.precioConUtilidad}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Precio Final</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.precioFinal}</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Creador</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.usuario.username}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                </div> 
+            </section> 
         </p:outputPanel>
     </p:dialog>
 

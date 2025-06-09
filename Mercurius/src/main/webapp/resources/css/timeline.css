@@ -45,12 +45,20 @@
     border-color: #60A9C6 !important;
 }
 .vis-timeline .vis-item.vis-selected{
-    background: var(--bulma-primary) !important;
-    color: var(--bulma-text-title) !important;
+    background: var(--bulma-warning-60) !important;
+    color: var(--bulma-text-invert) !important;
+}
+.vis-timeline .vis-item.vis-selected .vis-item-content{
+    background: var(--bulma-warning-60) !important;
+    color: var(--bulma-text-invert) !important;
+}
+.vis-timeline .vis-item .vis-item-content{
+    background: var(--bulma-success-60) !important;
+    color: var(--bulma-text-invert) !important;
 }
 .vis-timeline .vis-item{
     background: var(--bulma-success-60) !important;
-    color: var(--bulma-text-title) !important;
+    color: var(--bulma-text-invert) !important;
 }
 
 .vis-timeline {

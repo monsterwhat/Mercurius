@@ -15,7 +15,6 @@
 
         <ui:include src="/secured/fragments/userBar.xhtml" /> 
 
-
         <section class="section">
 
             <p:outputPanel id="mainPanel" >
@@ -69,30 +68,30 @@
                 <h:form id="Correo" rendered="#{SettingsController.currentSettings.completedSteps eq 2}"  >
 
                     <div class="columns is-half is-centered is-mobile"> 
-                        <p:card class="card">
+                        <div class="card">
                             <div class="column">
                                 <p:messages for="correo"/>
-                                <p:outputLabel value="Correo Electronico Principal: " for="correo" style="color: var(--primary-color);"/>
+                                <p:outputLabel value="Correo Electronico Principal: " for="correo" styleClass="has-text-link"/>
                                 <p:inputText id="correo" value="#{SettingsController.currentSettings.correoElectronico}"
                                              required="true" requiredMessage="El correo electronico no puede estar vacío"
                                              style="width: 100%"/>
                             </div>
                             <div class="column">
                                 <p:messages for="correoPass" />
-                                <p:outputLabel value="Contrasena Correo Electronico: " for="correoPass" style="color: var(--primary-color);"/>
+                                <p:outputLabel value="Contrasena Correo Electronico: " for="correoPass" styleClass="has-text-link"/>
                                 <p:inputText id="correoPass" value="#{SettingsController.currentSettings.contrasenaCorreo}"
                                              required="true" requiredMessage="La contrasena no puede estar vacía"
                                              style="width: 100%"/>
                             </div>
                             <div class="column">
                                 <div class="buttons">
-                                    <p:commandButton styleClass="button ui-button-primary rounded-button is-fullwidth" value="Siguiente" process="@form" update="mainPanel"
+                                    <p:commandLink styleClass="button is-rounded is-primary is-fullwidth" value="Siguiente" process="@form" update="mainPanel"
                                                      actionListener="#{SettingsController.saveCorreo()}"  />
-                                    <p:commandButton styleClass="button ui-button-secondary rounded-button is-fullwidth" value="Atras" process="@form" update="mainPanel"
+                                    <p:commandLink styleClass="button is-rounded is-info is-fullwidth" immediate="true" value="Atras" process="@form" update="mainPanel"
                                                      actionListener="#{SettingsController.backOneStep()}" />
                                 </div>
                             </div> 
-                        </p:card> 
+                        </div> 
                     </div> 
 
                 </h:form>

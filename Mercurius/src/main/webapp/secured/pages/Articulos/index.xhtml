@@ -8,9 +8,7 @@
 
     <h:head>
         <title>Menu Principal Articulos</title>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-        <h:outputStylesheet name="primefaces/primefaces.css"/>
-        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
     </h:head>
 
     <h:body>
@@ -83,16 +81,16 @@
                                         </f:facet>
 
                                         <p:column>
-                                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
+                                            <p:chip id="processedChip" icon="pi pi-check-circle" styleClass="has-background-success" 
                                                     rendered="#{articulo.processed}"/>
                                             <p:tooltip for="processedChip" value="Procesada" position="top"/>
-                                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" style="background: var(--yellow-500)"
+                                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning" 
                                                     rendered="#{!articulo.processed}"/>
                                             <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
-                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
+                                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success" 
                                                     rendered="#{articulo.status}"/>
                                             <p:tooltip for="ActiveChip" value="Activa" position="top"/>
-                                            <p:chip id="InactiveChip" icon="pi pi-times" style="background: var(--red-500);"
+                                            <p:chip id="InactiveChip" icon="pi pi-times" styleClass="has-background-danger"
                                                     rendered="#{!articulo.status}"/>
                                             <p:tooltip for="InactiveChip" value="Inactiva" position="top"/>
                                         </p:column>
@@ -112,14 +110,16 @@
 
                                         <p:column headerText="Acciones" exportable="false">
                                             <div class="buttons">
-                                                <p:commandButton styleClass="rounded-button ui-button-success" process="@this" icon="pi pi-pencil"
-                                                                 onclick="PF('EditArticuloDialog').show();" update="EditArticuloDialog">
+                                                <p:commandLink styleClass="button is-success is-rounded is-small" process="@this" 
+                                                               onclick="PF('EditArticuloDialog').show();" update="EditArticuloDialog">
+                                                    <i class="pi pi-pencil"></i>
                                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                                </p:commandButton>
-                                                <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
-                                                                 actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="@this">
+                                                </p:commandLink>
+                                                <p:commandLink styleClass="button is-rounded is-warning is-small" 
+                                                               actionListener="#{ArticulosController.deleteArticulo()}" process="@this" update="@this">
+                                                    <i class="pi pi-power-off"></i>
                                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                                </p:commandButton>
+                                                </p:commandLink>
                                             </div>
                                         </p:column>
                                     </p:dataTable> 
@@ -170,16 +170,16 @@
                                         </f:facet>
 
                                         <p:column>
-                                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
+                                            <p:chip id="processedChip" icon="pi pi-check-circle" styleClass="has-background-success"
                                                     rendered="#{articulo.processed}"/>
                                             <p:tooltip for="processedChip" value="Procesado" position="top"/>
-                                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" style="background: var(--yellow-500)"
+                                            <p:chip id="unprocessedChip" icon="pi pi-exclamation-circle" styleClass="has-background-warning"  
                                                     rendered="#{!articulo.processed}"/>
                                             <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
-                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
+                                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success"
                                                     rendered="#{articulo.status}"/>
                                             <p:tooltip for="ActiveChip" value="Activo" position="top"/>
-                                            <p:chip id="InactiveChip" icon="pi pi-times" style="background: var(--red-500);"
+                                            <p:chip id="InactiveChip" icon="pi pi-times" styleClass="has-background-danger"
                                                     rendered="#{!articulo.status}"/>
                                             <p:tooltip for="InactiveChip" value="Inactivo" position="top"/>
                                         </p:column>
@@ -202,10 +202,11 @@
 
                                         <p:column headerText="Acciones" exportable="false">
                                             <div class="buttons has-addons">
-                                                <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloInactivoDetailsDialog').show();"
-                                                                 icon="pi pi-eye" process="@this" update="selectedArticuloInactivo">
+                                                <p:commandLink styleClass="button is-rounded is-link" onclick="PF('ArticuloInactivoDetailsDialog').show();"
+                                                                  process="@this" update="selectedArticuloInactivo">
+                                                    <i class="pi pi-eye"></i>
                                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                                </p:commandButton>
+                                                </p:commandLink>
                                             </div>
                                         </p:column>
                                     </p:dataTable> 
@@ -230,10 +231,10 @@
                                         </f:facet>
 
                                         <p:column>
-                                            <p:chip id="processedChip" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
+                                            <p:chip id="processedChip" icon="pi pi-check-circle" styleClass="has-background-success"
                                                     rendered="#{articulo.processed}"/>
                                             <p:tooltip for="processedChip" value="Procesado" position="top"/>
-                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)"
+                                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="has-background-success"
                                                     rendered="#{articulo.status}"/>
                                             <p:tooltip for="ActiveChip" value="Activo" position="top"/>
                                         </p:column>
@@ -262,10 +263,11 @@
 
                                         <p:column headerText="Acciones" exportable="false">
                                             <div class="buttons has-addons">
-                                                <p:commandButton styleClass="rounded-button ui-button-info" onclick="PF('ArticuloActivoYProcesadoDetailsDialog').show();"
-                                                                 icon="pi pi-eye" process="@this" update="selectedArticuloActivoYProcesado">
+                                                <p:commandLink styleClass="button is-rounded is-link" onclick="PF('ArticuloActivoYProcesadoDetailsDialog').show();"
+                                                                 process="@this" update="selectedArticuloActivoYProcesado">
+                                                    <i class="pi pi-eye"></i>
                                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                                </p:commandButton>
+                                                </p:commandLink>
                                             </div>
                                         </p:column>
                                     </p:dataTable>    
@@ -307,10 +309,18 @@
 
                                         <p:column exportable="false">
                                             <div class="buttons">
-                                                <p:commandButton value="Procesar" styleClass="rounded-button ui-button-secondary" process="@this" update="RevisionArticuloDialog"
-                                                                 icon="pi pi-sync" onclick="PF('RevisionArticuloDialog').show();" >
+                                                <p:commandLink styleClass="button is-primary is-rounded is-small" process="@this" update="RevisionArticuloDialog"
+                                                                onclick="PF('RevisionArticuloDialog').show();" >
+                                                    <span class="icon-text">
+                                                        <span class="icon">
+                                                            <i class="pi pi-sync"></i>
+                                                        </span>
+                                                        <span>
+                                                            Procesar
+                                                        </span>
+                                                    </span> 
                                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
-                                                </p:commandButton>
+                                                </p:commandLink>
                                             </div>
                                         </p:column>
 
@@ -343,12 +353,10 @@
                                                  filterBy="#{PromocionesController.filterBy}" reflow="true" 
                                                  selectionMode="single" selection="#{PromocionesController.selectedPromocion}" 
                                                  rowKey="#{promocion.id}">
-
-                                        <p:ajax event="rowSelect" update="@this"/>
-
+ 
                                         <f:facet name="header">
                                             <p:commandLink actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
-                                                             update="@this" styleClass="button is-rounded is-primary is-fullwidth">
+                                                           update="@this" styleClass="button is-rounded is-primary is-fullwidth">
                                                 <span class="icon-text">
                                                     <span class="icon">
                                                         <i class="pi pi-plus"></i>
@@ -374,7 +382,7 @@
                                         </p:column>
 
                                         <p:column headerText="Artículos">
-                                            <p:commandButton value="Ver Artículos" 
+                                            <p:commandButton value="Ver Artículos" update=":articulodialog"
                                                              onclick="PF('articulosDialog').show();"
                                                              process="@this">
                                                 <f:setPropertyActionListener value="#{promocion}" 
@@ -441,7 +449,7 @@
         <!-- Dialog for displaying articulosCarrito -->
         <p:dialog header="Artículos de Promoción" widgetVar="articulosDialog" modal="true" fitViewport="true" 
                   responsive="true" dynamic="true" cache="false" closable="true" closeOnEscape="true" appendTo="@(body)">
-            <h:form>
+            <h:form id="articulodialog">
                 <p:dataTable value="#{PromocionesController.selectedPromocion.articulosCarrito}" 
                              var="articuloCarrito" reflow="true" style="width:100%;">
                     <p:column headerText="Nombre Artículo">
@@ -452,6 +460,12 @@
                     </p:column>
                     <p:column headerText="Precio Regular">
                         <h:outputText value="#{articuloCarrito.articulo.lastPrecio.precioFinal}"/>
+                    </p:column> 
+                    <p:column headerText="Precio Promo">
+                        <h:outputText value="#{articuloCarrito.totalArticulo}"/>
+                    </p:column> 
+                    <p:column headerText="Total">
+                        <h:outputText value="#{articuloCarrito.totalArticulos}"/>
                     </p:column>
 
                 </p:dataTable>

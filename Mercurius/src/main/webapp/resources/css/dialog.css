@@ -1,9 +1,23 @@
-.ui-dialog .ui-dialog-content,
-.ui-dialog .ui-dialog-titlebar {
-    background: var(--bulma-primary) !important;
-    color: var(--bulma-text-light) !important;
+.ui-dialog .ui-dialog-titlebar{
+    background: var(--bulma-scheme-main) !important; 
+    color: var(--bulma-text) !important;
 }
 
-.ui-dialog .ui-dialog-content {
+.ui-dialog .ui-dialog-content{
+    background: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text) !important;
     padding: 1rem !important;
+}
+  
+.ui-dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999; /* optional: make sure it's above other elements */
+}
+
+.ui-dialog{
+    background: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text) !important;
 }

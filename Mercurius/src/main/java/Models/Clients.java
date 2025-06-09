@@ -15,6 +15,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @Entity
 @Table(name = "Clients")
@@ -58,6 +60,8 @@ public class Clients {
     
     private Boolean status; //En caso de querer archivar o desabilitar
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el cliente

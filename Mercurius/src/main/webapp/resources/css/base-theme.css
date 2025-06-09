@@ -6,8 +6,18 @@ body,
 }
 
 .ui-commandlink,
-.ui-link,
-.ui-commandlink:hover {
-    color: var(--bulma-text-title-l) !important;
+.ui-link {
+    color: var(--bulma-background) !important;
     text-decoration: none !important;
+}
+
+.ui-commandlink:hover{
+    background: var(--bulma-link-dark-invert) !important;
+    color: var(--bulma-background) !important;
+    text-decoration: none !important;
+}
+hr {
+    border: 0;
+    height: 2px;
+    background: var(--bulma-border-l) !important;
 }
