@@ -351,7 +351,7 @@ public class FacturasController implements Serializable {
                 var montoTotalLinea = lineaDetalle.getMontoTotalLinea();
                 var totalUnitario = montoTotalLinea.divide(cantidad, 20, RoundingMode.HALF_UP);
                 var precioUnitario = totalUnitario;
-                var UnidadesParseadas = parser.parseUnidadComercial(unidadMedida, unidadMedidaComercial) * cantidad.doubleValue();
+                var UnidadesParseadas = parser.parseUnidadComercial(unidadMedida, unidadMedidaComercial).multiply(cantidad);
 
                 Articulos articulo = new Articulos();
 

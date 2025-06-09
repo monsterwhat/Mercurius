@@ -7,17 +7,46 @@
     background: var(--bulma-primary) !important;
 }
 
-select,
-.ui-datepicker,
-.ui-datepicker .ui-datepicker-header,
+select, 
 .ui-selectonemenu,
 .ui-inputgroup .ui-inputgroup-addon,
 .ui-panelgrid .ui-panelgrid-cell,
 .ui-panel .ui-panel-titlebar,
 .ui-panel .ui-panel-content {
-    background: var(--bulma-scheme-main-l) !important;
-    color: var(--bulma-text-title-l) !important;
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+} 
+
+.ui-selectonemenu-panel .ui-selectonemenu-items{
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+    padding: .4em !important;
 }
+
+.ui-selectonemenu-item{
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-selectonemenu-panel .ui-selectonemenu-items .ui-selectonemenu-item.ui-state-highlight{
+    background: var(--bulma-warning-light) !important;
+    color: var(--bulma-warning) !important;
+}
+
+.ui-datepicker,
+.ui-datepicker .ui-datepicker-header{
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-datepicker {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999; /* optional: make sure it's above other elements */
+}
+  
 
 .ui-inputfield,
 .ui-password-panel {

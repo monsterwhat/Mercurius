@@ -5,84 +5,101 @@ import Models.Departamento;
 import Models.Familia;
 import Models.Users;
 import jakarta.persistence.*;
-import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.io.Serializable;
+import java.math.BigDecimal; 
 import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.List; 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
-@Entity
 @Data
-public class Articulos {
+@Entity 
+@Table(name = "articulos") 
+public class Articulos implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int codigo;
+    @Column (nullable = false, updatable = false)
+    private Long codigo;
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "codigo_cabys")
     private Cabys codigoCabys;
 
+    @Column
     private String recomendacionCabys;
     
+    @Column
     private String nombre;
-    
+
+    @Column
     private String codigoBarra;
-    
+
+    @Column
     private String UnidadMedida;
-    
+
+    @Column
     private String unidadMedidaComercial;
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "departamento_id")
     private Departamento departamento;
 
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "familia_id")
     private Familia familia;
-    
+
+    @Column
     private boolean status;
-    
+
+    @Column
     private boolean processed;
-    
+
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ArticuloPrecio> precios; // List of pricing details
-    
-    @ManyToMany(mappedBy = "articulos", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Promocion> promociones;  // Lista de promociones relacionadas al artículo
-    
+  
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date fecha; //LOGS LOGS LOGS!!
-    
+
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el Articulo
-    
+
     @PrePersist
     protected void onCreate() {
         fecha = new Date(); // Sets the current timestamp when creating the entity
     }
-    
+
     public ArticuloPrecio getLastPrecio() {
         if (precios != null && !precios.isEmpty()) {
             return precios.get(precios.size() - 1);
         }
         return null;
     }
-    
-    public BigDecimal getLastPrecioArticulo(){
+
+    public BigDecimal getLastPrecioArticulo() {
         ArticuloPrecio lastPrecio = getLastPrecio();
         return lastPrecio.getPrecioFinal();
-    }   
-    
+    }
+
     public BigDecimal getPrecioFinalBetweenDates(Date startDate, Date endDate) {
         // Check if there are precios available
         if (precios != null && !precios.isEmpty()) {
             for (ArticuloPrecio precio : precios) {
                 // Ensure the precio has a date to compare
-                if (precio.getFechaCompra()!= null) {
+                if (precio.getFechaCompra() != null) {
                     Date precioFecha = precio.getFechaCompra();
 
                     // Check if the date falls within the startDate and endDate (inclusive)
@@ -97,59 +114,5 @@ public class Articulos {
     }
 
     
-    public Promocion getPromocionActiva() {
-        Date hoy = new Date();
-        for (Promocion promocion : this.getPromociones()) {
-            if (promocion.isActiva() && 
-                promocion.getFechaInicio().before(hoy) && 
-                promocion.getFechaFin().after(hoy)) {
-                return promocion;
-            }
-        }
-        return null; // Si no hay promoción activa
-    }
-    
-    public List<Promocion> getPromocionesActivas() {
-        Date hoy = new Date();
-        List<Promocion> promocionesActivas = new ArrayList<>();
 
-        for (Promocion promocion : this.getPromociones()) {
-            if (promocion.isActiva() && 
-                promocion.getFechaInicio().before(hoy) && 
-                promocion.getFechaFin().after(hoy)) {
-                promocionesActivas.add(promocion); // Add active promotions to the list
-            }
-        }
-
-        return promocionesActivas; // Return the list of active promotions
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(codigo, nombre, codigoBarra, status, processed);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        Articulos that = (Articulos) obj;
-        return codigo == that.codigo &&
-               status == that.status &&
-               processed == that.processed &&
-               Objects.equals(nombre, that.nombre) &&
-               Objects.equals(codigoBarra, that.codigoBarra);
-    }
-    
-    @Override
-    public String toString() {
-        return "Articulos{" +
-               "codigo=" + codigo +
-               ", nombre='" + nombre + '\'' +
-               ", codigoBarra='" + codigoBarra + '\'' +
-               ", status=" + status +
-               ", processed=" + processed +
-               '}';
-    }
-    
 }

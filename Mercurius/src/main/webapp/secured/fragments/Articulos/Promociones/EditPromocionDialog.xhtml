@@ -3,169 +3,179 @@
                 xmlns:f="http://xmlns.jcp.org/jsf/core"
                 xmlns:p="http://primefaces.org/ui"
                 xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
-    
-        <!-- Dialog for Editar Promocion -->
-        <p:dialog header="Editar Promocion" modal="true" dynamic="true" cache="false" 
-                  widgetVar="EditPromocionDialog" fitViewport="true" responsive="true">                   
-            <p:outputPanel id="EditPromocionDialog" rendered="#{not empty PromocionesController.selectedPromocion}">
-                <h:form id="editPromocion">
-                    <p:panelGrid columns="1" layout="grid">
-                        <p:panel header="Editar Promocion">
-                            <p:growl showDetail="true" showSummary="false"/>
-                            <p:message for="@this" />
-                            <p:card>
 
-                            <p:card title="Nombre de la Promocion:" style="text-align: center; color: var(--primary-color);">
-                            <!-- Nombre -->
-                            <p:column>
-                                <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
-                                <p:inputText id="newName" value="#{PromocionesController.selectedPromocion.nombre}"
-                                 required="true" requiredMessage="El nombre no puede estar vacío"
-                                style="width: 100%"/>
-                            </p:column>
-                            </p:card>
-                            
-                            <p:spacer height="1em"/>
-                            
-                            <p:card title="Articulos" style="text-align: center; color: var(--primary-color);">
-                                <!-- Lista Articulos... -->
+    <!-- Dialog for Editar Promocion -->
+    <p:dialog header="Editar Promocion" modal="true" dynamic="true" cache="false" 
+              widgetVar="EditPromocionDialog" fitViewport="true" responsive="true">                   
+        <p:outputPanel id="EditPromocionDialog" rendered="#{not empty PromocionesController.selectedPromocion}">
+            <h:form id="editPromocion">
+                <section class="section">
+                    <p:growl showDetail="true" showSummary="false"/>
+                    <p:message for="@this" /> 
+                    <div class="columns is-multiline m-1 p-1">
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Nombre de la Promocion:
+                            </p>
+                        </div>
+                        <p:column>
+                            <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
+                            <p:inputText id="newName" value="#{PromocionesController.selectedPromocion.nombre}"
+                                         required="true" requiredMessage="El nombre no puede estar vacío"
+                                         style="width: 100%"/>
+                        </p:column>
+                        <hr/>
+
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Articulos
+                            </p>
+                        </div>
+                        <div class="column is-full">
+                            <p:dataTable id="articuloTable" var="articulo" rowKey="#{articulo.articulo.codigo}" value="#{PromocionesController.lista}" selectionMode="single" selection="#{PromocionesController.selectedArticuloCarrito}" emptyMessage="No hay Articulos en el combo" >
+
+                                <p:column headerText="Articulo">
+                                    <h:outputText value="#{articulo.articulo.nombre}"/>
+                                </p:column>
+                                <p:column headerText="Cantidad">
+                                    <h:outputText value="#{articulo.cantidad}"/>
+                                </p:column>
+                                <p:column headerText="Precio Final Unitario">
+                                    <h:outputText value="#{articulo.articulo.lastPrecio.precioFinal}"/>
+                                </p:column>
                                 <p:column>
-                                    <p:dataTable id="articuloTable" var="articulo" value="#{PromocionesController.lista}" emptyMessage="No hay Articulos en el combo" >
+                                    <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" immediate="true" 
+                                                     update="articuloTable" actionListener="#{PromocionesController.removeSelectedItemFromPromociones()}" >
+                                        <f:setPropertyActionListener value="#{articulo.articulo}" target="#{PromocionesController.selectedArticulo}" />
+                                    </p:commandButton>
+                                </p:column>
 
-                                        <p:column headerText="Articulo">
-                                            <h:outputText value="#{articulo.articulo.nombre}"/>
-                                        </p:column>
-                                        <p:column headerText="Cantidad">
-                                            <h:outputText value="#{articulo.cantidad}"/>
-                                        </p:column>
-                                        <p:column headerText="Precio Final Unitario">
-                                            <h:outputText value="#{articulo.articulo.lastPrecio.precioFinal}"/>
-                                        </p:column>
-                                        <p:column>
-                                            <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" process="@form" update="articuloTable"
-                                                             actionListener="#{PromocionesController.removeSelectedItemFromPromociones(articulo.articulo)}" >
-                                            </p:commandButton>
-                                        </p:column>
-                                        
-                                        <f:facet name="footer">
-                                            <div style="text-align: center">
-                                                <h:outputText value="Total Sin IVA: #{PromocionesController.totalListaConUtilidad()} "/>
-                                            </div>
-                                            <div style="text-align: center">
-                                                <h:outputText value="Total Con IVA: #{PromocionesController.totalListaConIVA()}"/>
-                                            </div>
-                                        </f:facet>
-                                        <p:autoUpdate/>
-                                    </p:dataTable>
-                                </p:column>
-                            </p:card>
-                            
-                            <p:spacer height="1em"/>
-                                <p:commandButton value="Agregar Producto" style="width: 100%" styleClass="ui-button-warning rounded-button"
-                                                onclick="PF('ArticuloRevisionDialog').show();" />
-                            </p:card>
-                            
-                            <p:spacer height="1em"/>
-                            
-                            <p:card title="Descuento % :" style="text-align: center; color: var(--primary-color);">
-                                <!-- Descuento promocion -->
-                                <p:column id="descuento">
-                                    <p:messages showDetail="true" for="newDescuento" showSummary="false" closable="true" />
-                                    <p:inputNumber id="newDescuento" type="number" value="#{PromocionesController.selectedPromocion.descuento}"
-                                                    required="true" requiredMessage="El porcentaje de descuento no puede estar vacío"
-                                                    style="width: 100%" >
-                                        <p:ajax event="change" update="total articuloTable"/>
-                                    </p:inputNumber>
-                                </p:column>
-                            </p:card>
-                            
-                            <p:spacer height="1em"/>
-                            
-                            <p:card title="Total con descuento e IVA :" style="text-align: center; color: var(--primary-color);">
-                                <h:outputText id="total" value="#{PromocionesController.createTotalDescuentoEIVAText()}"/>
+                                <f:facet name="footer">
+                                    <div style="text-align: center">
+                                        <h:outputText value="Total Sin IVA: #{PromocionesController.totalListaConUtilidad()} "/>
+                                    </div>
+                                    <div style="text-align: center">
+                                        <h:outputText value="Total Con IVA: #{PromocionesController.totalListaConIVA()}"/>
+                                    </div>
+                                </f:facet>
                                 <p:autoUpdate/>
-                            </p:card>
-                            
-                            <p:spacer height="1em"/>
-                            
-                            <p:card title="Cantidades Limitadas:" subtitle="En caso de ser ilimitadas poner -1" style="text-align: center; color: var(--primary-color);">
-                                <p:column>
-                                    <p:messages for="newCantidad" closable="true"/>
-                                    <p:outputLabel class="label" for="newCantidad" style="color: var(--primary-color);" value="Cantidad:"/> 
-                                    <p:inputNumber id="newCantidad" type="number" value="#{PromocionesController.selectedPromocion.cantidad}"
-                                                    required="true" requiredMessage="La cantidad no puede estar vacia"
-                                                    style="width: 100%" >
-                                    </p:inputNumber>
-                                </p:column>
-                            </p:card>
-                            
-                            <p:spacer height="1em"/>
-                            
-                            <p:card title="Fechas de Promocion" style="text-align: center; color: var(--primary-color);">
-                                <!--Fecha Inicio/FIN-->
-                                <p:column>
-                                    <p:datePicker id="datePicker" value="#{PromocionesController.fechasPromocion}" readonlyInput="true"
-                                                  inline="true" selectionMode="range" />
-                                </p:column>
-                            
-                            </p:card>
-                                                        
-                            <p:spacer height="1em"/>
-                           
-                            <!--Activa o Inactiva-->
-                            <p:spacer height="1em"/>
-                        
-                            <p:column>
-                                <p:commandButton value="Editar Promocion" update="@form Articulos:promociones" process="@form"
-                                action="#{PromocionesController.updatePromocionByDialog()}" style="width: 100%"
-                                styleClass="rounded-button ui-button-primary"/>
-                            </p:column>
-                        </p:panel>
-                    </p:panelGrid>
+                            </p:dataTable> 
 
-                </h:form>
-            </p:outputPanel>
-        </p:dialog>
-        
-        <p:dialog header="Seleccionar Articulo" dynamic="true" widgetVar="ArticuloRevisionDialog" fitViewport="true">
+                            <p:commandLink value="Agregar Producto" process="articuloEdit" styleClass="button is-rounded is-primary is-fullwidth"
+                                           onclick="PF('ArticuloRevisionDialog').show();" />
+
+                        </div>
+
+                        <hr/>
+
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Descuento % :
+                            </p>
+                        </div>
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="newDescuento" showSummary="false" closable="true" />
+                            <p:inputNumber id="newDescuento" type="number" value="#{PromocionesController.selectedPromocion.descuento}"
+                                           required="true" requiredMessage="El porcentaje de descuento no puede estar vacío"
+                                           style="width: 100%" >
+                                <p:ajax event="change" update="total articuloTable"/>
+                            </p:inputNumber> 
+                        </div>
+
+                        <hr/>
+
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Total con descuento e IVA :
+                            </p>
+                        </div>
+                        <div class="column is-full">
+                            <h:outputText id="total" value="#{PromocionesController.createTotalDescuentoEIVAText()}"/>
+                            <p:autoUpdate/>
+                        </div>
+
+                        <hr/>
+
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Cantidades Limitadas:
+                            </p>
+                            <p class="subtitle has-text-centered">
+                                En caso de ser ilimitadas poner -1
+                            </p>
+                        </div>
+                        <div class="column is-full">
+                            <p:messages for="newCantidad" closable="true"/>
+                            <p:outputLabel class="label" for="newCantidad" style="color: var(--primary-color);" value="Cantidad:"/> 
+                            <p:inputNumber id="newCantidad" type="number" value="#{PromocionesController.selectedPromocion.cantidad}"
+                                           required="true" requiredMessage="La cantidad no puede estar vacia"
+                                           style="width: 100%" >
+                            </p:inputNumber>
+                        </div>
+                        <hr/>
+
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Fechas de Promocion
+                            </p> 
+                        </div>
+                        <div class="column is-full">
+                            <p:datePicker id="datePicker" value="#{PromocionesController.fechasPromocion}" readonlyInput="true"
+                                           selectionMode="range" />
+                        </div>
+
+                        <hr/>
+
+                        <div class="column is-full">
+                            <p:commandButton value="Editar Promocion" update="@form Articulos:promociones" process="@form"
+                                             action="#{PromocionesController.updatePromocionByDialog()}" style="width: 100%"
+                                             styleClass="rounded-button ui-button-primary"/>
+                        </div> 
+                    </div>     
+                </section>
+            </h:form>
+        </p:outputPanel>
+    </p:dialog>
+
+    <p:dialog header="Seleccionar Articulo" dynamic="true" widgetVar="ArticuloRevisionDialog" fitViewport="true">
         <h:form id="articuloEdit">
-            
+
             <p:card>
                 <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo" widgetVar="ArticuloTable"
-                            paginator="true" rows="5" paginatorPosition="bottom" id="ArticuloTable" reflow="true"
-                            emptyMessage="No se encontraron Articulos con la critería proporcionada" clientCache="true"
-                           globalFilterFunction="#{ArticulosController.globalFilterFunction}" size="small"
-                           filterBy="#{ArticulosController.filterBy}" showGridlines="true"
-                           selection="#{PromocionesController.selectedArticulo}" rowKey="#{articulo.codigo}">
+                             paginator="true" rows="5" paginatorPosition="bottom" id="ArticuloTable" reflow="true"
+                             emptyMessage="No se encontraron Articulos con la critería proporcionada" clientCache="true"
+                             globalFilterFunction="#{ArticulosController.globalFilterFunction}" size="small"
+                             filterBy="#{ArticulosController.filterBy}" showGridlines="true"
+                             selection="#{PromocionesController.selectedArticulo}" rowKey="#{articulo.codigo}">
 
                     <p:ajax event="rowSelect" update=":EditPromocionDialog"/>
 
-                   <f:facet name="header">
-                       <p:inputText id="globalFilter" onkeyup="PF('ArticuloTable').filter()" style="color: var(--primary-color); width: 100% "
-                                    placeholder="#{PromocionesController.selectedArticulo.nombre}" />
-                   </f:facet>
+                    <f:facet name="header">
+                        <p:inputText id="globalFilter" onkeyup="PF('ArticuloTable').filter()" style="color: var(--primary-color); width: 100% "
+                                     placeholder="#{PromocionesController.selectedArticulo.nombre}" />
+                    </f:facet>
 
-                  <p:column style="width: 3%" />
-                   <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
-                       <h:outputText value="#{articulo.nombre}" />
-                   </p:column>
+                    <p:column style="width: 3%" />
+                    <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                        <h:outputText value="#{articulo.nombre}" />
+                    </p:column>
 
-               </p:dataTable>
+                </p:dataTable>
             </p:card>
-            
+
             <p:spacer height="1em"/>
-            
+
             <p:card>
                 <p:outputLabel for="cantidadArticulo" value="Cantidad de Articulos: "/>
                 <p:inputNumber id="cantidadArticulo" style="width: 100%" value="#{PromocionesController.cantidad}"/>
             </p:card>
-            
+
             <p:spacer height="1em"/>
 
             <p:commandButton value="Seleccionar" styleClass="rounded-button ui-button-primary" 
                              action="#{PromocionesController.articuloSelectedDialog()}" 
-                             process="@form" update="@form :EditPromocionDialog" style="width: 100%"/>
+                             process="articuloEdit" update="articuloEdit :EditPromocionDialog" style="width: 100%"/>
         </h:form>
     </p:dialog>
-        
+
 </ui:composition>
