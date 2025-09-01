@@ -8,128 +8,134 @@
 
     <h:head>
         <title>Menu Principal Recibos</title>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-        <h:outputStylesheet name="primefaces/primefaces.css"/>
-        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
     </h:head>
 
     <h:body>
 
         <ui:include src="/secured/fragments/userBar.xhtml" /> 
 
-        <p:growl showDetail="true" showSummary="true" />
+        <section class="section">
 
-        <p:card title="Facturas Recibidas" style="text-align: center">
-            <h:form id="recibos">
-                  
-                <p:growl showDetail="true" showSummary="true" />
+            <div class="columns is-multiline has-text-centered">
+                <div class="column is-full">
+                    <p class="title is-3">Facturas Recibidas</p> 
+                </div>
+                <div class="column">  
+                    <div class="card"> 
+                        <h:form id="recibos"> 
+                            <p:growl showDetail="true" showSummary="true" />
 
-                <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
-                             paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
-                             emptyMessage="No se encontraron registros de factura con la critería proporcionada"
-                             globalFilterFunction="#{facturasController.globalFilterFunction}" lazy="false"
-                             filterBy="#{facturasController.filterBy}" reflow="true" selectionMode="single"
-                             selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
+                            <p:dataTable value="#{facturasController.filteredFacturasDetallados}" var="factura" widgetVar="FacturasTableData"
+                                         paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
+                                         emptyMessage="No se encontraron registros de factura con la critería proporcionada"
+                                         globalFilterFunction="#{facturasController.globalFilterFunction}" lazy="false"
+                                         filterBy="#{facturasController.filterBy}" reflow="true" selectionMode="single"
+                                         selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
-                    <p:ajax event="rowSelect" update="recibos selectedFacturaDetallado"/>
-                    <p:ajax event="rowUnselect" update="recibos selectedFacturaDetallado" />
-                    <p:ajax event="toggleSelect" update="recibos selectedFacturaDetallado" />
+                                <p:ajax event="rowSelect" update="recibos selectedFacturaDetallado"/>
+                                <p:ajax event="rowUnselect" update="recibos selectedFacturaDetallado" />
+                                <p:ajax event="toggleSelect" update="recibos selectedFacturaDetallado" />
 
-                    <p:autoUpdate/>
+                                <p:autoUpdate/>
 
-                    <f:facet name="header">
-                        <div class="columns">
-                            <div class="column">
-                                <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" 
-                                         style="width: 100%;" styleClass="rounded-button ui-button-info"/>
-                            </div>
-                            <div class="column">
-                                <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                         style='width: 100%' ajax="false">
-                                    <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                                </p:commandButton>
-                            </div>
-                        </div>
-                         
-                        <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
-                                     placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-                    </f:facet>
+                                <f:facet name="header">
+                                    <div class="columns">
+                                        <div class="column">
+                                            <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" 
+                                                             style="width: 100%;" styleClass="rounded-button ui-button-info"/>
+                                        </div>
+                                        <div class="column">
+                                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
+                                                             style='width: 100%' ajax="false">
+                                                <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                                            </p:commandButton>
+                                        </div>
+                                    </div>
 
-                    <p:column exportable="false" selectionMode="single"/>
+                                    <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
+                                                 placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                </f:facet>
 
-                    <p:column exportable="false">
-                        <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.status}"/>
-                        <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+                                <p:column exportable="false" selectionMode="single"/>
 
-                        <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!factura.status}"/>
-                        <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                                <p:column exportable="false">
+                                    <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.status}"/>
+                                    <p:tooltip for="ActiveChip" value="Activa" position="top"/>
 
-                        <p:chip id="ProcessedChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.processed}"/>
-                        <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
+                                    <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!factura.status}"/>
+                                    <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
 
-                        <p:chip id="unProcessedChip" icon="pi pi-clock" style="background: var(--yellow-500)" rendered="#{!factura.processed}"/>
-                        <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
+                                    <p:chip id="ProcessedChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.processed}"/>
+                                    <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
 
-                        <p:chip id="PaidChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.paid}"/>
-                        <p:tooltip for="PaidChip" value="Pagada" position="top"/>
+                                    <p:chip id="unProcessedChip" icon="pi pi-clock" style="background: var(--yellow-500)" rendered="#{!factura.processed}"/>
+                                    <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
 
-                        <p:chip id="unPaidChip" icon="pi pi-clock" style="background: var(--red-500)" rendered="#{!factura.paid}"/>
-                        <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
-                    </p:column>
+                                    <p:chip id="PaidChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.paid}"/>
+                                    <p:tooltip for="PaidChip" value="Pagada" position="top"/>
 
-                    <p:column headerText="Código" visible="false" >
-                        <h:outputText value="#{factura.id}"/>
-                    </p:column>
-                    <p:column headerText="Numero Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
-                        <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
-                    </p:column>
-                    <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
-                        <h:outputText value="#{factura.encabezado.fechaEmision}"/>
-                    </p:column>
-                    <p:column headerText="Emisor: " sortBy="#{factura.encabezado.emisor.nombre}">
-                        <h:outputText value="#{factura.encabezado.emisor.nombre}"/>
-                    </p:column>
-                    <p:column headerText="Condicion Venta" sortBy="#{factura.encabezado.condicionVenta}">
-                        <h:outputText value="#{factura.encabezado.condicionVenta}"/>
-                    </p:column>
-                    <p:column headerText="Plazo Credito" sortBy="#{factura.encabezado.plazoCredito}">
-                        <h:outputText value="#{factura.encabezado.plazoCredito}"/>
-                    </p:column>
-                    <p:column headerText="Medio Pago" exportable="false">
-                        <p:dataTable value="#{factura.encabezado.medioPago}" var="medio" reflow="true">
-                            <p:column>
-                                <h:outputText value="#{medio.medioPago}"/>
-                            </p:column>
-                        </p:dataTable>
-                    </p:column>
+                                    <p:chip id="unPaidChip" icon="pi pi-clock" style="background: var(--red-500)" rendered="#{!factura.paid}"/>
+                                    <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
+                                </p:column>
 
-                    <p:column headerText="Acciones" width="6%" exportable="false">
-                        <p:commandButton id="buttonSync" styleClass="rounded-button ui-button-success" disabled="#{factura.processed}" process="@this"
-                                         icon="pi pi-sync" actionListener="#{facturasController.processSelectedFactura()}" update="@this recibos">
-                            <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
-                        </p:commandButton>
+                                <p:column headerText="Código" visible="false" >
+                                    <h:outputText value="#{factura.id}"/>
+                                </p:column>
+                                <p:column headerText="Numero Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
+                                </p:column>
+                                <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}"/>
+                                </p:column>
+                                <p:column headerText="Emisor: " sortBy="#{factura.encabezado.emisor.nombre}">
+                                    <h:outputText value="#{factura.encabezado.emisor.nombre}"/>
+                                </p:column>
+                                <p:column headerText="Condicion Venta" sortBy="#{factura.encabezado.condicionVenta}">
+                                    <h:outputText value="#{factura.encabezado.condicionVenta}"/>
+                                </p:column>
+                                <p:column headerText="Plazo Credito" sortBy="#{factura.encabezado.plazoCredito}">
+                                    <h:outputText value="#{factura.encabezado.plazoCredito}"/>
+                                </p:column>
+                                <p:column headerText="Medio Pago" exportable="false">
+                                    <p:dataTable value="#{factura.encabezado.medioPago}" var="medio" reflow="true">
+                                        <p:column>
+                                            <h:outputText value="#{medio.medioPago}"/>
+                                        </p:column>
+                                    </p:dataTable>
+                                </p:column>
 
-                        <p:commandButton id="buttonPay" styleClass="rounded-button ui-button-help" disabled="#{factura.paid}" process="@this"
-                                         icon="pi pi-hammer" actionListener="#{facturasController.paySelectedFactura()}" update="@this recibos">
-                            <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
-                        </p:commandButton>
+                                <p:column headerText="Acciones" width="6%" exportable="false">
+                                    <p:commandButton id="buttonSync" styleClass="rounded-button ui-button-success" disabled="#{factura.processed}" process="@this"
+                                                     icon="pi pi-sync" actionListener="#{facturasController.processSelectedFactura()}" update="@this recibos">
+                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
+                                    </p:commandButton>
 
-                        <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
-                                         icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
-                            <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
-                        </p:commandButton>
+                                    <p:commandButton id="buttonPay" styleClass="rounded-button ui-button-help" disabled="#{factura.paid}" process="@this"
+                                                     icon="pi pi-hammer" actionListener="#{facturasController.paySelectedFactura()}" update="@this recibos">
+                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
+                                    </p:commandButton>
 
-                        <p:commandButton id="buttonToggle" styleClass="rounded-button ui-button-danger" icon="pi pi-power-off"
-                                         actionListener="#{facturasController.toggleFactura()}" process="@this" update="@this recibos FacturasTableData">
-                            <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
-                        </p:commandButton>
-                    </p:column>
-                </p:dataTable>
-            </h:form>
-        </p:card>
+                                    <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
+                                                     icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
+                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                    </p:commandButton>
 
+                                    <p:commandButton id="buttonToggle" styleClass="rounded-button ui-button-danger" icon="pi pi-power-off"
+                                                     actionListener="#{facturasController.toggleFactura()}" process="@this" update="@this recibos FacturasTableData">
+                                        <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                    </p:commandButton>
+                                </p:column>
+                            </p:dataTable>
+                        </h:form>
+                    </div>
+                </div>
+            </div>
+        </section> 
+        
         <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
         <ui:include src="/secured/fragments/Inventario/Upload/subirFacturas.xhtml"/>
         <ui:include src="/secured/fragments/Facturas/Recibos/verDetallesFactura.xhtml"/>
+        
     </h:body>
 </html>
