@@ -1,92 +1,97 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
       xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+      xmlns:ui="jakarta.faces.facelets"
+      class="#{ThemeController.currentTheme}">
 
     <h:head>
         <title>Menu Principal Facturas Emitidas</title>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-        <h:outputStylesheet name="primefaces/primefaces.css"/>
-        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
     </h:head>
 
     <h:body> 
 
         <ui:include src="/secured/fragments/userBar.xhtml" /> 
 
-        <p:growl showDetail="true" showSummary="true" />
+        <p:growl id="growl" showDetail="true" showSummary="true" />
 
-        <p:card styleClass="card">
+        <section class="section">
 
-            <f:facet name="title">
-                <p style="text-align: center">Facturas Emitidas</p> 
-            </f:facet> 
+            <div class="columns is-multiline has-text-centered">
+                <div class="column is-full">
+                    <p class="title is-3">Facturas Emitidas</p> 
+                </div>
+                <div class="column">  
+                    <div class="card"> 
 
-            <h:form id="recibos">
+                        <h:form id="recibos">
 
-                <p:growl showDetail="true" showSummary="true" />
+                            <p:growl showDetail="true" showSummary="true" />
 
-                <p:dataTable value="#{ComprobantesEmitidosController.filteredComprobantesEmitidos}" var="factura" widgetVar="FacturasTableData"
-                             paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
-                             emptyMessage="No se encontraron registros de factura con la critería proporcionada"
-                             globalFilterFunction="#{ComprobantesEmitidosController.globalFilterFunction}" lazy="false"
-                             filterBy="#{ComprobantesEmitidosController.filterBy}" reflow="true" selectionMode="single"
-                             selection="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" rowKey="#{factura.id}">
+                            <p:dataTable value="#{ComprobantesEmitidosController.filteredComprobantesEmitidos}" var="factura" widgetVar="FacturasTableData"
+                                         paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
+                                         emptyMessage="No se encontraron registros de factura con la critería proporcionada"
+                                         globalFilterFunction="#{ComprobantesEmitidosController.globalFilterFunction}" lazy="false"
+                                         filterBy="#{ComprobantesEmitidosController.filterBy}" reflow="true" selectionMode="single"
+                                         selection="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" rowKey="#{factura.id}">
 
-                    <p:ajax event="rowSelect" update="recibos selectedComprobanteEmitidoDetallado"/>
-                    <p:ajax event="rowUnselect" update="recibos selectedComprobanteEmitidoDetallado" />
-                    <p:ajax event="toggleSelect" update="recibos selectedComprobanteEmitidoDetallado" />
+                                <p:ajax event="rowSelect" update="recibos selectedComprobanteEmitidoDetallado"/>
+                                <p:ajax event="rowUnselect" update="recibos selectedComprobanteEmitidoDetallado" />
+                                <p:ajax event="toggleSelect" update="recibos selectedComprobanteEmitidoDetallado" />
 
-                    <p:autoUpdate/>
+                                <p:autoUpdate/>
 
-                    <f:facet name="header"> 
-                        
-                        <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                         style='width: 100%' ajax="false">
-                            <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                        </p:commandButton>
-                        
-                        <p:spacer height="1em"/>
+                                <f:facet name="header"> 
 
-                        <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
-                                     placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
-                         
-                    </f:facet>
+                                    <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
+                                                     style='width: 100%' ajax="false">
+                                        <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                                    </p:commandButton>
 
-                    <p:column exportable="false" selectionMode="single"/>
+                                    <p:spacer height="1em"/>
 
-                    <p:column headerText="Código" visible="false" >
-                        <h:outputText value="#{factura.id}"/>
-                    </p:column>
-                    <p:column headerText="Numero Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
-                        <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
-                    </p:column>
-                    <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
-                        <h:outputText value="#{factura.encabezado.fechaEmision}"/>
-                    </p:column>
-                    <p:column headerText="Emisor: " sortBy="#{factura.user.username}">
-                        <h:outputText value="#{factura.user.username}"/>
-                    </p:column>
-                    <p:column headerText="Condicion Venta" sortBy="#{factura.encabezado.condicionVenta}">
-                        <h:outputText value="#{factura.encabezado.condicionVenta}"/>
-                    </p:column>
+                                    <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
+                                                 placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
 
-                    <p:column headerText="Acciones" width="6%" exportable="false">
-                        <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
-                                         icon="pi pi-eye" onclick="PF('selectedComprobanteEmitidoDetallado').show(); PF('selectedComprobanteEmitidoDetallado').toggleMaximize();" >
-                            <f:setPropertyActionListener value="#{factura}" target="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" />
-                        </p:commandButton>
+                                </f:facet>
 
-                        <p:commandButton id="buttonToggle" styleClass="rounded-button ui-button-danger" icon="pi pi-power-off"
-                                         actionListener="#{ComprobantesEmitidosController.toggleFactura()}" process="@this" update="@this recibos FacturasTableData">
-                            <f:setPropertyActionListener value="#{factura}" target="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" />
-                        </p:commandButton>
-                    </p:column>
-                </p:dataTable>
-            </h:form>
-        </p:card>
+                                <p:column exportable="false" selectionMode="single"/>
+
+                                <p:column headerText="Código" visible="false" >
+                                    <h:outputText value="#{factura.id}"/>
+                                </p:column>
+                                <p:column headerText="Numero Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
+                                </p:column>
+                                <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}"/>
+                                </p:column>
+                                <p:column headerText="Emisor: " sortBy="#{factura.user.username}">
+                                    <h:outputText value="#{factura.user.username}"/>
+                                </p:column>
+                                <p:column headerText="Condicion Venta" sortBy="#{factura.encabezado.condicionVenta}">
+                                    <h:outputText value="#{factura.encabezado.condicionVenta}"/>
+                                </p:column>
+
+                                <p:column headerText="Acciones" width="6%" exportable="false">
+                                    <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
+                                                     icon="pi pi-eye" onclick="PF('selectedComprobanteEmitidoDetallado').show(); PF('selectedComprobanteEmitidoDetallado').toggleMaximize();" >
+                                        <f:setPropertyActionListener value="#{factura}" target="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" />
+                                    </p:commandButton>
+
+                                    <p:commandButton id="buttonToggle" styleClass="rounded-button ui-button-danger" icon="pi pi-power-off"
+                                                     actionListener="#{ComprobantesEmitidosController.toggleFactura()}" process="@this" update="@this recibos FacturasTableData">
+                                        <f:setPropertyActionListener value="#{factura}" target="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" />
+                                    </p:commandButton>
+                                </p:column>
+                            </p:dataTable>
+                        </h:form>
+                    </div> 
+                </div> 
+            </div> 
+        </section>
 
         <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
         <ui:include src="/secured/fragments/Facturas/Reportes/verDetallesFactura.xhtml"/>

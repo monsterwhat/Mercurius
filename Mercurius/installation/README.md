@@ -89,10 +89,10 @@ Follow the steps below to install and set up the required components:
 
 11. Add the following properties (or modify as needed):
 
-   - **password**: Jakarta@1!
-   - **databaseName**: jakarta
+   - **password**: Mercurius@1!
+   - **databaseName**: mercurius
    - **serverName**: localhost
-   - **user**: jakarta
+   - **user**: mercurius
    - **portNumber**: 3306
    - **UseSSL**: false
    - **allowPublicKeyRetrieval**: true
