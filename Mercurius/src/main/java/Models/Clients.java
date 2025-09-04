@@ -58,6 +58,9 @@ public class Clients {
     @Column
     private String TipoIdentificacion; //Tipo de identificacion Fisica/Juridica/DiMEX/NITE
     
+    @Column
+    private String CodigoActividadComercial;
+    
     private Boolean status; //En caso de querer archivar o desabilitar
 
     @EqualsAndHashCode.Exclude

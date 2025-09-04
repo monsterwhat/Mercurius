@@ -49,6 +49,8 @@ public class AppSettings {
     
     private String razonSocial;
     
+    private String provedor;
+    private String codigoActividad;
     
     //
     private Boolean estatus; //Si se esta usando o no en el sistema

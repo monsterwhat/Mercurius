@@ -203,7 +203,7 @@
                                         <p:column headerText="Acciones" exportable="false">
                                             <div class="buttons has-addons">
                                                 <p:commandLink styleClass="button is-rounded is-link" onclick="PF('ArticuloInactivoDetailsDialog').show();"
-                                                                  process="@this" update="selectedArticuloInactivo">
+                                                               process="@this" update="selectedArticuloInactivo">
                                                     <i class="pi pi-eye"></i>
                                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                                 </p:commandLink>
@@ -264,7 +264,7 @@
                                         <p:column headerText="Acciones" exportable="false">
                                             <div class="buttons has-addons">
                                                 <p:commandLink styleClass="button is-rounded is-link" onclick="PF('ArticuloActivoYProcesadoDetailsDialog').show();"
-                                                                 process="@this" update="selectedArticuloActivoYProcesado">
+                                                               process="@this" update="selectedArticuloActivoYProcesado">
                                                     <i class="pi pi-eye"></i>
                                                     <f:setPropertyActionListener value="#{articulo}" target="#{ArticulosController.selectedArticulo}" />
                                                 </p:commandLink>
@@ -310,7 +310,7 @@
                                         <p:column exportable="false">
                                             <div class="buttons">
                                                 <p:commandLink styleClass="button is-primary is-rounded is-small" process="@this" update="RevisionArticuloDialog"
-                                                                onclick="PF('RevisionArticuloDialog').show();" >
+                                                               onclick="PF('RevisionArticuloDialog').show();" >
                                                     <span class="icon-text">
                                                         <span class="icon">
                                                             <i class="pi pi-sync"></i>
@@ -353,7 +353,7 @@
                                                  filterBy="#{PromocionesController.filterBy}" reflow="true" 
                                                  selectionMode="single" selection="#{PromocionesController.selectedPromocion}" 
                                                  rowKey="#{promocion.id}">
- 
+
                                         <f:facet name="header">
                                             <p:commandLink actionListener="#{PromocionesController.openNewPromocion()}" process="@this"
                                                            update="@this" styleClass="button is-rounded is-primary is-fullwidth">

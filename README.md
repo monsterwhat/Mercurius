@@ -70,13 +70,12 @@ Mercurius es un programa de inventarios diseñado para ayudar a las empresas a g
 | Reportes de Recibos           | Implementado | Incluye todos los recibos, recibos vigentes y recibos vencidos |
 | Reportes de Inventarios       | Implementado | Incluye artículos, departamentos, familias, inventarios y generar etiquetas (sin implementar) |
 | Reportes de Usuarios          | Implementado | Incluye usuarios detallados                   |
-| Reportes Personalizados       | Pendiente    | Permitir la creación de reportes personalizados según las necesidades del usuario |
 | Reportes Automáticos por Correo | Implementado | Enviar reportes automáticos a correos específicos |
 
 ### Otras Características
 | Característica                | Estado       | Comentario                                    |
 |-------------------------------|--------------|-----------------------------------------------|
-| Integración con facturación electrónica | Implementada   | Procesa cualquier factura electrónica válida de manera correcta |
+| Integración con facturación electrónica | Implementada   | Procesa cualquier factura electrónica v4.4 válida de manera correcta |
 | Interfaz multilingüe          | Rechazado    | No es una prioridad en este momento           |
 | Backup Automático             | Pendiente    | Realizar copias de seguridad automáticas de la base de datos |
 
