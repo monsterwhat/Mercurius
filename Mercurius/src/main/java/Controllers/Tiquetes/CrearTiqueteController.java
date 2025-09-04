@@ -73,6 +73,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Data;
+import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.StreamedContent;
 import org.primefaces.util.LangUtils;
@@ -159,6 +160,14 @@ public class CrearTiqueteController implements Serializable {
 
     public void resetClient() {
         selectedClient = new Clients();
+    }
+    
+    public void revisarCarrito(){ 
+        if(!carrito.isEmpty()){
+             PrimeFaces.current().executeScript("PF('PagoDialog').show();");
+        }else{
+            //DISPLAY EMPTY CART WARNING
+        }
     }
 
     public void processCodigoBarra() {
@@ -634,8 +643,7 @@ public class CrearTiqueteController implements Serializable {
 
             } catch (Exception e) {
                 System.out.println("Error during PDF generation: " + e.getMessage());
-            }
-            return;
+            } 
         }
     }
 
