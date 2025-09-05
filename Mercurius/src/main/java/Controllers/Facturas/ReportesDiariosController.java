@@ -212,21 +212,25 @@ public class ReportesDiariosController implements Serializable{
     }
 
     public void imprimirReporteFamilias(){
-        File pdfFile = null;
-        pdfFile = pdfGenerator.generarPDFReportesFamilias(reportes,range);
-        printer.printPDFFile(pdfFile);
+        File pdfFile  = pdfGenerator.generarPDFReportesFamilias(reportes,range);
+        if(pdfFile != null){
+            printer.printPDFFile(pdfFile);
+        }
+        
     }
     
     public void imprimirReporteDepartamentos(){
-        File pdfFile = null;
-        pdfFile = pdfGenerator.generarPDFReportesDepartamentos(reportes,range);
-        printer.printPDFFile(pdfFile);
+        File pdfFile = pdfGenerator.generarPDFReportesDepartamentos(reportes,range);
+        if(pdfFile != null){
+            printer.printPDFFile(pdfFile);
+        }
     }
     
     public void imprimirReporteVentasXCajero(){
-        File pdfFile = null;
-        pdfFile = pdfGenerator.generarPDFReportesVentasXCajero(facturasEmitidas, currentSession.getUsername(), range);
-        printer.printPDFFile(pdfFile);
+        File pdfFile = pdfGenerator.generarPDFReportesVentasXCajero(facturasEmitidas, currentSession.getUsername(), range);
+        if(pdfFile != null){
+            printer.printPDFFile(pdfFile);
+        }
     }
     
 }

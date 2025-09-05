@@ -166,7 +166,7 @@ public class CrearTiqueteController implements Serializable {
         if(!carrito.isEmpty()){
              PrimeFaces.current().executeScript("PF('PagoDialog').show();");
         }else{
-            //DISPLAY EMPTY CART WARNING
+            //TODO DISPLAY EMPTY CART WARNING
         }
     }
 
@@ -606,7 +606,7 @@ public class CrearTiqueteController implements Serializable {
         // 1. Hacer ajustes en inventario
         ajustarInventario();
 
-        // 2. Crear Comprobante y enviarlo a tributacion
+        // 2. Crear Comprobante y TODO enviarlo a tributacion
         ComprobantesEmitidos tiqueteElectronico = crearComprobante();
 
         if (tiqueteElectronico != null) {
@@ -860,13 +860,13 @@ public class CrearTiqueteController implements Serializable {
         if (!Objects.equals(appSettings.getEstatus(), Boolean.FALSE)) {
             Encabezado encabezado = new Encabezado();
             //Codigo actividad
-            String codigoActividad = "521202";
+            String codigoActividad = appSettings.getCodigoActividad();
             encabezado.setCodigoActividadEmisor(codigoActividad);
             //Clave
             String clave = ""; //Traer de Tributacion
             encabezado.setClave(clave);
             //Consecutivo
-            String numeroConsecutivo = ""; //Traer de Registros...
+            String numeroConsecutivo = ""; //TODO Traer de Registros...
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
             //Fecha y Hora
             LocalDateTime emision = LocalDateTime.now().withNano(0);
@@ -880,7 +880,7 @@ public class CrearTiqueteController implements Serializable {
             //Medios de Pago
             List<MedioPago> medioPago = new ArrayList<>();
             MedioPago medio = new MedioPago();
-            medio.setMedioPago("01");
+            medio.setMedioPago("01"); //TODO THIS SHOULD BE DYNAMIC
             medio.setComprobante(encabezado);
             medioPago.add(medio);
             encabezado.setMedioPago(medioPago);

@@ -53,6 +53,7 @@
                     <div class="column is-full">
                         <h:form id="AjustesActivos">
 
+                             <!--TODO FIX THIS!! -->
                             <p:commandButton value="Imprimir" icon="pi pi-print" 
                                              action="#{InventarioController.exportPDF}" ajax="false" styleClass="rounded-button ui-button-help" style="width: 100%"
                                              oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')"/>
