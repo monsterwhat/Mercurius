@@ -30,7 +30,8 @@
                                 <h:form id="ArticulosActivos">  
 
                                     <div class="buttons p-2 ">
-                                        <p:commandLink action="#{ArticulosController.exportPDF('ArticulosActivos:ArticulosTableData')}" 
+                                        <!--TODO FIX THIS!! -->
+                                        <p:commandLink action="#{ArticulosController.exportPDF('Articulos:Activos:ArticulosActivos:ArticulosTableData')}" 
                                                        ajax="false" styleClass="button is-rounded is-info is-fullwidth" rendered="#{SessionController.registros}"
                                                        oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')">
                                             <span class="icon-text">
@@ -41,7 +42,7 @@
                                                     Imprimir
                                                 </span>
                                             </span> 
-                                        </p:commandLink>
+                                        </p:commandLink> 
                                         <p:commandLink rendered="#{SessionController.registros}"
                                                        styleClass="button is-rounded is-primary is-fullwidth">
                                             <span class="icon-text">
@@ -52,6 +53,7 @@
                                                     Exportar Excel
                                                 </span>
                                             </span> 
+                                            <p:dataExporter type="xls" target="ArticulosTableData"  fileName="Articulos_Activos"/>
                                         </p:commandLink>
                                         <p:commandLink actionListener="#{ArticulosController.openNewArticulo()}" process="@this"
                                                        update="@this" styleClass="button is-rounded is-success is-fullwidth">
@@ -80,7 +82,7 @@
                                                          placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                                         </f:facet>
 
-                                        <p:column>
+                                        <p:column exportable="false">
                                             <p:chip id="processedChip" icon="pi pi-check-circle" styleClass="has-background-success" 
                                                     rendered="#{articulo.processed}"/>
                                             <p:tooltip for="processedChip" value="Procesada" position="top"/>
@@ -131,8 +133,9 @@
                                 <h:form id="ArticulosInactivos">   
 
                                     <div class="buttons p-2">
+                                         <!--TODO FIX THIS!! -->
                                         <p:commandLink rendered="#{SessionController.registros}"
-                                                       action="#{ArticulosController.exportPDF('ArticulosInactivos:ArticulosTableData')}" ajax="false" 
+                                                       action="#{ArticulosController.exportPDF('Articulos:Inactivos:ArticulosInactivos:ArticulosTableData')}" ajax="false" 
                                                        styleClass="button is-info is-rounded is-fullwidth"  
                                                        oncomplete="printPDF('#{ArticulosController.contextPath}/jakarta.faces.resource/reporteArticulosActivos.pdf')">
                                             <span class="icon-text">
@@ -143,7 +146,7 @@
                                                     Imprimir
                                                 </span>
                                             </span> 
-                                        </p:commandLink>
+                                        </p:commandLink> 
                                         <p:commandLink rendered="#{SessionController.registros}"
                                                        styleClass="button is-success is-rounded is-fullwidth" style='width: 100%'>
                                             <span class="icon-text">
@@ -154,6 +157,7 @@
                                                     Exportar Excel
                                                 </span>
                                             </span> 
+                                            <p:dataExporter type="xls" target="ArticulosTableData"  fileName="Articulos_Inactivos"/>
                                         </p:commandLink>
                                     </div>
 

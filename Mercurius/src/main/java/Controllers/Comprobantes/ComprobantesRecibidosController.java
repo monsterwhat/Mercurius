@@ -235,6 +235,7 @@ public class ComprobantesRecibidosController implements Serializable {
         if(!files.isEmpty()){
             for (int i = 0; i < files.size(); i++) {
                 parseXMLFromUploadedFile(files.get(i));
+                //TODO Should also save them on the documents/recibos/xmls
             }
             files.clear();
             clearCache();
