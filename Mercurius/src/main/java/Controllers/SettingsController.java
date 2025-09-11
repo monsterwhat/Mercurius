@@ -62,10 +62,9 @@ public class SettingsController implements Serializable {
         currentSettingsList = settingsService.listAll();
         currentSettings = settingsService.returnCurrent();
         if (currentSettings == null) {
-            currentSettings = new AppSettings();
-        } else {
-            seleccionar();
-        }
+            currentSettings = new AppSettings(); 
+        }  
+        seleccionar();
     }
 
     public void seleccionar() {

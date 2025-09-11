@@ -53,10 +53,19 @@
                     <div class="column is-full">
                         <h:form id="AjustesActivos">
 
-                             <!--TODO FIX THIS!! -->
-                            <p:commandButton value="Imprimir" icon="pi pi-print" 
-                                             action="#{InventarioController.exportPDF}" ajax="false" styleClass="rounded-button ui-button-help" style="width: 100%"
-                                             oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')"/>
+                            <!--TODO FIX THIS!! -->
+                            <p:commandLink  action="#{InventarioController.exportPDF}" ajax="false" 
+                                            class="button is-fullwidth is-rounded is-warning"
+                                            oncomplete="printPDF('#{InventarioController.contextPath}/jakarta.faces.resource/reporteAjustesActivos.pdf')">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-print"></i>
+                                    </span>
+                                    <span>
+                                        Imprimir
+                                    </span>
+                                </span> 
+                            </p:commandLink>
 
                             <p:dataTable value="#{InventarioController.filteredInventarioDetallado}" var="inventario"  widgetVar="InventarioTable"
                                          paginator="true" rows="8" paginatorPosition="bottom" id="InventarioTableData"
@@ -92,10 +101,13 @@
 
                                 <p:column exportable="false">
                                     <div class="buttons">
-                                        <p:commandButton styleClass="rounded-button ui-button-info" icon="pi pi-eye" process="@this"
-                                                         onclick="PF('AjusteDetailsDialog').show();" update="selectedArticulo">
+                                        <p:commandLink class="button is-info is-rounded" process="@this"
+                                                       onclick="PF('AjusteDetailsDialog').show();" update="selectedArticulo">
                                             <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
-                                        </p:commandButton>
+                                            <span class="icon">
+                                                <i class="pi pi-eye"></i>
+                                            </span>
+                                        </p:commandLink>
                                     </div>
                                 </p:column>
 
@@ -122,17 +134,28 @@
                                 </p:column>
 
                                 <p:column exportable="false">
-                                    <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
-                                                     actionListener="#{InventarioController.deleteInventario()}" rendered="#{SessionController.inventarios}" process="@this" update="InventarioTableData">
+                                    <p:commandLink class="button is-rounded is-warning" actionListener="#{InventarioController.deleteInventario()}" 
+                                                   rendered="#{SessionController.inventarios}" process="@this" update="InventarioTableData">
                                         <f:setPropertyActionListener value="#{inventario}" target="#{InventarioController.selectedInventario}" />
-                                    </p:commandButton>
+                                        <span class="icon">
+                                            <i class="pi pi-power-off"></i>
+                                        </span>
+                                    </p:commandLink>
                                 </p:column>
 
                             </p:dataTable>
 
-                            <p:commandButton value="Crear Ajuste" onclick="PF('CrearAjusteDialog').show();" 
-                                             update="crearAjuste" styleClass="rounded-button ui-button-primary" 
-                                             style="width: 100%"/>
+                            <p:commandLink onclick="PF('CrearAjusteDialog').show();" update="crearAjuste" 
+                                           class="button is-primary is-rounded is-fullwidth">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-plus"></i>
+                                    </span>
+                                    <span>
+                                        Crear Ajuste
+                                    </span>
+                                </span> 
+                            </p:commandLink>
 
                         </h:form>
                     </div>

@@ -3,6 +3,7 @@ package Controllers.Comprobantes;
 import Models.ComprobantesV44.Detalles.LineaDetalle;
 import Models.ComprobantesV44.Detalles.CodigoComercial;
 import Controllers.*;
+import Controllers.Settings.SettingsDirController;
 import Models.Articulos.ArticuloPrecio;
 import Services.ComprobantesRecibidosService;
 import Models.Articulos.Articulos;
@@ -40,6 +41,7 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ComprobantesRecibidosController implements Serializable {
     
+    @Inject SettingsDirController directoryService;
     @Inject ComprobantesRecibidosService facturaService;
     @Inject LineaDetalleService lineaDetalleService;
     @Inject SessionController currentSession;
@@ -235,7 +237,11 @@ public class ComprobantesRecibidosController implements Serializable {
         if(!files.isEmpty()){
             for (int i = 0; i < files.size(); i++) {
                 parseXMLFromUploadedFile(files.get(i));
+                 
                 //TODO Should also save them on the documents/recibos/xmls
+                //Done i think
+                directoryService.saveUploadedFile(files.get(i), directoryService.getXMLDirPath());
+                
             }
             files.clear();
             clearCache();

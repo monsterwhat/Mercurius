@@ -45,10 +45,18 @@
 
                                 <f:facet name="header"> 
 
-                                    <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                                     style='width: 100%' ajax="false">
+                                    <p:commandLink class="button is-fullwidth is-rounded is-success" 
+                                                   ajax="false">
                                         <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                                    </p:commandButton>
+                                        <span class="icon-text">
+                                            <span class="icon">
+                                                <i class="pi pi-file-excel"></i>
+                                            </span>
+                                            <span>
+                                                Exportar Excel
+                                            </span>
+                                        </span> 
+                                    </p:commandLink>
 
                                     <p:spacer height="1em"/>
 
@@ -76,15 +84,21 @@
                                 </p:column>
 
                                 <p:column headerText="Acciones" width="6%" exportable="false">
-                                    <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
-                                                     icon="pi pi-eye" onclick="PF('selectedComprobanteEmitidoDetallado').show(); PF('selectedComprobanteEmitidoDetallado').toggleMaximize();" >
+                                    <p:commandLink id="buttonSee" class="button is-rounded is-info" process="@this"
+                                                   onclick="PF('selectedComprobanteEmitidoDetallado').show(); PF('selectedComprobanteEmitidoDetallado').toggleMaximize();" >
                                         <f:setPropertyActionListener value="#{factura}" target="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" />
-                                    </p:commandButton>
+                                        <span class="icon">
+                                            <i class="pi pi-eye"></i>
+                                        </span>  
+                                    </p:commandLink>
 
-                                    <p:commandButton id="buttonToggle" styleClass="rounded-button ui-button-danger" icon="pi pi-power-off"
+                                    <p:commandLink id="buttonToggle" class="button is-rounded is-danger"
                                                      actionListener="#{ComprobantesEmitidosController.toggleFactura()}" process="@this" update="@this recibos FacturasTableData">
                                         <f:setPropertyActionListener value="#{factura}" target="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" />
-                                    </p:commandButton>
+                                        <span class="icon">
+                                            <i class="pi pi-power-off"></i>
+                                        </span>
+                                    </p:commandLink>
                                 </p:column>
                             </p:dataTable>
                         </h:form>

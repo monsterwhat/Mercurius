@@ -32,7 +32,7 @@
                             <p:badge value="#{DepartamentosController.departamentosActivosCount()}" severity="success">
                                 <i class="pi pi-check-circle" style="font-size: 2rem"/>
                             </p:badge>
-                         </p:card>
+                        </p:card>
                     </div>
                     <div class="column mx-4">
                         <p:card style="border-radius: 15px; overflow: hidden;">
@@ -88,16 +88,25 @@
                                 </p:column>
                             </p:dataTable>
 
-                            <p:commandButton value="Crear Departamento" actionListener="#{DepartamentosController.openNewDepartamento()}" 
-                                             styleClass="rounded-button ui-button-primary" style="width: 100%" onclick="PF('CrearDepartamentoDialog').show();"/>
+                            <p:commandLink actionListener="#{DepartamentosController.openNewDepartamento()}" 
+                                             class="button is-fullwidth is-rounded is-success" onclick="PF('CrearDepartamentoDialog').show();">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-plus"></i>
+                                    </span>
+                                    <span>
+                                        Crear Departamento
+                                    </span>
+                                </span> 
+                            </p:commandLink>
                         </h:form>
                     </div> 
                 </div>
             </div>
-     </section>
-          
-    <ui:include src="/secured/fragments/Departamentos/CrearDepartamentoDialog.xhtml"/>
-    <ui:include src="/secured/fragments/Departamentos/EditDepartamentoDialog.xhtml"/>
+        </section>
+
+        <ui:include src="/secured/fragments/Departamentos/CrearDepartamentoDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Departamentos/EditDepartamentoDialog.xhtml"/>
 
     </h:body>
 </html>
