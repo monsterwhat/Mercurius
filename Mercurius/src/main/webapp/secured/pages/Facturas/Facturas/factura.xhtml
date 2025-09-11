@@ -1,0 +1,416 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="jakarta.faces.facelets"
+      class="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Emitir Factura</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
+
+        <link rel="apple-touch-icon" href="#{resource['favicon/apple-touch-icon.png']}"/>
+        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-32x32.png']}"/>
+        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-16x16.png']}"/>
+        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon.ico']}"/>  
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="/Mercurius/resources/css/style.css"/>  
+        <link rel="stylesheet" href="/Mercurius/resources/css/base-theme.css"/> 
+        <link rel="stylesheet" href="/Mercurius/resources/css/button-stack.css"/> 
+        <link rel="stylesheet" href="/Mercurius/resources/css/datatable.css"/> 
+        <link rel="stylesheet" href="/Mercurius/resources/css/dialog.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/form-elements.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/tabs.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/timeline.css"/> 
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.3/css/bulma.css"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/primeicons/primeicons.css"/> 
+
+        <script>
+            $(document).on('keydown', ':tabbable', function (e) {
+
+                if (e.key === "Enter") {
+                    e.preventDefault();
+
+                    var $canfocus = $(':tabbable:visible');
+                    var index = $canfocus.index(document.activeElement) + 1;
+
+                    if (index >= $canfocus.length)
+                        index = 0;
+                    $canfocus.eq(index).focus();
+                }
+
+            });
+        </script>
+
+        <h:outputScript>
+            window.addEventListener("beforeunload", function() {
+            // Trigger PrimeFaces AJAX call before closing
+            autoRegistrarFactura();
+            });
+        </h:outputScript>
+    </h:head>
+
+    <h:body>   
+
+        <h:form id="facturaForm">
+            <p:remoteCommand name="autoRegistrarFactura"
+                             actionListener="#{crearTiqueteController.cancel()}" />
+        </h:form>
+
+        <section class="section"> 
+            <p:outputPanel deferred="true" rendered="#{not empty crearTiqueteController.newFactura}"> 
+                <h:form id="crearTiquete">
+                    <p:growl id="growl" showDetail="true" showSummary="true"/>
+                    <div class="columns is-multiline is-centered is-vcentered">
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Crear Factura - #{SessionController.currentUser.username}
+                            </p> 
+                        </div>
+                    </div>
+                    <div class="columns is-multiline is-centered is-vcentered">
+                        <!-- Tipo Factura y Cliente -->
+                        <div class="column is-full is-centered">
+                            <div class="columns is-gapless is-vcentered is-centered">
+                                <div class="column is-narrow is-full-mobile"> 
+                                    <p class="title has-text-centered is-5">
+                                        Tipo de Factura
+                                    </p> 
+                                    <p:selectOneMenu id="group" disabled="true" class="input" >
+                                        <f:selectItem itemLabel="Contado" itemValue="01"/>
+                                        <f:selectItem itemLabel="Credito" itemValue="02"/> 
+                                        <f:selectItems/>
+                                    </p:selectOneMenu>
+                                </div>
+                                <div class="column is-narrow is-full-mobile">
+                                    <div class="column">
+                                        <p class="title has-text-centered is-5">
+                                            Cliente
+                                        </p> 
+                                        <p:commandLink id="btnCliente" class="button is-warning is-fullwidth" 
+                                                       oncomplete="PF('ClienteDialog').show();" rendered="#{!not empty crearTiqueteController.selectedClient.name}" >
+                                            <span class="icon-text">
+                                                <span class="icon">
+                                                    <i class="pi pi-address-book"></i>
+                                                </span>
+                                                <span>
+                                                    Seleccionar
+                                                </span>
+                                            </span>  
+                                        </p:commandLink>
+                                    </div> 
+                                </div> 
+                                <p:outputPanel rendered="#{not empty crearTiqueteController.selectedClient.name}">
+                                    <div class="column is-narrow is-full-mobile">
+                                        <div class="columns is-mobile is-vcentered is-centered">
+                                            <div class="column">
+                                                <p class="title is-5 has-text-centered">
+                                                    #{crearTiqueteController.selectedClient.name}
+                                                </p>
+                                            </div>
+                                            <div class="column is-narrow">
+                                                <p:commandLink  actionListener="#{crearTiqueteController.resetClient()}"
+                                                                class="button is-danger is-rounded" update="@this"
+                                                                process="@this" >
+                                                    <span class="icon">
+                                                        <i class="pi pi-times"></i>
+                                                    </span> 
+                                                </p:commandLink>
+                                            </div> 
+                                        </div> 
+                                    </div> 
+                                </p:outputPanel> 
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="columns is-centered is-vcentered is-gapless">
+                        <!-- Cantidad y codigoBarra --> 
+                        <div class="column is-narrow has-text-centered mx-2"> 
+                            <div class="block">
+                                <p class="title is-5 ">
+                                    Cantidad
+                                </p>    
+                                <p:inputNumber id="cantidad" inputmode="decimal"  value="#{crearTiqueteController.cantidadArticulo}"
+                                               minValue="1"  emptyValue="1" >
+                                    <p:ajax event="change" />
+                                </p:inputNumber>
+                            </div> 
+                        </div>
+                        <div class="column has-text-centered mx-2"> 
+                            <div class="block"> 
+                                <p class="title is-5">
+                                    Codigo de Barra
+                                </p> 
+                                <div class="columns is-centered is-vcentered is-mobile is-gapless">  
+                                    <div class="column is-narrow  mr-1">
+                                        <i class="pi pi-barcode"/>
+                                    </div>
+                                    <div class="column  mr-1">
+                                        <p:inputText id="codigoBarra" style="width: 100%" placeholder="Codigo de Barra" value="#{crearTiqueteController.codigoBarra}"
+                                                     onkeydown="if (event.keyCode === 13) {
+                                                                 event.preventDefault();
+                                                             }" tabindex="0" >
+                                            <p:ajax event="keydown" onstart="if (event.keyCode !== 13) return false;" process="@this"
+                                                    listener="#{crearTiqueteController.processCodigoBarra}" update="crearTiquete"/>
+                                        </p:inputText>
+                                    </div>
+                                    <div class="column is-narrow">
+                                        <p:commandLink class="button is-warning" 
+                                                       oncomplete="PF('CodigoBarraDialog').show();">
+                                            <span class="icon">
+                                                <i class="pi pi-search"></i>
+                                            </span>      
+                                        </p:commandLink>  
+                                    </div> 
+                                </div> 
+                            </div>
+                        </div> 
+                    </div>
+                    <div class="columns is-multiline is-centered is-vcentered"> 
+                        <div class="column is-full">
+                            <p:dataTable id="carrito" var="carrito"  value="#{crearTiqueteController.carrito}" reflow="true" 
+                                         showGridlines="true" stripedRows="true" emptyMessage="No hay articulos."
+                                         scrollable="true" scrollHeight="250" >
+                                <p:autoUpdate/>
+                                <p:column headerText="Cantidad">
+                                    <h:outputText value="#{carrito.cantidad}"/>
+                                </p:column>
+                                <p:column headerText="Nombre">
+                                    <h:outputText value="#{carrito.articulo.nombre}"/>
+                                </p:column>
+                                <p:column headerText="Descuento">
+                                    <h:outputText value="#{carrito.descuento}"/>
+                                </p:column>
+                                <p:column headerText="Precio">
+                                    <h:outputText value="#{crearTiqueteController.getArticuloPrecioFinal(carrito)}"/>
+                                </p:column>
+                                <p:column width="5%">
+                                    <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" 
+                                                     actionListener="#{crearTiqueteController.removeArticulo(carrito)}" />
+                                </p:column>
+                            </p:dataTable>
+                        </div>
+                        <div class="column is-full">
+                            <!--Total--> 
+                            <div class="columns is-centered is-vcentered is-multiline">
+                                <div class="column is-full">
+                                    <p class="title is-5 has-text-centered">
+                                        Total Descuento: #{crearTiqueteController.calculateTotalCarritoDescuento()}
+                                    </p>
+                                </div>
+                                <div class="column is-full">
+                                    <p class="title is-5  has-text-centered">
+                                        Total IVA: #{crearTiqueteController.calculateTotalCarritoImpuesto()}
+                                    </p> 
+                                </div>
+                                <div class="column is-full">
+                                    <p class="title is-5 has-text-centered">
+                                        Total Carrito: #{crearTiqueteController.calculateTotalCarrito()}
+                                    </p> 
+                                </div>
+                                <p:autoUpdate />
+                            </div>  
+                        </div> 
+
+                    </div>
+                    <div class="columns is-multiline is-centered is-vcentered">
+                        <div class="column is-full">
+                            <div class="buttons">
+                                <p:commandLink class="button is-secondary is-fullwidth" process="@form" update="@this" 
+                                               actionListener="#{crearTiqueteController.cancel()}" >
+                                    <span class="icon-text">
+                                        <span class="icon">
+                                            <i class="pi pi-times"></i>
+                                        </span>
+                                        <span>
+                                            Cancelar
+                                        </span>
+                                    </span>  
+                                </p:commandLink>
+                                <p:commandLink class="button is-primary is-fullwidth" actionListener="#{crearTiqueteController.revisarCarrito()}"
+                                               process="@form" update="pago">
+                                    <span class="icon-text">
+                                        <span class="icon">
+                                            <i class="pi pi-check"></i>
+                                        </span>
+                                        <span>
+                                            Facturar
+                                        </span>
+                                    </span>  
+                                </p:commandLink>
+                            </div>
+                        </div> 
+                    </div>  
+                    <p:autoUpdate/>
+                    <h:inputHidden id="resetFlag" value="#{crearTiqueteController.resetFlag}" />
+                </h:form> 
+            </p:outputPanel>     
+        </section> 
+
+        <p:dialog widgetVar="PagoDialog" dynamic="true" cache="false" 
+                  closable="false" modal="true" fitViewport="true" responsive="true">
+            <section class="section">
+                <h:form id="pago" >
+                    <p:growl id="growl" showDetail="true" showSummary="true"/> 
+                    <div class="columns is-centered is-vcentered is-multiline">
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Total Factura
+                            </p>
+                        </div>
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                #{crearTiqueteController.calculateTotalCarrito()} Colones
+                            </p>
+                        </div>
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                Paga con:
+                            </p>
+                        </div>
+                        <div class="column has-text-centered">
+                            <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="colones" value="Colones: " />
+                            <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="colones"
+                                           decimalPlaces="0" minValue="0"
+                                           value="#{crearTiqueteController.colones}" >
+                                <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@form"/>
+                            </p:inputNumber>
+                        </div>
+                        <div class="column has-text-centered">
+                            <p:outputLabel style="font-weight: bold; font-size: 1.5em" for="dolares" value="Dolares: "/>
+                            <p:inputNumber style="font-weight: bold; font-size: 1.5em" id="dolares" 
+                                           decimalPlaces="0" minValue="0"
+                                           value="#{crearTiqueteController.dolares}">
+                                <p:ajax event="change" listener="#{crearTiqueteController.calcularVuelto()}" update="@form"/>
+                            </p:inputNumber>
+                        </div>
+                        <div class="column is-full">
+                            <p class="title has-text-centered">
+                                #{crearTiqueteController.vueltoString}
+                            </p>
+                        </div> 
+                        <div class="column is-full">
+                            <div class="buttons">
+                                <p:commandLink class="button is-primary is-fullwidth"
+                                               actionListener="#{crearTiqueteController.verificarPago()}" process="@form" update="@this"
+                                               >
+                                    <span class="icon-text">
+                                        <span class="icon">
+                                            <i class="pi pi-receipt"></i>
+                                        </span>
+                                        <span>
+                                            Facturar
+                                        </span>
+                                    </span>  
+                                </p:commandLink>
+
+                                <p:commandLink class="button is-danger is-fullwidth" 
+                                               actionListener="#{crearTiqueteController.clearPago()}"
+                                               onclick="PF('PagoDialog').hide();" process="@form" update="pago">
+                                    <span class="icon-text">
+                                        <span class="icon">
+                                            <i class="pi pi-times"></i>
+                                        </span>
+                                        <span>
+                                            Cancelar
+                                        </span>
+                                    </span>  
+                                </p:commandLink>
+                            </div> 
+                        </div>
+                        <p:autoUpdate />
+                    </div>
+                </h:form>
+            </section> 
+        </p:dialog>
+
+        <!-- Cliente Dialog -->
+        <p:dialog widgetVar="ClienteDialog" dynamic="true" cache="false" closable="true" modal="true" header="Seleccionar Cliente">
+            <h:form id="clientes">
+                <p:dataTable value="#{crearTiqueteController.filteredClients}" var="client"  widgetVar="ClientsTableData"
+                             paginator="true" rows="8" paginatorPosition="bottom" id="ClientsTableData"
+                             emptyMessage="No se encontraron clientes con la critería proporcionada"
+                             globalFilterFunction="#{crearTiqueteController.globalFilterFunction}"  clientCache="true"
+                             filterBy="#{crearTiqueteController.filterBy}" reflow="true" selectionMode="single"
+                             selection="#{crearTiqueteController.selectedClient}" rowKey="#{client.code}">
+
+                    <f:facet name="header">
+                        <p:inputText id="globalFilter" onkeyup="PF('ClientsTableData').filter()"
+                                     placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                    </f:facet>
+
+                    <p:column headerText="ID Cliente" visible="false">
+                        <h:outputText value="#{client.code}"/>
+                    </p:column>
+                    <p:column headerText="Nombre" sortBy="#{client.name}">
+                        <h:outputText value="#{client.name}"/>
+                    </p:column>
+                    <p:column headerText="Correo" sortBy="#{client.email}">
+                        <h:outputText value="#{client.email}" />
+                    </p:column>
+                    <p:column headerText="Número de Cédula" sortBy="#{client.idNumber}">
+                        <h:outputText value="#{client.idNumber}" />
+                    </p:column>
+                    <p:column headerText="Descuento" sortBy="#{client.discount}" visible="false">
+                        <h:outputText value="#{client.discount}" />
+                    </p:column>
+                    <p:column headerText="Número de Teléfono" sortBy="#{client.phoneNumber}">
+                        <h:outputText value="#{client.phoneNumber}" />
+                    </p:column>
+
+                    <f:facet name="footer">
+                        <p:commandButton value="Seleccionar Cliente" icon="pi pi-check"
+                                         process="@form"
+                                         update="clientes"
+                                         oncomplete="PF('ClienteDialog').hide() "
+                                         actionListener="#{crearTiqueteController.selectCliente(ClientsController.selectedClient)}" />
+                    </f:facet>
+
+                </p:dataTable>
+            </h:form>
+        </p:dialog>
+
+        <!-- CodigoBarra Dialog -->
+        <p:dialog widgetVar="CodigoBarraDialog" dynamic="true" cache="false" closable="true" modal="true" header="Codigo de Barra">
+            <h:form id="articulos">
+                <p:dataTable value="#{ArticulosController.filteredArticulosActivosYProcesados}" var="articulo"  widgetVar="ArticulosActivosYProcesados"
+                             paginator="true" rows="8" paginatorPosition="bottom" id="ArticulosTableData" size="small"
+                             emptyMessage="No se encontraron artículos con la critería proporcionada" 
+                             globalFilterFunction="#{ArticulosController.globalFilterFunction}" clientCache="true"
+                             filterBy="#{ArticulosController.filterBy}" reflow="true" selectionMode="single"
+                             selection="#{ArticulosController.selectedArticulo}" rowKey="#{articulo.codigo}">
+
+                    <f:facet name="header">
+                        <p:inputText id="globalFilter" onkeyup="PF('ArticulosActivosYProcesados').filter()"
+                                     placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                    </f:facet>
+
+                    <p:column headerText="Código de Barra" sortBy="#{articulo.codigoBarra}">
+                        <h:outputText value="#{articulo.codigoBarra}"/>
+                    </p:column>                          
+                    <p:column headerText="Nombre" sortBy="#{articulo.nombre}">
+                        <h:outputText value="#{articulo.nombre}"/>
+                    </p:column>
+                    <p:column headerText="Precio" sortBy="#{articulo.lastPrecioArticulo}">
+                        <h:outputText value="#{articulo.lastPrecioArticulo}"/>
+                    </p:column>
+                    <p:column headerText="Stock" sortBy="#{ArticulosController.getStock(articulo)}">
+                        <h:outputText value="#{ArticulosController.getStock(articulo)}"/>
+                    </p:column>
+
+                    <f:facet name="footer">
+                        <p:commandButton value="Seleccionar Articulo" icon="pi pi-check"
+                                         process="@form"
+                                         update="articulos" 
+                                         oncomplete="PF('CodigoBarraDialog').hide() "
+                                         actionListener="#{crearTiqueteController.selectArticulo(ArticulosController.selectedArticulo)}" />
+                    </f:facet>
+
+                </p:dataTable>   
+            </h:form>
+        </p:dialog>
+
+    </h:body>
+</html>

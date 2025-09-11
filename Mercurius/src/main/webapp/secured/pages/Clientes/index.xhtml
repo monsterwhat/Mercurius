@@ -35,15 +35,35 @@
                         <p:ajax event="rowSelect" update="EditarClienteDialog"/>
 
                         <f:facet name="header">
-                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" rendered="#{SessionController.registros}" styleClass="rounded-button ui-button-help" style="width: 100%" ajax="false">
+                            
+                            <div class="buttons">
+                                 
+                            <p:commandLink rendered="#{SessionController.registros}" class="button is-rounded is-link is-fullwidth" ajax="false">
                                 <p:dataExporter type="xlsx" target="ClientsTableData" fileName="Clientes-Mercurius-Excel" />
-                            </p:commandButton>
-
-                            <p:spacer height="1em"/>
-
-                            <p:commandButton value="Crear Cliente" icon="pi pi-plus" onclick="PF('CrearClienteDialog').show();" actionListener="#{ClientsController.openNewClient}" 
-                                     styleClass="rounded-button ui-button-primary" style="width:100%"  />
-
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-file-excel"></i>
+                                    </span>
+                                    <span>
+                                        Exportar Excel
+                                    </span>
+                                </span> 
+                            </p:commandLink>
+ 
+                            <p:commandLink onclick="PF('CrearClienteDialog').show();" actionListener="#{ClientsController.openNewClient}" 
+                                             class="button is-rounded is-primary is-fullwidth">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-plus"></i>
+                                    </span>
+                                    <span>
+                                        Crear Cliente
+                                    </span>
+                                </span>
+                            </p:commandLink>
+                                 
+                            </div>
+                    
                             <p:spacer height="1em"/> 
 
                             <p:inputText id="globalFilter" onkeyup="PF('ClientsTableData').filter()"

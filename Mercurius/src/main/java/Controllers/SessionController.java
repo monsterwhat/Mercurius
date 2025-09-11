@@ -51,7 +51,7 @@ public class SessionController implements Serializable{
     
     @Inject FacesContext facesContext;
     @Inject SecurityContext securityContext;
-    @Inject private AlertasService alerta;
+    @Inject private AlertasService alertas;
 
     @PostConstruct
     public void init(){
@@ -68,7 +68,7 @@ public class SessionController implements Serializable{
                 case SUCCESS -> {
                     if(securityContext.getCallerPrincipal().getName() != null){
                         currentUser = loginService.getSession(securityContext.getCallerPrincipal().getName());
-                        alerta.registrarAlerta("Usuario Conectado", "El usuario se conectó", currentUser, 0, "executeLogin()", null, null);
+                        alertas.registrarAlerta("Usuario Conectado", "El usuario se conectó", currentUser, 0, "executeLogin()", null, null);
                         redirectToSecuredArea();
                     }
                 }   
@@ -78,8 +78,10 @@ public class SessionController implements Serializable{
                 default -> throw new AssertionError();
             }
             
-        } catch (IOException e) {
-            //TODO ALERT OF ERROR
+        } catch (IOException e) { 
+            alertas.registrarAlerta("Error al iniciar sesion " + username, e.getLocalizedMessage(), null, 0, "sessionController.executelogin()", e.getLocalizedMessage(), null);
+            FacesMessage message = new FacesMessage("Error", "Error al iniciar sesion");
+            FacesContext.getCurrentInstance().addMessage(null, message);
             System.out.println("Error logging in " + e.getLocalizedMessage());
         }
     }
@@ -94,14 +96,13 @@ public class SessionController implements Serializable{
             ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
             ec.redirect(ec.getRequestContextPath() + "/index");
             ec.invalidateSession(); // Invalidate the session
-            alerta.registrarAlerta("Usuario Desconectado", "El usuario se desconectó", getCurrentUser(), 0, "logOut()", null, null);
+            alertas.registrarAlerta("Usuario Desconectado", "El usuario se desconectó", getCurrentUser(), 0, "logOut()", null, null);
             this.currentUser = null;
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Logout successful!"));
             
-        } catch (IOException e) {
-            // Handle the IOException
-            //TODO ALERT OF ERROR
-            e.printStackTrace();
+        } catch (IOException e) { 
+            alertas.registrarAlerta("Error al cerrar sesion", e.getLocalizedMessage(), null, 0, "sessionControlller.logout()", null, null);
+            System.out.println("Error al cerrar sesion: " + e.getLocalizedMessage()); 
         }
     }
 
@@ -176,7 +177,7 @@ public class SessionController implements Serializable{
         if(newUsername != null){
             if(!newUsername.isBlank()){
                 if(!currentUser.getUsername().equals(newUsername)){
-                    alerta.registrarAlerta("Nombre de Usuario Cambiado", "Se cambió el nombre de usuario a: " + newUsername, getCurrentUser(), 0, "changeName()", currentUser.getUsername(), newUsername);
+                    alertas.registrarAlerta("Nombre de Usuario Cambiado", "Se cambió el nombre de usuario a: " + newUsername, getCurrentUser(), 0, "changeName()", currentUser.getUsername(), newUsername);
                     loginService.updateUsername(currentUser, newUsername);
                     infoMessage("Se actualizo el nombre de usuario.");
                     newUsername = null;
@@ -193,7 +194,7 @@ public class SessionController implements Serializable{
         if(newEmail != null){
             if(!newEmail.isBlank()){
                 if(!currentUser.getEmail().equals(newEmail)){
-                    alerta.registrarAlerta("Correo Electrónico Cambiado", "Se cambió el correo electrónico a: " + newEmail, getCurrentUser(), 0, "changeEmail()", currentUser.getEmail(), newEmail);
+                    alertas.registrarAlerta("Correo Electrónico Cambiado", "Se cambió el correo electrónico a: " + newEmail, getCurrentUser(), 0, "changeEmail()", currentUser.getEmail(), newEmail);
                     loginService.updateEmail(currentUser, newEmail);
                     infoMessage("Se actualizo el correo electronico.");
                     newEmail = null;
@@ -211,7 +212,7 @@ public class SessionController implements Serializable{
             if(!newPassword.isBlank()){
                 if(newPassword.equals(confirmPassword)){
                     loginService.updatePassword(currentUser, newPassword);
-                    alerta.registrarAlerta("Contraseña Cambiada", "Se cambió la contraseña", getCurrentUser(), 0, "changePassword()", null, null);
+                    alertas.registrarAlerta("Contraseña Cambiada", "Se cambió la contraseña", getCurrentUser(), 0, "changePassword()", null, null);
                     infoMessage("Se actualizo la contrasena.");
                     newPassword = null;
                 }else{

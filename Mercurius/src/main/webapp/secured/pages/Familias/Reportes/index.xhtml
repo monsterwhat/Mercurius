@@ -75,28 +75,42 @@
 
                                 <p:column headerText="Acciones" exportable="false" width="10%">
                                     <div class="buttons">
-                                        <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil" update="editFamilia"
+                                        <p:commandLink class="button is-rounded is-primary" update="editFamilia"
                                                          onclick="PF('EditarFamiliaDialog').show();" process="@this">
                                             <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
-                                        </p:commandButton>
-                                        <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
-                                                         actionListener="#{FamiliasController.deleteFamilia()}" process="@this" update="familias">
+                                            <span class="icon">
+                                                <i class="pi pi-pencil"></i>
+                                            </span>
+                                        </p:commandLink>
+                                        <p:commandLink class="button is-rounded is-warning" process="@this" update="familias"
+                                                         actionListener="#{FamiliasController.deleteFamilia()}" >
                                             <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
-                                        </p:commandButton>
+                                            <span class="icon">
+                                                <i class="pi pi-power-off"></i>
+                                            </span>
+                                        </p:commandLink>
                                     </div>
                                 </p:column>
                             </p:dataTable>
                             <!-- Adjust the button action -->
-                            <p:commandButton value="Crear Familia" actionListener="#{FamiliasController.openNewFamilia}"
-                                             styleClass="rounded-button ui-button-primary" style="width: 100%"
-                                             onclick="PF('CrearFamiliaDialog').show();"/>
+                            <p:commandLink actionListener="#{FamiliasController.openNewFamilia}"
+                                             class="button is-fullwidth is-rounded is-success" onclick="PF('CrearFamiliaDialog').show();">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-plus"></i>
+                                    </span>
+                                    <span>
+                                        Crear Familia
+                                    </span>
+                                </span> 
+                            </p:commandLink>
 
                         </h:form>
                     </div>
                 </div>
             </div>
         </section>
-          
+
 
         <ui:include src="/secured/fragments/Familias/CreateFamiliaDialog.xhtml"/>
 

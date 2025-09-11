@@ -335,7 +335,9 @@ public class CorreosHelper {
             // Failed to send email
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error enviando reporte!: " + emailResult, null));
-            //TODO LOG ERROR
+             
+            alertasService.registrarAlerta("Error enviando correo", "Se ha producido un error al enviar el correo electronico.", null, 0, "CorreosHelper.handleEmailResult", null, null);
+            System.out.println("Error enviando correo");
         }
     }
     

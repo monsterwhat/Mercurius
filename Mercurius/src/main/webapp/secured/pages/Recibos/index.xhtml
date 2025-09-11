@@ -42,14 +42,31 @@
                                 <f:facet name="header">
                                     <div class="columns">
                                         <div class="column">
-                                            <p:commandButton icon="pi pi-upload" onclick="PF('facturasUpload').show();" value="Subir Factura" 
-                                                             style="width: 100%;" styleClass="rounded-button ui-button-info"/>
+                                            <p:commandLink onclick="PF('facturasUpload').show();"
+                                                           class="button is-fullwidth is-rounded is-info">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-upload"></i>
+                                                    </span>
+                                                    <span>
+                                                        Subir Factura
+                                                    </span>
+                                                </span> 
+                                            </p:commandLink>
                                         </div>
                                         <div class="column">
-                                            <p:commandButton value="Exportar Excel" icon="pi pi-file-excel" styleClass="rounded-button ui-button-success" 
-                                                             style='width: 100%' ajax="false">
+                                            <p:commandLink class="button is-fullwidth is-rounded is-success" 
+                                                             ajax="false">
                                                 <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                                            </p:commandButton>
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-file-excel"></i>
+                                                    </span>
+                                                    <span>
+                                                        Exportar Excel
+                                                    </span>
+                                                </span> 
+                                            </p:commandLink>
                                         </div>
                                     </div>
 
@@ -132,10 +149,10 @@
                 </div>
             </div>
         </section> 
-        
+
         <ui:include src="/secured/fragments/Inventario/Activos/verDetallesDeAjuste.xhtml"/>
         <ui:include src="/secured/fragments/Inventario/Upload/subirFacturas.xhtml"/>
         <ui:include src="/secured/fragments/Facturas/Recibos/verDetallesFactura.xhtml"/>
-        
+
     </h:body>
 </html>

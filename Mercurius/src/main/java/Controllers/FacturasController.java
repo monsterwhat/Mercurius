@@ -26,8 +26,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.ArrayList; 
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -258,7 +257,9 @@ public class FacturasController implements Serializable {
             InputStream inputStream = uploadedFile.getInputStream();
             parser.parseXML(inputStream);
         } catch (IOException e) {
-            //TODO ALERT OF ERROR
+            alertas.registrarAlerta("Error al parsear xml de factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.parseXMLFromUploadedFile()", e.getLocalizedMessage(), null);
+            FacesMessage message = new FacesMessage("Error", "No hay una factura seleccionada");
+            FacesContext.getCurrentInstance().addMessage(null, message);
             System.out.println("Error" + e.getLocalizedMessage());
         }
     }
@@ -432,8 +433,10 @@ public class FacturasController implements Serializable {
             alertas.registrarAlerta("Factura Procesada", "Se procesaron los artículos de la factura #" + factura.getId(), currentSession.getCurrentUser(), 0, "processFactura()", factura.toString(), null);
             clearCache();
 
-        } catch (Exception e) {
-            //TODO ALERT OF ERROR
+        } catch (Exception e) { 
+            alertas.registrarAlerta("Error al procesar factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.processFactura()", e.getLocalizedMessage(), null);
+            FacesMessage message = new FacesMessage("Error", "No hay una factura seleccionada");
+            FacesContext.getCurrentInstance().addMessage(null, message);
             System.out.println("Error procesing factura: " + e.getLocalizedMessage());
         }
     }

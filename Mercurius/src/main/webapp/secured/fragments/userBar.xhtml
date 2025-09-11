@@ -34,7 +34,19 @@
                     });
                 }
             });
-        </script> 
+        </script>
+
+        <script>
+            function openFactura(facturaId) {
+                window.open(
+                        '#{request.contextPath}/secured/pages/Facturas/Facturas/factura.xhtml?facturaId=' + facturaId,
+                        '_blank',
+                        'width=1000,height=700,resizable=yes,scrollbars=yes'
+                        );
+            }
+
+        </script>
+
     </h:head>
 
     <h:form id="MainMenu">
@@ -43,8 +55,7 @@
             function handleKeyPress(event) {
             if (event.key === 'F5') {
             event.preventDefault();
-
-            PF('CrearTiqueteDialog').show();
+            openFactura(Date.now()); // or generate UUID server-side
             }
             }
             document.addEventListener('keydown', handleKeyPress);
@@ -84,11 +95,17 @@
                 </div>
 
                 <div class="navbar-end"> 
-                    <a class="navbar-item">
-                        <p class="control">
-                            <p:commandButton icon="pi pi-receipt" rendered="#{SessionController.facturacion}" styleClass="button is-dark" actionListener="#{crearTiqueteController.openNewFactura}" onsuccess="PF('CrearTiqueteDialog').show();"/>
-                        </p>
-                    </a>
+                    <a class="navbar-item">   
+                        <p:commandLink rendered="#{SessionController.facturacion}" 
+                                       class="button is-dark"
+                                       actionListener="#{crearTiqueteController.openNewFactura}"
+                                       onclick="openFactura(Date.now());
+                                               return false;">
+                            <span class="icon">
+                                <i class="pi pi-receipt"></i>
+                            </span>
+                        </p:commandLink>
+                    </a>  
 
                     <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.inventarios}">
                         <a class="navbar-link">
@@ -99,27 +116,33 @@
                         <div class="navbar-dropdown">
                             <a class="navbar-item" href="/Mercurius/secured/pages/Articulos/">
                                 <span class="icon-text">
-                                    <i class="pi pi-box"/>
-                                </span>
-                                <span>
-                                    Articulos
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-box"/>
+                                    </span>
+                                    <span>
+                                        Articulos
+                                    </span>
+                                </span> 
                             </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/Categorias/">
                                 <span class="icon-text">
-                                    <i class="pi pi-truck"/>
-                                </span>
-                                <span>
-                                    Categorias
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-truck"/>
+                                    </span>
+                                    <span>
+                                        Categorias
+                                    </span>
+                                </span> 
                             </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/Inventario/">
                                 <span class="icon-text">
-                                    <i class="pi pi-warehouse"/>
-                                </span>
-                                <span>
-                                    Inventarios
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-warehouse"/>
+                                    </span>
+                                    <span>
+                                        Inventarios
+                                    </span>
+                                </span> 
                             </a>
                         </div> 
                     </p:outputPanel>
@@ -142,27 +165,33 @@
                         <div class="navbar-dropdown">
                             <a class="navbar-item" href="/Mercurius/secured/pages/Tributacion/Consultas/" >
                                 <span class="icon-text">
-                                    <i class="pi pi-building-columns"/>
-                                </span>
-                                <span>
-                                    Consultas
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-building-columns"/>
+                                    </span>
+                                    <span>
+                                        Consultas
+                                    </span>
+                                </span> 
                             </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/CaByS/">
                                 <span class="icon-text">
-                                    <i class="pi pi-book"/>
-                                </span>
-                                <span>
-                                    CaByS
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-book"/>
+                                    </span>
+                                    <span>
+                                        CaByS
+                                    </span>
+                                </span> 
                             </a>
                             <a class="navbar-item">
                                 <span class="icon-text">
-                                    <i class="pi pi-dollar"/>
-                                </span>
-                                <span onclick="PF('dollarValueDialog').show();">
-                                    Tipo de cambio
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-dollar"/>
+                                    </span>
+                                    <span onclick="PF('dollarValueDialog').show();">
+                                        Tipo de cambio
+                                    </span>
+                                </span> 
                             </a>
                         </div>
 
@@ -190,36 +219,50 @@
                         <div class="navbar-dropdown">
                             <a class="navbar-item" href="/Mercurius/secured/pages/Impresoras/">
                                 <span class="icon-text">
-                                    <i class="pi pi-print"/>
-                                </span>
-                                <span>
-                                    Menu de Impresoras
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-print"/>
+                                    </span>
+                                    <span>
+                                        Menu de Impresoras
+                                    </span>
+                                </span> 
                             </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/Correos/Reportes">
                                 <span class="icon-text">
-                                    <i class="pi pi-at"/>
-                                </span>
-                                <span>
-                                    Menu de Correos
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-at"/>
+                                    </span>
+                                    <span>
+                                        Menu de Correos
+                                    </span>
+                                </span> 
                             </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/Aplicacion/">
                                 <span class="icon-text">
-                                    <i class="pi pi-crown"/>
-                                </span>
-                                <span>
-                                    Menu de Aplicacion
-                                </span>
+                                    <span class="icon">
+                                        <i class="pi pi-crown"/>
+                                    </span>
+                                    <span>
+                                        Menu de Aplicacion
+                                    </span>
+                                </span> 
                             </a>
                         </div>
 
                     </p:outputPanel>
                     <!-- Logout Button -->
                     <div class="navbar-item logout-button">
-                        <p:commandButton styleClass="rounded-button ui-button-secondary" 
-                                         icon="pi pi-user" label="Menu"
-                                         value="Perfil" oncomplete="PF('userSettingsDialog').show()" />
+                        <p:commandLink class="button is-rounded is-info" 
+                                       oncomplete="PF('userSettingsDialog').show()" > 
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="pi pi-user"/>
+                                </span>
+                                <span>
+                                    Perfil
+                                </span>
+                            </span>  
+                        </p:commandLink>
                     </div>
                 </div>
             </div>
@@ -242,7 +285,7 @@
                         </div>
 
                         <hr/>
-                        
+
                         <div class="column is-full">
                             <div class="columns is-multiline">
                                 <div class="column">
@@ -262,7 +305,7 @@
                         </div>
 
                         <hr/>
-                        
+
                         <div class="column is-full">
                             <div class="columns is-multiline">
                                 <div class="column">
@@ -273,16 +316,16 @@
                                 </div>
                                 <div class="column">
                                     <p:commandLink oncomplete="PF('emailDialog').show()"
-                                                     styleClass="button is-rounded is-success"
-                                                     actionListener="#{SessionController.openEmail()}">
-                                    <i class="pi pi-pencil"></i>
+                                                   styleClass="button is-rounded is-success"
+                                                   actionListener="#{SessionController.openEmail()}">
+                                        <i class="pi pi-pencil"></i>
                                     </p:commandLink>
                                 </div> 
                             </div>
                         </div> 
 
                         <hr/>
-                        
+
                         <div class="column is-full">
                             <div class="columns is-multiline is-centered is-vcentered">
                                 <div class="column is-full">
@@ -357,7 +400,5 @@
             </p:panelGrid>            
         </h:form>
     </p:dialog>
-
-    <ui:include src="/secured/fragments/Facturas/Facturas/factura.xhtml"/> 
-
+  
 </ui:composition>
