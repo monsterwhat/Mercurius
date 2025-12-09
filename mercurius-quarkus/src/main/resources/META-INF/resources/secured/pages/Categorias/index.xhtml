@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="jakarta.faces.facelets"
+      class="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Menu Principal de Categorias</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+
+        <section class="section">
+
+            <div class="columns is-multiline has-text-centered">
+                <div class="column is-full">
+                    <p class="title is-3">Departamentos y Familias </p> 
+                </div>
+                <div class="column">
+                    <p:tabView cache="false" dynamic="true" id="Categorias">
+                        <p:tab title="Departamentos">
+                            <div class="card">
+                                <h:form id="departamentos"> 
+                                    <p:dataTable value="#{DepartamentosController.filteredDepartamentos}" var="departamento"  widgetVar="DepartamentosTable"
+                                                 paginator="true" rows="8" paginatorPosition="bottom" id="DepartamentosTableData"
+                                                 emptyMessage="No se encontraron departamentos con la critería proporcionada"
+                                                 globalFilterFunction="#{DepartamentosController.globalFilterFunction}"
+                                                 filterBy="#{DepartamentosController.filterBy}" reflow="true" selectionMode="single"
+                                                 selection="#{DepartamentosController.selectedDepartamento}" rowKey="#{departamento.id}">
+
+                                        <p:ajax event="rowSelect" update="@form"/>
+
+                                        <f:facet name="header">
+                                            <p:commandLink actionListener="#{DepartamentosController.openNewDepartamento()}" 
+                                                           styleClass="button is-rounded is-success is-fullwidth" onclick="PF('CrearDepartamentoDialog').show();">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-plus"></i>
+                                                    </span>
+                                                    <span>
+                                                        Crear Departamento
+                                                    </span>
+                                                </span>
+                                            </p:commandLink>
+
+                                            <p:spacer height="1em"/>
+
+                                            <p:inputText id="globalFilter" onkeyup="PF('DepartamentosTable').filter()" style="color: var(--primary-color); width: 100%"
+                                                         placeholder="Búsqueda general de todos los campos" />
+                                        </f:facet>
+
+                                        <p:column exportable="false" width="5%"> 
+                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{departamento.status}"/>
+                                            <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+
+                                            <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!departamento.status}"/>
+                                            <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                                        </p:column>
+
+                                        <p:column headerText="ID Departamento" visible="false">
+                                            <h:outputText value="#{departamento.id}"/>
+                                        </p:column>
+                                        <p:column headerText="Nombre" sortBy="#{departamento.nombre}">
+                                            <h:outputText value="#{departamento.nombre}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Acciones" exportable="false" width="10%">
+                                            <div class="buttons">
+                                                <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil"
+                                                                 onclick="PF('EditarDepartamentoDialog').show();" process="@this" update="editDepartamento">
+                                                    <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
+                                                </p:commandButton>
+                                                <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off" update="@form Categorias:departamentos"
+                                                                 actionListener="#{DepartamentosController.deleteDepartamento()}" process="@this">
+                                                    <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable> 
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                        <p:tab title="Familias">
+                            <div class="card">
+                                <h:form id="familias">  
+                                    <p:dataTable value="#{FamiliasController.filteredFamilias}" var="familia"  widgetVar="FamiliasTable"
+                                                 paginator="true" rows="8" paginatorPosition="bottom" id="FamiliasTableData"
+                                                 emptyMessage="No se encontraron familias con la critería proporcionada"
+                                                 globalFilterFunction="#{FamiliasController.globalFilterFunction}"
+                                                 filterBy="#{FamiliasController.filterBy}" reflow="true" selectionMode="single"
+                                                 selection="#{FamiliasController.selectedFamilia}" rowKey="#{familia.id}">
+
+                                        <p:ajax event="rowSelect" update="@form"/>
+
+                                        <f:facet name="header">
+                                            <p:commandLink actionListener="#{FamiliasController.openNewFamilia}"
+                                                           styleClass="button is-rounded is-success is-fullwidth"
+                                                           onclick="PF('CrearFamiliaDialog').show();">
+                                                <span class="icon-text">
+                                                    <span class="icon">
+                                                        <i class="pi pi-plus"></i>
+                                                    </span>
+                                                    <span>
+                                                        Crear Familia
+                                                    </span>
+                                                </span>
+                                            </p:commandLink>
+
+                                            <p:spacer height="1em"/>
+
+                                            <p:inputText id="globalFilter" onkeyup="PF('FamiliasTable').filter()"
+                                                         placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                        </f:facet>
+
+                                        <p:column exportable="false">
+                                            <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{familia.status}"/>
+                                            <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+
+                                            <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!familia.status}"/>
+                                            <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                                        </p:column>
+
+                                        <p:column headerText="ID Familia" visible="false">
+                                            <h:outputText value="#{familia.id}"/>
+                                        </p:column>
+                                        <p:column headerText="Nombre" sortBy="#{familia.nombre}">
+                                            <h:outputText value="#{familia.nombre}"/>
+                                        </p:column>
+
+                                        <p:column headerText="Acciones" exportable="false" width="10%">
+                                            <div class="buttons">
+                                                <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil" update="editFamilia"
+                                                                 onclick="PF('EditarFamiliaDialog').show();" process="@this">
+                                                    <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                                </p:commandButton>
+                                                <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
+                                                                 actionListener="#{FamiliasController.deleteFamilia()}" process="@this" update="Categorias:familias">
+                                                    <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable>  
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                    </p:tabView>
+                </div>
+            </div>
+        </section>
+
+        <ui:include src="/secured/fragments/Departamentos/CrearDepartamentoDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Departamentos/EditDepartamentoDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Familias/CreateFamiliaDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Familias/EditFamiliasDialog.xhtml"/>
+
+    </h:body>
+</html>
