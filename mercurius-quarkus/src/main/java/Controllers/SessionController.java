@@ -254,4 +254,8 @@ public class SessionController implements Serializable{
             }
         }
     }
+    
+    public Users getCurrentUser() {
+        return currentUser;
+    }
 }

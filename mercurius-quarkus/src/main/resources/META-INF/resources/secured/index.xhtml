@@ -33,7 +33,7 @@
         <!-- Welcome Section -->
         <div class="hero is-primary is-small mb-4">
             <div class="hero-body">
-                <h1 class="title">¡Bienvenido de nuevo, #{empty sessionController.currentUser.username ? 'Usuario' : sessionController.currentUser.username}!</h1>
+                <h1 class="title">¡Bienvenido de nuevo, #{empty SessionController.currentUser.username ? 'Usuario' : SessionController.currentUser.username}!</h1>
                 <p class="subtitle">#{dashboardController.currentDate}</p>
             </div>
         </div>
@@ -45,7 +45,9 @@
                     <h3 class="title is-5 mb-4">Acciones Rápidas</h3>
 <div class="buttons is-centered">
                         <p:commandButton value="🛒 Nueva Venta" 
-                                       action="#{dashboardController.startNewSale}"
+                                       actionListener="#{crearTiqueteController.openNewFactura}"
+                                       onclick="openFactura(Date.now());
+                                               return false;"
                                        styleClass="is-primary is-large mr-3"
                                        icon="pi pi-shopping-cart" />
                         

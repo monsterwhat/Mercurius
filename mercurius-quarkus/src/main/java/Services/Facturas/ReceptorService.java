@@ -29,7 +29,7 @@ public class ReceptorService extends GService<Receptor> {
     @Override
     public void create(Receptor entity) {
         try {
-            em.persist(entity);
+            em.merge(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
         }
@@ -101,9 +101,11 @@ public class ReceptorService extends GService<Receptor> {
             query.setParameter("identificacionNumero", receptor.getIdentificacion().getNumero());
             List<Receptor> existingReceptors = query.getResultList();
 
-            // If no Receptor with the same identification number exists, create a new one
+// If no Receptor with the same identification number exists, create a new one
             if (existingReceptors.isEmpty()) {
                 em.persist(receptor);
+                em.flush(); // Ensure the entity gets an ID
+                em.refresh(receptor); // Refresh to get the generated ID
                 return receptor;
             } else {
                 // If a Receptor with the same identification number already exists, return it

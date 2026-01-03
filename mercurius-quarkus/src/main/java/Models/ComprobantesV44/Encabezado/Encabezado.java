@@ -9,7 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -62,17 +62,17 @@ public class Encabezado {
     @Column(name = "fecha_emision")
     private LocalDateTime fechaEmision;
     
-    @XmlElement(name = "Emisor")
+@XmlElement(name = "Emisor")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE})
     @JoinColumn(name = "emisor_id")  
     private Emisor emisor;
     
     @XmlElement(name = "Receptor")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @OneToOne(cascade = CascadeType.ALL)
+    @ManyToOne(cascade = {CascadeType.MERGE, CascadeType.REMOVE})
     @JoinColumn(name = "receptor_id") 
     private Receptor receptor;
 

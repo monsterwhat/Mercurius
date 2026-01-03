@@ -305,7 +305,7 @@ public class ComprobantesRecibidosController implements Serializable {
                 var montoTotalLinea = lineaDetalle.getMontoTotalLinea();
                 var totalUnitario = montoTotalLinea.divide(cantidad,20,RoundingMode.HALF_UP);
                 var precioUnitario = totalUnitario;
-                BigDecimal UnidadesParseadas = parser.parseUnidadComercial(unidadMedida, unidadMedidaComercial).multiply(cantidad);
+                BigDecimal UnidadesParseadas = parser.parseUnidadMedida(unidadMedida, unidadMedidaComercial).multiply(cantidad);
 
                 Articulos articulo = new Articulos();
                 

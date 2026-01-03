@@ -37,9 +37,11 @@
                    </p:column>
 
                 </p:dataTable>
-                <p:commandButton value="Seleccionar" action="#{CabysController.selectCabysCreate()}" 
-                                 onclick="PF('codigoCabysDialogCreate').hide();" style="width: 100%"
-                />
+                <p:commandButton value="Seleccionar" action="#{CabysController.selectCabysCreateAndAssign()}" 
+                                 oncomplete="PF('codigoCabysDialogCreate').hide();" style="width: 100%"
+                >
+                    <p:autoUpdate/>
+                </p:commandButton>
                 </h:form>
                 </p:outputPanel>
             </p:dialog>

@@ -64,11 +64,15 @@ public class ComprobanteFactory {
     public static Object createComprobanteRecibido(InputStream xmlStream) throws IOException {
         String version = detectVersion(xmlStream);
 
-        return switch (version) {
-            case "4.3", "4.4" -> new ComprobantesRecibidos();
-            case "4.5" -> new ComprobantesRecibidosV45();
-            default -> throw new UnsupportedOperationException("Unsupported XML version: " + version);
-        };
+        switch (version) {
+            case "4.3":
+            case "4.4":
+                return new ComprobantesRecibidos();
+            case "4.5":
+                return new ComprobantesRecibidosV45();
+            default:
+                throw new UnsupportedOperationException("Unsupported XML version: " + version);
+        }
     }
 
     /**

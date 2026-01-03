@@ -28,7 +28,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
     @Override
     public void create(DetalleServicio entity) {
         try {
-            em.persist(entity);
+            em.merge(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
         }

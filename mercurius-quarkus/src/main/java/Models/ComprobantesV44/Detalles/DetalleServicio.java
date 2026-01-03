@@ -8,7 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -37,7 +37,8 @@ public class DetalleServicio {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @OneToOne
+    @ToString.Exclude
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "comprobante_emitido_id")
     private Models.ComprobantesV44.ComprobantesEmitidos comprobanteEmitido;
     

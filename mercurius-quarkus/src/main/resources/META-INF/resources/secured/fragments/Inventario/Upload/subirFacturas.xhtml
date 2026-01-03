@@ -12,10 +12,10 @@
 
                 <p:growl id="messages" showDetail="true" keepAlive="true"/>
                 <div class="columns">
-                    <p:fileUpload value="#{uploadController.file}" mode="advanced"
-                                  multiple="true" update="messages uploadedFiles" styleClass="column"
-                                  accept=".xml" 
-                                  listener="#{uploadController.handleFileUpload}"/>      
+                <p:fileUpload value="#{uploadController.file}" mode="advanced"
+                                   multiple="true" update="messages uploadedFiles" styleClass="column"
+                                   accept=".xml" 
+                                   listener="#{uploadController.handleFileUpload}"/>
                     <div class="column">
                         <p:dataTable id="uploadedFiles" value="#{facturasController.files}" 
                                      reflow="true" widgetVar="uploadedFiles" var="file" lazy="false">

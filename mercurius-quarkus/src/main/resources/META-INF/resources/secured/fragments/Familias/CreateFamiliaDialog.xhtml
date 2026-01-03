@@ -10,7 +10,7 @@
             <h:form>
                 <p:panelGrid columns="1">
                     <p:panel header="Crear una nueva familia">
-                        <p:growl showDetail="true" showSummary="false"/>
+                        <p:messages id="messages" showDetail="true" showSummary="false"/>
                         
                         <p:messages showDetail="true" for="name" showSummary="false" closable="true" />
                         <label class="label" for="name" style="color: var(--primary-color); text-align: center">Nombre:</label>
@@ -19,7 +19,7 @@
                                      />
                         <p:spacer height="1em"/>
                         <p:commandButton value="Crear Familia" process="@form" styleClass="rounded-button ui-button-primary"
-                                        update="@form Categorias:familias" style="width: 100%"
+                                        update="@form Categorias growl" style="width: 100%"
                                         action="#{FamiliasController.createFamiliaDialog}"/>
                     </p:panel>
                 </p:panelGrid>

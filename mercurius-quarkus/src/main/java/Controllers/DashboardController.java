@@ -63,6 +63,7 @@ public void loadDashboardData() {
                     currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
                     
                     updateLastTransactionDisplay();
+                    dataLoaded = true;
                 }
             }
         } catch (Exception e) {

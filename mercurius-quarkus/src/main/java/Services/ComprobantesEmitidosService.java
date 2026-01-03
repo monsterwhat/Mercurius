@@ -30,12 +30,24 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     public void init() {
     }
 
-    @Override
+@Override
     public void create(ComprobantesEmitidos entity) {
         try {
             em.persist(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
+        }
+    }
+    
+    public ComprobantesEmitidos createAndReturn(ComprobantesEmitidos entity) {
+        try {
+            em.persist(entity);
+            em.flush(); // Ensure the entity is persisted and gets an ID
+            em.refresh(entity); // Refresh to get any database-generated values
+            return entity;
+        } catch (Exception e) {
+            System.out.println("Error creating entity: " + e.toString());
+            return null;
         }
     }
 

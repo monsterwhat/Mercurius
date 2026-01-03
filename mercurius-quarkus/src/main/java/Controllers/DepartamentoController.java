@@ -97,7 +97,11 @@ public class DepartamentoController implements Serializable {
                 newDepartamento.setUsuario(currentSession.getCurrentUser());
                 departamentoService.create(newDepartamento);
                 alertas.registrarAlerta("Departamento Creado", "Se creó el departamento: " + newDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "createDepartamento()", "", newDepartamento.toString());
-                clearSelectedDepartamento(); 
+                
+                // Clear cache but reset newDepartamento for next entry
+                departamentos = null;
+                newDepartamento = new Departamento();
+                
                 FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creó el departamento", null));
                 PrimeFaces.current().executeScript("PF('CrearDepartamentoDialog').hide();");

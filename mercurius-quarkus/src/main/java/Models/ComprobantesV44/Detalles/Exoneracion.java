@@ -7,7 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
@@ -35,10 +35,10 @@ public class Exoneracion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @XmlElement(name = "Impuesto")
+@XmlElement(name = "Impuesto")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "impuesto_id")
     private Impuesto impuesto;
 
