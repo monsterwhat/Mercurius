@@ -47,14 +47,30 @@ public enum Tipo_TarifaIVA {
     public static Tipo_TarifaIVA getTarifa(String codigoImpuesto) {
         Tipo_TarifaIVA tarifa;
         switch (codigoImpuesto) {
-            case "", "0" -> tarifa = Tipo_TarifaIVA.TARIFA_0_EXENTO;
-            case "0.5" -> tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_05;
-            case "1" -> tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_1;
-            case "2" -> tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_2;
-            case "4" -> tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_4;
-            case "8" -> tarifa = Tipo_TarifaIVA.TRANSITORIO_8;
-            case "13" -> tarifa = Tipo_TarifaIVA.TARIFA_GENERAL_13;
-            default -> throw new IllegalArgumentException("Código de impuesto no válido: " + codigoImpuesto);
+            case "":
+            case "0":
+                tarifa = Tipo_TarifaIVA.TARIFA_0_EXENTO;
+                break;
+            case "0.5":
+                tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_05;
+                break;
+            case "1":
+                tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_1;
+                break;
+            case "2":
+                tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_2;
+                break;
+            case "4":
+                tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_4;
+                break;
+            case "8":
+                tarifa = Tipo_TarifaIVA.TRANSITORIO_8;
+                break;
+            case "13":
+                tarifa = Tipo_TarifaIVA.TARIFA_GENERAL_13;
+                break;
+            default:
+                throw new IllegalArgumentException("Código de impuesto no válido: " + codigoImpuesto);
         }
         return tarifa;
     }

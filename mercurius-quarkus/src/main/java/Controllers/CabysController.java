@@ -166,22 +166,28 @@ public class CabysController implements Serializable {
     }
     
     
-    public void selectCabysEdit() {
+    public void selectCabysEditAndAssign() {
         if (selectedCabys != null) {
-            // This method should be called from the ArticulosController context
-            // where the selectedArticulo is available
-            selectedCabys = null;
+            // Find and call the ArticulosController bean directly
+            FacesContext context = FacesContext.getCurrentInstance();
+            ArticulosController articulosController = context.getApplication().evaluateExpressionGet(context, "#{ArticulosController}", ArticulosController.class);
+            if (articulosController != null) {
+                articulosController.assignCabysToSelectedArticulo();
+            }
         } else {
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
             FacesContext.getCurrentInstance().addMessage(null, message);
         }
-    
     }
     
-    public void selectCabysCreate(){
+    public void selectCabysCreateAndAssign(){
         if (selectedCabys != null) {
-            // This method should be called from the ArticulosController context
-            // where the newArticulo is available
+            // Find and call the ArticulosController bean directly
+            FacesContext context = FacesContext.getCurrentInstance();
+            ArticulosController articulosController = context.getApplication().evaluateExpressionGet(context, "#{ArticulosController}", ArticulosController.class);
+            if (articulosController != null) {
+                articulosController.assignCabysToNewArticulo();
+            }
         } else {
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se ha seleccionado ningún CABYS.");
             FacesContext.getCurrentInstance().addMessage(null, message);

@@ -47,9 +47,7 @@
                                                  placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                                 </f:facet>
 
-                                <p:column exportable="false">
-                                    <p:radioButton for="FacturasTableData" itemIndex="#{factura.id}"/>
-                                </p:column>
+
 
                                 <p:column exportable="false">
                                     <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.status}"/>

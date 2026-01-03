@@ -74,9 +74,7 @@
                                                  placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
                                 </f:facet>
 
-                                <p:column exportable="false">
-                                    <p:radioButton for="FacturasTableData" itemIndex="#{factura.id}"/>
-                                </p:column>
+
 
                                 <p:column exportable="false">
                                     <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.status}"/>
@@ -136,7 +134,7 @@
                                     </p:commandButton>
 
                                     <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
-                                                     icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
+                                                     icon="pi pi-eye" actionListener="#{facturasController.showDetailsDialog()}" update="@this selectedFacturaDetallado">
                                         <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                     </p:commandButton>
 

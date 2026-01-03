@@ -12,12 +12,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.Data;
+import lombok.ToString;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "ComprobantesEmitidos")
@@ -29,15 +31,19 @@ public class ComprobantesEmitidos {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @XmlElement(name = "Encabezado")
+@XmlElement(name = "Encabezado")
+    @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Encabezado encabezado;
     
-    @XmlElement(name = "DetalleServicio")
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "comprobanteEmitido")
+@XmlElement(name = "DetalleServicio")
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "detalle_servicio_id")
     private DetalleServicio detalles;
     
-    @XmlElement(name = "Resumen")
+@XmlElement(name = "Resumen")
+    @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private ResumenFactura resumen;
     

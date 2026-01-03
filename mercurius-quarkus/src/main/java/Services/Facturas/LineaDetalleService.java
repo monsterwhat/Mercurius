@@ -26,12 +26,16 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
     public void init() {
     }
 
-    @Override
+@Override
     public void create(LineaDetalle entity) {
         try {
             em.persist(entity);
+            em.flush();
+            em.refresh(entity);
+            System.out.println("Successfully created LineaDetalle with ID: " + entity.getId());
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
+            throw new RuntimeException("Failed to create LineaDetalle", e);
         }
     }
 
@@ -72,19 +76,18 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
         }
     }
     
-    public List<LineaDetalle> listAllWhereID(Long ComprobantesRecibidosId) {
+public List<LineaDetalle> listAllWhereID(Long detalleServicioId) {
         try {
-            TypedQuery<LineaDetalle> query = em.createQuery(
+        TypedQuery<LineaDetalle> query = em.createQuery(
                 "SELECT ld FROM LineaDetalle ld " +
                 "JOIN ld.detalleServicio ds " +
-                "JOIN ds.ComprobantesRecibidos cf " +
-                "WHERE cf.id = :ComprobantesRecibidos Id",
+                "WHERE ds.id = :detalleServicioId",
                 LineaDetalle.class
             );
-            query.setParameter("ComprobantesRecibidosId", ComprobantesRecibidosId);
+            query.setParameter("detalleServicioId", detalleServicioId);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing LineaDetalle by ComprobantesRecibidos ID: " + e.getMessage());
+            System.out.println("Error listing LineaDetalle by DetalleServicio ID: " + e.getMessage());
             return null;
         }
     }

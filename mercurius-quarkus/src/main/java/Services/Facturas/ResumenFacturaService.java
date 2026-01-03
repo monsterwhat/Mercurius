@@ -27,7 +27,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
     @Override
     public void create(ResumenFactura entity) {
         try {
-            em.persist(entity);
+            em.merge(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
         }

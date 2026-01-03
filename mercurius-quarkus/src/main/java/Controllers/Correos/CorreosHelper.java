@@ -67,14 +67,21 @@ public class CorreosHelper {
         calendar.setTime(fechaUltimoReporte);
 
         switch (frecuencia) {
-            case "Diario" -> calendar.add(Calendar.DAY_OF_MONTH, 1); // Next day
-            case "Semanal" -> calendar.add(Calendar.WEEK_OF_YEAR, 1); // Next week
-            case "Quincenal" -> calendar.add(Calendar.DAY_OF_MONTH, 15); // Next 15 days
-            case "Mensual" -> calendar.add(Calendar.MONTH, 1); // Next month
-            default -> {
+            case "Diario":
+                calendar.add(Calendar.DAY_OF_MONTH, 1); // Next day
+                break;
+            case "Semanal":
+                calendar.add(Calendar.WEEK_OF_YEAR, 1); // Next week
+                break;
+            case "Quincenal":
+                calendar.add(Calendar.DAY_OF_MONTH, 15); // Next 15 days
+                break;
+            case "Mensual":
+                calendar.add(Calendar.MONTH, 1); // Next month
+                break;
+            default:
                 // Handle unknown frequency or throw an exception
                 return null;
-            }
         }
         
         // Set the time to midnight

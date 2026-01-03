@@ -119,7 +119,7 @@ public class LineaDetalle {
     @XmlElement(name = "Descuento")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "lineaDetalle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Descuento> descuentos;
 
     @XmlElement(name = "SubTotal")
@@ -139,7 +139,7 @@ public class LineaDetalle {
     @XmlElement(name = "Impuesto")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @OneToMany(mappedBy = "lineaDetalle", orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "lineaDetalle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Impuesto> impuestos;
     
     @XmlElement(name = "ImpuestoAsumidoEmisorFabrica")

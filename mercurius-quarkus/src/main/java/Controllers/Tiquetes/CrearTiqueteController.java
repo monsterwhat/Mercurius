@@ -122,6 +122,9 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public void selectArticulo(Articulos articulo) {
+        if (articulo == null) {
+            return;
+        }
         carritoService.setCodigoBarra(articulo.getCodigoBarra());
         carritoService.processCodigoBarra();
     }

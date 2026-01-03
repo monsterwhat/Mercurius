@@ -96,10 +96,18 @@ public class FamiliaController implements Serializable {
                 newFamilia.setFecha(new Date());
                 var valid = familiaService.createIfNotExists(newFamilia);
                 if(valid){
+                    System.out.println("DEBUG: Familia created: " + newFamilia.getNombre());
                     alertas.registrarAlerta("Familia creada", "Se ha creado la familia: " + newFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.createFamiliaDialog", null, newFamilia.toString());
-                    clearSelectedFamilia();
-                    FacesContext.getCurrentInstance().addMessage(null,
+                    FacesContext.getCurrentInstance().addMessage("messages",
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Se creo la familia", null));
+
+                    // Clear cache to force refresh
+                    familias = null;
+                    System.out.println("DEBUG: Cache cleared, familias set to null");
+                    
+                    // Reset for next family creation
+                    newFamilia = new Familia();
+                    System.out.println("DEBUG: newFamilia reset for next entry");
 
                     PrimeFaces.current().executeScript("PF('CrearFamiliaDialog').hide();");
                 }else{

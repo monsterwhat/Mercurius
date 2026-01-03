@@ -18,6 +18,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import lombok.Data;
+import lombok.ToString;
 
 /**
  *
@@ -34,16 +35,19 @@ public class ComprobantesRecibidosV45 {
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Use auto-increment strategy
     private Long id;
     
-    @XmlElement(name = "Encabezado")
+@XmlElement(name = "Encabezado")
+    @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY)
     private Encabezado encabezado;
     
-    @XmlElement(name = "DetalleServicio")
-    @OneToOne(fetch = FetchType.LAZY)
+@XmlElement(name = "DetalleServicio")
+    @ToString.Exclude
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "detalle_servicio_id")
     private DetalleServicio detalles;
     
-    @XmlElement(name = "Resumen")
+@XmlElement(name = "Resumen")
+    @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY)
     private ResumenFactura resumen;
     

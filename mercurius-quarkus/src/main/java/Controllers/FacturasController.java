@@ -43,6 +43,8 @@ import org.primefaces.util.LangUtils;
 @Data
 @ViewScoped
 public class FacturasController implements Serializable {
+    
+    private static final Object fileUploadLock = new Object();
 
     @Inject
     ComprobantesRecibidosService facturaService;
@@ -56,6 +58,8 @@ public class FacturasController implements Serializable {
     InventarioController inventarioController;
     @Inject
     DepartamentoController departamentosController;
+    @Inject
+    ComprobantesRecibidosService comprobantesRecibidosService;
     @Inject
     MedioPagoService medioPagoService;
     @Inject
@@ -136,6 +140,31 @@ public class FacturasController implements Serializable {
 
     public void clearFactura() {
         selectedFactura = null;
+    }
+
+    public void showDetailsDialog() {
+        if (selectedFactura != null) {
+            // Re-fetch with all relationships to ensure lazy loading works
+            selectedFactura = comprobantesRecibidosService.findByIdWithDetails(selectedFactura.getId());
+            
+            // Additional null check after re-fetching
+            if (selectedFactura != null && selectedFactura.getDetalles() != null) {
+                List<LineaDetalle> lineasDetalle = selectedFactura.getDetalles().getLineasDetalle();
+                if (lineasDetalle == null || lineasDetalle.isEmpty()) {
+                    System.out.println("Fallback: lineasDetalle is empty, fetching manually with lineaDetalleService.listAllWhereID()");
+                    lineasDetalle = lineaDetalleService.listAllWhereID(selectedFactura.getDetalles().getId());
+                    if (lineasDetalle != null && !lineasDetalle.isEmpty()) {
+                        selectedFactura.getDetalles().setLineasDetalle(lineasDetalle);
+                        System.out.println("Fallback successful: populated " + lineasDetalle.size() + " lineasDetalle records");
+                    } else {
+                        System.out.println("Fallback failed: no lineasDetalle found with ID " + selectedFactura.getDetalles().getId());
+                    }
+                }
+            } else {
+                System.out.println("Error: selectedFactura or its detalles became null after re-fetching");
+            }
+        }
+        PrimeFaces.current().executeScript("PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();");
     }
 
     public void clearCache() {
@@ -254,6 +283,7 @@ public class FacturasController implements Serializable {
     }
 
     public void parseXMLFromUploadedFile(UploadedFile uploadedFile) {
+        synchronized (fileUploadLock) {
         if (uploadedFile == null) {
             System.err.println("UploadedFile is null");
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El archivo subido es nulo");
@@ -307,7 +337,8 @@ public class FacturasController implements Serializable {
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar el archivo XML: " + e.getLocalizedMessage());
             FacesContext.getCurrentInstance().addMessage(null, message);
         }
-    }
+        } // synchronized fileUploadLock
+     }
 
     public void processFacturas() {
         // Files are now processed immediately during upload
@@ -360,7 +391,8 @@ public class FacturasController implements Serializable {
     private void processFactura(ComprobantesRecibidos factura) {
         try {
 
-            List<LineaDetalle> lineasDetalle = factura.getDetalles().getLineasDetalle();
+            List<LineaDetalle> lineasDetalle = factura.getDetalles() != null ? 
+                factura.getDetalles().getLineasDetalle() : new ArrayList<>();
             if (lineasDetalle.isEmpty()) {
                 System.out.println("Empty factura?");
                 lineasDetalle = lineaDetalleService.listAllWhereID(factura.getDetalles().getId());
@@ -391,7 +423,7 @@ public class FacturasController implements Serializable {
                 var montoTotalLinea = lineaDetalle.getMontoTotalLinea();
                 var totalUnitario = montoTotalLinea.divide(cantidad, 20, RoundingMode.HALF_UP);
                 var precioUnitario = totalUnitario;
-                var UnidadesParseadas = parser.parseUnidadComercial(unidadMedida, unidadMedidaComercial).multiply(cantidad);
+                var UnidadesParseadas = parser.parseUnidadMedida(unidadMedida, unidadMedidaComercial).multiply(cantidad);
 
                 Articulos articulo = new Articulos();
 

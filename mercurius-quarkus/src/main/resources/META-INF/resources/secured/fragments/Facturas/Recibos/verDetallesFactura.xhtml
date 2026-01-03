@@ -69,7 +69,8 @@
             
             <p:card styleClass="has-text-centered" title="Articulos">
                 <p:dataTable value="#{facturasController.selectedFactura.detalles.lineasDetalle}" 
-                             var="linea" id="lineasDetalleTable" reflow="true">
+                             var="linea" id="lineasDetalleTable" reflow="true"
+                     rendered="#{facturasController.selectedFactura != null and facturasController.selectedFactura.detalles != null}">
                     <p:autoUpdate/>
 
                     <p:column styleClass="has-text-centered" headerText="Nombre">

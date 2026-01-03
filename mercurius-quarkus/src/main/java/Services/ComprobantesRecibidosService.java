@@ -2,6 +2,7 @@ package Services;
 
 import Models.ComprobantesV44.ComprobantesRecibidos;
 import Models.ComprobantesV44.Encabezado.Encabezado;
+import Models.ComprobantesV44.Resumen.ResumenFactura;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Named;
@@ -34,8 +35,29 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     public void create(ComprobantesRecibidos entity) {
         try {
             em.persist(entity);
+            em.flush();
+            em.refresh(entity);
+            System.out.println("Successfully created ComprobantesRecibidos with ID: " + entity.getId());
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
+            throw new RuntimeException("Failed to create ComprobantesRecibidos", e);
+        }
+    }
+    
+    // Method to create ComprobantesRecibidos with pre-persisted related entities
+    public void createWithRelatedEntities(ComprobantesRecibidos entity, Encabezado encabezado, ResumenFactura resumenFactura) {
+        try {
+            em.persist(encabezado);
+            em.persist(resumenFactura);
+            em.flush(); // Generate IDs for related entities
+            
+            em.persist(entity);
+            em.flush();
+            em.refresh(entity);
+            System.out.println("Successfully created ComprobantesRecibidos with ID: " + entity.getId());
+        } catch (Exception e) {
+            System.out.println("Error creating entity with related entities: " + e.toString());
+            throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
         }
     }
 
@@ -107,8 +129,11 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     public List<ComprobantesRecibidos> listAll() {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
-                "SELECT f FROM ComprobantesRecibidos f " +
-                "LEFT JOIN FETCH f.detalles",
+                "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle " +
+                "LEFT JOIN FETCH f.encabezado " +
+                "LEFT JOIN FETCH f.resumen",
                 ComprobantesRecibidos.class
             );
             return query.getResultList();
@@ -120,7 +145,15 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     
     public List<ComprobantesRecibidos> ListAllEnabled() {
         try {
-            TypedQuery<ComprobantesRecibidos> query = em.createQuery("SELECT f FROM ComprobantesRecibidos f WHERE f.Status = true", ComprobantesRecibidos.class);
+            TypedQuery<ComprobantesRecibidos> query = em.createQuery(
+                "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle " +
+                "LEFT JOIN FETCH f.encabezado " +
+                "LEFT JOIN FETCH f.resumen " +
+                "WHERE f.status = true",
+                ComprobantesRecibidos.class
+            );
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all enabled entities: " + e.toString());
@@ -143,6 +176,54 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             System.out.println("Error finding entity by numeroConsecutivo: " + e.toString());
             return false;
         }
+}
+    
+    public ComprobantesRecibidos findByIdWithDetails(Long id) {
+        try {
+            // First fetch the main entity with basic relationships
+            ComprobantesRecibidos entity = em.find(ComprobantesRecibidos.class, id);
+            if (entity == null) {
+                return null;
+            }
+            
+            // Initialize the detalles collection if it exists
+            if (entity.getDetalles() != null) {
+                em.refresh(entity.getDetalles());
+                
+                // Initialize lineasDetalle collection separately
+                if (entity.getDetalles().getLineasDetalle() != null) {
+                    entity.getDetalles().getLineasDetalle().size(); // Force initialization
+                    
+                    // Initialize nested collections for each line
+                    for (Models.ComprobantesV44.Detalles.LineaDetalle linea : entity.getDetalles().getLineasDetalle()) {
+                        if (linea.getCodigosComerciales() != null) {
+                            linea.getCodigosComerciales().size();
+                        }
+                        if (linea.getDescuentos() != null) {
+                            linea.getDescuentos().size();
+                        }
+                        if (linea.getImpuestos() != null) {
+                            linea.getImpuestos().size();
+                        }
+                    }
+                }
+            }
+            
+            // Initialize other relationships
+            if (entity.getEncabezado() != null) {
+                em.refresh(entity.getEncabezado());
+            }
+            if (entity.getResumen() != null) {
+                em.refresh(entity.getResumen());
+            }
+            
+            return entity;
+        } catch (NoResultException e) {
+            return null;
+        } catch (Exception e) {
+            System.out.println("Error finding ComprobantesRecibidos by ID with details: " + e.toString());
+            return null;
+        }
     }
     
     public List<ComprobantesRecibidos> findComprobantesAfterDate(Date fecha) {
@@ -159,25 +240,43 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     }
 
    public List<ComprobantesRecibidos> listPendientes() {
-        String sql = "SELECT t1.* FROM ComprobantesRecibidos t1 " +
-                     "JOIN ENCABEZADO t0 ON t0.ID = t1.ENCABEZADO_ID " +
-                     "WHERE DATE_ADD(t0.fecha_emision, INTERVAL t0.plazo_credito DAY) > ?1 " +
-                     "AND t1.paid = 0";
-
-        Query query = em.createNativeQuery(sql, ComprobantesRecibidos.class);
-        query.setParameter(1, java.sql.Date.valueOf(LocalDate.now()));
-        return query.getResultList();
+        try {
+            TypedQuery<ComprobantesRecibidos> query = em.createQuery(
+                "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle " +
+                "LEFT JOIN FETCH f.encabezado " +
+                "LEFT JOIN FETCH f.resumen " +
+                "WHERE DATE_ADD(f.encabezado.fechaEmision, INTERVAL f.encabezado.plazoCredito DAY) > :currentDate " +
+                "AND f.paid = false",
+                ComprobantesRecibidos.class
+            );
+            query.setParameter("currentDate", java.time.LocalDate.now());
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing pendientes: " + e.toString());
+            return null;
+        }
     }
 
     public List<ComprobantesRecibidos> listVencidas() {
-        String sql = "SELECT t1.* FROM ComprobantesRecibidos t1 " +
-                     "JOIN ENCABEZADO t0 ON t0.ID = t1.ENCABEZADO_ID " +
-                     "WHERE DATE_ADD(t0.fecha_emision, INTERVAL t0.plazo_credito DAY) <= ?1 " +
-                     "AND t1.paid = 0";
-
-        Query query = em.createNativeQuery(sql, ComprobantesRecibidos.class);
-        query.setParameter(1, java.sql.Date.valueOf(LocalDate.now()));
-        return query.getResultList();
+        try {
+            TypedQuery<ComprobantesRecibidos> query = em.createQuery(
+                "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle " +
+                "LEFT JOIN FETCH f.encabezado " +
+                "LEFT JOIN FETCH f.resumen " +
+                "WHERE DATE_ADD(f.encabezado.fechaEmision, INTERVAL f.encabezado.plazoCredito DAY) <= :currentDate " +
+                "AND f.paid = false",
+                ComprobantesRecibidos.class
+            );
+            query.setParameter("currentDate", java.time.LocalDate.now());
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error listing vencidas: " + e.toString());
+            return null;
+        }
     }
 
 

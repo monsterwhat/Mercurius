@@ -6,6 +6,6 @@ echo Debug port: 5005
 echo Press Ctrl+C to stop the server
 echo.
 
-mvn quarkus:dev
+mvn quarkus:dev -Dquarkus.jvm.args="-Xms1g -Xmx3g -XX:ReservedCodeCacheSize=512m -XX:+UseG1GC -XX:+UseStringDeduplication"
 
 pause

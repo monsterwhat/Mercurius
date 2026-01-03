@@ -99,7 +99,7 @@ public class CabysService extends GService<Cabys>{
                         responseCode = connection.getResponseCode();
 
                         switch (responseCode) {
-                            case HttpURLConnection.HTTP_OK -> {
+                            case HttpURLConnection.HTTP_OK:
                                 
                                 controller.showInfo("Ok", "Conectado a tributacion...");
                                 
@@ -111,14 +111,14 @@ public class CabysService extends GService<Cabys>{
                                     }
                                     cabysList = parseJsonResponse(fullListResponse.toString());
                                 }
-                            }
-                            case 429 -> {
+                                break;
+                            case 429:
                                 controller.showWarn("Oops!", "Demaciados Intentos, trate mas tarde");
                                 // Handle error 429 (Too Many Requests)
-                            }
-                            default -> {
+                                break;
+                            default:
                                 controller.showError("Error", "Codigo: " + responseCode);
-                            }
+                                break;
                         }
                     }
                 }

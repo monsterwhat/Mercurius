@@ -30,7 +30,7 @@ public class EmisorService extends GService<Emisor> {
     @Override
     public void create(Emisor entity) {
         try {
-            em.persist(entity);
+            em.merge(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
         }
@@ -100,9 +100,11 @@ public class EmisorService extends GService<Emisor> {
             query.setParameter("identificacionNumero", emisor.getIdentificacion().getNumero());
             List<Emisor> existingEmisors = query.getResultList();
 
-            // If no Emisor with the same identification number exists, create a new one
+// If no Emisor with the same identification number exists, create a new one
             if (existingEmisors.isEmpty()) {
                 em.persist(emisor);
+                em.flush(); // Ensure the entity gets an ID
+                em.refresh(emisor); // Refresh to get the generated ID
                 return emisor;
             } else {
                 // If an Emisor with the same identification number already exists, return it
