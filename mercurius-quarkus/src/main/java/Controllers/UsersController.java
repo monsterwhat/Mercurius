@@ -82,6 +82,13 @@ public class UsersController implements Serializable{
     }
     
     public void updateUser(){
+        // Server-side security check - admin or usuario role required
+        if (!currentSession.isUsuarios() && !currentSession.isAdmin()) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "User management access required"));
+            return;
+        }
+        
         var oldUser = selectedUser;
         userService.update(selectedUser);
         alertas.registrarAlerta("Usuario Actualizado", "Se actualizo el usuario: " + selectedUser.getUsername(), currentSession.getCurrentUser(), 0, "updateUser()", oldUser.toString(), selectedUser.toString());
@@ -90,6 +97,13 @@ public class UsersController implements Serializable{
     }
     
     public void createUser(){
+        // Server-side security check - admin or usuario role required
+        if (!currentSession.isUsuarios() && !currentSession.isAdmin()) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "User management access required"));
+            return;
+        }
+        
         if(newUser != null){
             var exists = userService.usernameExists(newUser.getUsername());
             if(!exists){
@@ -107,6 +121,13 @@ public class UsersController implements Serializable{
     }
     
     public void toggleUser(){
+        // Server-side security check - admin or usuario role required
+        if (!currentSession.isUsuarios() && !currentSession.isAdmin()) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "User management access required"));
+            return;
+        }
+        
         if(selectedUser != null){
             if(selectedUser.getId()!=null){
                 var oldUser = selectedUser;

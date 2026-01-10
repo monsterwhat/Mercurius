@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.mercurius</groupId>
@@ -93,6 +90,13 @@
             <scope>provided</scope>
         </dependency>
         
+        <!-- Security: BCrypt for secure password hashing -->
+        <dependency>
+            <groupId>at.favre.lib</groupId>
+            <artifactId>bcrypt</artifactId>
+            <version>0.10.2</version>
+        </dependency>
+        
         <!-- DataExporter (Excel XLS or XML) -->
         <dependency>
             <groupId>org.apache.poi</groupId>
@@ -138,6 +142,8 @@
             <artifactId>pdfbox</artifactId>
             <version>3.0.2</version>
         </dependency>
+
+
 
         <!-- Test Dependencies -->
         <dependency>
