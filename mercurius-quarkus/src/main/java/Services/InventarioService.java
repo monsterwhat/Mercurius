@@ -88,9 +88,23 @@ public class InventarioService extends GService<Inventario> {
                 existingItem.setStatus(false);
                 em.merge(existingItem);
 
-                // Create a new item with the updated information
-                em.persist(entity);
-                updateStock(entity);
+                // Create a new entity instance with the updated information
+                Inventario newEntity = new Inventario();
+                newEntity.setArticulo(entity.getArticulo());
+                newEntity.setUsuario(entity.getUsuario());
+                newEntity.setCantidad(entity.getCantidad());
+                newEntity.setUnidadesRecomendadasFactura(entity.getUnidadesRecomendadasFactura());
+                newEntity.setTipoMovimiento(entity.getTipoMovimiento());
+                newEntity.setFechaMovimiento(entity.getFechaMovimiento());
+                newEntity.setNotas(entity.getNotas());
+                newEntity.setStatus(entity.getStatus());
+                newEntity.setProcessed(entity.getProcessed());
+                
+                em.persist(newEntity);
+                updateStock(newEntity);
+                
+                // Update the original entity reference to the new one
+                entity.setCodigo(newEntity.getCodigo());
             } else {
                 System.out.println("Entity not found");
             }

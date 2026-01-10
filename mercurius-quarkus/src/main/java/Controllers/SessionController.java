@@ -78,17 +78,49 @@ public class SessionController implements Serializable{
     }
     
     public void logOut() {
+        ExternalContext ec = null;
         try {
-            ExternalContext ec = FacesContext.getCurrentInstance().getExternalContext();
-            ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
-            ec.invalidateSession(); // Invalidate the session
-            alertas.registrarAlerta("Usuario Desconectado", "El usuario se desconectó", getCurrentUser(), 0, "logOut()", null, null);
+            ec = FacesContext.getCurrentInstance().getExternalContext();
+            
+            // Register logout alert before destroying session
+            Users userToLog = getCurrentUser();
+            
+            // Invalidate session FIRST to prevent session fixation
+            ec.invalidateSession();
+            
+            // Clear user data after session invalidation
             this.currentUser = null;
-            FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Success", "Logout successful!"));
+            
+            // Register logout alert (user may be null after session clear)
+            if (userToLog != null) {
+                alertas.registrarAlerta("Usuario Desconectado", "El usuario se desconectó", userToLog, 0, "logOut()", null, null);
+            }
+            
+            // Redirect after session is properly invalidated
+            ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
             
         } catch (IOException e) { 
-            alertas.registrarAlerta("Error al cerrar sesion", e.getLocalizedMessage(), null, 0, "sessionControlller.logout()", null, null);
+            alertas.registrarAlerta("Error al cerrar sesion", e.getLocalizedMessage(), null, 0, "sessionController.logout()", null, null);
             System.out.println("Error al cerrar sesion: " + e.getLocalizedMessage()); 
+            
+            // Fallback redirect if primary fails
+            try {
+                if (ec != null) {
+                    ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
+                }
+            } catch (IOException fallbackEx) {
+                System.out.println("Fallback redirect failed: " + fallbackEx.getLocalizedMessage());
+            }
+        } catch (IllegalStateException e) {
+            // Session already invalidated - this is expected
+            System.out.println("Session already invalidated: " + e.getLocalizedMessage());
+            try {
+                if (ec != null) {
+                    ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
+                }
+            } catch (IOException fallbackEx) {
+                System.out.println("Redirect after invalid session failed: " + fallbackEx.getLocalizedMessage());
+            }
         }
     }
 
@@ -150,9 +182,7 @@ public class SessionController implements Serializable{
             
     private boolean processAuthentication(){
         try {
-            // Use Quarkus Security authentication via form-based login
-            // The actual authentication will be handled by Quarkus security layer
-            // This method will be called after successful authentication
+            // Custom authentication that integrates with Quarkus Security
             Users user = loginService.findByUsername(username);
             if (user != null && loginService.verifyPassword(password, user.getPassword())) {
                 currentUser = user;

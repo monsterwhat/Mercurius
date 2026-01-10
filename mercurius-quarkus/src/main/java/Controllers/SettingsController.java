@@ -59,6 +59,13 @@ public class SettingsController implements Serializable {
 
     @PostConstruct
     private void init() {
+        // Server-side security check for settings access - admin only
+        if (!currentSession.isAdmin()) {
+            FacesContext.getCurrentInstance().addMessage(null, 
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "Admin access required"));
+            return;
+        }
+        
         currentSettingsList = settingsService.listAll();
         currentSettings = settingsService.returnCurrent();
         if (currentSettings == null) {
