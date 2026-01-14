@@ -3,24 +3,252 @@
       xmlns:h="jakarta.faces.html"
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="jakarta.faces.facelets"
-      class="#{ThemeController.currentTheme}"
-      >
+      xmlns:f="jakarta.faces.core"
+      class="#{ThemeController.currentTheme}">
 
     <h:head>
-        <title>Menu Principal</title>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
+        <title>Consultas de Facturas</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <style>
+            .counter-container {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
+            .counter-card {
+                flex: 1;
+                text-align: center;
+                padding: 1.5rem;
+                border-radius: 8px;
+                border: 1px solid #e1e1e1;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .counter-number {
+                font-size: 2.5rem;
+                font-weight: bold;
+                margin-bottom: 0.5rem;
+            }
+            .counter-label {
+                font-size: 1rem;
+                color: #666;
+            }
+            .pendiente { background-color: #fff3cd; color: #856404; }
+            .aceptado { background-color: #d4edda; color: #155724; }
+            .rechazado { background-color: #f8d7da; color: #721c24; }
+            
+            .timer-container {
+                text-align: center;
+                padding: 1rem;
+                background-color: #e3f2fd;
+                border-radius: 8px;
+                margin-bottom: 2rem;
+            }
+            .timer-display {
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: #1976d2;
+                font-family: monospace;
+            }
+        </style>
     </h:head>
 
     <h:body>
-        <ui:include src="/secured/fragments/userBar.xhtml" /> 
-        <p:growl showDetail="true" showSummary="true" />
+        <h:form id="consultasForm">
+            <ui:include src="/secured/fragments/userBar.xhtml" /> 
+            <p:growl showDetail="true" showSummary="true" />
+            
+            <div class="container">
+            <div class="hero is-primary is-small mb-4">
+                <div class="hero-body">
+                    <h1 class="title">Consultas de Facturas</h1>
+                    <p class="subtitle">Estado de facturas y envíos programados</p>
+                </div>
+            </div>
 
-        <div class="card">
+            <!-- Contadores de Facturas -->
+            <h:panelGroup id="counters">
+                <div class="counter-container">
+                    <div class="counter-card pendiente">
+                        <div class="counter-number">#{consultasController.contadorPendientes}</div>
+                        <div class="counter-label">Facturas Pendientes</div>
+                    </div>
+                    <div class="counter-card aceptado">
+                        <div class="counter-number">#{consultasController.contadorAceptadas}</div>
+                        <div class="counter-label">Facturas Aceptadas</div>
+                    </div>
+                    <div class="counter-card rechazado">
+                        <div class="counter-number">#{consultasController.contadorRechazadas}</div>
+                        <div class="counter-label">Facturas Rechazadas</div>
+                    </div>
+                </div>
+            </h:panelGroup>
 
-        </div>
+            <!-- Timer para Próximo Envío -->
+            <h:panelGroup id="timerDisplay" rendered="#{consultasController.hasProximoEnvio()}">
+                <div class="timer-container">
+                    <h3>#{consultasController.proximoEnvioDisplay}</h3>
+                    <div class="timer-display">
+                        <h:outputText value="#{consultasController.countdownDisplay}" />
+                    </div>
+                </div>
+            </h:panelGroup>
 
+            <!-- Botones de Acción -->
+            <div class="buttons is-justify-content-center mb-4">
+                <p:commandButton value="Actualizar Datos" 
+                               action="#{consultasController.refreshData()}"
+                               update="@form"
+                               styleClass="is-info"
+                               icon="pi pi-refresh" />
+                
+                <p:commandButton value="Enviar Facturas Pendientes" 
+                               action="#{consultasController.enviarFacturasPendientes()}"
+                               update="@form"
+                               styleClass="is-warning"
+                               icon="pi pi-send"
+                               disabled="#{!consultasController.hasFacturasPendientes()}" />
+            </div>
+
+            <!-- Tabs para Listas de Facturas -->
+            <div class="card">
+                <div class="card-content">
+                    <p:tabView activeIndex="#{param.tab}">
+                        <!-- Tab de Facturas Pendientes -->
+                        <p:tab title="Facturas Pendientes (#{consultasController.contadorPendientes})">
+                            <p:dataTable value="#{consultasController.facturasPendientes}" 
+                                         var="factura"
+                                         rows="15"
+                                         paginator="true"
+                                         paginatorAlwaysVisible="false"
+                                         scrollable="true"
+                                         scrollHeight="400"
+                                         emptyMessage="No hay facturas pendientes"
+                                         styleClass="is-fullwidth">
+                                
+                                <p:column headerText="Número Consecutivo" width="150">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}" />
+                                </p:column>
+                                
+                                <p:column headerText="Fecha Emisión" width="120">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Cliente">
+                                    <h:outputText value="#{factura.encabezado.receptor.nombre}" />
+                                </p:column>
+                                
+                                <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                    <h:outputText value="#{factura.resumen.totalComprobante}">
+                                        <f:convertNumber type="currency" currencySymbol="₡" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Estado" width="100">
+                                    <span class="tag is-warning">Pendiente</span>
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+
+                        <!-- Tab de Facturas Aceptadas -->
+                        <p:tab title="Facturas Aceptadas (#{consultasController.contadorAceptadas})">
+                            <p:dataTable value="#{consultasController.facturasAceptadas}" 
+                                         var="factura"
+                                         rows="15"
+                                         paginator="true"
+                                         paginatorAlwaysVisible="false"
+                                         scrollable="true"
+                                         scrollHeight="400"
+                                         emptyMessage="No hay facturas aceptadas"
+                                         styleClass="is-fullwidth">
+                                
+                                <p:column headerText="Número Consecutivo" width="150">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}" />
+                                </p:column>
+                                
+                                <p:column headerText="Fecha Emisión" width="120">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Cliente">
+                                    <h:outputText value="#{factura.encabezado.receptor.nombre}" />
+                                </p:column>
+                                
+                                <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                    <h:outputText value="#{factura.resumen.totalComprobante}">
+                                        <f:convertNumber type="currency" currencySymbol="₡" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Estado" width="100">
+                                    <span class="tag is-success">Aceptada</span>
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+
+                        <!-- Tab de Facturas Rechazadas -->
+                        <p:tab title="Facturas Rechazadas (#{consultasController.contadorRechazadas})">
+                            <p:dataTable value="#{consultasController.facturasRechazadas}" 
+                                         var="factura"
+                                         rows="15"
+                                         paginator="true"
+                                         paginatorAlwaysVisible="false"
+                                         scrollable="true"
+                                         scrollHeight="400"
+                                         emptyMessage="No hay facturas rechazadas"
+                                         styleClass="is-fullwidth">
+                                
+                                <p:column headerText="Número Consecutivo" width="150">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}" />
+                                </p:column>
+                                
+                                <p:column headerText="Fecha Emisión" width="120">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Cliente">
+                                    <h:outputText value="#{factura.encabezado.receptor.nombre}" />
+                                </p:column>
+                                
+                                <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                    <h:outputText value="#{factura.resumen.totalComprobante}">
+                                        <f:convertNumber type="currency" currencySymbol="₡" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Motivo Rechazo" width="200">
+                                    <h:outputText value="#{factura.encabezado.motivoRechazo}" 
+                                                 rendered="#{not empty factura.encabezado.motivoRechazo}" 
+                                                 title="#{factura.encabezado.motivoRechazo}" />
+                                    <h:outputText value="No especificado" 
+                                                 rendered="#{empty factura.encabezado.motivoRechazo}" />
+                                </p:column>
+                                
+                                <p:column headerText="Estado" width="100">
+                                    <span class="tag is-danger">Rechazada</span>
+                                </p:column>
+                                
+                                <p:column headerText="Acciones" width="150" exportable="false">
+                                    <p:commandButton value="Corregir" 
+                                                   icon="pi pi-refresh"
+                                                   styleClass="button is-small is-primary"
+                                                   title="Crear nueva factura corregida"
+                                                   action="#{consultasController.corregirFacturaRechazada(factura)}" />
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+                    </p:tabView>
+                </div>
+            </div>
+            </div>
+        </h:form>
+        
+        <p:poll interval="5" update="consultasForm:timerDisplay consultasForm:counters" listener="#{consultasController.actualizarCountdown()}" />
+        
     </h:body>
-
-
-
 </html>

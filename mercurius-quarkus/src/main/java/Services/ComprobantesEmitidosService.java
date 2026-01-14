@@ -238,4 +238,80 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         return query.getResultList();
     }
 
+    public List<ComprobantesEmitidos> findFacturasPendientes() {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle ld " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "LEFT JOIN FETCH f.resumen r " +
+                "WHERE f.status = true " +
+                "AND (e.estado IS NULL OR e.estado = 'PENDIENTE') " +
+                "ORDER BY e.fechaEmision DESC",
+                ComprobantesEmitidos.class
+            );
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error finding facturas pendientes: " + e.toString());
+            return null;
+        }
+    }
+
+    public List<ComprobantesEmitidos> findFacturasAceptadas() {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle ld " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "LEFT JOIN FETCH f.resumen r " +
+                "WHERE f.status = true " +
+                "AND e.estado = 'ACEPTADO' " +
+                "ORDER BY e.fechaEmision DESC",
+                ComprobantesEmitidos.class
+            );
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error finding facturas aceptadas: " + e.toString());
+            return null;
+        }
+    }
+
+    public List<ComprobantesEmitidos> findFacturasRechazadas() {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle ld " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "LEFT JOIN FETCH f.resumen r " +
+                "WHERE f.status = true " +
+                "AND e.estado = 'RECHAZADO' " +
+                "ORDER BY e.fechaEmision DESC",
+                ComprobantesEmitidos.class
+            );
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error finding facturas rechazadas: " + e.toString());
+            return null;
+        }
+    }
+
+    public Long countFacturasPendientes() {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
+                "LEFT JOIN f.encabezado e " +
+                "WHERE f.status = true " +
+                "AND (e.estado IS NULL OR e.estado = 'PENDIENTE')",
+                Long.class
+            );
+            return query.getSingleResult();
+        } catch (Exception e) {
+            System.out.println("Error counting facturas pendientes: " + e.toString());
+            return 0L;
+        }
+    }
+
 }

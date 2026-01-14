@@ -6,6 +6,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
+import java.util.Date;
 
 /**
  *
@@ -20,6 +21,20 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
     @Override
     protected Class<ReporteProgramado> getEntityClass() {
         return ReporteProgramado.class;
+    }
+    
+    @Override
+    public void create(ReporteProgramado entity) {
+        try {
+            // Set initial next run time
+            if (entity.getNextRunTime() == null && entity.getFrecuencia() != null && !entity.getFrecuencia().isEmpty()) {
+                Date nextRun = new Date(); // Start with current time
+                entity.setNextRunTime(nextRun);
+            }
+            em.persist(entity);
+        } catch (Exception e) {
+            System.out.println("Error creating ReporteProgramado: " + e.toString());
+        }
     }
     
     public boolean findByName(String perfil) {
@@ -82,6 +97,26 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             }
         } catch (Exception e) {
             System.out.println("Error deleting entity: " + e.toString());
+        }
+    }
+
+    public ReporteProgramado findNextScheduledReport() {
+        try {
+            TypedQuery<ReporteProgramado> query = em.createQuery(
+                "SELECT r FROM ReporteProgramado r " +
+                "WHERE r.status = true " +
+                "AND r.nextRunTime > :now " +
+                "ORDER BY r.nextRunTime ASC",
+                ReporteProgramado.class
+            );
+            query.setParameter("now", new java.util.Date());
+            query.setMaxResults(1);
+            
+            java.util.List<ReporteProgramado> results = query.getResultList();
+            return results.isEmpty() ? null : results.get(0);
+        } catch (Exception e) {
+            System.out.println("Error finding next scheduled report: " + e.toString());
+            return null;
         }
     }
     
