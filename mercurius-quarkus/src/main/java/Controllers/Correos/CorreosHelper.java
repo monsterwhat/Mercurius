@@ -328,6 +328,14 @@ public class CorreosHelper {
         emailer.sendEmailsWithAttachment(to, subject, body, correoElectronico, contrasenaCorreo, changes, this::handleEmailResult);
         
         reporte.setLastRun(new Date());
+        
+        // Calculate next run time
+        List<String> frecuencias = reporte.getFrecuencia();
+        if (frecuencias != null && !frecuencias.isEmpty()) {
+            Date nextRun = calcularFechaProximoReporte(reporte.getLastRun(), frecuencias.get(0));
+            reporte.setNextRunTime(nextRun);
+        }
+        
         rpService.update(reporte);
         
     }

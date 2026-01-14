@@ -33,6 +33,6 @@ public class ReporteProgramado {
     
     private boolean status;
     
-    
+    private Date nextRunTime;
     
 }

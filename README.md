@@ -6,13 +6,72 @@
 
 Mercurius es un programa de inventarios diseñado para ayudar a las empresas a gestionar sus productos de manera eficiente. Ofrece una interfaz intuitiva y una variedad de funcionalidades para facilitar el seguimiento y control de inventarios.
 
+## Requisitos Previos
+
+- **Java 21+** - JDK versión 21 o superior
+- **Maven 3.8+** - Herramienta de construcción
+- **MySQL 8.0+** - Base de datos relacional
+
+## Instalación
+
+### 1. Configurar Base de Datos
+```sql
+-- Crear base de datos
+CREATE DATABASE mercurius;
+
+-- Crear usuario (opcional, ajustar según configuración)
+CREATE USER 'mercurius'@'localhost' IDENTIFIED BY 'Mercurius@1!';
+GRANT ALL PRIVILEGES ON mercurius.* TO 'mercurius'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### 2. Configurar Aplicación
+Editar `src/main/resources/application.properties` y ajustar la configuración de la base de datos si es necesario:
+```properties
+quarkus.datasource.username=tu_usuario
+quarkus.datasource.password=tu_contraseña
+quarkus.datasource.jdbc.url=jdbc:mysql://localhost:3306/mercurius?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Costa_Rica
+```
+
+### 3. Compilar y Ejecutar
+```bash
+# Modo desarrollo
+./run-dev.bat
+
+# O con Maven directamente
+mvn quarkus:dev
+
+# Compilar para producción
+mvn clean package
+java -jar target/mercurius-quarkus-runner.jar
+```
+
+### 4. Acceder a la Aplicación
+La aplicación estará disponible en: `http://localhost:8081/Mercurius`
+
 ## Tecnologías Utilizadas
 
-- MYSQL
-- PRIMEFACES
-- JakartaEE 10
-- Jakarta Faces 4.0
-- Java 21
+### Backend
+- **Java 21** - Última versión LTS de Java con soporte para virtual threads
+- **Quarkus 3.15.3** - Framework Java nativo en la nube para alto rendimiento y bajo consumo de memoria
+- **Apache MyFaces 4.0.1** - Implementación de Jakarta Faces para JSF
+- **PrimeFaces 3.15.3** - Framework UI component para aplicaciones web Java con tema Bootstrap
+- **MySQL** - Base de datos relacional para persistencia de datos
+- **Hibernate ORM** - Mapeo objeto-relacional integrado con Quarkus
+- **Maven** - Herramienta de gestión de dependencias y construcción
+
+### Librerías Adicionales
+- **Lombok 1.18.38** - Reducción de código boilerplate mediante anotaciones
+- **BCrypt 0.10.2** - Hashing seguro de contraseñas
+- **Apache POI 5.2.5** - Generación de archivos Excel (XLS/XLSX)
+- **OpenPDF 2.0.2** - Generación de documentos PDF
+- **Jackson 2.17.1** - Procesamiento JSON y XML
+- **Apache PDFBox 3.0.2** - Manipulación de documentos PDF
+- **Jakarta Mail 2.1.3** - Envío de correos electrónicos
+
+### Plataforma
+- **Quarkus Scheduler** - Tareas programadas automatizadas
+- **Quarkus Security** - Autenticación y autorización seguras 
 
 ## Características
 

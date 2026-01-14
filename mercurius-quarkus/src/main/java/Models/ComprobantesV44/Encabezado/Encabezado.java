@@ -94,5 +94,11 @@ public class Encabezado {
     @ToString.Exclude
     @OneToMany(mappedBy = "comprobante",fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     private List<MedioPago> medioPago;
+    
+    @Column(name = "estado", length = 20)
+    private String estado;
+    
+    @Column(name = "motivo_rechazo", length = 500)
+    private String motivoRechazo;
   
 }
