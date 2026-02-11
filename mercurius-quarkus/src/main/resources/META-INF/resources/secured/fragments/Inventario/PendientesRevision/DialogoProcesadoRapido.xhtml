@@ -1,0 +1,421 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <style>
+            .procesado-rapido-inventario-dialog {
+                max-width: 90vw;
+                width: 1200px;
+            }
+            
+            .procesado-header {
+                background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                color: white;
+                padding: 1rem;
+                border-radius: 0.5rem 0.5rem 0 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .procesado-content {
+                padding: 1.5rem;
+                background: var(--bulma-white);
+            }
+            
+            .inventario-info-card {
+                background: var(--bulma-light);
+                border-radius: 0.5rem;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                border-left: 4px solid #ff9800;
+            }
+            
+            .movimiento-info {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            .info-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 0.5rem;
+                background: var(--bulma-white);
+                border-radius: 0.25rem;
+                border: 1px solid var(--bulma-light);
+            }
+            
+            .info-label {
+                font-size: 0.75rem;
+                color: var(--bulma-grey);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+            
+            .info-value {
+                font-size: 1rem;
+                font-weight: 600;
+                color: var(--bulma-dark);
+                margin-top: 0.25rem;
+            }
+            
+            .form-section {
+                margin-bottom: 2rem;
+            }
+            
+            .form-section-title {
+                font-weight: 600;
+                color: #ff9800;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #ff9800;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+            
+            .required-field::after {
+                content: " *";
+                color: var(--bulma-danger);
+                font-weight: bold;
+            }
+            
+            .cantidad-preview {
+                background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+                border-radius: 0.5rem;
+                padding: 1rem;
+                border: 1px solid #ffcc80;
+                text-align: center;
+            }
+            
+            .navigation-buttons {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 1rem;
+                padding: 1rem;
+                background: var(--bulma-light);
+                border-radius: 0.5rem;
+            }
+            
+            .loading-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            }
+            
+            .field-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+            
+            @media (max-width: 768px) {
+                .field-group {
+                    grid-template-columns: 1fr;
+                }
+                
+                .movimiento-info {
+                    grid-template-columns: 1fr;
+                }
+                
+                .procesado-rapido-inventario-dialog {
+                    max-width: 95vw;
+                    width: 100%;
+                }
+            }
+        </style>
+    </h:head>
+
+    <!-- Dialog for Procesado Rápido de Inventario Mejorado -->
+    <p:dialog header="Procesado Rápido de Inventario" widgetVar="ProcesadoRapidoInventarioDialog" 
+              modal="true" fitViewport="true" responsive="true" dynamic="true" cache="false"
+              styleClass="procesado-rapido-inventario-dialog">
+              
+        <div class="procesado-header">
+            <div>
+                <h3 class="title is-5 has-text-white">#{InventarioController.selectedInventario.articulo.nombre}</h3>
+                <p class="subtitle is-7 has-text-light">Movimiento pendiente de procesar</p>
+            </div>
+            <div class="buttons">
+                <button type="button" class="button is-small is-light is-outlined">
+                    <i class="pi pi-keyboard"></i>
+                    <span>Atajos</span>
+                </button>
+            </div>
+        </div>
+        
+        <div class="procesado-content">
+            <p:outputPanel id="ProcesadoRapidoInventarioDialog" rendered="#{not empty InventarioController.selectedInventario}">
+                <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                    <div class="has-text-centered">
+                        <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+                        <p class="mt-3">Procesando movimiento...</p>
+                    </div>
+                </div>
+                
+                <h:form id="procesadoRapidoInventarioForm">
+                    <section class="section">
+                        <p:growl id="growl" showDetail="true" showSummary="true" sticky="true" />
+                        
+                        <!-- Movement Information Card -->
+                        <div class="inventario-info-card">
+                            <div class="movimiento-info">
+                                <div class="info-item">
+                                    <span class="info-label">Código</span>
+                                    <span class="info-value">#{InventarioController.selectedInventario.codigo}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Cantidad Actual</span>
+                                    <span class="info-value">#{InventarioController.selectedInventario.cantidad}</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Estado</span>
+                                    <span class="info-value">
+                                        <span class="tag is-warning">Pendiente</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Article Information Section -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-info-circle"></i> Información del Artículo
+                            </h4>
+                            
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label" for="articuloNombre">Artículo:</label>
+                                    <div class="control">
+                                        <p:inputText id="articuloNombre" value="#{InventarioController.selectedInventario.articulo.nombre}"
+                                                     disabled="true" styleClass="input" style="width: 100%"/>
+                                    </div>
+                                </div>
+                                
+                                <div class="field">
+                                    <label class="label" for="articuloCodigoBarra">Código de Barras:</label>
+                                    <div class="control">
+                                        <p:inputText id="articuloCodigoBarra" value="#{InventarioController.selectedInventario.articulo.codigoBarra}"
+                                                     disabled="true" styleClass="input" style="width: 100%"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Article Selection Section -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-search"></i> Cambiar Artículo
+                            </h4>
+                            
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label" for="articuloSelect">Seleccionar Nuevo Artículo:</label>
+                                    <div class="control">
+                                        <p:commandButton value="Buscar Artículo" 
+                                                        styleClass="button is-info is-fullwidth mb-2"
+                                                        onclick="PF('ArticuloRevisionDialog').show();" type="button"/>
+                                    </div>
+                                    <div class="control">
+                                        <p:card styleClass="card selected-option is-flex" 
+                                                 style="background: var(--bulma-success-light); border-color: var(--bulma-success);">
+                                            <p:outputLabel value="#{InventarioController.selectedInventario.articulo.codigo} - #{InventarioController.selectedInventario.articulo.nombre}"
+                                                           styleClass="has-text-weight-bold has-text-success">
+                                                <p:autoUpdate/>
+                                            </p:outputLabel>
+                                        </p:card>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quantity Section -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-calculator"></i> Ajuste de Cantidad
+                            </h4>
+                            
+                            <div class="cantidad-preview">
+                                <div class="columns">
+                                    <div class="column is-one-third">
+                                        <label class="label">Cantidad Actual:</label>
+                                        <p class="title is-4">#{InventarioController.selectedInventario.cantidad}</p>
+                                    </div>
+                                    <div class="column is-one-third">
+                                        <label class="label">Cantidad Recomendada:</label>
+                                        <p class="title is-4 has-text-info">#{InventarioController.selectedInventario.unidadesRecomendadasFactura}</p>
+                                    </div>
+                                    <div class="column is-one-third">
+                                        <label class="label">Nueva Cantidad:</label>
+                                        <p class="title is-4 has-text-link">
+                                            <p:inputNumber id="cantidadR" value="#{InventarioController.selectedInventario.cantidad}"
+                                                         required="true" requiredMessage="La cantidad no puede estar vacía"
+                                                         styleClass="input has-text-center" style="width: 100%"/>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes Section -->
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-file-text"></i> Notas del Movimiento
+                            </h4>
+                            
+                            <div class="field">
+                                <label class="label" for="notasR">Notas:</label>
+                                <div class="control">
+                                    <p:inputTextarea id="notasR" value="#{InventarioController.selectedInventario.notas}"
+                                                   styleClass="textarea" style="width: 100%" rows="4"
+                                                   placeholder="Ingrese notas sobre este movimiento..."
+                                                   maxlength="500"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="navigation-buttons">
+                            <div>
+                                <button type="button" class="button is-light" onclick="alert('Función anterior no implementada')">
+                                    <i class="pi pi-arrow-left"></i>
+                                    <span>Anterior</span>
+                                </button>
+                            </div>
+                            
+                            <div class="buttons">
+                                 <p:commandButton value="Omitir" styleClass="button is-warning"
+                                                action="#{InventarioController.skipCurrentMovement}" process="@this"
+                                                update="@form Inventarios:inventarioPendiente"
+                                                oncomplete="window.actualizarTablaYAbrirDialog()">
+                                    <i class="pi pi-forward"></i>
+                                    <span>Omitir</span>
+                                </p:commandButton>
+                            </div>
+                            
+                            <div>
+                                 <p:commandButton value="Procesar y Siguiente" 
+                                                styleClass="button is-success is-medium"
+                                                action="#{InventarioController.procesarMovimientoYSiguiente}"
+                                                update="@form Inventarios:inventarioPendiente"
+                                                onstart="showLoading()" 
+                                                oncomplete="window.actualizarTablaYAbrirDialog(); handleSaveComplete(xhr, status, args)">
+                                    <i class="pi pi-check"></i>
+                                    <span>Procesar y Siguiente</span>
+                                </p:commandButton>
+                            </div>
+                        </div>
+
+                    </section>
+                </h:form>
+            </p:outputPanel>
+        </div>
+    </p:dialog>
+    
+    <!-- Include existing dialogs -->
+    <ui:include src="/secured/fragments/Inventario/PendientesRevision/ArticuloDialog.xhtml"/>
+    
+    <script>
+        function showLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+        
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+        }
+        
+        function handleSaveComplete(xhr, status, args) {
+            hideLoading();
+            
+            if (args &amp;&amp; args.success) {
+                showNotification('Movimiento procesado correctamente', 'success');
+                
+                // Auto navigate to next if available
+                setTimeout(function() {
+                    if (args.hasNextMovement) {
+                        // Actualizar la tabla y mostrar el siguiente movimiento
+                        actualizarTablaYAbrirDialog();
+                    } else {
+                        // No more movements
+                        showNotification('No hay más movimientos pendientes', 'info');
+                        
+                        setTimeout(function() {
+                            const dialog = window.PF ? window.PF('ProcesadoRapidoInventarioDialog') : null;
+                            if (dialog) {
+                                dialog.hide();
+                            }
+                        }, 1000);
+                    }
+                }, 1000);
+            } else {
+                showNotification('Error al procesar el movimiento', 'danger');
+            }
+        }
+        
+        function actualizarTablaYAbrirDialog() {
+            setTimeout(function() {
+                // Forzar la actualización de la tabla
+                const tabla = PF('InventariosPendientesTable');
+                if (tabla) {
+                    tabla.clearFilters();
+                    tabla.filter();
+                }
+                
+                // Esperar y abrir el diálogo
+                setTimeout(function() {
+                    const dialog = window.PF ? window.PF('ProcesadoRapidoInventarioDialog') : null;
+                    if (dialog) {
+                        dialog.show();
+                        console.log('Diálogo de procesado rápido abierto exitosamente');
+                    } else {
+                        // Si el diálogo no está disponible, hacer clic en el primer movimiento
+                        const primerMovimiento = document.querySelector('[onclick*="PF(\'RevisionMovimientosDialog\')"]');
+                        if (primerMovimiento) {
+                            primerMovimiento.click();
+                        }
+                    }
+                }, 200);
+            }, 100);
+        }
+        
+        // Inicializar la función global para que pueda ser llamada externamente si es necesario
+        window.actualizarTablaYAbrirDialog = actualizarTablaYAbrirDialog;
+        
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            .notification {
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                border-radius: 0.375rem;
+                padding: 1rem;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+    
+</ui:composition>

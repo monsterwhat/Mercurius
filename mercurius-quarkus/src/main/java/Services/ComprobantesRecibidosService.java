@@ -247,12 +247,27 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 "LEFT JOIN FETCH d.lineasDetalle " +
                 "LEFT JOIN FETCH f.encabezado " +
                 "LEFT JOIN FETCH f.resumen " +
-                "WHERE DATE_ADD(f.encabezado.fechaEmision, INTERVAL f.encabezado.plazoCredito DAY) > :currentDate " +
-                "AND f.paid = false",
+                "WHERE f.paid = false",
                 ComprobantesRecibidos.class
             );
-            query.setParameter("currentDate", java.time.LocalDate.now());
-            return query.getResultList();
+            List<ComprobantesRecibidos> results = query.getResultList();
+            java.time.LocalDate currentDate = java.time.LocalDate.now();
+            
+            // Filter in Java - date due date is in the future
+            return results.stream()
+                .filter(f -> {
+                    if (f.getEncabezado() != null && f.getEncabezado().getPlazoCredito() != null && f.getEncabezado().getFechaEmision() != null) {
+                        try {
+                            int plazoCredito = Integer.parseInt(f.getEncabezado().getPlazoCredito());
+                            java.time.LocalDate dueDate = f.getEncabezado().getFechaEmision().toLocalDate().plusDays(plazoCredito);
+                            return dueDate.isAfter(currentDate);
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    }
+                    return false;
+                })
+                .collect(java.util.stream.Collectors.toList());
         } catch (Exception e) {
             System.out.println("Error listing pendientes: " + e.toString());
             return null;
@@ -267,12 +282,27 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 "LEFT JOIN FETCH d.lineasDetalle " +
                 "LEFT JOIN FETCH f.encabezado " +
                 "LEFT JOIN FETCH f.resumen " +
-                "WHERE DATE_ADD(f.encabezado.fechaEmision, INTERVAL f.encabezado.plazoCredito DAY) <= :currentDate " +
-                "AND f.paid = false",
+                "WHERE f.paid = false",
                 ComprobantesRecibidos.class
             );
-            query.setParameter("currentDate", java.time.LocalDate.now());
-            return query.getResultList();
+            List<ComprobantesRecibidos> results = query.getResultList();
+            java.time.LocalDate currentDate = java.time.LocalDate.now();
+            
+            // Filter in Java - due date is today or in the past
+            return results.stream()
+                .filter(f -> {
+                    if (f.getEncabezado() != null && f.getEncabezado().getPlazoCredito() != null && f.getEncabezado().getFechaEmision() != null) {
+                        try {
+                            int plazoCredito = Integer.parseInt(f.getEncabezado().getPlazoCredito());
+                            java.time.LocalDate dueDate = f.getEncabezado().getFechaEmision().toLocalDate().plusDays(plazoCredito);
+                            return dueDate.isBefore(currentDate) || dueDate.isEqual(currentDate);
+                        } catch (NumberFormatException e) {
+                            return false;
+                        }
+                    }
+                    return false;
+                })
+                .collect(java.util.stream.Collectors.toList());
         } catch (Exception e) {
             System.out.println("Error listing vencidas: " + e.toString());
             return null;

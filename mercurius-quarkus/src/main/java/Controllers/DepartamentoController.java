@@ -138,7 +138,7 @@ public class DepartamentoController implements Serializable {
     }
 
     public List<Departamento> getFilteredDepartamentos() {
-        if (departamentoFilter != null && !departamentoFilter.isEmpty()) {
+        if (departamentoFilter != null && !departamentoFilter.trim().isEmpty()) {
             return departamentosList().stream()
                     .filter(departamento -> globalFilterFunction(departamento, departamentoFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
@@ -148,7 +148,7 @@ public class DepartamentoController implements Serializable {
     }
     
     public List<Departamento> getFilteredDepartamentosDetallados() {
-        if (departamentoFilter != null && !departamentoFilter.isEmpty()) {
+        if (departamentoFilter != null && !departamentoFilter.trim().isEmpty()) {
             return departamentosListAll().stream()
                     .filter(departamento -> globalFilterFunction(departamento, departamentoFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
