@@ -119,12 +119,7 @@ public class ArticulosController implements Serializable {
         return activosYProcesados;
     }
     
-    public List<Articulos> articulosInactivos(){
-        if(inactivos == null){
-            inactivos = articulosService.listAllInactivos();
-        }
-        return inactivos;
-    }
+
 
     public long articulosCount() {
         return articulosService.count();
@@ -165,20 +160,20 @@ public class ArticulosController implements Serializable {
                     clearArticulo();
 
                     FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizo el articulo", null));
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizó el artículo", null));
                     PrimeFaces.current().executeScript("PF('EditArticuloDialog').hide();");
                 }else{
                     FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono un codigo del CABYS", null));
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "No se seleccionó un código del CABYS", null));
                 }
             }
             }else{
                 FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono departamento o familia", null));
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "No se seleccionó departamento o familia", null));
             }    
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
-            new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesion es invalida", null));
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesión es inválida", null));
             
         }
     }
@@ -237,55 +232,57 @@ public class ArticulosController implements Serializable {
                 selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
                 selectedArticulo.setProcessed(true);
+                
                 if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null) {
                     if(selectedArticulo.getCodigoCabys() != null){
                         if(selectedArticulo.getLastPrecio().getPrecioFinal() != null){
                             selectedArticulo.setProcessed(true);
                             articulosService.update(selectedArticulo);
-                             
+                              
                             alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "updateArticulosRevision()", oldArticulo.toString(), selectedArticulo.toString());
                             clearCache();
 
                             // Load the next article or reset if none available
-                            loadNextArticulo();
+                            boolean hasNext = loadNextArticulo();
 
                             FacesContext.getCurrentInstance().addMessage(null,
                             new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el articulo", null));
 
-                            // Refresh the dialog instead of hiding it
+                            // Add callback parameters for JavaScript
+                            PrimeFaces.current().ajax().addCallbackParam("success", true);
+                            PrimeFaces.current().ajax().addCallbackParam("hasNextArticle", hasNext);
                             PrimeFaces.current().ajax().update("RevisionArticulosDialog");
                         }else{
                             FacesContext.getCurrentInstance().addMessage(null,
                             new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay precio final", "se debe re-ajustar la utilidad y verificar que el codigo cabys sea correcto"));
+                            PrimeFaces.current().ajax().addCallbackParam("success", false);
                         }
                     }else{
                         FacesContext.getCurrentInstance().addMessage(null,
                         new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono un codigo del CABYS", null));
+                        PrimeFaces.current().ajax().addCallbackParam("success", false);
                     }                    
                 }
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_WARN, "No se selecciono departamento o familia", null));
+                PrimeFaces.current().ajax().addCallbackParam("success", false);
             }
         } else {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesion es invalida", null));
+            PrimeFaces.current().ajax().addCallbackParam("success", false);
         }
     }
 
-    private void loadNextArticulo() {
-        
+    private boolean loadNextArticulo() {
         sinProcesar = articulosService.listAllSinProcesar();
         
         if (sinProcesar == null || sinProcesar.isEmpty()) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
-            PrimeFaces.current().executeScript("PF('RevisionArticulosDialog').hide();");
-            return;
+            return false;
         }
 
         // Retrieve the first unprocessed article
-        
         selectedArticulo = sinProcesar.get(0);
         
         if(selectedArticulo.getDepartamento() != null){
@@ -302,11 +299,62 @@ public class ArticulosController implements Serializable {
             this.FamiliaID = 0;
         }
 
-        // Check if there are no more articles after the removal
-        if (selectedArticulo == null) {
+        return selectedArticulo != null;
+    }
+    
+    public void loadPreviousArticulo() {
+        // Implementation for loading previous article
+        // This would require maintaining a current position in the list
+        sinProcesar = articulosService.listAllSinProcesar();
+        
+        if (sinProcesar != null && !sinProcesar.isEmpty()) {
+            // For now, just load the first one. In a real implementation,
+            // you'd need to track current position and load the previous one
+            selectedArticulo = sinProcesar.get(0);
+            
+            if(selectedArticulo.getDepartamento() != null){
+                var selectedDepartamento = selectedArticulo.getDepartamento().getId();
+                this.DepartamentoID = selectedDepartamento;
+            }else{
+                this.DepartamentoID = 0;
+            }
+            
+            if(selectedArticulo.getFamilia() != null){
+                var selectedFamilia = selectedArticulo.getFamilia().getId();
+                this.FamiliaID = selectedFamilia;
+            }else{
+                this.FamiliaID = 0;
+            }
+            
+            PrimeFaces.current().ajax().update("RevisionArticulosDialog");
+        }
+    }
+    
+    public void skipCurrentArticle() {
+        // Mark as processed but don't require all fields
+        if(selectedArticulo != null){
+            var oldArticulo = selectedArticulo;
+            selectedArticulo.setProcessed(true);
+            selectedArticulo.setUsuario(currentSession.getCurrentUser());
+            
+            // Set default values if missing
+            if(selectedArticulo.getDepartamento() == null){
+                selectedArticulo.setDepartamento(departamentoService.findById(1)); // Default department
+            }
+            if(selectedArticulo.getFamilia() == null){
+                selectedArticulo.setFamilia(familiaService.findById(1)); // Default family
+            }
+            
+            articulosService.update(selectedArticulo);
+            alertasService.registrarAlerta("Artículo omitido", "Se ha omitido el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentArticle()", oldArticulo.toString(), selectedArticulo.toString());
+            
+            clearCache();
+            loadNextArticulo();
+            
             FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
-            PrimeFaces.current().executeScript("PF('RevisionArticulosDialog').hide();");
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Se omitió el artículo", null));
+            
+            PrimeFaces.current().ajax().update("RevisionArticulosDialog");
         }
     }
     
@@ -379,71 +427,48 @@ public class ArticulosController implements Serializable {
     }
 
     public void clearSelectedArticulo() {
-        clearCache();
-        clearArticulo();
+        articulos = null;
+        articulosActivos = null;
+        articulos = null;
+        sinProcesar = null;
+        activosYProcesados = null;
+        inactivos = null;
+        newArticulo = null;
+        selectedArticulo = null;
     }
     
     public void clearArticulo(){
         newArticulo = null;
+        articulosFilter = null;
+    }
+    
+    public void clearFilter(){
+        articulosFilter = null;
+        // Forzar la recarga de las listas filtradas
+        inactivos = null;
+        activosYProcesados = null;
+        sinProcesar = null;
     }
     
     public void clearCache(){
         articulos = null;
         articulosActivos = null;
         sinProcesar = null;
-        activosYProcesados = null; 
-        updateDepartamentoAndFamiliaOptions();
+        activosYProcesados = null;
+        inactivos = null;
+        clearArticulo();
     }
-
+      
     public List<Articulos> getFilteredArticulosActivos() {
         if(articulosActivos == null){
             articulosActivos = articulosService.ListAllEnabled();
         }
-        if (articulosFilter != null && !articulosFilter.isEmpty()) {
+        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
             return articulosActivos().stream()
                     .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
         } else {
-            return articulosActivos();
-        }
-    }
-    
-    public List<Articulos> getFilteredArticulosFull() {
-        if(articulos == null){
-            articulos = articulosService.listAll();
-        }
-        if (articulosFilter != null && !articulosFilter.isEmpty()) {
-            return articulosFull().stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return articulosFull();
-        }
-    }
-    
-    public List<Articulos> getFilteredArticulosSinProcesar() {
-        if(sinProcesar == null){
-            sinProcesar = articulosService.listAllSinProcesar();
-        }
-        if (articulosFilter != null && !articulosFilter.isEmpty()) {
-            return articulosSinProcesar().stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return articulosSinProcesar();
-        }
-    }
-    
-    public List<Articulos> getFilteredArticulosActivosYProcesados() {
-        if(activosYProcesados == null){
-            activosYProcesados = articulosService.listAllActivosYProcesados();
-        }
-        if (articulosFilter != null && !articulosFilter.isEmpty()) {
-            return articulosActivosYProcesados().stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return articulosActivosYProcesados();
+            return articulosActivos;
         }
     }
     
@@ -451,15 +476,54 @@ public class ArticulosController implements Serializable {
         if(inactivos == null){
             inactivos = articulosService.listAllInactivos();
         }
-        if (articulosFilter != null && !articulosFilter.isEmpty()) {
-            return articulosInactivos().stream()
+        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
+            return inactivos.stream()
                     .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
         } else {
-            return articulosInactivos();
+            return inactivos;
         }
     }
-
+    
+    public List<Articulos> getFilteredArticulosActivosYProcesados() {
+        if(activosYProcesados == null){
+            activosYProcesados = articulosService.listAllActivosYProcesados();
+        }
+        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
+            return activosYProcesados.stream()
+                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return activosYProcesados;
+        }
+    }
+    
+    public List<Articulos> getFilteredArticulosSinProcesar() {
+        if(sinProcesar == null){
+            sinProcesar = articulosService.listAllSinProcesar();
+        }
+        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
+            return sinProcesar.stream()
+                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return sinProcesar;
+        }
+    }
+    
+    public List<Articulos> getFilteredArticulosFull() {
+        if(articulos == null){
+            articulos = articulosService.listAll();
+        }
+        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
+            return articulos.stream()
+                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                    .collect(Collectors.toList());
+        } else {
+            return articulos;
+        }
+    }
+      
     public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {

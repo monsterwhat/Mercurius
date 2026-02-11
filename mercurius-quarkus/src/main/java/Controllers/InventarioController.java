@@ -166,16 +166,20 @@ public class InventarioController implements Serializable {
                         inventarioService.updateAndDisable(selectedInventario);
                         // Save an alert (log) for updating an inventory item
                         alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventariosRevisionDialog", oldInventario.toString(), selectedInventario.toString());
-                        clearSelectedInventario();
                         
-                        // Load the next ajuste or reset if none available
+                        // Refresh cache and load next
+                        clearCache();
                         loadNextAjuste();
-
+ 
                         FacesContext.getCurrentInstance().addMessage(null,
                             new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el ajuste", null));
-
-                        // Refresh the dialog instead of hiding it
-                        PrimeFaces.current().ajax().update("RevisionMovimientosDialog");
+                        
+                        // Add callback parameters for JavaScript
+                        PrimeFaces.current().ajax().addCallbackParam("success", true);
+                        PrimeFaces.current().ajax().addCallbackParam("hasNextMovement", (sinProcesar != null && !sinProcesar.isEmpty()));
+ 
+                        // Update the rapid processing dialog
+                        PrimeFaces.current().ajax().update("ProcesadoRapidoInventarioDialog");
                     }
                 }else{
                     FacesContext.getCurrentInstance().addMessage(null,
@@ -189,7 +193,7 @@ public class InventarioController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion invalida", null));
         }
-    }    
+    }  
     
     private void loadNextAjuste() {
         
@@ -198,25 +202,109 @@ public class InventarioController implements Serializable {
         if (sinProcesar == null || sinProcesar.isEmpty()) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
-            PrimeFaces.current().executeScript("PF('RevisionMovimientosDialog').hide();");
             return;
         }
 
-        // Retrieve the first unprocessed article
-        
+        // Retrieve first unprocessed article
         selectedInventario = sinProcesar.get(0);
-
-        // Check if there are no more ajustes after the removal
+        
         if (selectedInventario == null) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay más artículos para revisar", null));
-            PrimeFaces.current().executeScript("PF('RevisionMovimientosDialog').hide();");
         }
     }
     
+    public void skipCurrentMovement() {
+        // Skip current movement without requiring processing
+        if(selectedInventario != null){
+            var oldInventario = selectedInventario;
+            selectedInventario.setProcessed(true);
+            selectedInventario.setUsuario(currentSession.getCurrentUser());
+            selectedInventario.setTipoMovimiento("Omitido por usuario");
+            selectedInventario.setNotas("Movimiento omitido mediante procesado rápido por: " + currentSession.getCurrentUser().getUsername());
+            
+            inventarioService.update(selectedInventario);
+            alertasService.registrarAlerta("Movimiento omitido", "Se ha omitido el movimiento: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentMovement()", oldInventario.toString(), selectedInventario.toString());
+            
+            clearSelectedInventario();
+            loadNextAjuste();
+            
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Se omitió el movimiento", null));
+            
+                    PrimeFaces.current().ajax().addCallbackParam("success", true);
+                    PrimeFaces.current().ajax().addCallbackParam("skipped", true);
+                    PrimeFaces.current().ajax().addCallbackParam("hasNextMovement", (sinProcesar != null && !sinProcesar.isEmpty()));
+                    
+                    // Mostrar el diálogo de nuevo para el siguiente movimiento
+                    PrimeFaces.current().executeScript("setTimeout(function() { if (typeof PF === 'function' && PF('ProcesadoRapidoInventarioDialog')) { PF('ProcesadoRapidoInventarioDialog').show(); } }, 500);");
+        }
+    }
     
+    public void procesarMovimientoYSiguiente() {
+        // Procesar movimiento actual y cargar siguiente
+        if(currentSession.isValid()){
+            if(selectedInventario != null){
+                var oldInventario = selectedInventario;
+                selectedInventario.setUsuario(currentSession.getCurrentUser());
+                selectedInventario.setProcessed(true);
+                if(selectedInventario.getArticulo() != null){
+                    Date today = new Date();
+                    selectedInventario.setFechaMovimiento(today);
+                    selectedInventario.setTipoMovimiento("Stock por Factura");
+                    
+                    // Usar las notas del formulario si existen
+                    String notas = FacesContext.getCurrentInstance().getExternalContext()
+                        .getRequestParameterMap().get("procesadoRapidoInventarioForm:notasR");
+                    if(notas != null && !notas.trim().isEmpty()) {
+                        selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getCurrentUser().getUsername() + ". Notas: " + notas);
+                    } else {
+                        selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getCurrentUser().getUsername());
+                    }
+                    
+                    inventarioService.updateAndDisable(selectedInventario);
+                    alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "procesarMovimientoYSiguiente()", oldInventario.toString(), selectedInventario.toString());
+                    
+                    clearCache();
+                    loadNextAjuste();
+                    
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se proceso el ajuste", null));
+                    
+                    PrimeFaces.current().ajax().addCallbackParam("success", true);
+                    PrimeFaces.current().ajax().addCallbackParam("hasNextMovement", (sinProcesar != null && !sinProcesar.isEmpty()));
+                } else {
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_WARN, "Articulo Invalido", null));
+                    PrimeFaces.current().ajax().addCallbackParam("success", false);
+                }
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "No se selecciono articulo por procesar?", null));
+                PrimeFaces.current().ajax().addCallbackParam("success", false);
+            }
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Sesion invalida", null));
+            PrimeFaces.current().ajax().addCallbackParam("success", false);
+        }
+    }
+     
     public void procesadoRapido(){
-        selectedInventario = sinProcesar.get(0);
+        // Cargar el primer inventario pendiente
+        sinProcesar = inventarioService.listAllSinProcesar();
+        
+        if (sinProcesar != null && !sinProcesar.isEmpty()) {
+            selectedInventario = sinProcesar.get(0);
+            
+            // Mostrar mensaje informativo
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Movimiento cargado. Seleccione el movimiento en la tabla para procesar.", null));
+        } else {
+            // Mostrar mensaje si no hay pendientes
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "No hay movimientos pendientes para procesar", null));
+        }
     }
     
     public void createInventarioDialog() {
@@ -278,7 +366,7 @@ public class InventarioController implements Serializable {
         if(sinProcesar == null){
             sinProcesar = inventarioService.listAllSinProcesar();
         }
-        if (inventarioFilter != null && !inventarioFilter.isEmpty()) {
+        if (inventarioFilter != null && !inventarioFilter.trim().isEmpty()) {
             return inventarioSinProcesar().stream()
                     .filter(inventario -> globalFilterFunction(inventario, inventarioFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
@@ -291,7 +379,7 @@ public class InventarioController implements Serializable {
         if(activosYProcesados == null){
             activosYProcesados = inventarioService.listAllActivosYProcesados();
         }
-        if (inventarioFilter != null && !inventarioFilter.isEmpty()) {
+        if (inventarioFilter != null && !inventarioFilter.trim().isEmpty()) {
             return inventarioActivoYProcesado().stream()
                     .filter(inventario -> globalFilterFunction(inventario, inventarioFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
@@ -304,7 +392,7 @@ public class InventarioController implements Serializable {
         if(inactivos == null){
             inactivos = inventarioService.listAllInactivos();
         }
-        if (inventarioFilter != null && !inventarioFilter.isEmpty()) {
+        if (inventarioFilter != null && !inventarioFilter.trim().isEmpty()) {
             return inventarioInactivo().stream()
                     .filter(inventario -> globalFilterFunction(inventario, inventarioFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
@@ -317,7 +405,7 @@ public class InventarioController implements Serializable {
         if(inventarioActivo == null){
             inventarioActivo = inventarioService.ListAllEnabled();
         }
-        if (inventarioFilter != null && !inventarioFilter.isEmpty()) {
+        if (inventarioFilter != null && !inventarioFilter.trim().isEmpty()) {
             return inventarioList().stream()
                     .filter(inventario -> globalFilterFunction(inventario, inventarioFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
@@ -330,7 +418,7 @@ public class InventarioController implements Serializable {
         if(inventario == null){
             inventario = inventarioService.listAll();
         }
-        if (inventarioFilter != null && !inventarioFilter.isEmpty()) {
+        if (inventarioFilter != null && !inventarioFilter.trim().isEmpty()) {
             return inventarioListAll().stream()
                     .filter(inventario -> globalFilterFunction(inventario, inventarioFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());

@@ -137,7 +137,7 @@ public class FamiliaController implements Serializable {
     }
 
     public List<Familia> getFilteredFamilias() {
-        if (familiaFilter != null && !familiaFilter.isEmpty()) {
+        if (familiaFilter != null && !familiaFilter.trim().isEmpty()) {
             return familiasList().stream()
                     .filter(familia -> globalFilterFunction(familia, familiaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
                     .collect(Collectors.toList());
