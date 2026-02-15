@@ -1,5 +1,6 @@
 package Models;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -7,6 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.math.BigDecimal;
 import lombok.Data;
 
 @Data
@@ -51,5 +53,11 @@ public class AppSettings {
     //
     private Boolean estatus; //Si se esta usando o no en el sistema
     private int completedSteps; //En que punto del setup esta...
+    
+    @Column(name = "cashbackPercentage")
+    private BigDecimal cashbackPercentage; //Percentage of cashback for loyalty program
+    
+    @Column(name = "puntosInactivityMonths")
+    private Integer puntosInactivityMonths; //Months of inactivity before points expire
     
 }

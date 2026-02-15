@@ -62,9 +62,19 @@ public class Articulos implements Serializable {
     @Column
     private boolean processed;
 
+    // Stock management fields - automatically calculated by system
+    @Column(name = "stockOptimo")
+    private Integer stockOptimo; // Calculated optimal stock level
+    
+    @Column(name = "diasStockSeguridad")
+    private Integer diasStockSeguridad; // Safety stock days (default: 7)
+    
+    @Column(name = "estadoAlertas")
+    private Boolean estadoAlertas = true; // Enable stock alerts
+
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-@OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<ArticuloPrecio> precios; // List of pricing details
   
     @Column(nullable = false)

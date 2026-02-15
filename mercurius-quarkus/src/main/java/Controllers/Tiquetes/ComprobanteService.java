@@ -34,6 +34,8 @@ import Services.Facturas.ReceptorService;
 import Services.Facturas.DescuentoService;
 import Services.Facturas.ImpuestoService;
 import Services.Facturas.LineaDetalleService;
+import Services.LoyaltyService;
+import Models.PuntosTransaccion;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -64,6 +66,8 @@ public class ComprobanteService implements Serializable {
     private ImpuestoService impuestoService;
     @Inject
     private LineaDetalleService lineaService;
+    @Inject
+    private LoyaltyService loyaltyService;
 
     public ComprobantesEmitidos crearComprobante(AppSettings appSettings, List<ArticuloCarrito> carrito, Clients selectedClient, Clients cliente, Users currentUser) {
         try {
@@ -78,6 +82,20 @@ public class ComprobanteService implements Serializable {
             tiqueteElectronico.setDetalles(detalles);
             tiqueteElectronico.setResumen(resumen);
             tiqueteElectronico.setUser(currentUser.getUsername());
+            
+            // Add loyalty points for the sale if client exists
+            if (selectedClient != null && currentUser != null) {
+                BigDecimal totalAmount = resumen.getTotalVentaNeta();
+                String facturaReferencia = "FACT-" + System.currentTimeMillis();
+                
+                try {
+                    loyaltyService.earnPoints(selectedClient, totalAmount, facturaReferencia, currentUser);
+                } catch (Exception e) {
+                    // Log error but don't fail the sale
+                    System.err.println("Error adding loyalty points: " + e.getMessage());
+                }
+            }
+            
             return tiqueteElectronico;
         } catch (Exception e) {
             System.out.println("Error: " + e.getLocalizedMessage());

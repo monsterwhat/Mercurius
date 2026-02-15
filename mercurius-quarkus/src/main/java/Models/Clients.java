@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -62,6 +63,15 @@ public class Clients {
     private String CodigoActividadComercial;
     
     private Boolean status; //En caso de querer archivar o desabilitar
+
+    @Column(name = "puntosAcumulados")
+    private BigDecimal puntosAcumulados; //Customer loyalty points
+
+    @Column(name = "lastPurchaseDate")
+    private Date lastPurchaseDate; //Date of last purchase for activity tracking
+
+    @Column(name = "statusPuntos")
+    private String statusPuntos; //Status of points: 'active', 'inactive', 'expired'
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
