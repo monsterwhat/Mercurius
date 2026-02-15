@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.ComprobantesV44.Encabezado.Receptor;
+import Models.Encabezado.Receptor;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;

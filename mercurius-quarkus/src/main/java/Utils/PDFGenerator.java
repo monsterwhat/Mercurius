@@ -5,10 +5,12 @@ import Models.AppSettings;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Promocion;
 import Models.Clients;
-import Models.ComprobantesV44.ComprobantesEmitidos;
-import Models.ComprobantesV44.Detalles.LineaDetalle;
-import Models.ComprobantesV44.Enums.Tipo_CodigoImpuesto;
+import Models.ComprobantesEmitidos;
+import Models.Detalles.LineaDetalle;
+import Models.Enums.Tipo_CodigoImpuesto;
 import Models.ReportesFamiliasYDepartamentos;
+import Models.StockAlert;
+import Models.ProfitMarginSnapshot;
 import Models.Users;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
@@ -584,6 +586,116 @@ public class PDFGenerator {
         }
 
         return pdfFile; // Return the created File
+    }
+
+    public File generarPDFStockAlerts(List<StockAlert> stockAlerts) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        File pdfFile = null;
+
+        try {
+            Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
+            PdfWriter.getInstance(document, baos);
+            document.add(new Meta("charset", "UTF-8"));
+            document.open();
+
+            com.lowagie.text.Font font = new com.lowagie.text.Font();
+            font.setSize(8);
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+            Paragraph title = new Paragraph("Reporte de Alertas de Stock", font);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setLeading(10f);
+            document.add(title);
+
+            document.add(new Paragraph("\n"));
+
+            PdfPTable reportTable = new PdfPTable(new float[]{1, 2, 2, 1, 1});
+            reportTable.setWidthPercentage(100);
+            reportTable.setSpacingBefore(10f);
+
+            reportTable.addCell(new Phrase("ID", font));
+            reportTable.addCell(new Phrase("Artículo", font));
+            reportTable.addCell(new Phrase("Tipo Alerta", font));
+            reportTable.addCell(new Phrase("Cant. Actual", font));
+            reportTable.addCell(new Phrase("Estado", font));
+
+            for (StockAlert alert : stockAlerts) {
+                reportTable.addCell(new Phrase(String.valueOf(alert.getId()), font));
+                reportTable.addCell(new Phrase(alert.getArticulo() != null ? alert.getArticulo().getNombre() : "", font));
+                reportTable.addCell(new Phrase(alert.getTipoAlerta() != null ? alert.getTipoAlerta() : "", font));
+                reportTable.addCell(new Phrase(alert.getCantidadActual() != null ? alert.getCantidadActual().toString() : "0", font));
+                reportTable.addCell(new Phrase(alert.getEstado() != null ? alert.getEstado() : "", font));
+            }
+
+            document.add(reportTable);
+
+            document.close();
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd_MM_yyyy_HH_mm");
+            String formattedDate = ZonedDateTime.now().format(formatter);
+            pdfFile = savePdfToFileSystem(baos, "ReporteStockAlerts_" + formattedDate);
+
+        } catch (DocumentException e) {
+            System.out.println("Error generating PDF: " + e.getLocalizedMessage());
+        }
+
+        return pdfFile;
+    }
+
+    public File generarPDFProfitMarginSnapshots(List<ProfitMarginSnapshot> marginSnapshots) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        File pdfFile = null;
+
+        try {
+            Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
+            PdfWriter.getInstance(document, baos);
+            document.add(new Meta("charset", "UTF-8"));
+            document.open();
+
+            com.lowagie.text.Font font = new com.lowagie.text.Font();
+            font.setSize(8);
+
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
+            Paragraph title = new Paragraph("Reporte de Márgenes de Ganancia", font);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setLeading(10f);
+            document.add(title);
+
+            document.add(new Paragraph("\n"));
+
+            PdfPTable reportTable = new PdfPTable(new float[]{2, 2, 2, 2, 2});
+            reportTable.setWidthPercentage(100);
+            reportTable.setSpacingBefore(10f);
+
+            reportTable.addCell(new Phrase("Fecha", font));
+            reportTable.addCell(new Phrase("Departamento", font));
+            reportTable.addCell(new Phrase("Familia", font));
+            reportTable.addCell(new Phrase("% Margen", font));
+            reportTable.addCell(new Phrase("Total Ventas", font));
+
+            for (ProfitMarginSnapshot snapshot : marginSnapshots) {
+                reportTable.addCell(new Phrase(snapshot.getFechaSnapshot() != null ? dateFormat.format(snapshot.getFechaSnapshot()) : "", font));
+                reportTable.addCell(new Phrase(snapshot.getDepartamento() != null ? snapshot.getDepartamento() : "", font));
+                reportTable.addCell(new Phrase(snapshot.getFamilia() != null ? snapshot.getFamilia() : "", font));
+                reportTable.addCell(new Phrase(snapshot.getMargenPromedio() != null ? snapshot.getMargenPromedio().toString() + "%" : "0%", font));
+                reportTable.addCell(new Phrase(snapshot.getTotalVentas() != null ? snapshot.getTotalVentas().toString() : "0", font));
+            }
+
+            document.add(reportTable);
+
+            document.close();
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd_MM_yyyy_HH_mm");
+            String formattedDate = ZonedDateTime.now().format(formatter);
+            pdfFile = savePdfToFileSystem(baos, "ReporteProfitMargins_" + formattedDate);
+
+        } catch (DocumentException e) {
+            System.out.println("Error generating PDF: " + e.getLocalizedMessage());
+        }
+
+        return pdfFile;
     }
 
 }

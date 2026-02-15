@@ -7,13 +7,18 @@ import Models.Users;
 import Services.AlertasService;
 import Services.DepartamentoService;
 import Services.StockAlertService;
+import Utils.ExcelExporter;
+import Utils.PDFGenerator;
+import Controllers.Settings.SettingsDirController;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.io.File;
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.Data;
@@ -40,6 +45,9 @@ public class StockAlertController implements Serializable {
 
     @Inject
     private SessionController currentSession;
+
+    @Inject
+    private SettingsDirController dirController;
 
     // Filter properties
     private String selectedDepartment;
@@ -341,7 +349,26 @@ public class StockAlertController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Iniciada", 
                     "Exportando alertas de stock a Excel..."));
-            // TODO: Implement Excel export using existing ExcelExporter utility
+
+            if (activeAlerts == null || activeAlerts.isEmpty()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Sin Datos", 
+                        "No hay alertas de stock para exportar"));
+                return;
+            }
+
+            ExcelExporter exporter = new ExcelExporter();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm");
+            String timestamp = dateFormat.format(new Date());
+            String fileName = "StockAlerts_" + timestamp + ".xlsx";
+            String filePath = dirController.getPDFDirPath() + File.separator + fileName;
+
+            File excelFile = exporter.exportStockAlertsToExcel(activeAlerts, filePath);
+
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Exitosa", 
+                    "Alertas exportadas a: " + excelFile.getAbsolutePath()));
+
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", 
@@ -357,7 +384,27 @@ public class StockAlertController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Iniciada", 
                     "Exportando alertas de stock a PDF..."));
-            // TODO: Implement PDF export using existing PDFGenerator utility
+
+            if (activeAlerts == null || activeAlerts.isEmpty()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Sin Datos", 
+                        "No hay alertas de stock para exportar"));
+                return;
+            }
+
+            PDFGenerator pdfGenerator = new PDFGenerator();
+            File pdfFile = pdfGenerator.generarPDFStockAlerts(activeAlerts);
+
+            if (pdfFile != null && pdfFile.exists()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Exitosa", 
+                        "PDF generado: " + pdfFile.getAbsolutePath()));
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", 
+                        "No se pudo generar el archivo PDF"));
+            }
+
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", 

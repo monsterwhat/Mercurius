@@ -1,20 +1,19 @@
 package Services;
 
-import Models.ComprobantesV44.ComprobantesRecibidos;
-import Models.ComprobantesV44.Encabezado.Encabezado;
-import Models.ComprobantesV44.Resumen.ResumenFactura;
+import Models.ComprobantesRecibidos;
+import Models.Detalles.LineaDetalle;
+import Models.Encabezado.Encabezado;
+import Models.Resumen.ResumenFactura;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Named;
-import jakarta.persistence.NoResultException;
-import jakarta.persistence.Query;
+import jakarta.persistence.NoResultException; 
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
-import java.time.LocalDate;
+import jakarta.persistence.criteria.Root; 
 import java.util.Date;
 import java.util.List;
 
@@ -195,7 +194,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                     entity.getDetalles().getLineasDetalle().size(); // Force initialization
                     
                     // Initialize nested collections for each line
-                    for (Models.ComprobantesV44.Detalles.LineaDetalle linea : entity.getDetalles().getLineasDetalle()) {
+                    for (LineaDetalle linea : entity.getDetalles().getLineasDetalle()) {
                         if (linea.getCodigosComerciales() != null) {
                             linea.getCodigosComerciales().size();
                         }

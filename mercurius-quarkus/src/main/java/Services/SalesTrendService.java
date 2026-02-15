@@ -1,8 +1,8 @@
 package Services;
 
-import Models.ComprobantesV44.ComprobantesEmitidos;
-import Models.ComprobantesV44.Encabezado.Encabezado;
-import Models.ComprobantesV44.Resumen.ResumenFactura;
+import Models.ComprobantesEmitidos;
+import Models.Encabezado.Encabezado;
+import Models.Resumen.ResumenFactura;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;

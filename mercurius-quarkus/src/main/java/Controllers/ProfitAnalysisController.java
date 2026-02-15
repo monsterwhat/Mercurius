@@ -11,14 +11,19 @@ import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.ProfitAnalysisService;
+import Utils.ExcelExporter;
+import Utils.PDFGenerator;
+import Controllers.Settings.SettingsDirController;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import java.io.File;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.Data;
@@ -51,6 +56,9 @@ public class ProfitAnalysisController implements Serializable {
 
     @Inject
     private SessionController currentSession;
+
+    @Inject
+    private SettingsDirController dirController;
 
     // Filter and search properties
     private Date startDate;
@@ -228,11 +236,28 @@ public class ProfitAnalysisController implements Serializable {
      */
     public void exportToExcel() {
         try {
-            // Integration with existing ExcelExporter
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Iniciada", "Exportando datos de análisis de márgenes a Excel..."));
-                
-            // TODO: Implement Excel export using existing ExcelExporter utility
+
+            if (marginSnapshots == null || marginSnapshots.isEmpty()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Sin Datos", 
+                        "No hay datos de márgenes de ganancia para exportar"));
+                return;
+            }
+
+            ExcelExporter exporter = new ExcelExporter();
+            SimpleDateFormat dateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm");
+            String timestamp = dateFormat.format(new Date());
+            String fileName = "ProfitMargins_" + timestamp + ".xlsx";
+            String filePath = dirController.getPDFDirPath() + File.separator + fileName;
+
+            File excelFile = exporter.exportProfitMarginSnapshotsToExcel(marginSnapshots, filePath);
+
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Exitosa", 
+                    "Datos exportados a: " + excelFile.getAbsolutePath()));
+
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", "No se pudo exportar a Excel: " + e.getMessage()));
@@ -244,11 +269,29 @@ public class ProfitAnalysisController implements Serializable {
      */
     public void exportToPDF() {
         try {
-            // Integration with existing PDFGenerator
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Iniciada", "Exportando datos de análisis de márgenes a PDF..."));
-                
-            // TODO: Implement PDF export using existing PDFGenerator utility
+
+            if (marginSnapshots == null || marginSnapshots.isEmpty()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Sin Datos", 
+                        "No hay datos de márgenes de ganancia para exportar"));
+                return;
+            }
+
+            PDFGenerator pdfGenerator = new PDFGenerator();
+            File pdfFile = pdfGenerator.generarPDFProfitMarginSnapshots(marginSnapshots);
+
+            if (pdfFile != null && pdfFile.exists()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Exitosa", 
+                        "PDF generado: " + pdfFile.getAbsolutePath()));
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", 
+                        "No se pudo generar el archivo PDF"));
+            }
+
         } catch (Exception e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", "No se pudo exportar a PDF: " + e.getMessage()));

@@ -7,7 +7,7 @@ import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import Services.DashboardService; 
-import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesEmitidos;
 import Models.Users; 
 import java.io.Serializable;
 import java.math.BigDecimal;

@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.ComprobantesV44.Detalles.CodigoComercial;
+import Models.Detalles.CodigoComercial;
 import Services.GService;
 import jakarta.enterprise.context.ApplicationScoped; 
 

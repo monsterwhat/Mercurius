@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.ComprobantesV44.Detalles.Impuesto;
+import Models.Detalles.Impuesto;
 import Services.GService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
