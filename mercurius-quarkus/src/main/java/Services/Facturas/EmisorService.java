@@ -1,7 +1,7 @@
 
 package Services.Facturas;
 
-import Models.ComprobantesV44.Encabezado.Emisor;
+import Models.Encabezado.Emisor;
 import Services.GService;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;

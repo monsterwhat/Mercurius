@@ -1,8 +1,8 @@
 package Controllers.Comprobantes;
 
-import Models.ComprobantesV44.Detalles.LineaDetalle;
+import Models.Detalles.LineaDetalle;
 import Services.ComprobantesEmitidosService;
-import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesEmitidos;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;

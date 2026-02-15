@@ -6,7 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
-import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesEmitidos;
 import Models.Users;
 import java.math.BigDecimal;
 import java.time.LocalDate;

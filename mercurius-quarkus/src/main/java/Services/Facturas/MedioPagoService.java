@@ -1,6 +1,6 @@
 package Services.Facturas;
 
-import Models.ComprobantesV44.Encabezado.MedioPago;
+import Models.Encabezado.MedioPago;
 import Services.GService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;

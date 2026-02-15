@@ -2,7 +2,7 @@ package Controllers;
 
 import Controllers.SessionController;
 import Controllers.Tiquetes.CrearTiqueteController;
-import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesEmitidos;
 import Models.Correos.ReporteProgramado;
 import Services.AlertasService;
 import Services.ComprobantesEmitidosService;

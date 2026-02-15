@@ -1,19 +1,19 @@
 package Controllers;
 
-import Models.ComprobantesV44.Detalles.LineaDetalle;
-import Models.ComprobantesV44.Detalles.CodigoComercial;
 import Models.Articulos.ArticuloPrecio;
-import Services.ComprobantesRecibidosService;
 import Models.Articulos.Articulos;
-import Models.ComprobantesV44.ComprobantesRecibidos;
+import Models.Detalles.LineaDetalle;
+import Models.Detalles.CodigoComercial;
+import Models.ComprobantesRecibidos;
 
-import Models.ComprobantesV44.Encabezado.CorreoElectronicoEmisor;
-import Models.ComprobantesV44.Encabezado.Emisor;
-import Models.ComprobantesV44.Encabezado.Encabezado;
+import Models.Encabezado.CorreoElectronicoEmisor;
+import Models.Encabezado.Emisor;
+import Models.Encabezado.Encabezado;
 import Models.Departamento;
 import Models.Inventario;
 import Services.AlertasService;
 import Services.ArticuloPrecioService;
+import Services.ComprobantesRecibidosService;
 import Services.Facturas.*;
 import Utils.Parsers.Parser;
 import jakarta.annotation.PostConstruct;

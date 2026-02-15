@@ -1,26 +1,26 @@
 package Utils.Parsers;
 
 import Controllers.SessionController;
-import Models.ComprobantesV44.ComprobantesRecibidos;
-import Models.ComprobantesV44.ComprobantesEmitidos;
-import Models.ComprobantesV44.Detalles.CodigoComercial;
-import Models.ComprobantesV44.Detalles.Descuento;
-import Models.ComprobantesV44.Detalles.DetalleServicio;
-import Models.ComprobantesV44.Detalles.Impuesto;
-import Models.ComprobantesV44.Detalles.LineaDetalle;
-import Models.ComprobantesV44.Encabezado.CorreoElectronicoEmisor;
-import Models.ComprobantesV44.Encabezado.Emisor;
-import Models.ComprobantesV44.Encabezado.Encabezado;
-import Models.ComprobantesV44.Encabezado.Fax;
-import Models.ComprobantesV44.Encabezado.IdentificacionEmisor;
-import Models.ComprobantesV44.Encabezado.IdentificacionReceptor;
-import Models.ComprobantesV44.Encabezado.MedioPago;
-import Models.ComprobantesV44.Encabezado.Receptor;
-import Models.ComprobantesV44.Encabezado.Telefono;
-import Models.ComprobantesV44.Encabezado.Ubicacion;
-import Models.ComprobantesV44.Enums.Tipo_MedioPago;
-import Models.ComprobantesV44.Resumen.CodigoTipoMoneda;
-import Models.ComprobantesV44.Resumen.ResumenFactura;
+import Models.ComprobantesRecibidos;
+import Models.ComprobantesEmitidos;
+import Models.Detalles.CodigoComercial;
+import Models.Detalles.Descuento;
+import Models.Detalles.DetalleServicio;
+import Models.Detalles.Impuesto;
+import Models.Detalles.LineaDetalle;
+import Models.Encabezado.CorreoElectronicoEmisor;
+import Models.Encabezado.Emisor;
+import Models.Encabezado.Encabezado;
+import Models.Encabezado.Fax;
+import Models.Encabezado.IdentificacionEmisor;
+import Models.Encabezado.IdentificacionReceptor;
+import Models.Encabezado.MedioPago;
+import Models.Encabezado.Receptor;
+import Models.Encabezado.Telefono;
+import Models.Encabezado.Ubicacion;
+import Models.Enums.Tipo_MedioPago;
+import Models.Resumen.CodigoTipoMoneda;
+import Models.Resumen.ResumenFactura;
 import Services.ComprobantesRecibidosService;
 import Services.ComprobantesEmitidosService;
 import Services.Facturas.DescuentoService;
@@ -33,6 +33,7 @@ import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import Services.AlertasService;
 import Models.Registros.Alertas;
+import Utils.ComprobanteFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -775,6 +776,15 @@ public class Parser {
                 System.out.println("NumeroConsecutivo: '" + numeroConsecutivo + "'");
                 System.out.println("Clave: '" + clave + "'");
 
+                String schemaVersion = null;
+                try {
+                    schemaVersion = ComprobanteFactory.detectVersion(
+                        new java.io.ByteArrayInputStream(xmlContent.toString().getBytes(StandardCharsets.UTF_8)));
+                    System.out.println("Detected schema version: " + schemaVersion);
+                } catch (Exception e) {
+                    System.err.println("Warning: Could not detect schema version: " + e.getMessage());
+                }
+
                 // Solo validar NumeroConsecutivo para Factura/Nota, no para MensajeHacienda
                 if (!isMensajeHacienda && numeroConsecutivo.isEmpty()) {
                     String errorMsg = "XML inválido: falta el número consecutivo";
@@ -916,6 +926,9 @@ System.out.println("Creating comprobante recibido...");
                 factura.setUser(Utils.AsyncUserContext.getCurrentUser() != null ? Utils.AsyncUserContext.getCurrentUser() : "system");
                 factura.setStatus(true);
                 factura.setProcessed(false);
+                factura.setSchemaVersion(schemaVersion);
+                encabezado.setSchemaVersion(schemaVersion);
+                resumenFactura.setSchemaVersion(schemaVersion);
 
                 // Create a new DetalleServicio for the Recibidos entity
                 DetalleServicio nuevosDetalles = new DetalleServicio();

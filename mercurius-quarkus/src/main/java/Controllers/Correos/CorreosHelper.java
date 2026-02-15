@@ -2,7 +2,7 @@ package Controllers.Correos;
 
 import Controllers.Settings.SettingsDirController;
 import Models.Articulos.Articulos;
-import Models.ComprobantesV44.ComprobantesRecibidos;
+import Models.ComprobantesRecibidos;
 import Models.Correos.ReporteProgramado;
 import Models.Correos.ReportesEnum;
 import static Models.Correos.ReportesEnum.ARTICULOS;

@@ -2,16 +2,20 @@ package Utils;
 
 import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
-import Models.ComprobantesV44.ComprobantesRecibidos;
-import Models.ComprobantesV44.Encabezado.Encabezado;
-import Models.ComprobantesV44.Resumen.ResumenFactura;
+import Models.ComprobantesRecibidos;
+import Models.Encabezado.Encabezado;
+import Models.Resumen.ResumenFactura;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
+import Models.ProfitMarginHistory;
+import Models.ProfitMarginSnapshot;
+import Models.StockAlert;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -292,4 +296,135 @@ public class ExcelExporter {
         return file;
     }
     
+    public File exportStockAlertsToExcel(List<StockAlert> stockAlerts, String filePath) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Alertas de Stock");
+
+        String[] headers = {"ID", "Artículo", "Código", "Tipo Alerta", "Cantidad Actual", 
+                          "Cantidad Mínima", "Sugerido Reordenar", "Departamento", 
+                          "Estado", "Fecha Creación", "Fecha Resolución", "Notas"};
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        int rowNum = 1;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        for (StockAlert alert : stockAlerts) {
+            Row row = sheet.createRow(rowNum++);
+
+            row.createCell(0).setCellValue(alert.getId());
+            row.createCell(1).setCellValue(alert.getArticulo() != null ? alert.getArticulo().getNombre() : "");
+            row.createCell(2).setCellValue(alert.getArticulo() != null ? alert.getArticulo().getCodigoBarra() : "");
+            row.createCell(3).setCellValue(alert.getTipoAlerta());
+            row.createCell(4).setCellValue(alert.getCantidadActual() != null ? alert.getCantidadActual().doubleValue() : 0.0);
+            row.createCell(5).setCellValue(alert.getCantidadMinima() != null ? alert.getCantidadMinima().doubleValue() : 0.0);
+            row.createCell(6).setCellValue(alert.getSugeridoReordenar() != null ? alert.getSugeridoReordenar().doubleValue() : 0.0);
+            row.createCell(7).setCellValue(alert.getDepartamento() != null ? alert.getDepartamento().getNombre() : "");
+            row.createCell(8).setCellValue(alert.getEstado());
+            row.createCell(9).setCellValue(alert.getFechaCreacion() != null ? dateFormat.format(alert.getFechaCreacion()) : "");
+            row.createCell(10).setCellValue(alert.getFechaResolucion() != null ? dateFormat.format(alert.getFechaResolucion()) : "");
+            row.createCell(11).setCellValue(alert.getNotas() != null ? alert.getNotas() : "");
+        }
+
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        File file = new File(filePath);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            workbook.write(fos);
+        } finally {
+            workbook.close();
+        }
+
+        return file;
+    }
+
+    public File exportProfitMarginHistoryToExcel(List<ProfitMarginHistory> marginHistory, String filePath) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Historial Márgenes");
+
+        String[] headers = {"ID", "Artículo", "Código", "Fecha", "Precio Costo", "Precio Venta", 
+                          "% Utilidad", "Precio c/Utilidad", "Margen Real", "Cant. Vendida", "Total Ingresos"};
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        int rowNum = 1;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        for (ProfitMarginHistory history : marginHistory) {
+            Row row = sheet.createRow(rowNum++);
+
+            row.createCell(0).setCellValue((long) history.getId());
+            row.createCell(1).setCellValue(history.getArticulo() != null ? history.getArticulo().getNombre() : "");
+            row.createCell(2).setCellValue(history.getArticulo() != null ? history.getArticulo().getCodigoBarra() : "");
+            row.createCell(3).setCellValue(history.getFecha() != null ? dateFormat.format(history.getFecha()) : "");
+            row.createCell(4).setCellValue(history.getPrecioCosto() != null ? history.getPrecioCosto().doubleValue() : 0.0);
+            row.createCell(5).setCellValue(history.getPrecioVenta() != null ? history.getPrecioVenta().doubleValue() : 0.0);
+            row.createCell(6).setCellValue(history.getPorcentajeUtilidad() != null ? history.getPorcentajeUtilidad().doubleValue() : 0.0);
+            row.createCell(7).setCellValue(history.getPrecioConUtilidad() != null ? history.getPrecioConUtilidad().doubleValue() : 0.0);
+            row.createCell(8).setCellValue(history.getMargenReal() != null ? history.getMargenReal().doubleValue() : 0.0);
+            row.createCell(9).setCellValue(history.getCantidadVendida() != null ? history.getCantidadVendida().doubleValue() : 0.0);
+            row.createCell(10).setCellValue(history.getTotalIngresos() != null ? history.getTotalIngresos().doubleValue() : 0.0);
+        }
+
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        File file = new File(filePath);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            workbook.write(fos);
+        } finally {
+            workbook.close();
+        }
+
+        return file;
+    }
+
+    public File exportProfitMarginSnapshotsToExcel(List<ProfitMarginSnapshot> marginSnapshots, String filePath) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Snapshots Márgenes");
+
+        String[] headers = {"ID", "Fecha", "Departamento", "Familia", "% Margen Promedio", 
+                          "Total Utilidad", "Total Ventas", "Cant. Artículos"};
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            Cell cell = headerRow.createCell(i);
+            cell.setCellValue(headers[i]);
+        }
+
+        int rowNum = 1;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        for (ProfitMarginSnapshot snapshot : marginSnapshots) {
+            Row row = sheet.createRow(rowNum++);
+
+            row.createCell(0).setCellValue(snapshot.getId());
+            row.createCell(1).setCellValue(snapshot.getFechaSnapshot() != null ? dateFormat.format(snapshot.getFechaSnapshot()) : "");
+            row.createCell(2).setCellValue(snapshot.getDepartamento() != null ? snapshot.getDepartamento() : "");
+            row.createCell(3).setCellValue(snapshot.getFamilia() != null ? snapshot.getFamilia() : "");
+            row.createCell(4).setCellValue(snapshot.getMargenPromedio() != null ? snapshot.getMargenPromedio().doubleValue() : 0.0);
+            row.createCell(5).setCellValue(snapshot.getTotalUtilidad() != null ? snapshot.getTotalUtilidad().doubleValue() : 0.0);
+            row.createCell(6).setCellValue(snapshot.getTotalVentas() != null ? snapshot.getTotalVentas().doubleValue() : 0.0);
+            row.createCell(7).setCellValue(snapshot.getCantidadArticulos() != null ? snapshot.getCantidadArticulos().doubleValue() : 0.0);
+        }
+
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        File file = new File(filePath);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            workbook.write(fos);
+        } finally {
+            workbook.close();
+        }
+
+        return file;
+    }
+      
 }

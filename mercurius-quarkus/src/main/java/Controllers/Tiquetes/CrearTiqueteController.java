@@ -1,5 +1,7 @@
 package Controllers.Tiquetes;
 
+import Services.ComprobanteService;
+import Services.CarritoService;
 import Controllers.SessionController;
 import Controllers.SettingsController;
 import Controllers.TipoCambioController;
@@ -7,8 +9,8 @@ import Models.AppSettings;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Articulos;
 import Models.Clients;
-import Models.ComprobantesV44.ComprobantesEmitidos;
-import Models.ComprobantesV44.ComprobantesRecibidos;
+import Models.ComprobantesEmitidos;
+import Models.ComprobantesRecibidos;
 import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.ClientService;

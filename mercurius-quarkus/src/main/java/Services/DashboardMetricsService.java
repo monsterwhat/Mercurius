@@ -1,6 +1,6 @@
 package Services;
 
-import Models.ComprobantesV44.ComprobantesEmitidos;
+import Models.ComprobantesEmitidos;
 import Models.Users;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;

@@ -1,8 +1,8 @@
 package Services;
 
 import Models.Articulos.Articulos;
-import Models.ComprobantesV44.ComprobantesEmitidos;
-import Models.ComprobantesV44.Detalles.LineaDetalle;
+import Models.ComprobantesEmitidos;
+import Models.Detalles.LineaDetalle;
 import Models.Departamento;
 import Models.Familia;
 import jakarta.enterprise.context.ApplicationScoped;
