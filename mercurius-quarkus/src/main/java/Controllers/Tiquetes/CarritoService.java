@@ -10,6 +10,12 @@ import Models.Users;
 import Models.Registros.Alertas;
 import Services.AlertasService;
 import Services.InventarioService;
+import Services.LoyaltyService;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
+import Services.LoyaltyService;
+import Services.StockAlertService;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -442,6 +448,20 @@ public class CarritoService implements Serializable {
         }
     }
 
+    /**
+     * Trigger stock alert checking after inventory adjustment
+     */
+    @Inject
+    private Services.StockAlertService stockAlertService;
+
+    public void checkStockAlertsAfterSale() {
+        try {
+            stockAlertService.checkAndCreateStockAlerts();
+        } catch (Exception e) {
+            System.out.println("Error checking stock alerts: " + e.getLocalizedMessage());
+        }
+    }
+ 
     public void cancel(Users currentUser) {
         try {
             String cajero = currentUser.getUsername();

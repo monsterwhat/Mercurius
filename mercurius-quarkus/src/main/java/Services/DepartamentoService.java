@@ -2,10 +2,11 @@ package Services;
 
 import Models.Departamento; 
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.ApplicationScoped; 
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -44,6 +45,23 @@ public class DepartamentoService extends GService<Departamento> {
             return query.getSingleResult();
         } catch (Exception e) {
             System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Find department by name
+     */
+    public Departamento findByName(String nombre) {
+        try {
+            String jpql = "SELECT d FROM Departamento d WHERE d.nombre = :nombre AND d.status = true";
+            TypedQuery<Departamento> query = em.createQuery(jpql, Departamento.class)
+                    .setParameter("nombre", nombre);
+            return query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        } catch (Exception e) {
+            System.out.println("Error finding department by name: " + e.getLocalizedMessage());
             return null;
         }
     }
