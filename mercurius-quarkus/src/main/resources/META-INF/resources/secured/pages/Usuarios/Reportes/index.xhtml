@@ -1,126 +1,156 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:h="jakarta.faces.html"
       xmlns:p="http://primefaces.org/ui"
       xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      class="#{ThemeController.currentTheme}">
+      data-theme="#{ThemeController.currentTheme}">
 
     <h:head>
-        <title>Menu Principal Reportes de Usuarios</title>
-        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
+        <title>Gestión de Usuarios</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .usuarios-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .usuarios-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                transition: all 0.3s ease;
+            }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .stat-number {
+                font-size: 2rem;
+                font-weight: bold;
+                display: block;
+                margin-bottom: 0.5rem;
+                color: white;
+            }
+
+            .stat-label {
+                font-size: 0.875rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: white;
+            }
+        </style>
     </h:head>
 
     <h:body>
-        <p:growl id="growl" showDetail="true" showSummary="true" />
-
         <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl id="growl" showDetail="true" showSummary="true" />
 
         <section class="section">
 
-            <div class="columns is-centered is-vcentered has-text-centered is-multiline">
-                <div class="column is-full">
-                    <p class="title has-text-centered">
-                        Usuarios
-                    </p> 
-                </div>  
-            </div>
-
-            <div class="card"> 
-                <div class="columns is-centered is-vcentered has-text-centered is-multiline">
-                    <div class="column mx-4">
-                        <p:card style="border-radius: 15px; overflow: hidden;">
-                            <p:tag styleClass="mr-2" severity="success" value="Usuarios Activos" rounded="true"></p:tag>
-                            <p:badge value="#{UsersController.usuariosActivosCount()}" severity="success">
-                                <i class="pi pi-check-circle" style="font-size: 2rem"/>
-                            </p:badge> 
-                        </p:card> 
+            <div class="usuarios-header" style="background: linear-gradient(135deg, #6f42c1 0%, #4a2c81 100%);">
+                <p class="title is-3 has-text-centered">Gestión de Usuarios</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">#{UsersController.usuariosActivosCount()}</span>
+                        <span class="stat-label">Activos</span>
                     </div>
-                    <div class="column mx-4">
-                        <p:card style="border-radius: 15px; overflow: hidden;">
-                            <p:tag styleClass="mr-2" severity="danger" value="Usuarios Inactivos" rounded="true"></p:tag>
-                            <p:badge value="#{UsersController.usuariosInactivosCount()}" severity="danger">
-                                <i class="pi pi-times-circle" style="font-size: 2rem" />
-                            </p:badge>
-                        </p:card> 
-                    </div>
-                    <div class="column is-full">
-                        <h:form id="usuarios">
-                            <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTableData"
-                                         paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"
-                                         emptyMessage="No se encontraron usuarios con la critería proporcionada"
-                                         globalFilterFunction="#{UsersController.globalFilterFunction}"
-                                         filterBy="#{UsersController.filterBy}" reflow="true"
-                                         selection="#{UsersController.selectedUser}" rowKey="#{user.id}">
-
-                                <p:ajax event="rowSelect" update="EditarUsuarioDialog"/>
-                                <p:ajax event="rowUnselect" update="EditarUsuarioDialog"/>
-
-                                <f:facet name="header">
-                                    <p:inputText id="globalFilter" onkeyup="PF('UsersTableData').filter()" style="color: var(--primary-color); width: 100%"
-                                                 placeholder="Búsqueda general de todos los campos" />
-
-                                    <p:spacer height="1em"/>
-                                    <p:commandLink onclick="PF('CrearUsuarioDialog').show();"
-                                                   actionListener="#{UsersController.openNewUser}" class="button is-primary is-rounded is-fullwidth">
-                                        <span class="icon-text">
-                                            <span class="icon">
-                                                <i class="pi pi-plus"></i>
-                                            </span>
-                                            <span>
-                                                Crear Usuario
-                                            </span>
-                                        </span> 
-                                    </p:commandLink>
-
-                                </f:facet>
-
-                                <p:column exportable="false">
-                                    <p:chip id="activo" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
-                                            rendered="#{user.status}"/>
-                                    <p:tooltip for="activo" value="Activo" position="top"/>
-                                    <p:chip id="inactivo" icon="pi pi-times" style="background: var(--red-500);"
-                                            rendered="#{!user.status}"/>
-                                    <p:tooltip for="inactivo" value="Inactivo" position="top"/>
-                                </p:column>
-
-                                <p:column headerText="Identificador de perfil" visible="false" sortBy="#{user.id}">
-                                    <h:outputText value="#{user.id}"/>
-                                </p:column>
-                                <p:column headerText="Nombre de usuario" sortBy="#{user.username}">
-                                    <h:outputText value="#{user.username}" />
-                                </p:column>
-                                <p:column headerText="Contraseña (HASH)" rendered="false">
-                                    <h:outputText value="#{user.password}" />
-                                </p:column>
-                                <p:column headerText="Permisos" sortBy="#{user.groupName}">
-                                    <h:outputText value="#{user.groupName}" />
-                                </p:column>
-                                <p:column headerText="Activo" visible="false" sortBy="#{user.status}">
-                                    <h:outputText value="#{user.status}" />
-                                </p:column>
-
-                                <p:column headerText="Acciones" width="20%" exportable="false">
-                                    <p:commandLink class="button is-success is-rounded" 
-                                                     process="@this" onclick="PF('EditarUsuarioDialog').show();">
-                                        <span class="icon">
-                                            <i class="pi pi-pencil"></i>
-                                        </span> 
-                                        <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
-                                    </p:commandLink>
-                                    <p:commandLink styleClass="button is-warning is-rounded" 
-                                                     actionListener="#{UsersController.toggleUser()}" process="@this" update="usuarios">
-                                        <span class="icon">
-                                            <i class="pi pi-power-off"></i>
-                                        </span> 
-                                        <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
-                                    </p:commandLink>
-                                </p:column>
-                            </p:dataTable> 
-                        </h:form>
+                    <div class="stat-card">
+                        <span class="stat-number">#{UsersController.usuariosInactivosCount()}</span>
+                        <span class="stat-label">Inactivos</span>
                     </div>
                 </div>
-            </div> 
+            </div>
+
+            <div class="tab-content-card">
+                <h:form id="usuarios">
+                    <div class="actions-bar">
+                        <div class="actions-group">
+                            <p:commandLink onclick="PF('CrearUsuarioDialog').show();"
+                                           actionListener="#{UsersController.openNewUser}" class="action-btn button is-primary">
+                                <i class="pi pi-plus"></i>
+                                <span>Crear Usuario</span>
+                            </p:commandLink>
+                        </div>
+                    </div>
+
+                    <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTableData"
+                                 paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"
+                                 styleClass="articulos-table"
+                                 emptyMessage="No se encontraron usuarios con la critería proporcionada"
+                                 globalFilterFunction="#{UsersController.globalFilterFunction}"
+                                 filterBy="#{UsersController.filterBy}" reflow="true"
+                                 selection="#{UsersController.selectedUser}" rowKey="#{user.id}">
+
+                        <p:ajax event="rowSelect" update="EditarUsuarioDialog"/>
+                        <p:ajax event="rowUnselect" update="EditarUsuarioDialog"/>
+
+                        <f:facet name="header">
+                            <div class="filters-section">
+                                <p:inputText id="globalFilter" onkeyup="PF('UsersTableData').filter()" style="width: 100%;"
+                                             placeholder="Búsqueda general de todos los campos" />
+                            </div>
+                        </f:facet>
+
+                        <p:column exportable="false" style="width: 100px; text-align: center;">
+                            <p:chip id="activo" icon="pi pi-check" styleClass="status-chip status-active" rendered="#{user.status}"/>
+                            <p:tooltip for="activo" value="Activo" position="top"/>
+                            <p:chip id="inactivo" icon="pi pi-times" styleClass="status-chip status-inactive" rendered="#{!user.status}"/>
+                            <p:tooltip for="inactivo" value="Inactivo" position="top"/>
+                        </p:column>
+
+                        <p:column headerText="Identificador de perfil" visible="false" sortBy="#{user.id}">
+                            <h:outputText value="#{user.id}"/>
+                        </p:column>
+                        <p:column headerText="Nombre de usuario" sortBy="#{user.username}">
+                            <h:outputText value="#{user.username}" style="font-weight: 500;"/>
+                        </p:column>
+                        <p:column headerText="Contraseña (HASH)" rendered="false">
+                            <h:outputText value="#{user.password}" />
+                        </p:column>
+                        <p:column headerText="Permisos" sortBy="#{user.groupName}">
+                            <h:outputText value="#{user.groupName}" />
+                        </p:column>
+                        <p:column headerText="Activo" visible="false" sortBy="#{user.status}">
+                            <h:outputText value="#{user.status}" />
+                        </p:column>
+
+                        <p:column headerText="Acciones" width="20%" exportable="false" style="text-align: center;">
+                            <div class="table-actions">
+                                <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-pencil"
+                                                 process="@this" onclick="PF('EditarUsuarioDialog').show();" title="Editar">
+                                    <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
+                                </p:commandButton>
+                                <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-power-off"
+                                                 actionListener="#{UsersController.toggleUser()}" process="@this" update="usuarios" title="Cambiar estado">
+                                    <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
+                                </p:commandButton>
+                            </div>
+                        </p:column>
+                    </p:dataTable> 
+                </h:form>
+            </div>
         </section>
 
         <ui:include src="/secured/fragments/Users/CreateUsersDialog.xhtml"/>

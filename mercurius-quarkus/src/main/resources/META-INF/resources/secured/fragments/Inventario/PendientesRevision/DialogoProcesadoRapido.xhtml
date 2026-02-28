@@ -145,53 +145,33 @@
     <p:dialog header="Procesado Rápido de Inventario" widgetVar="ProcesadoRapidoInventarioDialog" 
               modal="true" fitViewport="true" responsive="true" dynamic="true" cache="false"
               styleClass="procesado-rapido-inventario-dialog">
-              
-        <div class="procesado-header">
-            <div>
-                <h3 class="title is-5 has-text-white">#{InventarioController.selectedInventario.articulo.nombre}</h3>
-                <p class="subtitle is-7 has-text-light">Movimiento pendiente de procesar</p>
-            </div>
-            <div class="buttons">
-                <button type="button" class="button is-small is-light is-outlined">
-                    <i class="pi pi-keyboard"></i>
-                    <span>Atajos</span>
-                </button>
-            </div>
-        </div>
-        
-        <div class="procesado-content">
-            <p:outputPanel id="ProcesadoRapidoInventarioDialog" rendered="#{not empty InventarioController.selectedInventario}">
-                <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-                    <div class="has-text-centered">
-                        <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
-                        <p class="mt-3">Procesando movimiento...</p>
-                    </div>
+               
+        <h:form id="procesadoRapidoInventarioForm">
+            <div class="procesado-header" id="procesadoHeader">
+                <div>
+                    <h3 class="title is-5 has-text-white">#{InventarioController.selectedInventario.articulo.nombre}</h3>
+                    <p class="subtitle is-7 has-text-light">Movimiento pendiente de procesar</p>
                 </div>
-                
-                <h:form id="procesadoRapidoInventarioForm">
+                <div class="buttons">
+                    <button type="button" class="button is-small is-light is-outlined">
+                        <i class="pi pi-keyboard"></i>
+                        <span>Atajos</span>
+                    </button>
+                </div>
+            </div>
+        
+            <div class="procesado-content">
+                <p:outputPanel id="procesadoContent" rendered="#{not empty InventarioController.selectedInventario}">
+                    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                        <div class="has-text-centered">
+                            <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+                            <p class="mt-3">Procesando movimiento...</p>
+                        </div>
+                    </div>
+                    
                     <section class="section">
                         <p:growl id="growl" showDetail="true" showSummary="true" sticky="true" />
                         
-                        <!-- Movement Information Card -->
-                        <div class="inventario-info-card">
-                            <div class="movimiento-info">
-                                <div class="info-item">
-                                    <span class="info-label">Código</span>
-                                    <span class="info-value">#{InventarioController.selectedInventario.codigo}</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Cantidad Actual</span>
-                                    <span class="info-value">#{InventarioController.selectedInventario.cantidad}</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Estado</span>
-                                    <span class="info-value">
-                                        <span class="tag is-warning">Pendiente</span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Article Information Section -->
                         <div class="form-section">
                             <h4 class="form-section-title">
@@ -251,22 +231,20 @@
                             </h4>
                             
                             <div class="cantidad-preview">
-                                <div class="columns">
-                                    <div class="column is-one-third">
-                                        <label class="label">Cantidad Actual:</label>
-                                        <p class="title is-4">#{InventarioController.selectedInventario.cantidad}</p>
+                                <div class="columns is-mobile">
+                                    <div class="column has-text-centered">
+                                        <p class="has-text-grey is-size-7">Factura</p>
+                                        <p class="title is-5 mb-2">#{InventarioController.selectedInventario.cantidad}</p>
                                     </div>
-                                    <div class="column is-one-third">
-                                        <label class="label">Cantidad Recomendada:</label>
-                                        <p class="title is-4 has-text-info">#{InventarioController.selectedInventario.unidadesRecomendadasFactura}</p>
+                                    <div class="column has-text-centered">
+                                        <p class="has-text-grey is-size-7">Recomendada</p>
+                                        <p class="title is-5 mb-2 has-text-info">#{InventarioController.selectedInventario.unidadesRecomendadasFactura}</p>
                                     </div>
-                                    <div class="column is-one-third">
-                                        <label class="label">Nueva Cantidad:</label>
-                                        <p class="title is-4 has-text-link">
-                                            <p:inputNumber id="cantidadR" value="#{InventarioController.selectedInventario.cantidad}"
-                                                         required="true" requiredMessage="La cantidad no puede estar vacía"
-                                                         styleClass="input has-text-center" style="width: 100%"/>
-                                        </p>
+                                    <div class="column has-text-centered">
+                                        <p class="has-text-grey is-size-7">Real</p>
+                                        <p:inputNumber id="cantidadR" value="#{InventarioController.selectedInventario.cantidad}"
+                                                     required="true" requiredMessage="La cantidad no puede estar vacía"
+                                                     style="width: 100%;"/>
                                     </div>
                                 </div>
                             </div>
@@ -290,41 +268,38 @@
                         </div>
 
                         <!-- Action Buttons -->
-                        <div class="navigation-buttons">
-                            <div>
-                                <button type="button" class="button is-light" onclick="alert('Función anterior no implementada')">
-                                    <i class="pi pi-arrow-left"></i>
-                                    <span>Anterior</span>
-                                </button>
-                            </div>
+                        <div class="buttons is-centered mt-4">
+                            <p:commandLink styleClass="button is-warning is-rounded"
+                                           action="#{InventarioController.skipCurrentMovement}" process="@this"
+                                           update="@form Inventarios:inventarioPendiente @form:procesadoContent @form:procesadoHeader">
+                                <i class="pi pi-forward"></i>
+                                <span>Omitir</span>
+                            </p:commandLink>
                             
-                            <div class="buttons">
-                                 <p:commandButton value="Omitir" styleClass="button is-warning"
-                                                action="#{InventarioController.skipCurrentMovement}" process="@this"
-                                                update="@form Inventarios:inventarioPendiente"
-                                                oncomplete="window.actualizarTablaYAbrirDialog()">
-                                    <i class="pi pi-forward"></i>
-                                    <span>Omitir</span>
-                                </p:commandButton>
-                            </div>
-                            
-                            <div>
-                                 <p:commandButton value="Procesar y Siguiente" 
-                                                styleClass="button is-success is-medium"
-                                                action="#{InventarioController.procesarMovimientoYSiguiente}"
-                                                update="@form Inventarios:inventarioPendiente"
-                                                onstart="showLoading()" 
-                                                oncomplete="window.actualizarTablaYAbrirDialog(); handleSaveComplete(xhr, status, args)">
-                                    <i class="pi pi-check"></i>
-                                    <span>Procesar y Siguiente</span>
-                                </p:commandButton>
-                            </div>
+                            <p:commandLink styleClass="button is-success is-medium is-rounded"
+                                           action="#{InventarioController.procesarMovimientoYSiguiente}"
+                                           update="@form Inventarios:inventarioPendiente @form:procesadoContent @form:procesadoHeader"
+                                           onstart="showLoading()" 
+                                           oncomplete="hideLoading()">
+                                <i class="pi pi-check"></i>
+                                <span>Procesar y Siguiente</span>
+                            </p:commandLink>
                         </div>
 
                     </section>
-                </h:form>
-            </p:outputPanel>
-        </div>
+                </p:outputPanel>
+                <p:outputPanel rendered="#{empty InventarioController.selectedInventario}">
+                    <div class="has-text-centered p-5">
+                        <p class="has-text-grey">No hay movimientos pendientes para procesar</p>
+                        <p:commandLink onclick="PF('ProcesadoRapidoInventarioDialog').hide();"
+                                       styleClass="button is-primary is-rounded mt-3">
+                            <i class="pi pi-times"></i>
+                            <span>Cerrar</span>
+                        </p:commandLink>
+                    </div>
+                </p:outputPanel>
+            </div>
+        </h:form>
     </p:dialog>
     
     <!-- Include existing dialogs -->
@@ -351,23 +326,13 @@
             if (args &amp;&amp; args.success) {
                 showNotification('Movimiento procesado correctamente', 'success');
                 
-                // Auto navigate to next if available
+                // Siempre abrir el diálogo para el siguiente movimiento
                 setTimeout(function() {
-                    if (args.hasNextMovement) {
-                        // Actualizar la tabla y mostrar el siguiente movimiento
-                        actualizarTablaYAbrirDialog();
-                    } else {
-                        // No more movements
-                        showNotification('No hay más movimientos pendientes', 'info');
-                        
-                        setTimeout(function() {
-                            const dialog = window.PF ? window.PF('ProcesadoRapidoInventarioDialog') : null;
-                            if (dialog) {
-                                dialog.hide();
-                            }
-                        }, 1000);
+                    const dialog = window.PF ? window.PF('ProcesadoRapidoInventarioDialog') : null;
+                    if (dialog) {
+                        dialog.show();
                     }
-                }, 1000);
+                }, 500);
             } else {
                 showNotification('Error al procesar el movimiento', 'danger');
             }

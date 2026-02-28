@@ -39,8 +39,9 @@
 
                         <p:commandButton value="Seleccionar" process="@form" update="@this" 
                                          action="#{CabysController.selectCabysEditAndAssign()}" 
-                                         oncomplete="PF('codigoCabysDialogEdit').hide();" style="width: 100%">
-                            <p:autoUpdate/>
+                                         oncomplete="PF('codigoCabysDialogEdit').hide();" 
+                                         styleClass="button is-primary is-rounded is-fullwidth"
+                                         icon="pi pi-check">
                         </p:commandButton>
                     </h:form>
             </p:outputPanel>

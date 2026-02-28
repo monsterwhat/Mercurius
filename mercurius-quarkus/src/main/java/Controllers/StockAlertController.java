@@ -1,11 +1,13 @@
 package Controllers;
 
 import Models.Departamento;
+import Models.Familia;
 import Models.ReorderSuggestion;
 import Models.StockAlert;
 import Models.Users;
 import Services.AlertasService;
 import Services.DepartamentoService;
+import Services.FamiliaService;
 import Services.StockAlertService;
 import Utils.ExcelExporter;
 import Utils.PDFGenerator;
@@ -41,6 +43,9 @@ public class StockAlertController implements Serializable {
     private DepartamentoService departamentoService;
 
     @Inject
+    private FamiliaService familiaService;
+
+    @Inject
     private AlertasService alertasService;
 
     @Inject
@@ -51,6 +56,7 @@ public class StockAlertController implements Serializable {
 
     // Filter properties
     private String selectedDepartment;
+    private String selectedFamily;
     private String selectedPriority;
     private String alertFilter;
     private List<FilterMeta> filterBy;
@@ -418,6 +424,18 @@ public class StockAlertController implements Serializable {
     public List<String> getDepartments() {
         return departamentoService.listAll().stream()
                 .map(Departamento::getNombre)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get families for filter dropdown
+     */
+    public List<String> getFamilies() {
+        return familiaService.listAll().stream()
+                .map(Familia::getNombre)
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()

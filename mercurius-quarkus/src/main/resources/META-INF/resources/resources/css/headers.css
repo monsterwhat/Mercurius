@@ -30,7 +30,52 @@
     color: white;
 }
 
+/* Header con métricas - Clientes */
+.clientes-header {
+    background: linear-gradient(135deg, #3298dc 0%, #1e3a52 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+/* Header con métricas - CAByS */
+.cabys-header {
+    background: linear-gradient(135deg, var(--bulma-warning) 0%, var(--bulma-warning-dark) 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+/* Header con métricas - Recibos */
+.recibos-header {
+    background: linear-gradient(135deg, var(--bulma-danger) 0%, #b71c1c 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.cabys-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+.clientes-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
 .articulos-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+.recibos-header .title {
     color: white !important;
     margin-bottom: 1.5rem;
 }
@@ -55,6 +100,11 @@
 .stat-card:hover {
     transform: translateY(-2px);
     background: rgba(255, 255, 255, 0.15);
+}
+
+.stat-card.active {
+    border: 2px solid white;
+    background: rgba(255, 255, 255, 0.25);
 }
 
 .stat-number {
@@ -345,7 +395,8 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-    .articulos-header {
+    .articulos-header,
+    .clientes-header {
         padding: 1.5rem;
     }
     
@@ -377,7 +428,8 @@
 }
 
 @media (max-width: 480px) {
-    .articulos-header {
+    .articulos-header,
+    .clientes-header {
         padding: 1rem;
     }
     

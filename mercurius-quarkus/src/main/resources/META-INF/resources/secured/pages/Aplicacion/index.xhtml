@@ -4,7 +4,7 @@
       xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      class="#{ThemeController.currentTheme}">
+      data-theme="#{ThemeController.currentTheme}">
 
     <h:head>
         <title>Menu Principal de la Aplicacion</title>
@@ -13,8 +13,13 @@
 
     <h:body>
 
-        <ui:include src="/secured/fragments/userBar.xhtml" /> 
-
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+        
+        <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+            <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+            <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no" icon="pi pi-times" />
+        </p:confirmDialog>
+        
         <section class="section">
             <div class="columns is-centered is-vcentered has-text-centered is-multiline">
                 <div class="column is-full">
@@ -236,6 +241,101 @@
                                                          required="true"
                                                          title="El codigo de Actividad vinculado a la actividad economica." />
                                         </div>
+                                        
+                                        <!-- HACIENDA CERTIFICATE SECTION -->
+                                        <div class="column is-full">
+                                            <p:separator />
+                                            <p class="title is-6 has-text-centered" style="color: var(--primary-color);">
+                                                Configuración Hacienda - Facturación Electrónica
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Environment Selection -->
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Entorno:" style="color: var(--primary-color);" />
+                                            <div class="buttons is-centered">
+                                                <p:commandButton value="Pruebas" 
+                                                    styleClass="#{SettingsController.isSandbox() ? 'ui-button-success' : 'ui-button-secondary'}"
+                                                    actionListener="#{SettingsController.setSandbox()}" 
+                                                    update="@form" />
+                                                <p:commandButton value="Producción" 
+                                                    styleClass="#{SettingsController.isProduction() ? 'ui-button-success' : 'ui-button-secondary'}"
+                                                    actionListener="#{SettingsController.setProduction()}" 
+                                                    update="@form" />
+                                            </div>
+                                            <p:outputLabel value="Entorno actual: #{SettingsController.environmentLabel}" 
+                                                styleClass="has-text-centered" />
+                                        </div>
+                                        
+                                        <!-- Certificate Status -->
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Certificado:" style="color: var(--primary-color);" />
+                                            <br/>
+                                            <p:badge value="#{SettingsController.certificateStatus}" 
+                                                severity="#{SettingsController.hasValidCertificate ? 'success' : (SettingsController.hasCertificate ? 'danger' : 'warning')}" />
+                                            
+                                            <h:panelGroup rendered="#{SettingsController.certificateInfo != null}">
+                                                <br/>
+                                                <small>
+                                                    <p:outputLabel value="Válido desde: #{SettingsController.certificateInfo.notBefore}" />
+                                                    <br/>
+                                                    <p:outputLabel value="Vence: #{SettingsController.certificateInfo.notAfter}" />
+                                                </small>
+                                            </h:panelGroup>
+                                        </div>
+                                        
+                                        <!-- Certificate Upload -->
+                                        <div class="column is-full">
+                                            <p:fileUpload 
+                                                listener="#{SettingsController.uploadCertificado}" mode="advanced" 
+                                                update="@form" process="@form"
+                                                previewWidth="120" 
+                                                chooseButtonStyleClass="ui-button-primary rounded-button"
+                                                uploadButtonStyleClass="ui-button-success rounded-button"
+                                                cancelLabel="Cancelar" cancelButtonStyleClass="ui-button-danger rounded-button"
+                                                label="Subir Certificado (.p12)" uploadLabel="Validar y Guardar"
+                                                accept=".p12,.pfx"
+                                                styleClass="certificate-upload">
+                                                <f:attribute name="password" value="#{SettingsController.certificadoPassword}" />
+                                            </p:fileUpload>
+                                        </div>
+                                        
+                                        <!-- Certificate Password -->
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Contraseña del Certificado:" for="certPassword" style="color: var(--primary-color);" />
+                                            <p:password id="certPassword" value="#{SettingsController.certificadoPassword}" 
+                                                feedback="false" toggleMask="true" redisplay="true"
+                                                placeholder="Ingrese la contraseña del archivo .p12"
+                                                style="width: 100%;" />
+                                        </div>
+                                        
+                                        <!-- Clear Certificate -->
+                                        <div class="column is-full">
+                                            <p:commandButton value="Eliminar Certificado" 
+                                                styleClass="ui-button-danger"
+                                                actionListener="#{SettingsController.clearCertificate()}" 
+                                                update="@form"
+                                                rendered="#{SettingsController.hasCertificate}">
+                                                <p:confirm header="Confirmar" message="¿Está seguro de eliminar el certificado?" icon="ui-icon-alert" />
+                                            </p:commandButton>
+                                        </div>
+                                        
+                                        <!-- API Key -->
+                                        <div class="column is-full">
+                                            <p:separator />
+                                            <p:outputLabel value="API Key Hacienda:" for="apiKey" style="color: var(--primary-color);" />
+                                            <p:password id="apiKey" value="#{SettingsController.haciendaApiKey}" 
+                                                feedback="false" toggleMask="true"
+                                                placeholder="Ingrese su API Key de Hacienda"
+                                                style="width: 100%;" />
+                                            <p:commandButton value="Guardar API Key" 
+                                                styleClass="ui-button-success"
+                                                actionListener="#{SettingsController.saveApiKey()}" 
+                                                update="@form"
+                                                style="margin-top: 5px;" />
+                                        </div>
+                                        
+                                        <!-- END HACIENDA SECTION -->
                                         <div class="column">
                                             <div class="buttons">
                                                 <p:commandLink class="button is-primary is-rounded is-fullwidth" process="@form" update="mainPanel"
@@ -255,20 +355,18 @@
                                             <p:outputLabel value="Nombre del perfil: #{SettingsController.currentSettings.nombrePerfil}" style="color: var(--primary-color);"/>
                                         </div>
                                         <div class="column">
-                                            <h:form rendered="#{SettingsController.currentSettings.logo != null}">
-                                                <p:outputLabel value="Logo: " style="color: var(--primary-color);"/>
-                                                <p:graphicImage value="#{SettingsController.logo}" stream="false" height="100px" width="100px"/>
-                                            </h:form>
+                                            <p:outputLabel value="Logo: " style="color: var(--primary-color);" rendered="#{SettingsController.currentSettings.logo != null}"/>
+                                            <p:graphicImage value="#{SettingsController.logo}" stream="false" height="100px" width="100px"
+                                                rendered="#{SettingsController.currentSettings.logo != null}"/>
                                         </div>
                                         <div class="column">
                                             <p:outputLabel value="Correo Electronico: #{SettingsController.currentSettings.correoElectronico}" style="color: var(--primary-color);"/>
                                         </div>
                                         <div class="column">
                                             <div class="buttons">
-                                                <p:commandLink class="button is-primary is-rounded is-fullwidth" process="@form" update="mainPanel"
-                                                               actionListener="#{SettingsController.saveProfile()}" >
-                                                    Confirmar
-                                                </p:commandLink> 
+                                                <p:commandButton class="button is-primary is-rounded is-fullwidth" 
+                                                    action="#{SettingsController.saveProfile()}" 
+                                                    value="Confirmar" />
                                             </div> 
                                         </div>
                                     </p:card>
@@ -288,10 +386,9 @@
                                                         <p:outputLabel value="Nombre del perfil: #{SettingsController.currentSettings.nombrePerfil}" style="color: var(--primary-color);"/>
                                                     </div>
                                                     <div class="column is-full">
-                                                        <h:form rendered="#{SettingsController.currentSettings.logo != null}">
-                                                            <p:outputLabel value="Logo: " style="color: var(--primary-color);"/>
-                                                            <p:graphicImage value="#{SettingsController.logo}" stream="false" height="100px" width="100px"/>
-                                                        </h:form>
+                                                        <p:outputLabel value="Logo: " style="color: var(--primary-color);" rendered="#{SettingsController.currentSettings.logo != null}"/>
+                                                        <p:graphicImage value="#{SettingsController.logo}" stream="false" height="100px" width="100px"
+                                                            rendered="#{SettingsController.currentSettings.logo != null}"/>
                                                     </div>
                                                     <div class="column is-full">
                                                         <p:outputLabel value="Correo Electronico: #{SettingsController.currentSettings.correoElectronico}" style="color: var(--primary-color);"/>

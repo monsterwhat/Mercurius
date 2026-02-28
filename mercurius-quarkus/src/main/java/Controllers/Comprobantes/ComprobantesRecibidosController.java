@@ -74,6 +74,7 @@ public class ComprobantesRecibidosController implements Serializable {
         files = new ArrayList<>();
         filterBy = new ArrayList<>();
         selectedFactura = new ComprobantesRecibidos();
+        initReport();
     }
     
     public List<ComprobantesRecibidos> facturasList() {
@@ -379,7 +380,7 @@ public class ComprobantesRecibidosController implements Serializable {
                 ajusteArticulo.setStatus(true);
                 ajusteArticulo.setProcessed(false);
                 ajusteArticulo.setCantidad(cantidad);
-                ajusteArticulo.setNotas((cantidad.doubleValue() != 0) ? "Pendiente a revision" : "Pendiente a revision, No se pudo auto adquirir la cantidad");                
+                ajusteArticulo.setNotas("");                
                 
                 inventarioController.createSimpleInventario(ajusteArticulo);
             }
@@ -398,5 +399,102 @@ public class ComprobantesRecibidosController implements Serializable {
         System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + "Cancelo Factura");
     }
     
+    // Report methods
+    private Date reportFechaInicio;
+    private Date reportFechaFin;
+    private java.math.BigDecimal reportTotalComprobantes;
+    private java.math.BigDecimal reportTotalImpuesto;
+    private java.math.BigDecimal reportTotalBaseImponible;
+    
+    public void initReport() {
+        reportFechaInicio = new Date();
+        reportFechaFin = new Date();
+        loadReportData();
+    }
+    
+    public void loadReportData() {
+        reportTotalComprobantes = java.math.BigDecimal.ZERO;
+        reportTotalImpuesto = java.math.BigDecimal.ZERO;
+        reportTotalBaseImponible = java.math.BigDecimal.ZERO;
+        
+        if (facturas == null) {
+            facturas = facturaService.listAll();
+        }
+        
+        for (ComprobantesRecibidos factura : facturas) {
+            if (factura.getResumen() != null) {
+                if (factura.getResumen().getTotalComprobante() != null) {
+                    reportTotalComprobantes = reportTotalComprobantes.add(factura.getResumen().getTotalComprobante());
+                }
+                if (factura.getResumen().getTotalImpuesto() != null) {
+                    reportTotalImpuesto = reportTotalImpuesto.add(factura.getResumen().getTotalImpuesto());
+                }
+            }
+        }
+    }
+    
+    public void generarReporteReport() {
+        if (reportFechaInicio != null && reportFechaFin != null) {
+            final Date fechaFinCalc = new Date(reportFechaFin.getTime() + 86400000);
+            
+            facturas = facturaService.listAll().stream()
+                .filter(f -> {
+                    if (f.getEncabezado() == null || f.getEncabezado().getFechaEmision() == null) {
+                        return false;
+                    }
+                    Object fechaObj = f.getEncabezado().getFechaEmision();
+                    Date fecha;
+                    if (fechaObj instanceof java.time.LocalDateTime) {
+                        fecha = Date.from(((java.time.LocalDateTime) fechaObj).atZone(java.time.ZoneId.systemDefault()).toInstant());
+                    } else if (fechaObj instanceof Date) {
+                        fecha = (Date) fechaObj;
+                    } else {
+                        return false;
+                    }
+                    return !fecha.before(reportFechaInicio) && fecha.before(fechaFinCalc);
+                })
+                .collect(Collectors.toList());
+            loadReportData();
+        }
+        FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Reporte Generado", 
+                "Se han calculado los impuestos de " + facturas.size() + " comprobantes"));
+    }
+    
+    public void limpiarFiltrosReport() {
+        reportFechaInicio = new Date();
+        reportFechaFin = new Date();
+        initReport();
+    }
+    
+    public int getTotalFacturasReporte() {
+        return facturas != null ? facturas.size() : 0;
+    }
+    
+    public int getFacturasProcesadasReporte() {
+        if (facturas == null) return 0;
+        return (int) facturas.stream()
+            .filter(f -> f.getProcessed() != null && f.getProcessed())
+            .count();
+    }
+    
+    public int getFacturasPendientesReporte() {
+        if (facturas == null) return 0;
+        return (int) facturas.stream()
+            .filter(f -> f.getProcessed() == null || !f.getProcessed())
+            .count();
+    }
+    
+    // Getters and setters for report fields
+    public Date getReportFechaInicio() { return reportFechaInicio; }
+    public void setReportFechaInicio(Date reportFechaInicio) { this.reportFechaInicio = reportFechaInicio; }
+    
+    public Date getReportFechaFin() { return reportFechaFin; }
+    public void setReportFechaFin(Date reportFechaFin) { this.reportFechaFin = reportFechaFin; }
+    
+    public java.math.BigDecimal getReportTotalComprobantes() { return reportTotalComprobantes; }
+    public java.math.BigDecimal getReportTotalImpuesto() { return reportTotalImpuesto; }
+    public java.math.BigDecimal getReportTotalBaseImponible() { return reportTotalBaseImponible; }
+
     
 }

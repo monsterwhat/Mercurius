@@ -54,4 +54,10 @@ public class ComprobantesEmitidos {
     @Column(length = 50)
     private String user;
     
+    // TODO: Phase 5 - Add Hacienda status fields
+    // private String haciendaEstado; // "enviado", "aceptado", "rechazado", "pendiente"
+    // private String haciendaClave;
+    // private LocalDateTime haciendaFechaEnvio;
+    // private LocalDateTime haciendaFechaRespuesta;
+    
 }

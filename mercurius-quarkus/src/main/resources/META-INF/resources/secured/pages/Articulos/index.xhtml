@@ -4,11 +4,31 @@
       xmlns:f="http://xmlns.jcp.org/jsf/core"
       xmlns:p="http://primefaces.org/ui"
       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      class="#{ThemeController.currentTheme}">
+       data-theme="#{ThemeController.currentTheme}">
 
     <h:head>
         <title>Gestión de Artículos</title>
         <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
+        <style>
+            /* Hide tab headers - use stat-cards as navigation instead */
+            .ui-tabs-nav {
+                display: none !important;
+            }
+            
+            /* Clickable stat-cards */
+            .stat-card {
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .stat-card.active {
+                border: 2px solid var(--bulma-primary);
+                background: rgba(72, 199, 142, 0.1);
+            }
+        </style>
     </h:head>
 
     <h:body>
@@ -23,23 +43,23 @@
             <div class="articulos-header">
                 <p class="title is-3">Gestión de Artículos</p>
                 <div class="stats-grid">
-                    <div class="stat-card">
+                    <div class="stat-card active" onclick="switchTab('ArticulosTabView', 0, this)">
                         <span class="stat-number">#{ArticulosController.articulosActivosCount()}</span>
                         <span class="stat-label">Activos</span>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="switchTab('ArticulosTabView', 1, this)">
                         <span class="stat-number">#{ArticulosController.articulosInactivosCount()}</span>
                         <span class="stat-label">Inactivos</span>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="switchTab('ArticulosTabView', 2, this)">
                         <span class="stat-number">#{ArticulosController.articulosCount()}</span>
-                        <span class="stat-label">Total</span>
+                        <span class="stat-label">Procesados</span>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="switchTab('ArticulosTabView', 3, this)">
                         <span class="stat-number">#{ArticulosController.articulosPendientesCount()}</span>
                         <span class="stat-label">Pendientes</span>
                     </div>
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="switchTab('ArticulosTabView', 4, this)">
                         <span class="stat-number">#{PromocionesController.promocionCount()}</span>
                         <span class="stat-label">Promociones</span>
                     </div>
@@ -48,7 +68,7 @@
 
             <div class="columns is-multiline has-text-centered">
                 <div class="column is-full"> 
-                    <p:tabView cache="false" dynamic="true" id="Articulos">
+                    <p:tabView cache="false" dynamic="true" id="Articulos" widgetVar="ArticulosTabView">
                         <p:tab title="Activos">
                             <f:facet name="title">
                                 <span class="icon-text">
@@ -323,8 +343,8 @@
                                         <div class="actions-group">
                                             <p:commandLink actionListener="#{ArticulosController.procesadoRapido}" 
                                                            styleClass="action-btn button is-warning"
-                                                           process="@this" update="RevisionArticulosDialog" 
-                                                           onclick="PF('RevisionArticulosDialog').show();"
+                                                           process="@this" 
+                                                           oncomplete="if(args &amp;&amp; !args.validationFailed) { PF('RevisionArticulosDialog').show(); }"
                                                            title="Procesar artículos pendientes rápidamente">
                                                 <i class="pi pi-bolt"></i>
                                                 <span>Procesado Rápido</span>
@@ -545,21 +565,34 @@
         <script>
             // Función para alternar vista entre tabla y cuadrícula
             function toggleView(currentView) {
-                // Esta función puede implementarse para cambiar entre vista de tabla y cuadrícula
                 console.log('Toggle view called:', currentView);
+            }
+
+            // Función para cambiar tabs mediante stat-cards
+            function switchTab(tabViewWidget, index, cardElement) {
+                PF(tabViewWidget).select(index);
+                setActiveCard(cardElement);
+            }
+
+            // Función para establecer la tarjeta activa
+            function setActiveCard(card) {
+                document.querySelectorAll('.stat-card').forEach(function(c) {
+                    c.classList.remove('active');
+                });
+                card.classList.add('active');
             }
 
             // Mejoras para las animaciones
             document.addEventListener('DOMContentLoaded', function() {
                 // Agregar efectos de carga a las tablas
                 const tables = document.querySelectorAll('.ui-datatable');
-                tables.forEach(table => {
+                tables.forEach(function(table) {
                     table.classList.add('fade-in');
                 });
 
                 // Mejorar accesibilidad de los botones
                 const actionButtons = document.querySelectorAll('.table-action-btn');
-                actionButtons.forEach(btn => {
+                actionButtons.forEach(function(btn) {
                     if (!btn.getAttribute('title')) {
                         const icon = btn.querySelector('i');
                         if (icon &amp;&amp; icon.classList.contains('pi-pencil')) {
@@ -574,11 +607,10 @@
                 
                 // Manejar el evento de borrado en los campos de filtro global
                 const globalFilters = document.querySelectorAll('input[id*="globalFilter"]');
-                globalFilters.forEach(filter => {
+                globalFilters.forEach(function(filter) {
                     filter.addEventListener('input', function() {
                         if (this.value.trim() === '') {
-                            // Forzar la recarga de datos cuando el filtro está vacío
-                            setTimeout(() => {
+                            setTimeout(function() {
                                 this.dispatchEvent(new Event('keyup'));
                             }, 100);
                         }

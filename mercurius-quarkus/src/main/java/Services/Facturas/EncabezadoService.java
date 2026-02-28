@@ -67,6 +67,24 @@ public class EncabezadoService extends GService<Encabezado> {
         }
     }
     
+    // New method: Check if there's a valid ComprobantesRecibidos with this numeroConsecutivo
+    // This ignores orphaned encabezados that have no parent ComprobantesRecibidos
+    public boolean existsByNumeroConsecutivoWithValidComprobante(String numeroConsecutivo) {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                "SELECT COUNT(c.id) FROM ComprobantesRecibidos c " +
+                "WHERE c.encabezado.numeroConsecutivo = :numeroConsecutivo", 
+                Long.class
+            );
+            query.setParameter("numeroConsecutivo", numeroConsecutivo);
+            Long count = query.getSingleResult();
+            return count != null && count > 0;
+        } catch (Exception e) {
+            System.out.println("Error checking valid comprobante existence: " + e.toString());
+            return false;
+        }
+    }
+    
     // New method to find existing encabezado and handle duplicates properly
     public Encabezado findExistingEncabezado(String numeroConsecutivo) {
         try {

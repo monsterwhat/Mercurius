@@ -6,6 +6,7 @@ import Models.Encabezado.Encabezado;
 import Models.Resumen.ResumenFactura;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException; 
 import jakarta.persistence.TypedQuery;
@@ -21,6 +22,8 @@ import java.util.List;
 @ApplicationScoped
 public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos> {
     
+    @Inject AlertasService alertasService;
+
     @Override
     protected Class<ComprobantesRecibidos> getEntityClass() {
         return ComprobantesRecibidos.class;
@@ -39,23 +42,29 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             System.out.println("Successfully created ComprobantesRecibidos with ID: " + entity.getId());
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al crear comprobante recibido: " + e.getMessage(), null, 0, "create()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos", e);
         }
     }
     
     // Method to create ComprobantesRecibidos with pre-persisted related entities
+    // Uses proper cascading to ensure atomic transaction - if any entity fails, all rollback
     public void createWithRelatedEntities(ComprobantesRecibidos entity, Encabezado encabezado, ResumenFactura resumenFactura) {
         try {
-            em.persist(encabezado);
-            em.persist(resumenFactura);
-            em.flush(); // Generate IDs for related entities
+            // Set relationships - let JPA handle cascading from the root entity
+            entity.setEncabezado(encabezado);
+            entity.setResumen(resumenFactura);
             
+            // Persist only the root entity - cascade will handle related entities
+            // This ensures atomic transaction: if anything fails, everything rolls back
             em.persist(entity);
             em.flush();
             em.refresh(entity);
+            
             System.out.println("Successfully created ComprobantesRecibidos with ID: " + entity.getId());
         } catch (Exception e) {
             System.out.println("Error creating entity with related entities: " + e.toString());
+            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al crear comprobante con entidades relacionadas: " + e.getMessage(), null, 0, "createWithRelatedEntities()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
         }
     }
@@ -74,6 +83,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             }
         } catch (Exception e) {
             System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al eliminar comprobante recibido: " + e.getMessage(), null, 0, "delete()", null, e.getMessage());
         }
     }
 
@@ -83,6 +93,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             em.merge(entity);
         } catch (Exception e) {
             System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al actualizar comprobante recibido: " + e.getMessage(), null, 0, "update()", null, e.getMessage());
         }
     }
     
@@ -100,6 +111,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             }
         } catch (Exception e) {
             System.out.println("Error soft deleting entity: " + e.toString());
+            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al eliminar suavemente comprobante recibido: " + e.getMessage(), null, 0, "softDelete()", null, e.getMessage());
         }
     }
     
@@ -138,7 +150,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             return query.getResultList();
         } catch (Exception e) {
             System.out.println("Error listing all entities: " + e.toString());
-            return null;
+            return java.util.Collections.emptyList();
         }
     }
     

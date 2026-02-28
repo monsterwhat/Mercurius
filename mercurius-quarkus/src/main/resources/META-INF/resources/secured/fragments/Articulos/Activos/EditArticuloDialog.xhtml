@@ -14,10 +14,6 @@
                     <p:growl showDetail="true" showSummary="false"/>
                     
                     <div class="columns is-multiline">
-                         
-                        <div class="column is-full">
-                            <p class="title has-text-centered has-text-link">Editar Artículo: #{ArticulosController.selectedArticulo.nombre}"</p>
-                        </div>
  
                         <div class="column is-full">
                             <p:messages for="editName" showSummary="false" showDetail="true" closable="true" />
@@ -48,15 +44,16 @@
                         <div class="column is-full">
                             <p:messages showDetail="true" for="editCodigoCabys" showSummary="false" closable="true" />
                             <label class="label has-text-link" for="editCodigoCabys">Código CABYS:</label>
-                            <p:commandLink value="Seleccionar" id="selectCabysEdit" styleClass="button is-rounded is-link is-fullwidth"
-                                             onclick="PF('codigoCabysDialogEdit').show();" style="width: 100%">
-                                <p:autoUpdate/>
+                            <p:commandLink value="Seleccionar" id="selectCabysEdit" styleClass="button is-primary is-rounded"
+                                             immediate="true" process="@this"
+                                             onclick="PF('codigoCabysDialogEdit').show();">
+                                <i class="pi pi-search"></i>
+                                <span>Seleccionar</span>
                             </p:commandLink>
                             <p:spacer height="1em"/>
                             <p:card class="selected-option is-flex">
                                 <p:outputLabel id="codigoCabys" value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto} %"
                                                styleClass="label">
-                                    <p:autoUpdate/>
                                 </p:outputLabel>
                             </p:card>
                         </div>

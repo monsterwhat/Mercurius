@@ -1,26 +1,36 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="jakarta.faces.html"
-      xmlns:p="http://primefaces.org/ui"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
-      class="#{ThemeController.currentTheme}">
+       xmlns:h="jakarta.faces.html"
+       xmlns:p="http://primefaces.org/ui"
+       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+       xmlns:f="http://xmlns.jcp.org/jsf/core"
+       data-theme="#{ThemeController.currentTheme}">
 
     <h:head>
         <title>Dashboard Cajero</title>
         <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
         <style>
             .dashboard-container {
-                padding: 0 2rem;
+                padding: 0 1.5rem;
                 max-width: 1400px;
                 margin: 0 auto;
+                min-height: calc(100vh - 52px);
+                display: flex;
+                flex-direction: column;
             }
-            .card {
-                border: 1px solid #dbdbdb;
+            .dashboard-main {
+                flex: 1;
+            }
+            .dashboard-card {
+                border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                border: none;
             }
-            .box {
-                border: 1px solid #e1e1e1;
+            .welcome-hero {
+                background: linear-gradient(135deg, #485563 0%, #29323c 100%);
+                border-radius: 8px;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
             }
         </style>
     </h:head>
@@ -30,118 +40,133 @@
         <p:growl showDetail="true" showSummary="true" />
         
         <div class="dashboard-container">
-        <!-- Welcome Section -->
-        <div class="hero is-primary is-small mb-4">
-            <div class="hero-body">
-                <h1 class="title">¡Bienvenido de nuevo, #{empty SessionController.currentUser.username ? 'Usuario' : SessionController.currentUser.username}!</h1>
-                <p class="subtitle">#{dashboardController.currentDate}</p>
-            </div>
-        </div>
-        
-        <!-- Quick Actions - Top Priority -->
-        <div class="mb-5">
-            <div class="card">
-                <div class="card-content">
-                    <h3 class="title is-5 mb-4">Acciones Rápidas</h3>
-<div class="buttons is-centered">
-                        <p:commandButton value="🛒 Nueva Venta" 
-                                       actionListener="#{crearTiqueteController.openNewFactura}"
-                                       onclick="openFactura(Date.now());
-                                               return false;"
-                                       styleClass="is-primary is-large mr-3"
-                                       icon="pi pi-shopping-cart" />
-                        
-                        <p:commandButton value="📦 Inventario" 
-                                       action="/secured/pages/inventario/inventario"
-                                       styleClass="is-info is-medium mr-3"
-                                       icon="pi pi-box"
-                                       rendered="#{sessionController.inventarios}" />
-                        
-                        <p:commandButton value="👤 Clientes" 
-                                       action="/secured/pages/Clientes/index.xhtml"
-                                       styleClass="is-link is-medium"
-                                       icon="pi pi-users"
-                                       rendered="#{sessionController.registros}" />
+            <div class="dashboard-main">
+            <!-- Welcome Section -->
+            <div class="welcome-hero">
+                <div class="columns is-vcentered">
+                    <div class="column">
+                        <h1 class="title is-3 has-text-white">¡Bienvenido, #{empty SessionController.currentUser.username ? 'Usuario' : SessionController.currentUser.username}!</h1>
+                        <p class="subtitle is-5 has-text-white-ter">#{dashboardController.currentDate}</p>
+                    </div>
+                    <div class="column is-narrow">
+                        <span class="icon is-large has-text-white">
+                            <i class="pi pi-user" style="font-size: 3rem;"></i>
+                        </span>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Main Content Area -->
-        <div class="columns is-multiline">
-            <!-- Left Column - Stats -->
-            <div class="column is-4">
-                <div class="card">
+            
+            <!-- Quick Actions - Top Priority -->
+            <div class="mb-5">
+                <div class="dashboard-card">
                     <div class="card-content">
-                        <h3 class="title is-5 mb-4">Resumen de Hoy</h3>
-                        
-                        <div class="columns is-multiline">
-                            <div class="column is-6">
-                                <div class="box has-background-info-light">
-                                    <p class="title is-5 has-text-info">#{dashboardController.transactionCount}</p>
-                                    <p class="subtitle is-6">Transacciones</p>
-                                </div>
-                            </div>
+                        <h3 class="title is-5 mb-5 has-text-centered">Acciones Rápidas</h3>
+                        <div class="buttons is-centered">
+                            <p:commandButton value="Nueva Venta" 
+                                           actionListener="#{crearTiqueteController.openNewFactura}"
+                                           onclick="openFactura(Date.now());
+                                                   return false;"
+                                           styleClass="is-primary is-large"
+                                           icon="pi pi-shopping-cart" />
                             
-                            <div class="column is-6">
-                                <div class="box has-background-success-light">
-                                    <p class="title is-5 has-text-success">#{dashboardController.itemsSold}</p>
-                                    <p class="subtitle is-6">Artículos Vendidos</p>
-                                </div>
-                            </div>
+                            <p:commandButton value="Inventario" 
+                                           action="/secured/pages/inventario/inventario"
+                                           styleClass="is-info is-medium"
+                                           icon="pi pi-box"
+                                           rendered="#{sessionController.inventarios}" />
                             
-                            <div class="column is-12">
-                                <div class="box has-background-warning-light">
-                                    <p class="title is-6 has-text-warning">#{dashboardController.lastTransactionDisplay}</p>
-                                    <p class="subtitle is-6">Última Transacción</p>
-                                </div>
-                            </div>
+                            <p:commandButton value="Clientes" 
+                                           action="/secured/pages/Clientes/index.xhtml"
+                                           styleClass="is-link is-medium"
+                                           icon="pi pi-users"
+                                           rendered="#{sessionController.registros}" />
+                            
+                            <p:commandButton value="Artículos" 
+                                           action="/secured/pages/Articulos/index.xhtml"
+                                           styleClass="is-warning is-medium"
+                                           icon="pi pi-tag"
+                                           rendered="#{sessionController.articulos}" />
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Right Column - Recent Activity -->
-            <div class="column is-8">
-                <div class="card">
-                    <div class="card-content">
-                        <h3 class="title is-5 mb-4">Ventas Recientes</h3>
-                        <p:dataTable id="recentSalesPanel" 
-                                   value="#{dashboardController.recentSales}" 
-                                   var="sale"
-                                   rows="10"
-                                   paginator="false"
-                                   scrollable="true"
-                                   scrollHeight="400"
-                                   emptyMessage="No se encontraron ventas con la critería proporcionada"
-                                   styleClass="is-fullwidth">
+            <!-- Main Content Area -->
+            <div class="columns is-multiline">
+                <!-- Left Column - Stats -->
+                <div class="column is-4">
+                    <div class="dashboard-card">
+                        <div class="card-content">
+                            <h3 class="title is-5 mb-4">Resumen de Hoy</h3>
                             
-                            <p:column headerText="Factura #" width="120">
-                                <h:outputText value="#{sale.encabezado.numeroConsecutivo}" />
-                            </p:column>
-                            
-                            <p:column headerText="Hora" width="80">
-                                <h:outputText value="#{sale.encabezado.fechaEmision}">
-                                    <f:convertDateTime pattern="HH:mm" />
-                                </h:outputText>
-                            </p:column>
-                            
-                            <p:column headerText="Cliente">
-                                <h:outputText value="#{sale.encabezado.receptor.nombre}" />
-                            </p:column>
-                            
-                            <p:column headerText="Total" width="120" styleClass="has-text-right">
-                                <h:outputText value="#{sale.resumen.totalComprobante} colones" />
-                            </p:column>
-                            
-                            <p:column headerText="Pago" width="100">
-                                <h:outputText value="#{sale.encabezado.medioPago}" />
-                            </p:column>
-                        </p:dataTable>
+                            <div class="columns is-multiline">
+                                <div class="column is-12">
+                                    <div class="box has-background-primary-light">
+                                        <p class="title is-3 has-text-primary">#{dashboardController.transactionCount}</p>
+                                        <p class="subtitle is-6">Transacciones</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="column is-12">
+                                    <div class="box has-background-success-light">
+                                        <p class="title is-3 has-text-success">#{dashboardController.itemsSold}</p>
+                                        <p class="subtitle is-6">Artículos Vendidos</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="column is-12">
+                                    <div class="box has-background-warning-light">
+                                        <p class="title is-5 has-text-warning">#{dashboardController.lastTransactionDisplay}</p>
+                                        <p class="subtitle is-6">Última Transacción</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column - Recent Activity -->
+                <div class="column is-8">
+                    <div class="dashboard-card">
+                        <div class="card-content">
+                            <h3 class="title is-5 mb-4">Ventas Recientes</h3>
+                            <p:dataTable id="recentSalesPanel" 
+                                       value="#{dashboardController.recentSales}" 
+                                       var="sale"
+                                       rows="10"
+                                       paginator="false"
+                                       scrollable="true"
+                                       scrollHeight="350"
+                                       emptyMessage="No se encontraron ventas con la critería proporcionada"
+                                       styleClass="is-fullwidth">
+                                 
+                                 <p:column headerText="Factura #" width="120">
+                                     <h:outputText value="#{sale.encabezado.numeroConsecutivo}" />
+                                 </p:column>
+                                 
+                                 <p:column headerText="Hora" width="80">
+                                     <h:outputText value="#{sale.encabezado.fechaEmision}">
+                                         <f:convertDateTime pattern="HH:mm" />
+                                     </h:outputText>
+                                 </p:column>
+                                 
+                                 <p:column headerText="Cliente">
+                                     <h:outputText value="#{sale.encabezado.receptor.nombre}" />
+                                 </p:column>
+                                 
+                                 <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                     <h:outputText value="#{sale.resumen.totalComprobante} colones" />
+                                 </p:column>
+                                 
+                                 <p:column headerText="Pago" width="100">
+                                     <h:outputText value="#{sale.encabezado.medioPago}" />
+                                 </p:column>
+                            </p:dataTable>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
         </div>
         
     </h:body>

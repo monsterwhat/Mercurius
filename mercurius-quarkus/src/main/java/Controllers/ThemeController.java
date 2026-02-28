@@ -5,12 +5,12 @@ import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.context.ExternalContext;
 import jakarta.inject.Named;
 import java.io.Serializable;
-import lombok.Data;
 import jakarta.faces.context.FacesContext;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.Data;
 
 @Named("ThemeController")
 @SessionScoped
@@ -25,19 +25,33 @@ public class ThemeController implements Serializable {
     public void switchThemeAndSave() {
         switchTheme();
         saveThemeToCookie();  
+        reloadCurrentPage();
     }
-    private String currentTheme = "theme-light";
+
+    public void saveThemeFromAjax() {
+        HttpServletRequest request = (HttpServletRequest) FacesContext.getCurrentInstance().getExternalContext().getRequest();
+        String theme = request.getParameter("theme");
+        if (theme != null) {
+            this.currentTheme = theme;
+            saveThemeToCookie();
+        }
+    }
+    private String currentTheme = "light";
 
     public void switchTheme() {
-        if (currentTheme.equals("theme-light")) {
-            currentTheme = "theme-dark";
+        if (currentTheme.equals("light")) {
+            currentTheme = "dark";
         } else {
-            currentTheme = "theme-light";
+            currentTheme = "light";
         }
     }
 
+    public String getDataTheme() {
+        return currentTheme;
+    }
+
     public String currentThemeToIcon() {
-        if ("theme-dark".equals(currentTheme)) {
+        if ("dark".equals(currentTheme)) {
             return "🌚";
         } else {
             return "🌞";

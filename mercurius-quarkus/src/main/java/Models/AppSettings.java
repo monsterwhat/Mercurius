@@ -60,4 +60,16 @@ public class AppSettings {
     @Column(name = "puntosInactivityMonths")
     private Integer puntosInactivityMonths; //Months of inactivity before points expire
     
+    // Hacienda Electronic Invoice Credentials
+    @Lob
+    private byte[] certificado; //.p12 certificate file
+    
+    private String certificadoPassword; //Certificate password (should be encrypted)
+    
+    private String haciendaApiKey; //Hacienda API token
+    
+    private String haciendaEnvironment; //"sandbox" or "production"
+    
+    private java.time.LocalDateTime haciendaTokenExpiry; //Token expiration for refresh
+    
 }

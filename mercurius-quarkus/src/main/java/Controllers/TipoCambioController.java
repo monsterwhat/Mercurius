@@ -43,7 +43,8 @@ public class TipoCambioController implements Serializable {
     
     public void recargar(){
         cambioActual = getTipoCambioActual();
-        alertasService.registrarAlerta("Tipo de Cambio Recargado", "Se recargo el tipo de cambio", currentSession.getCurrentUser(), 0, "recargar()", null, cambioActual.toString());
+        String cambioString = cambioActual != null ? cambioActual.toString() : "null";
+        alertasService.registrarAlerta("Tipo de Cambio Recargado", "Se recargo el tipo de cambio", currentSession.getCurrentUser(), 0, "recargar()", null, cambioString);
     }
     
     private void fetchTipoCambioFromApi() {

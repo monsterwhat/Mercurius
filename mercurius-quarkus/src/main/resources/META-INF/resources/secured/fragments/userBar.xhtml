@@ -16,8 +16,7 @@
         <link rel="stylesheet" href="/Mercurius/resources/css/button-stack.css"/> 
         <link rel="stylesheet" href="/Mercurius/resources/css/datatable.css"/> 
         <link rel="stylesheet" href="/Mercurius/resources/css/dialog.css"/>
-        <link rel="stylesheet" href="/Mercurius/resources/css/articulos.css"/>
-        <link rel="stylesheet" href="/Mercurius/resources/css/articulos.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
         <link rel="stylesheet" href="/Mercurius/resources/css/form-elements.css"/>
         <link rel="stylesheet" href="/Mercurius/resources/css/tabs.css"/>
         <link rel="stylesheet" href="/Mercurius/resources/css/timeline.css"/> 
@@ -35,6 +34,48 @@
                         menu.classList.toggle('is-active');
                     });
                 }
+
+                const themeToggle = document.getElementById('themeToggleButton');
+                const themeIcon = document.getElementById('themeIcon');
+                const themeLabel = document.getElementById('themeLabel');
+                const html = document.documentElement;
+
+                function updateThemeUI(theme) {
+                    if (theme === 'dark') {
+                        themeIcon.classList.remove('pi-sun');
+                        themeIcon.classList.add('pi-moon');
+                        themeLabel.textContent = 'Modo Oscuro';
+                    } else {
+                        themeIcon.classList.remove('pi-moon');
+                        themeIcon.classList.add('pi-sun');
+                        themeLabel.textContent = 'Modo Claro';
+                    }
+                }
+
+                function setTheme(theme) {
+                    html.setAttribute('data-theme', theme);
+                    localStorage.setItem('theme', theme);
+                    updateThemeUI(theme);
+                    saveThemeToServer(theme);
+                }
+
+                function saveThemeToServer(theme) {
+                    fetch('#{request.contextPath}\/ThemeController?action=saveTheme&amp;theme=' + theme, {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    }).catch(function(error) {
+                        console.log('Theme saved to localStorage only');
+                    });
+                }
+
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                setTheme(savedTheme);
+
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = html.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    setTheme(newTheme);
+                });
             });
         </script>
 
@@ -90,10 +131,14 @@
             <div id="navbarMenu" class="navbar-menu">
 
                 <div class="navbar-start">   
-                    <p:commandLink class="navbar-item" id="themeToggleButton" actionListener="#{ThemeController.switchThemeAndSave()}"
-                                   onsuccess="window.location.reload(); return false;"> 
-                        #{ThemeController.currentThemeToIcon()}️
-                    </p:commandLink> 
+                    <a class="navbar-item" id="themeToggleButton" href="javascript:void(0)">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="pi" id="themeIcon"></i>
+                            </span>
+                            <span id="themeLabel"></span>
+                        </span>
+                    </a> 
                 </div>
 
                 <div class="navbar-end"> 
@@ -185,12 +230,12 @@
                                     </span>
                                 </span> 
                             </a>
-                            <a class="navbar-item">
+                            <a class="navbar-item" href="javascript:void(0)" onclick="PF('dollarValueDialog').show(); return false;">
                                 <span class="icon-text">
                                     <span class="icon">
                                         <i class="pi pi-dollar"/>
                                     </span>
-                                    <span onclick="PF('dollarValueDialog').show();">
+                                    <span>
                                         Tipo de cambio
                                     </span>
                                 </span> 
@@ -198,8 +243,6 @@
                         </div>
 
                     </p:outputPanel>
-
-                    <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
 
                     <p:outputPanel class="navbar-item"  rendered="#{SessionController.registros}">
                         <a style="color: white" href="/Mercurius/secured/pages/Registros/index.xhtml">
@@ -254,7 +297,7 @@
                     <!-- Logout Button -->
                     <div class="navbar-item logout-button">
                         <p:commandLink class="button is-rounded is-info" 
-                                       oncomplete="PF('userSettingsDialog').show()" > 
+                                       onclick="PF('userSettingsDialog').show(); return false;" > 
                             <span class="icon-text">
                                 <span class="icon">
                                     <i class="pi pi-user"/>
@@ -268,6 +311,8 @@
                 </div>
             </div>
         </nav>
+
+        <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
 
         <p:spacer height="1em"/>
 

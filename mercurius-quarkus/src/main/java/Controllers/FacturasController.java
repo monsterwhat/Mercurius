@@ -81,12 +81,100 @@ public class FacturasController implements Serializable {
     private String facturaFilter;
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
+    
+    // Report fields
+    private Date reportFechaInicio;
+    private Date reportFechaFin;
+    private BigDecimal reportTotalComprobantes;
+    private BigDecimal reportTotalImpuesto;
+    private BigDecimal reportTotalBaseImponible;
 
     @PostConstruct
     public void init() {
         files = new ArrayList<>();
         filterBy = new ArrayList<>();
         selectedFactura = new ComprobantesRecibidos();
+        initReport();
+    }
+    
+    // Report methods
+    public void initReport() {
+        reportFechaInicio = new Date();
+        reportFechaFin = new Date();
+        loadReportData();
+    }
+    
+    public void loadReportData() {
+        reportTotalComprobantes = BigDecimal.ZERO;
+        reportTotalImpuesto = BigDecimal.ZERO;
+        reportTotalBaseImponible = BigDecimal.ZERO;
+        
+        if (facturas == null) {
+            facturas = facturaService.listAll();
+        }
+        
+        for (ComprobantesRecibidos factura : facturas) {
+            if (factura.getResumen() != null) {
+                if (factura.getResumen().getTotalComprobante() != null) {
+                    reportTotalComprobantes = reportTotalComprobantes.add(factura.getResumen().getTotalComprobante());
+                }
+                if (factura.getResumen().getTotalImpuesto() != null) {
+                    reportTotalImpuesto = reportTotalImpuesto.add(factura.getResumen().getTotalImpuesto());
+                }
+            }
+        }
+    }
+    
+    public void generarReporteReport() {
+        if (reportFechaInicio != null && reportFechaFin != null) {
+            final Date fechaFinCalc = new Date(reportFechaFin.getTime() + 86400000);
+            
+            facturas = facturaService.listAll().stream()
+                .filter(f -> {
+                    if (f.getEncabezado() == null || f.getEncabezado().getFechaEmision() == null) {
+                        return false;
+                    }
+                    Object fechaObj = f.getEncabezado().getFechaEmision();
+                    Date fecha;
+                    if (fechaObj instanceof java.time.LocalDateTime) {
+                        fecha = Date.from(((java.time.LocalDateTime) fechaObj).atZone(java.time.ZoneId.systemDefault()).toInstant());
+                    } else if (fechaObj instanceof Date) {
+                        fecha = (Date) fechaObj;
+                    } else {
+                        return false;
+                    }
+                    return !fecha.before(reportFechaInicio) && fecha.before(fechaFinCalc);
+                })
+                .collect(Collectors.toList());
+            loadReportData();
+        }
+        FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Reporte Generado", 
+                "Se han calculado los impuestos de " + facturas.size() + " comprobantes"));
+    }
+    
+    public void limpiarFiltrosReport() {
+        reportFechaInicio = new Date();
+        reportFechaFin = new Date();
+        initReport();
+    }
+    
+    public int getTotalFacturasReporte() {
+        return facturas != null ? facturas.size() : 0;
+    }
+    
+    public int getFacturasProcesadasReporte() {
+        if (facturas == null) return 0;
+        return (int) facturas.stream()
+            .filter(f -> f.getProcessed() != null && f.getProcessed())
+            .count();
+    }
+    
+    public int getFacturasPendientesReporte() {
+        if (facturas == null) return 0;
+        return (int) facturas.stream()
+            .filter(f -> f.getProcessed() == null || !f.getProcessed())
+            .count();
     }
 
     public List<ComprobantesRecibidos> facturasList() {
@@ -119,6 +207,30 @@ public class FacturasController implements Serializable {
 
     public long facturaCount() {
         return facturaService.count();
+    }
+    
+    public long facturasActivasCount() {
+        return facturasList().stream().filter(f -> f.getStatus() != null && f.getStatus()).count();
+    }
+    
+    public long facturasInactivasCount() {
+        return facturasList().stream().filter(f -> f.getStatus() == null || !f.getStatus()).count();
+    }
+    
+    public long facturasPendientesCount() {
+        return facturasPenditenes().size();
+    }
+    
+    public long facturasPagadasCount() {
+        return facturasList().stream().filter(f -> f.getPaid() != null && f.getPaid()).count();
+    }
+    
+    public long facturasProcesadasCount() {
+        return facturasList().stream().filter(f -> f.getProcessed() != null && f.getProcessed()).count();
+    }
+    
+    public long facturasVencidasCount() {
+        return facturasVencidas().size();
     }
 
     public void deleteFactura() {
@@ -176,6 +288,9 @@ public class FacturasController implements Serializable {
         if (facturas == null) {
             facturas = facturaService.ListAllEnabled();
         }
+        if (facturas == null) {
+            return new ArrayList<>();
+        }
         if (facturaFilter != null && !facturaFilter.isEmpty()) {
             return facturasList().stream()
                     .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -190,6 +305,9 @@ public class FacturasController implements Serializable {
             if (facturasDetalladas == null) {
                 facturasDetalladas = facturaService.listAll();
             }
+            if (facturasDetalladas == null) {
+                return new ArrayList<>();
+            }
             if (facturaFilter != null && !facturaFilter.isEmpty()) {
                 return facturasListDetalladas().stream()
                         .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -199,7 +317,7 @@ public class FacturasController implements Serializable {
             }
         } catch (Exception e) {
             System.out.println("Error: " + e.getLocalizedMessage());
-            return null;
+            return new ArrayList<>();
         }
     }
 
@@ -232,6 +350,69 @@ public class FacturasController implements Serializable {
                         .collect(Collectors.toList());
             } else {
                 return facturasVencidas();
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
+    public List<ComprobantesRecibidos> getFilteredFacturasActivas() {
+        try {
+            if (facturas == null) {
+                facturas = facturaService.ListAllEnabled();
+            }
+            List<ComprobantesRecibidos> activas = facturasList().stream()
+                    .filter(f -> f.getStatus() != null && f.getStatus())
+                    .collect(Collectors.toList());
+            if (facturaFilter != null && !facturaFilter.isEmpty()) {
+                return activas.stream()
+                        .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                        .collect(Collectors.toList());
+            } else {
+                return activas;
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
+    public List<ComprobantesRecibidos> getFilteredFacturasPagadas() {
+        try {
+            if (facturas == null) {
+                facturas = facturaService.ListAllEnabled();
+            }
+            List<ComprobantesRecibidos> pagadas = facturasList().stream()
+                    .filter(f -> f.getPaid() != null && f.getPaid())
+                    .collect(Collectors.toList());
+            if (facturaFilter != null && !facturaFilter.isEmpty()) {
+                return pagadas.stream()
+                        .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                        .collect(Collectors.toList());
+            } else {
+                return pagadas;
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getLocalizedMessage());
+            return null;
+        }
+    }
+    
+    public List<ComprobantesRecibidos> getFilteredFacturasProcesadas() {
+        try {
+            if (facturas == null) {
+                facturas = facturaService.ListAllEnabled();
+            }
+            List<ComprobantesRecibidos> procesadas = facturasList().stream()
+                    .filter(f -> f.getProcessed() != null && f.getProcessed())
+                    .collect(Collectors.toList());
+            if (facturaFilter != null && !facturaFilter.isEmpty()) {
+                return procesadas.stream()
+                        .filter(factura -> globalFilterFunction(factura, facturaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
+                        .collect(Collectors.toList());
+            } else {
+                return procesadas;
             }
         } catch (Exception e) {
             System.out.println("Error: " + e.getLocalizedMessage());
@@ -371,7 +552,7 @@ public class FacturasController implements Serializable {
 
     public void paySelectedFactura() {
         if (selectedFactura != null) {
-            if (!selectedFactura.getPaid() && selectedFactura.getStatus()) {
+            if (!selectedFactura.getPaid() && Boolean.TRUE.equals(selectedFactura.getStatus())) {
                 selectedFactura.setPaid(Boolean.TRUE);
                 facturaService.update(selectedFactura);
                 clearCache();
@@ -494,7 +675,7 @@ public class FacturasController implements Serializable {
                 ajusteArticulo.setStatus(true);
                 ajusteArticulo.setProcessed(false);
                 ajusteArticulo.setCantidad(cantidad);
-                ajusteArticulo.setNotas((cantidad.doubleValue() != 0) ? "Pendiente a revision" : "Pendiente a revision, No se pudo auto adquirir la cantidad");
+                ajusteArticulo.setNotas("");
 
                 inventarioController.createSimpleInventario(ajusteArticulo);
             }

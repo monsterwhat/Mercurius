@@ -6,63 +6,169 @@
 
     <ui:include src="/secured/fragments/Inventario/PendientesRevision/ArticuloDialog.xhtml"/>  
 
+    <h:head>
+        <style>
+            .revision-movimiento-dialog {
+                max-width: 90vw;
+                width: 800px;
+            }
+
+            .revision-movimiento-header {
+                background: linear-gradient(135deg, var(--bulma-info) 0%, var(--bulma-primary) 100%);
+                color: white;
+                padding: 1rem;
+                border-radius: 0.5rem 0.5rem 0 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .revision-movimiento-content {
+                padding: 1.5rem;
+                background: var(--bulma-white);
+            }
+
+            .field-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            .form-section {
+                margin-bottom: 1.5rem;
+            }
+
+            .form-section-title {
+                font-weight: 600;
+                color: var(--bulma-primary);
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .required-field:after {
+                content: " *";
+                color: var(--bulma-danger);
+                font-weight: bold;
+            }
+
+            .info-card {
+                background: var(--bulma-light);
+                border-radius: 0.5rem;
+                padding: 1rem;
+                border-left: 4px solid var(--bulma-primary);
+            }
+
+            @media (max-width: 768px) {
+                .revision-movimiento-dialog {
+                    max-width: 95vw;
+                    width: 100%;
+                }
+
+                .field-group {
+                    grid-template-columns: 1fr;
+                }
+            }
+        </style>
+    </h:head>
+
     <!-- Dialog for Revision de Movimiento -->
     <p:dialog header="Revision de Movimiento" widgetVar="RevisionMovimientoDialog"
-              responsive="true" modal="true" dynamic="true" cache="false"  fitViewport="true">
-        <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}" >
+              responsive="true" modal="true" dynamic="true" cache="false" fitViewport="true"
+              styleClass="revision-movimiento-dialog">
+        <p:outputPanel>
             <h:form id="RevisionMovimientoDialog">
-                <p:panelGrid columns="1" layout="flex">
-                    <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.articulo.nombre}">
+                <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}">
+                    <div class="revision-movimiento-header">
+                        <h4 class="title is-5 has-text-white">#{InventarioController.selectedInventario.articulo.nombre}</h4>
+                    </div>
+
+                    <div class="revision-movimiento-content">
                         <p:growl showDetail="true" showSummary="false"/>
 
-                        <p:column>
-                            <label class="label" style="color: var(--primary-color);">Artículo:</label>
-                            <p:inputText value="#{InventarioController.selectedInventario.articulo.nombre}" 
-                                                style="width: 100%" disabled="true" />
-                        </p:column>
-                        <p:spacer height="1em"/>
-                        <p:column>
-                            <p:messages showDetail="true" for="ArticuloSelect" showSummary="false" closable="true" />
-                            <label class="label" for="ArticuloSelect" style="color: var(--primary-color);">Articulo Seleccionado:</label>
-                            <p:commandButton value="Seleccionar" styleClass="rounded-button ui-button-primary" style="width: 100%"
-                                                 onclick="PF('ArticuloRevisionDialog').show();"/> 
-                            <p:spacer height="1em"/>
-                            <p:card>
-                                <p:outputLabel id="ArticuloSelect" value="#{InventarioController.selectedInventario.articulo.nombre}"
-                                                   style="width: 100%">
-                                        <p:autoUpdate/>
-                                </p:outputLabel>
-                            </p:card>
-                        </p:column>
-                        <p:spacer height="1em"/>
-                        <p:column>
-                            <p:messages for="cantidadRecomendada" showSummary="false" showDetail="true" closable="true" />
-                                <label class="label" for="cantidadRecomendada" style="color: var(--primary-color);">Cantidad recomendada:</label>
-                                <p:card>
-                                    <p:outputLabel id="cantidadRecomendada" value="#{InventarioController.selectedInventario.unidadesRecomendadasFactura}"
-                                                 />
-                                </p:card>
-                        </p:column>
-                        <p:spacer height="1em"/>
-                        <p:column>
-                            <p:messages for="cantidad" showSummary="false" showDetail="true" closable="true" />
-                            <label class="label" for="cantidad" style="color: var(--primary-color);">Cantidad:</label>
-                            <p:inputText id="cantidad" value="#{InventarioController.selectedInventario.cantidad}"
-                                required="true" requiredMessage="La cantidad no puede estar vacía"
-                                style="width: 100%; "/>
-                        </p:column>
-                        <p:spacer height="1em"/>
-                        <p:column>
-                            <p:commandButton value="Actualizar datos" update="@form Inventarios:inventarioPendiente" process="@form"
-                                                     action="#{InventarioController.updateInventarioRevisionDialog()}"
-                                                     styleClass="rounded-button ui-button-primary" style="width: 100%"/>
-                        </p:column>
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-box"></i>
+                                Información del Artículo
+                            </h4>
 
-                    </p:panel>
-                    
-                </p:panelGrid>
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label">Artículo:</label>
+                                    <div class="control">
+                                        <p:inputText value="#{InventarioController.selectedInventario.articulo.nombre}" 
+                                                     style="width: 100%" disabled="true" styleClass="input is-light"/>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label" for="ArticuloSelectR">Artículo Seleccionado:</label>
+                                    <p:messages showDetail="true" for="ArticuloSelectR" showSummary="false" closable="true" />
+                                    <div class="control">
+                                        <p:commandButton value="Seleccionar" styleClass="button is-primary is-fullwidth"
+                                                        onclick="PF('ArticuloRevisionDialog').show();"/>
+                                        <p:spacer height="0.5rem"/>
+                                        <p:card styleClass="card" style="background: var(--bulma-light);">
+                                            <p:outputLabel id="ArticuloSelectR" value="#{InventarioController.selectedInventario.articulo.nombre}">
+                                                <p:autoUpdate/>
+                                            </p:outputLabel>
+                                        </p:card>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-calculator"></i>
+                                Cantidades
+                            </h4>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label" for="cantidadRecomendada">Cantidad Recomendada:</label>
+                                    <p:messages for="cantidadRecomendada" showSummary="false" showDetail="true" closable="true" />
+                                    <div class="control">
+                                        <p:card styleClass="card" style="background: var(--bulma-info-light);">
+                                            <p:outputLabel id="cantidadRecomendada" 
+                                                           value="#{InventarioController.selectedInventario.unidadesRecomendadasFactura}"
+                                                           styleClass="has-text-weight-bold has-text-info"/>
+                                        </p:card>
+                                    </div>
+                                </div>
+
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label required-field" for="cantidad">Cantidad:</label>
+                                    <p:messages for="cantidad" showSummary="false" showDetail="true" closable="true" />
+                                    <div class="control">
+                                        <p:inputText id="cantidad" value="#{InventarioController.selectedInventario.cantidad}"
+                                            required="true" requiredMessage="La cantidad no puede estar vacía"
+                                            style="width: 100%" styleClass="input"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="buttons is-centered mt-4">
+                            <p:commandButton value="Actualizar datos" update="@form Inventarios:inventarioPendiente" process="@form"
+                                             action="#{InventarioController.updateInventarioRevisionDialog()}"
+                                             styleClass="button is-primary is-medium"
+                                             icon="pi pi-check"/>
+                        </div>
+                    </div>
+                    </div>
+                </p:outputPanel>
+                <p:outputPanel rendered="#{empty InventarioController.selectedInventario}">
+                    <div class="has-text-centered p-4">
+                        <p class="has-text-grey">No hay movimiento seleccionado</p>
+                    </div>
+                </p:outputPanel>
             </h:form>
         </p:outputPanel>
     </p:dialog>
-  
+    
 </ui:composition>    

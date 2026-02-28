@@ -84,6 +84,7 @@ public class UsersController implements Serializable{
     public void updateUser(){
         // Server-side security check - admin or usuario role required
         if (!currentSession.isUsuarios() && !currentSession.isAdmin()) {
+            alertas.registrarAlerta("Acceso Denegado", "Usuario: " + currentSession.getCurrentUsername() + " intento actualizar usuario sin permisos", currentSession.getCurrentUser(), 0, "updateUser()", null, "Intento de acceso no autorizado");
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "User management access required"));
             return;
@@ -99,6 +100,7 @@ public class UsersController implements Serializable{
     public void createUser(){
         // Server-side security check - admin or usuario role required
         if (!currentSession.isUsuarios() && !currentSession.isAdmin()) {
+            alertas.registrarAlerta("Acceso Denegado", "Usuario: " + currentSession.getCurrentUsername() + " intento crear usuario sin permisos", currentSession.getCurrentUser(), 0, "createUser()", null, "Intento de acceso no autorizado");
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "User management access required"));
             return;
@@ -123,6 +125,7 @@ public class UsersController implements Serializable{
     public void toggleUser(){
         // Server-side security check - admin or usuario role required
         if (!currentSession.isUsuarios() && !currentSession.isAdmin()) {
+            alertas.registrarAlerta("Acceso Denegado", "Usuario: " + currentSession.getCurrentUsername() + " intento cambiar estado de usuario sin permisos", currentSession.getCurrentUser(), 0, "toggleUser()", null, "Intento de acceso no autorizado");
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "User management access required"));
             return;

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Pronósticos de Inventario</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .reportes-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .reportes-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+                font-weight: bold;
+                display: block;
+                margin-bottom: 0.5rem;
+                color: white;
+            }
+
+            .stat-label {
+                font-size: 0.875rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: white;
+            }
+
+            .filter-section {
+                background: var(--bulma-scheme-main);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .filter-section .ui-outputlabel,
+            .filter-section .ui-outputlabel-label,
+            .filter-section p\:outputLabel {
+                color: var(--bulma-text) !important;
+            }
+
+            .filter-section .columns {
+                align-items: flex-start;
+            }
+
+            .filter-section .field-row {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .nav-cards {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+                flex-wrap: wrap;
+            }
+
+            .nav-card {
+                flex: 1;
+                min-width: 200px;
+                padding: 1rem;
+                border-radius: 0.75rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-align: center;
+                border: 2px solid transparent;
+            }
+
+            .nav-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .nav-card.active {
+                border-color: white;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+
+            .nav-card .nav-icon {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+                display: block;
+            }
+
+            .nav-card .nav-title {
+                font-weight: bold;
+                font-size: 0.9rem;
+            }
+
+            .content-section {
+                display: none;
+            }
+
+            .content-section.active {
+                display: block;
+            }
+
+            .health-good { border-left: 4px solid #28a745; }
+            .health-warning { border-left: 4px solid #ffc107; }
+            .health-danger { border-left: 4px solid #dc3545; }
+        </style>
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+
+            <div class="reportes-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                <p class="title is-3 has-text-centered">Pronósticos de Inventario</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">#{stockForecastUIBean.healthReport.totalProducts}</span>
+                        <span class="stat-label">Total Productos</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">#{stockForecastUIBean.healthReport.healthyProducts}</span>
+                        <span class="stat-label">Saludable</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">#{stockForecastUIBean.healthReport.lowStockProducts}</span>
+                        <span class="stat-label">Stock Bajo</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">#{stockForecastUIBean.healthReport.outOfStockProducts}</span>
+                        <span class="stat-label">Sin Stock</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h:form id="filtros">
+                    <div class="columns is-vcentered is-multiline">
+                        <div class="column is-narrow">
+                            <div class="field-row">
+                                <p:outputLabel value="Días de Pronóstico: " style="font-weight: bold;"/>
+                                <p:selectOneMenu value="#{stockForecastUIBean.forecastDays}" style="background: var(--bulma-background-l); color: var(--bulma-text);">
+                                    <f:selectItem itemLabel="7 días" itemValue="7"/>
+                                    <f:selectItem itemLabel="14 días" itemValue="14"/>
+                                    <f:selectItem itemLabel="30 días" itemValue="30"/>
+                                    <f:selectItem itemLabel="60 días" itemValue="60"/>
+                                </p:selectOneMenu>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="buttons">
+                                <p:commandLink styleClass="button is-info"
+                                               action="#{stockForecastUIBean.loadData}"
+                                               update="forecastForm growl">
+                                    <i class="pi pi-chart-line"></i>
+                                    <span>Generar Pronóstico</span>
+                                </p:commandLink>
+                                <p:commandLink styleClass="button is-success"
+                                               action="#{stockForecastUIBean.loadHealthReport}"
+                                               update="forecastForm growl">
+                                    <i class="pi pi-heart"></i>
+                                    <span>Ver Salud Inventario</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                    </div>
+                </h:form>
+            </div>
+
+            <div class="nav-cards">
+                <div class="nav-card active" style="background: #28a745; color: white;" onclick="showSection('pronosticos')">
+                    <span class="nav-icon"><i class="pi pi-chart-line"></i></span>
+                    <span class="nav-title">Pronósticos de Demanda</span>
+                </div>
+                <div class="nav-card" style="background: #17a2b8; color: white;" onclick="showSection('salud')">
+                    <span class="nav-icon"><i class="pi pi-heart"></i></span>
+                    <span class="nav-title">Salud del Inventario</span>
+                </div>
+                <div class="nav-card" style="background: #ffc107; color: black;" onclick="showSection('reorden')">
+                    <span class="nav-icon"><i class="pi pi-shopping-cart"></i></span>
+                    <span class="nav-title">Sugerencias de Reorden</span>
+                </div>
+            </div>
+
+            <div class="tab-content-card">
+                <h:form id="forecastForm">
+                    
+                    <div id="section-pronosticos" class="content-section active">
+                        <p:dataTable value="#{stockForecastUIBean.forecasts}" var="forecast" 
+                                     widgetVar="ForecastTable" paginator="true" rows="10"
+                                     emptyMessage="No hay pronósticos">
+                            
+                            <p:column headerText="Artículo">
+                                <h:outputText value="#{forecast.nombre}" style="font-weight: 500;"/>
+                            </p:column>
+                            
+                            <p:column headerText="Stock Actual">
+                                <h:outputText value="#{forecast.stockActual}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Demanda Pronosticada">
+                                <h:outputText value="#{forecast.demandaEstimada}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Días Restantes">
+                                <h:outputText value="#{forecast.diasRestantes}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Recomendación">
+                                <p:tag severity="#{forecast.recomendacion == 'Comprar' ? 'danger' : forecast.recomendacion == 'Pronto' ? 'warning' : 'success'}"
+                                       value="#{forecast.recomendacion}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+                    
+                    <div id="section-salud" class="content-section">
+                        <p:dataTable value="#{stockForecastUIBean.healthReport.productHealth}" var="product" 
+                                     widgetVar="HealthTable" paginator="true" rows="10"
+                                     emptyMessage="No hay datos">
+                            
+                            <p:column headerText="Artículo" styleClass="#{product.estado == 'Crítico' ? 'health-danger' : product.estado == 'Advertencia' ? 'health-warning' : 'health-good'}">
+                                <h:outputText value="#{product.nombre}" style="font-weight: 500;"/>
+                            </p:column>
+                            
+                            <p:column headerText="Stock">
+                                <h:outputText value="#{product.stock}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Stock Mínimo">
+                                <h:outputText value="#{product.stockMinimo}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Velocidad Venta/Día">
+                                <h:outputText value="#{product.velocidadVenta}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Días Restantes">
+                                <h:outputText value="#{product.diasRestantes}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Estado">
+                                <p:tag severity="#{product.estado == 'Crítico' ? 'danger' : product.estado == 'Advertencia' ? 'warning' : 'success'}"
+                                       value="#{product.estado}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+                    
+                    <div id="section-reorden" class="content-section">
+                        <p:dataTable value="#{stockForecastUIBean.reorderRecommendations}" var="reorder" 
+                                     widgetVar="ReorderTable" paginator="true" rows="10"
+                                     emptyMessage="No hay sugerencias">
+                            
+                            <p:column headerText="Artículo">
+                                <h:outputText value="#{reorder.nombre}" style="font-weight: 500;"/>
+                            </p:column>
+                            
+                            <p:column headerText="Stock Actual">
+                                <h:outputText value="#{reorder.stockActual}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Cantidad Sugerida">
+                                <h:outputText value="#{reorder.cantidadSugerida}" style="font-weight: bold; color: #dc3545;"/>
+                            </p:column>
+                            
+                            <p:column headerText="Costo Estimado">
+                                <h:outputText value="#{reorder.costoEstimado}">
+                                    <f:convertNumber type="currency" currencySymbol="₡"/>
+                                </h:outputText>
+                            </p:column>
+                            
+                            <p:column headerText="Prioridad">
+                                <p:tag severity="#{reorder.prioridad == 'Urgente' ? 'danger' : reorder.prioridad == 'Alta' ? 'warning' : 'info'}"
+                                       value="#{reorder.prioridad}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+                    
+                </h:form>
+            </div>
+        </section>
+
+        <script>
+            function showSection(sectionName) {
+                document.querySelectorAll('.content-section').forEach(function(el) {
+                    el.classList.remove('active');
+                });
+                document.querySelectorAll('.nav-card').forEach(function(el) {
+                    el.classList.remove('active');
+                });
+                
+                document.getElementById('section-' + sectionName).classList.add('active');
+                
+                var cards = document.querySelectorAll('.nav-card');
+                if (sectionName === 'pronosticos') cards[0].classList.add('active');
+                if (sectionName === 'salud') cards[1].classList.add('active');
+                if (sectionName === 'reorden') cards[2].classList.add('active');
+            }
+        </script>
+
+    </h:body>
+</html>

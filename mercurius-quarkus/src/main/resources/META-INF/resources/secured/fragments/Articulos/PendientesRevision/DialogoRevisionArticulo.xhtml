@@ -10,7 +10,7 @@
                 max-width: 90vw;
                 width: 1000px;
             }
-            
+
             .revision-header {
                 background: linear-gradient(135deg, var(--bulma-info) 0%, var(--bulma-primary) 100%);
                 color: white;
@@ -20,12 +20,12 @@
                 justify-content: space-between;
                 align-items: center;
             }
-            
+
             .revision-content {
                 padding: 1.5rem;
                 background: var(--bulma-white);
             }
-            
+
             .article-status {
                 display: inline-flex;
                 align-items: center;
@@ -37,11 +37,18 @@
                 font-size: 0.875rem;
                 font-weight: 500;
             }
-            
+
             .field-section {
                 margin-bottom: 1.5rem;
             }
-            
+
+            .field-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+
             .field-section-title {
                 font-weight: 600;
                 color: var(--bulma-primary);
@@ -50,16 +57,16 @@
                 align-items: center;
                 gap: 0.5rem;
             }
-            
+
             .copy-button {
                 cursor: pointer;
                 transition: all 0.2s ease;
             }
-            
+
             .copy-button:hover {
                 transform: scale(1.05);
             }
-            
+
             .price-preview {
                 background: var(--bulma-light);
                 border-radius: 0.5rem;
@@ -67,13 +74,13 @@
                 margin-top: 1rem;
                 border-left: 4px solid var(--bulma-primary);
             }
-            
+
             .required-field:after {
                 content: " *";
                 color: var(--bulma-danger);
                 font-weight: bold;
             }
-            
+
             .validation-summary {
                 background: var(--bulma-warning-light);
                 border: 1px solid var(--bulma-warning);
@@ -81,7 +88,7 @@
                 padding: 1rem;
                 margin-bottom: 1rem;
             }
-            
+
             .action-buttons {
                 display: flex;
                 gap: 1rem;
@@ -90,158 +97,152 @@
                 padding-top: 1.5rem;
                 border-top: 1px solid var(--bulma-light);
             }
-            
+
             @media (max-width: 768px) {
                 .revision-individual-dialog {
                     max-width: 95vw;
                     width: 100%;
                 }
-                
+
+                .field-group {
+                    grid-template-columns: 1fr;
+                }
+
                 .action-buttons {
                     flex-direction: column;
                 }
             }
         </style>
-        
+
         <script>
             function copyToClipboard(text) {
-                if (!text) return;
-                
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(text).then(function() {
-                        showNotification('Texto copiado al portapapeles', 'success');
-                    }).catch(function() {
-                        fallbackCopy(text);
-                    });
-                } else {
-                    fallbackCopy(text);
-                }
+            if (!text) return;
+            if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(function() {
+            showNotification('Texto copiado al portapapeles', 'success');
+            }).catch(function() {
+            fallbackCopy(text);
+            });
+            } else {
+            fallbackCopy(text);
             }
-            
+            }
+
             function fallbackCopy(text) {
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.style.position = 'absolute';
-                textarea.style.left = '-9999px';
-                document.body.appendChild(textarea);
-                textarea.select();
-                
-                try {
-                    document.execCommand('copy');
-                    showNotification('Texto copiado al portapapeles', 'success');
-                } catch (err) {
-                    showNotification('No se pudo copiar el texto', 'error');
-                }
-                
-                document.body.removeChild(textarea);
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+            document.execCommand('copy');
+            showNotification('Texto copiado al portapapeles', 'success');
+            } catch (err) {
+            showNotification('No se pudo copiar el texto', 'error');
             }
-            
+
+            document.body.removeChild(textarea);
+            }
+
             function showNotification(message, type) {
-                const notification = document.createElement('div');
-                notification.className = 'notification is-' + type + ' is-light';
-                notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000; min-width: 250px; animation: slideIn 0.3s ease-out;';
-                notification.innerHTML = '<button class="delete" onclick="this.parentElement.remove()"></button>' + message;
-                
-                document.body.appendChild(notification);
-                
-                setTimeout(function() {
-                    if (notification.parentElement) {
-                        notification.remove();
-                    }
-                }, 3000);
+            const notification = document.createElement('div');
+            notification.className = 'notification is-' + type + ' is-light';
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000; min-width: 250px; animation: slideIn 0.3s ease-out;';
+            notification.innerHTML = '<button class="delete" onclick="this.parentElement.remove()"></button>' + message;
+            document.body.appendChild(notification);
+            setTimeout(function() {
+            if (notification.parentElement) {
+            notification.remove();
             }
-            
+            }, 3000);
+            }
+
             function validateAndShowDialog() {
-                const validationSummary = validateFields();
-                
-                if (validationSummary.isValid) {
-                    /* All fields are valid, show confirmation dialog */
-                    confirmSave();
-                } else {
-                    /* Show validation errors */
-                    showValidationErrors(validationSummary.errors);
-                }
+            const validationSummary = validateFields();
+            if (validationSummary.isValid) {
+            /* All fields are valid, show confirmation dialog */
+            confirmSave();
+            } else {
+            /* Show validation errors */
+            showValidationErrors(validationSummary.errors);
             }
-            
+            }
+
             function validateFields() {
-                const errors = [];
-                
-                const name = document.getElementById('name') ? document.getElementById('name').value.trim() : '';
-                const codigoBarra = document.getElementById('codigoBarra') ? document.getElementById('codigoBarra').value.trim() : '';
-                const departamento = document.getElementById('departamento') ? document.getElementById('departamento').value : '';
-                const familia = document.getElementById('familia') ? document.getElementById('familia').value : '';
-                
-                if (!name) errors.push('El nombre del artículo es obligatorio');
-                if (!codigoBarra) errors.push('El código de barras es obligatorio');
-                if (!departamento) errors.push('Debe seleccionar un departamento');
-                if (!familia) errors.push('Debe seleccionar una familia');
-                
-                return {
-                    isValid: errors.length === 0,
+            const errors = [];
+            const name = document.getElementById('name') ? document.getElementById('name').value.trim() : '';
+            const codigoBarra = document.getElementById('codigoBarra') ? document.getElementById('codigoBarra').value.trim() : '';
+            const departamento = document.getElementById('departamento') ? document.getElementById('departamento').value : '';
+            const familia = document.getElementById('familia') ? document.getElementById('familia').value : '';
+            if (!name) errors.push('El nombre del artículo es obligatorio');
+            if (!codigoBarra) errors.push('El código de barras es obligatorio');
+            if (!departamento) errors.push('Debe seleccionar un departamento');
+            if (!familia) errors.push('Debe seleccionar una familia');
+            return {
+            isValid: errors.length === 0,
                     errors: errors
-                };
+            };
             }
-            
+
             function showValidationErrors(errors) {
-                const errorHtml = errors.map(function(error) { return '<li>' + error + '</li>'; }).join('');
-                showNotification('<strong>Errores de validación:</strong><ul>' + errorHtml + '</ul>', 'warning');
+            const errorHtml = errors.map(function(error) { return '<li>' + error + '</li>'; }).join('');
+            showNotification('<strong>Errores de validación:</strong><ul>' + errorHtml + '</ul>', 'warning');
             }
-            
+
             function confirmSave() {
-                if (confirm('¿Está seguro de actualizar los datos de este artículo?')) {
-                    /* Trigger actual save action */
-                    document.querySelector('[data-action="save-individual"]').click();
-                }
+            if (confirm('¿Está seguro de actualizar los datos de este artículo?')) {
+            /* Trigger actual save action */
+            document.querySelector('[data-action="save-individual"]').click();
             }
-            
+            }
+
             function refreshArticleData() {
-                /* Reload article data from server */
-                PF('RevisionArticuloDialog').hide();
-                setTimeout(function() {
-                    /* Re-open dialog to refresh data */
-                    const articleRow = document.querySelector('[data-row-selected]');
-                    if (articleRow) {
-                        articleRow.querySelector('.table-action-btn').click();
-                    }
-                }, 500);
+            /* Reload article data from server */
+            PF('RevisionArticuloDialog').hide();
+            setTimeout(function() {
+            /* Re-open dialog to refresh data */
+            const articleRow = document.querySelector('[data-row-selected]');
+            if (articleRow) {
+            articleRow.querySelector('.table-action-btn').click();
             }
-            
+            }, 500);
+            }
+
             /* Auto-save draft */
             let autoSaveTimer;
             function setupAutoSave() {
-                const inputs = document.querySelectorAll('#RevisionArticuloDialog input, #RevisionArticuloDialog select');
-                inputs.forEach(function(input) {
-                    input.addEventListener('input', function() {
-                        clearTimeout(autoSaveTimer);
-                        autoSaveTimer = setTimeout(function() {
-                            console.log('Auto-saving draft...');
-                            saveDraft();
-                        }, 3000);
-                    });
-                });
+            const inputs = document.querySelectorAll('#RevisionArticuloDialog input, #RevisionArticuloDialog select');
+            inputs.forEach(function(input) {
+            input.addEventListener('input', function() {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(function() {
+            console.log('Auto-saving draft...');
+            saveDraft();
+            }, 3000);
+            });
+            });
             }
-            
+
             function saveDraft() {
-                const formData = {
-                    nombre: document.getElementById('name') ? document.getElementById('name').value : '',
+            const formData = {
+            nombre: document.getElementById('name') ? document.getElementById('name').value : '',
                     codigoBarra: document.getElementById('codigoBarra') ? document.getElementById('codigoBarra').value : '',
                     timestamp: new Date().toISOString()
-                };
-                
-                localStorage.setItem('articuloIndividualDraft', JSON.stringify(formData));
+            };
+            localStorage.setItem('articuloIndividualDraft', JSON.stringify(formData));
             }
-            
+
             function onIndividualDialogShow() {
-                setupAutoSave();
-                
-                /* Focus first field */
-                setTimeout(function() {
-                    const firstField = document.getElementById('name');
-                    if (firstField) {
-                        firstField.focus();
-                        firstField.select();
-                    }
-                }, 300);
+            setupAutoSave();
+            /* Focus first field */
+            setTimeout(function() {
+            const firstField = document.getElementById('name');
+            if (firstField) {
+            firstField.focus();
+            firstField.select();
+            }
+            }, 300);
             }
         </script>
     </h:head>
@@ -250,58 +251,44 @@
     <p:dialog header="Revisión Individual de Artículo" widgetVar="RevisionArticuloDialog" 
               modal="true" fitViewport="true" responsive="true" dynamic="true" cache="false"
               styleClass="revision-individual-dialog" onShow="onIndividualDialogShow()">
-              
+
         <div class="revision-header">
             <div>
-                <h3 class="title is-5 has-text-white">#{ArticulosController.selectedArticulo.nombre}</h3>
-                <div class="article-status">
-                    <i class="pi pi-exclamation-circle"></i>
-                    <span>Pendiente de Procesamiento</span>
-                </div>
-            </div>
-            <div class="buttons">
-                <button type="button" class="button is-small is-light is-outlined" onclick="refreshArticleData()">
-                    <i class="pi pi-refresh"></i>
-                    <span>Actualizar</span>
-                </button>
-            </div>
+                <h3 class="title is-5 has-text-white">#{ArticulosController.selectedArticulo.nombre}</h3> 
+            </div> 
         </div>
-        
+
         <div class="revision-content">
             <p:outputPanel id="RevisionArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
                 <h:form id="revisionIndividualForm">
                     <section class="section">
                         <p:growl id="growl" showDetail="true" showSummary="true" sticky="true" />
-                        
+
                         <!-- Basic Information Section -->
                         <div class="field-section">
                             <h4 class="field-section-title">
                                 <i class="pi pi-info-circle"></i>
                                 Información Básica del Artículo
                             </h4>
-                            
-                            <div class="columns is-multiline">
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label required-field" for="name">Nombre del Artículo:</label>
-                                        <div class="control">
-                                            <p:inputText id="name" value="#{ArticulosController.selectedArticulo.nombre}"
-                                                         required="true" requiredMessage="El nombre no puede estar vacío"
-                                                         styleClass="input" style="width: 100%"
-                                                         placeholder="Ingrese el nombre completo del artículo"/>
-                                        </div>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label required-field" for="name">Nombre del Artículo:</label>
+                                    <div class="control">
+                                        <p:inputText id="name" value="#{ArticulosController.selectedArticulo.nombre}"
+                                                     required="true" requiredMessage="El nombre no puede estar vacío"
+                                                     styleClass="input" style="width: 100%"
+                                                     placeholder="Ingrese el nombre completo del artículo"/>
                                     </div>
                                 </div>
-                                
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label required-field" for="codigoBarra">Código de Barras:</label>
-                                        <div class="control">
-                                            <p:inputText id="codigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
-                                                         required="true" requiredMessage="El código de barra no puede estar vacío"
-                                                         styleClass="input" style="width: 100%"
-                                                         placeholder="Ingrese el código de barras"/>
-                                        </div>
+
+                                <div class="field">
+                                    <label class="label required-field" for="codigoBarra">Código de Barras:</label>
+                                    <div class="control">
+                                        <p:inputText id="codigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
+                                                     required="true" requiredMessage="El código de barra no puede estar vacío"
+                                                     styleClass="input" style="width: 100%"
+                                                     placeholder="Ingrese el código de barras"/>
                                     </div>
                                 </div>
                             </div>
@@ -313,41 +300,37 @@
                                 <i class="pi pi-tag"></i>
                                 Información CABYS
                             </h4>
-                            
-                            <div class="columns is-multiline">
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label" for="recomendacionCabys">Recomendación CABYS:</label>
-                                        <div class="control">
-                                            <p:card styleClass="card copy-button" 
-                                                     onclick="copyToClipboard('#{ArticulosController.selectedArticulo.recomendacionCabys}')"
-                                                     style="background: var(--bulma-light); cursor: pointer;">
-                                                <p:outputLabel id="recomendacionCabys" 
-                                                              value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
-                                            </p:card>
-                                            <p class="help is-size-7">Click para copiar al portapapeles</p>
-                                        </div>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label" for="recomendacionCabys">Recomendación CABYS:</label>
+                                    <div class="control">
+                                        <p:card styleClass="card copy-button" 
+                                                onclick="copyToClipboard('#{ArticulosController.selectedArticulo.recomendacionCabys}')"
+                                                style="background: var(--bulma-light); cursor: pointer;">
+                                            <p:outputLabel id="recomendacionCabys" 
+                                                           value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
+                                        </p:card>
+                                        <p class="help is-size-7">Click para copiar al portapapeles</p>
                                     </div>
                                 </div>
-                                
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label" for="codigoCabys">Código CABYS Seleccionado:</label>
-                                        <div class="control">
-                                            <p:commandButton id="selectCabysEdit" value="Buscar Código CABYS" 
-                                                            styleClass="button is-link is-fullwidth mb-2"
-                                                            onclick="PF('codigoCabysDialogEdit').show();" type="button">
+
+                                <div class="field">
+                                    <label class="label" for="codigoCabys">Código CABYS Seleccionado:</label>
+                                    <div class="control">
+                                        <p:commandButton id="selectCabysEdit" value="Buscar Código CABYS" 
+                                                         styleClass="button is-link is-fullwidth mb-2"
+                                                         onclick="PF('codigoCabysDialogEdit').show();" type="button">
+                                            <p:autoUpdate/>
+                                        </p:commandButton>
+
+                                        <p:card styleClass="card selected-option" 
+                                                style="background: var(--bulma-success-light); border: 1px solid var(--bulma-success);">
+                                            <p:outputLabel value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto}%"
+                                                           styleClass="has-text-weight-bold has-text-success">
                                                 <p:autoUpdate/>
-                                            </p:commandButton>
-                                            
-                                            <p:card styleClass="card selected-option" 
-                                                     style="background: var(--bulma-success-light); border: 1px solid var(--bulma-success);">
-                                                <p:outputLabel value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto}%"
-                                                               styleClass="has-text-weight-bold has-text-success">
-                                                    <p:autoUpdate/>
-                                                </p:outputLabel>
-                                            </p:card>
-                                        </div>
+                                            </p:outputLabel>
+                                        </p:card>
                                     </div>
                                 </div>
                             </div>
@@ -359,40 +342,36 @@
                                 <i class="pi pi-ruler"></i>
                                 Unidades de Medida
                             </h4>
-                            
-                            <div class="columns is-multiline">
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label" for="unidadMedida">Unidad de Medida:</label>
-                                        <div class="control">
-                                            <p:selectOneMenu id="unidadMedida" value="#{ArticulosController.selectedArticulo.unidadMedida}"
-                                                             styleClass="select" style="width: 100%">
-                                                <p:ajax listener="#{ArticulosController.selectedUnidadMedidaChanged}"/>
-                                                <f:selectItem itemLabel="Seleccione..." itemValue=""/>
-                                                <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
-                                                <f:selectItem itemLabel="Otros" itemValue="Otros"/>
-                                                <f:selectItem itemLabel="Gramos" itemValue="g"/>
-                                            </p:selectOneMenu>
-                                        </div>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label" for="unidadMedida">Unidad de Medida:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="unidadMedida" value="#{ArticulosController.selectedArticulo.unidadMedida}"
+                                                         styleClass="select" style="width: 100%">
+                                            <p:ajax listener="#{ArticulosController.selectedUnidadMedidaChanged}"/>
+                                            <f:selectItem itemLabel="Seleccione..." itemValue=""/>
+                                            <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                            <f:selectItem itemLabel="Otros" itemValue="Otros"/>
+                                            <f:selectItem itemLabel="Gramos" itemValue="g"/>
+                                        </p:selectOneMenu>
                                     </div>
                                 </div>
-                                
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label" for="unidadMedidaComercial">Unidad de Medida Comercial:</label>
-                                        <div class="control">
-                                            <p:selectOneMenu id="unidadMedidaComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
-                                                             styleClass="select" style="width: 100%">
-                                                <p:ajax listener="#{ArticulosController.selectedUnidadMedidaComercialChanged}"/>
-                                                <f:selectItem itemLabel="Seleccione..." itemValue=""/>
-                                                <f:selectItem itemLabel="Botella" itemValue="BOT"/>
-                                                <f:selectItem itemLabel="Lata" itemValue="LT"/>
-                                                <f:selectItem itemLabel="Six-Pack" itemValue="ST"/>
-                                                <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
-                                                <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
-                                                <f:selectItem itemLabel="Genérico" itemValue=""/>
-                                            </p:selectOneMenu>
-                                        </div>
+
+                                <div class="field">
+                                    <label class="label" for="unidadMedidaComercial">Unidad de Medida Comercial:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="unidadMedidaComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
+                                                         styleClass="select" style="width: 100%">
+                                            <p:ajax listener="#{ArticulosController.selectedUnidadMedidaComercialChanged}"/>
+                                            <f:selectItem itemLabel="Seleccione..." itemValue=""/>
+                                            <f:selectItem itemLabel="Botella" itemValue="BOT"/>
+                                            <f:selectItem itemLabel="Lata" itemValue="LT"/>
+                                            <f:selectItem itemLabel="Six-Pack" itemValue="ST"/>
+                                            <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
+                                            <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                            <f:selectItem itemLabel="Genérico" itemValue=""/>
+                                        </p:selectOneMenu>
                                     </div>
                                 </div>
                             </div>
@@ -404,36 +383,32 @@
                                 <i class="pi pi-sitemap"></i>
                                 Clasificación del Artículo
                             </h4>
-                            
-                            <div class="columns is-multiline">
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label required-field" for="departamento">Departamento:</label>
-                                        <div class="control">
-                                            <p:selectOneMenu id="departamento" value="#{ArticulosController.departamentoID}"
-                                                             required="true" requiredMessage="El Departamento no puede estar vacío"
-                                                             styleClass="select" style="width: 100%">
-                                                <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" 
-                                                            itemValue="#{ArticulosController.selectedArticulo.departamento.id}"/>
-                                                <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
-                                                               itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}"/>
-                                            </p:selectOneMenu>
-                                        </div>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label required-field" for="departamento">Departamento:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="departamento" value="#{ArticulosController.departamentoID}"
+                                                         required="true" requiredMessage="El Departamento no puede estar vacío"
+                                                         styleClass="select" style="width: 100%">
+                                            <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" 
+                                                          itemValue="#{ArticulosController.selectedArticulo.departamento.id}"/>
+                                            <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
+                                                           itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}"/>
+                                        </p:selectOneMenu>
                                     </div>
                                 </div>
-                                
-                                <div class="column is-half">
-                                    <div class="field">
-                                        <label class="label required-field" for="familia">Familia:</label>
-                                        <div class="control">
-                                            <p:selectOneMenu id="familia" value="#{ArticulosController.familiaID}"
-                                                             required="true" requiredMessage="La Familia no puede estar vacía"
-                                                             styleClass="select" style="width: 100%">
-                                                <f:selectItem itemLabel="Seleccionar Familia" itemValue=""/>
-                                                <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
-                                                               itemLabel="#{familia.nombre}" itemValue="#{familia.id}"/>
-                                            </p:selectOneMenu>
-                                        </div>
+
+                                <div class="field">
+                                    <label class="label required-field" for="familia">Familia:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="familia" value="#{ArticulosController.familiaID}"
+                                                         required="true" requiredMessage="La Familia no puede estar vacía"
+                                                         styleClass="select" style="width: 100%">
+                                            <f:selectItem itemLabel="Seleccionar Familia" itemValue=""/>
+                                            <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                           itemLabel="#{familia.nombre}" itemValue="#{familia.id}"/>
+                                        </p:selectOneMenu>
                                     </div>
                                 </div>
                             </div>
@@ -445,74 +420,68 @@
                                 <i class="pi pi-calculator"></i>
                                 Cálculo de Precios
                             </h4>
-                            
+
                             <div class="price-preview">
-                                <div class="columns is-multiline">
-                                    <div class="column is-half">
-                                        <div class="field">
-                                            <label class="label required-field" for="precioCostoSinIVA">Precio Costo sin IVA:</label>
-                                            <div class="control has-icons-left">
-                                                <p:inputText id="precioCostoSinIVA" type="number" 
-                                                             value="#{ArticulosController.lastPrecio.precioCostoSinIVA}"
-                                                             required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
-                                                             styleClass="input" style="width: 100%" min="0" step="0.01"
-                                                             placeholder="0.00">
-                                                    <p:ajax event="change" 
-                                                            listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
-                                                            update="precioConUtilidad precioFinal"/>
-                                                </p:inputText>
-                                                <span class="icon is-small is-left">
-                                                    <i class="pi pi-money-bill"></i>
-                                                </span>
-                                            </div>
+                                <div class="field-group">
+                                    <div class="field">
+                                        <label class="label required-field" for="precioCostoSinIVA">Precio Costo sin IVA:</label>
+                                        <div class="control has-icons-left">
+                                            <p:inputText id="precioCostoSinIVA" type="number" 
+                                                         value="#{ArticulosController.lastPrecio.precioCostoSinIVA}"
+                                                         required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
+                                                         styleClass="input" style="width: 100%" 
+                                                         placeholder="0.00">
+                                                <p:ajax event="change" 
+                                                        listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                        update="precioConUtilidad precioFinal"/>
+                                            </p:inputText>
+                                            <span class="icon is-small is-left">
+                                                <i class="pi pi-money-bill"></i>
+                                            </span>
                                         </div>
                                     </div>
-                                    
-                                    <div class="column is-half">
-                                        <div class="field">
-                                            <label class="label required-field" for="porcentajeUtilidad">Porcentaje de Utilidad:</label>
-                                            <div class="control has-icons-left">
-                                                <p:inputText id="porcentajeUtilidad" type="number" 
-                                                             value="#{ArticulosController.lastPrecio.porcentajeUtilidad}"
-                                                             required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
-                                                             styleClass="input" style="width: 100%" min="0" max="100" step="1"
-                                                             placeholder="0">
-                                                    <p:ajax event="change" 
-                                                            listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
-                                                            update="precioConUtilidad precioFinal"/>
-                                                </p:inputText>
-                                                <span class="icon is-small is-left">
-                                                    <i class="pi pi-percentage"></i>
-                                                </span>
-                                            </div>
+
+                                    <div class="field">
+                                        <label class="label required-field" for="porcentajeUtilidad">Porcentaje de Utilidad:</label>
+                                        <div class="control has-icons-left">
+                                            <p:inputText id="porcentajeUtilidad" type="number" 
+                                                         value="#{ArticulosController.lastPrecio.porcentajeUtilidad}"
+                                                         required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
+                                                         styleClass="input" style="width: 100%" 
+                                                         placeholder="0">
+                                                <p:ajax event="change" 
+                                                        listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                        update="precioConUtilidad precioFinal"/>
+                                            </p:inputText>
+                                            <span class="icon is-small is-left">
+                                                <i class="pi pi-percentage"></i>
+                                            </span>
                                         </div>
                                     </div>
-                                    
-                                    <div class="column is-half">
-                                        <div class="field">
-                                            <label class="label">Precio con Utilidad:</label>
-                                            <div class="control">
-                                                <p:card styleClass="card has-background-light">
-                                                    <p:outputLabel id="precioConUtilidad" 
-                                                                  value="#{ArticulosController.lastPrecio.precioConUtilidad}"
-                                                                  styleClass="has-text-weight-bold has-text-link"/>
-                                                </p:card>
-                                            </div>
+                                </div>
+                                <div class="field-group">
+
+                                    <div class="field">
+                                        <label class="label">Precio con Utilidad:</label>
+                                        <div class="control">
+                                            <p:card styleClass="card has-background-light">
+                                                <p:outputLabel id="precioConUtilidad" 
+                                                               value="#{ArticulosController.lastPrecio.precioConUtilidad}"
+                                                               styleClass="has-text-weight-bold has-text-link"/>
+                                            </p:card>
                                         </div>
                                     </div>
-                                    
-                                    <div class="column is-half">
-                                        <div class="field">
-                                            <label class="label">Precio Final con IVA:</label>
-                                            <div class="control">
-                                                <p:card styleClass="card has-background-success-light">
-                                                    <p:outputLabel id="precioFinal" 
-                                                                  value="#{ArticulosController.lastPrecio.precioFinal}"
-                                                                  styleClass="has-text-weight-bold has-text-success">
-                                                        <p:autoUpdate/>
-                                                    </p:outputLabel>
-                                                </p:card>
-                                            </div>
+
+                                    <div class="field">
+                                        <label class="label">Precio Final con IVA:</label>
+                                        <div class="control">
+                                            <p:card styleClass="card has-background-success-light">
+                                                <p:outputLabel id="precioFinal" 
+                                                               value="#{ArticulosController.lastPrecio.precioFinal}"
+                                                               styleClass="has-text-weight-bold has-text-success">
+                                                    <p:autoUpdate/>
+                                                </p:outputLabel>
+                                            </p:card>
                                         </div>
                                     </div>
                                 </div>
@@ -521,23 +490,15 @@
 
                         <!-- Action Buttons -->
                         <div class="action-buttons">
-                            <p:commandButton value="Guardar Borrador" styleClass="button is-info is-outlined"
-                                           onclick="saveDraft()" type="button">
-                                <i class="pi pi-save"></i>
-                                <span>Guardar Borrador</span>
-                            </p:commandButton>
-                            
-                            <p:commandButton value="Actualizar Datos" 
-                                           data-action="save-individual"
-                                           styleClass="button is-primary is-medium"
+                            <p:commandLink styleClass="button is-primary is-medium"
                                            action="#{ArticulosController.updateArticuloRevision}"
                                            update="@form Articulos:ArticulosPendientes"
                                            onstart="showLoading()" 
                                            oncomplete="handleIndividualSaveComplete(xhr, status, args)">
                                 <i class="pi pi-check"></i>
                                 <span>Actualizar Datos</span>
-                            </p:commandButton>
-                            
+                            </p:commandLink>
+
                             <button type="button" class="button is-light" onclick="PF('RevisionArticuloDialog').hide()">
                                 <i class="pi pi-times"></i>
                                 <span>Cancelar</span>
@@ -549,24 +510,24 @@
             </p:outputPanel>
         </div>
     </p:dialog>
-    
+
     <script>
         function showLoading() {
-            /* Show loading indicator */
-            console.log('Loading...');
+        /* Show loading indicator */
+        console.log('Loading...');
         }
-        
+
         function handleIndividualSaveComplete(xhr, status, args) {
             if (args &amp;&amp; args.success) {
-                showNotification('Artículo actualizado correctamente', 'success');
-                setTimeout(function() {
-                    PF('RevisionArticuloDialog').hide();
-                }, 1000);
-            } else {
-                showNotification('Error al actualizar el artículo', 'error');
-            }
+        showNotification('Artículo actualizado correctamente', 'success');
+        setTimeout(function() {
+        PF('RevisionArticuloDialog').hide();
+        }, 1000);
+        } else {
+        showNotification('Error al actualizar el artículo', 'error');
         }
-        
+        }
+
         /* Add slide-in animation */
         const style = document.createElement('style');
         style.textContent = '@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }';
