@@ -50,4 +50,13 @@ public class AlertasService extends GService<Alertas> {
             
             create(alerta);
     }  
+    
+    public void toggleVista(Alertas alerta) {
+        try {
+            alerta.setVista(!alerta.isVista());
+            em.merge(alerta);
+        } catch (Exception e) {
+            System.out.println("Error toggling vista: " + e.getLocalizedMessage());
+        }
+    }
 }

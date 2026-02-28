@@ -132,7 +132,7 @@ public class InventarioController implements Serializable {
                         selectedInventario.setFechaMovimiento(today);
                         selectedInventario.setTipoMovimiento("Stock por Factura");
                         selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
-                        inventarioService.updateAndDisable(selectedInventario);
+                        inventarioService.markAsProcessed(selectedInventario);
                         alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventarioRevisionDialog", oldInventario.toString(), selectedInventario.toString());
                         clearSelectedInventario();
                         PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
@@ -163,7 +163,7 @@ public class InventarioController implements Serializable {
                         selectedInventario.setFechaMovimiento(today);
                         selectedInventario.setTipoMovimiento("Stock por Factura");
                         selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
-                        inventarioService.updateAndDisable(selectedInventario);
+                        inventarioService.markAsProcessed(selectedInventario);
                         // Save an alert (log) for updating an inventory item
                         alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventariosRevisionDialog", oldInventario.toString(), selectedInventario.toString());
                         
@@ -207,6 +207,7 @@ public class InventarioController implements Serializable {
 
         // Retrieve first unprocessed article
         selectedInventario = sinProcesar.get(0);
+        selectedInventario.setNotas("");
         
         if (selectedInventario == null) {
             FacesContext.getCurrentInstance().addMessage(null,
@@ -215,15 +216,10 @@ public class InventarioController implements Serializable {
     }
     
     public void skipCurrentMovement() {
-        // Skip current movement without requiring processing
+        // Skip current movement without processing - just move to next
         if(selectedInventario != null){
             var oldInventario = selectedInventario;
-            selectedInventario.setProcessed(true);
-            selectedInventario.setUsuario(currentSession.getCurrentUser());
-            selectedInventario.setTipoMovimiento("Omitido por usuario");
-            selectedInventario.setNotas("Movimiento omitido mediante procesado rápido por: " + currentSession.getCurrentUser().getUsername());
             
-            inventarioService.update(selectedInventario);
             alertasService.registrarAlerta("Movimiento omitido", "Se ha omitido el movimiento: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentMovement()", oldInventario.toString(), selectedInventario.toString());
             
             clearSelectedInventario();
@@ -262,7 +258,7 @@ public class InventarioController implements Serializable {
                         selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getCurrentUser().getUsername());
                     }
                     
-                    inventarioService.updateAndDisable(selectedInventario);
+                    inventarioService.markAsProcessed(selectedInventario);
                     alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "procesarMovimientoYSiguiente()", oldInventario.toString(), selectedInventario.toString());
                     
                     clearCache();
@@ -296,6 +292,7 @@ public class InventarioController implements Serializable {
         
         if (sinProcesar != null && !sinProcesar.isEmpty()) {
             selectedInventario = sinProcesar.get(0);
+            selectedInventario.setNotas("");
             
             // Mostrar mensaje informativo
             FacesContext.getCurrentInstance().addMessage(null,

@@ -55,6 +55,14 @@ public class ClientsController implements Serializable {
     public long clientsCount() {
         return clientService.count();
     }
+    
+    public long clientsActivosCount() {
+        return clientsList().stream().filter(c -> c.getStatus() != null && c.getStatus()).count();
+    }
+    
+    public long clientsInactivosCount() {
+        return clientsList().stream().filter(c -> c.getStatus() == null || !c.getStatus()).count();
+    }
 
     public void openNewClient() {
         newClient = new Clients();

@@ -3,8 +3,10 @@ package Services;
 import Models.Articulos.ArticuloStock; 
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
+import Models.Users;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
@@ -23,6 +25,7 @@ import java.util.List;
 @ApplicationScoped
 public class InventarioService extends GService<Inventario> {
         
+    @Inject AlertasService alertasService;
 
     @Override
     protected Class<Inventario> getEntityClass() {
@@ -39,6 +42,7 @@ public class InventarioService extends GService<Inventario> {
             em.persist(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error Inventario", "Error al crear inventario: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.create()", null, e.getMessage());
         }
     }
     
@@ -48,6 +52,7 @@ public class InventarioService extends GService<Inventario> {
             updateStock(entity);
         } catch (Exception e) {
             System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error Inventario", "Error al crear inventario con stock: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.createWithStock()", null, e.getMessage());
         }
     }
 
@@ -65,6 +70,7 @@ public class InventarioService extends GService<Inventario> {
             }
         } catch (Exception e) {
             System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error Inventario", "Error al eliminar inventario: " + e.getMessage(), null, 0, "InventarioService.delete()", null, e.getMessage());
         }
     }
 
@@ -75,41 +81,30 @@ public class InventarioService extends GService<Inventario> {
             updateStock(entity);
         } catch (Exception e) {
             System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error Inventario", "Error al actualizar inventario: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.update()", null, e.getMessage());
         }
     }
     
-    public void updateAndDisable(Inventario entity) {
+    public void markAsProcessed(Inventario entity) {
         try {
-            // Find the existing item by its ID
             Inventario existingItem = em.find(getEntityClass(), entity.getCodigo());
-
             if (existingItem != null) {
-                // Disable the existing item
-                existingItem.setStatus(false);
+                existingItem.setProcessed(true);
+                existingItem.setStatus(true);
+                existingItem.setUsuario(entity.getUsuario());
+                existingItem.setCantidad(entity.getCantidad());
+                existingItem.setUnidadesRecomendadasFactura(entity.getUnidadesRecomendadasFactura());
+                existingItem.setTipoMovimiento(entity.getTipoMovimiento());
+                existingItem.setFechaMovimiento(entity.getFechaMovimiento());
+                existingItem.setNotas(entity.getNotas());
                 em.merge(existingItem);
-
-                // Create a new entity instance with the updated information
-                Inventario newEntity = new Inventario();
-                newEntity.setArticulo(entity.getArticulo());
-                newEntity.setUsuario(entity.getUsuario());
-                newEntity.setCantidad(entity.getCantidad());
-                newEntity.setUnidadesRecomendadasFactura(entity.getUnidadesRecomendadasFactura());
-                newEntity.setTipoMovimiento(entity.getTipoMovimiento());
-                newEntity.setFechaMovimiento(entity.getFechaMovimiento());
-                newEntity.setNotas(entity.getNotas());
-                newEntity.setStatus(entity.getStatus());
-                newEntity.setProcessed(entity.getProcessed());
-                
-                em.persist(newEntity);
-                updateStock(newEntity);
-                
-                // Update the original entity reference to the new one
-                entity.setCodigo(newEntity.getCodigo());
+                updateStock(existingItem);
             } else {
                 System.out.println("Entity not found");
             }
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            System.out.println("Error marking as processed: " + e.toString());
+            alertasService.registrarAlerta("Error Inventario", "Error al marcar inventario como procesado: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.markAsProcessed()", null, e.getMessage());
         }
     }
 
@@ -352,6 +347,7 @@ public class InventarioService extends GService<Inventario> {
             }
         } catch (Exception e) {
             System.out.println("Error updating stock: " + e.toString());
+            alertasService.registrarAlerta("Error Inventario", "Error al actualizar stock: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.updateStock()", null, e.getMessage());
         }
     }
     
@@ -463,6 +459,15 @@ public class InventarioService extends GService<Inventario> {
 
         return totalSalesByFamilia;
     }
- 
+
+    public List<ArticuloStock> getAllStock() {
+        try {
+            TypedQuery<ArticuloStock> query = em.createQuery("SELECT a FROM ArticuloStock a", ArticuloStock.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            System.out.println("Error getting all stock: " + e.toString());
+            return new ArrayList<>();
+        }
+    }
 
 }

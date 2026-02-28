@@ -52,6 +52,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.faulttolerance.Retry;
+import org.eclipse.microprofile.faulttolerance.Timeout;
+import java.time.temporal.ChronoUnit;
 
 /**
  *
@@ -594,7 +598,11 @@ public class Parser {
         try {
             CodigoTipoMoneda codigoMoneda = new CodigoTipoMoneda();
             codigoMoneda.setCodigoMoneda(codigo);
-            codigoMoneda.setTipoCambioMoneda(new BigDecimal(tipo));
+            if (tipo == null || tipo.isEmpty()) {
+                codigoMoneda.setTipoCambioMoneda(BigDecimal.ONE);
+            } else {
+                codigoMoneda.setTipoCambioMoneda(new BigDecimal(tipo));
+            }
 
             return codigoMoneda;
         } catch (Exception e) {
@@ -745,7 +753,7 @@ public class Parser {
         }
         return false;
     }
-
+ 
     @Transactional
     public void parseXML(InputStream inputStream) {
         synchronized (lock) {
@@ -864,7 +872,7 @@ public class Parser {
 
 // Check if encabezado already exists by numeroConsecutivo (before creating any entities)
                 // Use new method that handles duplicates properly
-                boolean existsByNumeroConsecutivo = encabezadoService.existsByNumeroConsecutivo(numeroConsecutivo);
+                boolean existsByNumeroConsecutivo = encabezadoService.existsByNumeroConsecutivoWithValidComprobante(numeroConsecutivo);
 
                 if (existsByNumeroConsecutivo) {
                     System.out.println("Skipping existing encabezado for: " + numeroConsecutivo);
@@ -1038,5 +1046,5 @@ facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
                 logAsyncError("ERROR", errorMsg, "Parser.parseXML.exception", xmlContent.toString());
             }
         }
-    }
+    } 
 }

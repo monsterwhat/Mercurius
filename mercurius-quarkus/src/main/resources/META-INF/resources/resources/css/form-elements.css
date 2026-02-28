@@ -34,9 +34,31 @@ select,
 }
 
 .ui-datepicker,
-.ui-datepicker .ui-datepicker-header{
+.ui-datepicker .ui-datepicker-header {
     background: var(--bulma-background) !important;
     color: var(--bulma-text) !important;
+}
+
+.ui-datepicker .ui-inputtext,
+.ui-calendar .ui-inputtext {
+    background: var(--bulma-background-l) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-datepicker-panel,
+.ui-datepicker-dropdown {
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-datepicker-calendar td a,
+.ui-datepicker-calendar th {
+    color: var(--bulma-text) !important;
+}
+
+.p-datepicker .p-datepicker-input {
+    background: var(--bulma-background-l) !important;
+    color: var(--bulma-text-title-l) !important;
 }
 
 .ui-datepicker {
@@ -52,4 +74,9 @@ select,
 .ui-password-panel {
     background: var(--bulma-background-l) !important;
     color: var(--bulma-text-title-l) !important;
+}
+
+.ui-outputlabel,
+.ui-outputlabel-label {
+    color: var(--bulma-text) !important;
 }

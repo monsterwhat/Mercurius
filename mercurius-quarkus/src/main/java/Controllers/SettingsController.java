@@ -4,6 +4,8 @@ import Models.AppSettings;
 import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.EmailService;
+import Services.HaciendaCertificateService;
+import Services.HaciendaCertificateService.CertificateInfo;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.ExternalContext;
@@ -56,6 +58,17 @@ public class SettingsController implements Serializable {
     private AlertasService alertas;
     @Inject
     private SessionController currentSession;
+    @Inject
+    private HaciendaCertificateService haciendaCertificateService;
+    
+    // Hacienda certificate fields
+    private UploadedFile certificadoFile;
+    private String certificadoPassword;
+    private String haciendaApiKey;
+    private String haciendaEnvironment;
+    private CertificateInfo certificateInfo;
+    private boolean hasCertificate;
+    private boolean hasValidCertificate;
 
     @PostConstruct
     private void init() {
@@ -71,6 +84,7 @@ public class SettingsController implements Serializable {
         if (currentSettings == null) {
             currentSettings = new AppSettings(); 
         }  
+        loadHaciendaStatus();
         seleccionar();
     }
 
@@ -438,5 +452,138 @@ public class SettingsController implements Serializable {
         }
         return null;
     }
-
+    
+    // ============ HACIENDA CERTIFICATE METHODS ============
+    
+    public void loadHaciendaStatus() {
+        hasCertificate = haciendaCertificateService.hasCertificate();
+        hasValidCertificate = haciendaCertificateService.hasValidCertificate();
+        if (hasCertificate) {
+            certificateInfo = haciendaCertificateService.getCertificateInfo();
+        }
+        if (currentSettings != null) {
+            haciendaApiKey = currentSettings.getHaciendaApiKey();
+            haciendaEnvironment = currentSettings.getHaciendaEnvironment();
+        }
+    }
+    
+    public void uploadCertificado(FileUploadEvent event) {
+        certificadoFile = event.getFile();
+        if (certificadoFile != null && certificadoFile.getContent() != null) {
+            try {
+                byte[] certBytes = certificadoFile.getContent();
+                
+                // Validate before saving
+                if (certificadoPassword == null || certificadoPassword.isBlank()) {
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Ingrese la contraseña del certificado"));
+                    return;
+                }
+                
+                boolean isValid = haciendaCertificateService.validateCertificate(certBytes, certificadoPassword);
+                if (!isValid) {
+                    FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El certificado es inválido o está vencido"));
+                    return;
+                }
+                
+                // Save the certificate
+                haciendaCertificateService.saveCertificate(certBytes, certificadoPassword);
+                
+                // Refresh status
+                loadHaciendaStatus();
+                
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Certificado guardado correctamente"));
+                
+                alertas.registrarAlerta("Certificado Hacienda", 
+                    "Se subió el certificado digital", 
+                    currentSession.getCurrentUser(), 0, "uploadCertificado()", null, null);
+                    
+            } catch (Exception e) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar certificado: " + e.getMessage()));
+            }
+        }
+    }
+    
+    public void saveApiKey() {
+        if (currentSettings != null && haciendaApiKey != null && !haciendaApiKey.isBlank()) {
+            currentSettings.setHaciendaApiKey(haciendaApiKey);
+            settingsService.update(currentSettings);
+            
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "API Key guardada correctamente"));
+            
+            alertas.registrarAlerta("API Key Hacienda", 
+                "Se guardó la API Key de Hacienda", 
+                currentSession.getCurrentUser(), 0, "saveApiKey()", null, null);
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Ingrese una API Key válida"));
+        }
+    }
+    
+    public void saveEnvironment() {
+        if (currentSettings != null && haciendaEnvironment != null) {
+            currentSettings.setHaciendaEnvironment(haciendaEnvironment);
+            settingsService.update(currentSettings);
+            
+            String envLabel = "production".equals(haciendaEnvironment) ? "Producción" : "Pruebas";
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Entorno configurado: " + envLabel));
+            
+            alertas.registrarAlerta("Entorno Hacienda", 
+                "Se configuró entorno: " + envLabel, 
+                currentSession.getCurrentUser(), 0, "saveEnvironment()", null, haciendaEnvironment);
+        }
+    }
+    
+    public void clearCertificate() {
+        haciendaCertificateService.clearCertificate();
+        loadHaciendaStatus();
+        
+        FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Certificado eliminado"));
+        
+        alertas.registrarAlerta("Certificado Hacienda", 
+            "Se eliminó el certificado digital", 
+            currentSession.getCurrentUser(), 0, "clearCertificate()", null, null);
+    }
+    
+    public String getCertificateStatus() {
+        if (!hasCertificate) {
+            return "No configurado";
+        }
+        if (!hasValidCertificate) {
+            return "Vencido";
+        }
+        return "Válido";
+    }
+    
+    public String getEnvironmentLabel() {
+        return "production".equals(haciendaEnvironment) ? "Producción" : "Pruebas (Sandbox)";
+    }
+    
+    public boolean isSandbox() {
+        return "sandbox".equalsIgnoreCase(haciendaEnvironment) || 
+               (haciendaEnvironment == null || haciendaEnvironment.isBlank());
+    }
+    
+    public boolean isProduction() {
+        return "production".equalsIgnoreCase(haciendaEnvironment);
+    }
+    
+    public void setSandbox() {
+        haciendaEnvironment = "sandbox";
+        saveEnvironment();
+    }
+    
+    public void setProduction() {
+        haciendaEnvironment = "production";
+        saveEnvironment();
+    }
+    
+    // ============ END HACIENDA METHODS ============
+    
 }

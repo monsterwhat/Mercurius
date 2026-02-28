@@ -37,6 +37,12 @@ public class CabysController implements Serializable {
     private boolean cabysStatus;
     private String selectedOption = "none";
     private String[] selectedOptions;
+    
+    // Column visibility
+    private boolean showCodigo = true;
+    private boolean showCategoria = true;
+    private boolean showDescripcion = true;
+    private boolean showImpuesto = true;
 
         
     @PostConstruct
@@ -44,7 +50,8 @@ public class CabysController implements Serializable {
         newCabys = new Cabys();
         selectedCabys = new Cabys();
         cabysList();
-        filterBy = new ArrayList<>();        
+        filterBy = new ArrayList<>();
+        selectedOptions = new String[]{"codigo", "categoria", "descripcion", "impuesto"};
     }
     
     public List<Cabys> cabysList() {
@@ -195,19 +202,19 @@ public class CabysController implements Serializable {
     }
     
     public void selectedOptionsChanged() {
-        String message = "Se cambio a: ";
         if (selectedOptions != null) {
-            for (int i = 0; i < selectedOptions.length; i++) {
-                if (i > 0) {
-                    message += ", ";
-                }
-                message += selectedOptions[i];
-            }
+            showCodigo = Arrays.toString(selectedOptions).contains("codigo");
+            showCategoria = Arrays.toString(selectedOptions).contains("categoria");
+            showDescripcion = Arrays.toString(selectedOptions).contains("descripcion");
+            showImpuesto = Arrays.toString(selectedOptions).contains("impuesto");
         }
-
-        FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, message, null));
     }
+    
+    // Getters for column visibility
+    public boolean isShowCodigo() { return showCodigo; }
+    public boolean isShowCategoria() { return showCategoria; }
+    public boolean isShowDescripcion() { return showDescripcion; }
+    public boolean isShowImpuesto() { return showImpuesto; }
     
     public boolean isSelected(String selection){
         var state = Arrays.toString(selectedOptions).contains(selection);

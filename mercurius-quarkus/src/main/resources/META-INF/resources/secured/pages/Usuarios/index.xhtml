@@ -1,63 +1,67 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
-      xmlns:h="jakarta.faces.html"
-      xmlns:p="http://primefaces.org/ui" 
-      xmlns:f="http://xmlns.jcp.org/jsf/core"
-      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
-      class="#{ThemeController.currentTheme}">
+       xmlns:h="jakarta.faces.html"
+       xmlns:p="http://primefaces.org/ui" 
+       xmlns:f="http://xmlns.jcp.org/jsf/core"
+       xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+       data-theme="#{ThemeController.currentTheme}">
 
     <h:head>
         <title>Menu Principal Usuarios</title>
         <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
-          
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
         <style>
+            .usuarios-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
 
-            .header-bar {
-                color: white; /* Ensure text contrasts with the background */
-                padding: 5px 10px;
+            .usuarios-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
                 text-align: center;
-                border-radius: 4px 4px 0 0; /* Rounded corners at the top */
-                font-weight: bold;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                transition: all 0.3s ease;
+                cursor: pointer;
+                text-decoration: none;
+                display: block;
+                color: white;
             }
 
-            .card-container {
-                display: flex;
-                flex-wrap: wrap;
-                margin: 5px;
-                gap: 10px; /* Add spacing between cards */
-                justify-content: center; /* Center cards when wrapping */
+            .stat-card:hover {
+                transform: translateY(-2px);
+                background: rgba(255, 255, 255, 0.15);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             }
 
-            .custom-card {
-                width: 100%; /* Default to full width for mobile */
-                margin-bottom: 10px;
+            .stat-card .stat-icon {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+                display: block;
             }
 
-            /* Tablet screens: show 2 cards per row */
-            @media (min-width: 768px) {
-                .custom-card {
-                    width: 48%; /* Adjust width to fit 2 cards per row with some gap */
-                }
+            .stat-card .stat-label {
+                font-size: 1rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                font-weight: 600;
             }
-
-            /* Desktop screens: show 4 cards per row */
-            @media (min-width: 1024px) {
-                .custom-card {
-                    width: 23%; /* Adjust width to fit 4 cards per row with some gap */
-                }
-            }
-
-            .card-buttons {
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-                margin-top: 20px;
-            }
-
-            .p-button {
-                width: 100%; /* Make the buttons full-width */
-            }
-
         </style>
 
     </h:head>
@@ -68,55 +72,18 @@
         <p:growl id="growl" showDetail="true" showSummary="true" />
 
         <section class="section">
-            <div class="columns is-multiline is-vcentered is-centered has-text-centered">
-                <div class="column is-full">
-                    <p class="title has-text-centered"> Usuarios</p>
+            <div class="usuarios-header" style="background: linear-gradient(135deg, #485460 0%, #2c3e50 100%);">
+                <p class="title is-3 has-text-centered">Usuarios</p>
+                <div class="stats-grid">
+                    <a class="stat-card" href="/Mercurius/secured/pages/Clientes/index.xhtml">
+                        <i class="pi pi-address-book stat-icon"></i>
+                        <span class="stat-label">Clientes</span>
+                    </a>
+                    <a class="stat-card" href="/Mercurius/secured/pages/Usuarios/Reportes/index.xhtml">
+                        <i class="pi pi-users stat-icon"></i>
+                        <span class="stat-label">Usuarios</span>
+                    </a>
                 </div>
-
-                <div class="column is-half"> 
-                    <div class="columns"> 
-                        <div class="column">
-                            <div class="card">
-                                <div class="header-bar" style="background-color: var(--bulma-warning)"/>
-                                <br/>
-                                <p class="title is-5">Clientes</p>
-
-                                <div class="buttons">
-                                    <p:link styleClass="button is-warning is-fullwidth" href="/Mercurius/secured/pages/Clientes/index.xhtml" >
-                                        <span class="icon-text">
-                                            <span class="icon">
-                                                <i class="pi pi-address-book"></i>
-                                            </span>
-                                            <span>
-                                                Menu de Clientes
-                                            </span>
-                                        </span> 
-                                    </p:link>
-                                </div>
-                            </div> 
-                        </div>
-                        <div class="column">
-                            <div class="card">
-                                <div class="header-bar" style="background-color: var(--blue-500)"/>
-                                <br/>
-                                <p class="title is-5">Usuarios</p>
-
-                                <div class="buttons"> 
-                                    <p:link styleClass="button is-info is-fullwidth" href="/Mercurius/secured/pages/Usuarios/Reportes/index.xhtml" >
-                                        <span class="icon-text">
-                                            <span class="icon">
-                                                <i class="pi pi-users"></i>
-                                            </span>
-                                            <span>
-                                                Menu de Usuarios
-                                            </span>
-                                        </span> 
-                                    </p:link>
-                                </div> 
-                            </div> 
-                        </div>
-                    </div> 
-                </div> 
             </div>
         </section> 
 

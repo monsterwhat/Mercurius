@@ -10,6 +10,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 /**
  *
@@ -30,10 +32,10 @@ public class Alertas {
     
     @Lob
     private String antes; //Usada para guardar alguna entidad que se modifico (vieja).
-    
+
     @Lob
     private String despues; //la entidad con el cambio (nueva).
-    
+
     private boolean vista; //Si ya se reviso o no...
     
     private LocalDateTime timestamp; // To record when the log entry was created
@@ -43,4 +45,11 @@ public class Alertas {
 private Users user;
     
     private String source; // To indicate the source of the log entry (e.g., the class or method that generated the log)
+    
+    public Date getTimestampAsDate() {
+        if (timestamp == null) {
+            return null;
+        }
+        return Date.from(timestamp.atZone(ZoneId.systemDefault()).toInstant());
+    }
 }

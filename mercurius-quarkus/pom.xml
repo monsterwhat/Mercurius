@@ -59,6 +59,10 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-mailer</artifactId>
         </dependency>
         <!-- Add Jakarta Mail API for compatibility -->
@@ -83,6 +87,11 @@
             <groupId>io.quarkiverse.primefaces</groupId>
             <artifactId>quarkus-primefaces</artifactId>
             <version>${primefaces-quarkus.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.org.okapibarcode</groupId>
+            <artifactId>okapibarcode</artifactId>
+            <version>0.5.0</version>
         </dependency>
 
         <!-- Additional Libraries (from original project) -->

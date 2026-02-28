@@ -104,6 +104,7 @@ public class uploadController {
             FacesContext.getCurrentInstance().addMessage(null, message);
             System.out.println("DEBUG: handleFileUpload completed for: " + uploadedFile.getFileName());
         } catch (Exception e) {
+            alertas.registrarAlerta("Error al procesar archivo", "Error al procesar archivo: " + e.getMessage(), currentSession.getCurrentUser(), 0, "handleFileUpload()", null, e.getMessage());
             System.err.println("DEBUG: Error in handleFileUpload: " + e.getMessage());
             e.printStackTrace();
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo procesar el archivo: " + e.getMessage());
@@ -167,13 +168,13 @@ private void processQueueAsync() {
              }
              System.out.println("DEBUG: XML file processing completed successfully");
              
-             System.out.println("DEBUG: File processed successfully: " + fileData.getFileName());
-         } catch (Exception e) {
-             System.err.println("DEBUG: Error processing file " + fileData.getFileName() + ": " + e.getMessage());
-             e.printStackTrace();
-             // Don't try to add FacesMessage in async thread - it will be null
-System.err.println("ERROR: Failed to process file " + fileData.getFileName() + ": " + e.getMessage());
-         }
+              System.out.println("DEBUG: File processed successfully: " + fileData.getFileName());
+          } catch (Exception e) {
+              alertas.registrarAlerta("Error al procesar archivo", "Archivo: " + fileData.getFileName() + " - Error: " + e.getMessage(), null, 0, "processSingleFile()", fileData.getFileName(), e.getMessage());
+              System.err.println("DEBUG: Error processing file " + fileData.getFileName() + ": " + e.getMessage());
+              e.printStackTrace();
+              System.err.println("ERROR: Failed to process file " + fileData.getFileName() + ": " + e.getMessage());
+          }
      }
      
 private void processXMLDirectly(FileData fileData, InputStream inputStream) throws Exception {
@@ -212,6 +213,9 @@ private void processXMLDirectly(FileData fileData, InputStream inputStream) thro
             Utils.AsyncUserContext.setCurrentUser(fileData.getCurrentUser());
             parser.parseXML(inputStream);
             System.out.println("Successfully processed file: " + fileData.getFileName());
+        } catch (Exception e) {
+            alertas.registrarAlerta("Error al parsear XML", "Archivo: " + fileData.getFileName() + " - Error: " + e.getMessage(), null, 0, "processXMLDirectly()", fileData.getFileName(), e.getMessage());
+            throw e;
         } finally {
             Utils.AsyncUserContext.clear();
         }

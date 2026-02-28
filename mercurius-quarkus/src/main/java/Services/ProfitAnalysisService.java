@@ -215,7 +215,10 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
      * Get top performing articles by profit margin
      */
     public List<Articulos> getTopProfitMarginArticles(int limit, Date startDate, Date endDate) {
-        String jpql = "SELECT DISTINCT pmh.articulo FROM ProfitMarginHistory pmh WHERE pmh.fecha BETWEEN :startDate AND :endDate ORDER BY pmh.margenReal DESC";
+        String jpql = "SELECT a FROM Articulos a WHERE a.codigo IN " +
+                "(SELECT pmh.articulo.codigo FROM ProfitMarginHistory pmh " +
+                "WHERE pmh.fecha BETWEEN :startDate AND :endDate " +
+                "ORDER BY pmh.margenReal DESC)";
         TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate)
@@ -227,7 +230,10 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
      * Get worst performing articles by profit margin
      */
     public List<Articulos> getWorstProfitMarginArticles(int limit, Date startDate, Date endDate) {
-        String jpql = "SELECT DISTINCT pmh.articulo FROM ProfitMarginHistory pmh WHERE pmh.fecha BETWEEN :startDate AND :endDate AND pmh.margenReal > 0 ORDER BY pmh.margenReal ASC";
+        String jpql = "SELECT a FROM Articulos a WHERE a.codigo IN " +
+                "(SELECT pmh.articulo.codigo FROM ProfitMarginHistory pmh " +
+                "WHERE pmh.fecha BETWEEN :startDate AND :endDate AND pmh.margenReal > 0 " +
+                "ORDER BY pmh.margenReal ASC)";
         TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate)

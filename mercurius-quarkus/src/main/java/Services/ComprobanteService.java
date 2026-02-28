@@ -52,6 +52,8 @@ import java.util.Objects;
 public class ComprobanteService implements Serializable {
 
     @Inject
+    private AlertasService alertasService;
+    @Inject
     private EncabezadoService encabezadoService;
     @Inject
     private DetalleServicioService detallesService;
@@ -84,6 +86,12 @@ public class ComprobanteService implements Serializable {
             tiqueteElectronico.setResumen(resumen);
             tiqueteElectronico.setUser(currentUser.getUsername());
             
+            // TODO: Phase 5 - Integrate with HaciendaApiService after Phase 4
+            // 1. Generate XML in Hacienda format
+            // 2. Sign XML using HaciendaSigner
+            // 3. Submit to Hacienda API
+            // 4. Update ComprobantesEmitidos with Hacienda status
+            
             // Add loyalty points for the sale if client exists
             if (selectedClient != null && currentUser != null) {
                 BigDecimal totalAmount = resumen.getTotalVentaNeta();
@@ -92,13 +100,14 @@ public class ComprobanteService implements Serializable {
                 try {
                     loyaltyService.earnPoints(selectedClient, totalAmount, facturaReferencia, currentUser);
                 } catch (Exception e) {
-                    // Log error but don't fail the sale
+                    alertasService.registrarAlerta("Error Loyalty", "Error al agregar puntos de lealtad: " + e.getMessage(), currentUser, 0, "crearComprobante()", null, e.getMessage());
                     System.err.println("Error adding loyalty points: " + e.getMessage());
                 }
             }
             
             return tiqueteElectronico;
         } catch (Exception e) {
+            alertasService.registrarAlerta("Error Comprobante", "Error al crear comprobante: " + e.getMessage(), currentUser, 0, "crearComprobante()", null, e.getMessage());
             System.out.println("Error: " + e.getLocalizedMessage());
             return null;
         }
@@ -163,6 +172,7 @@ public class ComprobanteService implements Serializable {
             resumen.setTotalComprobante(totalComprobante);
             return resumen;
         } catch (Exception e) {
+            alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tiquete: " + e.getMessage(), null, 0, "resumenTiqueteElectronico()", null, e.getMessage());
             System.out.println("Error: " + e.getLocalizedMessage());
             return null;
         }
@@ -234,6 +244,7 @@ public class ComprobanteService implements Serializable {
             detalles.setStatus(true);
             return detalles;
         } catch (Exception e) {
+            alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiquete: " + e.getMessage(), null, 0, "detallesTiqueteElectronico()", null, e.getMessage());
             System.out.println("Error: " + e.getLocalizedMessage());
             return null;
         }
@@ -313,6 +324,7 @@ public class ComprobanteService implements Serializable {
             }
             return null;
         } catch (Exception e) {
+            alertasService.registrarAlerta("Error Encabezado", "Error al crear encabezado de tiquete: " + e.getMessage(), null, 0, "encabezadoTiqueteElectronico()", null, e.getMessage());
             System.out.println("Error: " + e.getLocalizedMessage());
             return null;
         }

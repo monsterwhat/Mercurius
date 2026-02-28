@@ -18,8 +18,9 @@
                             required="true" requiredMessage="El nombre no puede estar vacío" style="width: 100%"
                         />
                         <p:spacer height="1em"/>
-                        <p:commandButton value="Actualizar datos" process="@form" styleClass="rounded-button ui-button-primary"
-                                         update="@form Categorias:familias" style="width: 100%"
+                        <p:commandButton value="Actualizar datos" process="@form" styleClass="button is-primary is-rounded is-fullwidth"
+                                         icon="pi pi-check"
+                                         update="@form Categorias:familias" 
                                          action="#{FamiliasController.updateFamiliaDialog}"/>
                                
                     </p:panel>

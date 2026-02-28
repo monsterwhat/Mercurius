@@ -14,24 +14,16 @@
                     <p:message for="@this" /> 
                     <div class="columns is-multiline m-1 p-1">
                         <div class="column is-full">
-                            <p class="title has-text-centered">
-                                Nombre de la Promocion:
-                            </p>
-                        </div>
-                        <p:column>
                             <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="newName">Nombre de la Promoción:</label>
                             <p:inputText id="newName" value="#{PromocionesController.selectedPromocion.nombre}"
                                          required="true" requiredMessage="El nombre no puede estar vacío"
                                          style="width: 100%"/>
-                        </p:column>
-                        <hr/>
-
-                        <div class="column is-full">
-                            <p class="title has-text-centered">
-                                Articulos
-                            </p>
                         </div>
-                        <div class="column is-full">
+
+                        <div class="column is-full mt-4">
+                            <p:messages showDetail="true" for="articuloTable" showSummary="false" closable="true" />
+                            <label class="label has-text-link">Artículos:</label>
                             <p:dataTable id="articuloTable" var="articulo" rowKey="#{articulo.articulo.codigo}" value="#{PromocionesController.lista}" selectionMode="single" selection="#{PromocionesController.selectedArticuloCarrito}" emptyMessage="No hay Articulos en el combo" >
 
                                 <p:column headerText="Articulo">
@@ -44,7 +36,7 @@
                                     <h:outputText value="#{articulo.articulo.lastPrecio.precioFinal}"/>
                                 </p:column>
                                 <p:column>
-                                    <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" immediate="true" 
+                                    <p:commandButton icon="pi pi-times" styleClass="button is-danger is-small is-rounded" immediate="true" 
                                                      update="articuloTable" actionListener="#{PromocionesController.removeSelectedItemFromPromociones()}" >
                                         <f:setPropertyActionListener value="#{articulo.articulo}" target="#{PromocionesController.selectedArticulo}" />
                                     </p:commandButton>
@@ -61,20 +53,14 @@
                                 <p:autoUpdate/>
                             </p:dataTable> 
 
-                            <p:commandLink value="Agregar Producto" process="articuloEdit" styleClass="button is-rounded is-primary is-fullwidth"
+                            <p:commandLink value="Agregar Producto" process="articuloEdit" styleClass="button is-primary is-rounded mt-2"
                                            onclick="PF('ArticuloRevisionDialog').show();" />
 
                         </div>
 
-                        <hr/>
-
-                        <div class="column is-full">
-                            <p class="title has-text-centered">
-                                Descuento % :
-                            </p>
-                        </div>
-                        <div class="column is-full">
+                        <div class="column is-full mt-4">
                             <p:messages showDetail="true" for="newDescuento" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="newDescuento">Descuento (%):</label>
                             <p:inputNumber id="newDescuento" type="number" value="#{PromocionesController.selectedPromocion.descuento}"
                                            required="true" requiredMessage="El porcentaje de descuento no puede estar vacío"
                                            style="width: 100%" >
@@ -82,55 +68,38 @@
                             </p:inputNumber> 
                         </div>
 
-                        <hr/>
-
-                        <div class="column is-full">
-                            <p class="title has-text-centered">
-                                Total con descuento e IVA :
-                            </p>
-                        </div>
-                        <div class="column is-full">
-                            <h:outputText id="total" value="#{PromocionesController.createTotalDescuentoEIVAText()}"/>
+                        <div class="column is-full mt-4">
+                            <label class="label has-text-link">Total con descuento e IVA:</label>
+                            <p:card>
+                                <h:outputText id="total" value="#{PromocionesController.createTotalDescuentoEIVAText()}"/>
+                            </p:card>
                             <p:autoUpdate/>
                         </div>
 
-                        <hr/>
-
-                        <div class="column is-full">
-                            <p class="title has-text-centered">
-                                Cantidades Limitadas:
-                            </p>
-                            <p class="subtitle has-text-centered">
-                                En caso de ser ilimitadas poner -1
-                            </p>
-                        </div>
-                        <div class="column is-full">
+                        <div class="column is-full mt-4">
                             <p:messages for="newCantidad" closable="true"/>
-                            <p:outputLabel class="label" for="newCantidad" style="color: var(--primary-color);" value="Cantidad:"/> 
+                            <label class="label has-text-link" for="newCantidad">Cantidades Limitadas:</label>
+                            <p class="help">En caso de ser ilimitadas poner -1</p>
                             <p:inputNumber id="newCantidad" type="number" value="#{PromocionesController.selectedPromocion.cantidad}"
                                            required="true" requiredMessage="La cantidad no puede estar vacia"
                                            style="width: 100%" >
                             </p:inputNumber>
                         </div>
-                        <hr/>
 
-                        <div class="column is-full">
-                            <p class="title has-text-centered">
-                                Fechas de Promocion
-                            </p> 
-                        </div>
-                        <div class="column is-full">
+                        <div class="column is-full mt-4">
+                            <label class="label has-text-link">Fechas de Promoción:</label>
                             <p:datePicker id="datePicker" value="#{PromocionesController.fechasPromocion}" readonlyInput="true"
-                                           selectionMode="range" />
+                                           selectionMode="range" style="width: 100%"/>
                         </div>
 
-                        <hr/>
-
-                        <div class="column is-full">
-                            <p:commandButton value="Editar Promocion" update="@form Articulos:promociones" process="@form"
-                                             action="#{PromocionesController.updatePromocionByDialog()}" style="width: 100%"
-                                             styleClass="rounded-button ui-button-primary"/>
-                        </div> 
+                        <div class="column is-full mt-4">
+                            <div class="buttons is-centered">
+                                <p:commandButton value="Editar Promocion" update="@form Articulos:promociones" process="@form"
+                                                 action="#{PromocionesController.updatePromocionByDialog()}" 
+                                                 styleClass="button is-primary is-rounded is-fullwidth"
+                                                 icon="pi pi-check"/>
+                            </div>
+                        </div>
                     </div>     
                 </section>
             </h:form>
@@ -172,9 +141,10 @@
 
             <p:spacer height="1em"/>
 
-            <p:commandButton value="Seleccionar" styleClass="rounded-button ui-button-primary" 
+            <p:commandButton value="Seleccionar" styleClass="button is-primary is-rounded is-fullwidth" 
+                             icon="pi pi-check"
                              action="#{PromocionesController.articuloSelectedDialog()}" 
-                             process="articuloEdit" update="articuloEdit :EditPromocionDialog" style="width: 100%"/>
+                             process="articuloEdit" update="articuloEdit :EditPromocionDialog"/>
         </h:form>
     </p:dialog>
 

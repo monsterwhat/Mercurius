@@ -31,6 +31,11 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.faulttolerance.Retry;
+import org.eclipse.microprofile.faulttolerance.Timeout;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import java.time.temporal.ChronoUnit;
 
 /**
  *
@@ -44,6 +49,9 @@ public class EmailService implements Serializable {
     @Inject Parser parser;
     @Inject SettingsDirController dirController;
     
+    @Timeout(value = 30, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 1000, jitter = 500)
+    @Fallback(fallbackMethod = "sendEmailFallback")
     public void sendEmail(String to, String subject, String body, String email, String pass, Consumer<String> callback) {
         final String[] status = {null}; // Declare status as an array
         
@@ -85,6 +93,14 @@ public class EmailService implements Serializable {
         CompletableFuture.runAsync(() -> callback.accept(status[0]));
     }
     
+    private void sendEmailFallback(String to, String subject, String body, String email, String pass, Consumer<String> callback) {
+        System.err.println("FALLBACK: sendEmail failed, notifying via callback");
+        CompletableFuture.runAsync(() -> callback.accept("Email send failed: Timeout or error - please try again later"));
+    }
+    
+    @Timeout(value = 60, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 1000, jitter = 500)
+    @Fallback(fallbackMethod = "sendEmailsFallback")
     public void sendEmails(List<String> to, String subject, String body, String email, String pass, Consumer<String> callback) {
         final String[] status = {null}; // Declare status as an array
         
@@ -133,6 +149,14 @@ public class EmailService implements Serializable {
         CompletableFuture.runAsync(() -> callback.accept(status[0]));
     }
     
+    private void sendEmailsFallback(List<String> to, String subject, String body, String email, String pass, Consumer<String> callback) {
+        System.err.println("FALLBACK: sendEmails failed, notifying via callback");
+        CompletableFuture.runAsync(() -> callback.accept("Email send failed: Timeout or error - please try again later"));
+    }
+    
+    @Timeout(value = 60, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 1000, jitter = 500)
+    @Fallback(fallbackMethod = "sendEmailsWithAttachmentFallback")
     public void sendEmailsWithAttachment(List<String> to, String subject, String body, String email, String pass, File attachment, Consumer<String> callback) {
         final String[] status = {null}; // Declare status as an array
         
@@ -187,7 +211,16 @@ public class EmailService implements Serializable {
         // Complete the CompletableFuture asynchronously
         CompletableFuture.runAsync(() -> callback.accept(status[0]));
     }
-
+    
+    private void sendEmailsWithAttachmentFallback(List<String> to, String subject, String body, String email, String pass, File attachment, Consumer<String> callback) {
+        System.err.println("FALLBACK: sendEmailsWithAttachment failed, notifying via callback");
+        CompletableFuture.runAsync(() -> callback.accept("Email with attachment failed: Timeout or error - please try again later"));
+    }
+    
+    @Timeout(value = 120, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 2000, jitter = 500)
+    @CircuitBreaker(requestVolumeThreshold = 3, failureRatio = 0.5, delay = 15, delayUnit = ChronoUnit.MINUTES)
+    @Fallback(fallbackMethod = "processUnreadXmlAttachmentsFallback")
     public void processUnreadXmlAttachments(String email, String pass, Consumer<String> callback) {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps"); // Use IMAP with SSL
@@ -289,6 +322,11 @@ public class EmailService implements Serializable {
             System.out.println("Error: " + e.getLocalizedMessage());
             callback.accept("Encountered an Error: " + e.getLocalizedMessage());
         }
+    }
+    
+    private void processUnreadXmlAttachmentsFallback(String email, String pass, Consumer<String> callback) {
+        System.err.println("FALLBACK: processUnreadXmlAttachments failed due to circuit breaker or repeated failures");
+        CompletableFuture.runAsync(() -> callback.accept("Email processing skipped: Service temporarily unavailable due to repeated failures. Will retry on next scheduled run."));
     }
 
 }

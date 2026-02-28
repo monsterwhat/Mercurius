@@ -331,21 +331,10 @@ public class ArticulosController implements Serializable {
     }
     
     public void skipCurrentArticle() {
-        // Mark as processed but don't require all fields
+        // Skip current article without processing - just move to next
         if(selectedArticulo != null){
             var oldArticulo = selectedArticulo;
-            selectedArticulo.setProcessed(true);
-            selectedArticulo.setUsuario(currentSession.getCurrentUser());
             
-            // Set default values if missing
-            if(selectedArticulo.getDepartamento() == null){
-                selectedArticulo.setDepartamento(departamentoService.findById(1)); // Default department
-            }
-            if(selectedArticulo.getFamilia() == null){
-                selectedArticulo.setFamilia(familiaService.findById(1)); // Default family
-            }
-            
-            articulosService.update(selectedArticulo);
             alertasService.registrarAlerta("Artículo omitido", "Se ha omitido el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentArticle()", oldArticulo.toString(), selectedArticulo.toString());
             
             clearCache();

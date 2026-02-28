@@ -61,6 +61,7 @@ public class SessionController implements Serializable{
                     redirectToSecuredArea();
                 }
             } else {
+                alertas.registrarAlerta("Intento de Login Fallido", "Usuario: " + username + " - Credenciales incorrectas", null, 0, "executeLogin()", username, null);
                 facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El nombre de usuario o contrasena son incorrectos."));
             }
             
