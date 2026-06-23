@@ -14,13 +14,33 @@
                         </p:growl>
 
                         <p:column>
-                            <p:messages for="name" showSummary="false" showDetail="true" closable="true" >
-                                <p:autoUpdate/>
-                            </p:messages>
                             <label class="label" for="name" style="color: var(--primary-color); text-align: center">Nombre:</label>
                             <p:inputText id="name" value="#{DepartamentosController.selectedDepartamento.nombre}"
-                                required="true" requiredMessage="El nombre no puede estar vacío" style="width: 100%"
-                                />
+                                required="true" requiredMessage="El nombre no puede estar vacío" style="width: 100%"/>
+                        </p:column>
+                        <p:column>
+                            <label class="label" for="editContactoNombre" style="color: var(--primary-color); text-align: center">Nombre Contacto:</label>
+                            <p:inputText id="editContactoNombre" value="#{DepartamentosController.selectedDepartamento.contactoNombre}" style="width: 100%"/>
+                        </p:column>
+                        <p:column>
+                            <label class="label" for="editContactoTelefono" style="color: var(--primary-color); text-align: center">Telefono Contacto:</label>
+                            <p:inputText id="editContactoTelefono" value="#{DepartamentosController.selectedDepartamento.contactoTelefono}" style="width: 100%"/>
+                        </p:column>
+                        <p:column>
+                            <label class="label" for="editContactoEmail" style="color: var(--primary-color); text-align: center">Email Contacto:</label>
+                            <p:inputText id="editContactoEmail" value="#{DepartamentosController.selectedDepartamento.contactoEmail}" style="width: 100%"/>
+                        </p:column>
+                        <p:column>
+                            <label class="label" for="editPlazoPagoDias" style="color: var(--primary-color); text-align: center">Plazo Pago (dias):</label>
+                            <p:inputNumber id="editPlazoPagoDias" value="#{DepartamentosController.selectedDepartamento.plazoPagoDias}" min="0" style="width: 100%"/>
+                        </p:column>
+                        <p:column>
+                            <label class="label" for="editTiempoEntregaDias" style="color: var(--primary-color); text-align: center">Tiempo Entrega (dias):</label>
+                            <p:inputNumber id="editTiempoEntregaDias" value="#{DepartamentosController.selectedDepartamento.tiempoEntregaDias}" min="0" style="width: 100%"/>
+                        </p:column>
+                        <p:column>
+                            <label class="label" for="editNotas" style="color: var(--primary-color); text-align: center">Notas:</label>
+                            <p:inputTextarea id="editNotas" value="#{DepartamentosController.selectedDepartamento.notas}" rows="3" style="width: 100%"/>
                         </p:column>
                         <p:spacer height="1em"/>
                         <p:column>

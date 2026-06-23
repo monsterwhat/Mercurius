@@ -32,9 +32,9 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
             em.persist(entity);
             em.flush();
             em.refresh(entity);
-            System.out.println("Successfully created LineaDetalle with ID: " + entity.getId());
+            alertasService.registrarAlerta("Info", "Successfully created LineaDetalle with ID: " + entity.getId(), null, 0, "LineaDetalleService.create()", null, null);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "LineaDetalleService.create()", null, e.getMessage());
             throw new RuntimeException("Failed to create LineaDetalle", e);
         }
     }
@@ -49,10 +49,10 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "LineaDetalleService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "LineaDetalleService.delete()", null, e.getMessage());
         }
     }
 
@@ -61,7 +61,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "LineaDetalleService.update()", null, e.getMessage());
         }
     }
 
@@ -71,7 +71,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
             TypedQuery<LineaDetalle> query = em.createQuery("SELECT d FROM LineaDetalle d", LineaDetalle.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "LineaDetalleService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -87,7 +87,7 @@ public List<LineaDetalle> listAllWhereID(Long detalleServicioId) {
             query.setParameter("detalleServicioId", detalleServicioId);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing LineaDetalle by DetalleServicio ID: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error listing LineaDetalle by DetalleServicio ID: " + e.getMessage(), null, 0, "LineaDetalleService.listAllWhereID()", null, e.getMessage());
             return null;
         }
     }
@@ -98,7 +98,7 @@ public List<LineaDetalle> listAllWhereID(Long detalleServicioId) {
     try {
         return em.find(getEntityClass(), id);
         } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "LineaDetalleService.findById()", null, e.getMessage());
             return null;
         }
     }
@@ -108,7 +108,7 @@ public List<LineaDetalle> listAllWhereID(Long detalleServicioId) {
             TypedQuery<LineaDetalle> query = em.createQuery("SELECT a FROM LineaDetalle a WHERE a.status = true", LineaDetalle.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "LineaDetalleService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
@@ -118,7 +118,7 @@ public List<LineaDetalle> listAllWhereID(Long detalleServicioId) {
             em.persist(entity);
             return entity;
         } catch (Exception e) {
-            System.out.println("Error creating and returning entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating and returning entity: " + e.getMessage(), null, 0, "LineaDetalleService.createAndReturnEntity()", null, e.getMessage());
             return null;
         }
     }

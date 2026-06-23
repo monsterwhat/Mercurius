@@ -27,7 +27,7 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             TypedQuery<ArticuloPrecio> query = em.createQuery("SELECT a FROM ArticuloPrecio a", ArticuloPrecio.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ArticuloPrecioService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -39,7 +39,7 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             List<ArticuloPrecio> resultList = query.getResultList();
             return resultList.isEmpty() ? null : resultList.get(resultList.size() - 1);
         } catch (Exception e) {
-            System.out.println("Error " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error " + e.getLocalizedMessage(), null, 0, "ArticuloPrecioService.method()", null, e.getMessage());
             return null;
         }    
     }
@@ -51,7 +51,7 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             List<ArticuloPrecio> resultList = query.getResultList();
             return resultList.isEmpty() ? null : resultList;
         } catch (Exception e) {
-            System.out.println("Error " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error " + e.getLocalizedMessage(), null, 0, "ArticuloPrecioService.method()", null, e.getMessage());
             return null;
         }    
     }

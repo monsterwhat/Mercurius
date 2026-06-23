@@ -6,7 +6,8 @@ import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import Services.DashboardService; 
+import Services.DashboardService;
+import Services.AlertasService; 
 import Models.ComprobantesEmitidos;
 import Models.Users; 
 import java.io.Serializable;
@@ -22,6 +23,7 @@ public class DashboardController implements Serializable {
     
     @Inject private SessionController sessionController;
     @Inject private DashboardService dashboardService;
+    @Inject private AlertasService alertasService;
     
     // Today's stats
     private BigDecimal todaySales;
@@ -67,7 +69,7 @@ public void loadDashboardData() {
                 }
             }
         } catch (Exception e) {
-            System.out.println("DashboardController: Error loading dashboard data: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error loading dashboard data: " + e.toString(), null, 0, "DashboardController.init()", null, e.toString());
             FacesContext.getCurrentInstance().addMessage(null, 
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron cargar los datos del dashboard"));
         }
@@ -88,7 +90,7 @@ public void loadDashboardData() {
                 lastTransactionDisplay = String.format("Factura %s - %s colones a las %s", 
                     billNumber, total, timeStr);
             } catch (Exception e) {
-                System.out.println("Error formatting last transaction: " + e.toString());
+                alertasService.registrarAlerta("Error", "Error formatting last transaction: " + e.toString(), null, 0, "DashboardController.updateLastTransactionDisplay()", null, e.toString());
                 lastTransactionDisplay = "Error al cargar última transacción";
             }
         } else {

@@ -56,6 +56,14 @@ public class AppSettings {
     
     @Column(name = "cashbackPercentage")
     private BigDecimal cashbackPercentage; //Percentage of cashback for loyalty program
+
+    private Integer ultimoConsecutivo; //Last consecutive number used for invoices
+    
+    @Column(length = 3)
+    private String codigoSucursal; //Branch code for Hacienda (e.g., "001")
+    
+    @Column(length = 3)
+    private String codigoTerminal; //Terminal code for Hacienda (e.g., "001")
     
     @Column(name = "puntosInactivityMonths")
     private Integer puntosInactivityMonths; //Months of inactivity before points expire

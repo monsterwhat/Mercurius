@@ -1,6 +1,7 @@
 package Services;
 
 import jakarta.enterprise.context.ApplicationScoped; 
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
@@ -22,46 +23,42 @@ import org.apache.pdfbox.printing.PDFPageable;
 @Named
 public class PrinterService implements Serializable{
 
+    @Inject AlertasService alertasService;
+
     public void printPDFFile(File fileToPrint) {
-        System.out.println("Attempting to print PDF: " + fileToPrint.getAbsolutePath());
+        alertasService.registrarAlerta("Info", "Attempting to print PDF: " + fileToPrint.getAbsolutePath(), null, 0, "PrinterService.printPDFFile()", null, null);
         
         try {
             PDDocument document = Loader.loadPDF(fileToPrint);
             
-            // Find the printer...
             PrintService printService = PrintServiceLookup.lookupDefaultPrintService();
-            System.out.println("Default print service: " + (printService != null ? printService.getName() : "null"));
+            alertasService.registrarAlerta("Info", "Default print service: " + (printService != null ? printService.getName() : "null"), null, 0, "PrinterService.printPDFFile()", null, null);
            
             if (printService != null) {
-                // Create a print job
                 try {
                     PrinterJob job = PrinterJob.getPrinterJob();
-                    System.out.println("Created printer job, attempting to print...");
+                    alertasService.registrarAlerta("Info", "Created printer job, attempting to print...", null, 0, "PrinterService.printPDFFile()", null, null);
            
                     job.setPageable(new PDFPageable(document));
                     job.setPrintService(printService);
                     job.print();
-                    System.out.println("Print job submitted successfully to printer: " + printService.getName());
+                    alertasService.registrarAlerta("Info", "Print job submitted successfully to printer: " + printService.getName(), null, 0, "PrinterService.printPDFFile()", null, null);
                 } catch (PrinterException e) {
-                    System.err.println("Printer error: " + e.getLocalizedMessage());
-                    e.printStackTrace();
+                    alertasService.registrarAlerta("Error", "Printer error: " + e.getMessage(), null, 0, "PrinterService.printPDFFile()", null, e.getMessage());
                 } catch (NullPointerException e) {
-                    System.err.println("Null pointer error during printing: " + e.getLocalizedMessage());
-                    e.printStackTrace();
+                    alertasService.registrarAlerta("Error", "Null pointer error during printing: " + e.getMessage(), null, 0, "PrinterService.printPDFFile()", null, e.getMessage());
                 }
             } else {
-                System.err.println("No default print service found. Available printers:");
+                alertasService.registrarAlerta("Error", "No default print service found.", null, 0, "PrinterService.printPDFFile()", null, null);
                 PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
                 for (PrintService service : services) {
-                    System.out.println("  - " + service.getName());
+                    alertasService.registrarAlerta("Info", "  - " + service.getName(), null, 0, "PrinterService.printPDFFile()", null, null);
                 }
             }
         } catch (IOException e) {
-            System.err.println("IO Error loading PDF: " + e.getLocalizedMessage());
-            e.printStackTrace();
+            alertasService.registrarAlerta("Error", "IO Error loading PDF: " + e.getMessage(), null, 0, "PrinterService.printPDFFile()", null, e.getMessage());
         } catch (Exception e) {
-            System.err.println("Unexpected error: " + e.getLocalizedMessage());
-            e.printStackTrace();
+            alertasService.registrarAlerta("Error", "Unexpected error: " + e.getMessage(), null, 0, "PrinterService.printPDFFile()", null, e.getMessage());
         }
     }
 }

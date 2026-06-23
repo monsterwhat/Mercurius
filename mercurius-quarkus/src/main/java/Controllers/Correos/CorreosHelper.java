@@ -117,8 +117,7 @@ public class CorreosHelper {
                     }
                 }
             } catch (IllegalArgumentException e) {
-                System.err.println("Invalid report type: " + tipo);
-                e.printStackTrace(); // Print the full stack trace for debugging
+                alertasService.registrarAlerta("Error", "Invalid report type: " + tipo, null, 0, "CorreosHelper.generarReporte()", null, null);
             }
         }
     }
@@ -145,7 +144,6 @@ public class CorreosHelper {
             
         } catch (IOException e) {
             alertasService.registrarAlerta("Error al enviar reporte de movimientos", e.getLocalizedMessage(), null, 0, "CorreosHelper.processMovimientos", null, null);
-            System.out.println("Error: " + e.getLocalizedMessage());
         }
     } else {
         FacesContext.getCurrentInstance().addMessage(null,
@@ -173,10 +171,9 @@ public class CorreosHelper {
                 // Save an alert (log) for processing facturas report
                 alertasService.registrarAlerta("Reporte de facturas enviado", "Se ha enviado el reporte de facturas a los correos especificados en el reporte programado.", null, 0, "CorreosHelper.processFacturas", null, null);
                 
-                System.out.println("Report generated: " + filePath);
+                alertasService.registrarAlerta("Info", "Report generated: " + filePath, null, 0, "CorreosHelper.processFacturas()", null, null);
             } catch (IOException e) {
                 alertasService.registrarAlerta("Error al enviar reporte de facturas", e.getLocalizedMessage(), null, 0, "CorreosHelper.processFacturas", null, null);
-                System.out.println("Error: " + e.getLocalizedMessage());
             }
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
@@ -204,10 +201,9 @@ public class CorreosHelper {
                 // Save an alert (log) for processing articulos report
                 alertasService.registrarAlerta("Reporte de artículos enviado", "Se ha enviado el reporte de artículos a los correos especificados en el reporte programado.", null, 0, "CorreosHelper.processArticulos", null, null);
                 
-                System.out.println("Report generated: " + filePath);
+                alertasService.registrarAlerta("Info", "Report generated: " + filePath, null, 0, "CorreosHelper.processArticulos()", null, null);
             } catch (IOException e) {
                 alertasService.registrarAlerta("Error al enviar reporte de artículos", e.getLocalizedMessage(), null, 0, "CorreosHelper.processArticulos", null, null);
-                System.out.println("Error: " + e.getLocalizedMessage());
             }
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
@@ -236,10 +232,9 @@ public class CorreosHelper {
                 // Save an alert (log) for processing departamentos report
                 alertasService.registrarAlerta("Reporte de departamentos enviado", "Se ha enviado el reporte de departamentos a los correos especificados en el reporte programado.", null, 0, "CorreosHelper.processDepartamentos", null, null);
                 
-                System.out.println("Report generated: " + filePath);
+                alertasService.registrarAlerta("Info", "Report generated: " + filePath, null, 0, "CorreosHelper.processDepartamentos()", null, null);
             } catch (IOException e) {
                 alertasService.registrarAlerta("Error al enviar reporte de departamentos", e.getLocalizedMessage(), null, 0, "CorreosHelper.processDepartamentos", null, null);
-                System.out.println("Error: " + e.getLocalizedMessage());
             }
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
@@ -268,10 +263,9 @@ public class CorreosHelper {
                 // Save an alert (log) for processing familias report
                 alertasService.registrarAlerta("Reporte de familias enviado", "Se ha enviado el reporte de familias a los correos especificados en el reporte programado.", null, 0, "CorreosHelper.processFamilias", null, null);
                 
-                System.out.println("Report generated: " + filePath);
+                alertasService.registrarAlerta("Info", "Report generated: " + filePath, null, 0, "CorreosHelper.processFamilias()", null, null);
             } catch (IOException e) {
                 alertasService.registrarAlerta("Error al enviar reporte de familias", e.getLocalizedMessage(), null, 0, "CorreosHelper.processFamilias", null, null);
-                System.out.println("Error: " + e.getLocalizedMessage());
             }
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
@@ -300,10 +294,9 @@ public class CorreosHelper {
                 // Save an alert (log) for processing inventarios report
                 alertasService.registrarAlerta("Reporte de inventarios enviado", "Se ha enviado el reporte de inventarios a los correos especificados en el reporte programado.", null, 0, "CorreosHelper.processInventarios", null, null);
 
-                System.out.println("Report generated: " + filePath);
+                alertasService.registrarAlerta("Info", "Report generated: " + filePath, null, 0, "CorreosHelper.processInventarios()", null, null);
             } catch (IOException e) {
                 alertasService.registrarAlerta("Error al enviar reporte de inventarios", e.getLocalizedMessage(), null, 0, "CorreosHelper.processInventarios", null, null);
-                System.out.println("Error: " + e.getLocalizedMessage());
             }
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
@@ -352,7 +345,7 @@ public class CorreosHelper {
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error enviando reporte!: " + emailResult, null));
              
             alertasService.registrarAlerta("Error enviando correo", "Se ha producido un error al enviar el correo electronico.", null, 0, "CorreosHelper.handleEmailResult", null, null);
-            System.out.println("Error enviando correo");
+            alertasService.registrarAlerta("Error", "Error enviando correo", null, 0, "CorreosHelper.handleEmailResult()", null, null);
         }
     }
     

@@ -1,5 +1,6 @@
 package Utils;
 
+import Services.AlertasService;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -28,11 +29,14 @@ public class AppLauncher {
     @Inject
     SystemTrayManager trayManager;
 
+    @Inject
+    AlertasService alertasService;
+
     void onStart(@Observes StartupEvent event) {
         try {
             // Check if application is already running
             if (!isSingleInstance()) {
-                System.err.println("Mercurius is already running!");
+                alertasService.registrarAlerta("Error", "Mercurius is already running!", null, 0, "AppLauncher.onStart()", null, null);
                 return; // Don't exit immediately, let Quarkus handle it
             }
             
@@ -46,9 +50,9 @@ public class AppLauncher {
                     // Silently ignore tray initialization failures on non-Windows systems
                     String os = System.getProperty("os.name").toLowerCase();
                     if (os.contains("win")) {
-                        System.err.println("System tray initialization failed: " + e.getMessage());
+                        alertasService.registrarAlerta("Error", "System tray initialization failed: " + e.getMessage(), null, 0, "AppLauncher.onStart()", null, null);
                     } else {
-                        System.out.println("System tray not initialized (non-Windows system)");
+                        alertasService.registrarAlerta("Debug", "System tray not initialized (non-Windows system)", null, 0, "AppLauncher.onStart()", null, null);
                     }
                 }
             });
@@ -60,7 +64,7 @@ public class AppLauncher {
             openBrowserAfterDelay(3000);
             
         } catch (Exception e) {
-            System.err.println("Error during application startup: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error during application startup: " + e.getMessage(), null, 0, "AppLauncher.onStart()", null, null);
             // Don't crash the app, just continue without these features
         }
     }
@@ -104,7 +108,7 @@ public class AppLauncher {
             
             return true;
         } catch (Exception e) {
-            System.err.println("Error checking single instance: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error checking single instance: " + e.getMessage(), null, 0, "AppLauncher.isSingleInstance()", null, null);
             return true; // Allow startup if we can't check
         }
     }
@@ -126,12 +130,12 @@ public class AppLauncher {
     /**
      * Opens the default browser to the specified URL
      */
-    public static void openBrowser(String url) {
+    void openBrowser(String url) {
         if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
             try {
                 Desktop.getDesktop().browse(new URI(url));
             } catch (IOException | URISyntaxException e) {
-                System.err.println("Error opening browser: " + e.getMessage());
+                alertasService.registrarAlerta("Error", "Error opening browser: " + e.getMessage(), null, 0, "AppLauncher.openBrowser()", null, e.getMessage());
                 // Fallback: try with runtime exec
                 try {
                     String os = System.getProperty("os.name").toLowerCase();
@@ -143,11 +147,11 @@ public class AppLauncher {
                         new ProcessBuilder("xdg-open", url).start();
                     }
                 } catch (IOException ex) {
-                    System.err.println("Failed to open browser with fallback method: " + ex.getMessage());
+                    alertasService.registrarAlerta("Error", "Failed to open browser with fallback: " + ex.getMessage(), null, 0, "AppLauncher.openBrowser()", null, ex.getMessage());
                 }
             }
         } else {
-            System.err.println("Desktop browsing is not supported");
+            alertasService.registrarAlerta("Warn", "Desktop browsing is not supported", null, 0, "AppLauncher.openBrowser()", null, null);
         }
     }
 
@@ -160,7 +164,7 @@ public class AppLauncher {
             try {
                 trayManager.shutdown();
             } catch (Exception e) {
-                System.err.println("Error cleaning up tray manager: " + e.getMessage());
+                alertasService.registrarAlerta("Error", "Error cleaning up tray manager: " + e.getMessage(), null, 0, "AppLauncher.shutdown()", null, null);
             }
             
             // Shutdown the application

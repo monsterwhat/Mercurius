@@ -26,7 +26,7 @@ public class DescuentoService extends GService<Descuento>{
         try {
             em.persist(descuento);
         } catch (Exception e) {
-            System.out.println("Error creating Entity!");
+            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "DescuentoService.create()", null, e.getMessage());
         }
     }
     

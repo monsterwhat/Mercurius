@@ -26,7 +26,7 @@ public class MedioPagoService extends GService<MedioPago>  {
         try {
             em.persist(medioPago);
         } catch (Exception e) {
-            System.out.println("Error creating Entity!");
+            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "MedioPagoService.create()", null, e.getMessage());
         }
     }
     

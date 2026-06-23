@@ -5,6 +5,7 @@ import Models.Articulos.Articulos;
 import Models.Detalles.LineaDetalle;
 import Models.Detalles.CodigoComercial;
 import Models.ComprobantesRecibidos;
+import Models.AppSettings;
 
 import Models.Encabezado.CorreoElectronicoEmisor;
 import Models.Encabezado.Emisor;
@@ -14,7 +15,11 @@ import Models.Inventario;
 import Services.AlertasService;
 import Services.ArticuloPrecioService;
 import Services.ComprobantesRecibidosService;
+import Services.AppSettingsService;
+import Services.ComprobanteService;
 import Services.Facturas.*;
+import Services.HaciendaApiService;
+import Services.HaciendaSigner;
 import Utils.Parsers.Parser;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -27,6 +32,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.ArrayList; 
 import java.util.Date;
 import java.util.List;
@@ -68,6 +74,14 @@ public class FacturasController implements Serializable {
     Parser parser;
     @Inject
     AlertasService alertas;
+    @Inject
+    AppSettingsService appSettingsService;
+    @Inject
+    ComprobanteService comprobanteService;
+    @Inject
+    HaciendaApiService haciendaApiService;
+    @Inject
+    HaciendaSigner haciendaSigner;
 
     private List<UploadedFile> files;
     private List<ComprobantesRecibidos> facturas;
@@ -263,17 +277,17 @@ public class FacturasController implements Serializable {
             if (selectedFactura != null && selectedFactura.getDetalles() != null) {
                 List<LineaDetalle> lineasDetalle = selectedFactura.getDetalles().getLineasDetalle();
                 if (lineasDetalle == null || lineasDetalle.isEmpty()) {
-                    System.out.println("Fallback: lineasDetalle is empty, fetching manually with lineaDetalleService.listAllWhereID()");
+                    alertas.registrarAlerta("Info", "Fallback: lineasDetalle is empty, fetching manually", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
                     lineasDetalle = lineaDetalleService.listAllWhereID(selectedFactura.getDetalles().getId());
                     if (lineasDetalle != null && !lineasDetalle.isEmpty()) {
                         selectedFactura.getDetalles().setLineasDetalle(lineasDetalle);
-                        System.out.println("Fallback successful: populated " + lineasDetalle.size() + " lineasDetalle records");
+                        alertas.registrarAlerta("Info", "Fallback successful: populated " + lineasDetalle.size() + " lineasDetalle records", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
                     } else {
-                        System.out.println("Fallback failed: no lineasDetalle found with ID " + selectedFactura.getDetalles().getId());
+                        alertas.registrarAlerta("Error", "Fallback failed: no lineasDetalle found with ID " + selectedFactura.getDetalles().getId(), currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
                     }
                 }
             } else {
-                System.out.println("Error: selectedFactura or its detalles became null after re-fetching");
+                alertas.registrarAlerta("Error", "selectedFactura or its detalles became null after re-fetching", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
             }
         }
         PrimeFaces.current().executeScript("PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();");
@@ -316,7 +330,7 @@ public class FacturasController implements Serializable {
                 return facturasListDetalladas();
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasDetallados()", null, e.getLocalizedMessage());
             return new ArrayList<>();
         }
     }
@@ -334,7 +348,7 @@ public class FacturasController implements Serializable {
                 return facturasPenditenes();
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasPendientes()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -352,7 +366,7 @@ public class FacturasController implements Serializable {
                 return facturasVencidas();
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasVencidas()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -373,7 +387,7 @@ public class FacturasController implements Serializable {
                 return activas;
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasActivas()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -394,7 +408,7 @@ public class FacturasController implements Serializable {
                 return pagadas;
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasPagadas()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -415,7 +429,7 @@ public class FacturasController implements Serializable {
                 return procesadas;
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasProcesadas()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -466,26 +480,23 @@ public class FacturasController implements Serializable {
     public void parseXMLFromUploadedFile(UploadedFile uploadedFile) {
         synchronized (fileUploadLock) {
         if (uploadedFile == null) {
-            System.err.println("UploadedFile is null");
+            alertas.registrarAlerta("Error", "UploadedFile is null", null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El archivo subido es nulo");
             FacesContext.getCurrentInstance().addMessage(null, message);
             return;
         }
         
-        System.out.println("File details:");
-        System.out.println("  FileName: " + uploadedFile.getFileName());
-        System.out.println("  Size: " + uploadedFile.getSize());
-        System.out.println("  ContentType: " + uploadedFile.getContentType());
+        alertas.registrarAlerta("Info", "File details: " + uploadedFile.getFileName() + " Size: " + uploadedFile.getSize() + " Type: " + uploadedFile.getContentType(), null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
         
         if (uploadedFile.getSize() == 0) {
-            System.err.println("File is empty: " + uploadedFile.getFileName());
+            alertas.registrarAlerta("Error", "File is empty: " + uploadedFile.getFileName(), null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El archivo está vacío: " + uploadedFile.getFileName());
             FacesContext.getCurrentInstance().addMessage(null, message);
             return;
         }
         
         try (InputStream inputStream = uploadedFile.getInputStream()) {
-            System.out.println("Got input stream for file: " + uploadedFile.getFileName());
+            alertas.registrarAlerta("Info", "Got input stream for file: " + uploadedFile.getFileName(), null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
             
             // Mark the stream so we can reset after reading preview
             inputStream.mark(1024);
@@ -493,27 +504,25 @@ public class FacturasController implements Serializable {
             // Read first few bytes to verify file content
             byte[] buffer = new byte[1024];
             int bytesRead = inputStream.read(buffer);
-            System.out.println("Read " + bytesRead + " bytes from file");
+            alertas.registrarAlerta("Info", "Read " + bytesRead + " bytes from file", null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
             
             if (bytesRead > 0) {
                 String preview = new String(buffer, 0, Math.min(bytesRead, 200));
-                System.out.println("File preview: " + preview);
+                alertas.registrarAlerta("Info", "File preview: " + preview, null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
             }
             
             // Reset stream for parser
             inputStream.reset();
             
             parser.parseXML(inputStream);
-            System.out.println("Successfully processed file: " + uploadedFile.getFileName());
+            alertas.registrarAlerta("Info", "Successfully processed file: " + uploadedFile.getFileName(), null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
         } catch (IOException e) {
-            System.err.println("IOException processing file " + uploadedFile.getFileName() + ": " + e.getLocalizedMessage());
-            e.printStackTrace();
+            alertas.registrarAlerta("Error", "IOException processing file " + uploadedFile.getFileName() + ": " + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "FacturasController.parseXMLFromUploadedFile()", null, e.getLocalizedMessage());
             alertas.registrarAlerta("Error al parsear xml de factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.parseXMLFromUploadedFile()", e.getLocalizedMessage(), null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar el archivo: " + e.getLocalizedMessage());
             FacesContext.getCurrentInstance().addMessage(null, message);
         } catch (Exception e) {
-            System.err.println("Exception processing file " + uploadedFile.getFileName() + ": " + e.getLocalizedMessage());
-            e.printStackTrace();
+            alertas.registrarAlerta("Error", "Exception processing file " + uploadedFile.getFileName() + ": " + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "FacturasController.parseXMLFromUploadedFile()", null, e.getLocalizedMessage());
             alertas.registrarAlerta("Error al parsear xml de factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.parseXMLFromUploadedFile()", e.getLocalizedMessage(), null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar el archivo XML: " + e.getLocalizedMessage());
             FacesContext.getCurrentInstance().addMessage(null, message);
@@ -575,7 +584,7 @@ public class FacturasController implements Serializable {
             List<LineaDetalle> lineasDetalle = factura.getDetalles() != null ? 
                 factura.getDetalles().getLineasDetalle() : new ArrayList<>();
             if (lineasDetalle.isEmpty()) {
-                System.out.println("Empty factura?");
+                alertas.registrarAlerta("Info", "Empty factura?", currentSession.getCurrentUser(), 0, "FacturasController.processFactura()", null, null);
                 lineasDetalle = lineaDetalleService.listAllWhereID(factura.getDetalles().getId());
                 if (lineasDetalle.isEmpty() || lineasDetalle == null) {
                     return;
@@ -661,6 +670,9 @@ public class FacturasController implements Serializable {
                     articuloController.updateSimpleArticulo(articuloExistente);
                 }
 
+                String codigoDocumento = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
+                boolean isNotaCredito = "03".equals(codigoDocumento);
+
                 Inventario ajusteArticulo = new Inventario();
 
                 if (articuloExistente != null) {
@@ -671,11 +683,11 @@ public class FacturasController implements Serializable {
                 ajusteArticulo.setUnidadesRecomendadasFactura(UnidadesParseadas);
                 ajusteArticulo.setUsuario(currentSession.getCurrentUser());
                 ajusteArticulo.setFechaMovimiento(new Date());
-                ajusteArticulo.setTipoMovimiento("Ingreso Automatico por factura");
+                ajusteArticulo.setTipoMovimiento(isNotaCredito ? "Egreso Automatico por nota de credito" : "Ingreso Automatico por factura");
                 ajusteArticulo.setStatus(true);
                 ajusteArticulo.setProcessed(false);
-                ajusteArticulo.setCantidad(cantidad);
-                ajusteArticulo.setNotas("");
+                ajusteArticulo.setCantidad(isNotaCredito ? cantidad.negate() : cantidad);
+                ajusteArticulo.setNotas(isNotaCredito ? "Nota de credito - egreso de inventario" : "");
 
                 inventarioController.createSimpleInventario(ajusteArticulo);
             }
@@ -689,13 +701,107 @@ public class FacturasController implements Serializable {
             alertas.registrarAlerta("Error al procesar factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.processFactura()", e.getLocalizedMessage(), null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar factura: " + e.getLocalizedMessage());
             FacesContext.getCurrentInstance().addMessage(null, message);
-            System.out.println("Error procesing factura: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error processing factura: " + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "FacturasController.processFactura()", null, e.getLocalizedMessage());
         }
     }
 
     public void cancel() {
-        System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + "Cancelo Factura");
+        alertas.registrarAlerta("Info", "Cajero: " + currentSession.getCurrentUser().getUsername() + " cancelo factura", currentSession.getCurrentUser(), 0, "FacturasController.cancel()", null, null);
         alertas.registrarAlerta("Factura eliminada", "Se elimino una factura pendiente", currentSession.getCurrentUser(), 0, "cancel()", "", "");
+    }
+
+    public void aceptarFacturaRecibida() {
+        if (selectedFactura == null || selectedFactura.getId() == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", "No hay factura seleccionada"));
+            return;
+        }
+        procesarMensajeReceptor(1, "Aceptado");
+    }
+
+    public void rechazarFacturaRecibida() {
+        if (selectedFactura == null || selectedFactura.getId() == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", "No hay factura seleccionada"));
+            return;
+        }
+        procesarMensajeReceptor(3, "Rechazado");
+    }
+
+    private void procesarMensajeReceptor(int codigoMensaje, String accion) {
+        try {
+            if (selectedFactura.getEncabezado() == null) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Factura sin encabezado"));
+                return;
+            }
+
+            AppSettings settings = appSettingsService.returnCurrent();
+            if (settings == null) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No hay configuración de Hacienda"));
+                return;
+            }
+
+            String clave = selectedFactura.getEncabezado().getClave();
+            if (clave == null || clave.isEmpty()) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Factura sin clave Hacienda"));
+                return;
+            }
+
+            String numeroCedula = settings.getIdentificacion() != null ? settings.getIdentificacion() : "0";
+            LocalDateTime fechaEmision = selectedFactura.getEncabezado().getFechaEmision();
+            
+            BigDecimal montoTotalImpuesto = selectedFactura.getResumen() != null 
+                ? selectedFactura.getResumen().getTotalImpuesto() : BigDecimal.ZERO;
+            BigDecimal montoTotalFactura = selectedFactura.getResumen() != null
+                ? selectedFactura.getResumen().getTotalVenta() : BigDecimal.ZERO;
+
+            String xmlMensaje = comprobanteService.generateMensajeReceptorXml(
+                settings, clave, numeroCedula, fechaEmision, codigoMensaje, 
+                accion, montoTotalImpuesto, montoTotalFactura
+            );
+
+            if (xmlMensaje == null) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo generar el XML del Mensaje Receptor"));
+                return;
+            }
+
+            HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlMensaje);
+            if (!signResult.success) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error firmando Mensaje Receptor: " + signResult.errorMessage));
+                return;
+            }
+
+            HaciendaApiService.ApiResponse response;
+            if (codigoMensaje == 1) {
+                response = haciendaApiService.acceptInvoice(clave, signResult.signedXml);
+            } else {
+                response = haciendaApiService.rejectInvoice(clave, signResult.signedXml);
+            }
+
+            if (response.isSuccess()) {
+                selectedFactura.setHaciendaMensajeReceptorEstado(accion.toUpperCase());
+                selectedFactura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
+                facturaService.update(selectedFactura);
+                
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", 
+                        "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor enviado a Hacienda."));
+                alertas.registrarAlerta("Hacienda", "Mensaje Receptor " + accion + ": " + clave, currentSession.getCurrentUser(), 0, "FacturasController.procesarMensajeReceptor()", null, null);
+            } else {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Hacienda rechazó el Mensaje Receptor: " + response.errorMessage));
+            }
+
+        } catch (Exception e) {
+            alertas.registrarAlerta("Error", "Error en Mensaje Receptor: " + e.getMessage(), currentSession.getCurrentUser(), 0, "FacturasController.procesarMensajeReceptor()", null, e.getMessage());
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar Mensaje Receptor: " + e.getMessage()));
+        }
     }
 
 }

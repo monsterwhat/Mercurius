@@ -22,7 +22,7 @@ public class CodigoComercialService extends GService<CodigoComercial>{
         try {
             this.em.persist(codigoComercial);
         } catch (Exception e) {
-            System.out.println("Error creating Entity!");
+            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "CodigoComercialService.create()", null, e.getMessage());
         }
     }
     

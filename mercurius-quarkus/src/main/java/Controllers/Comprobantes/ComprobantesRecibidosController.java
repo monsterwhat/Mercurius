@@ -162,7 +162,7 @@ public class ComprobantesRecibidosController implements Serializable {
                 return facturasListDetalladas();
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertaService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "ComprobantesRecibidosController.getFilteredFacturasDetallados()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -180,7 +180,7 @@ public class ComprobantesRecibidosController implements Serializable {
                 return facturasPenditenes();
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertaService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "ComprobantesRecibidosController.getFilteredFacturasPendientes()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -198,7 +198,7 @@ public class ComprobantesRecibidosController implements Serializable {
                 return facturasVencidas();
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertaService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "ComprobantesRecibidosController.getFilteredFacturasVencidas()", null, e.getLocalizedMessage());
             return null;
         }
     }
@@ -233,7 +233,7 @@ public class ComprobantesRecibidosController implements Serializable {
             parser.parseXML(inputStream);
         } catch (IOException e) {
             alertaService.registrarAlerta("Error parsing xml from uploaded file", "", currentSession.getCurrentUser(), 0, "parseXMLFromUploadedFile()", null, e.getLocalizedMessage());
-            System.out.println("Error" + e.getLocalizedMessage());
+            alertaService.registrarAlerta("Error", "Error" + e.getLocalizedMessage(), null, 0, "ComprobantesRecibidosController.parseXMLFromUploadedFile()", null, e.getLocalizedMessage());
         }
     }
     
@@ -242,8 +242,6 @@ public class ComprobantesRecibidosController implements Serializable {
             for (int i = 0; i < files.size(); i++) {
                 parseXMLFromUploadedFile(files.get(i));
                  
-                //TODO Should also save them on the documents/recibos/xmls
-                //Done i think
                 directoryService.saveUploadedFile(files.get(i), directoryService.getXMLDirPath());
                 
             }
@@ -280,7 +278,7 @@ public class ComprobantesRecibidosController implements Serializable {
             
             List<LineaDetalle> lineasDetalle = factura.getDetalles().getLineasDetalle();
             if(lineasDetalle.isEmpty()){
-                System.out.println("Empty factura?");
+                alertaService.registrarAlerta("Info", "Empty factura?", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.processFactura()", null, null);
                 lineasDetalle = lineaDetalleService.listAllWhereID(factura.getDetalles().getId());
                 if(lineasDetalle.isEmpty() || lineasDetalle == null){
                     return;
@@ -366,6 +364,9 @@ public class ComprobantesRecibidosController implements Serializable {
                     articuloController.updateSimpleArticulo(articuloExistente);
                 }
                 
+                String codigoDocumento = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
+                boolean isNotaCredito = "03".equals(codigoDocumento);
+
                 Inventario ajusteArticulo = new Inventario();
                 
                 if(articuloExistente != null){
@@ -376,11 +377,11 @@ public class ComprobantesRecibidosController implements Serializable {
                 ajusteArticulo.setUnidadesRecomendadasFactura(UnidadesParseadas);
                 ajusteArticulo.setUsuario(currentSession.getCurrentUser());
                 ajusteArticulo.setFechaMovimiento(new Date());
-                ajusteArticulo.setTipoMovimiento("Ingreso Automatico por factura");
+                ajusteArticulo.setTipoMovimiento(isNotaCredito ? "Egreso Automatico por nota de credito" : "Ingreso Automatico por factura");
                 ajusteArticulo.setStatus(true);
                 ajusteArticulo.setProcessed(false);
-                ajusteArticulo.setCantidad(cantidad);
-                ajusteArticulo.setNotas("");                
+                ajusteArticulo.setCantidad(isNotaCredito ? cantidad.negate() : cantidad);
+                ajusteArticulo.setNotas(isNotaCredito ? "Nota de credito - egreso de inventario" : "");                
                 
                 inventarioController.createSimpleInventario(ajusteArticulo);
             }
@@ -390,13 +391,12 @@ public class ComprobantesRecibidosController implements Serializable {
             clearCache();
             
         } catch (Exception e) {
-            System.out.println("Error procesing factura: " + e.getLocalizedMessage());
             alertaService.registrarAlerta("Error procesando factura", "", currentSession.getCurrentUser(), 0, "processFactura()", null, e.getLocalizedMessage());
         }
     }
     
     public void cancel(){
-        System.out.println("Cajero: " + currentSession.getCurrentUser().getUsername() + "Cancelo Factura");
+        alertaService.registrarAlerta("Info", "Cajero: " + currentSession.getCurrentUser().getUsername() + " cancelo factura", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.cancel()", null, null);
     }
     
     // Report methods

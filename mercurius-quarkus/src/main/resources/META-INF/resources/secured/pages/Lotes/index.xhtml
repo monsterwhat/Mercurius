@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Lotes / Vencimientos</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .lotes-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+                background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            }
+            .lotes-header .title { color: white; margin-bottom: 1rem; }
+            .lotes-header .subtitle { color: rgba(255,255,255,0.8); }
+            .form-card {
+                background: var(--surface-card, white);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            .form-card h3 {
+                margin-top: 0;
+                margin-bottom: 1rem;
+                color: var(--text-color, #333);
+                border-bottom: 2px solid #e67e22;
+                padding-bottom: 0.5rem;
+            }
+            .form-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            .form-field label {
+                display: block;
+                font-size: 0.875rem;
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+                color: var(--text-color-secondary, #666);
+            }
+            .lote-vencido { color: #dc3545; font-weight: bold; }
+            .lote-proximo { color: #e67e22; font-weight: bold; }
+            .lote-ok { color: #28a745; font-weight: bold; }
+        </style>
+    </h:head>
+
+    <h:body>
+        <h:form id="lotesForm">
+            <ui:include src="/secured/fragments/userBar.xhtml" />
+            <p:growl showDetail="true" showSummary="true" />
+
+            <section class="section">
+                <div class="lotes-header">
+                    <p class="title is-3 has-text-centered">Control de Lotes y Vencimientos</p>
+                    <p class="subtitle has-text-centered">Gestion de lotes, FEFO y alertas de expiracion</p>
+                </div>
+
+                <div class="form-card">
+                    <h3>Ingresar Lote</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="articulo">Articulo</label>
+                            <p:autoComplete id="articulo"
+                                          value="#{lotesController.selectedArticulo}"
+                                          completeMethod="#{articulosController.completeArticulo}"
+                                          var="art"
+                                          itemLabel="#{art.nombre}"
+                                          itemValue="#{art}"
+                                          converter="#{articulosConverter}"
+                                          forceSelection="true"
+                                          required="true"
+                                          style="width: 100%;" />
+                        </div>
+                        <div class="form-field">
+                            <label for="numeroLote">Numero de Lote</label>
+                            <p:inputText id="numeroLote"
+                                        value="#{lotesController.newLote.numeroLote}"
+                                        required="true"
+                                        style="width: 100%;" />
+                        </div>
+                        <div class="form-field">
+                            <label for="fechaVencimiento">Fecha de Vencimiento</label>
+                            <p:calendar id="fechaVencimiento"
+                                       value="#{lotesController.newLote.fechaVencimiento}"
+                                       pattern="dd/MM/yyyy"
+                                       required="true"
+                                       style="width: 100%;" />
+                        </div>
+                        <div class="form-field">
+                            <label for="cantidadInicial">Cantidad Inicial</label>
+                            <p:inputNumber id="cantidadInicial"
+                                          value="#{lotesController.newLote.cantidadInicial}"
+                                          min="0"
+                                          required="true"
+                                          style="width: 100%;" />
+                        </div>
+                        <div class="form-field" style="grid-column: 1 / -1;">
+                            <label for="notasLote">Notas</label>
+                            <p:inputTextarea id="notasLote"
+                                           value="#{lotesController.newLote.notas}"
+                                           rows="2"
+                                           style="width: 100%;" />
+                        </div>
+                    </div>
+                    <p:commandButton value="Ingresar Lote"
+                                   action="#{lotesController.ingresarLote()}"
+                                   update="lotesForm"
+                                   styleClass="button is-success"
+                                   icon="pi pi-plus"
+                                   style="margin-top: 1rem;" />
+                </div>
+
+                <div class="columns">
+                    <div class="column is-half">
+                        <div class="form-card">
+                            <h3>Proximos a Vencer (#{lotesController.countProximosVencer})</h3>
+                            <p:dataTable value="#{lotesController.lotesProximosVencer}"
+                                         var="lote"
+                                         rows="10"
+                                         paginator="true"
+                                         paginatorPosition="bottom"
+                                         emptyMessage="No hay lotes proximos a vencer"
+                                         styleClass="articulos-table"
+                                         reflow="true">
+
+                                <p:column headerText="Articulo">
+                                    <h:outputText value="#{lote.articulo.nombre}" />
+                                </p:column>
+                                <p:column headerText="Lote">
+                                    <h:outputText value="#{lote.numeroLote}" />
+                                </p:column>
+                                <p:column headerText="Vence" width="100">
+                                    <h:outputText value="#{lote.fechaVencimiento}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy" />
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="Cantidad" width="100" styleClass="has-text-right">
+                                    <h:outputText value="#{lote.cantidadActual}">
+                                        <f:convertNumber />
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="Estado" width="100">
+                                    <h:outputText value="#{lote.fechaVencimiento lt now.time ? 'Vencido' : 'Proximo'}"
+                                                  styleClass="#{lote.fechaVencimiento lt now.time ? 'lote-vencido' : 'lote-proximo'}" />
+                                </p:column>
+                            </p:dataTable>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="form-card">
+                            <h3>Vencidos (#{lotesController.countVencidos})</h3>
+                            <p:dataTable value="#{lotesController.lotesVencidos}"
+                                         var="lote"
+                                         rows="10"
+                                         paginator="true"
+                                         paginatorPosition="bottom"
+                                         emptyMessage="No hay lotes vencidos"
+                                         styleClass="articulos-table"
+                                         reflow="true"
+                                         rowStyleClass="lote-vencido">
+
+                                <p:column headerText="Articulo">
+                                    <h:outputText value="#{lote.articulo.nombre}" />
+                                </p:column>
+                                <p:column headerText="Lote">
+                                    <h:outputText value="#{lote.numeroLote}" />
+                                </p:column>
+                                <p:column headerText="Vence" width="100">
+                                    <h:outputText value="#{lote.fechaVencimiento}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy" />
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="Cantidad" width="100" styleClass="has-text-right">
+                                    <h:outputText value="#{lote.cantidadActual}">
+                                        <f:convertNumber />
+                                    </h:outputText>
+                                </p:column>
+                            </p:dataTable>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </h:form>
+    </h:body>
+</html>

@@ -521,3 +521,7 @@ MigrationBackup/
 Mercurius/nb-configuration.xml
 new 1.txt
 /mercurius-quarkus/.settings
+/.doctor
+/.omo
+PLAN_Prevalidation_Service.md
+TODO.md

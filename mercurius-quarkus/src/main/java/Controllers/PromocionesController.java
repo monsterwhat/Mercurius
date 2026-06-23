@@ -158,13 +158,13 @@ public class PromocionesController implements Serializable {
 
             // Remove the item from the list if found
             if (itemToRemove != null) {
-                System.out.println(itemToRemove.getArticulo().getNombre());
+                alertas.registrarAlerta("Info", "Item removed: " + itemToRemove.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "PromocionesController.removeItem()", null, null);
                 lista.remove(itemToRemove);
             } else {
-                System.out.println("No item removed?");
+                alertas.registrarAlerta("Info", "No item removed?", currentSession.getCurrentUser(), 0, "PromocionesController.removeItem()", null, null);
             }
         }else{
-            System.out.println("Null selection");
+            alertas.registrarAlerta("Info", "Null selection", currentSession.getCurrentUser(), 0, "PromocionesController.removeItem()", null, null);
         }
     }
 
@@ -438,7 +438,7 @@ public class PromocionesController implements Serializable {
     }
 
     public void descuentoChanged() {
-        System.out.println("Descuento: " + newPromocion.getDescuento());
+        alertas.registrarAlerta("Info", "Descuento: " + newPromocion.getDescuento(), currentSession.getCurrentUser(), 0, "PromocionesController.descuentoChanged()", null, null);
     }
 
 }

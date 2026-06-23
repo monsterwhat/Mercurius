@@ -16,6 +16,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
+import java.time.LocalDateTime;
 
 @Named
 @ApplicationScoped
@@ -35,7 +36,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         try {
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.create()", null, e.getMessage());
         }
     }
     
@@ -46,7 +47,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             em.refresh(entity); // Refresh to get any database-generated values
             return entity;
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.createAndReturn()", null, e.getMessage());
             return null;
         }
     }
@@ -61,10 +62,10 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ComprobantesEmitidosService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ComprobantesEmitidosService.delete()", null, e.getMessage());
         }
     }
 
@@ -73,7 +74,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.update()", null, e.getMessage());
         }
     }
     
@@ -87,10 +88,10 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 existingItem.setStatus(false);
                 em.merge(existingItem);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "ComprobantesEmitidosService.softDelete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error soft deleting entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.softDelete()", null, e.getMessage());
         }
     }
     
@@ -108,10 +109,10 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 }
                 em.merge(existingItem);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for toggle", null, 0, "ComprobantesEmitidosService.toggle()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error soft deleting entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error toggling entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.toggle()", null, e.getMessage());
         }
     }
     
@@ -124,7 +125,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listAll()", null, e.getMessage());
             return java.util.Collections.emptyList();
         }
     }
@@ -144,10 +145,10 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             query.setParameter("user", user);
             List<ComprobantesEmitidos> result = query.getResultList();
-            System.out.println("Query returned " + (result != null ? result.size() : "null") + " invoices for user " + user.getUsername());
+            alertasService.registrarAlerta("Info", "Query returned " + result.size() + " invoices for user " + user.getUsername(), null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, null);
             return result;
         } catch (Exception e) {
-            System.out.println("Error listing entities for user: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing entities for user: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, e.getMessage());
             return null;
         }
     }
@@ -170,10 +171,10 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             query.setParameter("startDate", startDate);
             query.setParameter("endDate", endDate);
             List<ComprobantesEmitidos> result = query.getResultList();
-            System.out.println("Query returned " + (result != null ? result.size() : "null") + " invoices for user " + user.getUsername() + " between " + startDate + " and " + endDate);
+            alertasService.registrarAlerta("Info", "Query returned " + result.size() + " invoices for user " + user.getUsername() + " between " + startDate + " and " + endDate, null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, null);
             return result;
         } catch (Exception e) {
-            System.out.println("Error listing entities for user with date range: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing entities for user with date range: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, e.getMessage());
             return null;
         }
     }
@@ -191,7 +192,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             // If no result is found, catch the NoResultException and return false
             return false;
         } catch (Exception e) {
-            System.out.println("Error finding entity by numeroConsecutivo: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding entity by numeroConsecutivo: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findByNumeroConsecutivo()", null, e.getMessage());
             return false;
         }
     }
@@ -214,7 +215,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
-            System.out.println("Error finding last transaction for user: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding last transaction for user: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findLastTransactionByUser()", null, e.getMessage());
             return null;
         }
     }
@@ -232,6 +233,25 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         return query.getResultList();
     }
 
+    public List<ComprobantesEmitidos> listByDateRange(Date start, Date end) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.resumen r " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "WHERE e.fechaEmision BETWEEN :start AND :end " +
+                "ORDER BY e.fechaEmision ASC",
+                ComprobantesEmitidos.class
+            );
+            query.setParameter("start", start);
+            query.setParameter("end", end);
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error listing by date range: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listByDateRange()", null, e.getMessage());
+            return null;
+        }
+    }
+
     public List<ComprobantesEmitidos> findFacturasPendientes() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
@@ -247,7 +267,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error finding facturas pendientes: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding facturas pendientes: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasPendientes()", null, e.getMessage());
             return null;
         }
     }
@@ -267,7 +287,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error finding facturas aceptadas: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding facturas aceptadas: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasAceptadas()", null, e.getMessage());
             return null;
         }
     }
@@ -287,7 +307,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error finding facturas rechazadas: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding facturas rechazadas: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasRechazadas()", null, e.getMessage());
             return null;
         }
     }
@@ -303,8 +323,64 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting facturas pendientes: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error counting facturas pendientes: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.countFacturasPendientes()", null, e.getMessage());
             return 0L;
+        }
+    }
+
+    public List<ComprobantesEmitidos> findByClave(String clave) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f WHERE f.haciendaClave = :clave",
+                ComprobantesEmitidos.class
+            );
+            query.setParameter("clave", clave);
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error finding by clave: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findByClave()", null, e.getMessage());
+            return null;
+        }
+    }
+
+    public List<ComprobantesEmitidos> findFacturasParaVerificarEstado() {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "WHERE f.status = true " +
+                "AND f.haciendaEstado = 'ENVIADO' " +
+                "AND (f.haciendaFechaRespuesta IS NULL " +
+                "     OR f.haciendaFechaEnvio IS NULL " +
+                "     OR f.haciendaFechaRespuesta < f.haciendaFechaEnvio) " +
+                "ORDER BY e.fechaEmision DESC",
+                ComprobantesEmitidos.class
+            );
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error finding facturas para verificar estado: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasParaVerificarEstado()", null, e.getMessage());
+            return null;
+        }
+    }
+
+    public List<ComprobantesEmitidos> findFacturasSinRespuesta3Horas() {
+        try {
+            LocalDateTime hace3Horas = LocalDateTime.now().minusHours(3);
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "WHERE f.status = true " +
+                "AND f.haciendaEstado = 'ENVIADO' " +
+                "AND f.haciendaFechaEnvio IS NOT NULL " +
+                "AND f.haciendaFechaEnvio < :hace3Horas " +
+                "AND (f.haciendaFechaRespuesta IS NULL OR f.haciendaFechaRespuesta < f.haciendaFechaEnvio) " +
+                "ORDER BY e.fechaEmision DESC",
+                ComprobantesEmitidos.class
+            );
+            query.setParameter("hace3Horas", hace3Horas);
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error finding facturas sin respuesta 3h: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasSinRespuesta3Horas()", null, e.getMessage());
+            return null;
         }
     }
 

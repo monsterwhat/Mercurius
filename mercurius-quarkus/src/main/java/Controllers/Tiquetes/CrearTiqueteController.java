@@ -1,6 +1,7 @@
 package Controllers.Tiquetes;
 
 import Services.ComprobanteService;
+import Services.ComprobanteService.CrearComprobanteResult;
 import Services.CarritoService;
 import Controllers.SessionController;
 import Controllers.SettingsController;
@@ -204,8 +205,8 @@ public class CrearTiqueteController implements Serializable {
         }
         // 1. Hacer ajustes en inventario
         carritoService.ajustarInventario(currentSession.getCurrentUser());
-        // 2. Crear Comprobante y TODO enviarlo a tributacion
-        ComprobantesEmitidos tiqueteElectronico = comprobanteService.crearComprobante(
+        // 2. Crear Comprobante y enviar a Hacienda
+        CrearComprobanteResult result = comprobanteService.crearComprobante(
                 settings,
                 carritoService.getCarrito(),
                 selectedClient,
@@ -213,7 +214,17 @@ public class CrearTiqueteController implements Serializable {
                 currentSession.getCurrentUser()
         );
 
-        if (tiqueteElectronico != null) {
+        if (result != null && result.comprobante != null) {
+            ComprobantesEmitidos tiqueteElectronico = result.comprobante;
+            
+            if (result.haciendaEnviado) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Hacienda", result.haciendaMensaje));
+            } else if (result.haciendaMensaje != null) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Hacienda", 
+                        "Factura creada pero pendiente de envio a Hacienda. Puede enviarla desde la seccion de Consultas."));
+            }
 
             try {
                 pdfGenerator.generarPDFTiqueteElectronico(
@@ -228,6 +239,16 @@ public class CrearTiqueteController implements Serializable {
 
                 pdfUrl = pdfGenerator.getPdfUrl();
 
+                if (result.haciendaEnviado) {
+                    comprobanteService.enviarFacturaACliente(
+                        tiqueteElectronico,
+                        selectedClient,
+                        currentSession.getCurrentUser(),
+                        carritoService.getPago(),
+                        carritoService.getVuelto()
+                    );
+                }
+
                 try {
                     URL url = new URL(pdfUrl);
                     File fileToPrint = new File("tiqueteElectronico_104.pdf");
@@ -240,12 +261,12 @@ public class CrearTiqueteController implements Serializable {
                     String msg = "Malformed URL: " + e.getMessage();
                     FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", msg));
                     alertaService.registrarAlerta("Error Facturación", msg, currentSession.getCurrentUser(), 0, "CrearTiqueteController.facturar", null, null);
-                    System.out.println(msg);
+                    alertaService.registrarAlerta("Error", msg, currentSession.getCurrentUser(), 0, "CrearTiqueteController.facturar()", null, msg);
                 } catch (IOException e) {
                     String msg = "I/O Error while downloading or printing the PDF: " + e.getMessage();
                     FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", msg));
                     alertaService.registrarAlerta("Error Facturación", msg, currentSession.getCurrentUser(), 0, "CrearTiqueteController.facturar", null, null);
-                    System.out.println(msg);
+                    alertaService.registrarAlerta("Error", msg, currentSession.getCurrentUser(), 0, "CrearTiqueteController.facturar()", null, msg);
                 }
 
                 clearPago();
@@ -255,7 +276,7 @@ public class CrearTiqueteController implements Serializable {
                 String msg = "Error during PDF generation: " + e.getMessage();
                 FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", msg));
                 alertaService.registrarAlerta("Error Facturación", msg, currentSession.getCurrentUser(), 0, "CrearTiqueteController.facturar", null, null);
-                System.out.println(msg);
+                alertaService.registrarAlerta("Error", msg, currentSession.getCurrentUser(), 0, "CrearTiqueteController.facturar()", null, msg);
             }
         }
 

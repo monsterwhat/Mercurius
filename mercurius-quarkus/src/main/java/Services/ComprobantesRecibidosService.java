@@ -17,6 +17,7 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root; 
 import java.util.Date;
 import java.util.List;
+import java.time.LocalDate;
 
 @Named
 @ApplicationScoped
@@ -39,10 +40,9 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             em.persist(entity);
             em.flush();
             em.refresh(entity);
-            System.out.println("Successfully created ComprobantesRecibidos with ID: " + entity.getId());
+            alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos with ID: " + entity.getId(), null, 0, "ComprobantesRecibidosService.create()", null, null);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
-            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al crear comprobante recibido: " + e.getMessage(), null, 0, "create()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.create()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos", e);
         }
     }
@@ -61,10 +61,9 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             em.flush();
             em.refresh(entity);
             
-            System.out.println("Successfully created ComprobantesRecibidos with ID: " + entity.getId());
+            alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos with ID: " + entity.getId(), null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, null);
         } catch (Exception e) {
-            System.out.println("Error creating entity with related entities: " + e.toString());
-            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al crear comprobante con entidades relacionadas: " + e.getMessage(), null, 0, "createWithRelatedEntities()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error creating entity with related entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
         }
     }
@@ -79,11 +78,10 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ComprobantesRecibidosService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
-            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al eliminar comprobante recibido: " + e.getMessage(), null, 0, "delete()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ComprobantesRecibidosService.delete()", null, e.getMessage());
         }
     }
 
@@ -92,8 +90,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
-            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al actualizar comprobante recibido: " + e.getMessage(), null, 0, "update()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.update()", null, e.getMessage());
         }
     }
     
@@ -107,11 +104,10 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 existingItem.setStatus(false);
                 em.merge(existingItem);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "ComprobantesRecibidosService.softDelete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error soft deleting entity: " + e.toString());
-            alertasService.registrarAlerta("Error Comprobante Recibido", "Error al eliminar suavemente comprobante recibido: " + e.getMessage(), null, 0, "softDelete()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.softDelete()", null, e.getMessage());
         }
     }
     
@@ -129,10 +125,10 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 }
                 em.merge(existingItem);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for toggle", null, 0, "ComprobantesRecibidosService.toggle()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error soft deleting entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error toggling entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.toggle()", null, e.getMessage());
         }
     }
     
@@ -149,7 +145,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listAll()", null, e.getMessage());
             return java.util.Collections.emptyList();
         }
     }
@@ -167,7 +163,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
@@ -184,7 +180,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             // If no result is found, catch the NoResultException and return false
             return false;
         } catch (Exception e) {
-            System.out.println("Error finding entity by numeroConsecutivo: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding entity by numeroConsecutivo: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findByNumeroConsecutivo()", null, e.getMessage());
             return false;
         }
 }
@@ -232,11 +228,30 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
-            System.out.println("Error finding ComprobantesRecibidos by ID with details: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding ComprobantesRecibidos by ID with details: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findByIdWithDetails()", null, e.getMessage());
             return null;
         }
     }
     
+    public List<ComprobantesRecibidos> listByDateRange(Date start, Date end) {
+        try {
+            TypedQuery<ComprobantesRecibidos> query = em.createQuery(
+                "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
+                "LEFT JOIN FETCH f.resumen r " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "WHERE e.fechaEmision BETWEEN :start AND :end " +
+                "ORDER BY e.fechaEmision ASC",
+                ComprobantesRecibidos.class
+            );
+            query.setParameter("start", start);
+            query.setParameter("end", end);
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error listing recibidos by date range: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listByDateRange()", null, e.getMessage());
+            return null;
+        }
+    }
+
     public List<ComprobantesRecibidos> findComprobantesAfterDate(Date fecha) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ComprobantesRecibidos> cq = cb.createQuery(ComprobantesRecibidos.class);
@@ -280,7 +295,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 })
                 .collect(java.util.stream.Collectors.toList());
         } catch (Exception e) {
-            System.out.println("Error listing pendientes: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing pendientes: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listPendientes()", null, e.getMessage());
             return null;
         }
     }
@@ -315,12 +330,46 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 })
                 .collect(java.util.stream.Collectors.toList());
         } catch (Exception e) {
-            System.out.println("Error listing vencidas: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing vencidas: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listVencidas()", null, e.getMessage());
+            return null;
+    }
+
+    public List<ComprobantesRecibidos> findPendientesMensajeReceptor() {
+        try {
+            TypedQuery<ComprobantesRecibidos> query = em.createQuery(
+                "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle " +
+                "LEFT JOIN FETCH f.encabezado " +
+                "LEFT JOIN FETCH f.resumen " +
+                "WHERE f.status = true " +
+                "AND (f.haciendaMensajeReceptorEstado IS NULL OR f.haciendaMensajeReceptorEstado = 'PENDIENTE') " +
+                "ORDER BY f.encabezado.fechaEmision DESC",
+                ComprobantesRecibidos.class
+            );
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error finding pendientes Mensaje Receptor: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findPendientesMensajeReceptor()", null, e.getMessage());
             return null;
         }
     }
 
+    public List<ComprobantesRecibidos> findProximosVencerMensajeReceptor(int dias) {
+        try {
+            LocalDate limite = LocalDate.now().plusDays(dias);
+            List<ComprobantesRecibidos> todos = findPendientesMensajeReceptor();
+            if (todos == null) return java.util.Collections.emptyList();
+            
+            return todos.stream()
+                .filter(f -> f.getMensajeReceptorLimite() != null && !f.getMensajeReceptorLimite().isAfter(limite))
+                .collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error finding proximos vencer Mensaje Receptor: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findProximosVencerMensajeReceptor()", null, e.getMessage());
+            return null;
+        }
+    }
 
+}
 
 
 }

@@ -110,7 +110,7 @@ public class SettingsController implements Serializable {
                 configuracionActual = true;
                 break;
             default:
-                System.out.println("No hay pasos?!");
+                alertas.registrarAlerta("Info", "No hay pasos?!", currentSession.getCurrentUser(), 0, "SettingsController.seleccionar()", null, null);
                 break;
         }
     }
@@ -137,7 +137,7 @@ public class SettingsController implements Serializable {
                 configuracionActual = true;
                 break;
             default:
-                System.out.println("No hay pasos?!");
+                alertas.registrarAlerta("Info", "No hay pasos?!", currentSession.getCurrentUser(), 0, "SettingsController.seleccionar()", null, null);
                 break;
         }
     }
@@ -308,7 +308,7 @@ public class SettingsController implements Serializable {
                 reloadPage();
 
             } catch (IOException ex) {
-                System.out.println("Error: " + ex.getLocalizedMessage());
+                alertas.registrarAlerta("Error", "Error: " + ex.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "SettingsController.handleFileUpload()", null, ex.getLocalizedMessage());
             }
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito!", imagen.getFileName() + " se selecciono."));
@@ -356,7 +356,7 @@ public class SettingsController implements Serializable {
             reloadPage();
             addMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Se añadió el correo electrónico");
         } catch (Exception e) {
-            System.out.println("Error:" + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error:" + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "SettingsController.saveCorreo()", null, e.getLocalizedMessage());
             addMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo enviar el correo: " + e.getMessage());
         }
     }
@@ -367,7 +367,7 @@ public class SettingsController implements Serializable {
         CompletableFuture.runAsync(() -> {
             probarCorreo(correoElectronico, contrasenaCorreo);
         }).exceptionally(ex -> {
-            System.out.println("Error al probar correo: " + ex.getMessage());
+            alertas.registrarAlerta("Error", "Error al probar correo: " + ex.getMessage(), currentSession.getCurrentUser(), 0, "SettingsController.asyncProbarCorreo()", null, ex.getMessage());
             addMessage(FacesMessage.SEVERITY_WARN, 
                    "Prueba de correo fallida", 
                    "El correo fue guardado, pero no se pudo enviar el mensaje de prueba."); 
@@ -436,7 +436,7 @@ public class SettingsController implements Serializable {
         try {
             externalContext.redirect(url);
         } catch (IOException e) {
-            e.printStackTrace();
+            alertas.registrarAlerta("Error", "Error al redirigir: " + e.getMessage(), currentSession.getCurrentUser(), 0, "SettingsController.reloadPage()", null, e.getMessage());
         }
     }
 

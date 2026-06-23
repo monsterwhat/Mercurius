@@ -29,7 +29,7 @@ public class EncabezadoService extends GService<Encabezado> {
         try {
             em.merge(encabezado);
         } catch (Exception e) {
-            System.out.println("Error creating Entity!");
+            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "EncabezadoService.create()", null, e.getMessage());
         }
     }
     
@@ -37,16 +37,16 @@ public class EncabezadoService extends GService<Encabezado> {
         try {
             // Check if encabezado with same numeroConsecutivo exists using count query
             if (existsByNumeroConsecutivo(encabezado.getNumeroConsecutivo())) {
-                System.out.println("Using existing encabezado for: " + encabezado.getNumeroConsecutivo());
-                return null; // Return null since it's already processed
+                alertasService.registrarAlerta("Info", "Using existing encabezado for: " + encabezado.getNumeroConsecutivo(), null, 0, "EncabezadoService.createIfNotExists()", null, null);
+                return null;
             }
             
             // Create new encabezado if not exists
             em.merge(encabezado);
-            System.out.println("Successfully created encabezado for: " + encabezado.getNumeroConsecutivo());
+            alertasService.registrarAlerta("Info", "Successfully created encabezado for: " + encabezado.getNumeroConsecutivo(), null, 0, "EncabezadoService.createIfNotExists()", null, null);
             return encabezado;
         } catch (Exception e) {
-            System.out.println("Error creating or finding encabezado: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating or finding encabezado: " + e.getMessage(), null, 0, "EncabezadoService.createIfNotExists()", null, e.getMessage());
             return null;
         }
     }
@@ -62,7 +62,7 @@ public class EncabezadoService extends GService<Encabezado> {
             Long count = query.getSingleResult();
             return count != null && count > 0;
         } catch (Exception e) {
-            System.out.println("Error checking encabezado existence: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error checking encabezado existence: " + e.getMessage(), null, 0, "EncabezadoService.existsByNumeroConsecutivo()", null, e.getMessage());
             return false;
         }
     }
@@ -80,7 +80,7 @@ public class EncabezadoService extends GService<Encabezado> {
             Long count = query.getSingleResult();
             return count != null && count > 0;
         } catch (Exception e) {
-            System.out.println("Error checking valid comprobante existence: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error checking valid comprobante existence: " + e.getMessage(), null, 0, "EncabezadoService.existsByNumeroConsecutivoWithValidComprobante()", null, e.getMessage());
             return false;
         }
     }
@@ -96,7 +96,7 @@ public class EncabezadoService extends GService<Encabezado> {
             List<Encabezado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (Exception e) {
-            System.out.println("Error finding existing encabezado: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding existing encabezado: " + e.getMessage(), null, 0, "EncabezadoService.findExistingEncabezado()", null, e.getMessage());
             return null;
         }
     }
@@ -106,7 +106,7 @@ public Encabezado getByNumeroConsecutivo(String numeroConsecutivo) {
             // Find existing record, handle duplicates gracefully
             return findExistingEncabezado(numeroConsecutivo);
         } catch (Exception e) {
-            System.out.println("Error getting encabezado by numeroConsecutivo: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting encabezado by numeroConsecutivo: " + e.getMessage(), null, 0, "EncabezadoService.getByNumeroConsecutivo()", null, e.getMessage());
             return null;
         }
     }
@@ -132,7 +132,7 @@ public Encabezado getByNumeroConsecutivo(String numeroConsecutivo) {
             }
             return 0;
         } catch (Exception e) {
-            System.out.println("Error cleaning duplicate encabezados: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error cleaning duplicate encabezados: " + e.getMessage(), null, 0, "EncabezadoService.cleanDuplicateEncabezados()", null, e.getMessage());
             return 0;
         }
     }

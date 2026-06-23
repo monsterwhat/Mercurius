@@ -26,7 +26,7 @@ public class ImpuestoService extends GService<Impuesto>{
         try {
             em.persist(impuesto);
         } catch (Exception e) {
-            System.out.println("Error creating Entity!");
+            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "ImpuestoService.create()", null, e.getMessage());
         }
     }
     

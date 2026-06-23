@@ -53,7 +53,7 @@ public class ArticuloPrecioController implements Serializable  {
      */
     public void selectGeneral(){
         selection = "general";
-        System.out.println("Selected General " + selection);
+        alertasService.registrarAlerta("Info", "Selected General " + selection, null, 0, "ArticuloPrecioController.selectGeneral()", null, null);
     }
     
     /**

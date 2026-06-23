@@ -1,5 +1,6 @@
 package Services;
 
+import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -16,6 +17,7 @@ import java.util.List;
 @Transactional
 public abstract class GService<T> implements Serializable{
     public @PersistenceContext EntityManager em;
+    @Inject protected AlertasService alertasService;
 
     protected abstract Class<T> getEntityClass();
 
@@ -24,6 +26,7 @@ public abstract class GService<T> implements Serializable{
             TypedQuery<T> query = em.createQuery("SELECT e FROM " + getEntityClass().getSimpleName() + " e", getEntityClass());
             return query.getResultList();
         } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error listing " + getEntityClass().getSimpleName() + ": " + e.getMessage(), null, 0, "GService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -32,7 +35,7 @@ public abstract class GService<T> implements Serializable{
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("No entity found!");
+            alertasService.registrarAlerta("Error", "No entity found!", null, 0, "GService.update()", null, e.getMessage());
         }
     }
 
@@ -40,7 +43,7 @@ public abstract class GService<T> implements Serializable{
         try {
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating Entity!");
+            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "GService.create()", null, e.getMessage());
         }
     }
 
@@ -53,10 +56,10 @@ public abstract class GService<T> implements Serializable{
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "GService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString(), null, 0, "GService.delete()", null, e.getMessage());
         }
     }
 
@@ -65,7 +68,7 @@ public abstract class GService<T> implements Serializable{
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "GService.count()", null, e.getMessage());
             return null;
         }
     }
@@ -77,6 +80,7 @@ public abstract class GService<T> implements Serializable{
             query.setMaxResults(pageSize);
             return query.getResultList();
         } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error listing page of " + getEntityClass().getSimpleName() + ": " + e.getMessage(), null, 0, "GService.listPage()", null, e.getMessage());
             return null;
         }
     }
@@ -85,7 +89,7 @@ public abstract class GService<T> implements Serializable{
         try {
             return em.find(getEntityClass(), id);
         } catch (Exception e) {
-            System.out.println("Error finding " + getEntityClass().getSimpleName() + " with ID " + id + ": " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error finding " + getEntityClass().getSimpleName() + " with ID " + id + ": " + e.getLocalizedMessage(), null, 0, "GService.find()", null, e.getMessage());
             return null;
         }
     }

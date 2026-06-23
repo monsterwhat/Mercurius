@@ -54,7 +54,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
                     .getResultList();
             return list != null && !list.isEmpty() ? list.get(0) : null;
         } catch (Exception e) {
-            System.out.println("Error getting active settings: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error getting active settings: " + e.getLocalizedMessage(), null, 0, "HaciendaCertificateService.getActiveSettings()", null, e.getMessage());
             return null;
         }
     }
@@ -69,7 +69,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
             CertificateInfo info = getCertificateInfo();
             return info != null && !info.isExpired && !info.isNotYetValid;
         } catch (Exception e) {
-            System.out.println("Error checking certificate validity: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error checking certificate validity: " + e.getLocalizedMessage(), null, 0, "HaciendaCertificateService.hasValidCertificate()", null, e.getMessage());
             return false;
         }
     }
@@ -107,7 +107,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
             }
             return null;
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-            System.out.println("Error reading certificate info: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error reading certificate info: " + e.getLocalizedMessage(), null, 0, "HaciendaCertificateService.getCertificateInfo()", null, e.getMessage());
             return null;
         }
     }
@@ -131,11 +131,11 @@ public class HaciendaCertificateService extends GService<AppSettings> {
                         Date now = new Date();
                         
                         if (now.after(x509.getNotAfter())) {
-                            System.out.println("Certificate is expired");
+                            alertasService.registrarAlerta("Info", "Certificate is expired", null, 0, "HaciendaCertificateService.validateCertificate()", null, null);
                             return false;
                         }
                         if (now.before(x509.getNotBefore())) {
-                            System.out.println("Certificate is not yet valid");
+                            alertasService.registrarAlerta("Info", "Certificate is not yet valid", null, 0, "HaciendaCertificateService.validateCertificate()", null, null);
                             return false;
                         }
                         
@@ -143,10 +143,10 @@ public class HaciendaCertificateService extends GService<AppSettings> {
                     }
                 }
             }
-            System.out.println("No valid certificate found in keystore");
+            alertasService.registrarAlerta("Info", "No valid certificate found in keystore", null, 0, "HaciendaCertificateService.validateCertificate()", null, null);
             return false;
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-            System.out.println("Certificate validation error: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Certificate validation error: " + e.getLocalizedMessage(), null, 0, "HaciendaCertificateService.validateCertificate()", null, e.getMessage());
             return false;
         }
     }
@@ -174,9 +174,9 @@ public class HaciendaCertificateService extends GService<AppSettings> {
             settings.setCertificado(certificado);
             settings.setCertificadoPassword(password);
             em.merge(settings);
-            System.out.println("Certificate saved successfully");
+            alertasService.registrarAlerta("Info", "Certificate saved successfully", null, 0, "HaciendaCertificateService.saveCertificate()", null, null);
         } else {
-            System.out.println("No active settings found to save certificate");
+            alertasService.registrarAlerta("Info", "No active settings found to save certificate", null, 0, "HaciendaCertificateService.saveCertificate()", null, null);
         }
     }
 
@@ -186,7 +186,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
             settings.setCertificado(null);
             settings.setCertificadoPassword(null);
             em.merge(settings);
-            System.out.println("Certificate cleared successfully");
+            alertasService.registrarAlerta("Info", "Certificate cleared successfully", null, 0, "HaciendaCertificateService.clearCertificate()", null, null);
         }
     }
 
@@ -200,7 +200,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         if (settings != null) {
             settings.setHaciendaApiKey(apiKey);
             em.merge(settings);
-            System.out.println("API Key saved successfully");
+            alertasService.registrarAlerta("Info", "API Key saved successfully", null, 0, "HaciendaCertificateService.saveApiKey()", null, null);
         }
     }
 
@@ -216,7 +216,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         if (settings != null) {
             settings.setHaciendaEnvironment(environment);
             em.merge(settings);
-            System.out.println("Environment set to: " + environment);
+            alertasService.registrarAlerta("Info", "Environment set to: " + environment, null, 0, "HaciendaCertificateService.setEnvironment()", null, null);
         }
     }
 

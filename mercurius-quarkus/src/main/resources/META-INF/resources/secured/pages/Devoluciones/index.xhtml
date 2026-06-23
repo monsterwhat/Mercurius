@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Devoluciones y Notas de Credito</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .devoluciones-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+                background: linear-gradient(135deg, #e67e22 0%, #d35400 100%);
+            }
+            .devoluciones-header .title { color: white; margin-bottom: 1rem; }
+            .devoluciones-header .subtitle { color: rgba(255,255,255,0.8); }
+            .form-card {
+                background: var(--surface-card, white);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            .form-card h3 {
+                margin-top: 0;
+                margin-bottom: 1rem;
+                color: var(--text-color, #333);
+                border-bottom: 2px solid #e67e22;
+                padding-bottom: 0.5rem;
+            }
+            .form-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            .form-field label {
+                display: block;
+                font-size: 0.875rem;
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+                color: var(--text-color-secondary, #666);
+            }
+            .total-badge {
+                font-size: 1.25rem;
+                font-weight: bold;
+                color: #e67e22;
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+        <h:form id="devolucionesForm">
+            <ui:include src="/secured/fragments/userBar.xhtml" />
+            <p:growl showDetail="true" showSummary="true" />
+
+            <section class="section">
+                <div class="devoluciones-header">
+                    <p class="title is-3 has-text-centered">Devoluciones y Notas de Credito</p>
+                    <p class="subtitle has-text-centered">Procese devoluciones de articulos y genere notas de credito</p>
+                </div>
+
+                <h:panelGroup rendered="#{devolucionesController.facturaSeleccionada == null}">
+                    <div class="form-card">
+                        <h3>Buscar Factura</h3>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="tipoBusqueda">Tipo de Busqueda</label>
+                                <p:selectOneRadio id="tipoBusqueda"
+                                                 value="#{devolucionesController.tipoBusqueda}">
+                                    <f:selectItem itemLabel="Numero Consecutivo" itemValue="consecutivo" />
+                                    <f:selectItem itemLabel="Nombre Cliente" itemValue="cliente" />
+                                </p:selectOneRadio>
+                            </div>
+                            <div class="form-field" style="grid-column: 1 / -1;">
+                                <label for="criterioBusqueda">Criterio de Busqueda</label>
+                                <p:inputText id="criterioBusqueda"
+                                           value="#{devolucionesController.criterioBusqueda}"
+                                           style="width: 100%;" />
+                            </div>
+                        </div>
+                        <p:commandButton value="Buscar"
+                                       action="#{devolucionesController.buscarFactura()}"
+                                       update="devolucionesForm"
+                                       styleClass="button is-warning"
+                                       icon="pi pi-search"
+                                       style="margin-top: 1rem;" />
+                    </div>
+
+                    <div class="form-card" rendered="#{not empty devolucionesController.facturasEncontradas}">
+                        <h3>Resultados de Busqueda</h3>
+                        <p:dataTable value="#{devolucionesController.facturasEncontradas}"
+                                     var="factura"
+                                     rows="10"
+                                     paginator="true"
+                                     emptyMessage="No se encontraron facturas"
+                                     styleClass="articulos-table"
+                                     reflow="true">
+
+                            <p:column headerText="Numero Consecutivo" width="180">
+                                <h:outputText value="#{factura.encabezado.numeroConsecutivo}" />
+                            </p:column>
+                            <p:column headerText="Fecha" width="150">
+                                <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="Cliente">
+                                <h:outputText value="#{factura.encabezado.receptor.nombre}" />
+                            </p:column>
+                            <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                <h:outputText value="#{factura.resumen.totalComprobante}">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="Accion" width="120" style="text-align: center;">
+                                <p:commandButton value="Seleccionar"
+                                               action="#{devolucionesController.seleccionarFactura(factura)}"
+                                               update="devolucionesForm"
+                                               styleClass="button is-warning is-small"
+                                               icon="pi pi-arrow-right" />
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+                </h:panelGroup>
+
+                <h:panelGroup rendered="#{devolucionesController.facturaSeleccionada != null}">
+                    <div class="form-card">
+                        <h3>
+                            Devolucion - Factura #{devolucionesController.facturaSeleccionada.encabezado.numeroConsecutivo}
+                        </h3>
+
+                        <p:dataTable value="#{devolucionesController.lineasDevolucion}"
+                                     var="linea"
+                                     rows="10"
+                                     emptyMessage="No hay lineas en esta factura"
+                                     styleClass="articulos-table"
+                                     reflow="true">
+
+                            <p:column headerText="Seleccionar" width="80" style="text-align: center;">
+                                <p:selectBooleanCheckbox value="#{linea.seleccionado}">
+                                    <p:ajax update="devolucionesForm:totalDisplay" listener="#{devolucionesController.recalcularTotal()}" />
+                                </p:selectBooleanCheckbox>
+                            </p:column>
+                            <p:column headerText="Articulo">
+                                <h:outputText value="#{linea.lineaDetalle.detalle}" />
+                            </p:column>
+                            <p:column headerText="Cantidad Original" width="100" styleClass="has-text-right">
+                                <h:outputText value="#{linea.cantidadOriginal}" />
+                            </p:column>
+                            <p:column headerText="Cantidad a Devolver" width="150">
+                                <p:inputNumber value="#{linea.cantidadDevolver}"
+                                             min="0"
+                                             max="#{linea.cantidadOriginal}"
+                                             style="width: 100%;">
+                                    <p:ajax update="devolucionesForm:totalDisplay" listener="#{devolucionesController.recalcularTotal()}" />
+                                </p:inputNumber>
+                            </p:column>
+                            <p:column headerText="Precio Unitario" width="120" styleClass="has-text-right">
+                                <h:outputText value="#{linea.lineaDetalle.precioUnitario}">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </p:column>
+                        </p:dataTable>
+
+                        <h:panelGroup id="totalDisplay" style="margin-top: 1rem; text-align: right;">
+                            <span class="total-badge">
+                                Total a devolver: ₡
+                                <h:outputText value="#{devolucionesController.totalDevolucion}">
+                                    <f:convertNumber minFractionDigits="2" maxFractionDigits="2" />
+                                </h:outputText>
+                            </span>
+                        </h:panelGroup>
+
+                        <div class="form-field" style="margin-top: 1rem;">
+                            <label for="motivo">Motivo de la Devolucion</label>
+                            <p:inputTextarea id="motivo"
+                                           value="#{devolucionesController.motivo}"
+                                           rows="3"
+                                           style="width: 100%;" />
+                        </div>
+
+                        <p:commandButton value="Procesar Devolucion"
+                                       action="#{devolucionesController.procesarDevolucion()}"
+                                       update="devolucionesForm"
+                                       styleClass="button is-danger"
+                                       icon="pi pi-refresh"
+                                       style="margin-top: 1rem;" />
+                    </div>
+                </h:panelGroup>
+
+                <div class="form-card">
+                    <h3>Historial de Notas de Credito</h3>
+                    <p:dataTable value="#{devolucionesController.historialNotas}"
+                                 var="nota"
+                                 rows="10"
+                                 paginator="true"
+                                 emptyMessage="No hay notas de credito registradas"
+                                 styleClass="articulos-table"
+                                 reflow="true">
+
+                        <p:column headerText="Fecha" width="150">
+                            <h:outputText value="#{nota.fecha}">
+                                <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="Factura Original" width="180">
+                            <h:outputText value="#{nota.comprobanteOriginal.encabezado.numeroConsecutivo}" />
+                        </p:column>
+                        <p:column headerText="Motivo">
+                            <h:outputText value="#{nota.motivo}" />
+                        </p:column>
+                        <p:column headerText="Monto" width="120" styleClass="has-text-right">
+                            <h:outputText value="#{nota.montoTotal}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="Estado Hacienda" width="120" style="text-align: center;">
+                            <h:outputText value="#{nota.haciendaEstado}" />
+                        </p:column>
+                    </p:dataTable>
+                </div>
+            </section>
+        </h:form>
+    </h:body>
+</html>

@@ -30,7 +30,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "DetalleServicioService.create()", null, e.getMessage());
         }
     }
 
@@ -44,10 +44,10 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "DetalleServicioService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "DetalleServicioService.delete()", null, e.getMessage());
         }
     }
 
@@ -56,7 +56,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "DetalleServicioService.update()", null, e.getMessage());
         }
     }
     
@@ -73,7 +73,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "DetalleServicioService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -91,7 +91,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "DetalleServicioService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }

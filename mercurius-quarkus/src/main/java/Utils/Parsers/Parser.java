@@ -23,6 +23,7 @@ import Models.Resumen.CodigoTipoMoneda;
 import Models.Resumen.ResumenFactura;
 import Services.ComprobantesRecibidosService;
 import Services.ComprobantesEmitidosService;
+import Services.ComprobanteService;
 import Services.Facturas.DescuentoService;
 import Services.Facturas.DetalleServicioService;
 import Services.Facturas.EmisorService;
@@ -75,6 +76,8 @@ public class Parser {
     @Inject
     ComprobantesEmitidosService comprobantesEmitidosService;
     @Inject
+    ComprobanteService comprobanteService;
+    @Inject
     ImpuestoService impuestoService;
     @Inject
     DescuentoService descuentoService;
@@ -101,7 +104,7 @@ public class Parser {
             // Parse the XML file into the ComprobantesRecibidos object
             return (ComprobantesRecibidos) unmarshaller.unmarshal(xmlFile);
         } catch (JAXBException e) {
-            System.out.println("Error!" + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error!" + e.getLocalizedMessage(), null, 0, "Parser.parseComprobanteXML()", null, null);
             return null;
         }
     }
@@ -129,7 +132,7 @@ public class Parser {
             // If no format works, throw an exception
             return null;
         } catch (Exception e) {
-            System.out.println("Error parsing fecha emision: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error parsing fecha emision: " + e.getMessage(), null, 0, "Parser.parseFechaEmision()", null, null);
             return null;
         }
     }
@@ -190,7 +193,7 @@ public class Parser {
 
             return emisor;
         } catch (Exception e) {
-            System.out.println("Error Parsing Emisor: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error Parsing Emisor: " + e.getLocalizedMessage(), null, 0, "Parser.parseEmisor()", null, null);
             return null;
         }
     }
@@ -233,7 +236,7 @@ public class Parser {
 
             return receptor;
         } catch (Exception e) {
-            System.out.println("Error parsing receptor: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing receptor: " + e.getLocalizedMessage(), null, 0, "Parser.parseReceptor()", null, null);
             return null;
         }
     }
@@ -256,7 +259,7 @@ public class Parser {
             return parsedUbicacion;
 
         } catch (Exception e) {
-            System.out.println("Error parsing ubicacion: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing ubicacion: " + e.getLocalizedMessage(), null, 0, "Parser.parseUbicacion()", null, null);
             return null;
         }
     }
@@ -272,7 +275,7 @@ public class Parser {
 
             return telefono;
         } catch (Exception e) {
-            System.out.println("Error parsing telefono: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing telefono: " + e.getLocalizedMessage(), null, 0, "Parser.parseTelefono()", null, null);
             return null;
         }
     }
@@ -298,7 +301,7 @@ public class Parser {
 
             return fax;
         } catch (Exception e) {
-            System.out.println("Error parsing fax: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing fax: " + e.getLocalizedMessage(), null, 0, "Parser.parseFax()", null, null);
             return null;
         }
     }
@@ -317,7 +320,7 @@ public class Parser {
             }
             return emails;
         } catch (Exception e) {
-            System.out.println("Error parsing emails: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing emails: " + e.getLocalizedMessage(), null, 0, "Parser.parseEmail()", null, null);
             return null;
         }
     }
@@ -343,7 +346,7 @@ public class Parser {
 
             return lineasDetalle;
         } catch (Exception e) {
-            System.out.println("Error parsing detalle Servicio: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing detalle Servicio: " + e.getLocalizedMessage(), null, 0, "Parser.parseDetalleServicio()", null, null);
             return null;
         }
 
@@ -371,7 +374,7 @@ public class Parser {
 
             return mediosPago;
         } catch (Exception e) {
-            System.out.println("Error parsing medio pago: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing medio pago: " + e.getLocalizedMessage(), null, 0, "Parser.parseMedioPago()", null, null);
             return null;
         }
     }
@@ -477,7 +480,7 @@ public class Parser {
 
             return lineaDetalle;
         } catch (Exception e) {
-            System.out.println("Error parsing linea detalle: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing linea detalle: " + e.getLocalizedMessage(), null, 0, "Parser.parseLineaDetalle()", null, null);
             return null;
         }
     }
@@ -493,7 +496,7 @@ public class Parser {
 
             return codigoComercial;
         } catch (Exception e) {
-            System.out.println("Error parsing codigo comercial: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing codigo comercial: " + e.getLocalizedMessage(), null, 0, "Parser.parseCodigoComercial()", null, null);
             return null;
         }
     }
@@ -513,7 +516,7 @@ public class Parser {
 
             return impuesto;
         } catch (Exception e) {
-            System.out.println("Error parsing impuestos: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing impuestos: " + e.getLocalizedMessage(), null, 0, "Parser.parseImpuesto()", null, null);
             return null;
         }
     }
@@ -526,7 +529,7 @@ public class Parser {
 
             CodigoTipoMoneda codigoMoneda = parseCodigoMoneda(codigoMonedaText, tipoCambioText);
             if (codigoMoneda == null) {
-                System.out.println("Error parsing moneda");
+                alertasService.registrarAlerta("Error", "Error parsing moneda", null, 0, "Parser.parseResumenFactura()", null, null);
                 return null;
             }
 
@@ -589,7 +592,7 @@ public class Parser {
             return resumenFactura;
 
         } catch (Exception e) {
-            System.out.println("Error parsing resumen factura: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing resumen factura: " + e.getLocalizedMessage(), null, 0, "Parser.parseResumenFactura()", null, null);
             return null;
         }
     }
@@ -606,7 +609,7 @@ public class Parser {
 
             return codigoMoneda;
         } catch (Exception e) {
-            System.out.println("Error parsing codigo moneda: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing codigo moneda: " + e.getLocalizedMessage(), null, 0, "Parser.parseCodigoMoneda()", null, null);
             return null;
         }
     }
@@ -622,7 +625,7 @@ public class Parser {
 
             return descuento;
         } catch (Exception e) {
-            System.out.println("Error parsing descuento: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error parsing descuento: " + e.getLocalizedMessage(), null, 0, "Parser.parseDescuento()", null, null);
             return null;
         }
     }
@@ -723,8 +726,8 @@ public class Parser {
             );
         } catch (Exception e) {
             // Fallback to console logging if AlertasService fails
-            System.err.println("Failed to log async error: " + e.getMessage());
-            System.err.println("Original error [" + level + "]: " + message);
+            alertasService.registrarAlerta("Error", "Failed to log async error: " + e.getMessage(), null, 0, "Parser.logAsyncError()", null, null);
+            alertasService.registrarAlerta("Error", "Original error [" + level + "]: " + message, null, 0, "Parser.logAsyncError()", null, null);
         }
     }
 
@@ -737,7 +740,7 @@ public class Parser {
                 try {
                     // Exponential backoff: 100ms, 200ms, 400ms
                     long delay = 100 * (1L << (attempt - 1));
-                    System.out.println("Duplicate key detected in " + operation + ", retry attempt " + attempt + " after " + delay + "ms...");
+                    alertasService.registrarAlerta("Info", "Duplicate key detected in " + operation + ", retry attempt " + attempt + " after " + delay + "ms...", null, 0, "Parser.handleDuplicateKeyError()", null, null);
                     Thread.sleep(delay);
                     return true; // Continue retrying
                 } catch (InterruptedException ie) {
@@ -745,7 +748,7 @@ public class Parser {
                     return false;
                 }
             } else {
-                System.err.println("Max retries reached for " + operation + ": " + e.getMessage());
+                alertasService.registrarAlerta("Error", "Max retries reached for " + operation + ": " + e.getMessage(), null, 0, "Parser.handleDuplicateKeyError()", null, null);
                 logAsyncError("ERROR", "Max retries reached for " + operation + ": " + e.getMessage(),
                         "Parser.handleDuplicateKeyError", "");
                 return false;
@@ -764,45 +767,51 @@ public class Parser {
                     xmlContent.append(line);
                 }
 
-                System.out.println("XML Content length: " + xmlContent.length());
-                System.out.println("XML Content preview: " + xmlContent.substring(0, Math.min(200, xmlContent.length())));
+                alertasService.registrarAlerta("Debug", "XML Content length: " + xmlContent.length(), null, 0, "Parser.parseXML()", null, null);
+                alertasService.registrarAlerta("Debug", "XML Content preview: " + xmlContent.substring(0, Math.min(200, xmlContent.length())), null, 0, "Parser.parseXML()", null, null);
 
                 XmlMapper xmlMapper = new XmlMapper();
                 JsonNode rootNode = xmlMapper.readTree(xmlContent.toString());
 
-                System.out.println("Root node: " + rootNode.getNodeType());
+                alertasService.registrarAlerta("Debug", "Root node: " + rootNode.getNodeType(), null, 0, "Parser.parseXML()", null, null);
 
                 // Validate required fields first with improved NumeroConsecutivo extraction
 // Detect document type first
                 String documentType = rootNode.fieldNames().next();
                 boolean isMensajeHacienda = "MensajeHacienda".equals(documentType);
 
+                String codigoDocumento = mapRootElementToDocumentCode(documentType);
+
                 String numeroConsecutivo = extractNumeroConsecutivo(rootNode);
                 String clave = rootNode.path("Clave").asText();
 
-                System.out.println("Root node: " + documentType);
-                System.out.println("NumeroConsecutivo: '" + numeroConsecutivo + "'");
-                System.out.println("Clave: '" + clave + "'");
+                alertasService.registrarAlerta("Debug", "Root node: " + documentType, null, 0, "Parser.parseXML()", null, null);
+                alertasService.registrarAlerta("Debug", "NumeroConsecutivo: '" + numeroConsecutivo + "'", null, 0, "Parser.parseXML()", null, null);
+                alertasService.registrarAlerta("Debug", "Clave: '" + clave + "'", null, 0, "Parser.parseXML()", null, null);
 
                 String schemaVersion = null;
                 try {
                     schemaVersion = ComprobanteFactory.detectVersion(
                         new java.io.ByteArrayInputStream(xmlContent.toString().getBytes(StandardCharsets.UTF_8)));
-                    System.out.println("Detected schema version: " + schemaVersion);
+                    alertasService.registrarAlerta("Debug", "Detected schema version: " + schemaVersion, null, 0, "Parser.parseXML()", null, null);
                 } catch (Exception e) {
-                    System.err.println("Warning: Could not detect schema version: " + e.getMessage());
+                    alertasService.registrarAlerta("Error", "Warning: Could not detect schema version: " + e.getMessage(), null, 0, "Parser.parseXML()", null, null);
                 }
 
-                // Solo validar NumeroConsecutivo para Factura/Nota, no para MensajeHacienda
-                if (!isMensajeHacienda && numeroConsecutivo.isEmpty()) {
+                if (isMensajeHacienda) {
+                    processMensajeHacienda(clave, rootNode, xmlContent.toString());
+                    return;
+                }
+
+                if (numeroConsecutivo.isEmpty()) {
                     String errorMsg = "XML inválido: falta el número consecutivo";
-                    System.err.println(errorMsg);
+                    alertasService.registrarAlerta("Error", errorMsg, null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML", xmlContent.toString());
                     return;
                 }
 
                 if (facturaService.findByNumeroConsecutivo(numeroConsecutivo)) {
-                    System.out.println("Factura duplicada: " + numeroConsecutivo);
+                    alertasService.registrarAlerta("Info", "Factura duplicada: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("WARN", "Factura duplicada: " + numeroConsecutivo, "Parser.parseXML", xmlContent.toString());
                     return;
                 }
@@ -810,32 +819,32 @@ public class Parser {
                 Encabezado encabezado = new Encabezado();
                 DetalleServicio detalles = new DetalleServicio();
 
-                System.out.println("Parsing emisor...");
+                alertasService.registrarAlerta("Debug", "Parsing emisor...", null, 0, "Parser.parseXML()", null, null);
                 Emisor emisor = parseEmisor(rootNode.path("Emisor"));
                 if (emisor == null) {
                     String errorMsg = "XML inválido: error en datos del emisor";
-                    System.err.println("Error parsing emisor");
+                    alertasService.registrarAlerta("Error", "Error parsing emisor", null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.emisor", xmlContent.toString());
                     return;
                 }
 
-                System.out.println("Parsing receptor...");
+                alertasService.registrarAlerta("Debug", "Parsing receptor...", null, 0, "Parser.parseXML()", null, null);
                 Receptor receptor = parseReceptor(rootNode.path("Receptor"));
                 if (receptor == null) {
                     String errorMsg = "XML inválido: error en datos del receptor";
-                    System.err.println("Error parsing receptor");
+                    alertasService.registrarAlerta("Error", "Error parsing receptor", null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.receptor", xmlContent.toString());
                     return;
                 }
 
                 String codigoActividad = rootNode.path("CodigoActividad").asText();
                 String fechaEmisionStr = rootNode.path("FechaEmision").asText();
-                System.out.println("FechaEmision: '" + fechaEmisionStr + "'");
+                alertasService.registrarAlerta("Debug", "FechaEmision: '" + fechaEmisionStr + "'", null, 0, "Parser.parseXML()", null, null);
 
                 LocalDateTime localDateTime = parseFechaEmision(fechaEmisionStr);
                 if (localDateTime == null) {
                     String errorMsg = "XML inválido: error en fecha de emisión";
-                    System.err.println("Error parsing fecha emision");
+                    alertasService.registrarAlerta("Error", "Error parsing fecha emision", null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.fechaEmision", xmlContent.toString());
                     return;
                 }
@@ -845,45 +854,45 @@ public class Parser {
                 List<MedioPago> medioPago = parseMedioPago(rootNode.path("MedioPago"), encabezado);
                 if (medioPago == null) {
                     String errorMsg = "XML inválido: error en medio de pago";
-                    System.err.println("Error parsing medio pago");
+                    alertasService.registrarAlerta("Error", "Error parsing medio pago", null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.medioPago", xmlContent.toString());
                     return;
                 }
 
-                System.out.println("Parsing resumen factura...");
+                alertasService.registrarAlerta("Debug", "Parsing resumen factura...", null, 0, "Parser.parseXML()", null, null);
                 ResumenFactura resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
                 if (resumenFactura == null) {
                     String errorMsg = "XML inválido: error en resumen de factura";
-                    System.err.println("Error parsing resumen factura");
+                    alertasService.registrarAlerta("Error", "Error parsing resumen factura", null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.resumenFactura", xmlContent.toString());
                     return;
                 }
 
-                System.out.println("Parsing detalle servicio...");
+                alertasService.registrarAlerta("Debug", "Parsing detalle servicio...", null, 0, "Parser.parseXML()", null, null);
                 List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
                 if (lineas == null || lineas.isEmpty()) {
                     String errorMsg = "XML inválido: no se encontraron líneas de detalle";
-                    System.err.println("Error parsing detalle servicio - no lines found");
+                    alertasService.registrarAlerta("Error", "Error parsing detalle servicio - no lines found", null, 0, "Parser.parseXML()", null, null);
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.detalleServicio", xmlContent.toString());
                     return;
                 }
 
-                System.out.println("Found " + lineas.size() + " lineas detalle");
+                alertasService.registrarAlerta("Debug", "Found " + lineas.size() + " lineas detalle", null, 0, "Parser.parseXML()", null, null);
 
 // Check if encabezado already exists by numeroConsecutivo (before creating any entities)
                 // Use new method that handles duplicates properly
                 boolean existsByNumeroConsecutivo = encabezadoService.existsByNumeroConsecutivoWithValidComprobante(numeroConsecutivo);
 
                 if (existsByNumeroConsecutivo) {
-                    System.out.println("Skipping existing encabezado for: " + numeroConsecutivo);
-                    System.out.println("Factura already processed: " + numeroConsecutivo);
+                    alertasService.registrarAlerta("Info", "Skipping existing encabezado for: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
+                    alertasService.registrarAlerta("Info", "Factura already processed: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
                     return; // Skip processing if already exists
                 }
 
                 // Clean up any existing duplicates before proceeding
                 int duplicatesCleaned = encabezadoService.cleanDuplicateEncabezados(numeroConsecutivo);
                 if (duplicatesCleaned > 0) {
-                    System.out.println("Cleaned " + duplicatesCleaned + " duplicate encabezados for: " + numeroConsecutivo);
+                    alertasService.registrarAlerta("Debug", "Cleaned " + duplicatesCleaned + " duplicate encabezados for: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
                 }
 
                 detalles.setLineasDetalle(lineas);
@@ -896,38 +905,39 @@ public class Parser {
                 encabezado.setPlazoCredito(plazoCredito);
                 encabezado.setMedioPago(medioPago);
                 encabezado.setClave(clave);
+                encabezado.setCodigoDocumento(codigoDocumento);
 
-                System.out.println("Creating emisor and receptor...");
+                alertasService.registrarAlerta("Debug", "Creating emisor and receptor...", null, 0, "Parser.parseXML()", null, null);
                 Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
                 Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
 
                 if (persistedEmisor != null) {
                     encabezado.setEmisor(persistedEmisor);
                 } else {
-                    System.out.println("Failed to create/find emisor");
+                    alertasService.registrarAlerta("Error", "Failed to create/find emisor", null, 0, "Parser.parseXML()", null, null);
                     return;
                 }
                 if (persistedReceptor != null) {
                     encabezado.setReceptor(persistedReceptor);
                 } else {
-                    System.out.println("Failed to create/find receptor");
+                    alertasService.registrarAlerta("Error", "Failed to create/find receptor", null, 0, "Parser.parseXML()", null, null);
                     return;
                 }
 
-                System.out.println("Creating detalle servicio...");
+                alertasService.registrarAlerta("Debug", "Creating detalle servicio...", null, 0, "Parser.parseXML()", null, null);
 
                 // Set the lineasDetalle relationship before persisting
                 detalles.setLineasDetalle(lineas);
 
-                System.out.println("Creating resumen factura and encabezado...");
+                alertasService.registrarAlerta("Debug", "Creating resumen factura and encabezado...", null, 0, "Parser.parseXML()", null, null);
 
 // For received documents, we don't create ComprobantesEmitidos
                 // Only ComprobantesRecibidos should be created for uploaded XML files
                 // This fixes the unique constraint violation issue
                 
-System.out.println("Creating comprobante recibido...");
+alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null, 0, "Parser.parseXML()", null, null);
                 
-                System.out.println("Creating comprobante recibido...");
+                alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null, 0, "Parser.parseXML()", null, null);
                 ComprobantesRecibidos factura = new ComprobantesRecibidos();
                 factura.setEncabezado(encabezado);
                 factura.setResumen(resumenFactura);
@@ -1012,39 +1022,143 @@ facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
 
                 // Verify ID assignment after creation
                 if (factura.getId() == null) {
-                    System.err.println("ERROR: ComprobantesRecibidos created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo());
+                    alertasService.registrarAlerta("Error", "ERROR: ComprobantesRecibidos created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
                 } else {
-                    System.out.println("Successfully created factura with ID: " + factura.getId() + " - " + factura.getEncabezado().getNumeroConsecutivo());
+                    alertasService.registrarAlerta("Info", "Successfully created factura with ID: " + factura.getId() + " - " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
                 }
                 
                 // Verify DetalleServicio ID assignment
                 if (factura.getDetalles() != null) {
                     if (factura.getDetalles().getId() == null) {
-                        System.err.println("ERROR: DetalleServicio created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo());
+                        alertasService.registrarAlerta("Error", "ERROR: DetalleServicio created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
                     } else {
-                        System.out.println("Successfully created DetalleServicio with ID: " + factura.getDetalles().getId());
+                        alertasService.registrarAlerta("Info", "Successfully created DetalleServicio with ID: " + factura.getDetalles().getId(), null, 0, "Parser.parseXML()", null, null);
                     }
                     
                     // Verify LineaDetalle IDs
                     if (factura.getDetalles().getLineasDetalle() != null) {
                         for (LineaDetalle linea : factura.getDetalles().getLineasDetalle()) {
                             if (linea.getId() == null) {
-                                System.err.println("ERROR: LineaDetalle created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo());
+                                alertasService.registrarAlerta("Error", "ERROR: LineaDetalle created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
                             } else {
-                                System.out.println("Successfully created LineaDetalle with ID: " + linea.getId());
+                                alertasService.registrarAlerta("Info", "Successfully created LineaDetalle with ID: " + linea.getId(), null, 0, "Parser.parseXML()", null, null);
                             }
                         }
                     }
                 }
                 
-                System.out.println("Successfully processed factura: " + factura.getEncabezado().getNumeroConsecutivo());
+                alertasService.registrarAlerta("Info", "Successfully processed factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
                 // Note: No FacesContext calls in async context
 
             } catch (Exception e) {
                 String errorMsg = "Error parsing XML: " + e.getLocalizedMessage();
-                System.err.println(errorMsg);
+                alertasService.registrarAlerta("Error", errorMsg, null, 0, "Parser.parseXML()", null, null);
                 logAsyncError("ERROR", errorMsg, "Parser.parseXML.exception", xmlContent.toString());
             }
         }
-    } 
+    }
+
+    private void processMensajeHacienda(String clave, JsonNode rootNode, String rawXml) {
+        try {
+            if (clave == null || clave.isEmpty()) {
+                alertasService.registrarAlerta("Error", "MensajeHacienda sin Clave", null, 0, "Parser.processMensajeHacienda()", null, null);
+                return;
+            }
+
+            JsonNode mensajeNode = rootNode.path("Mensaje");
+            String codigoMensaje = mensajeNode.path("CodigoMensaje").asText();
+            String detalleMensaje = mensajeNode.path("DetalleMensaje").asText();
+
+            String nuevoEstado;
+            switch (codigoMensaje) {
+                case "1": nuevoEstado = "ACEPTADO"; break;
+                case "2": nuevoEstado = "ACEPTACION_PARCIAL"; break;
+                case "3": nuevoEstado = "RECHAZADO"; break;
+                default:  nuevoEstado = "DESCONOCIDO"; break;
+            }
+
+            List<ComprobantesEmitidos> resultados = comprobantesEmitidosService.findByClave(clave);
+            if (resultados == null || resultados.isEmpty()) {
+                alertasService.registrarAlerta("Warn", "MensajeHacienda para factura no encontrada: " + clave, null, 0, "Parser.processMensajeHacienda()", null, null);
+                return;
+            }
+
+            for (ComprobantesEmitidos factura : resultados) {
+                factura.setHaciendaEstado(nuevoEstado);
+                factura.setHaciendaFechaRespuesta(LocalDateTime.now());
+                if (factura.getEncabezado() != null) {
+                    factura.getEncabezado().setEstado(nuevoEstado);
+                    if ("RECHAZADO".equals(nuevoEstado) && !detalleMensaje.isEmpty()) {
+                        factura.getEncabezado().setMotivoRechazo(detalleMensaje);
+                    }
+                }
+                comprobantesEmitidosService.update(factura);
+            }
+
+            // If accepted, send invoice to client automatically
+            if ("ACEPTADO".equals(nuevoEstado)) {
+                for (ComprobantesEmitidos factura : resultados) {
+                    try {
+                        // Get client from the receptor
+                        String receptorNombre = factura.getEncabezado() != null && factura.getEncabezado().getReceptor() != null
+                            ? factura.getEncabezado().getReceptor().getNombre() : null;
+                        if (receptorNombre != null) {
+                            // Find client by name (this is a simplified lookup)
+                            // In practice you might need to match by cedula
+                            alertasService.registrarAlerta("Info", "Factura ACEPTADA por Hacienda - listo para envio a cliente: " + clave, null, 0, "Parser.processMensajeHacienda()", null, null);
+                            // The actual email sending would require client lookup, 
+                            // which can be done in a separate process or by the controller
+                        }
+                    } catch (Exception e) {
+                        alertasService.registrarAlerta("Error", "Error preparando envio a cliente: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
+                    }
+                }
+            }
+
+            // If rejected, automatically create credit note and prepare correction
+            if ("RECHAZADO".equals(nuevoEstado)) {
+                for (ComprobantesEmitidos factura : resultados) {
+                    try {
+                        alertasService.registrarAlerta("Hacienda", "Iniciando corrección automática para factura rechazada: " + clave, null, 0, "Parser.processMensajeHacienda()", null, null);
+                        // The actual credit note creation and correction preparation 
+                        // will be handled by the controller when the user clicks "Corregir"
+                        // Here we just mark it for automatic correction
+                        factura.getEncabezado().setMotivoRechazo(
+                            (factura.getEncabezado().getMotivoRechazo() != null ? factura.getEncabezado().getMotivoRechazo() + " | " : "") 
+                            + "CORRECCION_AUTOMATICA_PENDIENTE"
+                        );
+                        comprobantesEmitidosService.update(factura);
+                    } catch (Exception e) {
+                        alertasService.registrarAlerta("Error", "Error marcando factura para corrección automática: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
+                    }
+                }
+            }
+
+            alertasService.registrarAlerta("Info", "MensajeHacienda procesado: " + clave + " -> " + nuevoEstado, null, 0, "Parser.processMensajeHacienda()", null, null);
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error procesando MensajeHacienda: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
+        }
+    }
+
+    private String mapRootElementToDocumentCode(String rootElement) {
+        if (rootElement == null) return "01";
+        switch (rootElement) {
+            case "FacturaElectronica":
+            case "FacturaElectrónica":
+                return "01";
+            case "NotaDebitoElectronica":
+            case "NotaDébitoElectrónica":
+            case "NotaDebito":
+                return "02";
+            case "NotaCreditoElectronica":
+            case "NotaCréditoElectrónica":
+            case "NotaCredito":
+                return "03";
+            case "TiqueteElectronico":
+            case "TiqueteElectrónico":
+                return "04";
+            default:
+                return "01";
+        }
+    }
 }

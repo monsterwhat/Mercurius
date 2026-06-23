@@ -30,10 +30,10 @@ public class AppSettingsService extends GService<AppSettings> {
                 entity.setEstatus(false);
                 em.merge(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "AppSettingsService.disable()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting "+ getEntityClass().getSimpleName() +" : " + e.getMessage(), null, 0, "AppSettingsService.disable()", null, e.getMessage());
         }
     }
      
@@ -45,7 +45,7 @@ public class AppSettingsService extends GService<AppSettings> {
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "AppSettingsService.returnCurrent()", null, e.getMessage());
             return null;
         }
     }

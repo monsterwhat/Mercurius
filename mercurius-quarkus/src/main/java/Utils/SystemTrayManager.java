@@ -1,6 +1,8 @@
 package Utils;
 
+import Services.AlertasService;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -13,6 +15,12 @@ import java.net.URL;
 @ApplicationScoped
 public class SystemTrayManager {
 
+    @Inject
+    AlertasService alertasService;
+
+    @Inject
+    AppLauncher appLauncher;
+
     private SystemTray tray;
     private TrayIcon trayIcon;
     private final Object trayLock = new Object();
@@ -21,32 +29,32 @@ public class SystemTrayManager {
     public void initializeTray() {
         // Early return if already initialized
         if (initialized) {
-            System.out.println("System tray icon already initialized");
+            alertasService.registrarAlerta("Debug", "System tray icon already initialized", null, 0, "SystemTrayManager.initializeTray()", null, null);
             return;
         }
         
         synchronized (trayLock) {
             // Double-check after acquiring lock
             if (initialized) {
-                System.out.println("System tray icon already initialized (double-check)");
+                alertasService.registrarAlerta("Debug", "System tray icon already initialized (double-check)", null, 0, "SystemTrayManager.initializeTray()", null, null);
                 return;
             }
             
             // Only enable tray on Windows desktop environments
             String os = System.getProperty("os.name").toLowerCase();
             if (!os.contains("win")) {
-                System.out.println("System tray disabled - only enabled on Windows");
+                alertasService.registrarAlerta("Debug", "System tray disabled - only enabled on Windows", null, 0, "SystemTrayManager.initializeTray()", null, null);
                 return;
             }
             
             // Check if running in headless mode
             if (GraphicsEnvironment.isHeadless()) {
-                System.out.println("Running in headless mode - system tray not available");
+                alertasService.registrarAlerta("Debug", "Running in headless mode - system tray not available", null, 0, "SystemTrayManager.initializeTray()", null, null);
                 return;
             }
             
             if (!SystemTray.isSupported()) {
-                System.out.println("System tray is not supported on this Windows system");
+                alertasService.registrarAlerta("Debug", "System tray is not supported on this Windows system", null, 0, "SystemTrayManager.initializeTray()", null, null);
                 return;
             }
 
@@ -56,7 +64,7 @@ public class SystemTrayManager {
                 // Check if there's already a tray icon in the system tray
                 for (TrayIcon existingIcon : tray.getTrayIcons()) {
                     if ("Mercurius".equals(existingIcon.getToolTip())) {
-                        System.out.println("Mercurius tray icon already exists in system tray");
+                        alertasService.registrarAlerta("Debug", "Mercurius tray icon already exists in system tray", null, 0, "SystemTrayManager.initializeTray()", null, null);
                         initialized = true;
                         return;
                     }
@@ -78,7 +86,7 @@ public class SystemTrayManager {
                     public void mouseClicked(MouseEvent e) {
                         if (e.getClickCount() == 2) {
                             // Double click - open browser
-                            AppLauncher.openBrowser("http://localhost:8081/Mercurius/index.xhtml");
+                            appLauncher.openBrowser("http://localhost:8081/Mercurius/index.xhtml");
                         }
                     }
                 });
@@ -87,10 +95,10 @@ public class SystemTrayManager {
                 tray.add(trayIcon);
                 initialized = true;
                 
-                System.out.println("System tray icon initialized successfully");
+                alertasService.registrarAlerta("Info", "System tray icon initialized successfully", null, 0, "SystemTrayManager.initializeTray()", null, null);
                 
             } catch (AWTException e) {
-                System.err.println("Error adding tray icon: " + e.getMessage());
+                alertasService.registrarAlerta("Error", "Error adding tray icon: " + e.getMessage(), null, 0, "SystemTrayManager.initializeTray()", null, null);
                 initialized = false;
             }
         }
@@ -137,7 +145,7 @@ public class SystemTrayManager {
         
         // Open Browser menu item
         MenuItem openItem = new MenuItem("Open Mercurius");
-        openItem.addActionListener(e -> AppLauncher.openBrowser("http://localhost:8081/Mercurius/index.xhtml"));
+        openItem.addActionListener(e -> appLauncher.openBrowser("http://localhost:8081/Mercurius/index.xhtml"));
         popup.add(openItem);
         
         popup.addSeparator();
@@ -156,8 +164,8 @@ public class SystemTrayManager {
                 if (tray != null && trayIcon != null) {
                     tray.remove(trayIcon);
                 }
-            } catch (Exception ex) {
-                System.err.println("Error removing tray icon: " + ex.getMessage());
+                } catch (Exception ex) {
+                alertasService.registrarAlerta("Error", "Error removing tray icon: " + ex.getMessage(), null, 0, "SystemTrayManager.createPopupMenu()", null, null);
             }
             System.exit(0);
         });
@@ -179,8 +187,8 @@ public class SystemTrayManager {
     private void showSimpleAboutDialog() {
         // This would require a proper GUI implementation
         // For now, just print to console
-        System.out.println("Mercurius v1.0 - Business Management System");
-        System.out.println("A comprehensive solution for business operations");
+        alertasService.registrarAlerta("Info", "Mercurius v1.0 - Business Management System", null, 0, "SystemTrayManager.showSimpleAboutDialog()", null, null);
+        alertasService.registrarAlerta("Info", "A comprehensive solution for business operations", null, 0, "SystemTrayManager.showSimpleAboutDialog()", null, null);
     }
 
     /**
@@ -219,9 +227,9 @@ public class SystemTrayManager {
                     tray.remove(trayIcon);
                     trayIcon = null;
                     initialized = false;
-                    System.out.println("System tray icon removed successfully");
+                    alertasService.registrarAlerta("Info", "System tray icon removed successfully", null, 0, "SystemTrayManager.removeTrayIcon()", null, null);
                 } catch (Exception e) {
-                    System.err.println("Error removing tray icon: " + e.getMessage());
+                    alertasService.registrarAlerta("Error", "Error removing tray icon: " + e.getMessage(), null, 0, "SystemTrayManager.removeTrayIcon()", null, null);
                 }
             }
         }

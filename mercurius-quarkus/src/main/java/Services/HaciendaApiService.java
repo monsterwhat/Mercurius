@@ -1,7 +1,10 @@
 package Services;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.eclipse.microprofile.faulttolerance.Retry;
+import org.eclipse.microprofile.faulttolerance.Fallback;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -20,6 +23,7 @@ public class HaciendaApiService {
 
     private final HaciendaCertificateService certificateService;
 
+    @Inject
     public HaciendaApiService(HaciendaCertificateService certificateService) {
         this.certificateService = certificateService;
     }
@@ -113,7 +117,9 @@ public class HaciendaApiService {
                     try {
                         String expStr = extractJsonValue(responseStr, "expires_in");
                         expires = Integer.parseInt(expStr);
-                    } catch (Exception ignored) {}
+                    } catch (Exception e) {
+                        // Use default 3600 seconds expiry if parsing fails
+                    }
 
                     certificateService.saveTokenExpiry(LocalDateTime.now().plusSeconds(expires));
 
@@ -136,6 +142,8 @@ public class HaciendaApiService {
         }
     }
 
+    @Retry(maxRetries = 3, delay = 7200000)
+    @Fallback(fallbackMethod = "sendInvoiceFallback")
     public ApiResponse sendInvoice(String clave, String xmlContent) {
         try {
             TokenResponse token = getAccessToken();
@@ -175,6 +183,11 @@ public class HaciendaApiService {
         } catch (Exception e) {
             return ApiResponse.error(500, "Error sending invoice: " + e.getMessage());
         }
+    }
+
+    public ApiResponse sendInvoiceFallback(String clave, String xmlContent) {
+        return ApiResponse.error(503, "No se pudo enviar la factura a Hacienda después de varios intentos. "
+            + "Puede reenviarla manualmente desde la sección de Consultas. Clave: " + clave);
     }
 
     public ApiResponse checkInvoiceStatus(String clave) {

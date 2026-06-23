@@ -74,9 +74,9 @@ public class SettingsDirController implements Serializable {
         File homeDir = new File(getMainDirectory(), "Mercurius");
         if (!homeDir.exists()) {
             if (homeDir.mkdirs()) {
-                System.out.println("Created directory: " + homeDir.getAbsolutePath());
+                alertasService.registrarAlerta("Info", "Created directory: " + homeDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createHomeDir()", null, null);
             } else {
-                System.err.println("Failed to create directory: " + homeDir.getAbsolutePath());
+                alertasService.registrarAlerta("Error", "Failed to create directory: " + homeDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createHomeDir()", null, null);
             }
         }
     }
@@ -88,9 +88,9 @@ public class SettingsDirController implements Serializable {
         File profileDir = new File(getMainDirectory() + File.separator + "Mercurius", profileName);
         if (!profileDir.exists()) {
             if (profileDir.mkdirs()) {
-                System.out.println("Created directory: " + profileDir.getAbsolutePath());
+                alertasService.registrarAlerta("Info", "Created directory: " + profileDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createProfileDir()", null, null);
             } else {
-                System.err.println("Failed to create directory: " + profileDir.getAbsolutePath());
+                alertasService.registrarAlerta("Error", "Failed to create directory: " + profileDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createProfileDir()", null, null);
             }
         }
     }
@@ -103,9 +103,9 @@ public class SettingsDirController implements Serializable {
         File reportesDir = new File(basePath, "reportes");
         if (!reportesDir.exists()) {
             if (reportesDir.mkdirs()) {
-                System.out.println("Created directory: " + reportesDir.getAbsolutePath());
+                alertasService.registrarAlerta("Info", "Created directory: " + reportesDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createReportesDir()", null, null);
             } else {
-                System.err.println("Failed to create directory: " + reportesDir.getAbsolutePath());
+                alertasService.registrarAlerta("Error", "Failed to create directory: " + reportesDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createReportesDir()", null, null);
             }
         }
     }
@@ -178,7 +178,7 @@ public class SettingsDirController implements Serializable {
             // Directory created successfully
         } else {
             // Failed to create directory
-            System.err.println("Failed to create directory: " + newFolder.getAbsolutePath());
+            alertasService.registrarAlerta("Error", "Failed to create directory: " + newFolder.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createFolder()", null, null);
         }
     }
 
@@ -237,7 +237,7 @@ public class SettingsDirController implements Serializable {
                 Files.copy(input, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "SettingsDirController.uploadLogo()", null, e.getLocalizedMessage());
         } 
     }
 

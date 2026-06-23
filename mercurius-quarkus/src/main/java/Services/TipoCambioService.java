@@ -52,11 +52,10 @@ public class TipoCambioService extends GService<TipoCambio> {
                     saveTipoCambio(tipoCambio);
                 }
             } else {
-                System.err.println("Failed to retrieve TipoCambio data from API. Response code: " + response.getStatus());
+                alertasService.registrarAlerta("Error", "Failed to retrieve TipoCambio data from API. Response code: " + response.getStatus(), null, 0, "TipoCambioService.getTipoCambioFromApi()", null, null);
             }
         } catch (Exception e) {
-            System.err.println("Error fetching TipoCambio from API: " + e.getMessage());
-            alertasService.registrarAlerta("Error Tipo de Cambio", "Error al obtener tipo de cambio de API: " + e.getMessage(), null, 0, "getTipoCambioFromApi()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error fetching TipoCambio from API: " + e.getMessage(), null, 0, "TipoCambioService.getTipoCambioFromApi()", null, e.getMessage());
         }
     }
 
@@ -78,8 +77,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             
             return tipoCambio;
         } catch (JsonProcessingException e) {
-            System.err.println("Error parsing JSON response: " + e.getMessage());
-            alertasService.registrarAlerta("Error Tipo de Cambio", "Error al parsear JSON de tipo de cambio: " + e.getMessage(), null, 0, "parseTipoCambio()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error parsing JSON response: " + e.getMessage(), null, 0, "TipoCambioService.parseTipoCambio()", null, e.getMessage());
             return null;
         }
     }
@@ -101,8 +99,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             query.setParameter("date", date);
             return query.getSingleResult() > 0;
         } catch (Exception e) {
-            System.err.println("Error checking TipoCambio existence for date: " + e.getMessage());
-            alertasService.registrarAlerta("Error Tipo de Cambio", "Error al verificar existencia de tipo de cambio: " + e.getMessage(), null, 0, "tipoCambioExistsForDate()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error checking TipoCambio existence for date: " + e.getMessage(), null, 0, "TipoCambioService.tipoCambioExistsForDate()", null, e.getMessage());
             return false;
         }
     }
@@ -116,8 +113,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             getTipoCambioFromApi();
             return getNewestTipoCambioFromDb();
         } catch (Exception e) {
-            System.err.println("Error retrieving newest TipoCambio: " + e.getMessage());
-            alertasService.registrarAlerta("Error Tipo de Cambio", "Error al obtener el ultimo tipo de cambio: " + e.getMessage(), null, 0, "getNewestTipoCambio()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error retrieving newest TipoCambio: " + e.getMessage(), null, 0, "TipoCambioService.getNewestTipoCambio()", null, e.getMessage());
             throw e;
         }
     }
@@ -130,8 +126,7 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
     
     public TipoCambio getNewestTipoCambioFallback() {
-        System.err.println("FALLBACK: Returning cached TipoCambio data due to API failure");
-        alertasService.registrarAlerta("Error Tipo de Cambio", "Fallo al obtener tipo de cambio, usando cache", null, 0, "getNewestTipoCambioFallback()", null, null);
+        alertasService.registrarAlerta("Error", "FALLBACK: Returning cached TipoCambio data due to API failure", null, 0, "TipoCambioService.getNewestTipoCambioFallback()", null, null);
         return getNewestTipoCambioFromDb();
     }
     

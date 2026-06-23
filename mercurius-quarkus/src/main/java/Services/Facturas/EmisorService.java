@@ -32,7 +32,7 @@ public class EmisorService extends GService<Emisor> {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "EmisorService.create()", null, e.getMessage());
         }
     }
 
@@ -46,10 +46,10 @@ public class EmisorService extends GService<Emisor> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "EmisorService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "EmisorService.delete()", null, e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class EmisorService extends GService<Emisor> {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "EmisorService.update()", null, e.getMessage());
         }
     }
 
@@ -68,7 +68,7 @@ public class EmisorService extends GService<Emisor> {
             TypedQuery<Emisor> query = em.createQuery("SELECT d FROM Emisor d", Emisor.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "EmisorService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -77,7 +77,7 @@ public class EmisorService extends GService<Emisor> {
     try {
         return em.find(getEntityClass(), id);
         } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "EmisorService.findById()", null, e.getMessage());
             return null;
         }
     }
@@ -87,7 +87,7 @@ public class EmisorService extends GService<Emisor> {
             TypedQuery<Emisor> query = em.createQuery("SELECT a FROM Emisor", Emisor.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "EmisorService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
@@ -112,7 +112,7 @@ public class EmisorService extends GService<Emisor> {
             }
         } catch (PersistenceException e) {
             // Catch the database constraint violation exception
-            System.out.println("Error creating or retrieving Emisor: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating or retrieving Emisor: " + e.getMessage(), null, 0, "EmisorService.createIfNotExist()", null, e.getMessage());
             // Handle the error gracefully, maybe log it or notify the user
             return null;
         }

@@ -13,10 +13,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Transient;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.DayOfWeek;
 import lombok.Data;
 import lombok.ToString;
 
@@ -57,5 +61,54 @@ public class ComprobantesRecibidos {
     
     @Column(length = 50)
     private String user;
+
+    @Column(name = "hacienda_mensaje_receptor_estado", length = 20)
+    private String haciendaMensajeReceptorEstado;
+
+    @Column(name = "hacienda_mensaje_receptor_fecha")
+    private LocalDateTime haciendaMensajeReceptorFecha;
+
+    @Column(name = "mensaje_receptor_limite")
+    private LocalDate mensajeReceptorLimite;
+
+    @Transient
+    public LocalDate getMensajeReceptorLimite() {
+        if (mensajeReceptorLimite != null) return mensajeReceptorLimite;
+        if (encabezado == null || encabezado.getFechaEmision() == null) return null;
+        
+        LocalDate fechaEmision = encabezado.getFechaEmision().toInstant()
+            .atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        LocalDate inicioMesSiguiente = fechaEmision.withDayOfMonth(1).plusMonths(1);
+        return calcularLimite8DiasHabiles(inicioMesSiguiente);
+    }
+
+    public void calcularYGuardarLimite() {
+        this.mensajeReceptorLimite = getMensajeReceptorLimite();
+    }
+
+    private LocalDate calcularLimite8DiasHabiles(LocalDate inicio) {
+        int diasHabiles = 0;
+        LocalDate fecha = inicio;
+        while (diasHabiles < 8) {
+            if (fecha.getDayOfWeek() != DayOfWeek.SATURDAY && fecha.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                diasHabiles++;
+                if (diasHabiles == 8) break;
+            }
+            fecha = fecha.plusDays(1);
+        }
+        return fecha;
+    }
+
+    public boolean isMensajeReceptorVencido() {
+        LocalDate limite = getMensajeReceptorLimite();
+        if (limite == null) return false;
+        return LocalDate.now().isAfter(limite);
+    }
+
+    public long getDiasRestantesMensajeReceptor() {
+        LocalDate limite = getMensajeReceptorLimite();
+        if (limite == null) return -1;
+        return java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), limite);
+    }
     
 }

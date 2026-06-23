@@ -21,6 +21,30 @@
                                     required="true" requiredMessage="El nombre no puede estar vacío"
                                     style="width: 100%"/>
                             </p:column>
+                            <p:column>
+                                <label class="label" for="contactoNombre" style="color: var(--primary-color); text-align: center">Nombre Contacto:</label>
+                                <p:inputText id="contactoNombre" value="#{DepartamentosController.newDepartamento.contactoNombre}" style="width: 100%"/>
+                            </p:column>
+                            <p:column>
+                                <label class="label" for="contactoTelefono" style="color: var(--primary-color); text-align: center">Telefono Contacto:</label>
+                                <p:inputText id="contactoTelefono" value="#{DepartamentosController.newDepartamento.contactoTelefono}" style="width: 100%"/>
+                            </p:column>
+                            <p:column>
+                                <label class="label" for="contactoEmail" style="color: var(--primary-color); text-align: center">Email Contacto:</label>
+                                <p:inputText id="contactoEmail" value="#{DepartamentosController.newDepartamento.contactoEmail}" style="width: 100%"/>
+                            </p:column>
+                            <p:column>
+                                <label class="label" for="plazoPagoDias" style="color: var(--primary-color); text-align: center">Plazo Pago (dias):</label>
+                                <p:inputNumber id="plazoPagoDias" value="#{DepartamentosController.newDepartamento.plazoPagoDias}" min="0" style="width: 100%"/>
+                            </p:column>
+                            <p:column>
+                                <label class="label" for="tiempoEntregaDias" style="color: var(--primary-color); text-align: center">Tiempo Entrega (dias):</label>
+                                <p:inputNumber id="tiempoEntregaDias" value="#{DepartamentosController.newDepartamento.tiempoEntregaDias}" min="0" style="width: 100%"/>
+                            </p:column>
+                            <p:column>
+                                <label class="label" for="notas" style="color: var(--primary-color); text-align: center">Notas:</label>
+                                <p:inputTextarea id="notas" value="#{DepartamentosController.newDepartamento.notas}" rows="3" style="width: 100%"/>
+                            </p:column>
                             <p:spacer height="1em"/>
                             <p:column>
                                 <p:commandButton value="Crear Departamento" process="@form" update="@form Categorias:departamentos"
