@@ -15,6 +15,13 @@ public class Departamento {
     private int id;
 
     private String nombre;
+
+    private String contactoNombre;
+    private String contactoTelefono;
+    private String contactoEmail;
+    private Integer plazoPagoDias;
+    private Integer tiempoEntregaDias;
+    private String notas;
     
     private Boolean status; //En caso de querer archivar o desabilitar
 

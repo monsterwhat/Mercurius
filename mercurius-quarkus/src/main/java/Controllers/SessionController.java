@@ -69,7 +69,7 @@ public class SessionController implements Serializable{
             alertas.registrarAlerta("Error al iniciar sesion " + username, e.getLocalizedMessage(), null, 0, "sessionController.executelogin()", e.getLocalizedMessage(), null);
             FacesMessage message = new FacesMessage("Error", "Error al iniciar sesion");
             FacesContext.getCurrentInstance().addMessage(null, message);
-            System.out.println("Error logging in " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Error logging in " + e.getLocalizedMessage(), null, 0, "SessionController.login()", null, e.getLocalizedMessage());
         }
     }
     
@@ -102,7 +102,7 @@ public class SessionController implements Serializable{
             
         } catch (IOException e) { 
             alertas.registrarAlerta("Error al cerrar sesion", e.getLocalizedMessage(), null, 0, "sessionController.logout()", null, null);
-            System.out.println("Error al cerrar sesion: " + e.getLocalizedMessage()); 
+            alertas.registrarAlerta("Error", "Error al cerrar sesion: " + e.getLocalizedMessage(), null, 0, "SessionController.logout()", null, e.getLocalizedMessage()); 
             
             // Fallback redirect if primary fails
             try {
@@ -110,17 +110,17 @@ public class SessionController implements Serializable{
                     ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
                 }
             } catch (IOException fallbackEx) {
-                System.out.println("Fallback redirect failed: " + fallbackEx.getLocalizedMessage());
+                alertas.registrarAlerta("Error", "Fallback redirect failed: " + fallbackEx.getLocalizedMessage(), null, 0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage());
             }
         } catch (IllegalStateException e) {
             // Session already invalidated - this is expected
-            System.out.println("Session already invalidated: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Session already invalidated: " + e.getLocalizedMessage(), null, 0, "SessionController.logout()", null, e.getLocalizedMessage());
             try {
                 if (ec != null) {
                     ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
                 }
             } catch (IOException fallbackEx) {
-                System.out.println("Redirect after invalid session failed: " + fallbackEx.getLocalizedMessage());
+                alertas.registrarAlerta("Error", "Redirect after invalid session failed: " + fallbackEx.getLocalizedMessage(), null, 0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage());
             }
         }
     }
@@ -191,7 +191,7 @@ public class SessionController implements Serializable{
             }
             return false;
         } catch (Exception e) {
-            System.out.println("Authentication error: " + e.getLocalizedMessage());
+            alertas.registrarAlerta("Error", "Authentication error: " + e.getLocalizedMessage(), null, 0, "SessionController.authenticate()", null, e.getLocalizedMessage());
             return false;
         }
     }

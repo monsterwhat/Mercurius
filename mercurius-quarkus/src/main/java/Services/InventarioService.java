@@ -41,8 +41,7 @@ public class InventarioService extends GService<Inventario> {
         try {
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
-            alertasService.registrarAlerta("Error Inventario", "Error al crear inventario: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.create()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.create()", null, e.getMessage());
         }
     }
     
@@ -51,8 +50,7 @@ public class InventarioService extends GService<Inventario> {
             em.persist(entity);
             updateStock(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
-            alertasService.registrarAlerta("Error Inventario", "Error al crear inventario con stock: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.createWithStock()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.createWithStock()", null, e.getMessage());
         }
     }
 
@@ -66,11 +64,10 @@ public class InventarioService extends GService<Inventario> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for deletion", null, 0, "InventarioService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
-            alertasService.registrarAlerta("Error Inventario", "Error al eliminar inventario: " + e.getMessage(), null, 0, "InventarioService.delete()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "InventarioService.delete()", null, e.getMessage());
         }
     }
 
@@ -80,8 +77,7 @@ public class InventarioService extends GService<Inventario> {
             em.merge(entity);
             updateStock(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
-            alertasService.registrarAlerta("Error Inventario", "Error al actualizar inventario: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.update()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.update()", null, e.getMessage());
         }
     }
     
@@ -100,11 +96,10 @@ public class InventarioService extends GService<Inventario> {
                 em.merge(existingItem);
                 updateStock(existingItem);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for markAsProcessed", null, 0, "InventarioService.markAsProcessed()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error marking as processed: " + e.toString());
-            alertasService.registrarAlerta("Error Inventario", "Error al marcar inventario como procesado: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.markAsProcessed()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error marking as processed: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.markAsProcessed()", null, e.getMessage());
         }
     }
 
@@ -114,7 +109,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a", Inventario.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -124,7 +119,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true", Inventario.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "InventarioService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
@@ -139,10 +134,10 @@ public class InventarioService extends GService<Inventario> {
                 existingItem.setStatus(false);
                 em.merge(existingItem);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "InventarioService.softDelete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error soft deleting entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "InventarioService.softDelete()", null, e.getMessage());
         }
     }
     
@@ -165,7 +160,7 @@ public class InventarioService extends GService<Inventario> {
                 return 0.0; // Return 0 if no stock found
             }
         } catch (Exception e) {
-            System.out.println("Error getting stock for barcode: " + barcode + " - " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting stock for barcode: " + barcode + " - " + e.getMessage(), null, 0, "InventarioService.getStock()", null, e.getMessage());
             return 0.0;
         }
     }
@@ -184,7 +179,7 @@ public class InventarioService extends GService<Inventario> {
                 return 0.0;
             }
         } catch (Exception e) {
-            System.out.println("Error calculating total stock for item by barcode: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error calculating total stock for item by barcode: " + e.getMessage(), null, 0, "InventarioService.calculateTotalStockForItemByBarcode()", null, e.getMessage());
             return 0.0;
         }
     }
@@ -194,7 +189,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = false", Inventario.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAllSinProcesar()", null, e.getMessage());
             return null;
         }
     }
@@ -204,7 +199,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = true", Inventario.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAllActivosYProcesados()", null, e.getMessage());
             return null;
         }    
     }
@@ -214,7 +209,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = false", Inventario.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAllInactivos()", null, e.getMessage());
             return null;
         }     
     }
@@ -300,7 +295,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage(), null, 0, "InventarioService.count()", null, e.getMessage());
             return 0l;
         }
     }
@@ -310,7 +305,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage(), null, 0, "InventarioService.count()", null, e.getMessage());
             return 0l;
         }
     }
@@ -320,7 +315,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true AND e.processed = false", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage(), null, 0, "InventarioService.count()", null, e.getMessage());
             return 0l;
         }
     }
@@ -346,8 +341,7 @@ public class InventarioService extends GService<Inventario> {
                 em.persist(newStock);
             }
         } catch (Exception e) {
-            System.out.println("Error updating stock: " + e.toString());
-            alertasService.registrarAlerta("Error Inventario", "Error al actualizar stock: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.updateStock()", null, e.getMessage());
+            alertasService.registrarAlerta("Error", "Error updating stock: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.updateStock()", null, e.getMessage());
         }
     }
     
@@ -465,7 +459,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<ArticuloStock> query = em.createQuery("SELECT a FROM ArticuloStock a", ArticuloStock.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error getting all stock: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting all stock: " + e.getMessage(), null, 0, "InventarioService.getAllStock()", null, e.getMessage());
             return new ArrayList<>();
         }
     }

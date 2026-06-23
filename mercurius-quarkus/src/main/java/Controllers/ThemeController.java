@@ -2,7 +2,9 @@ package Controllers;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
+import Services.AlertasService;
 import jakarta.faces.context.ExternalContext;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import jakarta.faces.context.FacesContext;
@@ -36,6 +38,9 @@ public class ThemeController implements Serializable {
             saveThemeToCookie();
         }
     }
+    @Inject
+    private AlertasService alertas;
+
     private String currentTheme = "light";
 
     public void switchTheme() {
@@ -79,7 +84,7 @@ public class ThemeController implements Serializable {
         response.addCookie(themeCookie);
     } 
 
-    public static void reloadCurrentPage() {
+    public void reloadCurrentPage() {
         FacesContext facesContext = FacesContext.getCurrentInstance();
         ExternalContext externalContext = facesContext.getExternalContext();
 
@@ -89,7 +94,7 @@ public class ThemeController implements Serializable {
         try {
             externalContext.redirect(url);
         } catch (IOException e) {
-            e.printStackTrace();
+            alertas.registrarAlerta("Error", "Error al redirigir tema: " + e.getMessage(), null, 0, "ThemeController.cambiarTema()", null, e.getMessage());
         }
     }
 

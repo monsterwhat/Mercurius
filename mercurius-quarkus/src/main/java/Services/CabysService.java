@@ -45,7 +45,7 @@ public class CabysService extends GService<Cabys>{
         try {
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "CabysService.create()", null, e.getMessage());
         }
     }
 
@@ -59,10 +59,10 @@ public class CabysService extends GService<Cabys>{
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "CabysService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "CabysService.delete()", null, e.getMessage());
         }
     }
     
@@ -127,7 +127,7 @@ public class CabysService extends GService<Cabys>{
             }
         } catch (IOException e) {
             controller.showError("Error", "Error: " + e.getLocalizedMessage());
-            System.err.println("Error making HTTP request: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error making HTTP request: " + e.getMessage(), null, 0, "CabysService.listAllAPI()", null, e.getMessage());
         }
         controller.showInfo("Exito", "Se descargo la lista CaByS");
         return cabysList;
@@ -158,7 +158,7 @@ public class CabysService extends GService<Cabys>{
                 resultList.add(cabys);
             }
         } catch (JsonProcessingException e) {
-            System.err.println("Error parsing JSON response: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error parsing JSON response: " + e.getMessage(), null, 0, "CabysService.parseJsonResponse()", null, e.getMessage());
         }
 
         return resultList;
@@ -170,7 +170,7 @@ public class CabysService extends GService<Cabys>{
                 create(cabys);
             }
         } catch (Exception e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "CabysService.saveAllDB()", null, e.getMessage());
         }
     }
 }

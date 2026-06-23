@@ -166,7 +166,10 @@ public class DepartamentoController implements Serializable {
         Departamento departamento = (Departamento) value;
         return departamento.getNombre().toLowerCase().contains(filterText)
                 || String.valueOf(departamento.getId()).contains(filterText)
-                || departamento.getUsuario().getUsername().toLowerCase().contains(filterText);
+                || departamento.getUsuario().getUsername().toLowerCase().contains(filterText)
+                || (departamento.getContactoNombre() != null && departamento.getContactoNombre().toLowerCase().contains(filterText))
+                || (departamento.getContactoTelefono() != null && departamento.getContactoTelefono().toLowerCase().contains(filterText))
+                || (departamento.getContactoEmail() != null && departamento.getContactoEmail().toLowerCase().contains(filterText));
     }
 
     public Departamento findDepartamentoById(Integer number) {

@@ -36,11 +36,30 @@
                                              placeholder="Búsqueda general de todos los campos" styleClass="input"/>
                             </f:facet>
                             
-                            <p:column headerText="ID Departamento" sortBy="#{departamento.id}">
+                            <p:column headerText="ID" sortBy="#{departamento.id}">
                                 <h:outputText value="#{departamento.id}"/>
                             </p:column>
                             <p:column headerText="Nombre" sortBy="#{departamento.nombre}">
                                 <h:outputText value="#{departamento.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Contacto" sortBy="#{departamento.contactoNombre}">
+                                <h:outputText value="#{departamento.contactoNombre}"/>
+                            </p:column>
+                            <p:column headerText="Telefono">
+                                <h:outputText value="#{departamento.contactoTelefono}"/>
+                            </p:column>
+                            <p:column headerText="Email">
+                                <h:outputText value="#{departamento.contactoEmail}"/>
+                            </p:column>
+                            <p:column headerText="Plazo Pago" styleClass="has-text-right">
+                                <h:outputText value="#{departamento.plazoPagoDias}">
+                                    <f:convertNumber/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="Entrega" styleClass="has-text-right">
+                                <h:outputText value="#{departamento.tiempoEntregaDias}">
+                                    <f:convertNumber/>
+                                </h:outputText>
                             </p:column>
                             <p:column headerText="Activo" visible="false" sortBy="#{departamento.status}">
                                 <h:outputText value="#{departamento.status}"/>
@@ -48,7 +67,6 @@
                             <p:column headerText="Creado por:" sortBy="#{departamento.usuario.username}">
                                 <h:outputText value="#{departamento.usuario.username}"/>
                             </p:column>
-                            <!-- Add more columns as needed -->
                             
                             <p:column headerText="Acciones">
                                 <div class="buttons has-addons">

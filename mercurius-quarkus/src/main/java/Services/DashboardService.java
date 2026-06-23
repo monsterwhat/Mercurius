@@ -47,7 +47,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             
             return result;
         } catch (Exception e) {
-            System.out.println("Error getting today sales: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting today sales: " + e.getMessage(), null, 0, "DashboardService.getTodaySales()", null, e.getMessage());
             return BigDecimal.ZERO;
         }
     }
@@ -73,7 +73,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             
             return result.intValue();
         } catch (Exception e) {
-            System.out.println("Error getting transaction count: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting transaction count: " + e.getMessage(), null, 0, "DashboardService.getTransactionCount()", null, e.getMessage());
             return 0;
         }
     }
@@ -100,7 +100,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             
             return result.intValue();
         } catch (Exception e) {
-            System.out.println("Error getting items sold: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting items sold: " + e.getMessage(), null, 0, "DashboardService.getItemsSold()", null, e.getMessage());
             return 0;
         }
     }
@@ -123,7 +123,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
-            System.out.println("Error finding last transaction: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding last transaction: " + e.getMessage(), null, 0, "DashboardService.getLastTransaction()", null, e.getMessage());
             return null;
         }
     }
@@ -143,7 +143,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             query.setMaxResults(limit);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error getting recent sales: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting recent sales: " + e.getMessage(), null, 0, "DashboardService.getRecentSales()", null, e.getMessage());
             return null;
         }
     }

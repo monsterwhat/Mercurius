@@ -32,7 +32,7 @@ public class AlertasService extends GService<Alertas> {
         try {
             em.persist(alerta);
         } catch (Exception e) {
-            System.out.println("Error creating Entity!");
+            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "AlertasService.create()", null, e.getMessage());
         }
     }
     
@@ -56,7 +56,7 @@ public class AlertasService extends GService<Alertas> {
             alerta.setVista(!alerta.isVista());
             em.merge(alerta);
         } catch (Exception e) {
-            System.out.println("Error toggling vista: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error toggling vista: " + e.getMessage(), null, 0, "AlertasService.toggleVista()", null, e.getMessage());
         }
     }
 }

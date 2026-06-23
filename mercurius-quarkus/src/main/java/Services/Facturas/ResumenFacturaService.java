@@ -29,7 +29,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ResumenFacturaService.create()", null, e.getMessage());
         }
     }
 
@@ -43,10 +43,10 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ResumenFacturaService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ResumenFacturaService.delete()", null, e.getMessage());
         }
     }
 
@@ -55,7 +55,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ResumenFacturaService.update()", null, e.getMessage());
         }
     }
 
@@ -65,7 +65,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
             TypedQuery<ResumenFactura> query = em.createQuery("SELECT d FROM ResumenFactura d", ResumenFactura.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ResumenFacturaService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -74,7 +74,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
     try {
         return em.find(getEntityClass(), id);
         } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "ResumenFacturaService.findById()", null, e.getMessage());
             return null;
         }
     }
@@ -84,7 +84,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
             TypedQuery<ResumenFactura> query = em.createQuery("SELECT a FROM ResumenFactura a WHERE a.status = true", ResumenFactura.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "ResumenFacturaService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }

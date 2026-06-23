@@ -34,7 +34,7 @@ public class DepartamentoService extends GService<Departamento> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "DepartamentoService.countActivos()", null, e.getMessage());
             return null;
         }
     }
@@ -44,7 +44,7 @@ public class DepartamentoService extends GService<Departamento> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "DepartamentoService.countActivos()", null, e.getMessage());
             return null;
         }
     }
@@ -61,7 +61,7 @@ public class DepartamentoService extends GService<Departamento> {
         } catch (NoResultException e) {
             return null;
         } catch (Exception e) {
-            System.out.println("Error finding department by name: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error finding department by name: " + e.getLocalizedMessage(), null, 0, "DepartamentoService.findByName()", null, e.getMessage());
             return null;
         }
     }
@@ -71,7 +71,7 @@ public class DepartamentoService extends GService<Departamento> {
         try {
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "DepartamentoService.create()", null, e.getMessage());
         }
     }
 
@@ -85,10 +85,10 @@ public class DepartamentoService extends GService<Departamento> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "DepartamentoService.delete()", null, e.getMessage());
         }
     }
 
@@ -100,7 +100,7 @@ public class DepartamentoService extends GService<Departamento> {
             }
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "DepartamentoService.update()", null, e.getMessage());
         }
     }
 
@@ -110,7 +110,7 @@ public class DepartamentoService extends GService<Departamento> {
             TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d", Departamento.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "DepartamentoService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -119,7 +119,7 @@ public class DepartamentoService extends GService<Departamento> {
     try {
         return em.find(getEntityClass(), id);
         } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "DepartamentoService.findById()", null, e.getMessage());
             return null;
         }
     }
@@ -141,10 +141,10 @@ public class DepartamentoService extends GService<Departamento> {
                 }
                 em.merge(existingItem);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.softDelete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error soft deleting entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "DepartamentoService.softDelete()", null, e.getMessage());
         }
     }
     
@@ -162,7 +162,7 @@ public class DepartamentoService extends GService<Departamento> {
             }
         } catch (PersistenceException e) {
             // Catch the database constraint violation exception
-            System.out.println("Error creating or retrieving Departamento: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating or retrieving Departamento: " + e.getMessage(), null, 0, "DepartamentoService.createIfNotExist()", null, e.getMessage());
             // Handle the error gracefully, maybe log it or notify the user
             return null;
         }

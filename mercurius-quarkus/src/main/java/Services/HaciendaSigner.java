@@ -23,8 +23,13 @@ import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import java.io.StringWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import Models.ComprobantesEmitidos;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,6 +52,7 @@ public class HaciendaSigner {
     
     @Inject AlertasService alertasService;
 
+    @Inject
     public HaciendaSigner(HaciendaCertificateService certificateService) {
         this.certificateService = certificateService;
     }
@@ -134,8 +140,6 @@ public class HaciendaSigner {
             return SignResult.ok(outputStream.toString("UTF-8"));
 
         } catch (Exception e) {
-            System.out.println("Error signing XML: " + e.getMessage());
-            e.printStackTrace();
             alertasService.registrarAlerta("Error Firmando XML", "Error al firmar XML: " + e.getMessage(), null, 0, "HaciendaSigner.signXml()", null, e.getMessage());
             return SignResult.error("Error signing XML: " + e.getMessage());
         }
@@ -180,8 +184,17 @@ public class HaciendaSigner {
     }
     
     private SignResult signXmlFallback(String xmlContent) {
-        System.err.println("FALLBACK: XML signing failed after retries");
+        alertasService.registrarAlerta("Error", "FALLBACK: XML signing failed after retries", null, 0, "HaciendaSigner.signXmlFallback()", null, null);
         alertasService.registrarAlerta("Error Firmando XML", "Fallo en firma XML despues de reintentos", null, 0, "HaciendaSigner.signXmlFallback()", null, null);
         return SignResult.error("XML signing failed: Service temporarily unavailable. Please try again later.");
+    }
+
+    public static String marshalComprobante(ComprobantesEmitidos comprobante) throws JAXBException {
+        JAXBContext context = JAXBContext.newInstance(ComprobantesEmitidos.class);
+        Marshaller marshaller = context.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+        StringWriter sw = new StringWriter();
+        marshaller.marshal(comprobante, sw);
+        return sw.toString();
     }
 }

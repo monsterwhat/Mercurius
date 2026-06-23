@@ -17,6 +17,8 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
+import java.time.LocalDateTime;
 import lombok.Data;
 import lombok.ToString;
 
@@ -53,11 +55,19 @@ public class ComprobantesEmitidos {
     
     @Column(length = 50)
     private String user;
-    
-    // TODO: Phase 5 - Add Hacienda status fields
-    // private String haciendaEstado; // "enviado", "aceptado", "rechazado", "pendiente"
-    // private String haciendaClave;
-    // private LocalDateTime haciendaFechaEnvio;
-    // private LocalDateTime haciendaFechaRespuesta;
+
+    @XmlTransient
+    @Column(length = 50)
+    private String haciendaClave;
+
+    @XmlTransient
+    @Column(length = 20)
+    private String haciendaEstado;
+
+    @XmlTransient
+    private LocalDateTime haciendaFechaEnvio;
+
+    @XmlTransient
+    private LocalDateTime haciendaFechaRespuesta;
     
 }

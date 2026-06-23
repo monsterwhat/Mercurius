@@ -186,12 +186,12 @@ public class ReportesDiariosController implements Serializable{
                 if (invoices != null) {
                     facturasEmitidas = invoices;
                 }
-                System.out.println("Loaded " + facturasEmitidas.size() + " invoices for user " + userId + " between " + startDate + " and " + endDate);
+                alertasService.registrarAlerta("Info", "Loaded " + facturasEmitidas.size() + " invoices for user " + userId + " between " + startDate + " and " + endDate, currentSession.getCurrentUser(), 0, "ReportesDiariosController.loadFacturas()", null, null);
             } else {
-                System.out.println("User not found with ID: " + userId);
+                alertasService.registrarAlerta("Error", "User not found with ID: " + userId, currentSession.getCurrentUser(), 0, "ReportesDiariosController.loadFacturas()", null, null);
             }
         } else {
-            System.out.println("Invalid parameters: startDate=" + startDate + ", endDate=" + endDate + ", userId=" + userId);
+            alertasService.registrarAlerta("Error", "Invalid parameters: startDate=" + startDate + ", endDate=" + endDate + ", userId=" + userId, currentSession.getCurrentUser(), 0, "ReportesDiariosController.loadFacturas()", null, null);
         }
     }
     
@@ -235,25 +235,25 @@ public class ReportesDiariosController implements Serializable{
     }
 
     public void imprimirReporteFamilias(){
-        System.out.println("imprimirReporteFamilias called");
-        System.out.println("reportes: " + (reportes != null ? reportes.size() : "null"));
-        System.out.println("range: " + range);
+        alertasService.registrarAlerta("Info", "imprimirReporteFamilias called", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteFamilias()", null, null);
+        alertasService.registrarAlerta("Info", "reportes: " + (reportes != null ? reportes.size() : "null"), currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteFamilias()", null, null);
+        alertasService.registrarAlerta("Info", "range: " + range, currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteFamilias()", null, null);
         
         if (reportes == null || reportes.isEmpty()) {
-            System.out.println("No data to generate family report");
+            alertasService.registrarAlerta("Info", "No data to generate family report", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteFamilias()", null, null);
             FacesContext.getCurrentInstance().addMessage(null, 
                 new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay datos para imprimir", "No se encontraron datos para generar el reporte de familias"));
             return;
         }
         
         File pdfFile = pdfGenerator.generarPDFReportesFamilias(reportes, range);
-        System.out.println("PDF file generated: " + (pdfFile != null ? pdfFile.getAbsolutePath() : "null"));
+        alertasService.registrarAlerta("Info", "PDF file generated: " + (pdfFile != null ? pdfFile.getAbsolutePath() : "null"), currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteFamilias()", null, null);
         
         if(pdfFile != null){
-            System.out.println("Sending PDF to printer...");
+            alertasService.registrarAlerta("Info", "Sending PDF to printer...", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteFamilias()", null, null);
             printer.printPDFFile(pdfFile);
         } else {
-            System.out.println("PDF generation failed");
+            alertasService.registrarAlerta("Error", "PDF generation failed", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteFamilias()", null, null);
             FacesContext.getCurrentInstance().addMessage(null, 
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error generando PDF", "No se pudo generar el archivo PDF"));
         }
@@ -267,25 +267,25 @@ public class ReportesDiariosController implements Serializable{
     }
     
     public void imprimirReporteVentasXCajero(){
-        System.out.println("imprimirReporteVentasXCajero called");
-        System.out.println("facturasEmitidas: " + (facturasEmitidas != null ? facturasEmitidas.size() : "null"));
-        System.out.println("range: " + range);
+        alertasService.registrarAlerta("Info", "imprimirReporteVentasXCajero called", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
+        alertasService.registrarAlerta("Info", "facturasEmitidas: " + (facturasEmitidas != null ? facturasEmitidas.size() : "null"), currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
+        alertasService.registrarAlerta("Info", "range: " + range, currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
         
         if (facturasEmitidas != null && !facturasEmitidas.isEmpty()) {
             File pdfFile = pdfGenerator.generarPDFReportesVentasXCajero(facturasEmitidas, currentSession.getUsername(), range);
-            System.out.println("PDF file generated: " + (pdfFile != null ? pdfFile.getAbsolutePath() : "null"));
+            alertasService.registrarAlerta("Info", "PDF file generated: " + (pdfFile != null ? pdfFile.getAbsolutePath() : "null"), currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
             
             if(pdfFile != null){
-                System.out.println("Sending PDF to printer...");
+                alertasService.registrarAlerta("Info", "Sending PDF to printer...", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
                 printer.printPDFFile(pdfFile);
-                System.out.println("PDF sent to printer");
+                alertasService.registrarAlerta("Info", "PDF sent to printer", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
             } else {
-                System.out.println("PDF generation failed");
+                alertasService.registrarAlerta("Error", "PDF generation failed", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
                 FacesContext.getCurrentInstance().addMessage(null, 
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error generando PDF", "No se pudo generar el archivo PDF"));
             }
         } else {
-            System.out.println("No invoices to print");
+            alertasService.registrarAlerta("Info", "No invoices to print", currentSession.getCurrentUser(), 0, "ReportesDiariosController.imprimirReporteVentasXCajero()", null, null);
             FacesContext.getCurrentInstance().addMessage(null, 
                 new FacesMessage(FacesMessage.SEVERITY_WARN, "No hay datos para imprimir", "No se encontraron facturas para generar el reporte"));
         }

@@ -209,7 +209,6 @@ public class CarritoCalculations {
             return BigDecimal.ZERO;
 
         } catch (Exception e) {
-            System.err.println("Error calculating totalPromo: " + e.getMessage());
             return BigDecimal.ZERO;
         }
     }

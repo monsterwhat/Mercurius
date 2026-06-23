@@ -1,6 +1,7 @@
 package Services;
 
 import Controllers.Settings.SettingsDirController;
+import Services.AlertasService;
 import Utils.Parsers.Parser;
 import jakarta.activation.DataHandler;
 import jakarta.activation.DataSource;
@@ -21,6 +22,7 @@ import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.search.FlagTerm;
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,6 +50,7 @@ public class EmailService implements Serializable {
     
     @Inject Parser parser;
     @Inject SettingsDirController dirController;
+    @Inject AlertasService alertasService;
     
     @Timeout(value = 30, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 1000, jitter = 500)
@@ -82,10 +85,10 @@ public class EmailService implements Serializable {
                 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                System.out.println("Error: " + e.getLocalizedMessage());
+                alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
             }
         } else {
-            System.out.println("No email set up");
+            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmail()", null, null);
             status[0] = "No Email Setup!";
         }
         
@@ -94,7 +97,7 @@ public class EmailService implements Serializable {
     }
     
     private void sendEmailFallback(String to, String subject, String body, String email, String pass, Consumer<String> callback) {
-        System.err.println("FALLBACK: sendEmail failed, notifying via callback");
+        alertasService.registrarAlerta("Error", "FALLBACK: sendEmail failed, notifying via callback", null, 0, "EmailService.sendEmailFallback()", null, null);
         CompletableFuture.runAsync(() -> callback.accept("Email send failed: Timeout or error - please try again later"));
     }
     
@@ -138,10 +141,10 @@ public class EmailService implements Serializable {
                 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                System.out.println("Error: " + e.getLocalizedMessage());
+                alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
             }
         } else {
-            System.out.println("No email set up");
+            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmail()", null, null);
             status[0] = "No Email Setup!";
         }
         
@@ -150,7 +153,7 @@ public class EmailService implements Serializable {
     }
     
     private void sendEmailsFallback(List<String> to, String subject, String body, String email, String pass, Consumer<String> callback) {
-        System.err.println("FALLBACK: sendEmails failed, notifying via callback");
+        alertasService.registrarAlerta("Error", "FALLBACK: sendEmails failed, notifying via callback", null, 0, "EmailService.sendEmailsFallback()", null, null);
         CompletableFuture.runAsync(() -> callback.accept("Email send failed: Timeout or error - please try again later"));
     }
     
@@ -201,10 +204,10 @@ public class EmailService implements Serializable {
                 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                System.out.println("Error: " + e.getLocalizedMessage());
+                alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
             }
         } else {
-            System.out.println("No email set up");
+            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmail()", null, null);
             status[0] = "No Email Setup!";
         }
         
@@ -213,7 +216,7 @@ public class EmailService implements Serializable {
     }
     
     private void sendEmailsWithAttachmentFallback(List<String> to, String subject, String body, String email, String pass, File attachment, Consumer<String> callback) {
-        System.err.println("FALLBACK: sendEmailsWithAttachment failed, notifying via callback");
+        alertasService.registrarAlerta("Error", "FALLBACK: sendEmailsWithAttachment failed, notifying via callback", null, 0, "EmailService.sendEmailsWithAttachmentFallback()", null, null);
         CompletableFuture.runAsync(() -> callback.accept("Email with attachment failed: Timeout or error - please try again later"));
     }
     
@@ -281,14 +284,14 @@ public class EmailService implements Serializable {
                             File file = new File(directory, mimeBodyPart.getFileName());
                             mimeBodyPart.saveFile(file); // Save directly to the file
 
-                            System.out.println("Saved XML attachment: " + file.getAbsolutePath());
+                            alertasService.registrarAlerta("Info", "Saved XML attachment: " + file.getAbsolutePath(), null, 0, "EmailService.processUnreadXmlAttachments()", null, null);
 
                             // Parse the saved XML file
                             try (InputStream inputStream = new FileInputStream(file)) {
                                 parser.parseXML(inputStream);
                                 successfullyProcessedFiles++;
                             } catch (Exception e) {
-                                System.out.println("Error parsing XML file: " + e.getMessage());
+                                alertasService.registrarAlerta("Error", "Error parsing XML file: " + e.getMessage(), null, 0, "EmailService.processUnreadXmlAttachments()", null, e.getMessage());
                             }
 
                             // Mark the message as read
@@ -319,14 +322,89 @@ public class EmailService implements Serializable {
                 totalEmails, emailsWithXmlAttachments, successfullyProcessedFiles));
 
         } catch (MessagingException | IOException e) {
-            System.out.println("Error: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
             callback.accept("Encountered an Error: " + e.getLocalizedMessage());
         }
     }
     
     private void processUnreadXmlAttachmentsFallback(String email, String pass, Consumer<String> callback) {
-        System.err.println("FALLBACK: processUnreadXmlAttachments failed due to circuit breaker or repeated failures");
+        alertasService.registrarAlerta("Error", "FALLBACK: processUnreadXmlAttachments failed due to circuit breaker or repeated failures", null, 0, "EmailService.processUnreadXmlAttachmentsFallback()", null, null);
         CompletableFuture.runAsync(() -> callback.accept("Email processing skipped: Service temporarily unavailable due to repeated failures. Will retry on next scheduled run."));
+    }
+
+    @Timeout(value = 120, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 2000, jitter = 500)
+    @Fallback(fallbackMethod = "sendEmailsWithAttachmentsFallback")
+    public void sendEmailsWithAttachments(List<String> to, String subject, String body, String email, String pass, List<File> attachments, Consumer<String> callback) {
+        final String[] status = {null};
+
+        if (email != null && pass != null) {
+            Properties props = new Properties();
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.host", "smtp.gmail.com");
+            props.put("mail.smtp.port", "587");
+
+            Session session = Session.getInstance(props, new jakarta.mail.Authenticator() {
+                @Override
+                protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
+                    return new jakarta.mail.PasswordAuthentication(email, pass);
+                }
+            });
+
+            try {
+                Message message = new MimeMessage(session);
+                message.setHeader("Content-Type", "multipart/mixed; charset=utf-8");
+                message.setFrom(new InternetAddress(email));
+
+                InternetAddress[] toAddresses = new InternetAddress[to.size()];
+                for (int i = 0; i < to.size(); i++) {
+                    toAddresses[i] = new InternetAddress(to.get(i));
+                }
+                message.setRecipients(Message.RecipientType.TO, toAddresses);
+
+                message.setSubject(subject);
+
+                Multipart multipart = new MimeMultipart();
+
+                // Body part
+                BodyPart bodyPart = new MimeBodyPart();
+                bodyPart.setContent(body, "text/plain; charset=utf-8");
+                multipart.addBodyPart(bodyPart);
+
+                // Attachments
+                if (attachments != null) {
+                    for (File attachment : attachments) {
+                        if (attachment != null && attachment.exists()) {
+                            BodyPart attachmentPart = new MimeBodyPart();
+                            DataSource source = new FileDataSource(attachment);
+                            attachmentPart.setDataHandler(new DataHandler(source));
+                            attachmentPart.setFileName(attachment.getName());
+                            multipart.addBodyPart(attachmentPart);
+                        }
+                    }
+                }
+
+                message.setContent(multipart);
+
+                Transport.send(message);
+                status[0] = "Sent";
+
+            } catch (MessagingException e) {
+                status[0] = "Encountered an Error: " + e.getLocalizedMessage();
+                alertasService.registrarAlerta("Error", "Error sending email with attachments: " + e.getMessage(), null, 0, "EmailService.sendEmailsWithAttachments()", null, e.getMessage());
+            }
+        } else {
+            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmailsWithAttachments()", null, null);
+            status[0] = "No Email Setup!";
+        }
+
+        CompletableFuture.runAsync(() -> callback.accept(status[0]));
+    }
+
+    private void sendEmailsWithAttachmentsFallback(List<String> to, String subject, String body, String email, String pass, List<File> attachments, Consumer<String> callback) {
+        alertasService.registrarAlerta("Error", "FALLBACK: sendEmailsWithAttachments failed", null, 0, "EmailService.sendEmailsWithAttachmentsFallback()", null, null);
+        CompletableFuture.runAsync(() -> callback.accept("Email with attachments failed: Timeout or error - please try again later"));
     }
 
 }

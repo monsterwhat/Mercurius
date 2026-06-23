@@ -590,8 +590,7 @@ public class ArticulosController implements Serializable {
                 }
             }
         } catch (Exception e) {  
-            alertasService.registrarAlerta("Error al calcular el precio con utilidad", "", currentSession.getCurrentUser(), 0, "calcularPrecioConUtilidad()", null, e.getLocalizedMessage());
-            System.out.println("Error: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), currentSession.getCurrentUser(), 0, "ArticulosController.calcularPrecioConUtilidad()", null, e.getMessage());
         }
     }
     
@@ -629,8 +628,7 @@ public class ArticulosController implements Serializable {
                 return;
             }
         } catch (Exception e) {
-            alertasService.registrarAlerta("Error al calcular el precio con utilidad", "", currentSession.getCurrentUser(), 0, "calcularPrecioConUtilidadEdit()", null, e.getLocalizedMessage());
-            System.out.println("Error: " + e.getMessage());
+            alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), currentSession.getCurrentUser(), 0, "ArticulosController.calcularPrecioConUtilidadEdit()", null, e.getMessage());
         }
     }
     
@@ -660,7 +658,7 @@ public class ArticulosController implements Serializable {
                 return;
             }
         } else {
-            System.out.println("No hay articulo.");
+            alertasService.registrarAlerta("Info", "No hay articulo.", null, 0, "ArticulosController.calcularPrecioConIVAEdit()", null, null);
         }
     }
         

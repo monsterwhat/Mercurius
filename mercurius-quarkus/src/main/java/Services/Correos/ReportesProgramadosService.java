@@ -33,7 +33,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             }
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating ReporteProgramado: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating ReporteProgramado: " + e.getMessage(), null, 0, "ReportesProgramadosService.create()", null, e.getMessage());
         }
     }
     
@@ -62,10 +62,10 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 }
                 em.persist(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ReportesProgramadosService.updateAndDisable()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.updateAndDisable()", null, e.getMessage());
         }
     }
     
@@ -84,7 +84,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             }
 
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.createIfNotExists()", null, e.getMessage());
             return false;
         }
     }
@@ -96,7 +96,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 em.remove(existingItem);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.delete()", null, e.getMessage());
         }
     }
 
@@ -115,7 +115,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             java.util.List<ReporteProgramado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (Exception e) {
-            System.out.println("Error finding next scheduled report: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding next scheduled report: " + e.getMessage(), null, 0, "ReportesProgramadosService.findNextScheduledReport()", null, e.getMessage());
             return null;
         }
     }

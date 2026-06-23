@@ -31,7 +31,7 @@ public class ReceptorService extends GService<Receptor> {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ReceptorService.create()", null, e.getMessage());
         }
     }
 
@@ -45,10 +45,10 @@ public class ReceptorService extends GService<Receptor> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ReceptorService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ReceptorService.delete()", null, e.getMessage());
         }
     }
 
@@ -57,7 +57,7 @@ public class ReceptorService extends GService<Receptor> {
         try {
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ReceptorService.update()", null, e.getMessage());
         }
     }
 
@@ -67,7 +67,7 @@ public class ReceptorService extends GService<Receptor> {
             TypedQuery<Receptor> query = em.createQuery("SELECT d FROM Receptor d", Receptor.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ReceptorService.listAll()", null, e.getMessage());
             return null;
         }
     }
@@ -76,7 +76,7 @@ public class ReceptorService extends GService<Receptor> {
     try {
         return em.find(getEntityClass(), id);
         } catch (Exception e) {
-            System.out.println("Error finding entity by ID: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "ReceptorService.findById()", null, e.getMessage());
             return null;
         }
     }
@@ -86,7 +86,7 @@ public class ReceptorService extends GService<Receptor> {
             TypedQuery<Receptor> query = em.createQuery("SELECT a FROM Receptor", Receptor.class);
             return query.getResultList();
         } catch (Exception e) {
-            System.out.println("Error listing all enabled entities: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "ReceptorService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
@@ -113,7 +113,7 @@ public class ReceptorService extends GService<Receptor> {
             }
         } catch (PersistenceException e) {
             // Catch the database constraint violation exception
-            System.out.println("Error creating or retrieving Receptor: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating or retrieving Receptor: " + e.getMessage(), null, 0, "ReceptorService.createIfNotExist()", null, e.getMessage());
             // Handle the error gracefully, maybe log it or notify the user
             return null;
         }

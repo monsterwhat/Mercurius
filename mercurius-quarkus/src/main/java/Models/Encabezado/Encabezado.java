@@ -98,5 +98,8 @@ public class Encabezado {
     
     @Column(length = 10)
     private String schemaVersion;
+
+    @Column(name = "codigo_documento", length = 2)
+    private String codigoDocumento;
   
 }

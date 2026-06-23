@@ -25,7 +25,7 @@ public class ClientService extends GService<Clients> {
         try {
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating entity: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ClientService.create()", null, e.getMessage());
         }
     }
 
@@ -39,13 +39,25 @@ public class ClientService extends GService<Clients> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ClientService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ClientService.delete()", null, e.getMessage());
         }
     }
     
+    public List<Clients> searchByName(String name) {
+        try {
+            TypedQuery<Clients> query = em.createQuery(
+                "SELECT c FROM Clients c WHERE LOWER(c.name) LIKE LOWER(:name)", Clients.class);
+            query.setParameter("name", "%" + name + "%");
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error searching clients by name: " + e.getMessage(), null, 0, "ClientService.searchByName()", null, e.getMessage());
+            return null;
+        }
+    }
+
     public boolean checkClientName(String username) {
         try {
             TypedQuery<Clients> query = em.createQuery("SELECT c FROM Clients c WHERE c.name = :username", Clients.class);
@@ -55,7 +67,7 @@ public class ClientService extends GService<Clients> {
 
             return !resultList.isEmpty();
         } catch (Exception e) {
-            System.out.println("Error getting client by username: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error getting client by username: " + e.getMessage(), null, 0, "ClientService.checkClientName()", null, e.getMessage());
             return true;
         }
     }

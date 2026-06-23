@@ -33,7 +33,7 @@ public class UserService extends GService<Users> {
             }
             em.persist(entity);
         } catch (Exception e) {
-            System.out.println("Error creating user: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error creating user: " + e.getMessage(), null, 0, "UserService.create()", null, e.getMessage());
         }
     }
 
@@ -41,7 +41,7 @@ public class UserService extends GService<Users> {
         try {
             return BCrypt.withDefaults().hashToString(BCRYPT_COST, password.toCharArray());
         } catch (Exception e) {
-            System.out.println("Password hashing error: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Password hashing error: " + e.getLocalizedMessage(), null, 0, "UserService.hashPassword()", null, e.getMessage());
             throw new RuntimeException("Failed to hash password", e);
         }
     }
@@ -62,7 +62,7 @@ public class UserService extends GService<Users> {
             }
             em.merge(entity);
         } catch (Exception e) {
-            System.out.println("Error updating user: " + e.toString());
+            alertasService.registrarAlerta("Error", "Error updating user: " + e.getMessage(), null, 0, "UserService.update()", null, e.getMessage());
         }
     }
 
@@ -76,10 +76,10 @@ public class UserService extends GService<Users> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                System.out.println("Entity not found");
+                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "UserService.delete()", null, null);
             }
         } catch (Exception e) {
-            System.out.println("Error deleting " + getEntityClass().getSimpleName() + " : " + e.toString());
+            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "UserService.delete()", null, e.getMessage());
         }
     }
 
@@ -89,7 +89,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage(), null, 0, "UserService.count()", null, e.getMessage());
             return null;
         }
     }
@@ -103,7 +103,7 @@ public class UserService extends GService<Users> {
             return !existingUser.isEmpty();
 
         } catch (Exception e) {
-            System.out.println("Error checking username: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error checking username: " + e.getLocalizedMessage(), null, 0, "UserService.usernameExists()", null, e.getMessage());
             return true;
         }
     }
@@ -113,7 +113,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting active users: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting active users: " + e.getLocalizedMessage(), null, 0, "UserService.countActivos()", null, e.getMessage());
             return null;
         }
     }
@@ -123,7 +123,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (Exception e) {
-            System.out.println("Error counting inactive users: " + e.getLocalizedMessage());
+            alertasService.registrarAlerta("Error", "Error counting inactive users: " + e.getLocalizedMessage(), null, 0, "UserService.countInactivos()", null, e.getMessage());
             return null;
         }
     }
