@@ -2,6 +2,7 @@ package Models;
 
 import Models.Detalles.DetalleServicio;
 import Models.Encabezado.Encabezado;
+import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -52,7 +53,13 @@ public class ComprobantesRecibidos {
     @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private ResumenFactura resumen;
-    
+
+    @XmlElement(name = "InformacionReferencia")
+    @ToString.Exclude
+    @jakarta.persistence.OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "comprobante_recibido_id")
+    private java.util.List<InformacionReferencia> informacionReferencia;
+
     private Boolean status;
     private Boolean processed;
     
@@ -76,7 +83,7 @@ public class ComprobantesRecibidos {
         if (mensajeReceptorLimite != null) return mensajeReceptorLimite;
         if (encabezado == null || encabezado.getFechaEmision() == null) return null;
         
-        LocalDate fechaEmision = encabezado.getFechaEmision().toInstant()
+        LocalDate fechaEmision = encabezado.getFechaEmision()
             .atZone(java.time.ZoneId.systemDefault()).toLocalDate();
         LocalDate inicioMesSiguiente = fechaEmision.withDayOfMonth(1).plusMonths(1);
         return calcularLimite8DiasHabiles(inicioMesSiguiente);

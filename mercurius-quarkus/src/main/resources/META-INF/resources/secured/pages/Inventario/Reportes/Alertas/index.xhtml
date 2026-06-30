@@ -261,11 +261,15 @@
                             </p:column>
                             
                             <p:column headerText="Stock Actual">
-                                <h:outputText value="#{alerta.stockActual}"/>
+                                <h:outputText value="#{alerta.cantidadActual}"/>
                             </p:column>
                             
                             <p:column headerText="Stock Mínimo">
-                                <h:outputText value="#{alerta.stockMinimo}"/>
+                                <h:outputText value="#{alerta.cantidadMinima}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Stock Óptimo" style="width: 100px;">
+                                <h:outputText value="#{alerta.articulo.stockOptimo}"/>
                             </p:column>
                             
                             <p:column headerText="Fecha Creación">
@@ -275,21 +279,24 @@
                             </p:column>
                             
                             <p:column headerText="Estado">
-                                <p:tag severity="#{alerta.estado == 'activa' ? 'warning' : 'success'}"
-                                       value="#{alerta.estado}"/>
+                                <p:tag severity="#{alerta.estado == 'active' ? 'warning' : alerta.estado == 'acknowledged' ? 'info' : 'success'}"
+                                       value="#{alerta.estado == 'active' ? 'Activa' : alerta.estado == 'acknowledged' ? 'Reconocida' : 'Resuelta'}"/>
                             </p:column>
                             
-                            <p:column headerText="Acciones" style="width: 150px; text-align: center;">
+                            <p:column headerText="Acciones" style="width: 180px; text-align: center;" rendered="#{alerta.estado == 'active'}">
                                 <p:commandButton icon="pi pi-check" 
                                                title="Reconocer"
                                                action="#{stockAlertController.acknowledgeAlert}"
                                                update="alertasReportes growl"
-                                               styleClass="button is-small is-success mr-1"/>
+                                               styleClass="button is-small is-success mr-1">
+                                    <f:setPropertyActionListener value="#{alerta}" target="#{stockAlertController.selectedAlert}" />
+                                </p:commandButton>
                                 <p:commandButton icon="pi pi-check-circle" 
                                                title="Resolver"
-                                               action="#{stockAlertController.resolveAlert}"
-                                               update="alertasReportes growl"
-                                               styleClass="button is-small is-info"/>
+                                               onclick="PF('resolveAlertDialog').show();"
+                                               styleClass="button is-small is-info">
+                                    <f:setPropertyActionListener value="#{alerta}" target="#{stockAlertController.selectedAlert}" />
+                                </p:commandButton>
                             </p:column>
                         </p:dataTable>
                     </div>
@@ -307,22 +314,28 @@
                                 <h:outputText value="#{sugerencia.articulo.codigoBarra}"/>
                             </p:column>
                             
-                            <p:column headerText="Stock Actual">
-                                <h:outputText value="#{sugerencia.stockActual}"/>
-                            </p:column>
-                            
                             <p:column headerText="Cantidad Sugerida">
                                 <h:outputText value="#{sugerencia.cantidadSugerida}"/>
                             </p:column>
                             
                             <p:column headerText="Prioridad">
                                 <p:tag severity="#{sugerencia.prioridad == 'urgent' ? 'danger' : sugerencia.prioridad == 'high' ? 'warning' : 'info'}"
-                                       value="#{sugerencia.prioridad}"/>
+                                       value="#{sugerencia.prioridad == 'urgent' ? 'Urgente' : sugerencia.prioridad == 'high' ? 'Alta' : sugerencia.prioridad == 'medium' ? 'Media' : 'Baja'}"/>
                             </p:column>
                             
                             <p:column headerText="Costo Estimado">
-                                <h:outputText value="#{sugerencia.costoEstimado}">
+                                <h:outputText value="#{sugerencia.costoTotalEstimado}">
                                     <f:convertNumber type="currency" currencySymbol="₡"/>
+                                </h:outputText>
+                            </p:column>
+                            
+                            <p:column headerText="Promedio Ventas Mensual">
+                                <h:outputText value="#{sugerencia.promedioVentasMensual}"/>
+                            </p:column>
+                            
+                            <p:column headerText="Fecha Creación">
+                                <h:outputText value="#{sugerencia.fechaCreacion}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
                                 </h:outputText>
                             </p:column>
                         </p:dataTable>
@@ -331,6 +344,35 @@
                 </h:form>
             </div>
         </section>
+
+            </div>
+
+            <!-- Resolve Alert Dialog with Notes -->
+            <p:dialog header="Resolver Alerta de Stock" widgetVar="resolveAlertDialog" modal="true" 
+                      fitViewport="true" responsive="true" dynamic="true" cache="false"
+                      appendTo="@(body)">
+                <h:form id="resolveAlertForm">
+                    <div class="columns is-multiline" style="padding: 1rem;">
+                        <div class="column is-full">
+                            <p:messages showDetail="true" showSummary="false" closable="true" />
+                        </div>
+                        <div class="column is-full">
+                            <label class="label has-text-link" for="resolutionNotes">Notas de Resolución:</label>
+                            <p:inputTextarea id="resolutionNotes" 
+                                             value="#{stockAlertController.resolutionNotes}"
+                                             style="width: 100%" rows="4"
+                                             placeholder="Describa cómo se resolvió la alerta (ej. nuevo pedido realizado, ajuste de inventario, etc.)"/>
+                        </div>
+                        <div class="column is-full">
+                            <p:commandButton value="Confirmar Resolución" 
+                                             action="#{stockAlertController.resolveAlert}"
+                                             update="alertasReportes growl"
+                                             oncomplete="if(args &amp;&amp; !args.validationFailed) { PF('resolveAlertDialog').hide(); }"
+                                             styleClass="button is-primary is-rounded is-fullwidth"/>
+                        </div>
+                    </div>
+                </h:form>
+            </p:dialog>
 
         <script>
             function showSection(sectionName) {

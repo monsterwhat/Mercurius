@@ -24,23 +24,23 @@ public class DatosImpuestoEspecificoSurtido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @XmlElement(name = "NombreCampoXML")
+    @XmlElement(name = "CantidadUnidadMedidaSurtido")
     @Column(name = "cantidad_unidad_medida_surtido", precision = 7, scale = 2)
     private BigDecimal cantidadUnidadMedidaSurtido;
     
-    @XmlElement(name = "NombreCampoXML")
+    @XmlElement(name = "PorcentajeSurtido")
     @Column(name = "porcentaje_surtido", precision = 4, scale = 2)
     private BigDecimal porcentajeSurtido;
     
-    @XmlElement(name = "NombreCampoXML")
+    @XmlElement(name = "ProporcionSurtido")
     @Column(name = "proporcion_surtido", precision = 5, scale = 2)
     private BigDecimal proporcionSurtido;
     
-    @XmlElement(name = "NombreCampoXML")
+    @XmlElement(name = "VolumenUnidadConsumoSurtido")
     @Column(name = "volumen_unidad_consumo_surtido", precision = 7, scale = 2)
     private BigDecimal volumenUnidadConsumoSurtido;
     
-    @XmlElement(name = "NombreCampoXML")
+    @XmlElement(name = "ImpuestoUnidadSurtido")
     @Column(name = "impuesto_unidad_surtido", precision = 18, scale = 2)
     private BigDecimal impuestoUnidadSurtido;
     

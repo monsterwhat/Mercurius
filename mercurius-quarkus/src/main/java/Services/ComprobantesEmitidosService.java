@@ -342,6 +342,27 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
 
+    public List<ComprobantesEmitidos> findFacturasPendientesEnvio() {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "LEFT JOIN FETCH f.detalles d " +
+                "LEFT JOIN FETCH d.lineasDetalle ld " +
+                "LEFT JOIN FETCH f.resumen r " +
+                "WHERE f.status = true " +
+                "AND f.haciendaEstado = 'PENDIENTE' " +
+                "ORDER BY e.fechaEmision ASC",
+                ComprobantesEmitidos.class
+            );
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error finding facturas pendientes de envio: " + e.getMessage(),
+                null, 0, "ComprobantesEmitidosService.findFacturasPendientesEnvio()", null, e.getMessage());
+            return java.util.Collections.emptyList();
+        }
+    }
+
     public List<ComprobantesEmitidos> findFacturasParaVerificarEstado() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(

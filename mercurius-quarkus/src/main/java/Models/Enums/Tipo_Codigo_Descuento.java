@@ -10,7 +10,7 @@ public enum Tipo_Codigo_Descuento {
     DESCUENTO_COMERCIAL("07","Descuento comercial"),
     DESCUENTO_POR_FRECUENCIA("08","Descuento por frecuencia"),
     DESCUENTO_SOSTENIDO("09","Descuento sostenido"),
-    OTROS_DESCUENTOS("99","Otros descuentos");
+    OTROS_DESCUENTOS("10","Otros descuentos");
 
     private final String codigo;
     private final String descripcion;

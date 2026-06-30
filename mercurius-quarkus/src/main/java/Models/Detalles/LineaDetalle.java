@@ -16,6 +16,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -82,9 +83,12 @@ public class LineaDetalle {
     @Column(name = "detalle", length = 200)
     private String detalle;
     
-    @XmlElement(name = "NumerosVINoSerie")
-    @Column(name = "numeros_vi_no_serie", length = 17)
-    private List<String> numerosVINoSerie;
+    @XmlElementWrapper(name = "NumerosVINoSerie")
+    @XmlElement(name = "NumeroVINoSerie")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToMany(mappedBy = "lineaDetalle", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<NumeroVINoSerie> numerosVINoSerie;
     
     @XmlElement(name = "RegistroMedicamento")
     @Column(name = "registro_medicamento", length = 100)
@@ -98,9 +102,9 @@ public class LineaDetalle {
     @XmlElement(name = "DetalleSurtido")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "detalle_surtido_id")
-    private DetalleSurtido detallesSurtidos;
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "linea_detalle_id")
+    private List<DetalleSurtido> detallesSurtidos;
  
     @XmlElement(name = "PrecioUnitario")
     @Column(name = "precio_unitario", precision = 18, scale = 5)
@@ -121,7 +125,7 @@ public class LineaDetalle {
     @Column(name = "sub_total", precision = 18, scale = 5)
     private BigDecimal subTotal;
     
-    @XmlElement(name = "IVACobradoFabrica")
+    @XmlTransient
     @Column(name = "iva_cobrado_fabrica", length = 2)
     private String ivaCobradoFabrica;
 

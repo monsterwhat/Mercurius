@@ -4,6 +4,7 @@ import Models.ComprobantesRecibidos;
 import Models.Detalles.LineaDetalle;
 import Models.Encabezado.Encabezado;
 import Models.Resumen.ResumenFactura;
+import Models.Validacion.PrevalidationResult;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Inject;
@@ -24,6 +25,7 @@ import java.time.LocalDate;
 public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos> {
     
     @Inject AlertasService alertasService;
+    @Inject ComprobantesRecibidosPrevalidationService prevalidationService;
 
     @Override
     protected Class<ComprobantesRecibidos> getEntityClass() {
@@ -51,17 +53,30 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     // Uses proper cascading to ensure atomic transaction - if any entity fails, all rollback
     public void createWithRelatedEntities(ComprobantesRecibidos entity, Encabezado encabezado, ResumenFactura resumenFactura) {
         try {
-            // Set relationships - let JPA handle cascading from the root entity
             entity.setEncabezado(encabezado);
             entity.setResumen(resumenFactura);
-            
-            // Persist only the root entity - cascade will handle related entities
-            // This ensures atomic transaction: if anything fails, everything rolls back
+
+            // Pre-validate before persisting — reject on ERROR-level issues
+            PrevalidationResult prevalidation = prevalidationService.prevalidarCompleto(entity);
+            if (prevalidation.hasErrors()) {
+                String errorSummary = prevalidation.getErrors().stream()
+                    .map(e -> e.getField() + ": " + e.getMessage())
+                    .collect(java.util.stream.Collectors.joining("; "));
+                alertasService.registrarAlerta("Error",
+                    "Pre-validation failed for " + (entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : "?") +
+                    ": " + errorSummary, null, 0,
+                    "ComprobantesRecibidosService.createWithRelatedEntities()", null, errorSummary);
+                throw new RuntimeException("Pre-validation failed: " + errorSummary);
+            }
+
             em.persist(entity);
             em.flush();
             em.refresh(entity);
-            
-            alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos with ID: " + entity.getId(), null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, null);
+
+            String consecutive = entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : String.valueOf(entity.getId());
+            alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos: " + consecutive, null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, null);
+        } catch (RuntimeException e) {
+            throw e; // re-throw our own pre-validation failure
         } catch (Exception e) {
             alertasService.registrarAlerta("Error", "Error creating entity with related entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
@@ -332,6 +347,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         } catch (Exception e) {
             alertasService.registrarAlerta("Error", "Error listing vencidas: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listVencidas()", null, e.getMessage());
             return null;
+        }
     }
 
     public List<ComprobantesRecibidos> findPendientesMensajeReceptor() {
@@ -367,9 +383,8 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             alertasService.registrarAlerta("Error", "Error finding proximos vencer Mensaje Receptor: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findProximosVencerMensajeReceptor()", null, e.getMessage());
             return null;
         }
-    }
-
 }
+
 
 
 }

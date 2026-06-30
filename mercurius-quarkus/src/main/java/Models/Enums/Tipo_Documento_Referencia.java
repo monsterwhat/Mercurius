@@ -2,8 +2,8 @@ package Models.Enums;
 
 public enum Tipo_Documento_Referencia {
     FACTURA_ELECTRONICA("01", "Factura electrónica"),
-    NOTA_DE_DEBITO_ELECTRONICA("02", "Nota de débito electrónica"),
-    NOTA_DE_CREDITO_ELECTRONICA("03", "Nota de crédito electrónica"),
+    NOTA_DE_CREDITO_ELECTRONICA("02", "Nota de crédito electrónica"),
+    NOTA_DE_DEBITO_ELECTRONICA("03", "Nota de débito electrónica"),
     TIQUETE_ELECTRONICO("04", "Tiquete electrónico"),
     NOTA_DE_DESPACHO("05", "Nota de despacho"),
     CONTRATO("06", "Contrato"),

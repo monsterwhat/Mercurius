@@ -6,12 +6,12 @@ import Models.ComprobantesEmitidos;
 import Models.Detalles.CodigoComercial;
 import Models.Detalles.Descuento;
 import Models.Detalles.DetalleServicio;
+import Models.Detalles.DetalleSurtido;
 import Models.Detalles.Impuesto;
 import Models.Detalles.LineaDetalle;
 import Models.Detalles.OtroCargo;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
-import Models.Encabezado.Fax;
 import Models.Encabezado.IdentificacionEmisor;
 import Models.Encabezado.IdentificacionReceptor;
 import Models.Encabezado.MedioPago;
@@ -19,9 +19,11 @@ import Models.Encabezado.Receptor;
 import Models.Encabezado.Telefono;
 import Models.Encabezado.Ubicacion;
 import Models.Resumen.ResumenFactura;
+import Models.Resumen.TotalDesgloseImpuesto;
 import Models.Encabezado.CorreoElectronicoEmisor;
 import Models.Enums.Tipo_CondicionVenta;
 import Models.Enums.Tipo_MedioPago;
+import Models.Enums.Tipo_Codigo_Descuento;
 import Models.Enums.Tipo_TarifaIVA;
 import Models.AppSettings;
 import Models.Articulos.Promocion;
@@ -49,11 +51,15 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import Services.EmailService;
 import Services.AppSettingsService;
+import Services.Strategies.DocumentoStrategy;
+import Services.Strategies.DocumentoStrategyFactory;
 import Models.AppSettings;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Clients;
@@ -102,13 +108,18 @@ public class ComprobanteService implements Serializable {
     @Inject
     private AppSettingsService appSettingsService;
 
+    @Inject
+    private DocumentoStrategyFactory strategyFactory;
+
     public static class CrearComprobanteResult {
         public ComprobantesEmitidos comprobante;
         public boolean haciendaEnviado;
         public String haciendaMensaje;
     }
 
-    public CrearComprobanteResult crearComprobante(AppSettings appSettings, List<ArticuloCarrito> carrito, Clients selectedClient, Clients cliente, Users currentUser) {
+    public CrearComprobanteResult crearComprobante(AppSettings appSettings, List<ArticuloCarrito> carrito,
+                                                    Clients selectedClient, Clients cliente, Users currentUser,
+                                                    DocumentoStrategy strategy, String medioPago) {
         CrearComprobanteResult result = new CrearComprobanteResult();
         result.haciendaEnviado = false;
         
@@ -116,28 +127,48 @@ public class ComprobanteService implements Serializable {
             // Generate consecutive number
             int consecutivo = (appSettings.getUltimoConsecutivo() != null ? appSettings.getUltimoConsecutivo() : 0) + 1;
             appSettings.setUltimoConsecutivo(consecutivo);
-            String numeroConsecutivo = String.format("%s%s%010d",
-                appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001",
-                appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001",
+            String tipoDocumento = strategy.getCodigoDocumento();
+            String sucursal = String.format("%03d", Integer.parseInt(
+                appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001"));
+            String terminal = String.format("%05d", Integer.parseInt(
+                appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001"));
+            String numeroConsecutivo = String.format("%s%s%s%010d",
+                sucursal, terminal,
+                tipoDocumento != null ? tipoDocumento : "04",
                 consecutivo);
 
-            Encabezado encabezado = encabezadoTiqueteElectronico(appSettings, selectedClient);
+            // Use strategy to build the type-specific encabezado
+            Encabezado encabezado = strategy.buildEncabezado(appSettings, selectedClient);
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
+
+            // Set medioPago from user selection (strategies no longer hardcode it)
+            List<MedioPago> medioPagoList = new ArrayList<>();
+            MedioPago medio = new MedioPago();
+            medio.setMedioPago(medioPago);
+            medio.setComprobante(encabezado);
+            medioPagoList.add(medio);
+            encabezado.setMedioPago(medioPagoList);
             
-            // Generate the Hacienda document key
-            String securityCode = String.format("%08d", (int)(Math.random() * 100000000));
+            // Generate the Hacienda document key (50-digit clave with check digit)
             String clave = haciendaSigner.generateInvoiceKey(
                 appSettings.getIdentificacion(),
-                "01", // Factura electronica
-                appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001",
-                appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001",
-                String.format("%010d", consecutivo),
-                securityCode
+                numeroConsecutivo,
+                "1",
+                encabezado.getFechaEmision().toLocalDate()
             );
             encabezado.setClave(clave);
             
             encabezadoService.create(encabezado);
-            DetalleServicio detalles = detallesTiqueteElectronico(carrito);
+            DetalleServicio detalles = detallesTiqueteElectronico(carrito, tipoDocumento);
+
+            // REP V4.4: DetalleServicio is MANDATORY (minOccurs="1")
+            if ("10".equals(tipoDocumento) && (detalles == null
+                || detalles.getLineasDetalle() == null || detalles.getLineasDetalle().isEmpty())) {
+                throw new IllegalArgumentException(
+                    "REP requiere al menos una línea de detalle (DetalleServicio es obligatorio)"
+                );
+            }
+
             detallesService.create(detalles);
             ResumenFactura resumen = resumenTiqueteElectronico(carrito);
             resumenService.create(resumen);
@@ -154,43 +185,9 @@ public class ComprobanteService implements Serializable {
             
             result.comprobante = tiqueteElectronico;
             
-            // Persist the comprobante
+            // Persist the comprobante (pending Hacienda submission — batched every 48h)
             comprobantesEmitidosService.createAndReturn(tiqueteElectronico);
-
-            // Try to sign and submit to Hacienda
-            try {
-                JAXBContext context = JAXBContext.newInstance(ComprobantesEmitidos.class);
-                Marshaller marshaller = context.createMarshaller();
-                marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-                StringWriter sw = new StringWriter();
-                marshaller.marshal(tiqueteElectronico, sw);
-                String xmlContent = sw.toString();
-                
-                HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlContent);
-                if (signResult.success) {
-                    HaciendaApiService.ApiResponse apiResponse = haciendaApiService.sendInvoice(clave, signResult.signedXml);
-                    if (apiResponse.isSuccess()) {
-                        tiqueteElectronico.setHaciendaEstado("ENVIADO");
-                        tiqueteElectronico.setHaciendaFechaEnvio(LocalDateTime.now());
-                        if (encabezado != null) encabezado.setEstado("ENVIADO");
-                        result.haciendaEnviado = true;
-                        result.haciendaMensaje = "Factura enviada a Hacienda exitosamente";
-                        alertasService.registrarAlerta("Hacienda", "Factura " + numeroConsecutivo + " enviada a Hacienda", currentUser, 0, "crearComprobante()", null, null);
-                    } else {
-                        encabezado.setEstado("RECHAZADO");
-                        encabezado.setMotivoRechazo(apiResponse.errorMessage);
-                        result.haciendaMensaje = "Hacienda rechazo la factura: " + apiResponse.errorMessage;
-                        alertasService.registrarAlerta("Hacienda", "Hacienda rechazo factura " + numeroConsecutivo + ": " + apiResponse.errorMessage, currentUser, 0, "crearComprobante()", null, apiResponse.errorMessage);
-                    }
-                } else {
-                    result.haciendaMensaje = "Error al firmar XML: " + signResult.errorMessage;
-                    alertasService.registrarAlerta("Hacienda", "Error al firmar factura " + numeroConsecutivo + ": " + signResult.errorMessage, currentUser, 0, "crearComprobante()", null, signResult.errorMessage);
-                }
-            } catch (Exception e) {
-                result.haciendaMensaje = "Error de comunicacion con Hacienda: " + e.getMessage();
-                alertasService.registrarAlerta("Hacienda", "Error al enviar factura " + numeroConsecutivo + " a Hacienda: " + e.getMessage(), currentUser, 0, "crearComprobante()", null, e.getMessage());
-                // Don't block the sale — Hacienda submission is best-effort
-            }
+            result.haciendaMensaje = "Comprobante creado - pendiente de envío a Hacienda";
             
             // Add loyalty points for the sale if client exists
             if (selectedClient != null && currentUser != null) {
@@ -212,6 +209,76 @@ public class ComprobanteService implements Serializable {
             return null;
         }
 
+    }
+
+    public void enviarComprobanteAHacienda(ComprobantesEmitidos comprobante) {
+        try {
+            AppSettings appSettings = appSettingsService.returnCurrent();
+            if (appSettings == null) {
+                alertasService.registrarAlerta("Error", "No hay configuracion de Hacienda para enviar comprobante", null, 0,
+                    "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+                return;
+            }
+
+            String clave = comprobante.getHaciendaClave();
+            if (clave == null || clave.isEmpty()) {
+                alertasService.registrarAlerta("Error", "Comprobante sin clave de Hacienda", null, 0,
+                    "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+                return;
+            }
+
+            // Determine document type from the encabezado and build type-specific XML
+            String docCode = comprobante.getEncabezado() != null
+                ? comprobante.getEncabezado().getCodigoDocumento() : null;
+            DocumentoStrategy strategy = strategyFactory.forCode(docCode);
+            String xmlContent = strategy.buildXml(comprobante);
+
+            HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlContent);
+            if (!signResult.success) {
+                alertasService.registrarAlerta("Hacienda", "Error al firmar comprobante: " + signResult.errorMessage,
+                    null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, signResult.errorMessage);
+                return;
+            }
+
+            String emisorTipo = appSettings.getTipoIdentificacion();
+            String emisorNumero = appSettings.getIdentificacion();
+            String receptorTipo = "01";
+            String receptorNumero = "000000000";
+            if (comprobante.getEncabezado() != null && comprobante.getEncabezado().getReceptor() != null
+                && comprobante.getEncabezado().getReceptor().getIdentificacion() != null) {
+                receptorTipo = comprobante.getEncabezado().getReceptor().getIdentificacion().getTipo();
+                receptorNumero = comprobante.getEncabezado().getReceptor().getIdentificacion().getNumero();
+            }
+
+            alertasService.registrarAlerta("Hacienda XML", "Enviando comprobante " + clave + " a Hacienda:\n" + signResult.signedXml,
+                null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+            HaciendaApiService.ApiResponse apiResponse = haciendaApiService.submitAndWait(
+                clave, signResult.signedXml,
+                emisorTipo, emisorNumero, receptorTipo, receptorNumero);
+
+            if (apiResponse.isSuccess()) {
+                comprobante.setHaciendaEstado("ACEPTADO");
+                comprobante.setHaciendaFechaEnvio(LocalDateTime.now());
+                comprobante.setHaciendaFechaRespuesta(LocalDateTime.now());
+                if (comprobante.getEncabezado() != null) {
+                    comprobante.getEncabezado().setEstado("ACEPTADO");
+                }
+                comprobantesEmitidosService.update(comprobante);
+                alertasService.registrarAlerta("Hacienda", "Comprobante " + (comprobante.getEncabezado() != null ? comprobante.getEncabezado().getNumeroConsecutivo() : clave) + " aceptado por Hacienda",
+                    null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+            } else {
+                if (comprobante.getEncabezado() != null) {
+                    comprobante.getEncabezado().setEstado("RECHAZADO");
+                    comprobante.getEncabezado().setMotivoRechazo(apiResponse.errorMessage);
+                }
+                comprobantesEmitidosService.update(comprobante);
+                alertasService.registrarAlerta("Hacienda", "Hacienda rechazo comprobante: " + apiResponse.errorMessage,
+                    null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, apiResponse.errorMessage);
+            }
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error al enviar comprobante a Hacienda: " + e.getMessage(),
+                null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, e.getMessage());
+        }
     }
 
     public ResumenFactura resumenTiqueteElectronico(List<ArticuloCarrito> carrito) {
@@ -260,7 +327,10 @@ public class ComprobanteService implements Serializable {
             resumen.setTotalMercanciasGravadas(totalMercanciasGravadas);
             resumen.setTotalMercanciasExentas(totalMercanciasExentas);
             resumen.setTotalMercExonerada(totalMercExonerada);
-            resumen.setTotalGravado(totalMercanciasGravadas);
+            totalGravado = totalServGravados.add(totalMercanciasGravadas);
+            totalExento = totalServExentos.add(totalMercanciasExentas);
+            totalExonerado = totalServExonerado.add(totalMercExonerada);
+            resumen.setTotalGravado(totalGravado);
             resumen.setTotalExento(totalExento);
             resumen.setTotalExonerado(totalExonerado);
             resumen.setTotalVenta(totalVenta);
@@ -270,6 +340,27 @@ public class ComprobanteService implements Serializable {
             resumen.setTotalIVADevuelto(totalIVADevuelto);
             resumen.setTotalOtrosCargos(totalOtrosCargos);
             resumen.setTotalComprobante(totalComprobante);
+            // Wire up TotalDesgloseImpuesto per tax rate (minOccurs="0" in XSD v4.4)
+            Map<Integer, BigDecimal> taxByRate = CarritoCalculations.calculateTotalTaxByRate(carrito);
+            if (!taxByRate.isEmpty()) {
+                List<TotalDesgloseImpuesto> desgloseList = new ArrayList<>();
+                for (Map.Entry<Integer, BigDecimal> entry : taxByRate.entrySet()) {
+                    String rateStr = String.valueOf(entry.getKey());
+                    // Only include rates that map to a valid tariff
+                    try {
+                        Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(rateStr);
+                        TotalDesgloseImpuesto item = new TotalDesgloseImpuesto();
+                        item.setCodigo("01"); // 01 = IVA standard tax code
+                        item.setCodigoTarifaIVA(tarifa.getCodigo());
+                        item.setTotalMontoImpuesto(entry.getValue().setScale(5, RoundingMode.HALF_UP));
+                        item.setResumenFactura(resumen);
+                        desgloseList.add(item);
+                    } catch (IllegalArgumentException e) {
+                        // Unknown tax rate — skip silently; total tax is still reported in resumen
+                    }
+                }
+                resumen.setTotalDesgloseImpuestos(desgloseList);
+            }
             return resumen;
         } catch (Exception e) {
 alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tiquete: " + e.getMessage(), null, 0, "resumenTiqueteElectronico()", null, e.getMessage());
@@ -278,8 +369,34 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
 
     }
 
-    public DetalleServicio detallesTiqueteElectronico(List<ArticuloCarrito> carrito) {
+    public DetalleServicio detallesTiqueteElectronico(List<ArticuloCarrito> carrito, String tipoDocumento) {
         try {
+            // Enforce line limits per Hacienda v4.4 spec
+            int maxLines;
+            switch (tipoDocumento) {
+                case "01": // FE (Factura Electronica)
+                case "05": // FEE (Factura Exportacion Electronica)
+                    maxLines = 60;
+                    break;
+                case "04": // TE (Tiquete Electronico)
+                    maxLines = 1000;
+                    break;
+                case "02": // NC (Nota de Credito)
+                case "03": // ND (Nota de Debito)
+                case "08": // FEC (Factura Compra Electronica)
+                    maxLines = 400;
+                    break;
+                default: // REP (Recibo Electronico de Pago) or unknown — no strict limit
+                    maxLines = Integer.MAX_VALUE;
+                    break;
+            }
+            if (carrito.size() > maxLines) {
+                throw new IllegalArgumentException(
+                    "El numero de lineas (" + carrito.size()
+                    + ") excede el maximo permitido de " + maxLines
+                    + " para el tipo de documento " + tipoDocumento);
+            }
+
             DetalleServicio detalles = new DetalleServicio();
             List<OtroCargo> otrosCargos = new ArrayList<>();
             List<LineaDetalle> lineasDetalle = new ArrayList<>();
@@ -299,7 +416,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                 linea.setUnidadMedida(articulo.getArticulo().getUnidadMedida());
                 linea.setUnidadMedidaComercial(articulo.getArticulo().getUnidadMedidaComercial());
                 linea.setDetalle(articulo.getArticulo().getNombre());
-                var precioUnitario = articulo.getArticulo().getLastPrecio().getPrecioConUtilidad();
+                var precioUnitario = articulo.getPrecioEfectivo();
                 linea.setPrecioUnitario(precioUnitario);
                 var montoTotal = precioUnitario.multiply(Cantidad);
                 linea.setMontoTotal(montoTotal);
@@ -311,10 +428,34 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                         for (Promocion promocion : promociones) {
                             Descuento descuento = new Descuento();
                             descuento.setMontoDescuento(articulo.getTotalDescuento());
+                            descuento.setCodigoDescuento(Tipo_Codigo_Descuento.DESCUENTO_PROMOCIONAL.getCodigo());
                             descuento.setNaturalezaDescuento(promocion.getNombre());
                             descuentoService.create(descuento);
                             descuentos.add(descuento);
                         }
+                    }
+                }
+                // Populate DetallesSurtidos for promo/combo items
+                if (articulo.isPromo()) {
+                    List<Promocion> promociones = articulo.getPromociones();
+                    if (promociones != null && !promociones.isEmpty()) {
+                        List<DetalleSurtido> surtidos = new ArrayList<>();
+                        for (Promocion promocion : promociones) {
+                            if (promocion.getArticulosCarrito() != null && !promocion.getArticulosCarrito().isEmpty()) {
+                                for (ArticuloCarrito compArticulo : promocion.getArticulosCarrito()) {
+                                    DetalleSurtido surtido = new DetalleSurtido();
+                                    surtido.setCodigoCabysSurtido(compArticulo.getArticulo().getCodigoCabys().getCodigo());
+                                    surtido.setCantidadSurtido(compArticulo.getCantidad());
+                                    surtido.setUnidadMedidaSurtido(compArticulo.getArticulo().getUnidadMedida());
+                                    surtido.setDetalleSurtido(compArticulo.getArticulo().getNombre());
+                                    surtido.setPrecioUnitarioSurtido(compArticulo.getPrecioEfectivo());
+                                    surtido.setMontoTotalSurtido(compArticulo.getTotalArticulo());
+                                    surtido.setSubTotalSurtido(compArticulo.getTotalArticulo());
+                                    surtidos.add(surtido);
+                                }
+                            }
+                        }
+                        linea.setDetallesSurtidos(surtidos);
                     }
                 }
                 linea.setDescuentos(descuentos);
@@ -355,22 +496,32 @@ alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiq
                 Encabezado encabezado = new Encabezado();
                 String codigoActividad = appSettings.getCodigoActividad();
                 encabezado.setCodigoActividadEmisor(codigoActividad);
-                String clave = "";
-                encabezado.setClave(clave);
+                encabezado.setProveedorSistemas(appSettings.getProvedor());
+                // clave and numeroConsecutivo are set in crearComprobante after calling this method
                 String numeroConsecutivo = "";
                 encabezado.setNumeroConsecutivo(numeroConsecutivo);
                 LocalDateTime emision = LocalDateTime.now().withNano(0);
                 encabezado.setFechaEmision(emision);
-                String condicionVenta = Tipo_CondicionVenta.OTROS.getCodigo();
+                String condicionVenta = Tipo_CondicionVenta.CONTADO.getCodigo();
                 encabezado.setCondicionVenta(condicionVenta);
-                String plazoCredito = "";
-                encabezado.setPlazoCredito(plazoCredito);
-                List<MedioPago> medioPago = new ArrayList<>();
-                MedioPago medio = new MedioPago();
-                medio.setMedioPago(Tipo_MedioPago.EFECTIVO.getCodigo());
-                medio.setComprobante(encabezado);
-                medioPago.add(medio);
-                encabezado.setMedioPago(medioPago);
+
+                // PlazoCredito for credit terms
+                if (Tipo_CondicionVenta.CREDITO.getCodigo().equals(encabezado.getCondicionVenta())
+                    || Tipo_CondicionVenta.VENTA_CREDITO_IVA_HASTA_90_DIAS.getCodigo().equals(encabezado.getCondicionVenta())) {
+                    encabezado.setPlazoCredito("30");
+                }
+
+                // CondicionVentaOtros when "99"
+                if ("99".equals(encabezado.getCondicionVenta())) {
+                    encabezado.setCondicionVentaOtros("Condicion de venta no especificada");
+                }
+
+                // Use configured document type (01=FE, 04=TE, etc.), default to TE if not set
+                String docType = appSettings.getTipoDocumento();
+                if (docType == null || docType.isEmpty()) {
+                    docType = "04";
+                }
+                encabezado.setCodigoDocumento(docType);
                 Emisor emisor = new Emisor();
                 emisor.setNombre(appSettings.getNombre());
                 IdentificacionEmisor emisorId = new IdentificacionEmisor();
@@ -388,14 +539,34 @@ alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiq
                 Telefono emisorTelefono = new Telefono();
                 emisorTelefono.setCodigoPais(appSettings.getCodigoPais());
                 emisorTelefono.setNumeroTelefono(appSettings.getTelefono());
-                Fax emisorFax = new Fax();
-                emisorFax.setCodigoPais(appSettings.getCodigoPaisFax());
-                emisorFax.setNumeroFax(appSettings.getTelefonoFax());
                 List<CorreoElectronicoEmisor> correosElectronicos = new ArrayList<>();
-                CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
-                correo.setCorreo(appSettings.getCorreoElectronicoTributacion());
-                correo.setEmisor(emisor);
-                correosElectronicos.add(correo);
+
+                if (appSettings.getCorreoElectronicoTributacion() != null && !appSettings.getCorreoElectronicoTributacion().trim().isEmpty()) {
+                    CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
+                    correo.setCorreo(appSettings.getCorreoElectronicoTributacion());
+                    correo.setEmisor(emisor);
+                    correosElectronicos.add(correo);
+                }
+
+                if (appSettings.getCorreoElectronicoTributacion2() != null && !appSettings.getCorreoElectronicoTributacion2().trim().isEmpty()) {
+                    CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
+                    correo.setCorreo(appSettings.getCorreoElectronicoTributacion2());
+                    correo.setEmisor(emisor);
+                    correosElectronicos.add(correo);
+                }
+                if (appSettings.getCorreoElectronicoTributacion3() != null && !appSettings.getCorreoElectronicoTributacion3().trim().isEmpty()) {
+                    CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
+                    correo.setCorreo(appSettings.getCorreoElectronicoTributacion3());
+                    correo.setEmisor(emisor);
+                    correosElectronicos.add(correo);
+                }
+                if (appSettings.getCorreoElectronicoTributacion4() != null && !appSettings.getCorreoElectronicoTributacion4().trim().isEmpty()) {
+                    CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
+                    correo.setCorreo(appSettings.getCorreoElectronicoTributacion4());
+                    correo.setEmisor(emisor);
+                    correosElectronicos.add(correo);
+                }
+
                 emisor.setCorreosElectronicos(correosElectronicos);
                 encabezado.setEmisor(emisor);
                 emisorService.create(emisor);
@@ -418,6 +589,13 @@ alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiq
                         receptorService.createIfNotExist(receptor);
                     }
                 }
+
+                // CodigoActividadReceptor from selectedClient
+                if (selectedClient != null && selectedClient.getCodigoActividadComercial() != null
+                    && !selectedClient.getCodigoActividadComercial().trim().isEmpty()) {
+                    encabezado.setCodigoActividadReceptor(selectedClient.getCodigoActividadComercial());
+                }
+
                 return encabezado;
             }
             return null;
@@ -427,30 +605,41 @@ alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiq
         }
      }
 
-    public String generateMensajeReceptorXml(AppSettings settings, String clave, String numeroCedulaReceptor, 
+    public String generateMensajeReceptorXml(AppSettings settings, String clave, String numeroCedulaEmisor,
+                                              String numeroCedulaReceptor,
                                               LocalDateTime fechaEmisionDoc, int codigoMensaje, String detalleMensaje,
-                                              BigDecimal montoTotalImpuesto, BigDecimal montoTotalFactura) {
+                                              BigDecimal montoTotalImpuesto, BigDecimal totalFactura,
+                                              String numeroConsecutivoReceptor) {
         try {
             StringBuilder xml = new StringBuilder();
-            xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            // NOTE: No XML declaration (<?xml?>) — Hacienda's MR parser rejects it
             xml.append("<MensajeReceptor xmlns=\"https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/mensajeReceptor\">");
-            xml.append("<Clave>").append(clave).append("</Clave>");
-            xml.append("<NumeroCedulaReceptor>").append(numeroCedulaReceptor).append("</NumeroCedulaReceptor>");
+            xml.append("<Clave>").append(escapeXml(clave)).append("</Clave>");
+            // NumeroCedulaEmisor: the original invoice emitter (seller), NOT the MR sender
+            xml.append("<NumeroCedulaEmisor>").append(escapeXml(numeroCedulaEmisor)).append("</NumeroCedulaEmisor>");
             if (fechaEmisionDoc != null) {
-                xml.append("<FechaEmisionDoc>").append(fechaEmisionDoc.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).append("</FechaEmisionDoc>");
+                // Append -06:00 (Costa Rica timezone) per FactuPOS recommendation: if no timezone, add -06:00
+                xml.append("<FechaEmisionDoc>").append(fechaEmisionDoc.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)).append("-06:00</FechaEmisionDoc>");
             }
-            xml.append("<Mensaje>");
-            xml.append("<CodigoMensaje>").append(codigoMensaje).append("</CodigoMensaje>");
+            // Mensaje is a simple integer: 1=Aceptado, 2=Aceptado parcialmente, 3=Rechazado
+            xml.append("<Mensaje>").append(codigoMensaje).append("</Mensaje>");
             if (detalleMensaje != null && !detalleMensaje.isEmpty()) {
-                xml.append("<DetalleMensaje>").append(escapeXml(detalleMensaje)).append("</DetalleMensaje>");
+                // XSD v4.4 restricts DetalleMensaje to maxLength=160
+                String truncated = detalleMensaje.length() > 160 ? detalleMensaje.substring(0, 160) : detalleMensaje;
+                xml.append("<DetalleMensaje>").append(escapeXml(truncated)).append("</DetalleMensaje>");
             }
             if (montoTotalImpuesto != null) {
                 xml.append("<MontoTotalImpuesto>").append(montoTotalImpuesto.toPlainString()).append("</MontoTotalImpuesto>");
             }
-            if (montoTotalFactura != null) {
-                xml.append("<MontoTotalFactura>").append(montoTotalFactura.toPlainString()).append("</MontoTotalFactura>");
+            // CodigoActividad from settings (optional)
+            if (settings.getCodigoActividad() != null && !settings.getCodigoActividad().trim().isEmpty()) {
+                xml.append("<CodigoActividad>").append(escapeXml(settings.getCodigoActividad())).append("</CodigoActividad>");
             }
-            xml.append("</Mensaje>");
+            xml.append("<TotalFactura>").append(totalFactura.toPlainString()).append("</TotalFactura>");
+            // NumeroCedulaReceptor: the original invoice receptor's ID
+            xml.append("<NumeroCedulaReceptor>").append(escapeXml(numeroCedulaReceptor)).append("</NumeroCedulaReceptor>");
+            // NumeroConsecutivoReceptor: 20-char consecutive for the MR
+            xml.append("<NumeroConsecutivoReceptor>").append(escapeXml(numeroConsecutivoReceptor)).append("</NumeroConsecutivoReceptor>");
             xml.append("</MensajeReceptor>");
             return xml.toString();
         } catch (Exception e) {

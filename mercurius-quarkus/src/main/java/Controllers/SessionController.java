@@ -289,4 +289,30 @@ public class SessionController implements Serializable{
     public Users getCurrentUser() {
         return currentUser;
     }
+
+    public Users authorizeAction(String username, String password) {
+        try {
+            Users authUser = loginService.findByUsername(username);
+            if (authUser == null) {
+                alertas.registrarAlerta("Autorización Fallida",
+                    "Intento con usuario inexistente: " + username,
+                    currentUser, 0, "authorizeAction()", null, null);
+                return null;
+            }
+
+            if (!loginService.verifyPassword(password, authUser.getPassword())) {
+                alertas.registrarAlerta("Autorización Fallida",
+                    "Contraseña incorrecta de: " + username,
+                    currentUser, 0, "authorizeAction()", null, null);
+                return null;
+            }
+
+            return authUser;
+        } catch (Exception e) {
+            alertas.registrarAlerta("Error",
+                "Error en authorizeAction: " + e.getMessage(),
+                currentUser, 0, "authorizeAction()", null, e.getMessage());
+            return null;
+        }
+    }
 }

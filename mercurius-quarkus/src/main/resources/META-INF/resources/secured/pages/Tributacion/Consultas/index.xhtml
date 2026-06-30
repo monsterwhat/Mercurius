@@ -280,6 +280,33 @@
                                                  rendered="#{empty factura.encabezado.motivoRechazo}" />
                                 </p:column>
                                 
+                                <p:column headerText="Intentos" width="80" style="text-align: center;">
+                                    <h:outputText value="#{factura.correctionAttempts}"
+                                                 rendered="#{not empty factura.correctionAttempts}"
+                                                 style="font-family: monospace;" />
+                                    <h:outputText value="0"
+                                                 rendered="#{empty factura.correctionAttempts}"
+                                                 style="font-family: monospace;" />
+                                </p:column>
+
+                                <p:column headerText="Última Corrección" width="160">
+                                    <h:outputText value="#{factura.ultimaCorreccion}"
+                                                 rendered="#{not empty factura.ultimaCorreccion}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                    <h:outputText value="-"
+                                                 rendered="#{empty factura.ultimaCorreccion}" />
+                                </p:column>
+
+                                <p:column headerText="Fecha Rechazo" width="160">
+                                    <h:outputText value="#{factura.haciendaFechaRespuesta}"
+                                                 rendered="#{not empty factura.haciendaFechaRespuesta}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                    <h:outputText value="-"
+                                                 rendered="#{empty factura.haciendaFechaRespuesta}" />
+                                </p:column>
+
                                 <p:column headerText="Estado" width="100" style="text-align: center;">
                                     <p:chip icon="pi pi-times" styleClass="status-chip status-inactive"/>
                                 </p:column>

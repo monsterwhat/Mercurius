@@ -83,6 +83,16 @@
                                         <f:selectItems/>
                                     </p:selectOneMenu>
                                 </div>
+                                <div class="column is-narrow is-full-mobile"> 
+                                    <p class="title has-text-centered is-5">
+                                        Tipo Documento
+                                    </p> 
+                                    <p:selectOneMenu id="tipoDocumento" class="input"
+                                                     value="#{crearTiqueteController.tipoDocumento}">
+                                        <f:selectItem itemLabel="Tiquete Electrónico" itemValue="04"/>
+                                        <f:selectItem itemLabel="Factura Electrónica" itemValue="01"/>
+                                    </p:selectOneMenu>
+                                </div>
                                 <div class="column is-narrow is-full-mobile">
                                     <div class="column">
                                         <p class="title has-text-centered is-5">
@@ -183,12 +193,16 @@
                                 <p:column headerText="Descuento">
                                     <h:outputText value="#{carrito.descuento}"/>
                                 </p:column>
-                                <p:column headerText="Precio">
+                                <p:column headerText="Precio" width="100">
                                     <h:outputText value="#{crearTiqueteController.getArticuloPrecioFinal(carrito)}"/>
+                                </p:column>
+                                <p:column headerText="Precio Override" width="120">
+                                    <p:inputNumber value="#{carrito.precioPersonalizado}"
+                                                   min="0" style="width: 100%"/>
                                 </p:column>
                                 <p:column width="5%">
                                     <p:commandButton icon="pi pi-times" styleClass="ui-button-danger rounded-button" 
-                                                     actionListener="#{crearTiqueteController.removeArticulo(carrito)}" />
+                                                     actionListener="#{crearTiqueteController.removeArticuloConAuth(carrito)}" />
                                 </p:column>
                             </p:dataTable>
                         </div>
@@ -230,7 +244,7 @@
                                     </span>  
                                 </p:commandLink>
                                 <p:commandLink class="button is-primary is-fullwidth" actionListener="#{crearTiqueteController.revisarCarrito()}"
-                                               process="@form" update="pago">
+                                               process="@form" update="@form">
                                     <span class="icon-text">
                                         <span class="icon">
                                             <i class="pi pi-check"></i>
@@ -290,7 +304,20 @@
                             <p class="title has-text-centered">
                                 #{crearTiqueteController.vueltoString}
                             </p>
-                        </div> 
+                        </div>
+                        <div class="column is-full has-text-centered">
+                            <p:outputLabel style="font-weight: bold; font-size: 1.2em" for="medioPago" value="Método de Pago: " />
+                            <p:selectOneMenu id="medioPago" value="#{crearTiqueteController.medioPago}">
+                                <f:selectItem itemLabel="Efectivo" itemValue="01" />
+                                <f:selectItem itemLabel="Tarjeta" itemValue="02" />
+                                <f:selectItem itemLabel="Cheque" itemValue="03" />
+                                <f:selectItem itemLabel="Transferencia/Depósito" itemValue="04" />
+                                <f:selectItem itemLabel="Recaudado por Terceros" itemValue="05" />
+                                <f:selectItem itemLabel="SINPE Móvil" itemValue="06" />
+                                <f:selectItem itemLabel="Plataforma Digital" itemValue="07" />
+                                <f:selectItem itemLabel="Otros" itemValue="99" />
+                            </p:selectOneMenu>
+                        </div>
                         <div class="column is-full">
                             <div class="buttons">
                                 <p:commandLink class="button is-primary is-fullwidth"
@@ -369,6 +396,35 @@
                     </f:facet>
 
                 </p:dataTable>
+            </h:form>
+        </p:dialog>
+
+        <!-- Authorization Dialog -->
+        <p:dialog widgetVar="AuthDialog" header="Autorización Requerida"
+                  modal="true" dynamic="true" cache="false" closable="true"
+                  fitViewport="true" responsive="true" width="400">
+            <h:form id="authFacturaForm">
+                <p:growl id="authGrowl" showDetail="true" showSummary="true"/>
+                <p class="has-text-centered" style="margin-bottom: 1rem;">
+                    Se requiere autorización para esta acción.
+                </p>
+                <div class="form-field" style="margin-bottom: 1rem;">
+                    <label class="label has-text-link" for="authUser">Usuario:</label>
+                    <p:inputText id="authUser" value="#{crearTiqueteController.authUsername}"
+                                 required="true" requiredMessage="Debe ingresar un usuario"
+                                 style="width: 100%"/>
+                </div>
+                <div class="form-field" style="margin-bottom: 1rem;">
+                    <label class="label has-text-link" for="authPass">Contraseña:</label>
+                    <p:password id="authPass" value="#{crearTiqueteController.authPassword}"
+                                required="true" requiredMessage="Debe ingresar la contraseña"
+                                style="width: 100%"/>
+                </div>
+                <p:commandButton value="Autorizar"
+                                 actionListener="#{crearTiqueteController.authorize()}"
+                                 styleClass="button is-primary is-fullwidth"
+                                 icon="pi pi-check"
+                                 update="authFacturaForm,crearTiquete"/>
             </h:form>
         </p:dialog>
 

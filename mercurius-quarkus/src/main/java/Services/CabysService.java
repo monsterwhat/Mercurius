@@ -164,6 +164,23 @@ public class CabysService extends GService<Cabys>{
         return resultList;
     }
     
+    /**
+     * Searches Cabys by description (case-insensitive LIKE).
+     */
+    public List<Cabys> searchByName(String nombre) {
+        try {
+            return em.createQuery(
+                "SELECT c FROM Cabys c WHERE LOWER(c.descripcion) LIKE LOWER(:nombre)",
+                Cabys.class)
+                .setParameter("nombre", "%" + nombre + "%")
+                .setMaxResults(10)
+                .getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error searching Cabys by name: " + e.getMessage(), null, 0, "CabysService.searchByName()", null, e.getMessage());
+            return List.of();
+        }
+    }
+
     public void saveAllDB(List<Cabys> cabysList) {
         try {
             for (Cabys cabys : cabysList) {

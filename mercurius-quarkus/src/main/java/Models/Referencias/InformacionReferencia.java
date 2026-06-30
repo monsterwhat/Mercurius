@@ -1,5 +1,6 @@
 package Models.Referencias;
 
+import Models.ComprobantesEmitidos;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -44,4 +45,24 @@ public class InformacionReferencia {
     @Column(name = "razon", length = 180)
     private String razon;
 
+    /**
+     * Creates an InformacionReferencia referencing an existing emitted comprobante.
+     * Used when issuing NC/ND/REP that refer to a previously issued invoice.
+     *
+     * @param original the original ComprobantesEmitidos being referenced
+     * @param codigo   Hacienda reason code (e.g. "01"=devolución, "02"=anulación)
+     * @param razon    human-readable explanation
+     * @return a new InformacionReferencia ready to attach to the NC/ND/REP comprobante
+     */
+    public static InformacionReferencia from(ComprobantesEmitidos original, String codigo, String razon) {
+        InformacionReferencia ref = new InformacionReferencia();
+        if (original.getEncabezado() != null) {
+            ref.setTipoDoc(original.getEncabezado().getCodigoDocumento());
+            ref.setNumero(original.getEncabezado().getNumeroConsecutivo());
+            ref.setFechaEmision(original.getEncabezado().getFechaEmision());
+        }
+        ref.setCodigo(codigo);
+        ref.setRazon(razon);
+        return ref;
+    }
 }

@@ -38,6 +38,14 @@ public class TotalDesgloseImpuesto {
     @Column(name = "codigo_tarifa_iva", length = 2)
     private String codigoTarifaIVA;
     
+    @XmlElement(name = "TarifaIVA")
+    @Column(name = "tarifa_iva", precision = 4, scale = 2)
+    private BigDecimal tarifaIVA;
+
+    @XmlElement(name = "FactorIVA")
+    @Column(name = "factor_iva", precision = 5, scale = 4)
+    private BigDecimal factorIVA;
+
     @XmlElement(name = "TotalMontoImpuesto")
     @Column(name = "total_monto_impuesto", precision = 18, scale = 5)
     private BigDecimal totalMontoImpuesto;

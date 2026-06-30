@@ -226,5 +226,33 @@
                 </div>
             </section>
         </h:form>
+        <!-- Authorization Dialog -->
+        <p:dialog widgetVar="AuthDevolucionDialog" header="Autorización Requerida"
+                  modal="true" dynamic="true" cache="false" closable="true"
+                  fitViewport="true" responsive="true" width="400">
+            <h:form id="authDevolucionForm">
+                <p:growl id="authGrowl" showDetail="true" showSummary="true"/>
+                <p class="has-text-centered" style="margin-bottom: 1rem;">
+                    Se requiere autorización para procesar la devolución.
+                </p>
+                <div class="form-field" style="margin-bottom: 1rem;">
+                    <label class="label has-text-link" for="authUser">Usuario:</label>
+                    <p:inputText id="authUser" value="#{devolucionesController.authUsername}"
+                                 required="true" requiredMessage="Debe ingresar un usuario"
+                                 style="width: 100%"/>
+                </div>
+                <div class="form-field" style="margin-bottom: 1rem;">
+                    <label class="label has-text-link" for="authPass">Contraseña:</label>
+                    <p:password id="authPass" value="#{devolucionesController.authPassword}"
+                                required="true" requiredMessage="Debe ingresar la contraseña"
+                                style="width: 100%"/>
+                </div>
+                <p:commandButton value="Autorizar"
+                                 actionListener="#{devolucionesController.authorize()}"
+                                 styleClass="button is-danger is-fullwidth"
+                                 icon="pi pi-check"
+                                 update="authDevolucionForm,devolucionesForm"/>
+            </h:form>
+        </p:dialog>
     </h:body>
 </html>

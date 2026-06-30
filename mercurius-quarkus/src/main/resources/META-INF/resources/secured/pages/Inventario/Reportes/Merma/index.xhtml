@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Control de Mermas y Pérdidas</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .reportes-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .reportes-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+                font-weight: bold;
+                display: block;
+                margin-bottom: 0.5rem;
+                color: white;
+            }
+
+            .stat-label {
+                font-size: 0.875rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: white;
+            }
+
+            .filter-section {
+                background: var(--bulma-scheme-main);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .filter-section .ui-outputlabel,
+            .filter-section .ui-outputlabel-label,
+            .filter-section p\:outputLabel {
+                color: var(--bulma-text) !important;
+            }
+
+            .filter-section .columns {
+                align-items: flex-start;
+            }
+
+            .filter-section .field-row {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .filter-section .field-row .ui-datepicker,
+            .filter-section .field-row .ui-selectonemenu {
+                width: auto !important;
+            }
+
+            .nav-cards {
+                display: flex;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+                flex-wrap: wrap;
+            }
+
+            .nav-card {
+                flex: 1;
+                min-width: 200px;
+                padding: 1rem;
+                border-radius: 0.75rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                text-align: center;
+                border: 2px solid transparent;
+            }
+
+            .nav-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .nav-card.active {
+                border-color: white;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            }
+
+            .nav-card .nav-icon {
+                font-size: 1.5rem;
+                margin-bottom: 0.5rem;
+                display: block;
+            }
+
+            .nav-card .nav-title {
+                font-weight: bold;
+                font-size: 0.9rem;
+            }
+
+            .content-section {
+                display: none;
+            }
+
+            .content-section.active {
+                display: block;
+            }
+
+            .shrinkage-negative { color: #dc3545; font-weight: bold; }
+            .shrinkage-warning { color: #fd7e14; font-weight: bold; }
+
+            .cause-badge {
+                display: inline-block;
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.5rem;
+                font-size: 0.8rem;
+                font-weight: 600;
+                color: white;
+            }
+
+            .chart-container {
+                background: var(--bulma-scheme-main);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .shrinkage-bar-container {
+                width: 100%;
+                height: 22px;
+                background: #e9ecef;
+                border-radius: 11px;
+                overflow: hidden;
+            }
+
+            .shrinkage-bar-fill {
+                height: 100%;
+                border-radius: 11px;
+                transition: width 0.3s ease;
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+
+            <!-- Header with gradient background -->
+            <div class="reportes-header" style="background: linear-gradient(135deg, #dc3545 0%, #a71d2a 100%);">
+                <p class="title is-3 has-text-centered">Control de Mermas y Pérdidas</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">
+                            <h:outputText value="#{shrinkageController.totalShrinkage}">
+                                <f:convertNumber pattern="#,##0.00"/>
+                            </h:outputText>
+                        </span>
+                        <span class="stat-label">Total Mermas</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">
+                            <h:outputText value="#{shrinkageController.shrinkagePercentage}">
+                                <f:convertNumber pattern="#,##0.00"/>
+                            </h:outputText>%
+                        </span>
+                        <span class="stat-label">% de Merma</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">
+                            <h:outputText value="#{shrinkageController.totalInventoryMovement}">
+                                <f:convertNumber pattern="#,##0"/>
+                            </h:outputText>
+                        </span>
+                        <span class="stat-label">Movimiento Total</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">#{shrinkageController.movementCount}</span>
+                        <span class="stat-label">Registros</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter section -->
+            <div class="filter-section">
+                <h:form id="filtros">
+                    <div class="columns is-vcentered is-multiline">
+                        <div class="column is-narrow">
+                            <div class="field-row">
+                                <p:outputLabel value="Fecha Inicio: " style="font-weight: bold;"/>
+                                <p:datePicker value="#{shrinkageController.startDate}" showIcon="true" style="background: var(--bulma-background-l); color: var(--bulma-text);"/>
+                            </div>
+                        </div>
+                        <div class="column is-narrow">
+                            <div class="field-row">
+                                <p:outputLabel value="Fecha Fin: " style="font-weight: bold;"/>
+                                <p:datePicker value="#{shrinkageController.endDate}" showIcon="true" style="background: var(--bulma-background-l); color: var(--bulma-text);"/>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="buttons">
+                                <p:commandLink styleClass="button is-danger"
+                                               action="#{shrinkageController.refreshData}"
+                                               update="mermaReportes growl">
+                                    <i class="pi pi-refresh"></i>
+                                    <span>Actualizar</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                    </div>
+                </h:form>
+            </div>
+
+            <!-- Navigation cards -->
+            <div class="nav-cards" rendered="#{shrinkageController.hasData()}">
+                <div class="nav-card active" style="background: #dc3545; color: white;" onclick="showSection('causas')">
+                    <span class="nav-icon"><i class="pi pi-chart-pie"></i></span>
+                    <span class="nav-title">Por Causa</span>
+                </div>
+                <div class="nav-card" style="background: #17a2b8; color: white;" onclick="showSection('departamentos')">
+                    <span class="nav-icon"><i class="pi pi-chart-bar"></i></span>
+                    <span class="nav-title">Por Departamento</span>
+                </div>
+                <div class="nav-card" style="background: #6f42c1; color: white;" onclick="showSection('detalle')">
+                    <span class="nav-icon"><i class="pi pi-list"></i></span>
+                    <span class="nav-title">Detalle de Movimientos</span>
+                </div>
+            </div>
+
+            <!-- Data sections -->
+            <div class="tab-content-card">
+                <h:form id="mermaReportes">
+
+                    <!-- Empty state -->
+                    <p:panel rendered="#{!shrinkageController.hasData()}" header="Sin Datos">
+                        <div class="columns is-centered has-text-centered">
+                            <div class="column">
+                                <i class="pi pi-inbox" style="font-size: 3rem; color: var(--bulma-text-light);"></i>
+                                <p style="color: var(--bulma-text-light);">No se encontraron movimientos de merma en el período seleccionado.</p>
+                            </div>
+                        </div>
+                    </p:panel>
+
+                    <!-- Section: Shrinkage by cause -->
+                    <div id="section-causas" class="content-section active" rendered="#{shrinkageController.hasData()}">
+                        <div class="columns">
+                            <div class="column">
+                                <div class="chart-container">
+                                    <p class="title is-5 has-text-centered">Distribuci\u00f3n por Causa</p>
+                                    <p:dataTable value="#{shrinkageController.shrinkageByCause.entrySet()}" var="entry"
+                                                 emptyMessage="No hay datos">
+                                        <p:column headerText="Causa">
+                                            <span class="cause-badge" style="background: #{shrinkageController.getCauseColor(entry.key)};">
+                                                #{shrinkageController.getCauseLabel(entry.key)}
+                                            </span>
+                                        </p:column>
+                                        <p:column headerText="Total" sortBy="#{entry.value}">
+                                            <h:outputText value="#{entry.value}">
+                                                <f:convertNumber pattern="#,##0.00"/>
+                                            </h:outputText>
+                                        </p:column>
+                                        <p:column headerText="%" sortBy="#{shrinkageController.getCausePercentage(entry.key)}">
+                                            <h:outputText value="#{shrinkageController.getCausePercentage(entry.key)}">
+                                                <f:convertNumber pattern="#,##0.0"/>
+                                            </h:outputText>%
+                                        </p:column>
+                                        <p:column headerText="Barra">
+                                            <div class="shrinkage-bar-container" style="width: 100%; height: 20px; background: #e9ecef; border-radius: 10px; overflow: hidden;">
+                                                <div style="width: #{shrinkageController.getCausePercentage(entry.key)}%; height: 100%; background: #{shrinkageController.getCauseColor(entry.key)}; border-radius: 10px; transition: width 0.3s;"></div>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Shrinkage by department -->
+                    <div id="section-departamentos" class="content-section" rendered="#{shrinkageController.hasData()}">
+                        <div class="columns">
+                            <div class="column">
+                                <div class="chart-container">
+                                    <p class="title is-5 has-text-centered">Mermas por Departamento</p>
+                                    <p:dataTable value="#{shrinkageController.shrinkageByDepartment.entrySet()}" var="entry"
+                                                 emptyMessage="No hay datos">
+                                        <p:column headerText="Departamento" sortBy="#{entry.key}">
+                                            <h:outputText value="#{entry.key}"/>
+                                        </p:column>
+                                        <p:column headerText="Total Mermas" sortBy="#{entry.value}">
+                                            <span class="shrinkage-negative">
+                                                <h:outputText value="#{entry.value}">
+                                                    <f:convertNumber pattern="#,##0.00"/>
+                                                </h:outputText>
+                                            </span>
+                                        </p:column>
+                                        <p:column headerText="% del Total">
+                                            <h:outputText value="#{shrinkageController.getCausePercentage(entry.key)}">
+                                                <f:convertNumber pattern="#,##0.0"/>
+                                            </h:outputText>%
+                                        </p:column>
+                                    </p:dataTable>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section: Detailed movements -->
+                    <div id="section-detalle" class="content-section" rendered="#{shrinkageController.hasData()}">
+                        <p:dataTable value="#{shrinkageController.shrinkageMovements}" var="mov"
+                                     widgetVar="MermaTable" paginator="true" rows="15"
+                                     emptyMessage="No hay movimientos de merma en el período seleccionado"
+                                     reflow="true">
+                            <p:column headerText="Tipo" sortBy="#{mov.tipoMovimiento}">
+                                <span class="cause-badge" style="background: #{shrinkageController.getCauseColor(mov.tipoMovimiento)};">
+                                    #{shrinkageController.getCauseLabel(mov.tipoMovimiento)}
+                                </span>
+                            </p:column>
+                            <p:column headerText="Artículo" sortBy="#{mov.articulo.nombre}">
+                                <h:outputText value="#{mov.articulo.nombre}"/>
+                            </p:column>
+                            <p:column headerText="Cantidad" sortBy="#{mov.cantidad}">
+                                <span class="shrinkage-negative">
+                                    <h:outputText value="#{mov.cantidad}">
+                                        <f:convertNumber pattern="#,##0.00"/>
+                                    </h:outputText>
+                                </span>
+                            </p:column>
+                            <p:column headerText="Fecha" sortBy="#{mov.fechaMovimiento}">
+                                <h:outputText value="#{mov.fechaMovimiento}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
+                                </h:outputText>
+                            </p:column>
+                            <p:column headerText="Notas">
+                                <h:outputText value="#{mov.notas}"/>
+                            </p:column>
+                            <p:column headerText="Usuario" sortBy="#{mov.usuario.username}">
+                                <h:outputText value="#{mov.usuario.username}"/>
+                            </p:column>
+                        </p:dataTable>
+                    </div>
+
+                </h:form>
+            </div>
+        </section>
+
+        <script>
+            function showSection(sectionName) {
+                document.querySelectorAll('.content-section').forEach(function(el) {
+                    el.classList.remove('active');
+                });
+                document.querySelectorAll('.nav-card').forEach(function(el) {
+                    el.classList.remove('active');
+                });
+
+                document.getElementById('section-' + sectionName).classList.add('active');
+
+                var cards = document.querySelectorAll('.nav-card');
+                if (sectionName === 'causas') cards[0].classList.add('active');
+                if (sectionName === 'departamentos') cards[1].classList.add('active');
+                if (sectionName === 'detalle') cards[2].classList.add('active');
+            }
+        </script>
+
+    </h:body>
+</html>

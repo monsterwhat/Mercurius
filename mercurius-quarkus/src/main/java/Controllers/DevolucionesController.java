@@ -1,17 +1,31 @@
 package Controllers;
 
 import Controllers.SessionController;
+import Models.AppSettings;
 import Models.Clients;
 import Models.ComprobantesEmitidos;
+import Models.Users;
+import Models.Detalles.CodigoComercial;
+import Models.Detalles.DetalleServicio;
+import Models.Detalles.Descuento;
+import Models.Detalles.Impuesto;
 import Models.Detalles.LineaDetalle;
+import Models.Encabezado.Encabezado;
+import Models.Encabezado.MedioPago;
 import Models.Inventario;
 import Models.NotaCredito;
+import Models.Referencias.InformacionReferencia;
+import Models.Resumen.ResumenFactura;
 import Services.AlertasService;
+import Services.AppSettingsService;
 import Services.ClientService;
 import Services.ComprobantesEmitidosService;
 import Services.InventarioService;
 import Services.NotaCreditoService;
+import Services.Strategies.DocumentoStrategy;
+import Services.Strategies.DocumentoStrategyFactory;
 import jakarta.annotation.PostConstruct;
+import java.math.RoundingMode;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -47,14 +61,27 @@ public class DevolucionesController implements Serializable {
     @Inject
     private AlertasService alertasService;
 
+    @Inject
+    private AppSettingsService appSettingsService;
+
+    @Inject
+    private DocumentoStrategyFactory strategyFactory;
+
+    @Inject
+    private Services.HaciendaSigner haciendaSigner;
+
     private String criterioBusqueda;
-    private String tipoBusqueda; // "consecutivo" or "cliente"
+    private String tipoBusqueda;
     private ComprobantesEmitidos facturaSeleccionada;
     private List<ComprobantesEmitidos> facturasEncontradas;
     private List<LineaDevolucion> lineasDevolucion;
     private String motivo;
     private BigDecimal totalDevolucion;
     private List<NotaCredito> historialNotas;
+
+    private String authUsername;
+    private String authPassword;
+    private String authorizedBy;
 
     @PostConstruct
     public void init() {
@@ -137,7 +164,28 @@ public class DevolucionesController implements Serializable {
         }
     }
 
+    public void authorize() {
+        Users authUser = sessionController.authorizeAction(authUsername, authPassword);
+        if (authUser != null) {
+            authorizedBy = authUser.getUsername();
+            alertasService.registrarAlerta("Autorización Exitosa",
+                "Devolución autorizada por: " + authorizedBy,
+                sessionController.getCurrentUser(), 0, "DevolucionesController.authorize()",
+                null, null);
+            procesarDevolucion();
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Autorización Fallida",
+                    "Usuario o contraseña incorrectos"));
+        }
+    }
+
     public void procesarDevolucion() {
+        if (authorizedBy == null) {
+            org.primefaces.PrimeFaces.current().executeScript("PF('AuthDevolucionDialog').show();");
+            return;
+        }
+
         if (facturaSeleccionada == null) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Seleccione una factura primero"));
@@ -198,11 +246,184 @@ public class DevolucionesController implements Serializable {
                 }
             }
 
+            // Generate Hacienda Nota de Credito Electronica
+            try {
+                AppSettings appSettings = appSettingsService.returnCurrent();
+                if (appSettings != null && facturaSeleccionada.getEncabezado() != null) {
+                    Clients client = null;
+                    if (facturaSeleccionada.getEncabezado().getReceptor() != null
+                        && facturaSeleccionada.getEncabezado().getReceptor().getNombre() != null) {
+                        List<Clients> clients = clientService.searchByName(
+                            facturaSeleccionada.getEncabezado().getReceptor().getNombre());
+                        if (clients != null && !clients.isEmpty()) {
+                            client = clients.get(0);
+                        }
+                    }
+
+                    DocumentoStrategy ncStrategy = strategyFactory.forCode("02");
+                    int consecutivo = (appSettings.getUltimoConsecutivo() != null ? appSettings.getUltimoConsecutivo() : 0) + 1;
+                    appSettings.setUltimoConsecutivo(consecutivo);
+                    String numeroConsecutivo = String.format("%s%s%s%012d",
+                        appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001",
+                        appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001",
+                        ncStrategy.getCodigoDocumento(), consecutivo);
+
+                    Encabezado ncEncabezado = ncStrategy.buildEncabezado(appSettings, client);
+                    ncEncabezado.setNumeroConsecutivo(numeroConsecutivo);
+
+                    List<MedioPago> medioPagoList = new ArrayList<>();
+                    MedioPago medio = new MedioPago();
+                    medio.setMedioPago("01");
+                    medio.setComprobante(ncEncabezado);
+                    medioPagoList.add(medio);
+                    ncEncabezado.setMedioPago(medioPagoList);
+
+                    String clave = haciendaSigner.generateInvoiceKey(
+                        appSettings.getIdentificacion(), numeroConsecutivo, "1",
+                        ncEncabezado.getFechaEmision().toLocalDate());
+                    ncEncabezado.setClave(clave);
+
+                    DetalleServicio ncDetalles = new DetalleServicio();
+                    List<LineaDetalle> ncLineas = new ArrayList<>();
+                    int lineNum = 0;
+                    for (LineaDevolucion ld : lineasDevolucion) {
+                        if (ld.isSeleccionado() && ld.getCantidadDevolver() != null
+                            && ld.getCantidadDevolver().compareTo(BigDecimal.ZERO) > 0) {
+                            LineaDetalle ol = ld.getLineaDetalle();
+                            LineaDetalle nl = new LineaDetalle();
+                            nl.setNumeroLinea(lineNum++);
+                            nl.setCodigoCabys(ol.getCodigoCabys());
+                            if (ol.getCodigosComerciales() != null) {
+                                List<CodigoComercial> ccs = new ArrayList<>();
+                                for (CodigoComercial cc : ol.getCodigosComerciales()) {
+                                    CodigoComercial ncc = new CodigoComercial();
+                                    ncc.setTipo(cc.getTipo());
+                                    ncc.setCodigo(cc.getCodigo());
+                                    ncc.setLineaDetalle(nl);
+                                    ccs.add(ncc);
+                                }
+                                nl.setCodigosComerciales(ccs);
+                            }
+                            nl.setCantidad(ld.getCantidadDevolver());
+                            nl.setUnidadMedida(ol.getUnidadMedida());
+                            nl.setUnidadMedidaComercial(ol.getUnidadMedidaComercial());
+                            nl.setDetalle(ol.getDetalle());
+                            nl.setPrecioUnitario(ol.getPrecioUnitario());
+                            BigDecimal montoTotal = ol.getPrecioUnitario().multiply(ld.getCantidadDevolver());
+                            nl.setMontoTotal(montoTotal);
+                            nl.setSubTotal(montoTotal);
+                            nl.setMontoTotalLinea(montoTotal);
+
+                            BigDecimal factor = ld.getCantidadDevolver().divide(ol.getCantidad(), 6, RoundingMode.HALF_UP);
+                            if (ol.getImpuestos() != null) {
+                                List<Impuesto> imps = new ArrayList<>();
+                                for (Impuesto imp : ol.getImpuestos()) {
+                                    Impuesto ni = new Impuesto();
+                                    ni.setCodigo(imp.getCodigo());
+                                    ni.setCodigoTarifaIVA(imp.getCodigoTarifaIVA());
+                                    ni.setTarifa(imp.getTarifa());
+                                    ni.setMonto(imp.getMonto() != null
+                                        ? imp.getMonto().multiply(factor).setScale(5, RoundingMode.HALF_UP)
+                                        : BigDecimal.ZERO);
+                                    ni.setLineaDetalle(nl);
+                                    imps.add(ni);
+                                }
+                                nl.setImpuestos(imps);
+                            }
+                            if (ol.getDescuentos() != null) {
+                                List<Descuento> descs = new ArrayList<>();
+                                for (Descuento d : ol.getDescuentos()) {
+                                    Descuento nd = new Descuento();
+                                    nd.setCodigoDescuento(d.getCodigoDescuento());
+                                    nd.setNaturalezaDescuento(d.getNaturalezaDescuento());
+                                    nd.setMontoDescuento(d.getMontoDescuento().multiply(factor).setScale(5, RoundingMode.HALF_UP));
+                                    nd.setLineaDetalle(nl);
+                                    descs.add(nd);
+                                }
+                                nl.setDescuentos(descs);
+                            }
+                            nl.setDetalleServicio(ncDetalles);
+                            ncLineas.add(nl);
+                        }
+                    }
+                    ncDetalles.setLineasDetalle(ncLineas);
+                    ncDetalles.setStatus(true);
+
+                    ResumenFactura ncResumen = new ResumenFactura();
+                    BigDecimal totalGravado = BigDecimal.ZERO;
+                    BigDecimal totalExento = BigDecimal.ZERO;
+                    BigDecimal totalVenta = BigDecimal.ZERO;
+                    BigDecimal totalDescuento = BigDecimal.ZERO;
+                    BigDecimal totalImpuesto = BigDecimal.ZERO;
+                    for (LineaDetalle linea : ncLineas) {
+                        totalVenta = totalVenta.add(linea.getMontoTotal());
+                        if (linea.getDescuentos() != null) {
+                            totalDescuento = totalDescuento.add(linea.getDescuentos().stream()
+                                .map(Descuento::getMontoDescuento).reduce(BigDecimal.ZERO, BigDecimal::add));
+                        }
+                        if (linea.getImpuestos() != null && !linea.getImpuestos().isEmpty()) {
+                            totalGravado = totalGravado.add(linea.getMontoTotal());
+                            totalImpuesto = totalImpuesto.add(linea.getImpuestos().stream()
+                                .map(i -> i.getMonto() != null ? i.getMonto() : BigDecimal.ZERO)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add));
+                        } else {
+                            totalExento = totalExento.add(linea.getMontoTotal());
+                        }
+                    }
+                    BigDecimal totalVentaNeta = totalVenta.subtract(totalDescuento);
+                    BigDecimal totalComprobante = totalVentaNeta.add(totalImpuesto);
+                    ncResumen.setTotalServGravados(BigDecimal.ZERO);
+                    ncResumen.setTotalServExentos(BigDecimal.ZERO);
+                    ncResumen.setTotalServExonerado(BigDecimal.ZERO);
+                    ncResumen.setTotalMercanciasGravadas(totalGravado);
+                    ncResumen.setTotalMercanciasExentas(totalExento);
+                    ncResumen.setTotalMercExonerada(BigDecimal.ZERO);
+                    ncResumen.setTotalGravado(totalGravado);
+                    ncResumen.setTotalExento(totalExento);
+                    ncResumen.setTotalExonerado(BigDecimal.ZERO);
+                    ncResumen.setTotalVenta(totalVenta);
+                    ncResumen.setTotalDescuentos(totalDescuento);
+                    ncResumen.setTotalVentaNeta(totalVentaNeta);
+                    ncResumen.setTotalImpuesto(totalImpuesto);
+                    ncResumen.setTotalIVADevuelto(BigDecimal.ZERO);
+                    ncResumen.setTotalOtrosCargos(BigDecimal.ZERO);
+                    ncResumen.setTotalComprobante(totalComprobante);
+
+                    InformacionReferencia ref = InformacionReferencia.from(facturaSeleccionada, "01", motivo);
+                    List<InformacionReferencia> referencias = new ArrayList<>();
+                    referencias.add(ref);
+
+                    ComprobantesEmitidos ncComprobante = new ComprobantesEmitidos();
+                    ncComprobante.setEncabezado(ncEncabezado);
+                    ncComprobante.setDetalles(ncDetalles);
+                    ncComprobante.setResumen(ncResumen);
+                    ncComprobante.setInformacionReferencia(referencias);
+                    ncComprobante.setUser(sessionController.getCurrentUser().getUsername());
+                    ncComprobante.setStatus(true);
+                    ncComprobante.setHaciendaClave(clave);
+                    ncComprobante.setHaciendaEstado("PENDIENTE");
+                    ncEncabezado.setEstado("PENDIENTE");
+
+                    comprobantesService.createAndReturn(ncComprobante);
+
+                    alertasService.registrarAlerta("NC Electronica",
+                        "Nota de Credito electronica " + numeroConsecutivo + " generada para devolucion",
+                        sessionController.getCurrentUser(), 0, "DevolucionesController.procesarDevolucion()",
+                        null, null);
+                }
+            } catch (Exception eNC) {
+                alertasService.registrarAlerta("Error NC",
+                    "Error al generar Nota de Credito electronica: " + eNC.getMessage(),
+                    sessionController.getCurrentUser(), 0, "DevolucionesController.procesarDevolucion()",
+                    null, eNC.getMessage());
+            }
+
             alertasService.registrarAlerta("Devolucion procesada",
                 "Nota de credito creada por " + totalDevolucion + " - " + motivo,
                 sessionController.getCurrentUser(), 0, "DevolucionesController.procesarDevolucion()",
                 null, null);
 
+            authorizedBy = null;
             facturaSeleccionada = null;
             lineasDevolucion = new ArrayList<>();
             motivo = null;

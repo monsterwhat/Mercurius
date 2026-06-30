@@ -6,6 +6,8 @@ import Models.Detalles.LineaDetalle;
 import Models.Detalles.CodigoComercial;
 import Models.ComprobantesRecibidos;
 import Models.AppSettings;
+import Models.Validacion.PrevalidationResult;
+import Models.Validacion.ValidationError;
 
 import Models.Encabezado.CorreoElectronicoEmisor;
 import Models.Encabezado.Emisor;
@@ -14,12 +16,14 @@ import Models.Departamento;
 import Models.Inventario;
 import Services.AlertasService;
 import Services.ArticuloPrecioService;
+import Services.ComprobantesRecibidosPrevalidationService;
 import Services.ComprobantesRecibidosService;
 import Services.AppSettingsService;
 import Services.ComprobanteService;
 import Services.Facturas.*;
 import Services.HaciendaApiService;
 import Services.HaciendaSigner;
+import Services.ConsecutivoReceptorService;
 import Utils.Parsers.Parser;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -35,9 +39,11 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList; 
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
@@ -82,6 +88,12 @@ public class FacturasController implements Serializable {
     HaciendaApiService haciendaApiService;
     @Inject
     HaciendaSigner haciendaSigner;
+    @Inject
+    ComprobantesRecibidosPrevalidationService prevalidationService;
+    @Inject
+    ConsecutivoReceptorService consecutivoReceptorService;
+
+    private PrevalidationResult prevalidationResult;
 
     private List<UploadedFile> files;
     private List<ComprobantesRecibidos> facturas;
@@ -90,6 +102,8 @@ public class FacturasController implements Serializable {
     private List<ComprobantesRecibidos> facturasPendientes;
 
     private LineaDetalle lineaDetalle;
+
+    private Set<Long> lineasAceptadas = new HashSet<>();
 
     private ComprobantesRecibidos selectedFactura;
     private String facturaFilter;
@@ -108,6 +122,7 @@ public class FacturasController implements Serializable {
         files = new ArrayList<>();
         filterBy = new ArrayList<>();
         selectedFactura = new ComprobantesRecibidos();
+        lineasAceptadas = new HashSet<>();
         initReport();
     }
     
@@ -266,6 +281,7 @@ public class FacturasController implements Serializable {
 
     public void clearFactura() {
         selectedFactura = null;
+        lineasAceptadas = new HashSet<>();
     }
 
     public void showDetailsDialog() {
@@ -671,7 +687,7 @@ public class FacturasController implements Serializable {
                 }
 
                 String codigoDocumento = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
-                boolean isNotaCredito = "03".equals(codigoDocumento);
+                boolean isNotaCredito = "02".equals(codigoDocumento);
 
                 Inventario ajusteArticulo = new Inventario();
 
@@ -710,13 +726,88 @@ public class FacturasController implements Serializable {
         alertas.registrarAlerta("Factura eliminada", "Se elimino una factura pendiente", currentSession.getCurrentUser(), 0, "cancel()", "", "");
     }
 
+    public void prevalidarFacturaSeleccionada() {
+        if (selectedFactura == null || selectedFactura.getId() == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", "No hay factura seleccionada"));
+            return;
+        }
+        selectedFactura = comprobantesRecibidosService.findByIdWithDetails(selectedFactura.getId());
+        if (selectedFactura == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Factura no encontrada"));
+            return;
+        }
+        prevalidationResult = prevalidationService.prevalidarCompleto(selectedFactura);
+
+        int errCount = prevalidationResult.getErrorCount();
+        int warnCount = prevalidationResult.getWarningCount();
+        if (errCount == 0 && warnCount == 0) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Pre-validación",
+                    "Factura válida — sin errores ni advertencias"));
+        } else {
+            String summary = errCount + " error(es), " + warnCount + " advertencia(s)";
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(errCount > 0 ? FacesMessage.SEVERITY_ERROR : FacesMessage.SEVERITY_WARN,
+                    "Resultado de Pre-validación", summary));
+        }
+        alertas.registrarAlerta("Pre-validación",
+            "Factura #" + selectedFactura.getId() + ": " + errCount + " errores, " + warnCount + " advertencias",
+            currentSession.getCurrentUser(), 0, "FacturasController.prevalidarFacturaSeleccionada()",
+            null, prevalidationResult.getAllIssues().toString());
+    }
+
+    public PrevalidationResult getPrevalidationResult() {
+        return prevalidationResult;
+    }
+
     public void aceptarFacturaRecibida() {
         if (selectedFactura == null || selectedFactura.getId() == null) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", "No hay factura seleccionada"));
             return;
         }
-        procesarMensajeReceptor(1, "Aceptado");
+
+        // Run prevalidation before allowing acceptance
+        selectedFactura = comprobantesRecibidosService.findByIdWithDetails(selectedFactura.getId());
+        if (selectedFactura == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Factura no encontrada"));
+            return;
+        }
+        PrevalidationResult preResult = prevalidationService.prevalidarCompleto(selectedFactura);
+        prevalidationResult = preResult;
+
+        if (preResult.hasErrors()) {
+            // ERROR-level issues → block acceptance
+            String errSummary = preResult.getErrorCount() + " error(es) de pre-validación impiden aceptar la factura";
+            for (ValidationError err : preResult.getErrors()) {
+                alertas.registrarAlerta("Pre-validación (bloqueo)",
+                    err.getField() + ": " + err.getMessage(),
+                    currentSession.getCurrentUser(), 0,
+                    "FacturasController.aceptarFacturaRecibida()", null, err.getMessage());
+            }
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Pre-validación", errSummary));
+            return;
+        }
+
+        if (preResult.hasWarnings()) {
+            // WARNING-level → log but allow
+            for (ValidationError warn : preResult.getWarnings()) {
+                alertas.registrarAlerta("Pre-validación (advertencia)",
+                    warn.getField() + ": " + warn.getMessage(),
+                    currentSession.getCurrentUser(), 0,
+                    "FacturasController.aceptarFacturaRecibida()", null, warn.getMessage());
+            }
+        }
+
+        BigDecimal totalImpuesto = selectedFactura.getResumen() != null
+            ? selectedFactura.getResumen().getTotalImpuesto() : BigDecimal.ZERO;
+        BigDecimal totalFactura = selectedFactura.getResumen() != null
+            ? selectedFactura.getResumen().getTotalVenta() : BigDecimal.ZERO;
+        procesarMensajeReceptor(1, "Aceptado", totalImpuesto, totalFactura);
     }
 
     public void rechazarFacturaRecibida() {
@@ -725,10 +816,91 @@ public class FacturasController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", "No hay factura seleccionada"));
             return;
         }
-        procesarMensajeReceptor(3, "Rechazado");
+        BigDecimal totalImpuesto = selectedFactura.getResumen() != null
+            ? selectedFactura.getResumen().getTotalImpuesto() : BigDecimal.ZERO;
+        BigDecimal totalFactura = selectedFactura.getResumen() != null
+            ? selectedFactura.getResumen().getTotalVenta() : BigDecimal.ZERO;
+        procesarMensajeReceptor(3, "Rechazado", totalImpuesto, totalFactura);
     }
 
-    private void procesarMensajeReceptor(int codigoMensaje, String accion) {
+    // ─── Partial acceptance (codigoMensaje=2) ────────────────────────
+
+    public void aceptarLinea() {
+        if (lineaDetalle == null || lineaDetalle.getId() == null) return;
+        lineasAceptadas.add(lineaDetalle.getId());
+    }
+
+    public void rechazarLinea() {
+        if (lineaDetalle == null || lineaDetalle.getId() == null) return;
+        lineasAceptadas.remove(lineaDetalle.getId());
+    }
+
+    public boolean isLineaAceptada(LineaDetalle linea) {
+        return linea != null && linea.getId() != null && lineasAceptadas.contains(linea.getId());
+    }
+
+    public boolean isLineaRechazada(LineaDetalle linea) {
+        return linea != null && linea.getId() != null && !lineasAceptadas.contains(linea.getId());
+    }
+
+    public Set<Long> getLineasAceptadasSet() {
+        return lineasAceptadas;
+    }
+
+    public void enviarAceptacionParcial() {
+        if (selectedFactura == null || selectedFactura.getId() == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", "No hay factura seleccionada"));
+            return;
+        }
+        if (lineasAceptadas.isEmpty()) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia",
+                    "Debe aceptar al menos una línea para enviar aceptación parcial"));
+            return;
+        }
+
+        selectedFactura = comprobantesRecibidosService.findByIdWithDetails(selectedFactura.getId());
+        if (selectedFactura == null || selectedFactura.getDetalles() == null) return;
+
+        // Run prevalidation before allowing partial acceptance
+        PrevalidationResult preResult = prevalidationService.prevalidarCompleto(selectedFactura);
+        if (preResult.hasErrors()) {
+            prevalidationResult = preResult;
+            String errSummary = preResult.getErrorCount() + " error(es) de pre-validación impiden aceptar parcialmente";
+            for (ValidationError err : preResult.getErrors()) {
+                alertas.registrarAlerta("Pre-validación (bloqueo)",
+                    err.getField() + ": " + err.getMessage(),
+                    currentSession.getCurrentUser(), 0,
+                    "FacturasController.enviarAceptacionParcial()", null, err.getMessage());
+            }
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Pre-validación", errSummary));
+            return;
+        }
+
+        List<LineaDetalle> lineas = selectedFactura.getDetalles().getLineasDetalle();
+        if (lineas == null || lineas.isEmpty()) return;
+
+        BigDecimal totalImpuesto = BigDecimal.ZERO;
+        BigDecimal totalFactura = BigDecimal.ZERO;
+        for (LineaDetalle linea : lineas) {
+            if (linea.getId() != null && lineasAceptadas.contains(linea.getId())) {
+                if (linea.getImpuestoNeto() != null) {
+                    totalImpuesto = totalImpuesto.add(linea.getImpuestoNeto());
+                }
+                if (linea.getMontoTotal() != null) {
+                    totalFactura = totalFactura.add(linea.getMontoTotal());
+                }
+            }
+        }
+
+        procesarMensajeReceptor(2, "Aceptado Parcial", totalImpuesto, totalFactura);
+        lineasAceptadas = new HashSet<>();
+    }
+
+    private void procesarMensajeReceptor(int codigoMensaje, String accion,
+                                          BigDecimal montoTotalImpuesto, BigDecimal montoTotalFactura) {
         try {
             if (selectedFactura.getEncabezado() == null) {
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -750,17 +922,29 @@ public class FacturasController implements Serializable {
                 return;
             }
 
-            String numeroCedula = settings.getIdentificacion() != null ? settings.getIdentificacion() : "0";
+            // NumeroCedulaReceptor in MR = the original invoice receptor (buyer = system user)
+            String receptorId = settings.getIdentificacion() != null ? settings.getIdentificacion() : "0";
+            // NumeroCedulaEmisor in MR = the original invoice emitter (seller)
+            String emisorId = "0";
+            if (selectedFactura.getEncabezado().getEmisor() != null
+                && selectedFactura.getEncabezado().getEmisor().getIdentificacion() != null
+                && selectedFactura.getEncabezado().getEmisor().getIdentificacion().getNumero() != null) {
+                emisorId = selectedFactura.getEncabezado().getEmisor().getIdentificacion().getNumero();
+            }
+
             LocalDateTime fechaEmision = selectedFactura.getEncabezado().getFechaEmision();
-            
-            BigDecimal montoTotalImpuesto = selectedFactura.getResumen() != null 
-                ? selectedFactura.getResumen().getTotalImpuesto() : BigDecimal.ZERO;
-            BigDecimal montoTotalFactura = selectedFactura.getResumen() != null
-                ? selectedFactura.getResumen().getTotalVenta() : BigDecimal.ZERO;
+
+            String codigoSucursal = settings.getCodigoSucursal() != null ? settings.getCodigoSucursal() : "001";
+            String codigoTerminal = settings.getCodigoTerminal() != null ? settings.getCodigoTerminal() : "001";
+            String mrType = codigoMensaje == 1 ? "05" : (codigoMensaje == 2 ? "06" : "07");
+            String sucursalFmt = String.format("%03d", Integer.parseInt(codigoSucursal));
+            String terminalFmt = String.format("%05d", Integer.parseInt(codigoTerminal));
+            String seq = consecutivoReceptorService.getNextSequential(sucursalFmt, terminalFmt, mrType);
+            String numeroConsecutivoReceptor = sucursalFmt + terminalFmt + mrType + seq;
 
             String xmlMensaje = comprobanteService.generateMensajeReceptorXml(
-                settings, clave, numeroCedula, fechaEmision, codigoMensaje, 
-                accion, montoTotalImpuesto, montoTotalFactura
+                settings, clave, emisorId, receptorId, fechaEmision, codigoMensaje,
+                accion, montoTotalImpuesto, montoTotalFactura, numeroConsecutivoReceptor
             );
 
             if (xmlMensaje == null) {
@@ -776,20 +960,33 @@ public class FacturasController implements Serializable {
                 return;
             }
 
+            String emisorTipoId = settings.getTipoIdentificacion();
+            String emisorNumeroId = settings.getIdentificacion();
+            String receptorTipoId = "01";
+            String receptorNumeroId = "000000000";
+            if (selectedFactura.getEncabezado() != null 
+                && selectedFactura.getEncabezado().getEmisor() != null
+                && selectedFactura.getEncabezado().getEmisor().getIdentificacion() != null) {
+                receptorTipoId = selectedFactura.getEncabezado().getEmisor().getIdentificacion().getTipo();
+                receptorNumeroId = selectedFactura.getEncabezado().getEmisor().getIdentificacion().getNumero();
+            }
+
             HaciendaApiService.ApiResponse response;
             if (codigoMensaje == 1) {
-                response = haciendaApiService.acceptInvoice(clave, signResult.signedXml);
+                response = haciendaApiService.acceptInvoice(clave, signResult.signedXml,
+                    emisorTipoId, emisorNumeroId, receptorTipoId, receptorNumeroId);
             } else {
-                response = haciendaApiService.rejectInvoice(clave, signResult.signedXml);
+                response = haciendaApiService.rejectInvoice(clave, signResult.signedXml,
+                    emisorTipoId, emisorNumeroId, receptorTipoId, receptorNumeroId);
             }
 
             if (response.isSuccess()) {
                 selectedFactura.setHaciendaMensajeReceptorEstado(accion.toUpperCase());
                 selectedFactura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
                 facturaService.update(selectedFactura);
-                
+
                 FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", 
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito",
                         "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor enviado a Hacienda."));
                 alertas.registrarAlerta("Hacienda", "Mensaje Receptor " + accion + ": " + clave, currentSession.getCurrentUser(), 0, "FacturasController.procesarMensajeReceptor()", null, null);
             } else {

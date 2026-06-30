@@ -34,6 +34,14 @@
                         </div> 
 
                         <div class="column is-full">
+                            <p:messages showDetail="true" for="newDescripcion" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="newDescripcion">Descripción:</label>
+                            <p:inputTextarea id="newDescripcion" value="#{ArticulosController.newArticulo.descripcion}"
+                                             style="width: 100%" rows="3" maxlength="500"
+                                             placeholder="Descripción del artículo (opcional)"/>
+                        </div>
+
+                        <div class="column is-full">
                             <p:messages showDetail="true" for="newCodigoCabys" showSummary="false" closable="true" />
                             <label class="label has-text-link" for="newCodigoCabys">Código CABYS:</label>
                             <p:commandLink value="Seleccionar" id="selectCabysCreate" styleClass="button is-primary is-rounded"  
@@ -134,6 +142,41 @@
                                     <p:autoUpdate/>
                                 </p:outputLabel>
                             </p:card>
+                        </div>
+
+                        <!-- Stock Alert Configuration Section -->
+                        <div class="column is-full">
+                            <hr/>
+                            <p class="title is-6 has-text-link">Configuración de Alertas de Stock</p>
+                        </div>
+
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="newStockOptimo" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="newStockOptimo">Stock Óptimo:</label>
+                            <p:inputText id="newStockOptimo" type="number" 
+                                         value="#{ArticulosController.newArticulo.stockOptimo}"
+                                         style="width: 100%"
+                                         placeholder="Nivel de stock óptimo calculado automáticamente"/>
+                            <p:tooltip for="newStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
+                        </div>
+
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="newDiasStockSeguridad" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="newDiasStockSeguridad">Días de Stock Seguridad:</label>
+                            <p:inputText id="newDiasStockSeguridad" type="number" 
+                                         value="#{ArticulosController.newArticulo.diasStockSeguridad}"
+                                         style="width: 100%"
+                                         placeholder="7 (por defecto)"/>
+                            <p:tooltip for="newDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
+                        </div>
+
+                        <div class="column is-full">
+                            <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                <p:selectBooleanCheckbox id="newEstadoAlertas" 
+                                                         value="#{ArticulosController.newArticulo.estadoAlertas}"/>
+                                <label class="label has-text-link" for="newEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                            </div>
+                            <p:tooltip for="newEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
                         </div>
 
                         <div class="column is-full mt-3">

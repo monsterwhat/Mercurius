@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.persistence.NoResultException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -407,6 +408,47 @@ public class InventarioService extends GService<Inventario> {
         }
 
         return totalSalesByDepartamento;
+    }
+
+    public Date getLastPurchaseDateByDepartamento(Integer departamentoId) {
+        try {
+            String jpql = "SELECT MAX(i.fechaMovimiento) FROM Inventario i " +
+                          "JOIN i.articulo a " +
+                          "WHERE a.departamento.id = :departamentoId " +
+                          "AND (i.tipoMovimiento LIKE '%Entrada%' OR i.tipoMovimiento LIKE '%Ingreso%')";
+            TypedQuery<Date> query = em.createQuery(jpql, Date.class);
+            query.setParameter("departamentoId", departamentoId);
+            return query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error getting last purchase date: " + e.getMessage(), null, 0, "InventarioService.getLastPurchaseDateByDepartamento()", null, e.getMessage());
+            return null;
+        }
+    }
+
+    public List<Object[]> getSalesDetailsByDepartamento(Date startDate, Date endDate, Integer departamentoId) {
+        try {
+            String jpql = "SELECT a.nombre, SUM(i.cantidad), SUM(ap.precioFinal * i.cantidad) " +
+                          "FROM Inventario i " +
+                          "JOIN i.articulo a " +
+                          "JOIN a.departamento d " +
+                          "JOIN ArticuloPrecio ap ON ap.articulo.codigo = a.codigo " +
+                          "WHERE i.tipoMovimiento = 'Venta' " +
+                          "AND d.id = :departamentoId " +
+                          "AND ap.fechaCompra = (SELECT MAX(ap2.fechaCompra) FROM ArticuloPrecio ap2 WHERE ap2.articulo.codigo = a.codigo) " +
+                          "AND i.fechaMovimiento BETWEEN :startDate AND :endDate " +
+                          "GROUP BY a.nombre " +
+                          "ORDER BY SUM(ap.precioFinal * i.cantidad) DESC";
+            Query query = em.createQuery(jpql);
+            query.setParameter("startDate", startDate);
+            query.setParameter("endDate", endDate);
+            query.setParameter("departamentoId", departamentoId);
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error getting sales details: " + e.getMessage(), null, 0, "InventarioService.getSalesDetailsByDepartamento()", null, e.getMessage());
+            return null;
+        }
     }
 
     public List<ReportesFamiliasYDepartamentos> getTotalSalesByFamilia(Date startDate, Date endDate) {
