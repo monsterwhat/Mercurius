@@ -45,6 +45,15 @@ public class AppSettings {
     
     private String correoElectronicoTributacion;
     
+    @Column(name = "correo_electronico_tributacion2", length = 200)
+    private String correoElectronicoTributacion2;
+    
+    @Column(name = "correo_electronico_tributacion3", length = 200)
+    private String correoElectronicoTributacion3;
+    
+    @Column(name = "correo_electronico_tributacion4", length = 200)
+    private String correoElectronicoTributacion4;
+    
     private String razonSocial;
     
     private String provedor;
@@ -65,6 +74,9 @@ public class AppSettings {
     @Column(length = 3)
     private String codigoTerminal; //Terminal code for Hacienda (e.g., "001")
     
+    @Column(length = 2)
+    private String tipoDocumento; //Hacienda document type: "01"=FE, "04"=TE (default)
+    
     @Column(name = "puntosInactivityMonths")
     private Integer puntosInactivityMonths; //Months of inactivity before points expire
     
@@ -79,5 +91,23 @@ public class AppSettings {
     private String haciendaEnvironment; //"sandbox" or "production"
     
     private java.time.LocalDateTime haciendaTokenExpiry; //Token expiration for refresh
-    
+
+    // Notification settings for invoice rejection alerts
+    private Boolean notificarRechazos; //Whether to send email notifications on rejection
+    private String correoNotificaciones; //Email address to send rejection notifications to
+    private Boolean notificarRechazosResumen; //Whether to send daily summary of rejected invoices
+
+    // ============ BACKUP CONFIGURATION ============
+
+    private Boolean backupHabilitado; //Enable/disable automatic database backup
+
+    @Column(length = 5)
+    private String backupHora; //Hour to run backup, format "HH:mm" (e.g. "03:00")
+
+    private Integer backupRetencionDias; //Days to keep backups (default 7)
+
+    @Column(length = 500)
+    private String backupRuta; //Directory path for backup files
+
+    private java.time.LocalDateTime backupUltimoEjecutado; //Timestamp of last successful backup
 }

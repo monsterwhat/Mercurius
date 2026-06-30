@@ -225,7 +225,8 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         if (settings == null || settings.getHaciendaTokenExpiry() == null) {
             return true;
         }
-        return LocalDateTime.now().isAfter(settings.getHaciendaTokenExpiry());
+        // Refresh 30s before actual expiry to prevent 401 errors during API calls
+        return LocalDateTime.now().plusSeconds(30).isAfter(settings.getHaciendaTokenExpiry());
     }
 
     public void saveTokenExpiry(LocalDateTime expiry) {

@@ -68,7 +68,7 @@ public class ExcelExporter {
         Sheet sheet = workbook.createSheet("Comprobantes");
 
         String[] headers = {"ID", "Código Actividad", "Clave", "Número Consecutivo", "Fecha Emisión", "Condición Venta", "Plazo Crédito",
-                            "Emisor", "Receptor", "Total Venta", "Total Impuesto", "Total Comprobante"};
+                            "Condición Venta Otros", "Emisor", "Receptor", "Total Venta", "Total Impuesto", "Total Comprobante"};
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
             Cell cell = headerRow.createCell(i);
@@ -88,15 +88,16 @@ public class ExcelExporter {
                 row.createCell(4).setCellValue(encabezado.getFechaEmision());
                 row.createCell(5).setCellValue(encabezado.getCondicionVenta());
                 row.createCell(6).setCellValue(encabezado.getPlazoCredito());
-                row.createCell(7).setCellValue(encabezado.getEmisor().getNombre());
-                row.createCell(8).setCellValue(encabezado.getReceptor().getNombre());
+                row.createCell(7).setCellValue(encabezado.getCondicionVentaOtros());
+                row.createCell(8).setCellValue(encabezado.getEmisor() != null ? encabezado.getEmisor().getNombre() : "");
+                row.createCell(9).setCellValue(encabezado.getReceptor() != null ? encabezado.getReceptor().getNombre() : "");
             }
 
             if (comprobante.getResumen() != null) {
                 ResumenFactura resumen = comprobante.getResumen();
-                row.createCell(9).setCellValue(resumen.getTotalVenta().doubleValue());
-                row.createCell(10).setCellValue(resumen.getTotalImpuesto().doubleValue());
-                row.createCell(11).setCellValue(resumen.getTotalComprobante().doubleValue());
+                row.createCell(10).setCellValue(resumen.getTotalVenta().doubleValue());
+                row.createCell(11).setCellValue(resumen.getTotalImpuesto().doubleValue());
+                row.createCell(12).setCellValue(resumen.getTotalComprobante().doubleValue());
             }
         }
 

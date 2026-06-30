@@ -365,7 +365,7 @@ public class ComprobantesRecibidosController implements Serializable {
                 }
                 
                 String codigoDocumento = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
-                boolean isNotaCredito = "03".equals(codigoDocumento);
+                boolean isNotaCredito = "02".equals(codigoDocumento);
 
                 Inventario ajusteArticulo = new Inventario();
                 

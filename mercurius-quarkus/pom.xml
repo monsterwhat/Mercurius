@@ -154,6 +154,26 @@
 
 
 
+        <!-- XAdES4j for XAdES-EPES digital signatures (Hacienda requirement) -->
+        <!-- ZXing QR Code generation for Hacienda V4.4 PDF (Quarkus extension with native support) -->
+        <dependency>
+            <groupId>io.quarkiverse.barcode</groupId>
+            <artifactId>quarkus-zxing</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.googlecode.xades4j</groupId>
+            <artifactId>xades4j</artifactId>
+            <version>2.4.1</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.xml.bind</groupId>
+                    <artifactId>jaxb-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Test Dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>

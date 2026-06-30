@@ -16,14 +16,14 @@ public class CarritoCalculations {
         if (articuloCarrito.isPromo()) {
             var discount = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
             var tax = BigDecimal.valueOf(articuloCarrito.getArticulo().getCodigoCabys().getImpuesto());
-            var precioArticulo = articuloCarrito.getArticulo().getLastPrecio().getPrecioConUtilidad();
+            var precioArticulo = articuloCarrito.getPrecioEfectivo();
             var cantidadDescuento = precioArticulo.multiply(discount.divide(BigDecimal.valueOf(100)));
             var precioConDescuento = precioArticulo.subtract(cantidadDescuento);
             var cantidadImpuesto = precioConDescuento.multiply(tax.divide(BigDecimal.valueOf(100)));
             var precioFinal = precioConDescuento.add(cantidadImpuesto);
             return precioFinal;
         } else {
-            var precioArticulo = articuloCarrito.getArticulo().getLastPrecio().getPrecioConUtilidad();
+            var precioArticulo = articuloCarrito.getPrecioEfectivo();
             return precioArticulo;
         }
     }
@@ -32,7 +32,7 @@ public class CarritoCalculations {
         if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
-        var precioArticulo = articuloCarrito.getArticulo().getLastPrecio().getPrecioConUtilidad();
+        var precioArticulo = articuloCarrito.getPrecioEfectivo();
         BigDecimal total;
 
         if (articuloCarrito.isPromo()) {
@@ -55,7 +55,7 @@ public class CarritoCalculations {
             return BigDecimal.ZERO;
         }
         var descuento = articuloCarrito.getDescuento();
-        var precioConUtilidad = articuloCarrito.getArticulo().getLastPrecio().getPrecioConUtilidad();
+        var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
         double tax = articuloCarrito.getArticulo().getCodigoCabys().getImpuesto();
         var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
 
@@ -80,7 +80,7 @@ public class CarritoCalculations {
             return BigDecimal.ZERO;
         }
         var descuento = articuloCarrito.getDescuento();
-        var precioConUtilidad = articuloCarrito.getArticulo().getLastPrecio().getPrecioConUtilidad();
+        var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
         var descuentoPercentage = descuento.divide(BigDecimal.valueOf(100));
         var descuentoTotal = precioConUtilidad.multiply(descuentoPercentage);
         return descuentoTotal;
@@ -91,7 +91,7 @@ public class CarritoCalculations {
             return BigDecimal.ZERO;
         }
         var descuento = articuloCarrito.getDescuento();
-        var precioConUtilidad = articuloCarrito.getArticulo().getLastPrecio().getPrecioConUtilidad();
+        var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
         double tax = articuloCarrito.getArticulo().getCodigoCabys().getImpuesto();
         var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
 
@@ -121,7 +121,7 @@ public class CarritoCalculations {
                 var taxDecimal = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
 
                 BigDecimal precioFinal;
-                BigDecimal precioUnidad = articulo.getArticulo().getLastPrecio().getPrecioConUtilidad();
+                BigDecimal precioUnidad = item.getPrecioEfectivo();
                 BigDecimal cantidadDecimal = cantidad;
 
                 if (isPromo) {
@@ -189,7 +189,7 @@ public class CarritoCalculations {
 
             if (lista != null) {
                 for (ArticuloCarrito articulo : lista) {
-                    BigDecimal precioConUtilidad = articulo.getArticulo().getLastPrecio().getPrecioConUtilidad();
+                    BigDecimal precioConUtilidad = articulo.getPrecioEfectivo();
 
                     BigDecimal porcentajeDescuento = (descuento != null ? descuento : BigDecimal.ZERO).divide(BigDecimal.valueOf(100));
 

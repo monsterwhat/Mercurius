@@ -3,6 +3,8 @@ package Controllers.Tiquetes;
 import Services.ComprobanteService;
 import Services.ComprobanteService.CrearComprobanteResult;
 import Services.CarritoService;
+import Services.Strategies.DocumentoStrategy;
+import Services.Strategies.DocumentoStrategyFactory;
 import Controllers.SessionController;
 import Controllers.SettingsController;
 import Controllers.TipoCambioController;
@@ -11,6 +13,7 @@ import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Articulos;
 import Models.Clients;
 import Models.ComprobantesEmitidos;
+import Models.Users;
 import Models.ComprobantesRecibidos;
 import Services.AlertasService;
 import Services.AppSettingsService;
@@ -70,6 +73,8 @@ public class CrearTiqueteController implements Serializable {
     @Inject
     private ComprobanteService comprobanteService;
     @Inject
+    private DocumentoStrategyFactory strategyFactory;
+    @Inject
     private PrinterService printer;
     @Inject
     private PDFGenerator pdfGenerator;
@@ -84,6 +89,14 @@ public class CrearTiqueteController implements Serializable {
     private String pdfUrl;
     private StreamedContent pdfStream;
     private String facturaId;
+    private String tipoDocumento = "04";
+    private String medioPago = "01";
+
+    private String authUsername;
+    private String authPassword;
+    private String authorizedBy;
+    private String authTargetAction;
+    private ArticuloCarrito pendingRemoveArticulo;
 
     @PostConstruct
     public void init() {
@@ -106,6 +119,54 @@ public class CrearTiqueteController implements Serializable {
         carritoService.setColones(new BigDecimal(0));
         carritoService.setDolares(new BigDecimal(0));
         carritoService.setVuelto(new BigDecimal(0));
+    }
+
+    public void authorize() {
+        Users authUser = currentSession.authorizeAction(authUsername, authPassword);
+        if (authUser != null) {
+            authorizedBy = authUser.getUsername();
+            alertaService.registrarAlerta("Autorización Exitosa",
+                "Acción: " + authTargetAction + " autorizada por: " + authorizedBy,
+                currentSession.getCurrentUser(), 0, "CrearTiqueteController.authorize()",
+                null, null);
+
+            if ("remove".equals(authTargetAction) && pendingRemoveArticulo != null) {
+                carritoService.removeArticulo(pendingRemoveArticulo, currentSession.getCurrentUser());
+                pendingRemoveArticulo = null;
+                authTargetAction = null;
+            } else if ("override".equals(authTargetAction)) {
+                authTargetAction = null;
+                facturar();
+            }
+            authUsername = null;
+            authPassword = null;
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Autorización Fallida",
+                    "Usuario o contraseña incorrectos"));
+        }
+    }
+
+    private void resetAuth() {
+        authUsername = null;
+        authPassword = null;
+        authTargetAction = null;
+    }
+
+    public boolean hasOverridesInCarrito() {
+        for (ArticuloCarrito item : carritoService.getCarrito()) {
+            if (item.getPrecioPersonalizado() != null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void removeArticuloConAuth(ArticuloCarrito articulo) {
+        authTargetAction = "remove";
+        pendingRemoveArticulo = articulo;
+        authorizedBy = null;
+        org.primefaces.PrimeFaces.current().executeScript("PF('AuthDialog').show();");
     }
 
     public void resetClient() {
@@ -199,8 +260,22 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public void facturar() {
+        if (hasOverridesInCarrito() && authorizedBy == null) {
+            authTargetAction = "override";
+            org.primefaces.PrimeFaces.current().executeScript("PF('AuthDialog').show();");
+            return;
+        }
         AppSettings settings = appSettings.returnCurrent();
         if (Objects.equals(settings.getEstatus(), Boolean.FALSE)) {
+            return;
+        }
+        DocumentoStrategy strategy = strategyFactory.forCode(tipoDocumento);
+        if (strategy.requiresReceptor()
+                && (cliente == null || cliente.getCode() == 0)) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR,
+                    "CLIENTE REQUERIDO",
+                    "Para emitir una Factura Electrónica debe seleccionar un cliente."));
             return;
         }
         // 1. Hacer ajustes en inventario
@@ -211,7 +286,9 @@ public class CrearTiqueteController implements Serializable {
                 carritoService.getCarrito(),
                 selectedClient,
                 cliente,
-                currentSession.getCurrentUser()
+                currentSession.getCurrentUser(),
+                strategy,
+                medioPago
         );
 
         if (result != null && result.comprobante != null) {
@@ -269,6 +346,7 @@ public class CrearTiqueteController implements Serializable {
                     alertaService.registrarAlerta("Error", msg, currentSession.getCurrentUser(), 0, "CrearTiqueteController.facturar()", null, msg);
                 }
 
+                authorizedBy = null;
                 clearPago();
                 carritoService.clear();
 

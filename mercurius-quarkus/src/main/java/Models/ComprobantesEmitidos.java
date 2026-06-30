@@ -2,6 +2,7 @@ package Models;
 
 import Models.Detalles.DetalleServicio;
 import Models.Encabezado.Encabezado;
+import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -50,7 +51,13 @@ public class ComprobantesEmitidos {
     @ToString.Exclude
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private ResumenFactura resumen;
-    
+
+    @XmlTransient
+    @ToString.Exclude
+    @jakarta.persistence.OneToMany(cascade = CascadeType.ALL)
+    @jakarta.persistence.JoinColumn(name = "comprobante_emitido_id")
+    private java.util.List<InformacionReferencia> informacionReferencia;
+
     private Boolean status;
     
     @Column(length = 50)
@@ -69,5 +76,13 @@ public class ComprobantesEmitidos {
 
     @XmlTransient
     private LocalDateTime haciendaFechaRespuesta;
+
+    @XmlTransient
+    @Column(name = "correction_attempts")
+    private Integer correctionAttempts = 0;
+
+    @XmlTransient
+    @Column(name = "ultima_correccion")
+    private LocalDateTime ultimaCorreccion;
     
 }

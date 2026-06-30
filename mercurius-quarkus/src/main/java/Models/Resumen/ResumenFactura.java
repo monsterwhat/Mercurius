@@ -15,6 +15,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.Data;
@@ -122,8 +123,7 @@ public class ResumenFactura {
     @Column(name = "total_otros_cargos", precision = 18, scale = 5)
     private BigDecimal totalOtrosCargos;
     
-    @XmlElementWrapper(name = "MediosPago")
-    @XmlElement(name = "MedioPago")
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToMany(mappedBy="resumenFactura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)

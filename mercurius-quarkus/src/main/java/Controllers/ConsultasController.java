@@ -16,6 +16,8 @@ import Services.CarritoService;
 import Services.ClientService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
+import Services.Strategies.DocumentoStrategy;
+import Services.Strategies.DocumentoStrategyFactory;
 import Services.Correos.ReportesProgramadosService;
 import Services.HaciendaApiService;
 import Services.HaciendaSigner;
@@ -67,6 +69,9 @@ public class ConsultasController implements Serializable {
     
     @Inject
     private ComprobanteService comprobanteService;
+    
+    @Inject
+    private DocumentoStrategyFactory strategyFactory;
     
     @Inject
     private NotaCreditoService notaCreditoService;
@@ -172,20 +177,36 @@ public class ConsultasController implements Serializable {
                         continue;
                     }
 
-                    JAXBContext context = JAXBContext.newInstance(ComprobantesEmitidos.class);
-                    Marshaller marshaller = context.createMarshaller();
-                    marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-                    StringWriter sw = new StringWriter();
-                    marshaller.marshal(factura, sw);
-                    String xmlContent = sw.toString();
+                    String docCode = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
+                    DocumentoStrategy strategy = strategyFactory.forCode(docCode);
+                    String xmlContent = strategy.buildXml(factura);
 
                     HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlContent);
                     if (signResult.success) {
-                        HaciendaApiService.ApiResponse apiResponse = haciendaApiService.sendInvoice(clave, signResult.signedXml);
+                        String emisorTipo = "02";
+                        String emisorNumero = "000000000";
+                        String receptorTipo = "01";
+                        String receptorNumero = "000000000";
+                        if (factura.getEncabezado() != null) {
+                            if (factura.getEncabezado().getEmisor() != null 
+                                && factura.getEncabezado().getEmisor().getIdentificacion() != null) {
+                                emisorTipo = factura.getEncabezado().getEmisor().getIdentificacion().getTipo();
+                                emisorNumero = factura.getEncabezado().getEmisor().getIdentificacion().getNumero();
+                            }
+                            if (factura.getEncabezado().getReceptor() != null
+                                && factura.getEncabezado().getReceptor().getIdentificacion() != null) {
+                                receptorTipo = factura.getEncabezado().getReceptor().getIdentificacion().getTipo();
+                                receptorNumero = factura.getEncabezado().getReceptor().getIdentificacion().getNumero();
+                            }
+                        }
+                        HaciendaApiService.ApiResponse apiResponse = haciendaApiService.submitAndWait(
+                            clave, signResult.signedXml,
+                            emisorTipo, emisorNumero, receptorTipo, receptorNumero);
                         if (apiResponse.isSuccess()) {
-                            factura.setHaciendaEstado("ENVIADO");
+                            factura.setHaciendaEstado("ACEPTADO");
                             factura.setHaciendaFechaEnvio(LocalDateTime.now());
-                            if (factura.getEncabezado() != null) factura.getEncabezado().setEstado("ENVIADO");
+                            factura.setHaciendaFechaRespuesta(LocalDateTime.now());
+                            if (factura.getEncabezado() != null) factura.getEncabezado().setEstado("ACEPTADO");
                             comprobantesService.update(factura);
                             enviadas[0]++;
                         } else {

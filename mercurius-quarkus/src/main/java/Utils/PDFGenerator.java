@@ -15,6 +15,7 @@ import Models.Users;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
+import com.lowagie.text.Image;
 import com.lowagie.text.Meta;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
@@ -22,6 +23,7 @@ import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import com.google.zxing.WriterException;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
@@ -341,6 +343,24 @@ public class PDFGenerator {
         Paragraph autorizacion = new Paragraph("Autorizado mediante resolucion No. DGT-R033-2019 del dia 20 de junio de 2019. Version FE 4.3", font);
         autorizacion.setAlignment(Element.ALIGN_CENTER);
         document.add(autorizacion);
+
+        // QR code for Hacienda V4.4 — encode the 50-digit Clave
+        String clave = tiqueteElectronico.getHaciendaClave();
+        if (clave != null && !clave.isBlank()) {
+            try {
+                byte[] qrBytes = QRCodeGenerator.generateQRCodeBytes(clave);
+                Image qrImage = Image.getInstance(qrBytes);
+                qrImage.setAlignment(Element.ALIGN_CENTER);
+                qrImage.scaleToFit(120f, 120f);
+                document.add(qrImage);
+
+                Paragraph claveLabel = new Paragraph("Clave: " + clave, font);
+                claveLabel.setAlignment(Element.ALIGN_CENTER);
+                document.add(claveLabel);
+            } catch (WriterException | IOException e) {
+                // QR generation failed — continue without QR
+            }
+        }
 
         Paragraph gracias = new Paragraph("***GRACIAS POR SU PREFERENCIA!***", font);
         gracias.setAlignment(Element.ALIGN_JUSTIFIED_ALL);

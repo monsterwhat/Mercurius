@@ -33,6 +33,7 @@ import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import Services.AlertasService;
+import Models.Referencias.InformacionReferencia;
 import Models.Registros.Alertas;
 import Utils.ComprobanteFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -145,7 +146,6 @@ public class Parser {
             String nombreComercial = emisorNode.path("NombreComercial").asText();
             Ubicacion ubicacion = new Ubicacion();
             Telefono telefono = new Telefono();
-            Fax fax = new Fax();
             // Parse Ubicacion si existe
             if (!emisorNode.path("Ubicacion").isMissingNode()) {
                 ubicacion = parseUbicacion(emisorNode.path("Ubicacion"));
@@ -160,14 +160,6 @@ public class Parser {
                     return null;
                 }
             }
-            // Parse Fax si existe
-            if (!emisorNode.path("Fax").isMissingNode()) {
-                fax = parseFax(emisorNode.path("Fax"));
-                if (fax == null) {
-                    return null;
-                }
-            }
-
             Emisor emisor = new Emisor();
             emisor.setNombre(nombre);
 
@@ -188,7 +180,6 @@ public class Parser {
             emisor.setNombreComercial(nombreComercial);
             emisor.setUbicacion(ubicacion);
             emisor.setTelefono(telefono);
-            emisor.setFax(fax);
             emisor.setCorreosElectronicos(correosElectronicos);
 
             return emisor;
@@ -206,7 +197,6 @@ public class Parser {
             String nombreComercial = receptorNode.path("NombreComercial").asText();
             Ubicacion ubicacion = new Ubicacion();
             Telefono telefono = new Telefono();
-            Fax fax = new Fax();
 
             if (!receptorNode.path("Ubicacion").isMissingNode()) {
                 ubicacion = parseUbicacion(receptorNode.path("Ubicacion"));
@@ -214,10 +204,6 @@ public class Parser {
             if (!receptorNode.path("Telefono").isMissingNode()) {
                 telefono = parseTelefono(receptorNode.path("Telefono"));
             }
-            if (!receptorNode.path("Fax").isMissingNode()) {
-                fax = parseFax(receptorNode.path("Fax"));
-            }
-
             String correoElectronico = receptorNode.path("CorreoElectronico").asText();
 
             Receptor receptor = new Receptor();
@@ -231,7 +217,6 @@ public class Parser {
             receptor.setNombreComercial(nombreComercial);
             receptor.setUbicacion(ubicacion);
             receptor.setTelefono(telefono);
-            receptor.setFax(fax);
             receptor.setCorreoElectronico(correoElectronico);
 
             return receptor;
@@ -851,6 +836,7 @@ public class Parser {
 
                 String condicionVenta = rootNode.path("CondicionVenta").asText();
                 String plazoCredito = rootNode.path("PlazoCredito").asText();
+                String condicionVentaOtros = rootNode.path("CondicionVentaOtros").asText();
                 List<MedioPago> medioPago = parseMedioPago(rootNode.path("MedioPago"), encabezado);
                 if (medioPago == null) {
                     String errorMsg = "XML inválido: error en medio de pago";
@@ -903,6 +889,9 @@ public class Parser {
                 encabezado.setFechaEmision(localDateTime);
                 encabezado.setCondicionVenta(condicionVenta);
                 encabezado.setPlazoCredito(plazoCredito);
+                if (condicionVentaOtros != null && !condicionVentaOtros.isEmpty()) {
+                    encabezado.setCondicionVentaOtros(condicionVentaOtros);
+                }
                 encabezado.setMedioPago(medioPago);
                 encabezado.setClave(clave);
                 encabezado.setCodigoDocumento(codigoDocumento);
@@ -1018,7 +1007,29 @@ nueva.setCantidad(original.getCantidad());
                 nuevosDetalles.setLineasDetalle(nuevasLineas);
                 factura.setDetalles(nuevosDetalles);
 
-facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
+                // Parse InformacionReferencia if present (for NC/ND received documents)
+                JsonNode infoRefNode = rootNode.path("InformacionReferencia");
+                if (!infoRefNode.isMissingNode()) {
+                    List<InformacionReferencia> referencias = new ArrayList<>();
+                    if (infoRefNode.isArray()) {
+                        for (JsonNode refNode : infoRefNode) {
+                            InformacionReferencia ref = parseSingleInformacionReferencia(refNode);
+                            if (ref != null) {
+                                referencias.add(ref);
+                            }
+                        }
+                    } else {
+                        InformacionReferencia ref = parseSingleInformacionReferencia(infoRefNode);
+                        if (ref != null) {
+                            referencias.add(ref);
+                        }
+                    }
+                    if (!referencias.isEmpty()) {
+                        factura.setInformacionReferencia(referencias);
+                    }
+                }
+
+                facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
 
                 // Verify ID assignment after creation
                 if (factura.getId() == null) {
@@ -1055,6 +1066,24 @@ facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
                 alertasService.registrarAlerta("Error", errorMsg, null, 0, "Parser.parseXML()", null, null);
                 logAsyncError("ERROR", errorMsg, "Parser.parseXML.exception", xmlContent.toString());
             }
+        }
+    }
+
+    private InformacionReferencia parseSingleInformacionReferencia(JsonNode node) {
+        try {
+            InformacionReferencia ref = new InformacionReferencia();
+            ref.setTipoDoc(node.path("TipoDoc").asText());
+            ref.setNumero(node.path("Numero").asText());
+            String fechaStr = node.path("FechaEmision").asText();
+            if (!fechaStr.isEmpty() && !"null".equals(fechaStr)) {
+                ref.setFechaEmision(LocalDateTime.parse(fechaStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            }
+            ref.setCodigo(node.path("Codigo").asText());
+            ref.setRazon(node.path("Razon").asText());
+            return ref;
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error parsing InformacionReferencia: " + e.getLocalizedMessage(), null, 0, "Parser.parseSingleInformacionReferencia()", null, null);
+            return null;
         }
     }
 
@@ -1146,13 +1175,13 @@ facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
             case "FacturaElectronica":
             case "FacturaElectrónica":
                 return "01";
-            case "NotaDebitoElectronica":
-            case "NotaDébitoElectrónica":
-            case "NotaDebito":
-                return "02";
             case "NotaCreditoElectronica":
             case "NotaCréditoElectrónica":
             case "NotaCredito":
+                return "02";
+            case "NotaDebitoElectronica":
+            case "NotaDébitoElectrónica":
+            case "NotaDebito":
                 return "03";
             case "TiqueteElectronico":
             case "TiqueteElectrónico":

@@ -69,7 +69,6 @@ public class Receptor {
     @Column(name = "correo_electronico", length = 160)
     private String correoElectronico;
       
-    @XmlElement(name = "Fax")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToOne(cascade = CascadeType.ALL)

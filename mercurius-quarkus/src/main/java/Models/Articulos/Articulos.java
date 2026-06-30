@@ -38,6 +38,9 @@ public class Articulos implements Serializable {
     @Column
     private String codigoBarra;
 
+    @Column(length = 500)
+    private String descripcion;
+
     @Column
     private String UnidadMedida;
 

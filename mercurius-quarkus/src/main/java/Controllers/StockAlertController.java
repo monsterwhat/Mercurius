@@ -454,4 +454,14 @@ public class StockAlertController implements Serializable {
     public Map<String, Integer> getAlertStatistics() {
         return alertStatistics;
     }
+
+    /**
+     * Get count of active stock alerts for badge display
+     */
+    public int getActiveAlertsCount() {
+        if (activeAlerts == null) {
+            return 0;
+        }
+        return activeAlerts.size();
+    }
 }

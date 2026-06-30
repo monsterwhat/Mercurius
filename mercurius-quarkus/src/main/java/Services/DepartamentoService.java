@@ -124,6 +124,16 @@ public class DepartamentoService extends GService<Departamento> {
         }
     }
     
+    public List<Departamento> listAllActive() {
+        try {
+            TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d WHERE d.status = true", Departamento.class);
+            return query.getResultList();
+        } catch (Exception e) {
+            alertasService.registrarAlerta("Error", "Error listing active departamentos: " + e.getMessage(), null, 0, "DepartamentoService.listAllActive()", null, e.getMessage());
+            return null;
+        }
+    }
+
     public void softDelete(Departamento entity) {
         try {
             // Find the item by its ID

@@ -13,7 +13,12 @@ public class ValidationError {
     public enum Category {
         CABYS,
         TAX_CALCULATION,
-        RECEPTOR_INFO
+        RECEPTOR_INFO,
+        INFORMACION_REFERENCIA,
+        DOCUMENT_TYPE,
+        RESUMEN_STRUCTURE,
+        HEADER_INFO,
+        LINE_DETAIL
     }
     
     public enum Severity {

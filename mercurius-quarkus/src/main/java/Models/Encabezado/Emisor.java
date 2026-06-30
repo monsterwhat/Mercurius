@@ -69,7 +69,6 @@ public class Emisor {
     @JoinColumn(name = "telefono_id", referencedColumnName = "id")
     private Telefono telefono;
 
-    @XmlElement(name = "Fax")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToOne(cascade = CascadeType.ALL)

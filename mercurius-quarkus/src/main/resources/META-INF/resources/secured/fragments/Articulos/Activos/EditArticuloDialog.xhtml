@@ -31,7 +31,15 @@
                                          style="width: 100%">
                             </p:inputText>
                         </div>
-                        
+
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="editDescripcion" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="editDescripcion">Descripción:</label>
+                            <p:inputTextarea id="editDescripcion" value="#{ArticulosController.selectedArticulo.descripcion}"
+                                             style="width: 100%" rows="3" maxlength="500"
+                                             placeholder="Descripción del artículo (opcional)"/>
+                        </div>
+
                         <div class="column is-full">
                             <p:messages showDetail="true" for="editRecomendacionCabys" showSummary="false" closable="true" />
                             <label class="label has-text-link" for="editRecomendacionCabys">Recomendacion Cabys:</label>
@@ -151,6 +159,41 @@
                             </p:card>
                         </div> 
                         
+                        <!-- Stock Alert Configuration Section -->
+                        <div class="column is-full">
+                            <hr/>
+                            <p class="title is-6 has-text-link">Configuración de Alertas de Stock</p>
+                        </div>
+
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="editStockOptimo" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="editStockOptimo">Stock Óptimo:</label>
+                            <p:inputText id="editStockOptimo" type="number" 
+                                         value="#{ArticulosController.selectedArticulo.stockOptimo}"
+                                         style="width: 100%"
+                                         placeholder="Nivel de stock óptimo calculado automáticamente"/>
+                            <p:tooltip for="editStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
+                        </div>
+
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="editDiasStockSeguridad" showSummary="false" closable="true" />
+                            <label class="label has-text-link" for="editDiasStockSeguridad">Días de Stock Seguridad:</label>
+                            <p:inputText id="editDiasStockSeguridad" type="number" 
+                                         value="#{ArticulosController.selectedArticulo.diasStockSeguridad}"
+                                         style="width: 100%"
+                                         placeholder="7 (por defecto)"/>
+                            <p:tooltip for="editDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
+                        </div>
+
+                        <div class="column is-full">
+                            <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                <p:selectBooleanCheckbox id="editEstadoAlertas" 
+                                                         value="#{ArticulosController.selectedArticulo.estadoAlertas}"/>
+                                <label class="label has-text-link" for="editEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                            </div>
+                            <p:tooltip for="editEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
+                        </div>
+
                         <div class="column is-full">
                             <p:commandLink value="Actualizar datos" update="@form Articulos:ArticulosActivos" process="@form"
                                              action="#{ArticulosController.updateArticuloByDialog()}" 

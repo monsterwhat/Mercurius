@@ -191,6 +191,32 @@
                                     </span>
                                 </span> 
                             </a>
+                            <hr class="navbar-divider"/>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Inventario/Reportes/Alertas/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-exclamation-triangle"/>
+                                    </span>
+                                    <span>
+                                        Alertas de Stock
+                                    </span>
+                                    <span class="tag is-danger is-small" 
+                                          style="margin-left: 0.5rem;"
+                                          rendered="#{stockAlertController.activeAlertsCount gt 0}">
+                                        #{stockAlertController.activeAlertsCount}
+                                    </span> 
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Inventario/Reportes/Merma/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-exclamation-triangle"/>
+                                    </span>
+                                    <span>
+                                        Mermas y Perdidas
+                                    </span>
+                                </span> 
+                            </a>
                         </div> 
                     </p:outputPanel>
 
@@ -219,6 +245,11 @@
                                         Consultas
                                     </span>
                                 </span> 
+                                <span class="tag is-danger is-small" 
+                                      style="margin-left: 0.5rem;"
+                                      rendered="#{request.requestURI ne null and request.requestURI.contains('Consultas') and consultasController.contadorRechazadas > 0}">
+                                    #{consultasController.contadorRechazadas}
+                                </span>
                             </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/CaByS/index.xhtml">
                                 <span class="icon-text">
@@ -255,7 +286,19 @@
                                 </span>
                             </span> 
                         </a>  
-                    </p:outputPanel> 
+                    </p:outputPanel>
+                    
+                    <a class="navbar-item" href="/Mercurius/secured/pages/Reportes/Estacionalidad/index.xhtml"
+                       rendered="#{SessionController.registros}">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="pi pi-chart-bar"></i>
+                            </span>
+                            <span>
+                                Estacionalidad
+                            </span>
+                        </span> 
+                    </a> 
 
                     <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.admin}">
                         <a class="navbar-link">
@@ -289,6 +332,16 @@
                                     </span>
                                     <span>
                                         Menu de Aplicacion
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Ajustes/Backups/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-database"/>
+                                    </span>
+                                    <span>
+                                        Backups
                                     </span>
                                 </span> 
                             </a>

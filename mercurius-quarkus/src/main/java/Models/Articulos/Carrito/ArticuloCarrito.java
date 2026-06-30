@@ -43,6 +43,9 @@ public class ArticuloCarrito {
     private BigDecimal descuento;
 
     @Column
+    private BigDecimal precioPersonalizado;
+
+    @Column
     private boolean isPromo;
 
     @ManyToMany
@@ -54,6 +57,13 @@ public class ArticuloCarrito {
     private List<Promocion> promociones = new ArrayList<>();
 
     public ArticuloCarrito() {
+    }
+
+    public BigDecimal getPrecioEfectivo() {
+        if (precioPersonalizado != null) {
+            return precioPersonalizado;
+        }
+        return articulo.getLastPrecio().getPrecioConUtilidad();
     }
 
     public ArticuloCarrito(BigDecimal cantidad, BigDecimal descuento, boolean isPromo, List<Promocion> promociones) {

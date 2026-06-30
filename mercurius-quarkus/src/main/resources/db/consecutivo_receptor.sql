@@ -1,0 +1,14 @@
+-- Reference DDL for ConsecutivoReceptor table
+-- Auto-created by Hibernate via quarkus.hibernate-orm.schema-management.strategy=update
+-- from Models.ConsecutivoReceptor entity annotations.
+--
+-- Provided here for manual setup or diff reference.
+--
+-- CREATE TABLE consecutivo_receptor (
+--     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+--     sucursal VARCHAR(3) NOT NULL,
+--     terminal VARCHAR(5) NOT NULL,
+--     tipo VARCHAR(2) NOT NULL COMMENT '05=accept, 06=partial, 07=reject',
+--     ultimo_secuencial BIGINT NOT NULL DEFAULT 0,
+--     UNIQUE KEY uk_consecutivo (sucursal, terminal, tipo)
+-- );

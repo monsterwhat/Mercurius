@@ -114,7 +114,7 @@ public class CarritoService implements Serializable {
         try {
             BigDecimal total = BigDecimal.ZERO;
             for (ArticuloCarrito item : carrito) {
-                BigDecimal precio = item.isPromo() ? item.getArticuloConDescuento() : item.getArticulo().getLastPrecio().getPrecioConUtilidad();
+                BigDecimal precio = item.isPromo() ? item.getArticuloConDescuento() : item.getPrecioEfectivo();
                 precio = precio.add(precio.multiply(BigDecimal.valueOf(item.getArticulo().getCodigoCabys().getImpuesto()).divide(BigDecimal.valueOf(100))));
                 total = total.add(precio.multiply(item.getCantidad()));
             }
