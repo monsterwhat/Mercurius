@@ -227,6 +227,19 @@
                             </div>
 
                             <div class="field">
+                                <label class="label required-field" for="newCodigoDescuento">Tipo de Descuento (Nota 20):</label>
+                                <p:selectOneMenu id="newCodigoDescuento" 
+                                                 value="#{PromocionesController.newPromocion.codigoDescuento}"
+                                                 styleClass="input" style="width: 100%">
+                                    <f:selectItem itemLabel="Seleccione un tipo" itemValue="" noSelectionOption="true"/>
+                                    <f:selectItems value="#{PromocionesController.tiposDescuento}" 
+                                                   var="tipo" 
+                                                   itemLabel="#{tipo.codigo} - #{tipo.descripcion}" 
+                                                   itemValue="#{tipo.codigo}"/>
+                                </p:selectOneMenu>
+                            </div>
+
+                            <div class="field">
                                 <label class="label" for="newCantidad">Cantidad Limitada:</label>
                                 <p:inputText id="newCantidad" type="number" 
                                              value="#{PromocionesController.selectedPromocion.cantidad}"

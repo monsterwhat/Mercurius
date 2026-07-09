@@ -335,7 +335,57 @@
                                                 style="margin-top: 5px;" />
                                         </div>
                                         
-                                        <!-- END HACIENDA SECTION -->
+                                        <!-- ── FIDES SECTION ────────────────────────────── -->
+                                        <div class="column is-full">
+                                            <p:separator />
+                                            <p class="title is-6 has-text-centered" style="color: var(--primary-color);">
+                                                Configuración Fides - Servicio de Facturación Externa
+                                            </p>
+                                            <p class="has-text-centered">
+                                                <small class="has-text-grey">
+                                                    Fides gestiona la generación de XML, firma digital y envío a Hacienda.
+                                                    Deje estos campos vacíos para usar el flujo directo de Hacienda.
+                                                </small>
+                                            </p>
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="URL de Fides:" for="fidesUrl" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesUrl" value="#{SettingsController.currentSettings.fidesApiUrl}"
+                                                placeholder="http://localhost:8080"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Correo de Autenticación:" for="fidesEmail" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesEmail" value="#{SettingsController.currentSettings.fidesAuthEmail}"
+                                                placeholder="admin@fides.local"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Contraseña de Autenticación:" for="fidesPass" style="color: var(--primary-color);" />
+                                            <p:password id="fidesPass" value="#{SettingsController.currentSettings.fidesAuthPassword}"
+                                                feedback="false" toggleMask="true" redisplay="true"
+                                                placeholder="Contraseña del usuario de Fides"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Tenant ID:" for="fidesTenant" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesTenant" value="#{SettingsController.currentSettings.fidesTenantId}"
+                                                placeholder="UUID del tenant en Fides"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="User ID (opcional):" for="fidesUserId" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesUserId" value="#{SettingsController.currentSettings.fidesUserId}"
+                                                placeholder="ID del usuario en Fides"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <!-- ── END FIDES SECTION ────────────────────────── -->
                                         <div class="column">
                                             <div class="buttons">
                                                 <p:commandLink class="button is-primary is-rounded is-fullwidth" process="@form" update="mainPanel"

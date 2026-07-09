@@ -128,7 +128,48 @@
                                                     </span> 
                                                 </p:commandLink>
                                             </div> 
-                                        </div> 
+                                        </div>
+                                        <!-- Point Balance Display -->
+                                        <div class="columns is-mobile is-vcentered is-centered" style="margin-top: 0.5rem;">
+                                            <div class="column has-text-centered">
+                                                <span class="tag is-info is-medium">
+                                                    Puntos Disponibles: #{crearTiqueteController.puntosBalance}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <!-- Point Redemption Input -->
+                                        <div class="columns is-mobile is-vcentered is-centered">
+                                            <div class="column is-narrow">
+                                                <p:inputNumber id="puntosRedimir" 
+                                                               value="#{crearTiqueteController.puntosARedimir}"
+                                                               min="0" max="#{crearTiqueteController.puntosBalance}"
+                                                               style="width: 120px;" placeholder="Puntos"/>
+                                            </div>
+                                            <div class="column is-narrow">
+                                                <p:commandButton value="Aplicar Puntos"
+                                                               actionListener="#{crearTiqueteController.calcularDescuentoPuntos()}"
+                                                               process="@this,puntosRedimir"
+                                                               update="crearTiquete"
+                                                               styleClass="button is-success is-small"/>
+                                            </div>
+                                            <div class="column is-narrow" 
+                                                 rendered="#{crearTiqueteController.descuentoPuntos > 0}">
+                                                <p:commandButton value="Quitar"
+                                                               actionListener="#{crearTiqueteController.removeDescuentoPuntos()}"
+                                                               process="@this"
+                                                               update="crearTiquete"
+                                                               styleClass="button is-danger is-small"/>
+                                            </div>
+                                        </div>
+                                        <!-- Calculated Discount Display -->
+                                        <div class="columns is-mobile is-vcentered is-centered"
+                                             rendered="#{crearTiqueteController.descuentoPuntos > 0}">
+                                            <div class="column has-text-centered">
+                                                <span class="tag is-warning is-medium">
+                                                    Descuento: -#{crearTiqueteController.descuentoPuntos} colones
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div> 
                                 </p:outputPanel> 
 
@@ -277,6 +318,16 @@
                         <div class="column is-full">
                             <p class="title has-text-centered">
                                 #{crearTiqueteController.calculateTotalCarrito()} Colones
+                            </p>
+                        </div>
+                        <!-- Point Discount Display in Payment -->
+                        <div class="column is-full"
+                             rendered="#{crearTiqueteController.descuentoPuntos > 0}">
+                            <p class="title has-text-centered" style="color: var(--warning-color, #e67e22);">
+                                Descuento por Puntos: -#{crearTiqueteController.descuentoPuntos} Colones
+                            </p>
+                            <p class="title is-5 has-text-centered" style="color: var(--success-color, #27ae60);">
+                                Neto a Pagar: #{crearTiqueteController.netoAPagar} Colones
                             </p>
                         </div>
                         <div class="column is-full">

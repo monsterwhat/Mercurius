@@ -69,6 +69,19 @@
                         </div>
 
                         <div class="column is-full mt-4">
+                            <label class="label has-text-link" for="editCodigoDescuento">Tipo de Descuento (Nota 20):</label>
+                            <p:selectOneMenu id="editCodigoDescuento" 
+                                             value="#{PromocionesController.selectedPromocion.codigoDescuento}"
+                                             style="width: 100%">
+                                <f:selectItem itemLabel="Seleccione un tipo" itemValue="" noSelectionOption="true"/>
+                                <f:selectItems value="#{PromocionesController.tiposDescuento}" 
+                                               var="tipo" 
+                                               itemLabel="#{tipo.codigo} - #{tipo.descripcion}" 
+                                               itemValue="#{tipo.codigo}"/>
+                            </p:selectOneMenu>
+                        </div>
+
+                        <div class="column is-full mt-4">
                             <label class="label has-text-link">Total con descuento e IVA:</label>
                             <p:card>
                                 <h:outputText id="total" value="#{PromocionesController.createTotalDescuentoEIVAText()}"/>

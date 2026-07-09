@@ -8,7 +8,7 @@ Mercurius es un programa de inventarios diseñado para ayudar a las empresas a g
 
 ## Requisitos Previos
 
-- **Java 21+** - JDK versión 21 o superior
+- **Java 25+** - JDK versión 25 o superior
 - **Maven 3.8+** - Herramienta de construcción
 - **MySQL 8.0+** - Base de datos relacional
 
@@ -35,15 +35,18 @@ quarkus.datasource.jdbc.url=jdbc:mysql://localhost:3306/mercurius?useSSL=false&a
 
 ### 3. Compilar y Ejecutar
 ```bash
+# Ir al directorio del proyecto Quarkus
+cd mercurius-quarkus
+
 # Modo desarrollo
-./run-dev.bat
+.\run-dev.bat
 
 # O con Maven directamente
 mvn quarkus:dev
 
 # Compilar para producción
 mvn clean package
-java -jar target/mercurius-quarkus-runner.jar
+java -jar target\mercurius-quarkus-runner.jar
 ```
 
 ### 4. Acceder a la Aplicación
@@ -52,22 +55,22 @@ La aplicación estará disponible en: `http://localhost:8081/Mercurius`
 ## Tecnologías Utilizadas
 
 ### Backend
-- **Java 21** - Última versión LTS de Java con soporte para virtual threads
-- **Quarkus 3.15.3** - Framework Java nativo en la nube para alto rendimiento y bajo consumo de memoria
-- **Apache MyFaces 4.0.1** - Implementación de Jakarta Faces para JSF
-- **PrimeFaces 3.15.3** - Framework UI component para aplicaciones web Java con tema Bootstrap
+- **Java 25** - Última versión de Java con soporte para virtual threads y mejoras de rendimiento
+- **Quarkus 3.36.2** - Framework Java nativo en la nube para alto rendimiento y bajo consumo de memoria
+- **Apache MyFaces 4.1.3** - Implementación de Jakarta Faces para JSF
+- **PrimeFaces 4.15.16** - Framework UI component para aplicaciones web Java con tema Bootstrap
 - **MySQL** - Base de datos relacional para persistencia de datos
 - **Hibernate ORM** - Mapeo objeto-relacional integrado con Quarkus
 - **Maven** - Herramienta de gestión de dependencias y construcción
 
 ### Librerías Adicionales
-- **Lombok 1.18.38** - Reducción de código boilerplate mediante anotaciones
+- **Lombok 1.18.46** - Reducción de código boilerplate mediante anotaciones
 - **BCrypt 0.10.2** - Hashing seguro de contraseñas
 - **Apache POI 5.2.5** - Generación de archivos Excel (XLS/XLSX)
 - **OpenPDF 2.0.2** - Generación de documentos PDF
 - **Jackson 2.17.1** - Procesamiento JSON y XML
-- **Apache PDFBox 3.0.2** - Manipulación de documentos PDF
-- **Jakarta Mail 2.1.3** - Envío de correos electrónicos
+- **Apache PDFBox 3.0.6** - Manipulación de documentos PDF
+- **Jakarta Mail 2.1.5** - Envío de correos electrónicos
 
 ### Plataforma
 - **Quarkus Scheduler** - Tareas programadas automatizadas

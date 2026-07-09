@@ -20,6 +20,48 @@
     </context-param>
     
     <!-- Security Constraints -->
+    <!-- Admin-only: user/settings management -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Admin Area</web-resource-name>
+            <url-pattern>/secured/pages/Usuarios/*</url-pattern>
+            <url-pattern>/secured/pages/Ajustes/*</url-pattern>
+            <url-pattern>/secured/fragments/userBar.xhtml</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>admin</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <!-- Tributacion pages — tax role only -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>Tributacion Area</web-resource-name>
+            <url-pattern>/secured/pages/Tributacion/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>tributacion</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <!-- POS/Cashier pages — facturacion role -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>POS Area</web-resource-name>
+            <url-pattern>/secured/pages/Caja/*</url-pattern>
+            <url-pattern>/secured/pages/Impresoras/*</url-pattern>
+            <url-pattern>/secured/pages/Facturas/*</url-pattern>
+            <url-pattern>/secured/pages/Recibos/*</url-pattern>
+            <url-pattern>/secured/pages/Lotes/*</url-pattern>
+            <url-pattern>/secured/pages/Correos/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>facturacion</role-name>
+            <role-name>admin</role-name>
+        </auth-constraint>
+    </security-constraint>
+
+    <!-- All other secured pages — any authenticated user -->
     <security-constraint>
         <web-resource-collection>
             <web-resource-name>Secured Area</web-resource-name>
