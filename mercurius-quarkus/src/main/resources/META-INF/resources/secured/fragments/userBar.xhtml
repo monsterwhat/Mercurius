@@ -476,21 +476,21 @@
             <p:panelGrid columns="1" layout="flex">
                 <p:outputPanel>
                     <p:outputLabel for="currentPassword" value="Contrasena actual:" style="width: 100%"/>
-<p:password id="currentPassword" value="#{SessionController.currentPassword}"
+ <p:password id="currentPassword" value="#{SessionController.currentPassword}"
                              required="true" style="width: 100%"
-                             />
+                             autocomplete="off" redisplay="false"/>
                 </p:outputPanel>
                 <p:outputPanel >
                     <p:outputLabel for="newPassword" value="Nueva Contrasena:" style="width: 100%"/>
-<p:password id="newPassword" value="#{SessionController.newPassword}"
+ <p:password id="newPassword" value="#{SessionController.newPassword}"
                              required="true" style="width: 100%"
-                             />
+                             autocomplete="off" redisplay="false"/>
                 </p:outputPanel>
                 <p:outputPanel  >
                     <p:outputLabel for="confirmPassword" value="Confimar nueva contrasena:" style="width: 100%"/>
-<p:password id="confirmPassword" value="#{SessionController.confirmPassword}"
+ <p:password id="confirmPassword" value="#{SessionController.confirmPassword}"
                              required="true" style="width: 100%"
-                             />
+                             autocomplete="off" redisplay="false"/>
                 </p:outputPanel>
                 <p:outputPanel >
                     <p:commandButton value="Guardar" action="#{SessionController.changePassword}" update=":userSettingsForm" 
