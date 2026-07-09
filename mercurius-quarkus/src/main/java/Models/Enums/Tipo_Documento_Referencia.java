@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_Documento_Referencia {
     FACTURA_ELECTRONICA("01", "Factura electrónica"),
     NOTA_DE_CREDITO_ELECTRONICA("02", "Nota de crédito electrónica"),
@@ -19,25 +21,32 @@ public enum Tipo_Documento_Referencia {
     COMPROBANTE_DE_PROVEEDOR_NO_DOMICILIADO("16","Comprobante de Proveedor No Domiciliado"),
     NOTA_CREDITO_FACTURA_ELECTRONICA_COMPRA("17","Nota de Crédito a Factura Electrónica de Compra"),
     NOTA_DEBITO_FACTURA_ELECTRONICA_COMPRA("18","Nota de Débito a Factura Electrónica de Compra"),
+    FACTURA_ELECTRONICA_EXPORTACION_REF("19","Factura Electrónica de Exportación"),
+    RECIBO_ELECTRONICO_PAGO_REF("20","Recibo Electrónico de Pago"),
     OTROS("99", "Otros");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
-    Tipo_Documento_Referencia(String codigo, String descripcion) {
+    Tipo_Documento_Referencia(@Nonnull String codigo, @Nonnull String descripcion) {
         this.codigo = codigo;
         this.descripcion = descripcion;
     }
 
+    @Nonnull
     public String getCodigo() {
         return codigo;
     }
 
+    @Nonnull
     public String getDescripcion() {
         return descripcion;
     }
 
-    public static Tipo_Documento_Referencia fromCodigo(String codigo) {
+    @Nonnull
+    public static Tipo_Documento_Referencia fromCodigo(@Nonnull String codigo) {
         for (Tipo_Documento_Referencia tipo : Tipo_Documento_Referencia.values()) {
             if (tipo.getCodigo().equals(codigo)) {
                 return tipo;

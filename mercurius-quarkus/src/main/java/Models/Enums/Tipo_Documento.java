@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_Documento {
 
     CONTRIBUCION_PARAFISCAL("01", "Contribución parafiscal"),
@@ -14,7 +16,9 @@ public enum Tipo_Documento {
     INTERESES_MORATORIOS("10", "Intereses Moratorios"),
     OTROS_CARGOS("99", "Otros Cargos");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_Documento(String codigo, String descripcion) {

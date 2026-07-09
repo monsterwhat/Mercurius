@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_MedioPago {
     EFECTIVO("01", "Efectivo"),
     TARJETA("02", "Tarjeta"),
@@ -10,23 +12,28 @@ public enum Tipo_MedioPago {
     PLATAFORMA_DIGITAL("07","Plataforma Digital"),
     OTROS("99", "Otros (se debe indicar el medio de pago)");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
-    Tipo_MedioPago(String codigo, String descripcion) {
+    Tipo_MedioPago(@Nonnull String codigo, @Nonnull String descripcion) {
         this.codigo = codigo;
         this.descripcion = descripcion;
     }
 
+    @Nonnull
     public String getCodigo() {
         return codigo;
     }
 
+    @Nonnull
     public String getDescripcion() {
         return descripcion;
     }
 
-    public static Tipo_MedioPago fromCodigo(String codigo) {
+    @Nonnull
+    public static Tipo_MedioPago fromCodigo(@Nonnull String codigo) {
         for (Tipo_MedioPago medio : Tipo_MedioPago.values()) {
             if (medio.getCodigo().equals(codigo)) {
                 return medio;

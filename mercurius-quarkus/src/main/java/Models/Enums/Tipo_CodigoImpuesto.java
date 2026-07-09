@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_CodigoImpuesto {
     IVA("01", "Impuesto al Valor Agregado"),
     IMPUESTO_SELECTIVO_CONSUMO("02", "Impuesto Selectivo de Consumo"),
@@ -12,7 +14,9 @@ public enum Tipo_CodigoImpuesto {
     IMPUESTO_ESPECIFICO_CEMENTO("12", "Impuesto Específico al Cemento"),
     OTROS("99", "Otros");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_CodigoImpuesto(String codigo, String descripcion) {

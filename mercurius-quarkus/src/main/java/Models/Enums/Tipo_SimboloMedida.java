@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_SimboloMedida {
     AL("Al", "Alquiler de uso habitacional"),
     ALC("Alc", "Alquiler de uso comercial"),
@@ -105,15 +107,18 @@ public enum Tipo_SimboloMedida {
         this.descripcion = descripcion;
     }
 
+    @Nonnull
     public String getSimbolo() {
         return simbolo;
     }
 
+    @Nonnull
     public String getDescripcion() {
         return descripcion;
     }
 
-    public static Tipo_SimboloMedida fromSimbolo(String simbolo) {
+    @Nonnull
+    public static Tipo_SimboloMedida fromSimbolo(@Nonnull String simbolo) {
         for (Tipo_SimboloMedida medida : Tipo_SimboloMedida.values()) {
             if (medida.getSimbolo().equals(simbolo)) {
                 return medida;

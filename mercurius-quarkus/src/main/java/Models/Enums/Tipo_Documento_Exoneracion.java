@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_Documento_Exoneracion {
     COMPRAS_AUTORIZADAS("01", "Compras autorizadas"),
     VENTAS_EXENTAS_DIPLOMATICOS("02", "Ventas exentas a diplomáticos"),
@@ -14,7 +16,9 @@ public enum Tipo_Documento_Exoneracion {
     EXENCIONES_HACIENDA_IMPUESTO_LOCAL("11","Exenciones Dirección General de Hacienda Autorización de Impuesto Local Concreta"),
     OTROS("99", "Otros");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_Documento_Exoneracion(String codigo, String descripcion) {

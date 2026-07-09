@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_CodigosReferencia {
     ANULA_DOCUMENTO_REFERENCIA("01", "Anula Documento de Referencia"),
     CORRIGE_MONTO("02", "Corrige monto"),
@@ -12,9 +14,16 @@ public enum Tipo_CodigosReferencia {
     NOTA_DEBITO_FINANCIERA("10","Nota de Debito Financiera"),
     PROVEEDOR_NO_DOMICILIADO("11","Proveedor no domiciliado"),
     CREDITO_POR_EXONERACION_POSTERIOR("12","Credito por exoneracion posterior a la facturacion"),
+    AJUSTE_CONTABLE_PERIODO_1("13","Ajuste contable al período que corresponda"),
+    AJUSTE_CONTABLE_PERIODO_2("14","Ajuste contable al período que corresponda"),
+    AJUSTE_CONTABLE_PERIODO_3("15","Ajuste contable al período que corresponda"),
+    COMPROBANTE_ELECTRONICO_RECHAZADO("16","Comprobante electrónico rechazado"),
+    APLICACION_PAGO_REP("17","Aplicación de pago en Recibo Electrónico de Pago"),
     OTROS("99", "Otros");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_CodigosReferencia(String codigo, String descripcion) {

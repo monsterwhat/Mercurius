@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_TarifaIVA {
     TARIFA_0_EXENTO("01", "Tarifa 0% (Exento)"),
     TARIFA_REDUCIDA_1("02", "Tarifa reducida 1%"),
@@ -21,15 +23,18 @@ public enum Tipo_TarifaIVA {
         this.descripcion = descripcion;
     }
 
+    @Nonnull
     public String getCodigo() {
         return codigo;
     }
 
+    @Nonnull
     public String getDescripcion() {
         return descripcion;
     }
 
-    public static Tipo_TarifaIVA fromCodigo(String codigo) {
+    @Nonnull
+    public static Tipo_TarifaIVA fromCodigo(@Nonnull String codigo) {
         for (Tipo_TarifaIVA tarifa : Tipo_TarifaIVA.values()) {
             if (tarifa.getCodigo().equals(codigo)) {
                 return tarifa;
@@ -38,7 +43,8 @@ public enum Tipo_TarifaIVA {
         throw new IllegalArgumentException("Código de tarifa de IVA no válido: " + codigo);
     }
     
-    public static Tipo_TarifaIVA getTarifa(String codigoImpuesto) {
+    @Nonnull
+    public static Tipo_TarifaIVA getTarifa(@Nonnull String codigoImpuesto) {
         Tipo_TarifaIVA tarifa;
         switch (codigoImpuesto) {
             case "":
@@ -57,8 +63,17 @@ public enum Tipo_TarifaIVA {
             case "4":
                 tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_4;
                 break;
+            case "5":
+                tarifa = Tipo_TarifaIVA.TRANSITORIO_4;
+                break;
             case "8":
                 tarifa = Tipo_TarifaIVA.TRANSITORIO_8;
+                break;
+            case "10":
+                tarifa = Tipo_TarifaIVA.TARIFA_EXENTA;
+                break;
+            case "11":
+                tarifa = Tipo_TarifaIVA.TARIFA_0_SIN_CREDITO;
                 break;
             case "13":
                 tarifa = Tipo_TarifaIVA.TARIFA_GENERAL_13;
