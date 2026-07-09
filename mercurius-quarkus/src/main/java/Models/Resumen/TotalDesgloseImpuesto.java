@@ -14,7 +14,9 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.math.BigDecimal;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -30,26 +32,32 @@ public class TotalDesgloseImpuesto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @Nullable
     @XmlElement(name = "Codigo")
     @Column(name = "codigo", length = 2)
     private String codigo;
     
+    @Nullable
     @XmlElement(name = "CodigoTarifaIVA")
     @Column(name = "codigo_tarifa_iva", length = 2)
     private String codigoTarifaIVA;
     
-    @XmlElement(name = "TarifaIVA")
+    @Nullable
+    @XmlTransient
     @Column(name = "tarifa_iva", precision = 4, scale = 2)
     private BigDecimal tarifaIVA;
 
-    @XmlElement(name = "FactorIVA")
+    @Nullable
+    @XmlTransient
     @Column(name = "factor_iva", precision = 5, scale = 4)
     private BigDecimal factorIVA;
 
+    @Nullable
     @XmlElement(name = "TotalMontoImpuesto")
     @Column(name = "total_monto_impuesto", precision = 18, scale = 5)
     private BigDecimal totalMontoImpuesto;
-      
+       
+    @Nullable
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)

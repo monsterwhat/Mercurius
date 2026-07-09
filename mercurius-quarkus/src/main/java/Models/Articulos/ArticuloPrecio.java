@@ -2,6 +2,8 @@ package Models.Articulos;
 
 
 import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date; 
@@ -30,22 +32,23 @@ public class ArticuloPrecio {
     @JoinColumn(name = "articulo_id", nullable = false)
     private Articulos articulo;
 
-    @Column(name = "precio_costo_sin_iva")
+    @Nullable @Column(name = "precio_costo_sin_iva")
     private BigDecimal precioCostoSinIVA; //Lo que costo sin agregar el IVA de nuestra parte
 
-    @Column(name = "precio_final")
+    @Nullable @Column(name = "precio_final")
     private BigDecimal precioFinal; // precioConUtilidad + el IVA;
 
-    @Column(name = "porcentaje_utilidad")
+    @Nullable @Column(name = "porcentaje_utilidad")
     private BigDecimal porcentajeUtilidad; //% De utilidad
 
-    @Column(name = "precio_con_utilidad")
+    @Nullable @Column(name = "precio_con_utilidad")
     private BigDecimal precioConUtilidad; //Lo que costo + la utilidad (S/IVA)
 
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaCompra;
 
+    @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; // Who made the purchase or set the price

@@ -12,8 +12,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.XmlElement;
 import java.math.BigDecimal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,11 +31,12 @@ public class ImpuestoSurtido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "detalle_surtido_id")
-    private DetalleSurtido detalleSurtido;
+    private LineaDetalleSurtido lineaDetalleSurtido;
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

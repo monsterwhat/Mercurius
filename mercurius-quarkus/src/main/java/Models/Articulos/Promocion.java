@@ -3,6 +3,7 @@ package Models.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Users;
 import Utils.CarritoCalculations;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -32,13 +33,18 @@ public class Promocion {
     @ManyToMany(mappedBy = "promociones", cascade = CascadeType.ALL)
     private List<ArticuloCarrito> articulosCarrito = new ArrayList<>();
 
+    @Nullable
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaInicio;
 
+    @Nullable
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaFin;
 
     private boolean activa;
+
+    @Column(name = "codigo_descuento", length = 2)
+    private String codigoDescuento = "06"; // Default: DESCUENTO_PROMOCIONAL per Nota 20
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

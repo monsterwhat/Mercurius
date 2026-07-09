@@ -14,6 +14,7 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.math.BigDecimal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,12 +31,12 @@ public class DescuentoSurtido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @XmlElement(name = "DetalleSurtido")
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "detalle_surtido_id")
-    private DetalleSurtido detalleSurtido;
+    private LineaDetalleSurtido lineaDetalleSurtido;
 
     @XmlElement(name = "MontoDescuentoSurtido")
     @Column(name = "monto_descuento_surtido", precision = 18, scale = 5)
@@ -43,10 +44,10 @@ public class DescuentoSurtido {
     
     @XmlElement(name = "CodigoDescuentoSurtido")
     @Column(name = "codigo_descuento_surtido", length = 2)
-    private BigDecimal codigoDescuentoSurtido;
+    private String codigoDescuentoSurtido;
     
     @XmlElement(name = "DescuentoSurtidoOtros")
     @Column(name = "descuento_surtido_otros", length = 80)
-    private BigDecimal descuentoSurtidoOtros;
+    private String descuentoSurtidoOtros;
    
 }

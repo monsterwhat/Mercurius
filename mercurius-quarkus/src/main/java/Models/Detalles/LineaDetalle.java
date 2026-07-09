@@ -33,11 +33,14 @@ public class LineaDetalle {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @XmlTransient
     private Long id;
     
+    @XmlTransient
     @Column(length = 10)
     private String schemaVersion;
 
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL)
@@ -52,11 +55,10 @@ public class LineaDetalle {
     @Column(name = "partida_arancelaria", length = 12)
     private String partidaArancelaria;
 
-    @XmlElement(name = "CodigoCabys")
+    @XmlElement(name = "CodigoCABYS")
     @Column(name = "codigoCabys", length = 13)
     private String codigoCabys;
 
-    @XmlElementWrapper(name = "CodigosComerciales")
     @XmlElement(name = "CodigoComercial")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
@@ -83,7 +85,6 @@ public class LineaDetalle {
     @Column(name = "detalle", length = 200)
     private String detalle;
     
-    @XmlElementWrapper(name = "NumerosVINoSerie")
     @XmlElement(name = "NumeroVINoSerie")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
@@ -98,13 +99,15 @@ public class LineaDetalle {
     @Column(name = "forma_farmaceutica", length = 3)
     private String formaFarmaceutica;
     
-    @XmlElementWrapper(name = "DetallesSurtidos")
-    @XmlElement(name = "DetalleSurtido")
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "linea_detalle_id")
-    private List<DetalleSurtido> detallesSurtidos;
+    private List<LineaDetalleSurtido> detallesSurtidos;
+
+    @XmlElement(name = "DetalleSurtido")
+    private DetalleSurtido detalleSurtido;
  
     @XmlElement(name = "PrecioUnitario")
     @Column(name = "precio_unitario", precision = 18, scale = 5)
@@ -114,7 +117,6 @@ public class LineaDetalle {
     @Column(name = "monto_total", precision = 18, scale = 5)
     private BigDecimal montoTotal;
 
-    @XmlElementWrapper(name = "Descuentos")
     @XmlElement(name = "Descuento")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
@@ -125,7 +127,7 @@ public class LineaDetalle {
     @Column(name = "sub_total", precision = 18, scale = 5)
     private BigDecimal subTotal;
     
-    @XmlTransient
+    @XmlElement(name = "IVACobradoFabrica")
     @Column(name = "iva_cobrado_fabrica", length = 2)
     private String ivaCobradoFabrica;
 
@@ -133,7 +135,6 @@ public class LineaDetalle {
     @Column(name = "base_imponible", precision = 18, scale = 5)
     private BigDecimal baseImponible;
 
-    @XmlElementWrapper(name = "Impuestos")
     @XmlElement(name = "Impuesto")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

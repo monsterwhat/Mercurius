@@ -4,6 +4,7 @@ import Models.Cabys;
 import Models.Departamento;
 import Models.Familia;
 import Models.Users;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal; 
@@ -28,6 +29,7 @@ public class Articulos implements Serializable {
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @ManyToOne
     @JoinColumn(name = "cabys_id")
     private Cabys codigoCabys;
@@ -38,6 +40,7 @@ public class Articulos implements Serializable {
     @Column
     private String codigoBarra;
 
+    @Nullable
     @Column(length = 500)
     private String descripcion;
 
@@ -49,12 +52,14 @@ public class Articulos implements Serializable {
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @ManyToOne
     @JoinColumn(name = "departamento_id")
     private Departamento departamento;
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @ManyToOne
     @JoinColumn(name = "familia_id")
     private Familia familia;
@@ -66,26 +71,31 @@ public class Articulos implements Serializable {
     private boolean processed;
 
     // Stock management fields - automatically calculated by system
+    @Nullable
     @Column(name = "stockOptimo")
     private Integer stockOptimo; // Calculated optimal stock level
     
+    @Nullable
     @Column(name = "diasStockSeguridad")
     private Integer diasStockSeguridad; // Safety stock days (default: 7)
     
+    @Nullable
     @Column(name = "estadoAlertas")
     private Boolean estadoAlertas = true; // Enable stock alerts
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<ArticuloPrecio> precios; // List of pricing details
-  
+   
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date fecha; //LOGS LOGS LOGS!!
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el Articulo

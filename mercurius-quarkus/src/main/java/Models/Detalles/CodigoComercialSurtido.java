@@ -14,6 +14,7 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -29,12 +30,12 @@ public class CodigoComercialSurtido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @XmlElement(name = "DetalleSurtido")
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "linea_detalle_surtido_id")
-    private DetalleSurtido detalleSurtido;
+    private LineaDetalleSurtido lineaDetalleSurtido;
 
     @XmlElement(name = "TipoSurtido")
     @Column(name = "tipo_surtido", length = 2)

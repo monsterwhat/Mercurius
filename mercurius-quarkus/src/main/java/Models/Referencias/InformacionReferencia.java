@@ -11,7 +11,10 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.time.LocalDateTime;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -23,24 +26,30 @@ public class InformacionReferencia {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @XmlTransient
     private Long id;
 
-    @XmlElement(name = "TipoDoc")
+    @Nullable
+    @XmlElement(name = "TipoDocIR")
     @Column(name = "tipo_doc", length = 2)
     private String tipoDoc;
 
+    @Nullable
     @XmlElement(name = "Numero")
     @Column(name = "numero", length = 50)
     private String numero;
 
-    @XmlElement(name = "FechaEmision")
+    @Nullable
+    @XmlElement(name = "FechaEmisionIR")
     @Column(name = "fecha_emision")
     private LocalDateTime fechaEmision;
 
+    @Nullable
     @XmlElement(name = "Codigo")
     @Column(name = "codigo", length = 2)
     private String codigo;
 
+    @Nullable
     @XmlElement(name = "Razon")
     @Column(name = "razon", length = 180)
     private String razon;

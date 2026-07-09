@@ -15,6 +15,8 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import java.math.BigDecimal;
+import jakarta.annotation.Nullable;
+import jakarta.annotation.Nonnull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -30,18 +32,22 @@ public class MedioPagoR {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @Nullable
     @XmlElement(name = "TipoMedioPago")
     @Column(name = "tipo_medio_pago", length = 2)
     private String tipoMedioPago;
     
+    @Nullable
     @XmlElement(name = "MedioPagoOtros")
     @Column(name = "medio_pago_otros", length = 100)
     private String medioPagoOtros;
     
+    @Nullable
     @XmlElement(name = "TotalMedioPago")
     @Column(name = "total_medio_pago", precision = 18, scale = 5)
     private BigDecimal totalMedioPago;
       
+    @Nullable
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)

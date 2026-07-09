@@ -3,6 +3,7 @@ package Models.Articulos.Carrito;
 import Models.Articulos.Articulos;
 import Models.Articulos.Promocion;
 import Utils.CarritoCalculations;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -48,6 +49,7 @@ public class ArticuloCarrito {
     @Column
     private boolean isPromo;
 
+    @Nullable
     @ManyToMany
     @JoinTable(
             name = "articulo_carrito_promocion",
