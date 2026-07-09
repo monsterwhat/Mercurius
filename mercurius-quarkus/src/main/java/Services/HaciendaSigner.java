@@ -1,6 +1,8 @@
 package Services;
 
 import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -11,6 +13,7 @@ import javax.xml.crypto.dsig.SignatureMethod;
 import javax.xml.crypto.dsig.SignedInfo;
 import javax.xml.crypto.dsig.Transform;
 import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.crypto.dsig.XMLSignatureFactory;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
@@ -19,21 +22,21 @@ import javax.xml.crypto.dsig.keyinfo.X509Data;
 import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Marshaller;
-import java.io.StringWriter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import Models.ComprobantesEmitidos;
+import org.xml.sax.SAXException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
@@ -54,6 +57,9 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 @Named
 @ApplicationScoped
 public class HaciendaSigner {
+
+    private static final java.util.logging.Logger LOG =
+        java.util.logging.Logger.getLogger(HaciendaSigner.class.getName());
 
     private final HaciendaCertificateService certificateService;
     
@@ -93,6 +99,12 @@ public class HaciendaSigner {
             // ── 1. Parse and XSD-validate before any cryptographic work ───────
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
+            // XXE prevention (OWASP)
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
             DocumentBuilder builder = factory.newDocumentBuilder();
             InputStream is = new ByteArrayInputStream(xmlContent.getBytes("UTF-8"));
             Document doc = builder.parse(is);
@@ -119,7 +131,7 @@ public class HaciendaSigner {
             while (aliases.hasMoreElements()) {
                 String alias = aliases.nextElement();
                 if (keyStore.isKeyEntry(alias)) {
-                    String certPassword = certificateService.getActiveSettings().getCertificadoPassword();
+                    String certPassword = certificateService.getDecryptedCertificadoPassword();
                     privateKey = (PrivateKey) keyStore.getKey(alias,
                         (certPassword != null ? certPassword : "").toCharArray());
                     certificate = (X509Certificate) keyStore.getCertificate(alias);
@@ -228,15 +240,21 @@ public class HaciendaSigner {
 
             // Serialize
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            transformerFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            transformerFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            transformerFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             Transformer transformer = transformerFactory.newTransformer();
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             transformer.transform(new DOMSource(doc), new StreamResult(outputStream));
 
             return SignResult.ok(outputStream.toString("UTF-8"));
 
+        } catch (ParserConfigurationException | SAXException | IOException | GeneralSecurityException | TransformerException | XMLSignatureException | javax.xml.crypto.MarshalException e) {
+            alertasService.registrarAlerta("Error Firmando XML", "Error al firmar XML: " + e.getMessage(), null, 0, "HaciendaSigner.signXml()", null, e.getMessage());
+            throw new RuntimeException("Error signing XML: " + e.getMessage(), e);
         } catch (Exception e) {
             alertasService.registrarAlerta("Error Firmando XML", "Error al firmar XML: " + e.getMessage(), null, 0, "HaciendaSigner.signXml()", null, e.getMessage());
-            return SignResult.error("Error signing XML: " + e.getMessage());
+            throw new RuntimeException("Error signing XML: " + e.getMessage(), e);
         }
     }
 
@@ -311,8 +329,8 @@ public class HaciendaSigner {
         }
         String stripped = input.replaceAll("[^0-9]", "");
         if (stripped.length() != input.length()) {
-            java.util.logging.Logger.getLogger(HaciendaSigner.class.getName())
-                .warning("padLeftZeros: non-digit characters stripped from '" + input + "'");
+            LOG.warning("Clave numeric: non-digit chars stripped from '" + maskInput(input)
+                + "' — clave must be 50-digit numeric per Hacienda spec");
         }
         if (stripped.isEmpty()) {
             char[] zeros = new char[length];
@@ -325,6 +343,14 @@ public class HaciendaSigner {
         char[] zeros = new char[length - stripped.length()];
         java.util.Arrays.fill(zeros, '0');
         return new String(zeros) + stripped;
+    }
+
+    /** Masks all but last 4 chars for safe logging (e.g. cédula numbers). */
+    private static String maskInput(String input) {
+        if (input == null) return "null";
+        int len = input.length();
+        if (len <= 4) return "****";
+        return input.substring(0, len - 4).replaceAll(".", "*") + input.substring(len - 4);
     }
 
     private String getCurrentCountryCode() {
@@ -352,12 +378,4 @@ public class HaciendaSigner {
         return SignResult.error("XML signing failed: Service temporarily unavailable. Please try again later.");
     }
 
-    public static String marshalComprobante(ComprobantesEmitidos comprobante) throws JAXBException {
-        JAXBContext context = JAXBContext.newInstance(ComprobantesEmitidos.class);
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        StringWriter sw = new StringWriter();
-        marshaller.marshal(comprobante, sw);
-        return sw.toString();
-    }
 }

@@ -1,6 +1,8 @@
 package Services;
 
 import Models.NotaCredito;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
@@ -28,7 +30,7 @@ public class NotaCreditoService extends GService<NotaCredito> {
             );
             query.setParameter("comprobanteId", comprobanteId);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing credit notes: " + e.getMessage(), null, 0, "NotaCreditoService.listPorComprobante()", null, e.getMessage());
             return null;
         }
@@ -41,7 +43,7 @@ public class NotaCreditoService extends GService<NotaCredito> {
                 NotaCredito.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all credit notes: " + e.getMessage(), null, 0, "NotaCreditoService.listAll()", null, e.getMessage());
             return null;
         }

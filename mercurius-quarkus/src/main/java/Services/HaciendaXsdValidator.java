@@ -1,12 +1,16 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
+import org.xml.sax.SAXException;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -151,7 +155,7 @@ public class HaciendaXsdValidator {
             }
 
             return factory.newSchema(source);
-        } catch (final Exception e) {
+        } catch (SAXException | RuntimeException e) {
             LOG.log(Level.SEVERE, "Failed to compile XSD schema from " + classpathResource, e);
             return null;
         }
@@ -321,7 +325,7 @@ public class HaciendaXsdValidator {
             validator.validate(
                 new StreamSource(new ByteArrayInputStream(xml.getBytes("UTF-8"))));
             return ValidationResult.ok();
-        } catch (final Exception e) {
+        } catch (SAXException | IOException | RuntimeException e) {
             return ValidationResult.error("XSD validation failed: " + e.getMessage());
         }
     }
