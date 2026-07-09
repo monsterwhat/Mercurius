@@ -9,12 +9,23 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 
+/**
+ * Per-type counter for emitted document consecutive numbering (FE, TE, NC, ND, FEE, FEC, REP).
+ *
+ * One row per (sucursal, terminal, tipo) combination.
+ * Each document type at each point of sale gets its own independent sequence starting from 1,
+ * as required by Hacienda CR: "valor consecutivo que se debe de generar por tipo de documento...
+ * Siempre comienza desde 1 por cada punto de venta y por cada tipo de documento."
+ *
+ * Uses PESSIMISTIC_WRITE locking in ConsecutivoEmitidoService to guarantee
+ * unique sequential numbers under concurrent requests.
+ */
 @Data
 @Entity
-@Table(name = "consecutivo_receptor", uniqueConstraints = {
+@Table(name = "consecutivo_emitido", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"sucursal", "terminal", "tipo"})
 })
-public class ConsecutivoReceptor {
+public class ConsecutivoEmitido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,5 +1,6 @@
 package Models;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -18,9 +19,11 @@ public class Cabys {
     @Id
     private String codigo;
 
+    @Nullable
     @Column(length = 2000)
     private String descripcion;
 
+    @Nullable
     @Column(length = 3000)
     private String categorias;
 
@@ -57,4 +60,3 @@ public class Cabys {
     }
     
 }
-

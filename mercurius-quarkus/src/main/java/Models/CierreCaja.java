@@ -1,5 +1,6 @@
 package Models;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -33,30 +34,38 @@ public class CierreCaja implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaApertura;
 
+    @Nullable
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaCierre;
 
     @Column(nullable = false, precision = 18, scale = 2)
     private BigDecimal montoInicial;
 
+    @Nullable
     @Column(precision = 18, scale = 2)
     private BigDecimal montoEsperadoEfectivo;
 
+    @Nullable
     @Column(precision = 18, scale = 2)
     private BigDecimal montoEsperadoSinpe;
 
+    @Nullable
     @Column(precision = 18, scale = 2)
     private BigDecimal montoEsperadoTarjeta;
 
+    @Nullable
     @Column(precision = 18, scale = 2)
     private BigDecimal montoContadoEfectivo;
 
+    @Nullable
     @Column(precision = 18, scale = 2)
     private BigDecimal montoContadoSinpe;
 
+    @Nullable
     @Column(precision = 18, scale = 2)
     private BigDecimal montoContadoTarjeta;
 
+    @Nullable
     @Column(precision = 18, scale = 2)
     private BigDecimal diferencia;
 

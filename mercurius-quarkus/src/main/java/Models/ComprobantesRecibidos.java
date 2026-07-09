@@ -4,6 +4,7 @@ import Models.Detalles.DetalleServicio;
 import Models.Encabezado.Encabezado;
 import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,27 +36,32 @@ public class ComprobantesRecibidos {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @Nullable
     @Column(length = 10)
     private String schemaVersion;
     
     @XmlElement(name = "Encabezado")
     @ToString.Exclude
+    @Nullable
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Encabezado encabezado;
     
     @XmlElement(name = "DetalleServicio")
     @ToString.Exclude
+    @Nullable
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "detalle_servicio_id")
     private DetalleServicio detalles;
     
     @XmlElement(name = "Resumen")
     @ToString.Exclude
+    @Nullable
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private ResumenFactura resumen;
 
     @XmlElement(name = "InformacionReferencia")
     @ToString.Exclude
+    @Nullable
     @jakarta.persistence.OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "comprobante_recibido_id")
     private java.util.List<InformacionReferencia> informacionReferencia;
@@ -66,15 +72,19 @@ public class ComprobantesRecibidos {
     @Column(nullable = false)
     private Boolean paid = false;
     
+    @Nullable
     @Column(length = 50)
     private String user;
 
+    @Nullable
     @Column(name = "hacienda_mensaje_receptor_estado", length = 20)
     private String haciendaMensajeReceptorEstado;
 
+    @Nullable
     @Column(name = "hacienda_mensaje_receptor_fecha")
     private LocalDateTime haciendaMensajeReceptorFecha;
 
+    @Nullable
     @Column(name = "mensaje_receptor_limite")
     private LocalDate mensajeReceptorLimite;
 

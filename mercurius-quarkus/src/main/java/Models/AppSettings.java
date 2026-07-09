@@ -1,5 +1,7 @@
 package Models;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,37 +23,37 @@ public class AppSettings {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int Id;
     
-    private String NombrePerfil; //Nombre del Perfil
-    @Lob private byte[] Logo; //Logo de la empresa
-    private String LogoMimeType; //Practicamente la extencion de la imagen.
-    private String CorreoElectronico; //Correo Electronico para enviar mensajes
-    private String ContrasenaCorreo; //Contrasena del Correo
+    @Nullable private String NombrePerfil; //Nombre del Perfil
+    @Nullable @Lob private byte[] Logo; //Logo de la empresa
+    @Nullable private String LogoMimeType; //Practicamente la extencion de la imagen.
+    @Nullable private String CorreoElectronico; //Correo Electronico para enviar mensajes
+    @Nullable private String ContrasenaCorreo; //Contrasena del Correo
     
-    private String Nombre; //Completo con apellidos
-    private String TipoIdentificacion; //Tipo de ID
-    private String Identificacion;
-    private String NombreNegocio; //NombreComercial
-    private String Provincia;
-    private String Canton;
-    private String Distrito;
-    private String Barrio;
-    private String DireccionCompleta; //OtrasSenas
+    @Nullable private String Nombre; //Completo con apellidos
+    @Nullable private String TipoIdentificacion; //Tipo de ID
+    @Nullable private String Identificacion;
+    @Nullable private String NombreNegocio; //NombreComercial
+    @Nullable private String Provincia;
+    @Nullable private String Canton;
+    @Nullable private String Distrito;
+    @Nullable private String Barrio;
+    @Nullable private String DireccionCompleta; //OtrasSenas
     
-    private String CodigoPais;
-    private String Telefono;
+    @Nullable private String CodigoPais;
+    @Nullable private String Telefono;
     
-    private String CodigoPaisFax;
-    private String TelefonoFax;
+    @Nullable private String CodigoPaisFax;
+    @Nullable private String TelefonoFax;
     
-    private String correoElectronicoTributacion;
+    @Nullable private String correoElectronicoTributacion;
     
-    @Column(name = "correo_electronico_tributacion2", length = 200)
+    @Nullable @Column(name = "correo_electronico_tributacion2", length = 200)
     private String correoElectronicoTributacion2;
     
-    @Column(name = "correo_electronico_tributacion3", length = 200)
+    @Nullable @Column(name = "correo_electronico_tributacion3", length = 200)
     private String correoElectronicoTributacion3;
     
-    @Column(name = "correo_electronico_tributacion4", length = 200)
+    @Nullable @Column(name = "correo_electronico_tributacion4", length = 200)
     private String correoElectronicoTributacion4;
     
     private String razonSocial;
@@ -63,21 +65,21 @@ public class AppSettings {
     private Boolean estatus; //Si se esta usando o no en el sistema
     private int completedSteps; //En que punto del setup esta...
     
-    @Column(name = "cashbackPercentage")
+    @Nullable @Column(name = "cashbackPercentage")
     private BigDecimal cashbackPercentage; //Percentage of cashback for loyalty program
 
     private Integer ultimoConsecutivo; //Last consecutive number used for invoices
     
-    @Column(length = 3)
+    @Nullable @Column(length = 3)
     private String codigoSucursal; //Branch code for Hacienda (e.g., "001")
     
-    @Column(length = 3)
+    @Nullable @Column(length = 3)
     private String codigoTerminal; //Terminal code for Hacienda (e.g., "001")
     
-    @Column(length = 2)
+    @Nullable @Column(length = 2)
     private String tipoDocumento; //Hacienda document type: "01"=FE, "04"=TE (default)
     
-    @Column(name = "puntosInactivityMonths")
+    @Nullable @Column(name = "puntosInactivityMonths")
     private Integer puntosInactivityMonths; //Months of inactivity before points expire
     
     // Hacienda Electronic Invoice Credentials
@@ -101,13 +103,38 @@ public class AppSettings {
 
     private Boolean backupHabilitado; //Enable/disable automatic database backup
 
-    @Column(length = 5)
+    @Nullable @Column(length = 5)
     private String backupHora; //Hour to run backup, format "HH:mm" (e.g. "03:00")
 
     private Integer backupRetencionDias; //Days to keep backups (default 7)
 
-    @Column(length = 500)
+    @Nullable @Column(length = 500)
     private String backupRuta; //Directory path for backup files
 
     private java.time.LocalDateTime backupUltimoEjecutado; //Timestamp of last successful backup
+
+    // ============ DB-STORED CRYPTO & CONFIG (no env vars) ============
+
+    @Nullable @Column(length = 64)
+    private String haciendaEncryptionKey; //Auto-generated AES-256 key (Base64) for credential encryption
+
+    @Nullable @Column(length = 500)
+    private String haciendaCallbackUrl; //TRIBU-CR async notification callback
+
+    // ============ FIDES E-INVOICING CONFIGURATION ============
+
+    @Nullable @Column(length = 200)
+    private String fidesApiUrl;
+
+    @Nullable @Column(length = 200)
+    private String fidesAuthEmail;
+
+    @Nullable @Column(length = 500)
+    private String fidesAuthPassword;
+
+    @Nullable @Column(length = 100)
+    private String fidesTenantId;
+
+    @Nullable @Column(length = 100)
+    private String fidesUserId;
 }

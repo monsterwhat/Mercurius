@@ -2,6 +2,7 @@ package Models;
 
 import java.math.BigDecimal;
 import java.util.List;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 /**
@@ -12,8 +13,11 @@ import lombok.Data;
 @Data
 public class ReportesFamiliasYDepartamentos {
     
+    @Nullable
     String nombre;
+    @Nullable
     BigDecimal cantidad;
+    @Nullable
     BigDecimal porcentaje;
 
     public ReportesFamiliasYDepartamentos(String nombre, BigDecimal cantidad, BigDecimal porcentaje) {
