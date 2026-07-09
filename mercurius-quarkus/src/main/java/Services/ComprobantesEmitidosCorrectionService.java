@@ -7,10 +7,13 @@ import Services.Strategies.DocumentoStrategy;
 import Services.Strategies.DocumentoStrategyFactory;
 import Models.Detalles.DetalleServicio;
 import Models.Detalles.LineaDetalle;
+import Models.Detalles.OtroCargo;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.Receptor;
 import Models.NotaCredito;
 import Models.Resumen.ResumenFactura;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -32,31 +35,31 @@ import java.util.List;
 public class ComprobantesEmitidosCorrectionService {
 
     @Inject
-    private ComprobantesEmitidosService comprobantesEmitidosService;
+    private @Nonnull ComprobantesEmitidosService comprobantesEmitidosService;
 
     @Inject
-    private NotaCreditoService notaCreditoService;
+    private @Nonnull NotaCreditoService notaCreditoService;
 
     @Inject
-    private CabysService cabysService;
+    private @Nonnull CabysService cabysService;
 
     @Inject
-    private ClientService clientService;
+    private @Nonnull ClientService clientService;
 
     @Inject
-    private HaciendaSigner haciendaSigner;
+    private @Nonnull HaciendaSigner haciendaSigner;
 
     @Inject
-    private HaciendaApiService haciendaApiService;
+    private @Nonnull HaciendaApiService haciendaApiService;
 
     @Inject
-    private AlertasService alertasService;
+    private @Nonnull AlertasService alertasService;
 
     @Inject
-    private PrevalidationConfigService prevalidationConfigService;
+    private @Nonnull PrevalidationConfigService prevalidationConfigService;
 
     @Inject
-    private DocumentoStrategyFactory strategyFactory;
+    private @Nonnull DocumentoStrategyFactory strategyFactory;
 
     // ─── Public API ─────────────────────────────────────────────────
 
@@ -67,11 +70,12 @@ public class ComprobantesEmitidosCorrectionService {
      * - correctionAttempts must be under the configured max
      * - Not recently corrected (prevents scheduler double-fire within 60s)
      */
-    public boolean puedeCorregir(ComprobantesEmitidos factura) {
+    public boolean puedeCorregir(@Nullable ComprobantesEmitidos factura) {
         if (factura == null) return false;
         if (!"RECHAZADO".equals(factura.getHaciendaEstado())) return false;
 
-        int maxAttempts = prevalidationConfigService.getActiveConfig().getMaxCorrectionAttempts();
+        Integer maxAttemptsObj = prevalidationConfigService.getActiveConfig().getMaxCorrectionAttempts();
+        int maxAttempts = maxAttemptsObj != null ? maxAttemptsObj : 3;
         int attempts = factura.getCorrectionAttempts() != null ? factura.getCorrectionAttempts() : 0;
         if (attempts >= maxAttempts) return false;
 
@@ -89,7 +93,7 @@ public class ComprobantesEmitidosCorrectionService {
      * Main orchestrator: attempts to fix and resend a rejected invoice.
      * Increments correctionAttempts even on failure to prevent infinite retries.
      */
-    public void corregirFactura(ComprobantesEmitidos factura) {
+    public void corregirFactura(@Nonnull ComprobantesEmitidos factura) {
         String clave = factura.getHaciendaClave();
         try {
             alertasService.registrarAlerta("Hacienda",
@@ -127,7 +131,16 @@ public class ComprobantesEmitidosCorrectionService {
             // Marshal via type-specific strategy, sign, and send
             String docCode = nuevaFactura.getEncabezado() != null ? nuevaFactura.getEncabezado().getCodigoDocumento() : null;
             DocumentoStrategy strategy = strategyFactory.forCode(docCode);
-            String xmlContent = strategy.buildXml(nuevaFactura);
+            String xmlContent;
+            try {
+                xmlContent = strategy.buildXml(nuevaFactura);
+            } catch (jakarta.xml.bind.JAXBException e) {
+                alertasService.registrarAlerta("Error",
+                    "Error generating XML for corrected invoice: " + e.getMessage(), null, 0,
+                    "ComprobantesEmitidosCorrectionService.corregirFactura()", null, e.getMessage());
+                incrementarAttempts(factura);
+                return;
+            }
 
             HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlContent);
             if (!signResult.success) {
@@ -177,7 +190,7 @@ public class ComprobantesEmitidosCorrectionService {
 
             incrementarAttempts(factura);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error",
                 "Error en auto-corrección de " + clave + ": " + e.getMessage(), null, 0,
                 "ComprobantesEmitidosCorrectionService.corregirFactura()", null, e.getMessage());
@@ -294,6 +307,23 @@ public class ComprobantesEmitidosCorrectionService {
                     nuevasLineas.add(nuevaLinea);
                 }
                 detNuevo.setLineasDetalle(nuevasLineas);
+            }
+            // Clone OtrosCargos so corrected invoices preserve cargo line items
+            if (detOriginal.getOtrosCargos() != null && !detOriginal.getOtrosCargos().isEmpty()) {
+                java.util.List<OtroCargo> nuevosCargos = new java.util.ArrayList<>();
+                for (OtroCargo cargo : detOriginal.getOtrosCargos()) {
+                    OtroCargo nuevoCargo = new OtroCargo();
+                    nuevoCargo.setTipoDocumentoOC(cargo.getTipoDocumentoOC());
+                    nuevoCargo.setTipoDocumentoOTROS(cargo.getTipoDocumentoOTROS());
+                    nuevoCargo.setIdentificacionTercero(cargo.getIdentificacionTercero());
+                    nuevoCargo.setNombreTercero(cargo.getNombreTercero());
+                    nuevoCargo.setDetalle(cargo.getDetalle());
+                    nuevoCargo.setPorcentajeOC(cargo.getPorcentajeOC());
+                    nuevoCargo.setMontoCargo(cargo.getMontoCargo());
+                    nuevoCargo.setDetalleServicio(detNuevo);
+                    nuevosCargos.add(nuevoCargo);
+                }
+                detNuevo.setOtrosCargos(nuevosCargos);
             }
             nueva.setDetalles(detNuevo);
         }

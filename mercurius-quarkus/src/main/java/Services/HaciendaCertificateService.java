@@ -1,8 +1,14 @@
 package Services;
 
 import Models.AppSettings;
+import Utils.EncryptionUtil;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
+import jakarta.persistence.PersistenceException;
+import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,14 +21,77 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class HaciendaCertificateService extends GService<AppSettings> {
 
+    private static final Logger LOG = Logger.getLogger(HaciendaCertificateService.class.getName());
+
+    private SecretKey encryptionKey;
+
     @Override
     protected Class<AppSettings> getEntityClass() {
         return AppSettings.class;
+    }
+
+    @PostConstruct
+    void initEncryption() {
+        try {
+            AppSettings settings = getActiveSettings();
+            if (settings != null) {
+                String dbKey = settings.getHaciendaEncryptionKey();
+                if (dbKey != null && !dbKey.isEmpty()) {
+                    encryptionKey = EncryptionUtil.getKeyFromString(dbKey);
+                    migrateExistingSecrets();
+                } else {
+                    LOG.warning("No encryption key configured — secrets stored in plaintext. " +
+                        "Use Settings UI to initialize the encryption key.");
+                }
+            } else {
+                LOG.warning("No active AppSettings — encryption key not available, secrets stored in plaintext");
+            }
+        } catch (RuntimeException e) {
+            LOG.warning("Failed to initialize encryption key: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Explicitly generates and persists a new encryption key.
+     * Call this from the Settings UI when the user clicks "Initialize Encryption Key".
+     * Only generates if no key exists yet — does NOT rotate existing keys.
+     * @return true if a new key was generated, false if one already existed
+     */
+    public boolean initializeEncryptionKey() {
+        AppSettings settings = getActiveSettings();
+        if (settings == null) {
+            LOG.warning("Cannot initialize encryption key — no active settings");
+            return false;
+        }
+        String existing = settings.getHaciendaEncryptionKey();
+        if (existing != null && !existing.isEmpty()) {
+            LOG.info("Encryption key already exists — skipping initialization");
+            return false;
+        }
+        try {
+            String newKey = EncryptionUtil.generateKey();
+            settings.setHaciendaEncryptionKey(newKey);
+            em.merge(settings);
+            encryptionKey = EncryptionUtil.getKeyFromString(newKey);
+            LOG.info("Encryption key initialized via UI");
+            alertasService.registrarAlerta("Info",
+                "Encryption key initialized successfully", null, 0,
+                "HaciendaCertificateService.initializeEncryptionKey()", null, null);
+            migrateExistingSecrets();
+            return true;
+        } catch (RuntimeException e) {
+            LOG.warning("Failed to initialize encryption key: " + e.getMessage());
+            alertasService.registrarAlerta("Error",
+                "Failed to initialize encryption key: " + e.getMessage(), null, 0,
+                "HaciendaCertificateService.initializeEncryptionKey()", null, e.getMessage());
+            return false;
+        }
     }
 
     public static class CertificateInfo {
@@ -48,15 +117,81 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         }
     }
 
+    private String decryptValue(String encrypted) {
+        if (encryptionKey == null) return encrypted; // plaintext fallback
+        if (encrypted == null || encrypted.isEmpty()) return encrypted;
+        try {
+            return EncryptionUtil.decrypt(encrypted, encryptionKey);
+        } catch (RuntimeException e) {
+            // Not encrypted or wrong key — return as-is for backward compat
+            return encrypted;
+        }
+    }
+
+    private String encryptValue(String plaintext) {
+        if (encryptionKey == null) return plaintext; // no key = plaintext
+        if (plaintext == null || plaintext.isEmpty()) return plaintext;
+        try {
+            return EncryptionUtil.encrypt(plaintext, encryptionKey);
+        } catch (RuntimeException e) {
+            LOG.warning("Failed to encrypt value: " + e.getMessage());
+            return plaintext;
+        }
+    }
+
+    private void migrateExistingSecrets() {
+        if (encryptionKey == null) return;
+        try {
+            AppSettings settings = getActiveSettings();
+            if (settings == null) return;
+            boolean changed = false;
+
+            if (settings.getHaciendaApiKey() != null && !settings.getHaciendaApiKey().isEmpty()
+                    && !EncryptionUtil.isEncrypted(settings.getHaciendaApiKey())) {
+                settings.setHaciendaApiKey(encryptValue(settings.getHaciendaApiKey()));
+                changed = true;
+                LOG.info("Migrated existing plaintext API key to encrypted storage");
+            }
+
+            if (settings.getCertificadoPassword() != null && !settings.getCertificadoPassword().isEmpty()
+                    && !EncryptionUtil.isEncrypted(settings.getCertificadoPassword())) {
+                settings.setCertificadoPassword(encryptValue(settings.getCertificadoPassword()));
+                changed = true;
+                LOG.info("Migrated existing plaintext certificate password to encrypted storage");
+            }
+
+            if (changed) {
+                em.merge(settings);
+                alertasService.registrarAlerta("Info",
+                    "Existing Hacienda credentials encrypted at rest", null, 0,
+                    "HaciendaCertificateService.migrateExistingSecrets()", null, null);
+            }
+        } catch (RuntimeException e) {
+            LOG.warning("Secret migration failed (non-blocking): " + e.getMessage());
+        }
+    }
+
     public AppSettings getActiveSettings() {
         try {
             var list = em.createQuery("SELECT a FROM AppSettings a WHERE a.estatus = true", AppSettings.class)
                     .getResultList();
             return list != null && !list.isEmpty() ? list.get(0) : null;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting active settings: " + e.getLocalizedMessage(), null, 0, "HaciendaCertificateService.getActiveSettings()", null, e.getMessage());
             return null;
         }
+    }
+
+    public String getDecryptedApiKey() {
+        AppSettings settings = getActiveSettings();
+        if (settings == null || settings.getHaciendaApiKey() == null) return null;
+        return decryptValue(settings.getHaciendaApiKey());
+    }
+
+    public String getDecryptedCertificadoPassword() {
+        AppSettings settings = getActiveSettings();
+        if (settings == null || settings.getCertificadoPassword() == null) return null;
+        return decryptValue(settings.getCertificadoPassword());
     }
 
     public boolean hasCertificate() {
@@ -68,7 +203,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         try {
             CertificateInfo info = getCertificateInfo();
             return info != null && !info.isExpired && !info.isNotYetValid;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error checking certificate validity: " + e.getLocalizedMessage(), null, 0, "HaciendaCertificateService.hasValidCertificate()", null, e.getMessage());
             return false;
         }
@@ -82,7 +217,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
 
         try (InputStream is = new ByteArrayInputStream(settings.getCertificado())) {
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            String password = settings.getCertificadoPassword();
+            String password = getDecryptedCertificadoPassword();
             if (password == null || password.isEmpty()) {
                 password = "";
             }
@@ -116,10 +251,19 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         if (certificado == null || certificado.length == 0) {
             return false;
         }
+        // password may be plaintext (from UI) or already decrypted — try both
+        String resolvedPassword = password;
+        if (encryptionKey != null && password != null && EncryptionUtil.isEncrypted(password)) {
+            try {
+                resolvedPassword = EncryptionUtil.decrypt(password, encryptionKey);
+            } catch (RuntimeException e) {
+                // not encrypted, use as-is
+            }
+        }
 
         try (InputStream is = new ByteArrayInputStream(certificado)) {
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            keyStore.load(is, password.toCharArray());
+            keyStore.load(is, resolvedPassword.toCharArray());
 
             Enumeration<String> aliases = keyStore.aliases();
             while (aliases.hasMoreElements()) {
@@ -159,7 +303,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
 
         try (InputStream is = new ByteArrayInputStream(settings.getCertificado())) {
             KeyStore keyStore = KeyStore.getInstance("PKCS12");
-            String password = settings.getCertificadoPassword();
+            String password = getDecryptedCertificadoPassword();
             if (password == null || password.isEmpty()) {
                 password = "";
             }
@@ -172,7 +316,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         AppSettings settings = getActiveSettings();
         if (settings != null) {
             settings.setCertificado(certificado);
-            settings.setCertificadoPassword(password);
+            settings.setCertificadoPassword(encryptValue(password));
             em.merge(settings);
             alertasService.registrarAlerta("Info", "Certificate saved successfully", null, 0, "HaciendaCertificateService.saveCertificate()", null, null);
         } else {
@@ -198,7 +342,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
     public void saveApiKey(String apiKey) {
         AppSettings settings = getActiveSettings();
         if (settings != null) {
-            settings.setHaciendaApiKey(apiKey);
+            settings.setHaciendaApiKey(encryptValue(apiKey));
             em.merge(settings);
             alertasService.registrarAlerta("Info", "API Key saved successfully", null, 0, "HaciendaCertificateService.saveApiKey()", null, null);
         }

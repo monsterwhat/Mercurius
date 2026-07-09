@@ -1,13 +1,15 @@
 package Services;
 
 import Models.ComprobantesEmitidos;
-import Models.ComprobantesRecibidos;
 import Models.Encabezado.Encabezado;
 import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -23,7 +25,7 @@ import java.time.LocalDateTime;
 public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> {
     
     @Override
-    protected Class<ComprobantesEmitidos> getEntityClass() {
+    protected @Nonnull Class<ComprobantesEmitidos> getEntityClass() {
         return ComprobantesEmitidos.class;
     }
 
@@ -31,29 +33,29 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     public void init() {
     }
 
-@Override
-    public void create(ComprobantesEmitidos entity) {
+    @Override
+    public void create(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.create()", null, e.getMessage());
         }
     }
     
-    public ComprobantesEmitidos createAndReturn(ComprobantesEmitidos entity) {
+    public @Nullable ComprobantesEmitidos createAndReturn(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.persist(entity);
             em.flush(); // Ensure the entity is persisted and gets an ID
             em.refresh(entity); // Refresh to get any database-generated values
             return entity;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.createAndReturn()", null, e.getMessage());
             return null;
         }
     }
 
     @Override
-    public void delete(ComprobantesEmitidos entity) {
+    public void delete(@Nonnull ComprobantesEmitidos entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -64,21 +66,21 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ComprobantesEmitidosService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ComprobantesEmitidosService.delete()", null, e.getMessage());
         }
     }
 
     @Override
-    public void update(ComprobantesEmitidos entity) {
+    public void update(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.update()", null, e.getMessage());
         }
     }
     
-    public void softDelete(ComprobantesEmitidos entity) {
+    public void softDelete(@Nonnull ComprobantesEmitidos entity) {
         try {
             // Find the item by its ID
             ComprobantesEmitidos existingItem = em.find(getEntityClass(), entity.getId());
@@ -90,12 +92,12 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "ComprobantesEmitidosService.softDelete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.softDelete()", null, e.getMessage());
         }
     }
     
-    public void toggle(ComprobantesEmitidos entity){
+    public void toggle(@Nonnull ComprobantesEmitidos entity){
         try {
             // Find the item by its ID
             ComprobantesEmitidos existingItem = em.find(getEntityClass(), entity.getId());
@@ -111,26 +113,26 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for toggle", null, 0, "ComprobantesEmitidosService.toggle()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error toggling entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.toggle()", null, e.getMessage());
         }
     }
     
     @Override
-    public List<ComprobantesEmitidos> listAll() {
+    public @Nonnull List<ComprobantesEmitidos> listAll() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f LEFT JOIN FETCH f.resumen",
                 ComprobantesEmitidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listAll()", null, e.getMessage());
             return java.util.Collections.emptyList();
         }
     }
       
-    public List<ComprobantesEmitidos> listAllEmitidosBy(Users user) {
+    public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Users user) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -147,13 +149,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             List<ComprobantesEmitidos> result = query.getResultList();
             alertasService.registrarAlerta("Info", "Query returned " + result.size() + " invoices for user " + user.getUsername(), null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, null);
             return result;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing entities for user: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, e.getMessage());
             return null;
         }
     }
     
-    public List<ComprobantesEmitidos> listAllEmitidosBy(Users user, Date startDate, Date endDate) {
+    public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Users user, @Nonnull Date startDate, @Nonnull Date endDate) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -173,16 +175,16 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             List<ComprobantesEmitidos> result = query.getResultList();
             alertasService.registrarAlerta("Info", "Query returned " + result.size() + " invoices for user " + user.getUsername() + " between " + startDate + " and " + endDate, null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, null);
             return result;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing entities for user with date range: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, e.getMessage());
             return null;
         }
     }
 
 
-    public boolean findByNumeroConsecutivo(String numeroConsecutivo) {
+    public boolean findByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
         try {
-            TypedQuery<ComprobantesEmitidos> query = em.createQuery("SELECT f FROM ComprobantesRecibidos f WHERE f.encabezado.numeroConsecutivo = :numeroConsecutivo", ComprobantesEmitidos.class);
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery("SELECT f FROM ComprobantesEmitidos f WHERE f.encabezado.numeroConsecutivo = :numeroConsecutivo", ComprobantesEmitidos.class);
             query.setParameter("numeroConsecutivo", numeroConsecutivo);
             // Attempt to get a single result
             ComprobantesEmitidos factura = query.getSingleResult();
@@ -191,13 +193,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         } catch (NoResultException e) {
             // If no result is found, catch the NoResultException and return false
             return false;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding entity by numeroConsecutivo: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findByNumeroConsecutivo()", null, e.getMessage());
             return false;
         }
     }
     
-    public ComprobantesEmitidos findLastTransactionByUser(Users user) {
+    public @Nullable ComprobantesEmitidos findLastTransactionByUser(@Nonnull Users user) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -214,26 +216,26 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             return query.getSingleResult();
         } catch (NoResultException e) {
             return null;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding last transaction for user: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findLastTransactionByUser()", null, e.getMessage());
             return null;
         }
     }
     
-    public List<ComprobantesRecibidos> findComprobantesAfterDate(Date fecha) {
+    public @Nonnull List<ComprobantesEmitidos> findComprobantesAfterDate(@Nonnull Date fecha) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
-        CriteriaQuery<ComprobantesRecibidos> cq = cb.createQuery(ComprobantesRecibidos.class);
-        Root<ComprobantesRecibidos> ComprobantesRecibidos = cq.from(ComprobantesRecibidos.class);
-        Join<ComprobantesRecibidos, Encabezado> encabezado = ComprobantesRecibidos.join("encabezado");
+        CriteriaQuery<ComprobantesEmitidos> cq = cb.createQuery(ComprobantesEmitidos.class);
+        Root<ComprobantesEmitidos> comprobanteRoot = cq.from(ComprobantesEmitidos.class);
+        Join<ComprobantesEmitidos, Encabezado> encabezado = comprobanteRoot.join("encabezado");
 
         Predicate datePredicate = cb.greaterThan(encabezado.get("fechaEmision"), fecha);
         cq.where(datePredicate);
 
-        TypedQuery<ComprobantesRecibidos> query = em.createQuery(cq);
+        TypedQuery<ComprobantesEmitidos> query = em.createQuery(cq);
         return query.getResultList();
     }
 
-    public List<ComprobantesEmitidos> listByDateRange(Date start, Date end) {
+    public @Nullable List<ComprobantesEmitidos> listByDateRange(@Nonnull Date start, @Nonnull Date end) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -246,13 +248,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             query.setParameter("start", start);
             query.setParameter("end", end);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing by date range: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listByDateRange()", null, e.getMessage());
             return null;
         }
     }
 
-    public List<ComprobantesEmitidos> findFacturasPendientes() {
+    public @Nullable List<ComprobantesEmitidos> findFacturasPendientes() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -266,13 +268,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 ComprobantesEmitidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding facturas pendientes: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasPendientes()", null, e.getMessage());
             return null;
         }
     }
 
-    public List<ComprobantesEmitidos> findFacturasAceptadas() {
+    public @Nullable List<ComprobantesEmitidos> findFacturasAceptadas() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -286,13 +288,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 ComprobantesEmitidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding facturas aceptadas: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasAceptadas()", null, e.getMessage());
             return null;
         }
     }
 
-    public List<ComprobantesEmitidos> findFacturasRechazadas() {
+    public @Nullable List<ComprobantesEmitidos> findFacturasRechazadas() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -306,13 +308,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 ComprobantesEmitidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding facturas rechazadas: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasRechazadas()", null, e.getMessage());
             return null;
         }
     }
 
-    public Long countFacturasPendientes() {
+    public @Nonnull Long countFacturasPendientes() {
         try {
             TypedQuery<Long> query = em.createQuery(
                 "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
@@ -322,13 +324,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 Long.class
             );
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting facturas pendientes: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.countFacturasPendientes()", null, e.getMessage());
             return 0L;
         }
     }
 
-    public List<ComprobantesEmitidos> findByClave(String clave) {
+    public @Nullable List<ComprobantesEmitidos> findByClave(@Nonnull String clave) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f WHERE f.haciendaClave = :clave",
@@ -336,13 +338,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             query.setParameter("clave", clave);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding by clave: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findByClave()", null, e.getMessage());
             return null;
         }
     }
 
-    public List<ComprobantesEmitidos> findFacturasPendientesEnvio() {
+    public @Nonnull List<ComprobantesEmitidos> findFacturasPendientesEnvio() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -356,14 +358,14 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 ComprobantesEmitidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding facturas pendientes de envio: " + e.getMessage(),
                 null, 0, "ComprobantesEmitidosService.findFacturasPendientesEnvio()", null, e.getMessage());
             return java.util.Collections.emptyList();
         }
     }
 
-    public List<ComprobantesEmitidos> findFacturasParaVerificarEstado() {
+    public @Nullable List<ComprobantesEmitidos> findFacturasParaVerificarEstado() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -377,13 +379,13 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 ComprobantesEmitidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding facturas para verificar estado: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasParaVerificarEstado()", null, e.getMessage());
             return null;
         }
     }
 
-    public List<ComprobantesEmitidos> findFacturasSinRespuesta3Horas() {
+    public @Nullable List<ComprobantesEmitidos> findFacturasSinRespuesta3Horas() {
         try {
             LocalDateTime hace3Horas = LocalDateTime.now().minusHours(3);
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
@@ -399,7 +401,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
             );
             query.setParameter("hace3Horas", hace3Horas);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding facturas sin respuesta 3h: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.findFacturasSinRespuesta3Horas()", null, e.getMessage());
             return null;
         }

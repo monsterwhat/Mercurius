@@ -5,11 +5,14 @@ import Models.Detalles.LineaDetalle;
 import Models.Encabezado.Encabezado;
 import Models.Resumen.ResumenFactura;
 import Models.Validacion.PrevalidationResult;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException; 
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -24,8 +27,8 @@ import java.time.LocalDate;
 @ApplicationScoped
 public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos> {
     
-    @Inject AlertasService alertasService;
-    @Inject ComprobantesRecibidosPrevalidationService prevalidationService;
+    @Inject @Nonnull AlertasService alertasService;
+    @Inject @Nonnull ComprobantesRecibidosPrevalidationService prevalidationService;
 
     @Override
     protected Class<ComprobantesRecibidos> getEntityClass() {
@@ -43,7 +46,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             em.flush();
             em.refresh(entity);
             alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos with ID: " + entity.getId(), null, 0, "ComprobantesRecibidosService.create()", null, null);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.create()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos", e);
         }
@@ -51,7 +54,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     
     // Method to create ComprobantesRecibidos with pre-persisted related entities
     // Uses proper cascading to ensure atomic transaction - if any entity fails, all rollback
-    public void createWithRelatedEntities(ComprobantesRecibidos entity, Encabezado encabezado, ResumenFactura resumenFactura) {
+    public void createWithRelatedEntities(@Nonnull ComprobantesRecibidos entity, @Nonnull Encabezado encabezado, @Nonnull ResumenFactura resumenFactura) {
         try {
             entity.setEncabezado(encabezado);
             entity.setResumen(resumenFactura);
@@ -75,11 +78,11 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
 
             String consecutive = entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : String.valueOf(entity.getId());
             alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos: " + consecutive, null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, null);
-        } catch (RuntimeException e) {
-            throw e; // re-throw our own pre-validation failure
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity with related entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
+        } catch (RuntimeException e) {
+            throw e; // re-throw our own pre-validation failure
         }
     }
 
@@ -95,7 +98,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ComprobantesRecibidosService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ComprobantesRecibidosService.delete()", null, e.getMessage());
         }
     }
@@ -104,12 +107,12 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     public void update(ComprobantesRecibidos entity) {
         try {
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.update()", null, e.getMessage());
         }
     }
     
-    public void softDelete(ComprobantesRecibidos entity) {
+    public void softDelete(@Nonnull ComprobantesRecibidos entity) {
         try {
             // Find the item by its ID
             ComprobantesRecibidos existingItem = em.find(getEntityClass(), entity.getId());
@@ -121,12 +124,12 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "ComprobantesRecibidosService.softDelete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.softDelete()", null, e.getMessage());
         }
     }
     
-    public void toggle(ComprobantesRecibidos entity){
+    public void toggle(@Nonnull ComprobantesRecibidos entity){
         try {
             // Find the item by its ID
             ComprobantesRecibidos existingItem = em.find(getEntityClass(), entity.getId());
@@ -142,12 +145,12 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for toggle", null, 0, "ComprobantesRecibidosService.toggle()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error toggling entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.toggle()", null, e.getMessage());
         }
     }
     
-    @Override
+    @Override @Nonnull
     public List<ComprobantesRecibidos> listAll() {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
@@ -159,12 +162,13 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 ComprobantesRecibidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listAll()", null, e.getMessage());
             return java.util.Collections.emptyList();
         }
     }
     
+    @Nullable
     public List<ComprobantesRecibidos> ListAllEnabled() {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
@@ -177,13 +181,13 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 ComprobantesRecibidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
 
-    public boolean findByNumeroConsecutivo(String numeroConsecutivo) {
+    public boolean findByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery("SELECT f FROM ComprobantesRecibidos f WHERE f.encabezado.numeroConsecutivo = :numeroConsecutivo", ComprobantesRecibidos.class);
             query.setParameter("numeroConsecutivo", numeroConsecutivo);
@@ -194,13 +198,14 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         } catch (NoResultException e) {
             // If no result is found, catch the NoResultException and return false
             return false;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding entity by numeroConsecutivo: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findByNumeroConsecutivo()", null, e.getMessage());
             return false;
         }
 }
     
-    public ComprobantesRecibidos findByIdWithDetails(Long id) {
+    @Nullable
+    public ComprobantesRecibidos findByIdWithDetails(@Nonnull Long id) {
         try {
             // First fetch the main entity with basic relationships
             ComprobantesRecibidos entity = em.find(ComprobantesRecibidos.class, id);
@@ -242,13 +247,14 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             return entity;
         } catch (NoResultException e) {
             return null;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding ComprobantesRecibidos by ID with details: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findByIdWithDetails()", null, e.getMessage());
             return null;
         }
     }
     
-    public List<ComprobantesRecibidos> listByDateRange(Date start, Date end) {
+    @Nullable
+    public List<ComprobantesRecibidos> listByDateRange(@Nonnull Date start, @Nonnull Date end) {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
                 "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
@@ -261,13 +267,13 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             query.setParameter("start", start);
             query.setParameter("end", end);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing recibidos by date range: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listByDateRange()", null, e.getMessage());
             return null;
         }
     }
 
-    public List<ComprobantesRecibidos> findComprobantesAfterDate(Date fecha) {
+    public List<ComprobantesRecibidos> findComprobantesAfterDate(@Nonnull Date fecha) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<ComprobantesRecibidos> cq = cb.createQuery(ComprobantesRecibidos.class);
         Root<ComprobantesRecibidos> ComprobantesRecibidos = cq.from(ComprobantesRecibidos.class);
@@ -280,6 +286,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         return query.getResultList();
     }
 
+   @Nullable
    public List<ComprobantesRecibidos> listPendientes() {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
@@ -309,12 +316,13 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                     return false;
                 })
                 .collect(java.util.stream.Collectors.toList());
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing pendientes: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listPendientes()", null, e.getMessage());
             return null;
         }
     }
 
+    @Nullable
     public List<ComprobantesRecibidos> listVencidas() {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
@@ -344,12 +352,13 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                     return false;
                 })
                 .collect(java.util.stream.Collectors.toList());
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing vencidas: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listVencidas()", null, e.getMessage());
             return null;
         }
     }
 
+    @Nullable
     public List<ComprobantesRecibidos> findPendientesMensajeReceptor() {
         try {
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
@@ -364,12 +373,13 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 ComprobantesRecibidos.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding pendientes Mensaje Receptor: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findPendientesMensajeReceptor()", null, e.getMessage());
             return null;
         }
     }
 
+    @Nonnull
     public List<ComprobantesRecibidos> findProximosVencerMensajeReceptor(int dias) {
         try {
             LocalDate limite = LocalDate.now().plusDays(dias);
@@ -379,7 +389,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             return todos.stream()
                 .filter(f -> f.getMensajeReceptorLimite() != null && !f.getMensajeReceptorLimite().isAfter(limite))
                 .collect(java.util.stream.Collectors.toList());
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding proximos vencer Mensaje Receptor: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findProximosVencerMensajeReceptor()", null, e.getMessage());
             return null;
         }

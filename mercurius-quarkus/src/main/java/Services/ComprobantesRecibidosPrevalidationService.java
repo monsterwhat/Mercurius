@@ -10,6 +10,8 @@ import Models.Resumen.ResumenFactura;
 import Models.Validacion.PrevalidationConfig;
 import Models.Validacion.PrevalidationResult;
 import Models.Validacion.ValidationError;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -35,22 +37,23 @@ import Models.Referencias.InformacionReferencia;
 @ApplicationScoped
 public class ComprobantesRecibidosPrevalidationService {
 
-    @Inject
+    @Inject @Nonnull
     private CabysService cabysService;
 
-    @Inject
+    @Inject @Nonnull
     private ComprobantesRecibidosService comprobantesRecibidosService;
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
-    @Inject
+    @Inject @Nonnull
     private PrevalidationConfigService prevalidationConfigService;
 
     @PostConstruct
     public void init() {
     }
 
+    @Nonnull
     private PrevalidationConfig getConfig() {
         return prevalidationConfigService.getActiveConfig();
     }
@@ -61,7 +64,8 @@ public class ComprobantesRecibidosPrevalidationService {
      * Main orchestrator: runs all three validators and returns aggregated results.
      * Accepts a comprobante ID (Long).
      */
-    public PrevalidationResult prevalidarCompleto(Long comprobanteId) {
+    @Nonnull
+    public PrevalidationResult prevalidarCompleto(@Nullable Long comprobanteId) {
         PrevalidationResult result = new PrevalidationResult();
         if (comprobanteId == null) {
             result.addError(new ValidationError(
@@ -109,7 +113,8 @@ public class ComprobantesRecibidosPrevalidationService {
      * Pre-validates a ComprobantesRecibidos entity directly (without persisting first).
      * Used by ComprobantesRecibidosService.createWithRelatedEntities() before persisting.
      */
-    public PrevalidationResult prevalidarCompleto(ComprobantesRecibidos factura) {
+    @Nonnull
+    public PrevalidationResult prevalidarCompleto(@Nullable ComprobantesRecibidos factura) {
         PrevalidationResult result = new PrevalidationResult();
 
         if (factura == null) {
@@ -142,7 +147,8 @@ public class ComprobantesRecibidosPrevalidationService {
     /**
      * Overload accepting a comprobante ID as String (converts to Long).
      */
-    public PrevalidationResult prevalidarCompleto(String comprobanteId) {
+    @Nonnull
+    public PrevalidationResult prevalidarCompleto(@Nullable String comprobanteId) {
         try {
             return prevalidarCompleto(Long.parseLong(comprobanteId));
         } catch (NumberFormatException e) {
@@ -165,7 +171,7 @@ public class ComprobantesRecibidosPrevalidationService {
      * STRICT mode: missing codes = ERROR (reject invoice).
      * LENIENT mode: missing codes = WARNING (allow acceptance).
      */
-    void validarCabys(List<LineaDetalle> lineas, PrevalidationResult result) {
+    void validarCabys(@Nullable List<LineaDetalle> lineas, @Nonnull PrevalidationResult result) {
         if (lineas == null || lineas.isEmpty()) {
             return;
         }
@@ -229,7 +235,7 @@ public class ComprobantesRecibidosPrevalidationService {
      * Verifies tax calculations both line-by-line and at resumen level.
      * Tolerance: ±0.01 on all comparisons.
      */
-    void verificarCalculosImpuestos(List<LineaDetalle> lineas, ResumenFactura resumen, PrevalidationResult result) {
+    void verificarCalculosImpuestos(@Nullable List<LineaDetalle> lineas, @Nullable ResumenFactura resumen, @Nonnull PrevalidationResult result) {
         if (lineas == null || lineas.isEmpty()) {
             return;
         }
@@ -293,9 +299,9 @@ public class ComprobantesRecibidosPrevalidationService {
         }
     }
 
-    private void checkResumenMatch(PrevalidationResult result, String field,
-                                    BigDecimal sumValue, BigDecimal resumenValue,
-                                    String description) {
+    private void checkResumenMatch(@Nonnull PrevalidationResult result, @Nonnull String field,
+                                    @Nullable BigDecimal sumValue, @Nullable BigDecimal resumenValue,
+                                    @Nonnull String description) {
         if (sumValue == null || resumenValue == null) return;
         BigDecimal diff = sumValue.subtract(resumenValue).abs();
         if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
@@ -316,7 +322,7 @@ public class ComprobantesRecibidosPrevalidationService {
      * - Ubicacion completeness
      * - Required field presence
      */
-    void validarInfoReceptor(Receptor receptor, String docCode, PrevalidationResult result) {
+    void validarInfoReceptor(@Nullable Receptor receptor, @Nullable String docCode, @Nonnull PrevalidationResult result) {
         if (receptor == null) {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
@@ -370,16 +376,17 @@ public class ComprobantesRecibidosPrevalidationService {
     }
 
     /**
-     * Validates Costa Rican identification types (01-05).
+     * Validates Costa Rican identification types (01-06) per Anexos V4.4.
      *
-     * Type format rules:
+     * Type format rules (Anexos V4.4 — Nota 4):
      *   01 (Cedula Fisica):    9-10 digits, format 0XXXXXXXX or 1XXXXXXXX
-     *   02 (Cedula Juridica):  10-12 digits, format 3XXXXXXXXX
-     *   03 (DIMEX):            11-12 digits
-     *   04 (NITE):             10-12 digits
-     *   05 (Cedula de residencia): 9-10 digits, format 8XXXXXXXX or 9XXXXXXXX
+     *   02 (Cedula Juridica):  10-12 digits starting with 3, OR 10 alfanumericos (Q4 2026)
+     *   03 (DIMEX):            11-12 digits, sin ceros al inicio
+     *   04 (NITE):             10-12 digits, sin ceros al inicio
+     *   05 (Extranjero No Domiciliado): hasta 20 caracteres alfanumericos (FEC exclusivo)
+     *   06 (No Contribuyente): hasta 20 caracteres alfanumericos (FEC exclusivo)
      */
-    void validarIdentificacion(IdentificacionReceptor id, PrevalidationResult result) {
+    void validarIdentificacion(@Nonnull IdentificacionReceptor id, @Nonnull PrevalidationResult result) {
         String tipo = id.getTipo();
         String numero = id.getNumero();
 
@@ -393,12 +400,12 @@ public class ComprobantesRecibidosPrevalidationService {
 
         tipo = tipo.trim();
 
-        // Valid ID types for Costa Rica: 01-05
-        if (!tipo.matches("0[1-5]")) {
+        // Valid ID types for Costa Rica per Anexos V4.4: 01-06
+        if (!tipo.matches("0[1-6]")) {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "identificacion.tipo", "UNKNOWN_ID_TYPE",
-                "Unknown identification type: " + tipo + " (expected 01-05)",
+                "Unknown identification type: " + tipo + " (expected 01-06)",
                 ValidationError.Severity.WARNING));
             return;
         }
@@ -424,12 +431,17 @@ public class ComprobantesRecibidosPrevalidationService {
                 }
                 break;
             case "02": // Cedula Juridica
-                if (!numero.matches("3\\d{9,11}")) {
+                // Accept both: old numeric (3XXXXXXXXX) and new alfanumerico per RN Decreto 44648-MJ Art.137
+                //   Old format: 3\d{9} (10 digits, starts with 3)
+                //   New format: 3\d{3}[0-9A-Za-z]{6} (class code 3-digit numeric + consecutivo 6-char alfanumerico)
+                //                e.g. 3-101-A00001 → stripped 3101A00001
+                //   New format effective: Q4 2026, pending RN activation (min 2 months notice)
+                if (!numero.matches("3\\d{9,11}") && !numero.matches("3\\d{3}[0-9A-Za-z]{6}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_02_FORMAT",
-                        "Cedula Juridica (02) must be 10-12 digits starting with 3",
-                        "10-12 digits starting with 3", numero));
+                        "Cedula Juridica (02) must be 10-12 digits starting with 3, or 10 alfanumericos (3 + 3 digitos + 6 alfanumericos)",
+                        "10-12 digits starting with 3, or 10 alfanumericos", numero));
                 }
                 break;
             case "03": // DIMEX
@@ -450,13 +462,24 @@ public class ComprobantesRecibidosPrevalidationService {
                         "10-12 digits", numero));
                 }
                 break;
-            case "05": // Cedula de residencia
-                if (!numero.matches("[89]\\d{8,9}")) {
+            case "05": // Extranjero No Domiciliado — V4.4 redefined (FEC exclusivo)
+                // Hasta 20 caracteres alfanumericos per Anexos V4.4 Nota 4
+                if (!numero.matches("[0-9A-Za-z]{1,20}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_05_FORMAT",
-                        "Cedula de Residencia (05) must be 9-10 digits starting with 8 or 9",
-                        "9-10 digits starting with 8 or 9", numero));
+                        "Extranjero No Domiciliado (05) must be 1-20 alfanumericos",
+                        "1-20 alfanumericos", numero));
+                }
+                break;
+            case "06": // No Contribuyente — V4.4 new (FEC exclusivo)
+                // Hasta 20 caracteres alfanumericos per Anexos V4.4 Nota 4
+                if (!numero.matches("[0-9A-Za-z]{1,20}")) {
+                    result.addError(new ValidationError(
+                        ValidationError.Category.valueOf("RECEPTOR_INFO"),
+                        "identificacion.numero", "INVALID_06_FORMAT",
+                        "No Contribuyente (06) must be 1-20 alfanumericos",
+                        "1-20 alfanumericos", numero));
                 }
                 break;
         }
@@ -465,7 +488,7 @@ public class ComprobantesRecibidosPrevalidationService {
     /**
      * Validates ubicacion completeness.
      */
-    void validarUbicacion(Ubicacion ubicacion, PrevalidationResult result) {
+    void validarUbicacion(@Nullable Ubicacion ubicacion, @Nonnull PrevalidationResult result) {
         if (ubicacion == null) {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
@@ -512,7 +535,7 @@ public class ComprobantesRecibidosPrevalidationService {
      * For REP (07): InformacionReferencia is optional but if present, each entry is validated.
      * For all present entries: validates tipoDoc, codigo, numero, fechaEmision, and razon.
      */
-    private void validarInformacionReferencia(List<InformacionReferencia> refs, String docCode, PrevalidationResult result) {
+    private void validarInformacionReferencia(@Nullable List<InformacionReferencia> refs, @Nullable String docCode, @Nonnull PrevalidationResult result) {
         // NC (02) and ND (03) require at least one InformacionReferencia
         if ("02".equals(docCode) || "03".equals(docCode)) {
             if (refs == null || refs.isEmpty()) {

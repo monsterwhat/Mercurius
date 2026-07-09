@@ -1,6 +1,8 @@
 package Services;
 
 import Models.ConsecutivoReceptor;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
@@ -13,6 +15,7 @@ import jakarta.persistence.TypedQuery;
 public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
 
     @Override
+    @Nonnull
     protected Class<ConsecutivoReceptor> getEntityClass() {
         return ConsecutivoReceptor.class;
     }
@@ -30,7 +33,8 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
      * <p>
      * Format: 10 digits zero-padded (0000000001, 0000000002, ...)
      */
-    public synchronized String getNextSequential(String sucursal, String terminal, String tipo) {
+    @Nonnull
+    public synchronized String getNextSequential(@Nonnull String sucursal, @Nonnull String terminal, @Nonnull String tipo) {
         try {
             TypedQuery<ConsecutivoReceptor> query = em.createQuery(
                 "SELECT c FROM ConsecutivoReceptor c WHERE c.sucursal = :sucursal AND c.terminal = :terminal AND c.tipo = :tipo",
@@ -60,7 +64,7 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
             em.flush();
 
             return String.format("%010d", nextVal);
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error",
                 "Error generating consecutive number: " + e.getMessage(),
                 null, 0, "ConsecutivoReceptorService.getNextSequential()", null, e.getMessage());
@@ -73,7 +77,8 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
      * Retrieves the current counter value for a given key without incrementing.
      * Returns null if no counter exists yet.
      */
-    public ConsecutivoReceptor findCounter(String sucursal, String terminal, String tipo) {
+    @Nullable
+    public ConsecutivoReceptor findCounter(@Nonnull String sucursal, @Nonnull String terminal, @Nonnull String tipo) {
         try {
             TypedQuery<ConsecutivoReceptor> query = em.createQuery(
                 "SELECT c FROM ConsecutivoReceptor c WHERE c.sucursal = :sucursal AND c.terminal = :terminal AND c.tipo = :tipo",
@@ -85,7 +90,7 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
             return query.getSingleResult();
         } catch (NoResultException e) {
             return null;
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error",
                 "Error finding counter: " + e.getMessage(),
                 null, 0, "ConsecutivoReceptorService.findCounter()", null, e.getMessage());

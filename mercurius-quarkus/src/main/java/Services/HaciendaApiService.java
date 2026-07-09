@@ -16,6 +16,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.AppSettings;
 
 @Named
@@ -30,6 +32,19 @@ public class HaciendaApiService {
     @Inject
     public HaciendaApiService(HaciendaCertificateService certificateService) {
         this.certificateService = certificateService;
+    }
+
+    private String getCallbackUrl() {
+        try {
+            AppSettings settings = certificateService.getActiveSettings();
+            if (settings != null && settings.getHaciendaCallbackUrl() != null
+                    && !settings.getHaciendaCallbackUrl().isEmpty()) {
+                return settings.getHaciendaCallbackUrl();
+            }
+        } catch (RuntimeException e) {
+            // Log but don't break — callback URL is optional
+        }
+        return "";
     }
 
     public static class ApiResponse {
@@ -150,7 +165,7 @@ public class HaciendaApiService {
      * 2. If refresh token is still valid → refresh access token
      * 3. Otherwise → full ROPC authentication
      */
-    public TokenResponse getAccessToken() {
+    public synchronized TokenResponse getAccessToken() {
         // ── 1. Return cached token if still valid ────────────────────────────
         if (isCacheValid()) {
             TokenResponse result = new TokenResponse();
@@ -178,7 +193,7 @@ public class HaciendaApiService {
                 return error;
             }
 
-            String password = settings.getHaciendaApiKey();
+            String password = certificateService.getDecryptedApiKey();
             if (password == null || password.isEmpty()) {
                 TokenResponse error = new TokenResponse();
                 error.error = "No ATV password configured (haciendaApiKey)";
@@ -205,7 +220,7 @@ public class HaciendaApiService {
             }
             return token;
 
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             TokenResponse error = new TokenResponse();
             error.error = "Error getting token: " + e.getMessage();
             return error;
@@ -230,7 +245,7 @@ public class HaciendaApiService {
             }
             return token;
 
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             TokenResponse error = new TokenResponse();
             error.error = "Error refreshing token: " + e.getMessage();
             return error;
@@ -244,6 +259,8 @@ public class HaciendaApiService {
     private TokenResponse executeTokenRequest(String postData) throws IOException {
         URL url = new URL(getTokenUrl());
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setConnectTimeout(15000);
+        conn.setReadTimeout(30000);
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
         conn.setDoOutput(true);
@@ -319,6 +336,8 @@ public class HaciendaApiService {
             String url = getBaseUrl() + "/recepcion";
             URL apiUrl = new URL(url);
             HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(60000);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setRequestProperty("Authorization", "Bearer " + token.accessToken);
@@ -346,8 +365,8 @@ public class HaciendaApiService {
                 return ApiResponse.error(responseCode, "HTTP " + responseCode + ": " + responseBody);
             }
 
-        } catch (Exception e) {
-            return ApiResponse.error(500, "Error sending invoice: " + e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            throw new RuntimeException("Error sending invoice: " + e.getMessage(), e);
         }
     }
 
@@ -368,6 +387,8 @@ public class HaciendaApiService {
             String url = getBaseUrl() + "/recepcion/" + clave;
             URL apiUrl = new URL(url);
             HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(30000);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Authorization", "Bearer " + token.accessToken);
 
@@ -384,7 +405,7 @@ public class HaciendaApiService {
                 return ApiResponse.error(responseCode, "HTTP " + responseCode + ": " + responseBody);
             }
 
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             return ApiResponse.error(500, "Error checking status: " + e.getMessage());
         }
     }
@@ -401,6 +422,8 @@ public class HaciendaApiService {
             String url = getBaseUrl() + "/recepcion";
             URL apiUrl = new URL(url);
             HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(60000);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setRequestProperty("Authorization", "Bearer " + token.accessToken);
@@ -428,7 +451,7 @@ public class HaciendaApiService {
                 return ApiResponse.error(responseCode, "HTTP " + responseCode + ": " + responseBody);
             }
 
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             return ApiResponse.error(500, "Error accepting invoice: " + e.getMessage());
         }
     }
@@ -445,6 +468,8 @@ public class HaciendaApiService {
             String url = getBaseUrl() + "/recepcion";
             URL apiUrl = new URL(url);
             HttpURLConnection conn = (HttpURLConnection) apiUrl.openConnection();
+            conn.setConnectTimeout(30000);
+            conn.setReadTimeout(60000);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
             conn.setRequestProperty("Authorization", "Bearer " + token.accessToken);
@@ -472,7 +497,7 @@ public class HaciendaApiService {
                 return ApiResponse.error(responseCode, "HTTP " + responseCode + ": " + responseBody);
             }
 
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             return ApiResponse.error(500, "Error rejecting invoice: " + e.getMessage());
         }
     }
@@ -533,14 +558,14 @@ public class HaciendaApiService {
 
     private String readStream(InputStream stream) throws IOException {
         if (stream == null) return "";
-        BufferedReader br = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
-        StringBuilder response = new StringBuilder();
-        String line;
-        while ((line = br.readLine()) != null) {
-            response.append(line);
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                response.append(line);
+            }
+            return response.toString();
         }
-        br.close();
-        return response.toString();
     }
 
     private String buildRecepcionPayload(String clave, String emisorTipoId, String emisorNumeroId,
@@ -551,10 +576,21 @@ public class HaciendaApiService {
         String base64Xml = java.util.Base64.getEncoder().encodeToString(
             xmlContent.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-        return "{\"clave\":\"" + clave + "\",\"fecha\":\"" + fecha + "\","
-            + "\"emisor\":{\"tipoIdentificacion\":\"" + emisorTipoId + "\",\"numeroIdentificacion\":\"" + emisorNumeroId + "\"},"
-            + "\"receptor\":{\"tipoIdentificacion\":\"" + receptorTipoId + "\",\"numeroIdentificacion\":\"" + receptorNumeroId + "\"},"
-            + "\"comprobanteXml\":\"" + base64Xml + "\"}";
+        StringBuilder payload = new StringBuilder();
+        payload.append("{\"clave\":\"").append(clave).append("\",");
+        payload.append("\"fecha\":\"").append(fecha).append("\",");
+        payload.append("\"emisor\":{\"tipoIdentificacion\":\"").append(emisorTipoId)
+               .append("\",\"numeroIdentificacion\":\"").append(emisorNumeroId).append("\"},");
+        payload.append("\"receptor\":{\"tipoIdentificacion\":\"").append(receptorTipoId)
+               .append("\",\"numeroIdentificacion\":\"").append(receptorNumeroId).append("\"},");
+        // Include optional callbackUrl for TRIBU-CR async notification
+        String cbUrl = getCallbackUrl();
+        if (!cbUrl.isEmpty()) {
+            payload.append("\"callbackUrl\":\"").append(cbUrl).append("\",");
+        }
+        payload.append("\"comprobanteXml\":\"").append(base64Xml).append("\"}");
+
+        return payload.toString();
     }
 
     private String extractJsonValue(String json, String key) {
@@ -567,7 +603,7 @@ public class HaciendaApiService {
             int endQuote = json.indexOf("\"", startQuote + 1);
             if (startQuote == -1 || endQuote == -1) return null;
             return json.substring(startQuote + 1, endQuote);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return null;
         }
     }
