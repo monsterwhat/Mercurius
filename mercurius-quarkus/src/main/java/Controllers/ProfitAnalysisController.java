@@ -1,5 +1,7 @@
 package Controllers;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.Articulos.Articulos;
 import Models.Departamento;
 import Models.Familia;
@@ -21,6 +23,7 @@ import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -39,47 +42,47 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ProfitAnalysisController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private ProfitAnalysisService profitAnalysisService;
 
-    @Inject
+    @Inject @Nonnull
     private ArticulosService articulosService;
 
-    @Inject
+    @Inject @Nonnull
     private DepartamentoService departamentoService;
 
-    @Inject
+    @Inject @Nonnull
     private FamiliaService familiaService;
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
-    @Inject
+    @Inject @Nonnull
     private SessionController currentSession;
 
-    @Inject
+    @Inject @Nonnull
     private SettingsDirController dirController;
 
     // Filter and search properties
-    private Date startDate;
-    private Date endDate;
-    private String selectedDepartment;
-    private String selectedFamily;
-    private String articleFilter;
-    private List<FilterMeta> filterBy;
+    @Nonnull private Date startDate;
+    @Nonnull private Date endDate;
+    @Nullable private String selectedDepartment;
+    @Nullable private String selectedFamily;
+    @Nullable private String articleFilter;
+    @Nonnull private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 
     // Data lists
-    private List<ProfitMarginHistory> marginHistory;
-    private List<ProfitMarginSnapshot> marginSnapshots;
-    private List<Articulos> topMarginArticles;
-    private List<Articulos> worstMarginArticles;
-    private Map<String, BigDecimal> departmentComparisons;
+    @Nullable private List<ProfitMarginHistory> marginHistory;
+    @Nullable private List<ProfitMarginSnapshot> marginSnapshots;
+    @Nullable private List<Articulos> topMarginArticles;
+    @Nullable private List<Articulos> worstMarginArticles;
+    @Nullable private Map<String, BigDecimal> departmentComparisons;
 
     // Summary statistics
-    private BigDecimal averageMargin;
-    private BigDecimal totalProfit;
-    private BigDecimal totalRevenue;
+    @Nullable private BigDecimal averageMargin;
+    @Nullable private BigDecimal totalProfit;
+    @Nullable private BigDecimal totalRevenue;
 
     public ProfitAnalysisController() {
         // Initialize dates to last 30 days
@@ -118,7 +121,7 @@ public class ProfitAnalysisController implements Serializable {
             // Calculate summary statistics
             calculateSummaryStatistics();
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo cargar el análisis de márgenes: " + e.getMessage()));
         }
@@ -159,7 +162,7 @@ public class ProfitAnalysisController implements Serializable {
     /**
      * Load detailed margin history for a specific article
      */
-    public void loadArticleMarginHistory(Articulos articulo) {
+    public void loadArticleMarginHistory(@Nullable Articulos articulo) {
         if (articulo != null) {
             marginHistory = profitAnalysisService.getArticleMarginHistory(articulo, startDate, endDate);
             
@@ -208,7 +211,7 @@ public class ProfitAnalysisController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Reporte Generado", "El reporte de márgenes se ha generado exitosamente"));
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo generar el reporte: " + e.getMessage()));
         }
@@ -258,7 +261,7 @@ public class ProfitAnalysisController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Exitosa", 
                     "Datos exportados a: " + excelFile.getAbsolutePath()));
 
-        } catch (Exception e) {
+        } catch (RuntimeException | IOException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", "No se pudo exportar a Excel: " + e.getMessage()));
         }
@@ -292,7 +295,7 @@ public class ProfitAnalysisController implements Serializable {
                         "No se pudo generar el archivo PDF"));
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", "No se pudo exportar a PDF: " + e.getMessage()));
         }
@@ -301,7 +304,8 @@ public class ProfitAnalysisController implements Serializable {
     /**
      * Get margin color indicator for display
      */
-    public String getMarginColor(BigDecimal margin) {
+    @Nonnull
+    public String getMarginColor(@Nullable BigDecimal margin) {
         if (margin == null) {
             return "#cccccc";
         }
@@ -318,7 +322,8 @@ public class ProfitAnalysisController implements Serializable {
     /**
      * Get margin performance label
      */
-    public String getMarginPerformanceLabel(BigDecimal margin) {
+    @Nonnull
+    public String getMarginPerformanceLabel(@Nullable BigDecimal margin) {
         if (margin == null) {
             return "Sin Datos";
         }
@@ -338,6 +343,7 @@ public class ProfitAnalysisController implements Serializable {
     /**
      * Get list of departments for filter dropdown
      */
+    @Nonnull
     public List<String> getDepartments() {
         return departamentoService.listAll().stream()
                 .map(Departamento::getNombre)
@@ -350,6 +356,7 @@ public class ProfitAnalysisController implements Serializable {
     /**
      * Get list of families for filter dropdown
      */
+    @Nonnull
     public List<String> getFamilies() {
         return familiaService.listAll().stream()
                 .map(Familia::getNombre)
@@ -362,6 +369,7 @@ public class ProfitAnalysisController implements Serializable {
     /**
      * Get filtered articles for display
      */
+    @Nonnull
     public List<Articulos> getFilteredArticles() {
         List<Articulos> articles = new ArrayList<>();
         articles.addAll(topMarginArticles);
@@ -379,7 +387,7 @@ public class ProfitAnalysisController implements Serializable {
     /**
      * Global filter function for articles
      */
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -416,34 +424,42 @@ public class ProfitAnalysisController implements Serializable {
     }
 
     // Getters for view
+    @Nullable
     public List<ProfitMarginHistory> getMarginHistory() {
         return marginHistory;
     }
 
+    @Nullable
     public List<ProfitMarginSnapshot> getMarginSnapshots() {
         return marginSnapshots;
     }
 
+    @Nullable
     public List<Articulos> getTopMarginArticles() {
         return topMarginArticles;
     }
 
+    @Nullable
     public List<Articulos> getWorstMarginArticles() {
         return worstMarginArticles;
     }
 
+    @Nullable
     public Map<String, BigDecimal> getDepartmentComparisons() {
         return departmentComparisons;
     }
 
+    @Nullable
     public BigDecimal getAverageMargin() {
         return averageMargin;
     }
 
+    @Nullable
     public BigDecimal getTotalProfit() {
         return totalProfit;
     }
 
+    @Nullable
     public BigDecimal getTotalRevenue() {
         return totalRevenue;
     }

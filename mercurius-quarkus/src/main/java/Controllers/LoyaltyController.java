@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
@@ -34,29 +36,34 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class LoyaltyController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private LoyaltyService loyaltyService;
 
-    @Inject
+    @Inject @Nonnull
     private ClientService clientService;
 
-    @Inject
+    @Inject @Nonnull
     private AppSettingsService appSettingsService;
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
-    @Inject
+    @Inject @Nonnull
     private SessionController currentSession;
 
     // Form fields
+    @Nullable
     private AppSettings selectedSettings;
+    @Nullable
     private String clientsFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 
     // Lists for display
+    @Nullable
     private List<Clients> topLoyaltyCustomers;
+    @Nullable
     private List<PuntosTransaccion> selectedCustomerPointsHistory;
 
     public LoyaltyController() {
@@ -115,7 +122,7 @@ public class LoyaltyController implements Serializable {
     /**
      * Load points history for selected customer
      */
-    public void loadCustomerPointsHistory(Clients customer) {
+    public void loadCustomerPointsHistory(@Nullable Clients customer) {
         if (customer != null) {
             selectedCustomerPointsHistory = loyaltyService.getCustomerPointsHistory(customer);
         }
@@ -151,7 +158,7 @@ public class LoyaltyController implements Serializable {
     /**
      * Get list of all customers with filtering
      */
-    public List<Clients> getFilteredCustomers() {
+    public @Nonnull List<Clients> getFilteredCustomers() {
         if (clientsFilter != null && !clientsFilter.isEmpty()) {
             return clientService.listAll().stream()
                     .filter(client -> globalFilterFunction(client, clientsFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -164,7 +171,7 @@ public class LoyaltyController implements Serializable {
     /**
      * Global filter function for customers
      */
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -173,14 +180,14 @@ public class LoyaltyController implements Serializable {
         Clients client = (Clients) value;
         return client.getName().toLowerCase().contains(filterText)
                 || (client.getEmail() != null && client.getEmail().toLowerCase().contains(filterText))
-                || String.valueOf(client.getIdNumber()).contains(filterText)
+                || (client.getIdNumber() != null && client.getIdNumber().toLowerCase().contains(filterText))
                 || (client.getPuntosAcumulados() != null && client.getPuntosAcumulados().toString().contains(filterText));
     }
 
     /**
      * Get customer tier color for display
      */
-    public String getCustomerTierColor(Clients customer) {
+    public @Nonnull String getCustomerTierColor(@Nonnull Clients customer) {
         if (customer.getPuntosAcumulados() == null) {
             return "#cccccc"; // Gray
         }
@@ -199,7 +206,7 @@ public class LoyaltyController implements Serializable {
     /**
      * Get customer tier label
      */
-    public String getCustomerTierLabel(Clients customer) {
+    public @Nonnull String getCustomerTierLabel(@Nonnull Clients customer) {
         if (customer.getPuntosAcumulados() == null) {
             return "Sin Puntos";
         }
@@ -216,21 +223,21 @@ public class LoyaltyController implements Serializable {
     }
 
     // Getters and Setters for view
-    public AppSettings getSelectedSettings() {
+    public @Nullable AppSettings getSelectedSettings() {
         if (selectedSettings == null) {
             loadCurrentSettings();
         }
         return selectedSettings;
     }
 
-    public List<Clients> getTopLoyaltyCustomers() {
+    public @Nullable List<Clients> getTopLoyaltyCustomers() {
         if (topLoyaltyCustomers == null) {
             loadTopCustomers();
         }
         return topLoyaltyCustomers;
     }
 
-    public List<PuntosTransaccion> getSelectedCustomerPointsHistory() {
+    public @Nullable List<PuntosTransaccion> getSelectedCustomerPointsHistory() {
         return selectedCustomerPointsHistory;
     }
 

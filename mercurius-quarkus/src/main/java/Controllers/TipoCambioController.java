@@ -3,6 +3,8 @@ package Controllers;
 import Models.TipoCambio;
 import Services.AlertasService;
 import Services.TipoCambioService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -16,12 +18,14 @@ import lombok.Data;
 @ApplicationScoped
 public class TipoCambioController implements Serializable {
     
-    @Inject private TipoCambioService tipoCambioService;
-    @Inject private SettingsController settings;
-    @Inject private AlertasService alertasService;
-    @Inject private SessionController currentSession;
+    @Inject @Nonnull private TipoCambioService tipoCambioService;
+    @Inject @Nonnull private SettingsController settings;
+    @Inject @Nonnull private AlertasService alertasService;
+    @Inject @Nonnull private SessionController currentSession;
 
+    @Nullable
     private List<TipoCambio> tipoCambios;
+    @Nullable
     private TipoCambio cambioActual;
     
     @PostConstruct
@@ -30,6 +34,7 @@ public class TipoCambioController implements Serializable {
         cambioActual = getTipoCambioActual(); 
     }
 
+    @Nullable
     public List<TipoCambio> loadTipoCambios() {
         if (tipoCambios == null) {
             tipoCambios = tipoCambioService.listAll();
@@ -53,6 +58,7 @@ public class TipoCambioController implements Serializable {
         }
     }
     
+    @Nullable
     public TipoCambio getTipoCambioActual() {
         return settings.getCurrentSettings() != null ? 
                tipoCambioService.getNewestTipoCambio() : 

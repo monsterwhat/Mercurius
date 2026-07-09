@@ -6,6 +6,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -16,7 +18,7 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProductPerformanceController {
 
-    @Inject
+    @Inject @Nonnull
     ProductPerformanceService productPerformanceService;
 
     @GET
@@ -31,7 +33,7 @@ public class ProductPerformanceController {
             List<ProductPerformanceService.ProductSalesSummary> results = 
                 productPerformanceService.getBestSellingProducts(start, end, limit);
             return Response.ok(results).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -49,7 +51,7 @@ public class ProductPerformanceController {
             List<ProductPerformanceService.ProductSalesSummary> results = 
                 productPerformanceService.getWorstSellingProducts(start, end, limit);
             return Response.ok(results).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -67,7 +69,7 @@ public class ProductPerformanceController {
             List<ProductPerformanceService.ProductSalesSummary> results = 
                 productPerformanceService.getBestSellingProductsByRevenue(start, end, limit);
             return Response.ok(results).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -81,7 +83,7 @@ public class ProductPerformanceController {
         try {
             BigDecimal velocity = productPerformanceService.getProductVelocity(articuloId, days);
             return Response.ok(velocity).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -97,7 +99,7 @@ public class ProductPerformanceController {
             Date end = new Date(endDate != null ? endDate : System.currentTimeMillis());
             Map<String, BigDecimal> results = productPerformanceService.getCategoryPerformance(start, end);
             return Response.ok(results).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -113,7 +115,7 @@ public class ProductPerformanceController {
             Date end = new Date(endDate != null ? endDate : System.currentTimeMillis());
             Map<String, BigDecimal> results = productPerformanceService.getDepartmentPerformance(start, end);
             return Response.ok(results).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -129,7 +131,7 @@ public class ProductPerformanceController {
             Date end = new Date(endDate != null ? endDate : System.currentTimeMillis());
             List<ProductPerformanceService.DailySalesTrend> results = productPerformanceService.getSalesTrend(start, end);
             return Response.ok(results).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -145,7 +147,7 @@ public class ProductPerformanceController {
             Date end = new Date(endDate != null ? endDate : System.currentTimeMillis());
             List<ProductPerformanceService.ABCAnalysis> results = productPerformanceService.performABCAnalysis(start, end);
             return Response.ok(results).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -162,7 +164,7 @@ public class ProductPerformanceController {
             ProductPerformanceService.ProductPerformanceSummary summary = 
                 productPerformanceService.getPerformanceSummary(start, end);
             return Response.ok(summary).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }

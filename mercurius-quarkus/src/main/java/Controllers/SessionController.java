@@ -3,6 +3,8 @@ package Controllers;
 import Models.Users;
 import Services.AlertasService;
 import Services.LoginService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import jakarta.faces.application.FacesMessage;
@@ -32,28 +34,28 @@ public class SessionController implements Serializable{
     public SessionController() {
     }
     
-    @NotEmpty private String username;
-    @NotEmpty private String password;
-    private Users currentUser;
+    @NotEmpty @Nonnull private String username;
+    @NotEmpty @Nonnull private String password;
+    @Nullable private Users currentUser;
     
-    private String newUsername;
-    private String currentPassword;
-    private String newPassword;
-    private String newEmail;
-    private String confirmPassword;
+    @Nullable private String newUsername;
+    @Nullable private String currentPassword;
+    @Nullable private String newPassword;
+    @Nullable private String newEmail;
+    @Nullable private String confirmPassword;
     
-    @Inject private LoginService loginService;
+    @Inject @Nonnull private LoginService loginService;
     
-    @Inject FacesContext facesContext;
-    @Inject SecurityIdentity securityIdentity;
-    @Inject private AlertasService alertas;
+    @Inject @Nonnull FacesContext facesContext;
+    @Inject @Nonnull SecurityIdentity securityIdentity;
+    @Inject @Nonnull private AlertasService alertas;
 
     @PostConstruct
     public void init(){
         loginService.init();
     }
     
-    public void executeLogin(){
+    public synchronized void executeLogin(){
         try {
             if (processAuthentication()) {
                 if(currentUser != null){
@@ -78,7 +80,7 @@ public class SessionController implements Serializable{
         ec.redirect(ec.getRequestContextPath() + "/secured/index.xhtml");
     }
     
-    public void logOut() {
+    public synchronized void logOut() {
         ExternalContext ec = null;
         try {
             ec = FacesContext.getCurrentInstance().getExternalContext();
@@ -190,7 +192,7 @@ public class SessionController implements Serializable{
                 return true;
             }
             return false;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Authentication error: " + e.getLocalizedMessage(), null, 0, "SessionController.authenticate()", null, e.getLocalizedMessage());
             return false;
         }
@@ -200,18 +202,19 @@ public class SessionController implements Serializable{
      return facesContext.getExternalContext();
     }
     
-    public void errorMessage(String message){
+    public void errorMessage(@Nonnull String message){
         facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", message));
     }
     
-    public void infoMessage(String message){
+    public void infoMessage(@Nonnull String message){
         facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", message));
     }
         
-    public void warnMessage(String message){
+    public void warnMessage(@Nonnull String message){
         facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", message));
     }
     
+    @Nullable
     public String getCurrentUsername() {
         if (currentUser != null) {
             return currentUser.getUsername();
@@ -235,7 +238,7 @@ public class SessionController implements Serializable{
     }
     
     
-    public void changeName(){
+    public synchronized void changeName(){
         if(newUsername != null){
             if(!newUsername.isBlank()){
                 if(!currentUser.getUsername().equals(newUsername)){
@@ -252,7 +255,7 @@ public class SessionController implements Serializable{
         }
     }
     
-    public void changeEmail(){
+    public synchronized void changeEmail(){
         if(newEmail != null){
             if(!newEmail.isBlank()){
                 if(!currentUser.getEmail().equals(newEmail)){
@@ -269,10 +272,18 @@ public class SessionController implements Serializable{
         }
     }
     
-    public void changePassword(){
+    public synchronized void changePassword(){
         if(newPassword != null){
             if(!newPassword.isBlank()){
                 if(newPassword.equals(confirmPassword)){
+                    if(currentPassword == null || currentPassword.isBlank()){
+                        errorMessage("La contrasena actual no puede estar vacia.");
+                        return;
+                    }
+                    if(!loginService.verifyPassword(currentPassword, currentUser.getPassword())){
+                        errorMessage("La contrasena actual es incorrecta.");
+                        return;
+                    }
                     loginService.updatePassword(currentUser, newPassword);
                     alertas.registrarAlerta("Contraseña Cambiada", "Se cambió la contraseña", getCurrentUser(), 0, "changePassword()", null, null);
                     infoMessage("Se actualizo la contrasena.");
@@ -286,11 +297,13 @@ public class SessionController implements Serializable{
         }
     }
     
+    @Nullable
     public Users getCurrentUser() {
         return currentUser;
     }
 
-    public Users authorizeAction(String username, String password) {
+    @Nullable
+    public Users authorizeAction(@Nonnull String username, @Nonnull String password) {
         try {
             Users authUser = loginService.findByUsername(username);
             if (authUser == null) {
@@ -308,7 +321,7 @@ public class SessionController implements Serializable{
             }
 
             return authUser;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error",
                 "Error en authorizeAction: " + e.getMessage(),
                 currentUser, 0, "authorizeAction()", null, e.getMessage());

@@ -1,6 +1,8 @@
 package Controllers;
 
 import Services.StockForecastService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -14,18 +16,20 @@ import java.util.List;
 public class StockForecastController {
 
     @Inject
+    @Nonnull
     StockForecastService stockForecastService;
 
     @GET
     @Path("/forecast/{articuloId}")
+    @Nonnull
     public Response generateForecast(
-            @PathParam("articuloId") Long articuloId,
+            @Nullable @PathParam("articuloId") Long articuloId,
             @QueryParam("days") @DefaultValue("30") int days) {
         try {
             List<StockForecastService.ProductForecast> forecast = 
                 stockForecastService.generateForecast(articuloId, days);
             return Response.ok(forecast).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -33,13 +37,14 @@ public class StockForecastController {
 
     @GET
     @Path("/bulk-forecast")
+    @Nonnull
     public Response generateBulkForecast(
             @QueryParam("days") @DefaultValue("30") int days) {
         try {
             List<StockForecastService.ProductForecast> forecast = 
                 stockForecastService.generateBulkForecast(days);
             return Response.ok(forecast).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -47,14 +52,15 @@ public class StockForecastController {
 
     @GET
     @Path("/demand/{articuloId}")
+    @Nonnull
     public Response predictDemand(
-            @PathParam("articuloId") Long articuloId,
+            @Nullable @PathParam("articuloId") Long articuloId,
             @QueryParam("days") @DefaultValue("30") int days) {
         try {
             StockForecastService.DemandPrediction prediction = 
                 stockForecastService.predictDemand(articuloId, days);
             return Response.ok(prediction).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -62,12 +68,13 @@ public class StockForecastController {
 
     @GET
     @Path("/health")
+    @Nonnull
     public Response getInventoryHealth() {
         try {
             StockForecastService.InventoryHealthReport report = 
                 stockForecastService.getInventoryHealthReport();
             return Response.ok(report).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }
@@ -75,12 +82,13 @@ public class StockForecastController {
 
     @GET
     @Path("/reorder/{articuloId}")
-    public Response getReorderRecommendation(@PathParam("articuloId") Long articuloId) {
+    @Nonnull
+    public Response getReorderRecommendation(@Nullable @PathParam("articuloId") Long articuloId) {
         try {
             StockForecastService.ReorderRecommendation recommendation = 
                 stockForecastService.getReorderRecommendation(articuloId);
             return Response.ok(recommendation).build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         }

@@ -2,6 +2,8 @@ package Controllers;
 
 import Models.Registros.Alertas;
 import Services.AlertasService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -21,12 +23,16 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class AlertasController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
+    @Nullable
     private List<Alertas> alertas;
+    @Nullable
     private Alertas selectedAlerta;
+    @Nullable
     private String alertasFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
 
     @PostConstruct
@@ -34,6 +40,7 @@ public class AlertasController implements Serializable {
         filterBy = new ArrayList<>();
     }
 
+    @Nonnull
     public List<Alertas> getAlertas() {
         if (alertas == null) {
             alertas = alertasService.listAll();
@@ -50,7 +57,7 @@ public class AlertasController implements Serializable {
         alertas = alertasService.listAll();
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -67,7 +74,7 @@ public class AlertasController implements Serializable {
                (alerta.getSource() != null && alerta.getSource().toLowerCase().contains(filterText));
     }
 
-    public void toggleVista(Alertas alerta) {
+    public void toggleVista(@Nonnull Alertas alerta) {
         alertasService.toggleVista(alerta);
         refreshAlertas();
     }

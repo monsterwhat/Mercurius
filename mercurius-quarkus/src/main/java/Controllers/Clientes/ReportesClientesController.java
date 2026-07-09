@@ -3,6 +3,8 @@ package Controllers.Clientes;
 import Controllers.SessionController;
 import Models.Clients;
 import Services.ClientService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -20,15 +22,19 @@ import org.primefaces.PrimeFaces;
 @ViewScoped
 public class ReportesClientesController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private ClientService clientService;
 
-    @Inject
+    @Inject @Nonnull
     private SessionController currentSession;
 
+    @Nullable
     private List<Clients> clientes;
+    @Nullable
     private Date fechaInicio;
+    @Nullable
     private Date fechaFin;
+    @Nullable
     private String filtroBusqueda;
 
     public ReportesClientesController() {
@@ -42,7 +48,7 @@ public class ReportesClientesController implements Serializable {
     public void cargarClientes() {
         try {
             clientes = clientService.listAll();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new jakarta.faces.application.FacesMessage(jakarta.faces.application.FacesMessage.SEVERITY_ERROR, 
                     "Error", "No se pudieron cargar los clientes: " + e.getMessage()));
@@ -62,6 +68,7 @@ public class ReportesClientesController implements Serializable {
         PrimeFaces.current().ajax().update("filtros");
     }
 
+    @Nonnull
     public List<Clients> getClientesFiltrados() {
         if (clientes == null) {
             return new ArrayList<>();
@@ -74,7 +81,7 @@ public class ReportesClientesController implements Serializable {
             resultado = resultado.stream()
                 .filter(c -> (c.getName() != null && c.getName().toLowerCase().contains(filtro))
                     || (c.getEmail() != null && c.getEmail().toLowerCase().contains(filtro))
-                    || String.valueOf(c.getIdNumber()).contains(filtro))
+                    || (c.getIdNumber() != null && c.getIdNumber().toLowerCase().contains(filtro)))
                 .toList();
         }
 

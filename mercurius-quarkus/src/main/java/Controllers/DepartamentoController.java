@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
@@ -24,14 +26,19 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class DepartamentoController implements Serializable {
     
-    @Inject private DepartamentoService departamentoService;
-    @Inject private SessionController currentSession;
-    @Inject private AlertasService alertas;
+    @Inject @Nonnull private DepartamentoService departamentoService;
+    @Inject @Nonnull private SessionController currentSession;
+    @Inject @Nonnull private AlertasService alertas;
     
+    @Nullable
     private List<Departamento> departamentos;
+    @Nullable
     private Departamento selectedDepartamento;
+    @Nullable
     private Departamento newDepartamento;
+    @Nullable
     private String departamentoFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 
@@ -43,14 +50,14 @@ public class DepartamentoController implements Serializable {
         filterBy = new ArrayList<>();
     }
 
-    public List<Departamento> departamentosList() {
+    public @Nonnull List<Departamento> departamentosList() {
         if (departamentos == null) {
             departamentos = departamentoService.listAll();
         }
         return departamentos;
     }
     
-    public List<Departamento> departamentosListAll() {
+    public @Nonnull List<Departamento> departamentosListAll() {
         return departamentoService.listAll();
     }
 
@@ -113,7 +120,7 @@ public class DepartamentoController implements Serializable {
         }
     }
     
-    public Departamento createSimpleDepartamento(Departamento departamento){
+    public @Nullable Departamento createSimpleDepartamento(@Nonnull Departamento departamento){
         if(currentSession.isValid()){
             Departamento persistedDepartamento = departamentoService.createIfNotExist(departamento);
             clearSelectedDepartamento();
@@ -137,7 +144,7 @@ public class DepartamentoController implements Serializable {
         selectedDepartamento = null;
     }
 
-    public List<Departamento> getFilteredDepartamentos() {
+    public @Nonnull List<Departamento> getFilteredDepartamentos() {
         if (departamentoFilter != null && !departamentoFilter.trim().isEmpty()) {
             return departamentosList().stream()
                     .filter(departamento -> globalFilterFunction(departamento, departamentoFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -147,7 +154,7 @@ public class DepartamentoController implements Serializable {
         }
     }
     
-    public List<Departamento> getFilteredDepartamentosDetallados() {
+    public @Nonnull List<Departamento> getFilteredDepartamentosDetallados() {
         if (departamentoFilter != null && !departamentoFilter.trim().isEmpty()) {
             return departamentosListAll().stream()
                     .filter(departamento -> globalFilterFunction(departamento, departamentoFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -157,7 +164,7 @@ public class DepartamentoController implements Serializable {
         }
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -172,7 +179,7 @@ public class DepartamentoController implements Serializable {
                 || (departamento.getContactoEmail() != null && departamento.getContactoEmail().toLowerCase().contains(filterText));
     }
 
-    public Departamento findDepartamentoById(Integer number) {
+    public @Nullable Departamento findDepartamentoById(@Nonnull Integer number) {
         
         return departamentoService.findById(number);
         

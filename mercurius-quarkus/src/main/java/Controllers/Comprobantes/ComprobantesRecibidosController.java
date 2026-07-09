@@ -17,6 +17,8 @@ import Services.Facturas.*;
 import Utils.Parsers.Parser;   
 import Services.AlertasService;
 import Services.ComprobantesRecibidosService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -44,28 +46,37 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ComprobantesRecibidosController implements Serializable {
     
-    @Inject SettingsDirController directoryService;
-    @Inject ComprobantesRecibidosService facturaService;
-    @Inject LineaDetalleService lineaDetalleService;
-    @Inject SessionController currentSession;
-    @Inject ArticulosController articuloController;
-    @Inject InventarioController inventarioController;
-    @Inject DepartamentoController departamentosController;
-    @Inject MedioPagoService medioPagoService;
-    @Inject ArticuloPrecioService precioService;
-    @Inject Parser parser;
-    @Inject AlertasService alertaService;
+    @Inject @Nonnull SettingsDirController directoryService;
+    @Inject @Nonnull ComprobantesRecibidosService facturaService;
+    @Inject @Nonnull LineaDetalleService lineaDetalleService;
+    @Inject @Nonnull SessionController currentSession;
+    @Inject @Nonnull ArticulosController articuloController;
+    @Inject @Nonnull InventarioController inventarioController;
+    @Inject @Nonnull DepartamentoController departamentosController;
+    @Inject @Nonnull MedioPagoService medioPagoService;
+    @Inject @Nonnull ArticuloPrecioService precioService;
+    @Inject @Nonnull Parser parser;
+    @Inject @Nonnull AlertasService alertaService;
     
+    @Nullable
     private List<UploadedFile> files;
+    @Nullable
     private List<ComprobantesRecibidos> facturas;
+    @Nullable
     private List<ComprobantesRecibidos> facturasDetalladas;
+    @Nullable
     private List<ComprobantesRecibidos> facturasVencidas;
+    @Nullable
     private List<ComprobantesRecibidos> facturasPendientes;
     
+    @Nullable
     private LineaDetalle lineaDetalle;
     
+    @Nullable
     private ComprobantesRecibidos selectedFactura;
+    @Nullable
     private String facturaFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     
@@ -77,6 +88,7 @@ public class ComprobantesRecibidosController implements Serializable {
         initReport();
     }
     
+    @Nonnull
     public List<ComprobantesRecibidos> facturasList() {
         if (facturas == null) {
             facturas = facturaService.ListAllEnabled();
@@ -84,6 +96,7 @@ public class ComprobantesRecibidosController implements Serializable {
         return facturas;
     }
     
+    @Nonnull
     public List<ComprobantesRecibidos> facturasListDetalladas() {
         if(facturasDetalladas == null){
             facturasDetalladas = facturaService.listAll();
@@ -91,6 +104,7 @@ public class ComprobantesRecibidosController implements Serializable {
         return facturasDetalladas;
     }
     
+    @Nonnull
     public List<ComprobantesRecibidos> facturasPenditenes(){
         if(facturasPendientes == null){
             facturasPendientes = facturaService.listPendientes();
@@ -98,6 +112,7 @@ public class ComprobantesRecibidosController implements Serializable {
         return facturasPendientes;
     }
     
+    @Nonnull
     public List<ComprobantesRecibidos> facturasVencidas(){
         if(facturasVencidas == null){
             facturasVencidas = facturaService.listVencidas();
@@ -136,6 +151,7 @@ public class ComprobantesRecibidosController implements Serializable {
         facturasDetalladas = null;
     }
 
+    @Nonnull
     public List<ComprobantesRecibidos> getFilteredFacturas() {
         if(facturas == null){
             facturas = facturaService.ListAllEnabled();
@@ -149,6 +165,7 @@ public class ComprobantesRecibidosController implements Serializable {
         }
     }
     
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasDetallados() {
         try {
             if(facturasDetalladas == null){
@@ -161,12 +178,13 @@ public class ComprobantesRecibidosController implements Serializable {
             } else {
                 return facturasListDetalladas();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertaService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "ComprobantesRecibidosController.getFilteredFacturasDetallados()", null, e.getLocalizedMessage());
             return null;
         }
     }
     
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasPendientes() {
         try {
             if(facturasPendientes == null){
@@ -179,12 +197,13 @@ public class ComprobantesRecibidosController implements Serializable {
             } else {
                 return facturasPenditenes();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertaService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "ComprobantesRecibidosController.getFilteredFacturasPendientes()", null, e.getLocalizedMessage());
             return null;
         }
     }
     
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasVencidas() {
         try {
             if(facturasVencidas == null){
@@ -197,13 +216,13 @@ public class ComprobantesRecibidosController implements Serializable {
             } else {
                 return facturasVencidas();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertaService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "ComprobantesRecibidosController.getFilteredFacturasVencidas()", null, e.getLocalizedMessage());
             return null;
         }
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -220,14 +239,14 @@ public class ComprobantesRecibidosController implements Serializable {
                 || factura.getEncabezado().getNumeroConsecutivo().toLowerCase().contains(filterText);
     }
     
-    public void addFile(UploadedFile file){
+    public void addFile(@Nonnull UploadedFile file){
         if(files == null){
             files = new ArrayList<>();
         }
         files.add(file);
     }
     
-    public void parseXMLFromUploadedFile(UploadedFile uploadedFile) {
+    public void parseXMLFromUploadedFile(@Nonnull UploadedFile uploadedFile) {
         try {
             InputStream inputStream = uploadedFile.getInputStream();    
             parser.parseXML(inputStream);
@@ -390,7 +409,7 @@ public class ComprobantesRecibidosController implements Serializable {
             facturaService.update(factura);
             clearCache();
             
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertaService.registrarAlerta("Error procesando factura", "", currentSession.getCurrentUser(), 0, "processFactura()", null, e.getLocalizedMessage());
         }
     }
@@ -400,10 +419,15 @@ public class ComprobantesRecibidosController implements Serializable {
     }
     
     // Report methods
+    @Nullable
     private Date reportFechaInicio;
+    @Nullable
     private Date reportFechaFin;
+    @Nonnull
     private java.math.BigDecimal reportTotalComprobantes;
+    @Nonnull
     private java.math.BigDecimal reportTotalImpuesto;
+    @Nonnull
     private java.math.BigDecimal reportTotalBaseImponible;
     
     public void initReport() {
@@ -486,14 +510,19 @@ public class ComprobantesRecibidosController implements Serializable {
     }
     
     // Getters and setters for report fields
+    @Nullable
     public Date getReportFechaInicio() { return reportFechaInicio; }
-    public void setReportFechaInicio(Date reportFechaInicio) { this.reportFechaInicio = reportFechaInicio; }
+    public void setReportFechaInicio(@Nullable Date reportFechaInicio) { this.reportFechaInicio = reportFechaInicio; }
     
+    @Nullable
     public Date getReportFechaFin() { return reportFechaFin; }
-    public void setReportFechaFin(Date reportFechaFin) { this.reportFechaFin = reportFechaFin; }
+    public void setReportFechaFin(@Nullable Date reportFechaFin) { this.reportFechaFin = reportFechaFin; }
     
+    @Nonnull
     public java.math.BigDecimal getReportTotalComprobantes() { return reportTotalComprobantes; }
+    @Nonnull
     public java.math.BigDecimal getReportTotalImpuesto() { return reportTotalImpuesto; }
+    @Nonnull
     public java.math.BigDecimal getReportTotalBaseImponible() { return reportTotalBaseImponible; }
 
     

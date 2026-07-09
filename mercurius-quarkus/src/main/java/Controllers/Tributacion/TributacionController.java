@@ -3,6 +3,8 @@ package Controllers.Tributacion;
 import Controllers.SessionController;
 import Models.ComprobantesEmitidos;
 import Services.ComprobantesEmitidosService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -25,17 +27,26 @@ import lombok.Data;
 public class TributacionController implements Serializable {
 
     @Inject
+    @Nonnull
     private ComprobantesEmitidosService comprobantesService;
 
     @Inject
+    @Nonnull
     private SessionController currentSession;
 
+    @Nonnull
     private Date fechaInicio;
+    @Nonnull
     private Date fechaFin;
+    @Nullable
     private List<ComprobantesEmitidos> facturas;
+    @Nullable
     private Map<String, BigDecimal> impuestosAgrupados;
+    @Nonnull
     private BigDecimal totalBaseImponible;
+    @Nonnull
     private BigDecimal totalImpuesto;
+    @Nonnull
     private BigDecimal totalComprobantes;
 
     public TributacionController() {
@@ -53,7 +64,7 @@ public class TributacionController implements Serializable {
             List<ComprobantesEmitidos> result = comprobantesService.listAll();
             facturas = result != null ? result : null;
             calcularTotales();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             facturas = null;
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", 

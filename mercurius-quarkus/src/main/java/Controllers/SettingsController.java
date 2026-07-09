@@ -6,6 +6,8 @@ import Services.AppSettingsService;
 import Services.EmailService;
 import Services.HaciendaCertificateService;
 import Services.HaciendaCertificateService.CertificateInfo;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.ExternalContext;
@@ -38,34 +40,53 @@ import org.primefaces.model.file.UploadedFile;
 @ViewScoped
 public class SettingsController implements Serializable {
 
+    @Nullable
     private List<AppSettings> currentSettingsList;
+    @Nullable
     private AppSettings currentSettings;
+    @Nullable
     private AppSettings newSettings;
+    @Nullable
     private AppSettings selectedSettings;
+    @Nullable
     private Boolean hasValidProfile;
+    @Nullable
     private Boolean pasoSeleccionNombre, pasoSeleccionLogo, pasoSeleccionEmail, pasoSeleccionTributacion, pasoSeleccionConfirmacion, configuracionActual;
+    @Nullable
     private UploadedFile imagen;
 
     @Inject
+    @Nonnull
     AppSettingsService settingsService;
     @Inject
+    @Nonnull
     private ServletContext servletContext;
     @Inject
+    @Nonnull
     private EmailService emailer;
     @Inject
+    @Nonnull
     private TipoCambioController tipoCambioController;
     @Inject
+    @Nonnull
     private AlertasService alertas;
     @Inject
+    @Nonnull
     private SessionController currentSession;
     @Inject
+    @Nonnull
     private HaciendaCertificateService haciendaCertificateService;
     
     // Hacienda certificate fields
+    @Nullable
     private UploadedFile certificadoFile;
+    @Nullable
     private String certificadoPassword;
+    @Nullable
     private String haciendaApiKey;
+    @Nullable
     private String haciendaEnvironment;
+    @Nullable
     private CertificateInfo certificateInfo;
     private boolean hasCertificate;
     private boolean hasValidCertificate;
@@ -115,7 +136,7 @@ public class SettingsController implements Serializable {
         }
     }
 
-    public void seleccionar(String caso) {
+    public void seleccionar(@Nonnull String caso) {
         resetSeleccion();
         switch (caso) {
             case "nombre":
@@ -243,13 +264,14 @@ public class SettingsController implements Serializable {
         alertas.registrarAlerta("Configuración Deshabilitada", "Se deshabilitó la configuración seleccionada", currentSession.getCurrentUser(), 0, "disableSelectedSettings()", oldSettings.toString(), selectedSettings.toString());
     }
 
+    @Nonnull
     public String getMainDirectory() {
         FileSystemView fsv = FileSystemView.getFileSystemView();
         File docDir = fsv.getDefaultDirectory();
         return docDir.getAbsolutePath();
     }
 
-    public void createFolder(String documentsPath, String folderName) {
+    public void createFolder(@Nonnull String documentsPath, @Nonnull String folderName) {
         File newFolder = new File(documentsPath, folderName);
         if (newFolder.exists()) {
         } else if (newFolder.mkdir()) {
@@ -257,43 +279,52 @@ public class SettingsController implements Serializable {
         }
     }
 
+    @Nonnull
     public String getHomeDirPath() {
         return getMainDirectory() + File.separator + "Mercurius";
     }
 
+    @Nonnull
     public String getProfileDirPath() {
         return getHomeDirPath() + File.separator + currentSettings.getNombrePerfil();
     }
 
+    @Nonnull
     public String getReportesDirPath() {
         return getProfileDirPath() + File.separator + "reportes";
     }
 
+    @Nonnull
     public String getXMLDirPath() {
         return getProfileDirPath() + File.separator + "xml";
     }
 
+    @Nonnull
     public String getPDFDirPath() {
         return getProfileDirPath() + File.separator + "pdf";
     }
 
+    @Nonnull
     public String getImgDirPath() {
         return File.separator + "resources" + File.separator + "img";
     }
 
+    @Nonnull
     public String getLogoDirPath() {
         return getImgDirPath() + File.separator + "logo";
     }
 
+    @Nonnull
     public String getFacturasDirPath() {
         return getProfileDirPath() + File.separator + "facturas";
     }
 
+    @Nonnull
     public String getRecibosDirPath() {
         return getProfileDirPath() + File.separator + "recibos";
     }
 
-    public void uploadLogo(FileUploadEvent event) {
+    public void uploadLogo(@Nonnull FileUploadEvent event) {
         imagen = event.getFile();
         if (imagen != null) {
             try (InputStream input = imagen.getInputStream()) {
@@ -355,7 +386,7 @@ public class SettingsController implements Serializable {
 
             reloadPage();
             addMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Se añadió el correo electrónico");
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error:" + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "SettingsController.saveCorreo()", null, e.getLocalizedMessage());
             addMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo enviar el correo: " + e.getMessage());
         }
@@ -375,14 +406,14 @@ public class SettingsController implements Serializable {
         });
     }
 
-    public void probarCorreo(String correoElectronico, String contrasenaCorreo) {
+    public void probarCorreo(@Nonnull String correoElectronico, @Nonnull String contrasenaCorreo) {
         String to = correoElectronico;
         String subject = "¡Bienvenido!";
         String body = "¡Se registró con éxito su correo en el sistema Mercurius!";
         emailer.sendEmail(to, subject, body, correoElectronico, contrasenaCorreo, this::handleEmailResult);
     }
 
-    public void handleEmailResult(String emailResult) {
+    public void handleEmailResult(@Nonnull String emailResult) {
         // Handle the result of the email sending operation
         if (emailResult.equals("Sent")) {
             // Email sent successfully
@@ -440,6 +471,7 @@ public class SettingsController implements Serializable {
         }
     }
 
+    @Nullable
     public StreamedContent getLogo() {
         if (currentSettings != null) {
             byte[] logoBytes = currentSettings.getLogo();
@@ -462,12 +494,12 @@ public class SettingsController implements Serializable {
             certificateInfo = haciendaCertificateService.getCertificateInfo();
         }
         if (currentSettings != null) {
-            haciendaApiKey = currentSettings.getHaciendaApiKey();
+            haciendaApiKey = haciendaCertificateService.getDecryptedApiKey();
             haciendaEnvironment = currentSettings.getHaciendaEnvironment();
         }
     }
     
-    public void uploadCertificado(FileUploadEvent event) {
+    public void uploadCertificado(@Nonnull FileUploadEvent event) {
         certificadoFile = event.getFile();
         if (certificadoFile != null && certificadoFile.getContent() != null) {
             try {
@@ -500,7 +532,7 @@ public class SettingsController implements Serializable {
                     "Se subió el certificado digital", 
                     currentSession.getCurrentUser(), 0, "uploadCertificado()", null, null);
                     
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar certificado: " + e.getMessage()));
             }
@@ -509,8 +541,8 @@ public class SettingsController implements Serializable {
     
     public void saveApiKey() {
         if (currentSettings != null && haciendaApiKey != null && !haciendaApiKey.isBlank()) {
-            currentSettings.setHaciendaApiKey(haciendaApiKey);
-            settingsService.update(currentSettings);
+            haciendaCertificateService.saveApiKey(haciendaApiKey);
+            loadHaciendaStatus();
             
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "API Key guardada correctamente"));
@@ -551,6 +583,7 @@ public class SettingsController implements Serializable {
             currentSession.getCurrentUser(), 0, "clearCertificate()", null, null);
     }
     
+    @Nonnull
     public String getCertificateStatus() {
         if (!hasCertificate) {
             return "No configurado";
@@ -561,6 +594,7 @@ public class SettingsController implements Serializable {
         return "Válido";
     }
     
+    @Nonnull
     public String getEnvironmentLabel() {
         return "production".equals(haciendaEnvironment) ? "Producción" : "Pruebas (Sandbox)";
     }
@@ -584,6 +618,28 @@ public class SettingsController implements Serializable {
         saveEnvironment();
     }
     
+    public void initializeEncryption() {
+        boolean created = haciendaCertificateService.initializeEncryptionKey();
+        if (created) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito",
+                    "Llave de cifrado inicializada. Las credenciales existentes se migrarán automáticamente."));
+            alertas.registrarAlerta("Cifrado Hacienda",
+                "Se inicializó la llave de cifrado",
+                currentSession.getCurrentUser(), 0, "initializeEncryption()", null, null);
+        } else {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "Info",
+                    "La llave de cifrado ya existe o no se pudo crear. Verifique que haya configuraciones activas."));
+        }
+    }
+
+    public boolean isEncryptionKeyInitialized() {
+        if (currentSettings == null) return false;
+        String key = currentSettings.getHaciendaEncryptionKey();
+        return key != null && !key.isEmpty();
+    }
+
     // ============ END HACIENDA METHODS ============
     
 }

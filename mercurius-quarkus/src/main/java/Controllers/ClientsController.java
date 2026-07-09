@@ -3,6 +3,8 @@ package Controllers;
 import Models.Clients;
 import Services.AlertasService;
 import Services.ClientService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -23,14 +25,19 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ClientsController implements Serializable {
     
-    @Inject private ClientService clientService;
-    @Inject private SessionController currentSession;
-    @Inject private AlertasService alertas;
+    @Inject @Nonnull private ClientService clientService;
+    @Inject @Nonnull private SessionController currentSession;
+    @Inject @Nonnull private AlertasService alertas;
 
+    @Nullable
     private List<Clients> clients;
+    @Nullable
     private Clients selectedClient;
+    @Nullable
     private Clients newClient;
+    @Nullable
     private String clientsFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 
@@ -45,6 +52,7 @@ public class ClientsController implements Serializable {
         filterBy = new ArrayList<>();        
     }
 
+    @Nonnull
     public List<Clients> clientsList() {
         if (clients == null) {
             clients = clientService.listAll();
@@ -81,8 +89,20 @@ public class ClientsController implements Serializable {
 
     public void createClient() {
         if(currentSession.isValid()){
-            var exists = clientService.checkClientName(newClient.getName());
             var oldClient = newClient;
+
+            // Check tax ID uniqueness if idNumber is provided
+            String idNumber = newClient.getIdNumber();
+            if (idNumber != null && !idNumber.isBlank()
+                && clientService.checkClientByIdNumber(idNumber)) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new jakarta.faces.application.FacesMessage(
+                        jakarta.faces.application.FacesMessage.SEVERITY_ERROR,
+                        "Error", "Ya existe un cliente con la cédula: " + idNumber));
+                return;
+            }
+
+            var exists = clientService.checkClientName(newClient.getName());
             if(!exists){
                 newClient.setUsuario(currentSession.getCurrentUser());
                 newClient.setStatus(true);
@@ -122,6 +142,7 @@ public class ClientsController implements Serializable {
         selectedClient = null;
     }    
         
+    @Nonnull
     public List<Clients> getFilteredClients() {
         if (clientsFilter != null && !clientsFilter.isEmpty()) {
             return clientsList().stream()
@@ -132,7 +153,7 @@ public class ClientsController implements Serializable {
         }
     }
        
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -143,9 +164,9 @@ public class ClientsController implements Serializable {
                 || client.getEmail().toLowerCase().contains(filterText)
                 || client.getBirthDate().toString().toLowerCase().contains(filterText)
                 || client.getIdType().toLowerCase().contains(filterText)
-                || String.valueOf(client.getIdNumber()).contains(filterText)
+                || (client.getIdNumber() != null && client.getIdNumber().toLowerCase().contains(filterText))
                 || String.valueOf(client.getDiscount()).contains(filterText)
-                || String.valueOf(client.getPhoneNumber()).contains(filterText)
+                || (client.getPhoneNumber() != null && client.getPhoneNumber().toLowerCase().contains(filterText))
                 || String.valueOf(client.isTaxpayer()).contains(filterText)
                 || String.valueOf(client.getZoneCode()).contains(filterText);
     }

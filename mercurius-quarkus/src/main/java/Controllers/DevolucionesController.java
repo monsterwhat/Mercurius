@@ -16,10 +16,13 @@ import Models.Inventario;
 import Models.NotaCredito;
 import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
+import Models.Resumen.CodigoTipoMoneda;
 import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.ClientService;
+import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
+import Services.ConsecutivoEmitidoService;
 import Services.InventarioService;
 import Services.NotaCreditoService;
 import Services.Strategies.DocumentoStrategy;
@@ -36,6 +39,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 @Data
@@ -43,44 +48,61 @@ import lombok.Data;
 @ViewScoped
 public class DevolucionesController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private ComprobantesEmitidosService comprobantesService;
 
-    @Inject
+    @Inject @Nonnull
     private NotaCreditoService notaCreditoService;
 
-    @Inject
+    @Inject @Nonnull
     private InventarioService inventarioService;
 
-    @Inject
+    @Inject @Nonnull
     private ClientService clientService;
 
-    @Inject
+    @Inject @Nonnull
     private SessionController sessionController;
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
-    @Inject
+    @Inject @Nonnull
     private AppSettingsService appSettingsService;
 
-    @Inject
+    @Inject @Nonnull
     private DocumentoStrategyFactory strategyFactory;
 
-    @Inject
+    @Inject @Nonnull
     private Services.HaciendaSigner haciendaSigner;
 
+    @Inject @Nonnull
+    private ComprobanteService comprobanteService;
+
+    @Inject @Nonnull
+    private ConsecutivoEmitidoService consecutivoEmitidoService;
+
+    @Nullable
     private String criterioBusqueda;
+    @Nonnull
     private String tipoBusqueda;
+    @Nullable
     private ComprobantesEmitidos facturaSeleccionada;
+    @Nonnull
     private List<ComprobantesEmitidos> facturasEncontradas;
+    @Nullable
     private List<LineaDevolucion> lineasDevolucion;
+    @Nullable
     private String motivo;
+    @Nonnull
     private BigDecimal totalDevolucion;
+    @Nonnull
     private List<NotaCredito> historialNotas;
 
+    @Nullable
     private String authUsername;
+    @Nullable
     private String authPassword;
+    @Nullable
     private String authorizedBy;
 
     @PostConstruct
@@ -132,7 +154,7 @@ public class DevolucionesController implements Serializable {
         }
     }
 
-    public void seleccionarFactura(ComprobantesEmitidos factura) {
+    public void seleccionarFactura(@Nonnull ComprobantesEmitidos factura) {
         this.facturaSeleccionada = factura;
         lineasDevolucion = new ArrayList<>();
         totalDevolucion = BigDecimal.ZERO;
@@ -261,11 +283,11 @@ public class DevolucionesController implements Serializable {
                     }
 
                     DocumentoStrategy ncStrategy = strategyFactory.forCode("02");
-                    int consecutivo = (appSettings.getUltimoConsecutivo() != null ? appSettings.getUltimoConsecutivo() : 0) + 1;
-                    appSettings.setUltimoConsecutivo(consecutivo);
+                    String sucursal = appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001";
+                    String terminal = appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001";
+                    long consecutivo = consecutivoEmitidoService.getNextSequential(sucursal, terminal, ncStrategy.getCodigoDocumento());
                     String numeroConsecutivo = String.format("%s%s%s%012d",
-                        appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001",
-                        appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001",
+                        sucursal, terminal,
                         ncStrategy.getCodigoDocumento(), consecutivo);
 
                     Encabezado ncEncabezado = ncStrategy.buildEncabezado(appSettings, client);
@@ -350,6 +372,9 @@ public class DevolucionesController implements Serializable {
                     ncDetalles.setStatus(true);
 
                     ResumenFactura ncResumen = new ResumenFactura();
+                    CodigoTipoMoneda moneda = new CodigoTipoMoneda();
+                    moneda.setCodigoMoneda("CRC");
+                    ncResumen.setCodigoMoneda(moneda);
                     BigDecimal totalGravado = BigDecimal.ZERO;
                     BigDecimal totalExento = BigDecimal.ZERO;
                     BigDecimal totalVenta = BigDecimal.ZERO;
@@ -406,12 +431,15 @@ public class DevolucionesController implements Serializable {
 
                     comprobantesService.createAndReturn(ncComprobante);
 
+                    // Send NC immediately to Hacienda per CR 2176 §5.6
+                    comprobanteService.enviarComprobanteAHacienda(ncComprobante);
+
                     alertasService.registrarAlerta("NC Electronica",
                         "Nota de Credito electronica " + numeroConsecutivo + " generada para devolucion",
                         sessionController.getCurrentUser(), 0, "DevolucionesController.procesarDevolucion()",
                         null, null);
                 }
-            } catch (Exception eNC) {
+            } catch (RuntimeException eNC) {
                 alertasService.registrarAlerta("Error NC",
                     "Error al generar Nota de Credito electronica: " + eNC.getMessage(),
                     sessionController.getCurrentUser(), 0, "DevolucionesController.procesarDevolucion()",
@@ -434,7 +462,7 @@ public class DevolucionesController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito",
                     "Devolucion procesada correctamente"));
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error devolucion",
                 "Error al procesar devolucion: " + e.getMessage(),
                 sessionController.getCurrentUser(), 0, "DevolucionesController.procesarDevolucion()",
@@ -448,8 +476,11 @@ public class DevolucionesController implements Serializable {
 
     @Data
     public static class LineaDevolucion implements Serializable {
+        @Nullable
         private LineaDetalle lineaDetalle;
+        @Nullable
         private BigDecimal cantidadOriginal;
+        @Nullable
         private BigDecimal cantidadDevolver;
         private boolean seleccionado;
     }

@@ -3,6 +3,8 @@ package Controllers;
 import Models.Inventario;
 import Services.InventarioService;
 import Services.ShrinkageAnalysisService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -24,26 +26,37 @@ import lombok.Data;
 public class ShrinkageController implements Serializable {
 
     @Inject
+    @Nonnull
     private ShrinkageAnalysisService shrinkageAnalysisService;
 
     @Inject
+    @Nonnull
     private InventarioService inventarioService;
 
     @Inject
+    @Nonnull
     private SessionController currentSession;
 
     // Date range filters
+    @Nonnull
     private Date startDate;
+    @Nonnull
     private Date endDate;
 
     // Summary data
+    @Nullable
     private BigDecimal totalShrinkage;
+    @Nullable
     private BigDecimal shrinkagePercentage;
+    @Nullable
     private BigDecimal totalInventoryMovement;
+    @Nullable
     private Map<String, BigDecimal> shrinkageByCause;
+    @Nullable
     private Map<String, BigDecimal> shrinkageByDepartment;
 
     // Detailed movements list
+    @Nullable
     private List<Inventario> shrinkageMovements;
 
     public ShrinkageController() {
@@ -81,7 +94,7 @@ public class ShrinkageController implements Serializable {
 
             shrinkageMovements = shrinkageAnalysisService.getShrinkageMovements(start, end);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron cargar los datos de mermas: " + e.getMessage()));
         }
@@ -90,7 +103,8 @@ public class ShrinkageController implements Serializable {
     /**
      * Get human-readable label for shrinkage cause type.
      */
-    public String getCauseLabel(String tipo) {
+    @Nonnull
+    public String getCauseLabel(@Nullable String tipo) {
         if (tipo == null) return "";
         return switch (tipo) {
             case "Merma" -> "Merma General";
@@ -104,7 +118,8 @@ public class ShrinkageController implements Serializable {
     /**
      * Get color for shrinkage cause display.
      */
-    public String getCauseColor(String tipo) {
+    @Nonnull
+    public String getCauseColor(@Nullable String tipo) {
         if (tipo == null) return "#cccccc";
         return switch (tipo) {
             case "Merma" -> "#ffc107";
@@ -118,7 +133,8 @@ public class ShrinkageController implements Serializable {
     /**
      * Calculate percentage contribution of a specific cause to total shrinkage.
      */
-    public BigDecimal getCausePercentage(String tipo) {
+    @Nonnull
+    public BigDecimal getCausePercentage(@Nullable String tipo) {
         if (shrinkageByCause == null || totalShrinkage == null
             || totalShrinkage.compareTo(BigDecimal.ZERO) == 0) {
             return BigDecimal.ZERO;

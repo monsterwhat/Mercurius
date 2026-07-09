@@ -3,6 +3,8 @@ package Controllers;
 import Models.Users;
 import Services.AlertasService;
 import Services.LoginService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -29,17 +31,24 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class UsersController implements Serializable{
     
-    @Inject private AlertasService alertas;
-    @Inject private LoginService userService;
-    @Inject private SessionController currentSession;
+    @Inject @Nonnull private AlertasService alertas;
+    @Inject @Nonnull private LoginService userService;
+    @Inject @Nonnull private SessionController currentSession;
 
+    @Nullable
     private List<Users> users;
+    @Nullable
     private Users selectedUser;
+    @Nullable
     private Users newUser;
+    @Nullable
     private String generatorOption;
+    @Nullable
     private String usernameFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
+    @Nullable
     private String[] SelectedPuestos;
 
     public UsersController() {
@@ -54,6 +63,7 @@ public class UsersController implements Serializable{
         filterBy = new ArrayList<>();        
     }
     
+    @Nullable
     public List<Users> usersList(){
         if(users == null){
             users = userService.listAll();
@@ -61,6 +71,7 @@ public class UsersController implements Serializable{
         return users;
     }
     
+    @Nullable
     public List<Users> usersListFull(){
         return userService.listAll();
     }
@@ -162,6 +173,7 @@ public class UsersController implements Serializable{
         selectedUser = null;
     }
         
+    @Nullable
     public List<Users> getFilteredUsers() {
         if (usernameFilter != null && !usernameFilter.isEmpty()) {
             return usersList().stream()
@@ -172,6 +184,7 @@ public class UsersController implements Serializable{
         }
     }
     
+    @Nullable
     public List<Users> getFilteredUsersDetallado(){
         if (usernameFilter != null && !usernameFilter.isEmpty()) {
             return usersListFull().stream()

@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import org.primefaces.util.LangUtils;
 
@@ -23,17 +25,22 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class EtiquetasController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private ArticulosService articuloService;
-    @Inject
+    @Inject @Nonnull
     private PrinterService printer;
-    @Inject
+    @Inject @Nonnull
     private SettingsDirController directoryConfig;
 
+    @Nullable
     private List<Articulos> articulos;
+    @Nonnull
     private List<Articulos> selectedArticulos;
+    @Nullable
     private String globalFilter;
+    @Nonnull
     private Integer cantidadEtiquetas = 1;
+    @Nonnull
     private Integer cantidadCopias = 1;
 
     @PostConstruct
@@ -41,14 +48,14 @@ public class EtiquetasController implements Serializable {
         selectedArticulos = new ArrayList<>();
     }
 
-    public List<Articulos> getArticulos() {
+    public @Nonnull List<Articulos> getArticulos() {
         if (articulos == null) {
             articulos = articuloService.ListAllEnabled();
         }
         return articulos;
     }
 
-    public List<Articulos> getFilteredArticulos() {
+    public @Nonnull List<Articulos> getFilteredArticulos() {
         List<Articulos> result = getArticulos();
 
         if (globalFilter != null && !globalFilter.trim().isEmpty()) {
@@ -61,7 +68,7 @@ public class EtiquetasController implements Serializable {
         return result;
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -73,7 +80,7 @@ public class EtiquetasController implements Serializable {
                 || (articulo.getCodigoBarra() != null && articulo.getCodigoBarra().toLowerCase().contains(filterText));
     }
 
-    public void toggleSelection(Articulos articulo) {
+    public void toggleSelection(@Nonnull Articulos articulo) {
         boolean found = false;
         for (Articulos a : selectedArticulos) {
             if (a.getCodigo() != null && a.getCodigo().equals(articulo.getCodigo())) {
@@ -88,7 +95,7 @@ public class EtiquetasController implements Serializable {
         }
     }
 
-    public boolean isSelected(Articulos articulo) {
+    public boolean isSelected(@Nonnull Articulos articulo) {
         for (Articulos a : selectedArticulos) {
             if (a.getCodigo() != null && a.getCodigo().equals(articulo.getCodigo())) {
                 return true;
@@ -105,7 +112,7 @@ public class EtiquetasController implements Serializable {
         selectedArticulos.clear();
     }
 
-    public String getContextPath() {
+    public @Nonnull String getContextPath() {
         return FacesContext.getCurrentInstance().getExternalContext().getRequestContextPath();
     }
 
@@ -119,7 +126,7 @@ public class EtiquetasController implements Serializable {
         return (int) (countWithBarcode * cantidadEtiquetas * cantidadCopias);
     }
 
-    public List<Articulos> getSelectedArticulosWithBarcode() {
+    public @Nonnull List<Articulos> getSelectedArticulosWithBarcode() {
         if (selectedArticulos == null) {
             return new ArrayList<>();
         }

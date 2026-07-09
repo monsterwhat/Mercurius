@@ -22,6 +22,8 @@ import Services.ComprobantesRecibidosService;
 import Services.FamiliaService;
 import Services.InventarioService;
 import Utils.ExcelExporter;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -50,19 +52,21 @@ import lombok.Data;
 @Named
 public class CorreosHelper {
     
-    @Inject InventarioService inventarioService;
-    @Inject ComprobantesRecibidosService facturaService;
-    @Inject ArticulosService articuloService;
-    @Inject DepartamentoService departamentosService;
-    @Inject FamiliaService familiaService;
-    @Inject SettingsDirController settings;
-    @Inject private EmailService emailer;
-    @Inject ReportesProgramadosService rpService;    
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull InventarioService inventarioService;
+    @Inject @Nonnull ComprobantesRecibidosService facturaService;
+    @Inject @Nonnull ArticulosService articuloService;
+    @Inject @Nonnull DepartamentoService departamentosService;
+    @Inject @Nonnull FamiliaService familiaService;
+    @Inject @Nonnull SettingsDirController settings;
+    @Inject @Nonnull private EmailService emailer;
+    @Inject @Nonnull ReportesProgramadosService rpService;    
+    @Inject @Nonnull AlertasService alertasService;
     
+    @Nonnull
     ExcelExporter exporter = new ExcelExporter();
     
-    public Date calcularFechaProximoReporte(Date fechaUltimoReporte, String frecuencia) {
+    @Nullable
+    public Date calcularFechaProximoReporte(@Nonnull Date fechaUltimoReporte, @Nonnull String frecuencia) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(fechaUltimoReporte);
 
@@ -93,7 +97,7 @@ public class CorreosHelper {
         return calendar.getTime();
     }
     
-    public void checkChanges(ReporteProgramado reporte) {
+    public void checkChanges(@Nonnull ReporteProgramado reporte) {
     List<String> tipos = reporte.getReportes();
         if(tipos == null){
             return;
@@ -122,7 +126,7 @@ public class CorreosHelper {
         }
     }
 
-    public void processMovimientos(ReporteProgramado reporte){
+    public void processMovimientos(@Nonnull ReporteProgramado reporte){
     List<Inventario> changes = inventarioService.findInventariosAfterDate(reporte.getLastRun());
     if(changes != null && !changes.isEmpty()){
         try {
@@ -151,7 +155,7 @@ public class CorreosHelper {
     }
 }
     
-    public void processFacturas(ReporteProgramado reporte){
+    public void processFacturas(@Nonnull ReporteProgramado reporte){
         List<ComprobantesRecibidos> changes = facturaService.findComprobantesAfterDate(reporte.getLastRun());
         if(changes != null && !changes.isEmpty()){
             try {
@@ -181,7 +185,7 @@ public class CorreosHelper {
         }
     }
     
-    public void processArticulos(ReporteProgramado reporte){
+    public void processArticulos(@Nonnull ReporteProgramado reporte){
         List<Articulos> changes = articuloService.findArticulosAfterDate(reporte.getLastRun());
         if(changes != null && !changes.isEmpty()){
             try {
@@ -212,7 +216,7 @@ public class CorreosHelper {
         }
     }
     
-    public void processDepartamentos(ReporteProgramado reporte){
+    public void processDepartamentos(@Nonnull ReporteProgramado reporte){
         List<Departamento> changes = departamentosService.findDepartamentosAfterDate(reporte.getLastRun());
         if(changes != null && !changes.isEmpty()){
             try {
@@ -243,7 +247,7 @@ public class CorreosHelper {
         }
     }
     
-    public void processFamilias(ReporteProgramado reporte){
+    public void processFamilias(@Nonnull ReporteProgramado reporte){
         List<Familia> changes = familiaService.findFamiliasAfterDate(reporte.getLastRun());
         if(changes != null && !changes.isEmpty()) {
             try {
@@ -274,7 +278,7 @@ public class CorreosHelper {
         }
     }
     
-    public void processInventarios(ReporteProgramado reporte){
+    public void processInventarios(@Nonnull ReporteProgramado reporte){
         List<Inventario> changes = inventarioService.findInventariosAfterDate(reporte.getLastRun());
         if(changes != null && !changes.isEmpty()){
             try {
@@ -305,7 +309,7 @@ public class CorreosHelper {
         }
     }
     
-    public void mailChanges(File changes, ReporteProgramado reporte){
+    public void mailChanges(@Nonnull File changes, @Nonnull ReporteProgramado reporte){
         String correoElectronico = settings.getCurrentSettings().getCorreoElectronico();
         String contrasenaCorreo = settings.getCurrentSettings().getContrasenaCorreo();
         List<String> to = reporte.getCorreos();
@@ -333,7 +337,7 @@ public class CorreosHelper {
         
     }
     
-    public void handleEmailResult(String emailResult) {
+    public void handleEmailResult(@Nonnull String emailResult) {
     // Handle the result of the email sending operation
     if (emailResult.equals("Sent")) {
         // Email sent successfully

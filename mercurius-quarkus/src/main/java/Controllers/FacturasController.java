@@ -45,6 +45,8 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
@@ -58,63 +60,79 @@ public class FacturasController implements Serializable {
     
     private static final Object fileUploadLock = new Object();
 
-    @Inject
+    @Inject @Nonnull
     ComprobantesRecibidosService facturaService;
-    @Inject
+    @Inject @Nonnull
     LineaDetalleService lineaDetalleService;
-    @Inject
+    @Inject @Nonnull
     SessionController currentSession;
-    @Inject
+    @Inject @Nonnull
     ArticulosController articuloController;
-    @Inject
+    @Inject @Nonnull
     InventarioController inventarioController;
-    @Inject
+    @Inject @Nonnull
     DepartamentoController departamentosController;
-    @Inject
+    @Inject @Nonnull
     ComprobantesRecibidosService comprobantesRecibidosService;
-    @Inject
+    @Inject @Nonnull
     MedioPagoService medioPagoService;
-    @Inject
+    @Inject @Nonnull
     ArticuloPrecioService precioService;
-    @Inject
+    @Inject @Nonnull
     Parser parser;
-    @Inject
+    @Inject @Nonnull
     AlertasService alertas;
-    @Inject
+    @Inject @Nonnull
     AppSettingsService appSettingsService;
-    @Inject
+    @Inject @Nonnull
     ComprobanteService comprobanteService;
-    @Inject
+    @Inject @Nonnull
     HaciendaApiService haciendaApiService;
-    @Inject
+    @Inject @Nonnull
     HaciendaSigner haciendaSigner;
-    @Inject
+    @Inject @Nonnull
     ComprobantesRecibidosPrevalidationService prevalidationService;
-    @Inject
+    @Inject @Nonnull
     ConsecutivoReceptorService consecutivoReceptorService;
 
+    @Nullable
     private PrevalidationResult prevalidationResult;
 
+    @Nonnull
     private List<UploadedFile> files;
+    @Nullable
     private List<ComprobantesRecibidos> facturas;
+    @Nullable
     private List<ComprobantesRecibidos> facturasDetalladas;
+    @Nullable
     private List<ComprobantesRecibidos> facturasVencidas;
+    @Nullable
     private List<ComprobantesRecibidos> facturasPendientes;
 
+    @Nullable
     private LineaDetalle lineaDetalle;
 
+    @Nonnull
     private Set<Long> lineasAceptadas = new HashSet<>();
 
+    @Nullable
     private ComprobantesRecibidos selectedFactura;
+    @Nullable
     private String facturaFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     
     // Report fields
+    @Nonnull
     private Date reportFechaInicio;
+    @Nonnull
     private Date reportFechaFin;
+    @Nonnull
     private BigDecimal reportTotalComprobantes;
+    @Nonnull
     private BigDecimal reportTotalImpuesto;
+    @Nonnull
     private BigDecimal reportTotalBaseImponible;
 
     @PostConstruct
@@ -206,28 +224,28 @@ public class FacturasController implements Serializable {
             .count();
     }
 
-    public List<ComprobantesRecibidos> facturasList() {
+    public @Nullable List<ComprobantesRecibidos> facturasList() {
         if (facturas == null) {
             facturas = facturaService.ListAllEnabled();
         }
         return facturas;
     }
 
-    public List<ComprobantesRecibidos> facturasListDetalladas() {
+    public @Nullable List<ComprobantesRecibidos> facturasListDetalladas() {
         if (facturasDetalladas == null) {
             facturasDetalladas = facturaService.listAll();
         }
         return facturasDetalladas;
     }
 
-    public List<ComprobantesRecibidos> facturasPenditenes() {
+    public @Nullable List<ComprobantesRecibidos> facturasPenditenes() {
         if (facturasPendientes == null) {
             facturasPendientes = facturaService.listPendientes();
         }
         return facturasPendientes;
     }
 
-    public List<ComprobantesRecibidos> facturasVencidas() {
+    public @Nullable List<ComprobantesRecibidos> facturasVencidas() {
         if (facturasVencidas == null) {
             facturasVencidas = facturaService.listVencidas();
         }
@@ -314,7 +332,7 @@ public class FacturasController implements Serializable {
         facturasDetalladas = null;
     }
 
-    public List<ComprobantesRecibidos> getFilteredFacturas() {
+    public @Nonnull List<ComprobantesRecibidos> getFilteredFacturas() {
         if (facturas == null) {
             facturas = facturaService.ListAllEnabled();
         }
@@ -330,7 +348,7 @@ public class FacturasController implements Serializable {
         }
     }
 
-    public List<ComprobantesRecibidos> getFilteredFacturasDetallados() {
+    public @Nonnull List<ComprobantesRecibidos> getFilteredFacturasDetallados() {
         try {
             if (facturasDetalladas == null) {
                 facturasDetalladas = facturaService.listAll();
@@ -345,12 +363,13 @@ public class FacturasController implements Serializable {
             } else {
                 return facturasListDetalladas();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasDetallados()", null, e.getLocalizedMessage());
             return new ArrayList<>();
         }
     }
 
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasPendientes() {
         try {
             if (facturasPendientes == null) {
@@ -363,12 +382,13 @@ public class FacturasController implements Serializable {
             } else {
                 return facturasPenditenes();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasPendientes()", null, e.getLocalizedMessage());
             return null;
         }
     }
 
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasVencidas() {
         try {
             if (facturasVencidas == null) {
@@ -381,12 +401,13 @@ public class FacturasController implements Serializable {
             } else {
                 return facturasVencidas();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasVencidas()", null, e.getLocalizedMessage());
             return null;
         }
     }
     
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasActivas() {
         try {
             if (facturas == null) {
@@ -402,12 +423,13 @@ public class FacturasController implements Serializable {
             } else {
                 return activas;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasActivas()", null, e.getLocalizedMessage());
             return null;
         }
     }
     
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasPagadas() {
         try {
             if (facturas == null) {
@@ -423,12 +445,13 @@ public class FacturasController implements Serializable {
             } else {
                 return pagadas;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasPagadas()", null, e.getLocalizedMessage());
             return null;
         }
     }
     
+    @Nullable
     public List<ComprobantesRecibidos> getFilteredFacturasProcesadas() {
         try {
             if (facturas == null) {
@@ -444,13 +467,13 @@ public class FacturasController implements Serializable {
             } else {
                 return procesadas;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "FacturasController.getFilteredFacturasProcesadas()", null, e.getLocalizedMessage());
             return null;
         }
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -486,14 +509,14 @@ public class FacturasController implements Serializable {
                 .anyMatch(correo -> correo.toLowerCase().contains(filterText));
     }
 
-    public void addFile(UploadedFile file) {
+    public void addFile(@Nonnull UploadedFile file) {
         if (files == null) {
             files = new ArrayList<>();
         }
         files.add(file);
     }
 
-    public void parseXMLFromUploadedFile(UploadedFile uploadedFile) {
+    public void parseXMLFromUploadedFile(@Nullable UploadedFile uploadedFile) {
         synchronized (fileUploadLock) {
         if (uploadedFile == null) {
             alertas.registrarAlerta("Error", "UploadedFile is null", null, 0, "FacturasController.parseXMLFromUploadedFile()", null, null);
@@ -537,7 +560,7 @@ public class FacturasController implements Serializable {
             alertas.registrarAlerta("Error al parsear xml de factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.parseXMLFromUploadedFile()", e.getLocalizedMessage(), null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar el archivo: " + e.getLocalizedMessage());
             FacesContext.getCurrentInstance().addMessage(null, message);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Exception processing file " + uploadedFile.getFileName() + ": " + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "FacturasController.parseXMLFromUploadedFile()", null, e.getLocalizedMessage());
             alertas.registrarAlerta("Error al parsear xml de factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.parseXMLFromUploadedFile()", e.getLocalizedMessage(), null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar el archivo XML: " + e.getLocalizedMessage());
@@ -713,7 +736,7 @@ public class FacturasController implements Serializable {
             alertas.registrarAlerta("Factura Procesada", "Se procesaron los artículos de la factura #" + factura.getId(), currentSession.getCurrentUser(), 0, "processFactura()", factura.toString(), null);
             clearCache();
 
-        } catch (Exception e) { 
+        } catch (RuntimeException e) { 
             alertas.registrarAlerta("Error al procesar factura", e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "facturasController.processFactura()", e.getLocalizedMessage(), null);
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar factura: " + e.getLocalizedMessage());
             FacesContext.getCurrentInstance().addMessage(null, message);
@@ -758,6 +781,7 @@ public class FacturasController implements Serializable {
             null, prevalidationResult.getAllIssues().toString());
     }
 
+    @Nullable
     public PrevalidationResult getPrevalidationResult() {
         return prevalidationResult;
     }
@@ -835,15 +859,15 @@ public class FacturasController implements Serializable {
         lineasAceptadas.remove(lineaDetalle.getId());
     }
 
-    public boolean isLineaAceptada(LineaDetalle linea) {
+    public boolean isLineaAceptada(@Nullable LineaDetalle linea) {
         return linea != null && linea.getId() != null && lineasAceptadas.contains(linea.getId());
     }
 
-    public boolean isLineaRechazada(LineaDetalle linea) {
+    public boolean isLineaRechazada(@Nullable LineaDetalle linea) {
         return linea != null && linea.getId() != null && !lineasAceptadas.contains(linea.getId());
     }
 
-    public Set<Long> getLineasAceptadasSet() {
+    public @Nonnull Set<Long> getLineasAceptadasSet() {
         return lineasAceptadas;
     }
 
@@ -994,7 +1018,7 @@ public class FacturasController implements Serializable {
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Hacienda rechazó el Mensaje Receptor: " + response.errorMessage));
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error en Mensaje Receptor: " + e.getMessage(), currentSession.getCurrentUser(), 0, "FacturasController.procesarMensajeReceptor()", null, e.getMessage());
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar Mensaje Receptor: " + e.getMessage()));

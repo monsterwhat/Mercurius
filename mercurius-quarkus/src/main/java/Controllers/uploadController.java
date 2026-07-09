@@ -4,12 +4,15 @@ import Services.ComprobantesRecibidosService;
 import Services.Facturas.*;
 import Services.AlertasService;
 import Utils.Parsers.Parser;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,11 +31,12 @@ import org.primefaces.model.file.UploadedFile;
 @Named
 @RequestScoped
 public class uploadController {
-    @Inject ComprobantesRecibidosService facturaService;
-    @Inject SessionController currentSession;
-    @Inject Parser parser;
-    @Inject AlertasService alertas;
-    @Inject ExecutorService executorService;
+    @Inject @Nonnull ComprobantesRecibidosService facturaService;
+    @Inject @Nonnull SessionController currentSession;
+    @Inject @Nonnull Parser parser;
+    @Inject @Nonnull AlertasService alertas;
+    @Inject @Nonnull ExecutorService executorService;
+    @Nullable
     private UploadedFile file;
     
     // Queue for processing files sequentially
@@ -41,27 +45,36 @@ public class uploadController {
     
     // Inner class to store file data before temp files are deleted
     private static class FileData {
+        @Nonnull
         private final String fileName;
+        @Nonnull
         private final String contentType;
+        @Nonnull
         private final byte[] fileContent;
+        @Nonnull
         private final String currentUser;
         
-        public FileData(UploadedFile uploadedFile, String currentUser) throws Exception {
+        public FileData(@Nonnull UploadedFile uploadedFile, @Nonnull String currentUser) {
             this.fileName = uploadedFile.getFileName();
             this.contentType = uploadedFile.getContentType();
             this.fileContent = uploadedFile.getContent();
             this.currentUser = currentUser;
         }
         
+        @Nonnull
         public String getFileName() { return fileName; }
+        @Nonnull
         public String getContentType() { return contentType; }
+        @Nonnull
         public byte[] getFileContent() { return fileContent; }
         public long getSize() { return fileContent.length; }
+        @Nonnull
         public InputStream getInputStream() { return new ByteArrayInputStream(fileContent); }
+        @Nonnull
         public String getCurrentUser() { return currentUser; }
     }
         
-    public void handleFileUpload(FileUploadEvent event) {
+    public void handleFileUpload(@Nonnull FileUploadEvent event) {
         try {
             alertas.registrarAlerta("Info", "DEBUG: handleFileUpload called", currentSession.getCurrentUser(), 0, "uploadController.handleFileUpload()", null, null);
             // Add uploaded file to queue for sequential processing
@@ -73,7 +86,7 @@ public class uploadController {
                 String currentUser = null;
                 try {
                     currentUser = currentSession.getCurrentUser().getUsername();
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     alertas.registrarAlerta("Warning", "Warning: Could not get current user, using default: " + e.getMessage(), null, 0, "uploadController.handleFileUpload()", null, e.getMessage());
                     currentUser = "system";
                 }
@@ -103,7 +116,7 @@ public class uploadController {
             FacesMessage message = new FacesMessage("Exito.", "Archivo '" + uploadedFile.getFileName() + "' agregado a la cola de procesamiento.");
             FacesContext.getCurrentInstance().addMessage(null, message);
             alertas.registrarAlerta("Info", "DEBUG: handleFileUpload completed for: " + uploadedFile.getFileName(), currentSession.getCurrentUser(), 0, "uploadController.handleFileUpload()", null, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error al procesar archivo", "Error al procesar archivo: " + e.getMessage(), currentSession.getCurrentUser(), 0, "handleFileUpload()", null, e.getMessage());
             alertas.registrarAlerta("Error", "DEBUG: Error in handleFileUpload: " + e.getMessage(), currentSession.getCurrentUser(), 0, "uploadController.handleFileUpload()", null, e.getMessage());
             FacesMessage message = new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo procesar el archivo: " + e.getMessage());
@@ -136,7 +149,7 @@ private void processQueueAsync() {
                      isProcessing = false;
                  }
                  alertas.registrarAlerta("Info", "DEBUG: Virtual thread completed, processed " + fileCount + " files, isProcessing set to false", currentSession.getCurrentUser(), 0, "uploadController.processQueueAsync()", null, null);
-             } catch (Exception e) {
+             } catch (RuntimeException e) {
                 alertas.registrarAlerta("Error", "Error in virtual thread processing: " + e.getMessage(), currentSession.getCurrentUser(), 0, "uploadController.processQueueAsync()", null, e.getMessage());
                 synchronized (uploadController.class) {
                      isProcessing = false;
@@ -167,14 +180,14 @@ private void processQueueAsync() {
              alertas.registrarAlerta("Info", "DEBUG: XML file processing completed successfully", currentSession.getCurrentUser(), 0, "uploadController.processSingleFile()", null, null);
              
               alertas.registrarAlerta("Info", "DEBUG: File processed successfully: " + fileData.getFileName(), currentSession.getCurrentUser(), 0, "uploadController.processSingleFile()", null, null);
-          } catch (Exception e) {
-              alertas.registrarAlerta("Error al procesar archivo", "Archivo: " + fileData.getFileName() + " - Error: " + e.getMessage(), null, 0, "processSingleFile()", fileData.getFileName(), e.getMessage());
+           } catch (IOException | RuntimeException e) {
+                alertas.registrarAlerta("Error al procesar archivo", "Archivo: " + fileData.getFileName() + " - Error: " + e.getMessage(), null, 0, "processSingleFile()", fileData.getFileName(), e.getMessage());
             alertas.registrarAlerta("Error", "DEBUG: Error processing file " + fileData.getFileName() + ": " + e.getMessage(), currentSession.getCurrentUser(), 0, "uploadController.processSingleFile()", null, e.getMessage());
             alertas.registrarAlerta("Error", "ERROR: Failed to process file " + fileData.getFileName() + ": " + e.getMessage(), currentSession.getCurrentUser(), 0, "uploadController.processSingleFile()", null, e.getMessage());
           }
      }
      
-private void processXMLDirectly(FileData fileData, InputStream inputStream) throws Exception {
+private void processXMLDirectly(FileData fileData, InputStream inputStream) throws IOException {
         alertas.registrarAlerta("Info", "DEBUG: Processing XML directly for: " + fileData.getFileName() + " by user: " + fileData.getCurrentUser(), currentSession.getCurrentUser(), 0, "uploadController.processXMLDirectly()", null, null);
         
         if (fileData == null || fileData.getSize() == 0) {
@@ -206,7 +219,7 @@ private void processXMLDirectly(FileData fileData, InputStream inputStream) thro
             Utils.AsyncUserContext.setCurrentUser(fileData.getCurrentUser());
             parser.parseXML(inputStream);
             alertas.registrarAlerta("Info", "Successfully processed file: " + fileData.getFileName(), currentSession.getCurrentUser(), 0, "uploadController.processXMLDirectly()", null, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertas.registrarAlerta("Error al parsear XML", "Archivo: " + fileData.getFileName() + " - Error: " + e.getMessage(), null, 0, "processXMLDirectly()", fileData.getFileName(), e.getMessage());
             throw e;
         } finally {

@@ -4,6 +4,8 @@ import Models.Correos.ReporteProgramado;
 import Services.AlertasService;
 import Services.Correos.ReportesProgramadosService;
 import io.quarkus.scheduler.Scheduled;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Date;
@@ -17,10 +19,11 @@ import java.util.List;
 @ApplicationScoped
 public class CorreosScheduler {
     
-    @Inject ReportesProgramadosService rpService;    
-    @Inject CorreosHelper helper;
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull ReportesProgramadosService rpService;    
+    @Inject @Nonnull CorreosHelper helper;
+    @Inject @Nonnull AlertasService alertasService;
     
+    @Nullable
     private List<ReporteProgramado> reportes;
     
     //Midnight everyday!

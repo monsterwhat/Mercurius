@@ -3,6 +3,8 @@ package Controllers;
 import Models.Articulos.ArticuloPrecio;
 import Services.ArticuloPrecioService;
 import Services.AlertasService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -27,14 +29,19 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ArticuloPrecioController implements Serializable  {
     
-    @Inject ArticuloPrecioService precioService;
-    @Inject private AlertasService alertasService;
-    @Inject private SessionController currentSession;
+    @Inject @Nonnull ArticuloPrecioService precioService;
+    @Inject @Nonnull private AlertasService alertasService;
+    @Inject @Nonnull private SessionController currentSession;
     
+    @Nullable
     List<ArticuloPrecio> precios;
+    @Nullable
     private String preciosFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
+    @Nonnull
     private ArticuloPrecio selectedPrecio;
+    @Nullable
     private String selection;
     
     /**
@@ -63,6 +70,7 @@ public class ArticuloPrecioController implements Serializable  {
         selection = "articulos";
     }
     
+    @Nonnull
     public List<ArticuloPrecio> preciosActivos() {
         if(precios == null){
             precios = precioService.listAll();
@@ -70,6 +78,7 @@ public class ArticuloPrecioController implements Serializable  {
         return precios;
     }
      
+     @Nonnull
      public List<ArticuloPrecio> getFilteredPrecios() {
         if(precios == null){
             precios = precioService.listAll();
@@ -83,7 +92,7 @@ public class ArticuloPrecioController implements Serializable  {
         }
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -103,7 +112,7 @@ public class ArticuloPrecioController implements Serializable  {
             var oldPrecio = selectedPrecio;
             precioService.update(selectedPrecio);
             alertasService.registrarAlerta("Precio actualizado", "Se ha actualizado el precio del artículo: " + selectedPrecio.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "ArticuloPrecioController.updateSelectedPrecio", oldPrecio.toString() , selectedPrecio.toString());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error al actualizar el precio del artículo: " + selectedPrecio.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "ArticuloPrecioController.updateSelectedPrecio", selectedPrecio.toString(), e.getMessage());
         }
     }
