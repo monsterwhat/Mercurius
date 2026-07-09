@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_Mensaje {
     ACEPTADO("1", "Aceptado"),
     ACEPTACION_PARCIAL("2", "Aceptación parcial"),
@@ -13,15 +15,18 @@ public enum Tipo_Mensaje {
         this.descripcion = descripcion;
     }
 
+    @Nonnull
     public String getCodigo() {
         return codigo;
     }
 
+    @Nonnull
     public String getDescripcion() {
         return descripcion;
     }
 
-    public static Tipo_Mensaje fromCodigo(String codigo) {
+    @Nonnull
+    public static Tipo_Mensaje fromCodigo(@Nonnull String codigo) {
         for (Tipo_Mensaje mensaje : Tipo_Mensaje.values()) {
             if (mensaje.getCodigo().equals(codigo)) {
                 return mensaje;

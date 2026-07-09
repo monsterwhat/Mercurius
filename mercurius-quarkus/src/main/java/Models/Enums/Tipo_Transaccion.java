@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_Transaccion {
     VENTA_NORMAL("01", "Venta Normal de Bienes y Servicios (Transacción General)"),
     AUTOCONSUMO_EXENTO_BIEN("02", "Mercancía de Autoconsumo exento"),
@@ -23,15 +25,18 @@ public enum Tipo_Transaccion {
         this.descripcion = descripcion;
     }
 
+    @Nonnull
     public String getCodigo() {
         return codigo;
     }
 
+    @Nonnull
     public String getDescripcion() {
         return descripcion;
     }
 
-    public static Tipo_Transaccion fromCodigo(String codigo) {
+    @Nonnull
+    public static Tipo_Transaccion fromCodigo(@Nonnull String codigo) {
         for (Tipo_Transaccion tipo : Tipo_Transaccion.values()) {
             if (tipo.getCodigo().equals(codigo)) {
                 return tipo;

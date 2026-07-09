@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_Codigo_ProductoServicio {
     CODIGO_PRODUCTO_VENDEDOR("01", "Código del producto del vendedor"),
     CODIGO_PRODUCTO_COMPRADOR("02", "Código del producto del comprador"),
@@ -7,7 +9,9 @@ public enum Tipo_Codigo_ProductoServicio {
     CODIGO_USO_INTERNO("04", "Código uso interno"),
     OTROS("99", "Otros");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_Codigo_ProductoServicio(String codigo, String descripcion) {

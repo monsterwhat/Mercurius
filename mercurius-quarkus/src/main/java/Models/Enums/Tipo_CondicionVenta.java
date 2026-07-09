@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_CondicionVenta {
     CONTADO("01", "Contado"),
     CREDITO("02", "Crédito"),
@@ -18,7 +20,9 @@ public enum Tipo_CondicionVenta {
     ARRENDAMIENTO_FINANCIERO("15","Arrendamiento Financiero"),
     OTROS("99", "Otros (se debe indicar la condición de la venta)");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_CondicionVenta(String codigo, String descripcion) {

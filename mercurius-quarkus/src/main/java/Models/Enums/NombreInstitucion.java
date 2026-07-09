@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum NombreInstitucion { 
 
     MINISTERIO_HACIENDA("01", "Ministerio de Hacienda"),
@@ -16,7 +18,9 @@ public enum NombreInstitucion {
     ARESEP("12", "Autoridad Reguladora de los Servicios Públicos (Aresep)"),
     OTROS("99", "Otros");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String nombre;
 
     NombreInstitucion(String codigo, String nombre) {
@@ -24,15 +28,18 @@ public enum NombreInstitucion {
         this.nombre = nombre;
     }
 
+    @Nonnull
     public String getCodigo() {
         return codigo;
     }
 
+    @Nonnull
     public String getNombre() {
         return nombre;
     }
 
-    public static NombreInstitucion fromCodigo(String codigo) {
+    @Nonnull
+    public static NombreInstitucion fromCodigo(@Nonnull String codigo) {
         for (NombreInstitucion inst : values()) {
             if (inst.codigo.equals(codigo)) {
                 return inst;

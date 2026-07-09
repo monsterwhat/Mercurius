@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_CondicionImpuesto {
     GENERA_CREDITO_IVA("01", "Genera crédito IVA"),
     GENERA_CREDITO_PARCIAL_IVA("02", "Genera Crédito parcial del IVA"),
@@ -7,7 +9,9 @@ public enum Tipo_CondicionImpuesto {
     GASTO_CORRIENTE_NO_GENERA_CREDITO("04", "Gasto corriente no genera crédito"),
     PROPORCIONALIDAD("05", "Proporcionalidad");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_CondicionImpuesto(String codigo, String descripcion) {

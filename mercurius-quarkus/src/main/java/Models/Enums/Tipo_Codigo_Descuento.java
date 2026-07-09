@@ -1,5 +1,7 @@
 package Models.Enums;
 
+import jakarta.annotation.Nonnull;
+
 public enum Tipo_Codigo_Descuento {
     DESCUENTO_POR_REGALIA("01", "Descuento por Regalia"),
     DESCUENTO_POR_REGALIA_IVA_COBRADO_CLIENTE("02", "Descuento por Regalia con IVA cobrado al cliente"),
@@ -10,9 +12,11 @@ public enum Tipo_Codigo_Descuento {
     DESCUENTO_COMERCIAL("07","Descuento comercial"),
     DESCUENTO_POR_FRECUENCIA("08","Descuento por frecuencia"),
     DESCUENTO_SOSTENIDO("09","Descuento sostenido"),
-    OTROS_DESCUENTOS("10","Otros descuentos");
+    OTROS_DESCUENTOS("99","Otros descuentos");
 
+    @Nonnull
     private final String codigo;
+    @Nonnull
     private final String descripcion;
 
     Tipo_Codigo_Descuento(String codigo, String descripcion) {
