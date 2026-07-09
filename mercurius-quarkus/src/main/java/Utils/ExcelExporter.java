@@ -1,5 +1,6 @@
 package Utils;
 
+import jakarta.annotation.Nonnull;
 import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
 import Models.ComprobantesRecibidos;
@@ -22,7 +23,8 @@ import java.util.stream.Collectors;
 
 public class ExcelExporter {
 
-    public File exportInventoryToExcel(List<Inventario> inventarios, String filePath) throws IOException {
+    @Nonnull
+    public File exportInventoryToExcel(@Nonnull List<Inventario> inventarios, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Inventario");
 
@@ -63,7 +65,8 @@ public class ExcelExporter {
         return file;
     }
 
-    public File exportComprobantesToExcel(List<ComprobantesRecibidos> comprobantes, String filePath) throws IOException {
+    @Nonnull
+    public File exportComprobantesToExcel(@Nonnull List<ComprobantesRecibidos> comprobantes, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Comprobantes");
 
@@ -115,7 +118,8 @@ public class ExcelExporter {
         return file;
     }
 
-    public File exportArticulosToExcel(List<Articulos> articulosList, String filePath) throws IOException {
+    @Nonnull
+    public File exportArticulosToExcel(@Nonnull List<Articulos> articulosList, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Articulos");
 
@@ -175,7 +179,8 @@ public class ExcelExporter {
         return file;
     }
 
-    public File exportDepartamentosToExcel(List<Departamento> departamentoList, String filePath) throws IOException {
+    @Nonnull
+    public File exportDepartamentosToExcel(@Nonnull List<Departamento> departamentoList, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Departamentos");
 
@@ -211,7 +216,8 @@ public class ExcelExporter {
         return file;
     }
 
-    public File exportFamiliasToExcel(List<Familia> familiaList, String filePath) throws IOException {
+    @Nonnull
+    public File exportFamiliasToExcel(@Nonnull List<Familia> familiaList, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Familias");
 
@@ -247,7 +253,8 @@ public class ExcelExporter {
         return file;
     }
     
-    public File exportMovimientosToExcel(List<Inventario> inventarios, String filePath) throws IOException {
+    @Nonnull
+    public File exportMovimientosToExcel(@Nonnull List<Inventario> inventarios, @Nonnull String filePath) throws IOException {
     Workbook workbook = new XSSFWorkbook();
     
         // Agrupar inventarios por usuario
@@ -297,7 +304,8 @@ public class ExcelExporter {
         return file;
     }
     
-    public File exportStockAlertsToExcel(List<StockAlert> stockAlerts, String filePath) throws IOException {
+    @Nonnull
+    public File exportStockAlertsToExcel(@Nonnull List<StockAlert> stockAlerts, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Alertas de Stock");
 
@@ -343,7 +351,8 @@ public class ExcelExporter {
         return file;
     }
 
-    public File exportProfitMarginHistoryToExcel(List<ProfitMarginHistory> marginHistory, String filePath) throws IOException {
+    @Nonnull
+    public File exportProfitMarginHistoryToExcel(@Nonnull List<ProfitMarginHistory> marginHistory, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Historial Márgenes");
 

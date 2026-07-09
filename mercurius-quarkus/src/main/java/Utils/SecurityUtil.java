@@ -1,8 +1,8 @@
 package Utils;
 
+import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import Controllers.SessionController;
 import io.quarkus.security.identity.SecurityIdentity;
 
 /**
@@ -11,65 +11,62 @@ import io.quarkus.security.identity.SecurityIdentity;
 @ApplicationScoped
 public class SecurityUtil {
     
-    @Inject
-    SessionController sessionController;
-    
-    @Inject
+    @Inject @Nonnull
     SecurityIdentity securityIdentity;
     
     /**
      * Check if current user has admin role
      */
     public boolean isAdmin() {
-        return sessionController.isAdmin();
+        return isAuthenticated() && securityIdentity.hasRole("admin");
     }
     
     /**
      * Check if current user has facturacion role
      */
     public boolean isFacturacion() {
-        return sessionController.isFacturacion();
+        return isAuthenticated() && (securityIdentity.hasRole("facturacion") || isAdmin());
     }
     
     /**
      * Check if current user has inventario role
      */
     public boolean isInventarios() {
-        return sessionController.isInventarios();
+        return isAuthenticated() && (securityIdentity.hasRole("inventario") || isAdmin());
     }
     
     /**
      * Check if current user has usuario role
      */
     public boolean isUsuarios() {
-        return sessionController.isUsuarios();
+        return isAuthenticated() && (securityIdentity.hasRole("usuario") || isAdmin());
     }
     
     /**
      * Check if current user has tributacion role
      */
     public boolean isTributacion() {
-        return sessionController.isTributacion();
+        return isAuthenticated() && (securityIdentity.hasRole("tributacion") || isAdmin());
     }
     
     /**
      * Check if current user has registro role
      */
     public boolean isRegistros() {
-        return sessionController.isRegistros();
+        return isAuthenticated() && (securityIdentity.hasRole("registro") || isAdmin());
     }
     
     /**
      * Check if current user is authenticated
      */
     public boolean isAuthenticated() {
-        return sessionController.isValid();
+        return securityIdentity != null && !securityIdentity.isAnonymous();
     }
     
     /**
      * Check if current user can access a specific role
      */
-    public boolean hasRole(String role) {
+    public boolean hasRole(@Nonnull String role) {
         switch (role.toLowerCase()) {
             case "admin":
                 return isAdmin();

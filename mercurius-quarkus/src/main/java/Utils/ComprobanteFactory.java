@@ -1,5 +1,6 @@
 package Utils;
 
+import jakarta.annotation.Nonnull;
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import java.io.BufferedInputStream;
@@ -15,7 +16,8 @@ public class ComprobanteFactory {
 
     private static final Pattern VERSION_PATTERN = Pattern.compile("v(\\d+\\.\\d+)");
 
-    public static String detectVersion(InputStream xmlStream) throws IOException {
+    @Nonnull
+    public static String detectVersion(@Nonnull InputStream xmlStream) throws IOException {
 
         if (!xmlStream.markSupported()) {
             xmlStream = new BufferedInputStream(xmlStream);
@@ -45,25 +47,28 @@ public class ComprobanteFactory {
         }
     }
 
-    public static ComprobantesRecibidos createComprobanteRecibido(InputStream xmlStream) throws IOException {
+    @Nonnull
+    public static ComprobantesRecibidos createComprobanteRecibido(@Nonnull InputStream xmlStream) throws IOException {
         String version = detectVersion(xmlStream);
         ComprobantesRecibidos entity = new ComprobantesRecibidos();
         entity.setSchemaVersion(version);
         return entity;
     }
 
-    public static ComprobantesEmitidos createComprobanteEmitido(InputStream xmlStream) throws IOException {
+    @Nonnull
+    public static ComprobantesEmitidos createComprobanteEmitido(@Nonnull InputStream xmlStream) throws IOException {
         String version = detectVersion(xmlStream);
         ComprobantesEmitidos entity = new ComprobantesEmitidos();
         entity.setSchemaVersion(version);
         return entity;
     }
 
+    @Nonnull
     public static String[] getSupportedVersions() {
         return new String[]{"4.3", "4.4", "4.5"};
     }
 
-    public static boolean isVersionSupported(String version) {
+    public static boolean isVersionSupported(@Nonnull String version) {
         for (String supported : getSupportedVersions()) {
             if (supported.equals(version)) {
                 return true;

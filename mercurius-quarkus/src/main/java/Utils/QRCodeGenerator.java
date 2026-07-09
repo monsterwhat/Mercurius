@@ -1,5 +1,6 @@
 package Utils;
 
+import jakarta.annotation.Nonnull;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
@@ -29,7 +30,8 @@ public class QRCodeGenerator {
      * @throws WriterException if the QR code cannot be generated
      * @throws IOException     if the PNG image cannot be written
      */
-    public static byte[] generateQRCodeBytes(String text) throws WriterException, IOException {
+    @Nonnull
+    public static byte[] generateQRCodeBytes(@Nonnull String text) throws WriterException, IOException {
         BufferedImage image = generateQRCodeImage(text);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(image, "png", baos);
@@ -43,7 +45,8 @@ public class QRCodeGenerator {
      * @return QR code image
      * @throws WriterException if the QR code cannot be generated
      */
-    public static BufferedImage generateQRCodeImage(String text) throws WriterException {
+    @Nonnull
+    public static BufferedImage generateQRCodeImage(@Nonnull String text) throws WriterException {
         QRCodeWriter qrCodeWriter = new QRCodeWriter();
         BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, QR_SIZE, QR_SIZE);
         return MatrixToImageWriter.toBufferedImage(bitMatrix);

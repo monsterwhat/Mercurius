@@ -1,6 +1,7 @@
 package Utils;
 
 import Services.AlertasService;
+import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.awt.*;
@@ -15,10 +16,10 @@ import java.net.URL;
 @ApplicationScoped
 public class SystemTrayManager {
 
-    @Inject
+    @Inject @Nonnull
     AlertasService alertasService;
 
-    @Inject
+    @Inject @Nonnull
     AppLauncher appLauncher;
 
     private SystemTray tray;
@@ -164,7 +165,7 @@ public class SystemTrayManager {
                 if (tray != null && trayIcon != null) {
                     tray.remove(trayIcon);
                 }
-                } catch (Exception ex) {
+                } catch (RuntimeException ex) {
                 alertasService.registrarAlerta("Error", "Error removing tray icon: " + ex.getMessage(), null, 0, "SystemTrayManager.createPopupMenu()", null, null);
             }
             System.exit(0);
@@ -194,7 +195,7 @@ public class SystemTrayManager {
     /**
      * Shows a notification in the system tray
      */
-    public void showNotification(String title, String message) {
+    public void showNotification(@Nonnull String title, @Nonnull String message) {
         if (trayIcon != null) {
             trayIcon.displayMessage(title, message, TrayIcon.MessageType.INFO);
         }
@@ -228,7 +229,7 @@ public class SystemTrayManager {
                     trayIcon = null;
                     initialized = false;
                     alertasService.registrarAlerta("Info", "System tray icon removed successfully", null, 0, "SystemTrayManager.removeTrayIcon()", null, null);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     alertasService.registrarAlerta("Error", "Error removing tray icon: " + e.getMessage(), null, 0, "SystemTrayManager.removeTrayIcon()", null, null);
                 }
             }
