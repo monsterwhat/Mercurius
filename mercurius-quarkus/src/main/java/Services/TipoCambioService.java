@@ -1,5 +1,7 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.TipoCambio;
 import com.fasterxml.jackson.core.JsonProcessingException; 
 import java.time.LocalDateTime;
@@ -24,7 +26,7 @@ import java.time.temporal.ChronoUnit;
 @ApplicationScoped
 public class TipoCambioService extends GService<TipoCambio> {
 
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull AlertasService alertasService;
 
     @Override
     protected Class<TipoCambio> getEntityClass() {
@@ -54,12 +56,13 @@ public class TipoCambioService extends GService<TipoCambio> {
             } else {
                 alertasService.registrarAlerta("Error", "Failed to retrieve TipoCambio data from API. Response code: " + response.getStatus(), null, 0, "TipoCambioService.getTipoCambioFromApi()", null, null);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error fetching TipoCambio from API: " + e.getMessage(), null, 0, "TipoCambioService.getTipoCambioFromApi()", null, e.getMessage());
         }
     }
 
-    private TipoCambio parseTipoCambio(String jsonResponse) {
+    @Nullable
+    private TipoCambio parseTipoCambio(@Nonnull String jsonResponse) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(jsonResponse);
@@ -83,22 +86,23 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
 
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    public void saveTipoCambio(TipoCambio tipoCambio) {
+    public void saveTipoCambio(@Nonnull TipoCambio tipoCambio) {
         create(tipoCambio);
     }
 
-    private LocalDateTime parseFechaVenta(JsonNode ventaNode) {
+    @Nonnull
+    private LocalDateTime parseFechaVenta(@Nonnull JsonNode ventaNode) {
         String fecha = ventaNode.get("fecha").asText();
         return LocalDateTime.parse(fecha.substring(0, 10) + "T" + fecha.substring(11));
     }
 
-    private boolean tipoCambioExistsForDate(LocalDateTime date) {
+    private boolean tipoCambioExistsForDate(@Nonnull LocalDateTime date) {
         try {
             TypedQuery<Long> query = em.createQuery(
-                "SELECT COUNT(t) FROM TipoCambio t WHERE FUNCTION('DATE', t.fecha) = :date", Long.class);
+                "SELECT COUNT(t) FROM TipoCambio t WHERE CAST(t.fecha AS date) = :date", Long.class);
             query.setParameter("date", date);
             return query.getSingleResult() > 0;
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error checking TipoCambio existence for date: " + e.getMessage(), null, 0, "TipoCambioService.tipoCambioExistsForDate()", null, e.getMessage());
             return false;
         }
@@ -112,7 +116,7 @@ public class TipoCambioService extends GService<TipoCambio> {
         try {
             getTipoCambioFromApi();
             return getNewestTipoCambioFromDb();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error retrieving newest TipoCambio: " + e.getMessage(), null, 0, "TipoCambioService.getNewestTipoCambio()", null, e.getMessage());
             throw e;
         }

@@ -5,12 +5,16 @@ import Models.ComprobantesEmitidos;
 import Models.Detalles.LineaDetalle;
 import Models.Departamento;
 import Models.Familia;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
+import io.quarkus.cache.CacheResult;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -24,11 +28,11 @@ import java.util.stream.Collectors;
 @Named("productPerformanceService")
 public class ProductPerformanceService {
 
-    @Inject
+    @Inject @Nonnull
     EntityManager entityManager;
 
-    @Transactional
-    public List<ProductSalesSummary> getBestSellingProducts(Date startDate, Date endDate, int limit) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<ProductSalesSummary> getBestSellingProducts(@Nonnull Date startDate, @Nonnull Date endDate, int limit) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
@@ -57,8 +61,8 @@ public class ProductPerformanceService {
             .collect(Collectors.toList());
     }
 
-    @Transactional
-    public List<ProductSalesSummary> getWorstSellingProducts(Date startDate, Date endDate, int limit) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<ProductSalesSummary> getWorstSellingProducts(@Nonnull Date startDate, @Nonnull Date endDate, int limit) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
@@ -88,8 +92,8 @@ public class ProductPerformanceService {
             .collect(Collectors.toList());
     }
 
-    @Transactional
-    public List<ProductSalesSummary> getBestSellingProductsByRevenue(Date startDate, Date endDate, int limit) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<ProductSalesSummary> getBestSellingProductsByRevenue(@Nonnull Date startDate, @Nonnull Date endDate, int limit) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
@@ -118,8 +122,8 @@ public class ProductPerformanceService {
             .collect(Collectors.toList());
     }
 
-    @Transactional
-    public BigDecimal getProductVelocity(Long articuloId, int days) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull BigDecimal getProductVelocity(@Nonnull Long articuloId, int days) {
         Date endDate = new Date();
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, -days);
@@ -147,8 +151,8 @@ public class ProductPerformanceService {
         return result != null ? result : BigDecimal.ZERO;
     }
 
-    @Transactional
-    public Map<String, BigDecimal> getCategoryPerformance(Date startDate, Date endDate) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull Map<String, BigDecimal> getCategoryPerformance(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
@@ -178,8 +182,8 @@ public class ProductPerformanceService {
         return categoryPerformance;
     }
 
-    @Transactional
-    public Map<String, BigDecimal> getDepartmentPerformance(Date startDate, Date endDate) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull Map<String, BigDecimal> getDepartmentPerformance(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
@@ -209,20 +213,21 @@ public class ProductPerformanceService {
         return departmentPerformance;
     }
 
-    @Transactional
-    public List<DailySalesTrend> getSalesTrend(Date startDate, Date endDate) {
+    @Transactional(TxType.SUPPORTS)
+    @CacheResult(cacheName = "analytics-products")
+    public @Nonnull List<DailySalesTrend> getSalesTrend(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT FUNCTION('DATE', e.fechaEmision), SUM(r.totalComprobante), COUNT(f) " +
+            "SELECT CAST(e.fechaEmision AS date), SUM(r.totalComprobante), COUNT(f) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('DATE', e.fechaEmision) " +
-            "ORDER BY FUNCTION('DATE', e.fechaEmision)",
+            "GROUP BY CAST(e.fechaEmision AS date) " +
+            "ORDER BY CAST(e.fechaEmision AS date)",
             Object[].class
         )
         .setParameter("start", start)
@@ -238,8 +243,8 @@ public class ProductPerformanceService {
             .collect(Collectors.toList());
     }
 
-    @Transactional
-    public List<ABCAnalysis> performABCAnalysis(Date startDate, Date endDate) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<ABCAnalysis> performABCAnalysis(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
@@ -298,8 +303,8 @@ public class ProductPerformanceService {
         return abcList;
     }
 
-    @Transactional
-    public ProductPerformanceSummary getPerformanceSummary(Date startDate, Date endDate) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull ProductPerformanceSummary getPerformanceSummary(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 

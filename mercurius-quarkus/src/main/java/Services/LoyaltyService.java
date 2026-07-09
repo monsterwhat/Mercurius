@@ -4,6 +4,8 @@ import Models.AppSettings;
 import Models.Clients;
 import Models.PuntosTransaccion;
 import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -24,13 +26,13 @@ import java.util.List;
 @ApplicationScoped
 public class LoyaltyService extends GService<PuntosTransaccion> {
 
-    @Inject
+    @Inject @Nonnull
     private EntityManager em;
 
-    @Inject
+    @Inject @Nonnull
     private ClientService clientService;
 
-    @Inject
+    @Inject @Nonnull
     private AppSettingsService appSettingsService;
 
     @Override
@@ -41,7 +43,8 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
     /**
      * Calculate points earned based on purchase amount and current cashback percentage
      */
-    public BigDecimal calculatePointsEarned(BigDecimal purchaseAmount, BigDecimal cashbackPercentage) {
+    @Nonnull
+    public BigDecimal calculatePointsEarned(@Nonnull BigDecimal purchaseAmount, @Nonnull BigDecimal cashbackPercentage) {
         return purchaseAmount.multiply(cashbackPercentage.divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP));
     }
 
@@ -49,7 +52,7 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      * Earn points for a customer from a purchase
      */
     @Transactional
-    public void earnPoints(Clients client, BigDecimal purchaseAmount, String facturaId, Users currentUser) {
+    public void earnPoints(@Nonnull Clients client, @Nonnull BigDecimal purchaseAmount, @Nullable String facturaId, @Nonnull Users currentUser) {
         AppSettings settings = appSettingsService.returnCurrent();
         if (settings == null || settings.getCashbackPercentage() == null) {
             return;
@@ -57,8 +60,12 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
 
         BigDecimal pointsEarned = calculatePointsEarned(purchaseAmount, settings.getCashbackPercentage());
         
-        // Update client's total points
-        client.setPuntosAcumulados(client.getPuntosAcumulados().add(pointsEarned));
+        // Update client's total points (null-safe — legacy clients may have NULL puntosAcumulados)
+        BigDecimal currentPoints = client.getPuntosAcumulados();
+        if (currentPoints == null) {
+            currentPoints = BigDecimal.ZERO;
+        }
+        client.setPuntosAcumulados(currentPoints.add(pointsEarned));
         client.setLastPurchaseDate(new Date());
         client.setStatusPuntos("active");
         
@@ -80,7 +87,8 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      * Redeem points for a discount on purchase
      */
     @Transactional
-    public BigDecimal redeemPoints(Clients client, BigDecimal pointsToRedeem) {
+    @Nonnull
+    public BigDecimal redeemPoints(@Nonnull Clients client, @Nonnull BigDecimal pointsToRedeem) {
         if (pointsToRedeem.compareTo(client.getPuntosAcumulados()) > 0) {
             return BigDecimal.ZERO; // Cannot redeem more than available
         }
@@ -146,7 +154,8 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
     /**
      * Get customer's point transaction history
      */
-    public List<PuntosTransaccion> getCustomerPointsHistory(Clients client) {
+    @Nonnull
+    public List<PuntosTransaccion> getCustomerPointsHistory(@Nonnull Clients client) {
         String jpql = "SELECT pt FROM PuntosTransaccion pt WHERE pt.cliente.code = :clientId ORDER BY pt.fechaCreacion DESC";
         TypedQuery<PuntosTransaccion> query = em.createQuery(jpql, PuntosTransaccion.class)
                 .setParameter("clientId", client.getCode());
@@ -156,6 +165,7 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
     /**
      * Get customers with highest points balances
      */
+    @Nonnull
     public List<Clients> getTopLoyaltyCustomers(int limit) {
         String jpql = "SELECT c FROM Clients c WHERE c.puntosAcumulados > 0 ORDER BY c.puntosAcumulados DESC";
         TypedQuery<Clients> query = em.createQuery(jpql, Clients.class)
@@ -164,24 +174,10 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
     }
 
     /**
-     * Calculate customer tier based on total spending (internal tracking)
-     */
-    public String calculateCustomerTier(BigDecimal totalSpent) {
-        // Internal tier calculation (not shown to customers)
-        if (totalSpent.compareTo(BigDecimal.valueOf(500000)) >= 0) { // 500,000+ colones
-            return "Gold";
-        } else if (totalSpent.compareTo(BigDecimal.valueOf(200000)) >= 0) { // 200,000+ colones
-            return "Silver";
-        } else if (totalSpent.compareTo(BigDecimal.valueOf(50000)) >= 0) { // 50,000+ colones
-            return "Bronze";
-        }
-        return "Basic";
-    }
-
-    /**
      * Get available points balance for a customer
      */
-    public BigDecimal getAvailablePoints(Clients client) {
+    @Nonnull
+    public BigDecimal getAvailablePoints(@Nonnull Clients client) {
         if (client.getPuntosAcumulados() == null) {
             return BigDecimal.ZERO;
         }

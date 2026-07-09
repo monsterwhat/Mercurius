@@ -1,10 +1,13 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.Users;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 import at.favre.lib.crypto.bcrypt.BCrypt;
@@ -25,14 +28,14 @@ public class UserService extends GService<Users> {
     }
 
     @Override
-    public void create(Users entity) {
+    public void create(@Nonnull Users entity) {
         try {
             // Hash the password before storing
             if (entity.getPassword() != null && entity.getPassword().length() < 50) {
                 entity.setPassword(hashPassword(entity.getPassword()));
             }
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error creating user: " + e.getMessage(), null, 0, "UserService.create()", null, e.getMessage());
         }
     }
@@ -40,14 +43,14 @@ public class UserService extends GService<Users> {
     private String hashPassword(String password) {
         try {
             return BCrypt.withDefaults().hashToString(BCRYPT_COST, password.toCharArray());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Password hashing error: " + e.getLocalizedMessage(), null, 0, "UserService.hashPassword()", null, e.getMessage());
             throw new RuntimeException("Failed to hash password", e);
         }
     }
 
     @Override
-    public void update(Users entity) {
+    public void update(@Nonnull Users entity) {
         try {
             // Get the existing user to check if password changed
             Users existingUser = em.find(Users.class, entity.getId());
@@ -61,13 +64,13 @@ public class UserService extends GService<Users> {
                 }
             }
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error updating user: " + e.getMessage(), null, 0, "UserService.update()", null, e.getMessage());
         }
     }
 
     @Override
-    public void delete(Users entity) {
+    public void delete(@Nonnull Users entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -78,7 +81,7 @@ public class UserService extends GService<Users> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "UserService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "UserService.delete()", null, e.getMessage());
         }
     }
@@ -88,13 +91,13 @@ public class UserService extends GService<Users> {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage(), null, 0, "UserService.count()", null, e.getMessage());
             return null;
         }
     }
 
-    public boolean usernameExists(String username) {
+    public boolean usernameExists(@Nonnull String username) {
         try {
             TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
             query.setParameter("username", username);
@@ -102,27 +105,29 @@ public class UserService extends GService<Users> {
 
             return !existingUser.isEmpty();
 
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error checking username: " + e.getLocalizedMessage(), null, 0, "UserService.usernameExists()", null, e.getMessage());
             return true;
         }
     }
 
+    @Nullable
     public Long countActivos() {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting active users: " + e.getLocalizedMessage(), null, 0, "UserService.countActivos()", null, e.getMessage());
             return null;
         }
     }
 
+    @Nullable
     public Long countInactivos() {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting inactive users: " + e.getLocalizedMessage(), null, 0, "UserService.countInactivos()", null, e.getMessage());
             return null;
         }

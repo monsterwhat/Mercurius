@@ -1,6 +1,7 @@
 package Services;
  
 import Models.Articulos.Carrito.ArticuloCarrito;
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Named; 
@@ -10,7 +11,7 @@ import jakarta.inject.Named;
 public class ArticuloCarritoService extends GService<ArticuloCarrito> {
 
     @Override
-    protected Class<ArticuloCarrito> getEntityClass() {
+    protected @Nonnull Class<ArticuloCarrito> getEntityClass() {
         return ArticuloCarrito.class;
     }
 

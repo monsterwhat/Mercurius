@@ -1,6 +1,8 @@
 package Services;
 
 import Models.Validacion.PrevalidationConfig;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -8,6 +10,7 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
@@ -23,9 +26,11 @@ import java.util.List;
 public class PrevalidationConfigService {
 
     @PersistenceContext
+    @Nonnull
     EntityManager em;
 
     @Inject
+    @Nonnull
     AlertasService alertasService;
 
     // ─── Defaults ───────────────────────────────────────────────────
@@ -59,6 +64,7 @@ public class PrevalidationConfigService {
      * Returns the single active config, or a hardcoded fallback if none is
      * active or the query fails (e.g. table doesn't exist yet).
      */
+    @Nonnull
     public PrevalidationConfig getActiveConfig() {
         try {
             TypedQuery<PrevalidationConfig> query = em.createQuery(
@@ -78,7 +84,7 @@ public class PrevalidationConfigService {
                 // Truly empty — return in-code defaults
                 return createDefaultConfig();
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error",
                 "Error reading PrevalidationConfig: " + e.getMessage(), null, 0,
                 "PrevalidationConfigService.getActiveConfig()", null, e.getMessage());
@@ -100,13 +106,14 @@ public class PrevalidationConfigService {
         return cfg;
     }
 
+    @Nonnull
     public List<PrevalidationConfig> listAll() {
         try {
             TypedQuery<PrevalidationConfig> query = em.createQuery(
                 "SELECT c FROM PrevalidationConfig c ORDER BY c.id ASC",
                 PrevalidationConfig.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error",
                 "Error listing PrevalidationConfig: " + e.getMessage(), null, 0,
                 "PrevalidationConfigService.listAll()", null, e.getMessage());
@@ -114,10 +121,11 @@ public class PrevalidationConfigService {
         }
     }
 
-    public PrevalidationConfig findById(Long id) {
+    @Nullable
+    public PrevalidationConfig findById(@Nonnull Long id) {
         try {
             return em.find(PrevalidationConfig.class, id);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error",
                 "Error finding PrevalidationConfig by ID: " + e.getMessage(), null, 0,
                 "PrevalidationConfigService.findById()", null, e.getMessage());
@@ -130,21 +138,24 @@ public class PrevalidationConfigService {
             TypedQuery<Long> query = em.createQuery(
                 "SELECT COUNT(c) FROM PrevalidationConfig c", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
+            alertasService.registrarAlerta("Error",
+                "PrevalidationConfig count failed: " + e.getMessage(), null, 0,
+                "PrevalidationConfigService.count()", null, e.getMessage());
             return 0;
         }
     }
 
     // ─── Mutations ──────────────────────────────────────────────────
 
-    public void save(PrevalidationConfig config) {
+    public void save(@Nonnull PrevalidationConfig config) {
         try {
             if (config.getId() == null) {
                 em.persist(config);
             } else {
                 em.merge(config);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error",
                 "Error saving PrevalidationConfig: " + e.getMessage(), null, 0,
                 "PrevalidationConfigService.save()", null, e.getMessage());
@@ -154,7 +165,7 @@ public class PrevalidationConfigService {
     /**
      * Sets the given config as active and deactivates all others.
      */
-    public void setActive(Long id) {
+    public void setActive(@Nonnull Long id) {
         try {
             // Deactivate all
             em.createQuery("UPDATE PrevalidationConfig c SET c.isActive = false")
@@ -165,7 +176,7 @@ public class PrevalidationConfigService {
                 target.setActive(true);
                 em.merge(target);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error",
                 "Error setting active PrevalidationConfig: " + e.getMessage(), null, 0,
                 "PrevalidationConfigService.setActive()", null, e.getMessage());

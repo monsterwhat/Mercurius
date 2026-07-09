@@ -1,11 +1,14 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
 import Models.ReportesFamiliasYDepartamentos;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
+import io.quarkus.cache.CacheResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,27 +20,29 @@ import java.util.*;
 @ApplicationScoped
 public class SeasonalityService {
 
-    @Inject
+    @Inject @Nonnull
     EntityManager em;
 
-    @Inject
+    @Inject @Nonnull
     InventarioService inventarioService;
 
-    @Transactional
-    public Map<YearMonth, BigDecimal> getMonthlySales(Date start, Date end) {
+    @Transactional(TxType.SUPPORTS)
+    @CacheResult(cacheName = "analytics-seasonality")
+    @Nonnull
+    public Map<YearMonth, BigDecimal> getMonthlySales(@Nonnull Date start, @Nonnull Date end) {
         LocalDateTime startLdt = toLocalDateTime(start);
         LocalDateTime endLdt = toLocalDateTime(end);
 
         List<Object[]> results = em.createQuery(
-            "SELECT FUNCTION('YEAR', e.fechaEmision), FUNCTION('MONTH', e.fechaEmision), " +
+            "SELECT YEAR(e.fechaEmision), MONTH(e.fechaEmision), " +
             "SUM(r.totalComprobante) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('YEAR', e.fechaEmision), FUNCTION('MONTH', e.fechaEmision) " +
-            "ORDER BY FUNCTION('YEAR', e.fechaEmision), FUNCTION('MONTH', e.fechaEmision)",
+            "GROUP BY YEAR(e.fechaEmision), MONTH(e.fechaEmision) " +
+            "ORDER BY YEAR(e.fechaEmision), MONTH(e.fechaEmision)",
             Object[].class
         )
         .setParameter("start", startLdt)
@@ -54,20 +59,22 @@ public class SeasonalityService {
         return monthlySales;
     }
 
-    @Transactional
-    public Map<Integer, BigDecimal> getSalesByDayOfWeek(Date start, Date end) {
+    @CacheResult(cacheName = "analytics-seasonality")
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public Map<Integer, BigDecimal> getSalesByDayOfWeek(@Nonnull Date start, @Nonnull Date end) {
         LocalDateTime startLdt = toLocalDateTime(start);
         LocalDateTime endLdt = toLocalDateTime(end);
 
         List<Object[]> results = em.createQuery(
-            "SELECT FUNCTION('WEEKDAY', e.fechaEmision), SUM(r.totalComprobante) " +
+            "SELECT CAST(e.fechaEmision AS date), SUM(r.totalComprobante) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('WEEKDAY', e.fechaEmision) " +
-            "ORDER BY FUNCTION('WEEKDAY', e.fechaEmision)",
+            "GROUP BY CAST(e.fechaEmision AS date) " +
+            "ORDER BY CAST(e.fechaEmision AS date)",
             Object[].class
         )
         .setParameter("start", startLdt)
@@ -80,17 +87,18 @@ public class SeasonalityService {
             dayOfWeekSales.put(i, BigDecimal.ZERO);
         }
 
-        // MySQL WEEKDAY returns 0=Monday, 6=Sunday; we want 1=Monday...7=Sunday
         for (Object[] row : results) {
-            int weekday = (Integer) row[0];
+            java.sql.Date date = (java.sql.Date) row[0];
             BigDecimal total = (BigDecimal) row[1];
-            dayOfWeekSales.put(weekday + 1, total != null ? total : BigDecimal.ZERO);
+            int dayOfWeek = date.toLocalDate().getDayOfWeek().getValue();
+            dayOfWeekSales.put(dayOfWeek, dayOfWeekSales.get(dayOfWeek).add(total != null ? total : BigDecimal.ZERO));
         }
         return dayOfWeekSales;
     }
 
-    @Transactional
-    public Map<String, BigDecimal> getSalesByDepartment(Date start, Date end) {
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public Map<String, BigDecimal> getSalesByDepartment(@Nonnull Date start, @Nonnull Date end) {
         List<ReportesFamiliasYDepartamentos> reportes = inventarioService.getTotalSalesByDepartamento(start, end);
         Map<String, BigDecimal> deptSales = new LinkedHashMap<>();
         if (reportes != null) {
@@ -101,8 +109,9 @@ public class SeasonalityService {
         return deptSales;
     }
 
-    @Transactional
-    public Map<String, BigDecimal> getSalesByFamily(Date start, Date end) {
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public Map<String, BigDecimal> getSalesByFamily(@Nonnull Date start, @Nonnull Date end) {
         List<ReportesFamiliasYDepartamentos> reportes = inventarioService.getTotalSalesByFamilia(start, end);
         Map<String, BigDecimal> familySales = new LinkedHashMap<>();
         if (reportes != null) {
@@ -113,20 +122,22 @@ public class SeasonalityService {
         return familySales;
     }
 
-    @Transactional
-    public List<Object[]> getDailySales(Date start, Date end) {
+    @Transactional(TxType.SUPPORTS)
+    @CacheResult(cacheName = "analytics-seasonality")
+    @Nonnull
+    public List<Object[]> getDailySales(@Nonnull Date start, @Nonnull Date end) {
         LocalDateTime startLdt = toLocalDateTime(start);
         LocalDateTime endLdt = toLocalDateTime(end);
 
         return em.createQuery(
-            "SELECT FUNCTION('DATE', e.fechaEmision), COALESCE(SUM(r.totalComprobante), 0) " +
+            "SELECT CAST(e.fechaEmision AS date), COALESCE(SUM(r.totalComprobante), 0) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('DATE', e.fechaEmision) " +
-            "ORDER BY FUNCTION('DATE', e.fechaEmision)",
+            "GROUP BY CAST(e.fechaEmision AS date) " +
+            "ORDER BY CAST(e.fechaEmision AS date)",
             Object[].class
         )
         .setParameter("start", startLdt)
@@ -134,7 +145,8 @@ public class SeasonalityService {
         .getResultList();
     }
 
-    private LocalDateTime toLocalDateTime(Date date) {
+    @Nonnull
+    private LocalDateTime toLocalDateTime(@Nonnull Date date) {
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
 }

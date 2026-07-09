@@ -1,9 +1,12 @@
 package Services;
 
 import Models.Articulos.Promocion;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
 
@@ -17,7 +20,7 @@ import java.util.List;
 public class PromocionesService extends GService<Promocion> {
 
     @Override
-    protected Class<Promocion> getEntityClass() {
+    protected @Nonnull Class<Promocion> getEntityClass() {
         return Promocion.class;
     }
 
@@ -26,21 +29,21 @@ public class PromocionesService extends GService<Promocion> {
         
     }
     
-    public Long countActivos() {
+    public @Nullable Long countActivos() {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.activa = true", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "PromocionesService.countActivos()", null, e.getMessage());
             return null;
         }
     }
     
-    public Long countInactivos() {
+    public @Nullable Long countInactivos() {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.activa = false", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "PromocionesService.countActivos()", null, e.getMessage());
             return null;
         }
@@ -50,7 +53,7 @@ public class PromocionesService extends GService<Promocion> {
     public void create(Promocion entity) {
         try {
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "PromocionesService.create()", null, e.getMessage());
         }
     }
@@ -67,7 +70,7 @@ public class PromocionesService extends GService<Promocion> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "PromocionesService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "PromocionesService.delete()", null, e.getMessage());
         }
     }
@@ -79,7 +82,7 @@ public class PromocionesService extends GService<Promocion> {
                 entity.setActiva(true);
             }
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "PromocionesService.update()", null, e.getMessage());
         }
     }
@@ -89,16 +92,16 @@ public class PromocionesService extends GService<Promocion> {
         try {
             TypedQuery<Promocion> query = em.createQuery("SELECT d FROM Promocion d", Promocion.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "PromocionesService.listAll()", null, e.getMessage());
             return null;
         }
     }
     
-    public Promocion findById(Integer id) {
+    public @Nullable Promocion findById(@Nonnull Integer id) {
     try {
         return em.find(getEntityClass(), id);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "PromocionesService.findById()", null, e.getMessage());
             return null;
         }

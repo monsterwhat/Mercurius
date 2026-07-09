@@ -6,6 +6,8 @@ import Utils.Parsers.Parser;
 import jakarta.activation.DataHandler;
 import jakarta.activation.DataSource;
 import jakarta.activation.FileDataSource;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -48,14 +50,14 @@ import java.time.temporal.ChronoUnit;
 @ApplicationScoped
 public class EmailService implements Serializable {
     
-    @Inject Parser parser;
-    @Inject SettingsDirController dirController;
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull Parser parser;
+    @Inject @Nonnull SettingsDirController dirController;
+    @Inject @Nonnull AlertasService alertasService;
     
     @Timeout(value = 30, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 1000, jitter = 500)
     @Fallback(fallbackMethod = "sendEmailFallback")
-    public void sendEmail(String to, String subject, String body, String email, String pass, Consumer<String> callback) {
+    public void sendEmail(@Nonnull String to, @Nonnull String subject, @Nonnull String body, @Nullable String email, @Nullable String pass, @Nonnull Consumer<String> callback) {
         final String[] status = {null}; // Declare status as an array
         
         if (email != null && pass != null) {
@@ -104,7 +106,7 @@ public class EmailService implements Serializable {
     @Timeout(value = 60, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 1000, jitter = 500)
     @Fallback(fallbackMethod = "sendEmailsFallback")
-    public void sendEmails(List<String> to, String subject, String body, String email, String pass, Consumer<String> callback) {
+    public void sendEmails(@Nonnull List<String> to, @Nonnull String subject, @Nonnull String body, @Nullable String email, @Nullable String pass, @Nonnull Consumer<String> callback) {
         final String[] status = {null}; // Declare status as an array
         
         if (email != null && pass != null) {
@@ -160,7 +162,7 @@ public class EmailService implements Serializable {
     @Timeout(value = 60, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 1000, jitter = 500)
     @Fallback(fallbackMethod = "sendEmailsWithAttachmentFallback")
-    public void sendEmailsWithAttachment(List<String> to, String subject, String body, String email, String pass, File attachment, Consumer<String> callback) {
+    public void sendEmailsWithAttachment(@Nonnull List<String> to, @Nonnull String subject, @Nonnull String body, @Nullable String email, @Nullable String pass, @Nullable File attachment, @Nonnull Consumer<String> callback) {
         final String[] status = {null}; // Declare status as an array
         
         if (email != null && pass != null) {
@@ -224,7 +226,7 @@ public class EmailService implements Serializable {
     @Retry(maxRetries = 2, delay = 2000, jitter = 500)
     @CircuitBreaker(requestVolumeThreshold = 3, failureRatio = 0.5, delay = 15, delayUnit = ChronoUnit.MINUTES)
     @Fallback(fallbackMethod = "processUnreadXmlAttachmentsFallback")
-    public void processUnreadXmlAttachments(String email, String pass, Consumer<String> callback) {
+    public void processUnreadXmlAttachments(@Nonnull String email, @Nonnull String pass, @Nonnull Consumer<String> callback) {
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps"); // Use IMAP with SSL
 
@@ -290,7 +292,7 @@ public class EmailService implements Serializable {
                             try (InputStream inputStream = new FileInputStream(file)) {
                                 parser.parseXML(inputStream);
                                 successfullyProcessedFiles++;
-                            } catch (Exception e) {
+                            } catch (IOException | RuntimeException e) {
                                 alertasService.registrarAlerta("Error", "Error parsing XML file: " + e.getMessage(), null, 0, "EmailService.processUnreadXmlAttachments()", null, e.getMessage());
                             }
 
@@ -335,7 +337,7 @@ public class EmailService implements Serializable {
     @Timeout(value = 120, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 2000, jitter = 500)
     @Fallback(fallbackMethod = "sendEmailsWithAttachmentsFallback")
-    public void sendEmailsWithAttachments(List<String> to, String subject, String body, String email, String pass, List<File> attachments, Consumer<String> callback) {
+    public void sendEmailsWithAttachments(@Nonnull List<String> to, @Nonnull String subject, @Nonnull String body, @Nullable String email, @Nullable String pass, @Nullable List<File> attachments, @Nonnull Consumer<String> callback) {
         final String[] status = {null};
 
         if (email != null && pass != null) {

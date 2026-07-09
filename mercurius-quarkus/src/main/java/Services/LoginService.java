@@ -1,10 +1,13 @@
 package Services;
 
 import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -36,7 +39,7 @@ public class LoginService extends GService<Users> {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage(), null, 0, "LoginService.countActivos()", null, e.getMessage());
             return null;
         }
@@ -46,7 +49,7 @@ public class LoginService extends GService<Users> {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage(), null, 0, "LoginService.countActivos()", null, e.getMessage());
             return null;
         }
@@ -56,7 +59,7 @@ public class LoginService extends GService<Users> {
         try {
             BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), hashedPassword);
             return result.verified;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Password verification error: " + e.getLocalizedMessage(), null, 0, "LoginService.verifyPassword()", null, e.getMessage());
             return false;
         }
@@ -65,7 +68,7 @@ public class LoginService extends GService<Users> {
     private String hashPassword(String password) {
         try {
             return BCrypt.withDefaults().hashToString(BCRYPT_COST, password.toCharArray());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Password hashing error: " + e.getLocalizedMessage(), null, 0, "LoginService.hashPassword()", null, e.getMessage());
             throw new RuntimeException("Failed to hash password", e);
         }
@@ -78,7 +81,7 @@ public class LoginService extends GService<Users> {
                 return user;
             }
             return null;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Authentication error: " + e.getLocalizedMessage(), null, 0, "LoginService.authenticate()", null, e.getMessage());
             return null;
         }
@@ -144,7 +147,7 @@ public class LoginService extends GService<Users> {
                 alertasService.registrarAlerta("Info", "Username: " + username, null, 0, "LoginService.InsertAdmin()", null, null);
                 alertasService.registrarAlerta("Info", "=============================", null, 0, "LoginService.InsertAdmin()", null, null);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error in InsertAdmin! Error: " + e.getMessage(), null, 0, "LoginService.InsertAdmin()", null, e.getMessage());
         }
     }
@@ -156,7 +159,7 @@ public class LoginService extends GService<Users> {
             var unHashedPassword = entity.getPassword();
             entity.setPassword(hashPassword(unHashedPassword));
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error creating user: " + e.getMessage(), null, 0, "LoginService.create()", null, e.getMessage());
         }
     }
@@ -173,7 +176,7 @@ public class LoginService extends GService<Users> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "LoginService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "LoginService.delete()", null, e.getMessage());
         }
     }
@@ -190,7 +193,7 @@ public class LoginService extends GService<Users> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "LoginService.softDelete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error soft deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "LoginService.softDelete()", null, e.getMessage());
         }
     }
@@ -203,7 +206,7 @@ public class LoginService extends GService<Users> {
 
             return !existingUser.isEmpty();
 
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error:" + e.getLocalizedMessage(), null, 0, "LoginService.usernameExists()", null, e.getMessage());
             return true;
         }
@@ -223,7 +226,7 @@ public class LoginService extends GService<Users> {
                 }
             }
 
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "LoginService.method()", null, e.getMessage());
         }
     }
@@ -241,7 +244,7 @@ public class LoginService extends GService<Users> {
                     em.merge(foundUser);
                 }
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "LoginService.method()", null, e.getMessage());
         }
     }
@@ -259,7 +262,7 @@ public class LoginService extends GService<Users> {
                     em.merge(foundUser);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), null, 0, "LoginService.method()", null, e.getMessage());
         }
     }

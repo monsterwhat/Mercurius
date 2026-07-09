@@ -1,5 +1,7 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
@@ -18,14 +20,16 @@ import java.util.List;
 public class DashboardService extends GService<ComprobantesEmitidos> {
     
     @Override
+    @Nonnull
     protected Class<ComprobantesEmitidos> getEntityClass() {
         return ComprobantesEmitidos.class;
     }
     
-    @PersistenceContext
+    @PersistenceContext @Nonnull
     private EntityManager em;
     
-    public BigDecimal getTodaySales(Users user) {
+    @Nonnull
+    public BigDecimal getTodaySales(@Nonnull Users user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -46,13 +50,13 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
              .getSingleResult();
             
             return result;
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting today sales: " + e.getMessage(), null, 0, "DashboardService.getTodaySales()", null, e.getMessage());
             return BigDecimal.ZERO;
         }
     }
     
-    public int getTransactionCount(Users user) {
+    public int getTransactionCount(@Nonnull Users user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -72,13 +76,13 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
              .getSingleResult();
             
             return result.intValue();
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting transaction count: " + e.getMessage(), null, 0, "DashboardService.getTransactionCount()", null, e.getMessage());
             return 0;
         }
     }
     
-    public int getItemsSold(Users user) {
+    public int getItemsSold(@Nonnull Users user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -99,13 +103,14 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
              .getSingleResult();
             
             return result.intValue();
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting items sold: " + e.getMessage(), null, 0, "DashboardService.getItemsSold()", null, e.getMessage());
             return 0;
         }
     }
     
-    public ComprobantesEmitidos getLastTransaction(Users user) {
+    @Nullable
+    public ComprobantesEmitidos getLastTransaction(@Nonnull Users user) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -122,13 +127,14 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             return query.getSingleResult();
         } catch (NoResultException e) {
             return null;
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding last transaction: " + e.getMessage(), null, 0, "DashboardService.getLastTransaction()", null, e.getMessage());
             return null;
         }
     }
     
-    public List<ComprobantesEmitidos> getRecentSales(Users user, int limit) {
+    @Nullable
+    public List<ComprobantesEmitidos> getRecentSales(@Nonnull Users user, int limit) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -142,7 +148,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             query.setParameter("user", user);
             query.setMaxResults(limit);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting recent sales: " + e.getMessage(), null, 0, "DashboardService.getRecentSales()", null, e.getMessage());
             return null;
         }

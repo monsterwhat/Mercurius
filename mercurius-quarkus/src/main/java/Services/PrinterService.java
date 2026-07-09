@@ -1,5 +1,6 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -23,9 +24,9 @@ import org.apache.pdfbox.printing.PDFPageable;
 @Named
 public class PrinterService implements Serializable{
 
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull AlertasService alertasService;
 
-    public void printPDFFile(File fileToPrint) {
+    public void printPDFFile(@Nonnull File fileToPrint) {
         alertasService.registrarAlerta("Info", "Attempting to print PDF: " + fileToPrint.getAbsolutePath(), null, 0, "PrinterService.printPDFFile()", null, null);
         
         try {
@@ -57,7 +58,7 @@ public class PrinterService implements Serializable{
             }
         } catch (IOException e) {
             alertasService.registrarAlerta("Error", "IO Error loading PDF: " + e.getMessage(), null, 0, "PrinterService.printPDFFile()", null, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Unexpected error: " + e.getMessage(), null, 0, "PrinterService.printPDFFile()", null, e.getMessage());
         }
     }

@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.zip.GZIPOutputStream;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Named
@@ -35,19 +37,19 @@ public class BackupService implements Serializable {
     private static final DateTimeFormatter FILENAME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss");
 
     @Inject
-    private AppSettingsService appSettingsService;
+    private @Nonnull AppSettingsService appSettingsService;
 
     @Inject
-    private AlertasService alertasService;
+    private @Nonnull AlertasService alertasService;
 
     @ConfigProperty(name = "quarkus.datasource.jdbc.url")
-    String jdbcUrl;
+    @Nonnull String jdbcUrl;
 
     @ConfigProperty(name = "quarkus.datasource.username")
-    String dbUser;
+    @Nonnull String dbUser;
 
     @ConfigProperty(name = "quarkus.datasource.password")
-    String dbPass;
+    @Nonnull String dbPass;
 
     public boolean ejecutarBackup() {
         try {
@@ -163,7 +165,7 @@ public class BackupService implements Serializable {
         }
     }
 
-    public List<String> listarBackups() {
+    public @Nonnull List<String> listarBackups() {
         List<String> result = new ArrayList<>();
         try {
             AppSettings settings = appSettingsService.returnCurrent();
@@ -183,7 +185,7 @@ public class BackupService implements Serializable {
             }
 
             backupFiles.sort(Collections.reverseOrder(Comparator.comparingLong(p -> {
-                try { return p.toFile().lastModified(); } catch (Exception e) { return 0L; }
+                try { return p.toFile().lastModified(); } catch (RuntimeException e) { return 0L; }
             })));
 
             for (Path file : backupFiles) {
@@ -198,7 +200,7 @@ public class BackupService implements Serializable {
         return result;
     }
 
-    public String getTamanioBackup(String filename) {
+    public @Nonnull String getTamanioBackup(@Nonnull String filename) {
         try {
             AppSettings settings = appSettingsService.returnCurrent();
             if (settings == null) return "0 B";
@@ -210,13 +212,13 @@ public class BackupService implements Serializable {
             if (Files.exists(file)) {
                 return getTamanioBackup(file.toFile());
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return "0 B";
         }
         return "0 B";
     }
 
-    public Path getBackupFilePath(String filename) {
+    public @Nullable Path getBackupFilePath(@Nonnull String filename) {
         try {
             AppSettings settings = appSettingsService.returnCurrent();
             if (settings == null) return null;
@@ -226,17 +228,17 @@ public class BackupService implements Serializable {
             if (Files.exists(file)) {
                 return file;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return null;
         }
         return null;
     }
 
-    public AppSettings getSettings() {
+    public @Nullable AppSettings getSettings() {
         return appSettingsService.returnCurrent();
     }
 
-    public void saveSettings(AppSettings settings) {
+    public void saveSettings(@Nonnull AppSettings settings) {
         appSettingsService.update(settings);
     }
 

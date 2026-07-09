@@ -9,9 +9,14 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import io.quarkus.cache.CacheResult;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
+import java.time.temporal.IsoFields;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,23 +24,24 @@ import java.util.stream.Collectors;
 @Named("salesTrendService")
 public class SalesTrendService {
 
-    @Inject
+    @Inject @Nonnull
     EntityManager entityManager;
 
-    @Transactional
-    public List<TimeSeriesData> getDailySalesTimeSeries(Date startDate, Date endDate) {
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
+    public @Nonnull List<TimeSeriesData> getDailySalesTimeSeries(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT FUNCTION('DATE', e.fechaEmision), SUM(r.totalComprobante), COUNT(f), SUM(r.totalGravado), SUM(r.totalExento) " +
+            "SELECT CAST(e.fechaEmision AS date), SUM(r.totalComprobante), COUNT(f), SUM(r.totalGravado), SUM(r.totalExento) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('DATE', e.fechaEmision) " +
-            "ORDER BY FUNCTION('DATE', e.fechaEmision)",
+            "GROUP BY CAST(e.fechaEmision AS date) " +
+            "ORDER BY CAST(e.fechaEmision AS date)",
             Object[].class
         )
         .setParameter("start", start)
@@ -53,53 +59,77 @@ public class SalesTrendService {
             .collect(Collectors.toList());
     }
 
-    @Transactional
-    public List<TimeSeriesData> getWeeklySalesTimeSeries(Date startDate, Date endDate) {
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
+    public @Nonnull List<TimeSeriesData> getWeeklySalesTimeSeries(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT FUNCTION('YEAR', e.fechaEmision), FUNCTION('WEEK', e.fechaEmision), " +
-            "SUM(r.totalComprobante), COUNT(f), SUM(r.totalGravado), SUM(r.totalExento) " +
+            "SELECT CAST(e.fechaEmision AS date), SUM(r.totalComprobante), COUNT(f), " +
+            "SUM(r.totalGravado), SUM(r.totalExento) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('YEAR', e.fechaEmision), FUNCTION('WEEK', e.fechaEmision) " +
-            "ORDER BY FUNCTION('YEAR', e.fechaEmision), FUNCTION('WEEK', e.fechaEmision)",
+            "GROUP BY CAST(e.fechaEmision AS date) " +
+            "ORDER BY CAST(e.fechaEmision AS date)",
             Object[].class
         )
         .setParameter("start", start)
         .setParameter("end", end)
         .getResultList();
 
-        return results.stream()
-            .map(row -> new TimeSeriesData(
-                (Integer) row[0], (Integer) row[1],
-                (BigDecimal) row[2],
-                ((Number) row[3]).intValue(),
-                (BigDecimal) row[4],
-                (BigDecimal) row[5]
-            ))
-            .collect(Collectors.toList());
+        Map<String, TimeSeriesData> weeklyMap = new LinkedHashMap<>();
+
+        for (Object[] row : results) {
+            LocalDate date = (LocalDate) row[0];
+            BigDecimal totalSales = (BigDecimal) row[1];
+            int transactionCount = ((Number) row[2]).intValue();
+            BigDecimal taxableAmount = (BigDecimal) row[3];
+            BigDecimal exemptAmount = (BigDecimal) row[4];
+
+            int weekYear = date.get(IsoFields.WEEK_BASED_YEAR);
+            int weekOfYear = date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+
+            String key = weekYear + "-" + weekOfYear;
+            TimeSeriesData existing = weeklyMap.get(key);
+            if (existing != null) {
+                weeklyMap.put(key, new TimeSeriesData(
+                    weekYear, weekOfYear,
+                    existing.getTotalSales().add(totalSales),
+                    existing.getTransactionCount() + transactionCount,
+                    existing.getTaxableAmount().add(taxableAmount),
+                    existing.getExemptAmount().add(exemptAmount)
+                ));
+            } else {
+                weeklyMap.put(key, new TimeSeriesData(
+                    weekYear, weekOfYear,
+                    totalSales, transactionCount, taxableAmount, exemptAmount
+                ));
+            }
+        }
+
+        return new ArrayList<>(weeklyMap.values());
     }
 
-    @Transactional
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
     public List<TimeSeriesData> getMonthlySalesTimeSeries(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT FUNCTION('YEAR', e.fechaEmision), FUNCTION('MONTH', e.fechaEmision), " +
+            "SELECT YEAR(e.fechaEmision), MONTH(e.fechaEmision), " +
             "SUM(r.totalComprobante), COUNT(f), SUM(r.totalGravado), SUM(r.totalExento) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('YEAR', e.fechaEmision), FUNCTION('MONTH', e.fechaEmision) " +
-            "ORDER BY FUNCTION('YEAR', e.fechaEmision), FUNCTION('MONTH', e.fechaEmision)",
+            "GROUP BY YEAR(e.fechaEmision), MONTH(e.fechaEmision) " +
+            "ORDER BY YEAR(e.fechaEmision), MONTH(e.fechaEmision)",
             Object[].class
         )
         .setParameter("start", start)
@@ -117,20 +147,21 @@ public class SalesTrendService {
             .collect(Collectors.toList());
     }
 
-    @Transactional
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
     public SeasonalPattern getSeasonalPattern(int year) {
         LocalDateTime start = LocalDate.of(year, 1, 1).atStartOfDay();
         LocalDateTime end = LocalDate.of(year, 12, 31).atTime(23, 59, 59);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT FUNCTION('MONTH', e.fechaEmision), SUM(r.totalComprobante), COUNT(f) " +
+            "SELECT MONTH(e.fechaEmision), SUM(r.totalComprobante), COUNT(f) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('MONTH', e.fechaEmision) " +
-            "ORDER BY FUNCTION('MONTH', e.fechaEmision)",
+            "GROUP BY MONTH(e.fechaEmision) " +
+            "ORDER BY MONTH(e.fechaEmision)",
             Object[].class
         )
         .setParameter("start", start)
@@ -171,7 +202,8 @@ public class SalesTrendService {
         return new SeasonalPattern(year, monthlyRevenue, monthlyTransactions, seasonalIndex);
     }
 
-    @Transactional
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
     public YearOverYearComparison getYearOverYearComparison(int currentYear, int yearsBack) {
         List<YearData> yearlyData = new ArrayList<>();
         
@@ -219,7 +251,8 @@ public class SalesTrendService {
         return new YearOverYearComparison(yearlyData, growthRates);
     }
 
-    @Transactional
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
     public TrendIndicators getTrendIndicators(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
@@ -298,38 +331,61 @@ public class SalesTrendService {
             firstHalfRevenue, secondHalfRevenue);
     }
 
-    @Transactional
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
     public List<HourlyHeatmap> getHourlyHeatmap(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT FUNCTION('HOUR', e.fechaEmision), FUNCTION('DAYOFWEEK', e.fechaEmision), " +
+            "SELECT HOUR(e.fechaEmision), CAST(e.fechaEmision AS date), " +
             "SUM(r.totalComprobante), COUNT(f) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "JOIN f.resumen r " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
-            "GROUP BY FUNCTION('HOUR', e.fechaEmision), FUNCTION('DAYOFWEEK', e.fechaEmision) " +
-            "ORDER BY FUNCTION('HOUR', e.fechaEmision), FUNCTION('DAYOFWEEK', e.fechaEmision)",
+            "GROUP BY HOUR(e.fechaEmision), CAST(e.fechaEmision AS date) " +
+            "ORDER BY HOUR(e.fechaEmision), CAST(e.fechaEmision AS date)",
             Object[].class
         )
         .setParameter("start", start)
         .setParameter("end", end)
         .getResultList();
 
-        return results.stream()
-            .map(row -> new HourlyHeatmap(
-                ((Number) row[0]).intValue(),
-                ((Number) row[1]).intValue(),
-                (BigDecimal) row[2],
-                ((Number) row[3]).intValue()
-            ))
-            .collect(Collectors.toList());
+        // Aggregate by (hour, dayOfWeek) since multiple dates may share the same hour + day-of-week
+        Map<String, HourlyHeatmap> aggregated = new LinkedHashMap<>();
+
+        for (Object[] row : results) {
+            int hour = ((Number) row[0]).intValue();
+            LocalDate date = (LocalDate) row[1];
+            BigDecimal totalSales = (BigDecimal) row[2];
+            int transactionCount = ((Number) row[3]).intValue();
+
+            // Java DayOfWeek: MONDAY=1 .. SUNDAY=7
+            // MySQL DAYOFWEEK: 1=Sunday .. 7=Saturday
+            int javaDayOfWeek = date.getDayOfWeek().getValue();
+            int mysqlDayOfWeek = (javaDayOfWeek % 7) + 1;
+
+            String key = hour + "-" + mysqlDayOfWeek;
+
+            aggregated.merge(key, new HourlyHeatmap(hour, mysqlDayOfWeek, totalSales, transactionCount),
+                (existing, incoming) -> new HourlyHeatmap(
+                    existing.getHour(),
+                    existing.getDayOfWeek(),
+                    existing.getTotalSales().add(incoming.getTotalSales()),
+                    existing.getTransactionCount() + incoming.getTransactionCount()
+                ));
+        }
+
+        List<HourlyHeatmap> result = new ArrayList<>(aggregated.values());
+        result.sort(Comparator.comparingInt(HourlyHeatmap::getHour)
+            .thenComparingInt(HourlyHeatmap::getDayOfWeek));
+        return result;
     }
 
-    @Transactional
+    @CacheResult(cacheName = "analytics-sales")
+    @Transactional(value = Transactional.TxType.SUPPORTS)
     public GrowthMetrics getGrowthMetrics(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
         LocalDateTime end = toLocalDateTime(endDate);

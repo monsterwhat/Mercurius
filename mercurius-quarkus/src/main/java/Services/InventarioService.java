@@ -4,11 +4,14 @@ import Models.Articulos.ArticuloStock;
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
 import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -26,10 +29,10 @@ import java.util.List;
 @ApplicationScoped
 public class InventarioService extends GService<Inventario> {
         
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull AlertasService alertasService;
 
     @Override
-    protected Class<Inventario> getEntityClass() {
+    protected @Nonnull Class<Inventario> getEntityClass() {
         return Inventario.class;
     }
 
@@ -38,25 +41,25 @@ public class InventarioService extends GService<Inventario> {
     }
 
     @Override
-    public void create(Inventario entity) {
+    public void create(@Nonnull Inventario entity) {
         try {
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.create()", null, e.getMessage());
         }
     }
     
-    public void createWithStock(Inventario entity) {
+    public void createWithStock(@Nonnull Inventario entity) {
         try {
             em.persist(entity);
             updateStock(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.createWithStock()", null, e.getMessage());
         }
     }
 
     @Override
-    public void delete(Inventario entity) {
+    public void delete(@Nonnull Inventario entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getCodigo());
@@ -67,22 +70,22 @@ public class InventarioService extends GService<Inventario> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for deletion", null, 0, "InventarioService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "InventarioService.delete()", null, e.getMessage());
         }
     }
 
     @Override
-    public void update(Inventario entity) {
+    public void update(@Nonnull Inventario entity) {
         try {
             em.merge(entity);
             updateStock(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.update()", null, e.getMessage());
         }
     }
     
-    public void markAsProcessed(Inventario entity) {
+    public void markAsProcessed(@Nonnull Inventario entity) {
         try {
             Inventario existingItem = em.find(getEntityClass(), entity.getCodigo());
             if (existingItem != null) {
@@ -99,27 +102,27 @@ public class InventarioService extends GService<Inventario> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for markAsProcessed", null, 0, "InventarioService.markAsProcessed()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error marking as processed: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.markAsProcessed()", null, e.getMessage());
         }
     }
 
     @Override
-    public List<Inventario> listAll() {
+    public @Nullable List<Inventario> listAll() {
         try {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a", Inventario.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAll()", null, e.getMessage());
             return null;
         }
     }
     
-    public List<Inventario> ListAllEnabled() {
+    public @Nullable List<Inventario> ListAllEnabled() {
         try {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true", Inventario.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "InventarioService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
@@ -137,7 +140,7 @@ public class InventarioService extends GService<Inventario> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "InventarioService.softDelete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "InventarioService.softDelete()", null, e.getMessage());
         }
     }
@@ -160,7 +163,7 @@ public class InventarioService extends GService<Inventario> {
             } else {
                 return 0.0; // Return 0 if no stock found
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting stock for barcode: " + barcode + " - " + e.getMessage(), null, 0, "InventarioService.getStock()", null, e.getMessage());
             return 0.0;
         }
@@ -179,7 +182,7 @@ public class InventarioService extends GService<Inventario> {
             }else{
                 return 0.0;
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error calculating total stock for item by barcode: " + e.getMessage(), null, 0, "InventarioService.calculateTotalStockForItemByBarcode()", null, e.getMessage());
             return 0.0;
         }
@@ -189,7 +192,7 @@ public class InventarioService extends GService<Inventario> {
         try {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = false", Inventario.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAllSinProcesar()", null, e.getMessage());
             return null;
         }
@@ -199,7 +202,7 @@ public class InventarioService extends GService<Inventario> {
     try {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = true", Inventario.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAllActivosYProcesados()", null, e.getMessage());
             return null;
         }    
@@ -209,7 +212,7 @@ public class InventarioService extends GService<Inventario> {
     try {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = false", Inventario.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "InventarioService.listAllInactivos()", null, e.getMessage());
             return null;
         }     
@@ -295,7 +298,7 @@ public class InventarioService extends GService<Inventario> {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage(), null, 0, "InventarioService.count()", null, e.getMessage());
             return 0l;
         }
@@ -305,7 +308,7 @@ public class InventarioService extends GService<Inventario> {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = false", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage(), null, 0, "InventarioService.count()", null, e.getMessage());
             return 0l;
         }
@@ -315,7 +318,7 @@ public class InventarioService extends GService<Inventario> {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true AND e.processed = false", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage(), null, 0, "InventarioService.count()", null, e.getMessage());
             return 0l;
         }
@@ -341,7 +344,7 @@ public class InventarioService extends GService<Inventario> {
                 newStock.setStock(entity.getCantidad()); // Set initial stock
                 em.persist(newStock);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating stock: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.updateStock()", null, e.getMessage());
         }
     }
@@ -421,7 +424,7 @@ public class InventarioService extends GService<Inventario> {
             return query.getSingleResult();
         } catch (NoResultException e) {
             return null;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting last purchase date: " + e.getMessage(), null, 0, "InventarioService.getLastPurchaseDateByDepartamento()", null, e.getMessage());
             return null;
         }
@@ -445,7 +448,7 @@ public class InventarioService extends GService<Inventario> {
             query.setParameter("endDate", endDate);
             query.setParameter("departamentoId", departamentoId);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting sales details: " + e.getMessage(), null, 0, "InventarioService.getSalesDetailsByDepartamento()", null, e.getMessage());
             return null;
         }
@@ -500,7 +503,7 @@ public class InventarioService extends GService<Inventario> {
         try {
             TypedQuery<ArticuloStock> query = em.createQuery("SELECT a FROM ArticuloStock a", ArticuloStock.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting all stock: " + e.getMessage(), null, 0, "InventarioService.getAllStock()", null, e.getMessage());
             return new ArrayList<>();
         }
