@@ -1,0 +1,25 @@
+package Models.Jaxb.FEC;
+
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import lombok.Data;
+
+@XmlAccessorType(XmlAccessType.FIELD)
+@Data
+public class IdentificacionReceptor {
+    @XmlElement(name = "Tipo")
+    private String tipo;
+
+    @XmlElement(name = "Numero")
+    private String numero;
+
+    public IdentificacionReceptor() {}
+
+    public IdentificacionReceptor(Models.Encabezado.IdentificacionReceptor src) {
+        if (src != null) {
+            this.tipo = src.getTipo();
+            this.numero = src.getNumero();
+        }
+    }
+}
