@@ -1,5 +1,6 @@
 package Models;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import java.util.Date;
 import lombok.Data;
@@ -27,6 +28,7 @@ public class Departamento {
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el departamento

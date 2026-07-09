@@ -4,6 +4,7 @@ import Models.Detalles.DetalleServicio;
 import Models.Encabezado.Encabezado;
 import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,41 +34,49 @@ public class ComprobantesEmitidos {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @Nullable
     @Column(length = 10)
     private String schemaVersion;
     
     @XmlElement(name = "Encabezado")
     @ToString.Exclude
+    @Nullable
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Encabezado encabezado;
     
     @XmlElement(name = "DetalleServicio")
     @ToString.Exclude
+    @Nullable
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "detalle_servicio_id")
     private DetalleServicio detalles;
     
     @XmlElement(name = "Resumen")
     @ToString.Exclude
+    @Nullable
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private ResumenFactura resumen;
 
     @XmlTransient
     @ToString.Exclude
+    @Nullable
     @jakarta.persistence.OneToMany(cascade = CascadeType.ALL)
     @jakarta.persistence.JoinColumn(name = "comprobante_emitido_id")
     private java.util.List<InformacionReferencia> informacionReferencia;
 
     private Boolean status;
     
+    @Nullable
     @Column(length = 50)
     private String user;
 
     @XmlTransient
+    @Nullable
     @Column(length = 50)
     private String haciendaClave;
 
     @XmlTransient
+    @Nullable
     @Column(length = 20)
     private String haciendaEstado;
 
@@ -78,10 +87,12 @@ public class ComprobantesEmitidos {
     private LocalDateTime haciendaFechaRespuesta;
 
     @XmlTransient
+    @Nullable
     @Column(name = "correction_attempts")
     private Integer correctionAttempts = 0;
 
     @XmlTransient
+    @Nullable
     @Column(name = "ultima_correccion")
     private LocalDateTime ultimaCorreccion;
     

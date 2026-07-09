@@ -1,6 +1,7 @@
 package Models;
 
 import Models.Articulos.Articulos;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -33,12 +34,14 @@ public class Inventario implements Serializable {
     
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "articulo_codigo")
     private Articulos articulo; //Referencia al articulo (Al valido en el momento del ajuste)
     
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
+    @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien realizo el ajuste
