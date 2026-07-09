@@ -14,6 +14,7 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.math.BigDecimal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -30,7 +31,7 @@ public class OtroCargo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
  
-    @XmlElement(name = "DetalleServicio")
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -61,7 +62,7 @@ public class OtroCargo {
     private String detalle;
 
     @XmlElement(name = "PorcentajeOC")
-    @Column(name = "porcentaje_oc", precision = 6, scale = 5)
+    @Column(name = "porcentaje_oc", precision = 9, scale = 5)
     private BigDecimal porcentajeOC;
 
     @XmlElement(name = "MontoCargo")

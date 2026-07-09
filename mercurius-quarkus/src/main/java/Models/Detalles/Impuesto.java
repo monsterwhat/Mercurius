@@ -15,6 +15,7 @@ import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.math.BigDecimal;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,8 +30,10 @@ public class Impuesto {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @XmlTransient
     private Long id;
 
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -17,6 +17,7 @@ import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlElementWrapper;
 import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
 import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,31 +33,34 @@ public class DetalleServicio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @XmlTransient
     private Long id;
     
+    @XmlTransient
     @Column(length = 10)
     private String schemaVersion;
     
+    @XmlTransient
     @ToString.Exclude
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "comprobante_emitido_id")
     private ComprobantesEmitidos comprobanteEmitido;
     
+    @XmlTransient
     private Boolean status;
 
-    @XmlElementWrapper(name = "LineasDetalle")
     @XmlElement(name = "LineaDetalle")
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToMany(mappedBy = "detalleServicio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LineaDetalle> lineasDetalle;
 
-    @XmlElementWrapper(name = "OtrosCargos")
-    @XmlElement(name = "OtroCargo")
+    @XmlTransient
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @OneToMany(mappedBy = "detalleServicio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<OtroCargo> otrosCargos;
+    
     
     @PrePersist
     protected void onCreate() {
