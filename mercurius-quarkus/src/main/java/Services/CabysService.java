@@ -5,6 +5,8 @@ import Models.Cabys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Inject;
@@ -29,10 +31,10 @@ import java.util.List;
 @ApplicationScoped
 public class CabysService extends GService<Cabys>{
     
-    @Inject CabysController controller;
+    @Inject @Nonnull CabysController controller;
     
     @Override
-    protected Class<Cabys> getEntityClass() {
+    protected @Nonnull Class<Cabys> getEntityClass() {
         return Cabys.class;
     }
 
@@ -41,16 +43,16 @@ public class CabysService extends GService<Cabys>{
     }
     
     @Override
-    public void create(Cabys entity) {
+    public void create(@Nonnull Cabys entity) {
         try {
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "CabysService.create()", null, e.getMessage());
         }
     }
 
     @Override
-    public void delete(Cabys entity) {
+    public void delete(@Nonnull Cabys entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getCodigo());
@@ -61,13 +63,13 @@ public class CabysService extends GService<Cabys>{
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "CabysService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "CabysService.delete()", null, e.getMessage());
         }
     }
     
     
-    public List<Cabys> listAllAPI() {
+    public @Nonnull List<Cabys> listAllAPI() {
         List<Cabys> cabysList = new ArrayList<>();
 
         try {
@@ -167,7 +169,7 @@ public class CabysService extends GService<Cabys>{
     /**
      * Searches Cabys by description (case-insensitive LIKE).
      */
-    public List<Cabys> searchByName(String nombre) {
+    public @Nonnull List<Cabys> searchByName(@Nonnull String nombre) {
         try {
             return em.createQuery(
                 "SELECT c FROM Cabys c WHERE LOWER(c.descripcion) LIKE LOWER(:nombre)",
@@ -175,18 +177,18 @@ public class CabysService extends GService<Cabys>{
                 .setParameter("nombre", "%" + nombre + "%")
                 .setMaxResults(10)
                 .getResultList();
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error searching Cabys by name: " + e.getMessage(), null, 0, "CabysService.searchByName()", null, e.getMessage());
             return List.of();
         }
     }
 
-    public void saveAllDB(List<Cabys> cabysList) {
+    public void saveAllDB(@Nonnull List<Cabys> cabysList) {
         try {
             for (Cabys cabys : cabysList) {
                 create(cabys);
             }
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "CabysService.saveAllDB()", null, e.getMessage());
         }
     }

@@ -1,5 +1,7 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.Articulos.Articulos;
 import Models.Inventario;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -7,6 +9,8 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
+import io.quarkus.cache.CacheResult;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -18,11 +22,12 @@ import java.util.stream.Collectors;
 @Named("stockForecastService")
 public class StockForecastService {
 
-    @Inject
+    @Inject @Nonnull
     EntityManager entityManager;
 
-    @Transactional
-    public List<ProductForecast> generateForecast(Long articuloId, int forecastDays) {
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public List<ProductForecast> generateForecast(@Nonnull Long articuloId, int forecastDays) {
         Articulos articulo = entityManager.find(Articulos.class, articuloId);
         if (articulo == null) return Collections.emptyList();
 
@@ -70,7 +75,8 @@ public class StockForecastService {
         return forecasts;
     }
 
-    @Transactional
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
     public List<ProductForecast> generateBulkForecast(int daysToForecast) {
         List<Articulos> articulos = entityManager.createQuery(
             "SELECT a FROM Articulos a WHERE a.status = true", Articulos.class
@@ -118,8 +124,9 @@ public class StockForecastService {
         return allForecasts;
     }
 
-    @Transactional
-    public DemandPrediction predictDemand(Long articuloId, int daysToPredict) {
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
+    public DemandPrediction predictDemand(@Nonnull Long articuloId, int daysToPredict) {
         List<SalesData> salesHistory = getSalesHistory(articuloId, 180);
         
         if (salesHistory.isEmpty()) {
@@ -154,7 +161,8 @@ public class StockForecastService {
         );
     }
 
-    @Transactional
+    @Transactional(TxType.SUPPORTS)
+    @Nonnull
     public InventoryHealthReport getInventoryHealthReport() {
         List<Articulos> articulos = entityManager.createQuery(
             "SELECT a FROM Articulos a WHERE a.status = true", Articulos.class
@@ -205,8 +213,9 @@ public class StockForecastService {
         );
     }
 
-    @Transactional
-    public ReorderRecommendation getReorderRecommendation(Long articuloId) {
+    @Transactional(TxType.SUPPORTS)
+    @Nullable
+    public ReorderRecommendation getReorderRecommendation(@Nonnull Long articuloId) {
         Articulos articulo = entityManager.find(Articulos.class, articuloId);
         if (articulo == null) return null;
 
@@ -258,12 +267,13 @@ public class StockForecastService {
         );
     }
 
-    private List<SalesData> getSalesHistory(Long articuloId, int days) {
+    @CacheResult(cacheName = "analytics-forecast")
+    List<SalesData> getSalesHistory(Long articuloId, int days) {
         LocalDateTime startDate = LocalDate.now().minusDays(days).atStartOfDay();
         LocalDateTime endDate = LocalDate.now().atTime(23, 59, 59);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT FUNCTION('DATE', e.fechaEmision), SUM(ld.cantidad) " +
+            "SELECT CAST(e.fechaEmision AS date), SUM(ld.cantidad) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
@@ -271,8 +281,8 @@ public class StockForecastService {
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "AND ld.detalle = (SELECT a.nombre FROM Articulos a WHERE a.codigo = :articuloId) " +
-            "GROUP BY FUNCTION('DATE', e.fechaEmision) " +
-            "ORDER BY FUNCTION('DATE', e.fechaEmision)",
+            "GROUP BY CAST(e.fechaEmision AS date) " +
+            "ORDER BY CAST(e.fechaEmision AS date)",
             Object[].class
         )
         .setParameter("start", startDate)
@@ -293,7 +303,7 @@ public class StockForecastService {
             ).setParameter("articuloId", articuloId)
              .getSingleResult();
             return stock != null ? stock.intValue() : 0;
-        } catch (Exception e) {
+        } catch (jakarta.persistence.PersistenceException e) {
             return 0;
         }
     }

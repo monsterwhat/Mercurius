@@ -2,9 +2,12 @@ package Services;
 
 import Models.Articulos.Articulos;
 import Models.Lote;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.util.Calendar;
 import java.util.Date;
@@ -31,7 +34,7 @@ public class LoteService extends GService<Lote> {
             );
             query.setParameter("articulo", articulo);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing lots by article: " + e.getMessage(), null, 0, "LoteService.listPorArticulo()", null, e.getMessage());
             return null;
         }
@@ -49,7 +52,7 @@ public class LoteService extends GService<Lote> {
             );
             query.setParameter("fechaLimite", fechaLimite);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing lots near expiry: " + e.getMessage(), null, 0, "LoteService.listProximosVencer()", null, e.getMessage());
             return null;
         }
@@ -62,7 +65,7 @@ public class LoteService extends GService<Lote> {
                 Lote.class
             );
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing expired lots: " + e.getMessage(), null, 0, "LoteService.listVencidos()", null, e.getMessage());
             return null;
         }
@@ -78,7 +81,7 @@ public class LoteService extends GService<Lote> {
             query.setMaxResults(1);
             List<Lote> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error suggesting FEFO lot: " + e.getMessage(), null, 0, "LoteService.sugerirLoteFEFO()", null, e.getMessage());
             return null;
         }
@@ -96,7 +99,7 @@ public class LoteService extends GService<Lote> {
             );
             query.setParameter("fechaLimite", fechaLimite);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting lots near expiry: " + e.getMessage(), null, 0, "LoteService.countProximosVencer()", null, e.getMessage());
             return 0L;
         }
@@ -109,7 +112,7 @@ public class LoteService extends GService<Lote> {
                 Long.class
             );
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting expired lots: " + e.getMessage(), null, 0, "LoteService.countVencidos()", null, e.getMessage());
             return 0L;
         }

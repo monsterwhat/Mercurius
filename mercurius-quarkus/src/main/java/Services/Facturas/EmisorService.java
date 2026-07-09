@@ -3,6 +3,8 @@ package Services.Facturas;
 
 import Models.Encabezado.Emisor;
 import Services.GService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
@@ -16,9 +18,10 @@ import java.util.List;
 @ApplicationScoped
 public class EmisorService extends GService<Emisor> {
     
-    @PersistenceContext EntityManager em;
+    @PersistenceContext @Nonnull EntityManager em;
 
     @Override
+    @Nonnull
     protected Class<Emisor> getEntityClass() {
         return Emisor.class;
     }
@@ -28,16 +31,16 @@ public class EmisorService extends GService<Emisor> {
     }
 
     @Override
-    public void create(Emisor entity) {
+    public void create(@Nonnull Emisor entity) {
         try {
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "EmisorService.create()", null, e.getMessage());
         }
     }
 
     @Override
-    public void delete(Emisor entity) {
+    public void delete(@Nonnull Emisor entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -48,51 +51,55 @@ public class EmisorService extends GService<Emisor> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "EmisorService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "EmisorService.delete()", null, e.getMessage());
         }
     }
 
     @Override
-    public void update(Emisor entity) {
+    public void update(@Nonnull Emisor entity) {
         try {
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "EmisorService.update()", null, e.getMessage());
         }
     }
 
     @Override
+    @Nullable
     public List<Emisor> listAll() {
         try {
             TypedQuery<Emisor> query = em.createQuery("SELECT d FROM Emisor d", Emisor.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "EmisorService.listAll()", null, e.getMessage());
             return null;
         }
     }
     
-    public Emisor findById(Integer id) {
+    @Nullable
+    public Emisor findById(@Nonnull Integer id) {
     try {
         return em.find(getEntityClass(), id);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "EmisorService.findById()", null, e.getMessage());
             return null;
         }
     }
     
+    @Nullable
     public List<Emisor> ListAllEnabled() {
         try {
             TypedQuery<Emisor> query = em.createQuery("SELECT a FROM Emisor", Emisor.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "EmisorService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
 
-    public Emisor createIfNotExist(Emisor emisor) {
+    @Nullable
+    public Emisor createIfNotExist(@Nonnull Emisor emisor) {
         try {
             // Correct query to join identificacion and check the identificacion.numero field
             TypedQuery<Emisor> query = em.createQuery(

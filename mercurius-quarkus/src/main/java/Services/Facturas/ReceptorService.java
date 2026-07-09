@@ -2,6 +2,8 @@ package Services.Facturas;
 
 import Models.Encabezado.Receptor;
 import Services.GService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
@@ -15,10 +17,10 @@ import java.util.List;
 @ApplicationScoped
 public class ReceptorService extends GService<Receptor> {
 
-    @PersistenceContext EntityManager em;
+    @PersistenceContext @Nonnull EntityManager em;
 
     @Override
-    protected Class<Receptor> getEntityClass() {
+    protected @Nonnull Class<Receptor> getEntityClass() {
         return Receptor.class;
     }
 
@@ -27,16 +29,16 @@ public class ReceptorService extends GService<Receptor> {
     }
 
     @Override
-    public void create(Receptor entity) {
+    public void create(@Nonnull Receptor entity) {
         try {
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ReceptorService.create()", null, e.getMessage());
         }
     }
 
     @Override
-    public void delete(Receptor entity) {
+    public void delete(@Nonnull Receptor entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -47,51 +49,51 @@ public class ReceptorService extends GService<Receptor> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ReceptorService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ReceptorService.delete()", null, e.getMessage());
         }
     }
 
     @Override
-    public void update(Receptor entity) {
+    public void update(@Nonnull Receptor entity) {
         try {
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ReceptorService.update()", null, e.getMessage());
         }
     }
 
     @Override
-    public List<Receptor> listAll() {
+    public @Nullable List<Receptor> listAll() {
         try {
             TypedQuery<Receptor> query = em.createQuery("SELECT d FROM Receptor d", Receptor.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ReceptorService.listAll()", null, e.getMessage());
             return null;
         }
     }
     
-    public Receptor findById(Integer id) {
+    public @Nullable Receptor findById(@Nonnull Integer id) {
     try {
         return em.find(getEntityClass(), id);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "ReceptorService.findById()", null, e.getMessage());
             return null;
         }
     }
     
-    public List<Receptor> ListAllEnabled() {
+    public @Nullable List<Receptor> ListAllEnabled() {
         try {
             TypedQuery<Receptor> query = em.createQuery("SELECT a FROM Receptor", Receptor.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "ReceptorService.ListAllEnabled()", null, e.getMessage());
             return null;
         }
     }
 
-    public Receptor createIfNotExist(Receptor receptor) {
+    public @Nullable Receptor createIfNotExist(@Nonnull Receptor receptor) {
         try {
             // Check if a Receptor with the same identification number already exists
             TypedQuery<Receptor> query = em.createQuery(

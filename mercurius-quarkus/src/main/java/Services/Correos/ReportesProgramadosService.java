@@ -2,9 +2,12 @@ package Services.Correos;
 
 import Models.Correos.ReporteProgramado;
 import Services.GService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.util.Date;
 
@@ -16,15 +19,16 @@ import java.util.Date;
 @ApplicationScoped
 public class ReportesProgramadosService extends GService<ReporteProgramado>{
     
-    @PersistenceContext EntityManager em;
+    @PersistenceContext @Nonnull EntityManager em;
 
     @Override
+    @Nonnull
     protected Class<ReporteProgramado> getEntityClass() {
         return ReporteProgramado.class;
     }
     
     @Override
-    public void create(ReporteProgramado entity) {
+    public void create(@Nonnull ReporteProgramado entity) {
         try {
             // Set initial next run time
             if (entity.getNextRunTime() == null && entity.getFrecuencia() != null && !entity.getFrecuencia().isEmpty()) {
@@ -32,19 +36,19 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 entity.setNextRunTime(nextRun);
             }
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating ReporteProgramado: " + e.getMessage(), null, 0, "ReportesProgramadosService.create()", null, e.getMessage());
         }
     }
     
-    public boolean findByName(String perfil) {
+    public boolean findByName(@Nonnull String perfil) {
         String jpql = "SELECT r FROM ReporteProgramado r WHERE r.perfil = :perfil";
         TypedQuery<ReporteProgramado> query = em.createQuery(jpql, ReporteProgramado.class);
         query.setParameter("perfil", perfil);
         return !query.getResultList().isEmpty();
     }
     
-    public void updateAndDisable(ReporteProgramado entity) {
+    public void updateAndDisable(@Nonnull ReporteProgramado entity) {
         try {
             // Find the existing item by its ID
             ReporteProgramado existingItem = em.find(getEntityClass(), entity.getId());
@@ -64,12 +68,12 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ReportesProgramadosService.updateAndDisable()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.updateAndDisable()", null, e.getMessage());
         }
     }
     
-    public boolean createIfNotExists(ReporteProgramado entity) {
+    public boolean createIfNotExists(@Nonnull ReporteProgramado entity) {
         try {
             String queryStr = "SELECT COUNT(f) FROM ReporteProgramado f WHERE f.perfil = :nombre";
             Long count = em.createQuery(queryStr, Long.class)
@@ -83,23 +87,24 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 return true;
             }
 
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.createIfNotExists()", null, e.getMessage());
             return false;
         }
     }
     
-    public void delete(ReporteProgramado entity) {
+    public void delete(@Nonnull ReporteProgramado entity) {
         try {
             ReporteProgramado existingItem = em.find(getEntityClass(), entity.getId());
             if (existingItem != null) {
                 em.remove(existingItem);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.delete()", null, e.getMessage());
         }
     }
 
+    @Nullable
     public ReporteProgramado findNextScheduledReport() {
         try {
             TypedQuery<ReporteProgramado> query = em.createQuery(
@@ -114,7 +119,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             
             java.util.List<ReporteProgramado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding next scheduled report: " + e.getMessage(), null, 0, "ReportesProgramadosService.findNextScheduledReport()", null, e.getMessage());
             return null;
         }

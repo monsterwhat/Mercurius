@@ -1,11 +1,14 @@
 package Services;
 
 import Models.UserShortcut;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import jakarta.transaction.Transactional.TxType;
 
 import java.util.Date;
 import java.util.List;
@@ -15,11 +18,11 @@ import java.util.stream.Collectors;
 @Named("quickActionsService")
 public class QuickActionsService {
 
-    @Inject
+    @Inject @Nonnull
     EntityManager entityManager;
 
-    @Transactional
-    public List<UserShortcut> getUserShortcuts(String username) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<UserShortcut> getUserShortcuts(@Nonnull String username) {
         return entityManager.createQuery(
             "SELECT s FROM UserShortcut s WHERE s.username = :username ORDER BY s.displayOrder, s.usageCount DESC",
             UserShortcut.class
@@ -27,8 +30,8 @@ public class QuickActionsService {
          .getResultList();
     }
 
-    @Transactional
-    public List<UserShortcut> getFavoriteActions(String username) {
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<UserShortcut> getFavoriteActions(@Nonnull String username) {
         return entityManager.createQuery(
             "SELECT s FROM UserShortcut s WHERE s.username = :username AND s.isFavorite = true ORDER BY s.displayOrder",
             UserShortcut.class
@@ -36,7 +39,7 @@ public class QuickActionsService {
          .getResultList();
     }
 
-    @Transactional
+    @Transactional(TxType.SUPPORTS)
     public List<UserShortcut> getMostUsedActions(String username, int limit) {
         return entityManager.createQuery(
             "SELECT s FROM UserShortcut s WHERE s.username = :username ORDER BY s.usageCount DESC",

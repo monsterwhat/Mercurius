@@ -1,10 +1,13 @@
 package Services;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.Inventario;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -23,13 +26,15 @@ public class ShrinkageAnalysisService {
     private static final String[] SHRINKAGE_TYPES = {"Merma", "Perdida/Robo", "Vencimiento", "Daño"};
 
     @PersistenceContext
+    @Nonnull
     private EntityManager em;
 
     /**
      * Get total shrinkage quantity for a date range.
      * Sum of cantidad from Inventario where tipoMovimiento is a shrinkage type.
      */
-    public BigDecimal getTotalShrinkage(Date start, Date end) {
+    @Nonnull
+    public BigDecimal getTotalShrinkage(@Nonnull Date start, @Nonnull Date end) {
         try {
             String jpql = "SELECT SUM(i.cantidad) FROM Inventario i " +
                           "WHERE i.tipoMovimiento IN ('Merma', 'Perdida/Robo', 'Vencimiento', 'Daño') " +
@@ -39,7 +44,7 @@ public class ShrinkageAnalysisService {
             query.setParameter("end", end);
             BigDecimal result = query.getSingleResult();
             return result != null ? result : BigDecimal.ZERO;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             return BigDecimal.ZERO;
         }
     }
@@ -48,7 +53,8 @@ public class ShrinkageAnalysisService {
      * Get shrinkage grouped by cause (tipoMovimiento).
      * Returns map of cause -> total quantity.
      */
-    public Map<String, BigDecimal> getShrinkageByCause(Date start, Date end) {
+    @Nonnull
+    public Map<String, BigDecimal> getShrinkageByCause(@Nonnull Date start, @Nonnull Date end) {
         Map<String, BigDecimal> resultMap = new LinkedHashMap<>();
         try {
             String jpql = "SELECT i.tipoMovimiento, SUM(i.cantidad) FROM Inventario i " +
@@ -71,7 +77,7 @@ public class ShrinkageAnalysisService {
             for (String type : SHRINKAGE_TYPES) {
                 resultMap.putIfAbsent(type, BigDecimal.ZERO);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             for (String type : SHRINKAGE_TYPES) {
                 resultMap.put(type, BigDecimal.ZERO);
             }
@@ -83,7 +89,8 @@ public class ShrinkageAnalysisService {
      * Get shrinkage grouped by department.
      * Returns map of department name -> total quantity.
      */
-    public Map<String, BigDecimal> getShrinkageByDepartment(Date start, Date end) {
+    @Nonnull
+    public Map<String, BigDecimal> getShrinkageByDepartment(@Nonnull Date start, @Nonnull Date end) {
         Map<String, BigDecimal> resultMap = new LinkedHashMap<>();
         try {
             String jpql = "SELECT d.nombre, SUM(i.cantidad) FROM Inventario i " +
@@ -103,7 +110,7 @@ public class ShrinkageAnalysisService {
                 BigDecimal total = (BigDecimal) row[1];
                 resultMap.put(dept, total != null ? total.abs() : BigDecimal.ZERO);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             // Return empty map on error
         }
         return resultMap;
@@ -113,7 +120,8 @@ public class ShrinkageAnalysisService {
      * Calculate shrinkage percentage relative to total inventory movement.
      * (total shrinkage / total inventory movement) * 100
      */
-    public BigDecimal getShrinkagePercentage(Date start, Date end) {
+    @Nonnull
+    public BigDecimal getShrinkagePercentage(@Nonnull Date start, @Nonnull Date end) {
         try {
             BigDecimal totalShrinkage = getTotalShrinkage(start, end);
 
@@ -133,7 +141,7 @@ public class ShrinkageAnalysisService {
             return absShrinkage.divide(totalMovement, 4, RoundingMode.HALF_UP)
                                .multiply(BigDecimal.valueOf(100))
                                .setScale(2, RoundingMode.HALF_UP);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             return BigDecimal.ZERO;
         }
     }
@@ -141,7 +149,8 @@ public class ShrinkageAnalysisService {
     /**
      * Get detailed shrinkage movements for the date range.
      */
-    public List<Inventario> getShrinkageMovements(Date start, Date end) {
+    @Nonnull
+    public List<Inventario> getShrinkageMovements(@Nonnull Date start, @Nonnull Date end) {
         try {
             String jpql = "SELECT i FROM Inventario i " +
                           "WHERE i.tipoMovimiento IN ('Merma', 'Perdida/Robo', 'Vencimiento', 'Daño') " +
@@ -151,7 +160,7 @@ public class ShrinkageAnalysisService {
             query.setParameter("start", start);
             query.setParameter("end", end);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             return List.of();
         }
     }
@@ -159,7 +168,8 @@ public class ShrinkageAnalysisService {
     /**
      * Get total inventory movement (all types) for the date range.
      */
-    public BigDecimal getTotalInventoryMovement(Date start, Date end) {
+    @Nonnull
+    public BigDecimal getTotalInventoryMovement(@Nonnull Date start, @Nonnull Date end) {
         try {
             String jpql = "SELECT SUM(ABS(i.cantidad)) FROM Inventario i " +
                           "WHERE i.fechaMovimiento BETWEEN :start AND :end";
@@ -168,7 +178,7 @@ public class ShrinkageAnalysisService {
             query.setParameter("end", end);
             BigDecimal result = query.getSingleResult();
             return result != null ? result : BigDecimal.ZERO;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             return BigDecimal.ZERO;
         }
     }

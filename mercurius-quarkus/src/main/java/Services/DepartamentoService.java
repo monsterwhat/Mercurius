@@ -1,6 +1,8 @@
 package Services;
 
 import Models.Departamento; 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.faces.application.FacesMessage;
@@ -21,6 +23,7 @@ import java.util.List;
 public class DepartamentoService extends GService<Departamento> {
 
     @Override
+    @Nonnull
     protected Class<Departamento> getEntityClass() {
         return Departamento.class;
     }
@@ -29,21 +32,23 @@ public class DepartamentoService extends GService<Departamento> {
     public void init() {
     }
     
+    @Nullable
     public Long countActivos() {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "DepartamentoService.countActivos()", null, e.getMessage());
             return null;
         }
     }
     
+    @Nullable
     public Long countInactivos() {
         try {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "DepartamentoService.countActivos()", null, e.getMessage());
             return null;
         }
@@ -52,7 +57,8 @@ public class DepartamentoService extends GService<Departamento> {
     /**
      * Find department by name
      */
-    public Departamento findByName(String nombre) {
+    @Nullable
+    public Departamento findByName(@Nonnull String nombre) {
         try {
             String jpql = "SELECT d FROM Departamento d WHERE d.nombre = :nombre AND d.status = true";
             TypedQuery<Departamento> query = em.createQuery(jpql, Departamento.class)
@@ -60,23 +66,23 @@ public class DepartamentoService extends GService<Departamento> {
             return query.getSingleResult();
         } catch (NoResultException e) {
             return null;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding department by name: " + e.getLocalizedMessage(), null, 0, "DepartamentoService.findByName()", null, e.getMessage());
             return null;
         }
     }
 
     @Override
-    public void create(Departamento entity) {
+    public void create(@Nonnull Departamento entity) {
         try {
             em.persist(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "DepartamentoService.create()", null, e.getMessage());
         }
     }
 
     @Override
-    public void delete(Departamento entity) {
+    public void delete(@Nonnull Departamento entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -87,54 +93,57 @@ public class DepartamentoService extends GService<Departamento> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.delete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "DepartamentoService.delete()", null, e.getMessage());
         }
     }
 
     @Override
-    public void update(Departamento entity) {
+    public void update(@Nonnull Departamento entity) {
         try {
             if(!entity.getStatus()){
                 entity.setStatus(true);
             }
             em.merge(entity);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "DepartamentoService.update()", null, e.getMessage());
         }
     }
 
     @Override
+    @Nullable
     public List<Departamento> listAll() {
         try {
             TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d", Departamento.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "DepartamentoService.listAll()", null, e.getMessage());
             return null;
         }
     }
     
-    public Departamento findById(Integer id) {
+    @Nullable
+    public Departamento findById(@Nonnull Integer id) {
     try {
         return em.find(getEntityClass(), id);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "DepartamentoService.findById()", null, e.getMessage());
             return null;
         }
     }
     
+    @Nullable
     public List<Departamento> listAllActive() {
         try {
             TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d WHERE d.status = true", Departamento.class);
             return query.getResultList();
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing active departamentos: " + e.getMessage(), null, 0, "DepartamentoService.listAllActive()", null, e.getMessage());
             return null;
         }
     }
 
-    public void softDelete(Departamento entity) {
+    public void softDelete(@Nonnull Departamento entity) {
         try {
             // Find the item by its ID
             Departamento existingItem = em.find(getEntityClass(), entity.getId());
@@ -153,12 +162,13 @@ public class DepartamentoService extends GService<Departamento> {
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.softDelete()", null, null);
             }
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "DepartamentoService.softDelete()", null, e.getMessage());
         }
     }
     
-    public Departamento createIfNotExist(Departamento departamento) {
+    @Nullable
+    public Departamento createIfNotExist(@Nonnull Departamento departamento) {
         try {
             TypedQuery<Departamento> query = em.createQuery("SELECT e FROM Departamento e WHERE e.nombre = :nombre", Departamento.class);
             query.setParameter("nombre", departamento.getNombre());
@@ -178,7 +188,8 @@ public class DepartamentoService extends GService<Departamento> {
         }
     }
     
-    public List<Departamento> findDepartamentosAfterDate(Date fecha) {
+    @Nonnull
+    public List<Departamento> findDepartamentosAfterDate(@Nonnull Date fecha) {
         CriteriaBuilder cb = em.getCriteriaBuilder();
         CriteriaQuery<Departamento> cq = cb.createQuery(Departamento.class);
         Root<Departamento> departamento = cq.from(Departamento.class);

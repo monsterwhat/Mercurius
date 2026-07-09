@@ -2,11 +2,14 @@ package Services;
 
 import Models.Registros.Alertas;
 import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Named;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.logging.Logger;
 
 /**
  *
@@ -17,8 +20,10 @@ import java.util.Date;
 @ApplicationScoped
 public class AlertasService extends GService<Alertas> {
 
+    private static final Logger LOG = Logger.getLogger(AlertasService.class.getName());
+
     @Override
-    protected Class<Alertas> getEntityClass() {
+    protected @Nonnull Class<Alertas> getEntityClass() {
         return Alertas.class;
     }
 
@@ -28,15 +33,15 @@ public class AlertasService extends GService<Alertas> {
     }
     
     @Override
-    public void create(Alertas alerta) {
+    public void create(@Nonnull Alertas alerta) {
         try {
             em.persist(alerta);
-        } catch (Exception e) {
-            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "AlertasService.create()", null, e.getMessage());
+        } catch (jakarta.persistence.PersistenceException e) {
+            LOG.severe("Error creating Alertas entity: " + e.getMessage());
         }
     }
     
-    public void registrarAlerta(String tipo, String Mensaje, Users user, int codigo, String source, String antes, String despues){
+    public void registrarAlerta(@Nonnull String tipo, @Nonnull String Mensaje, @Nullable Users user, int codigo, @Nonnull String source, @Nullable String antes, @Nullable String despues){
             Alertas alerta = new Alertas();
             alerta.setTipo(tipo);
             alerta.setMensaje(Mensaje);
@@ -51,12 +56,12 @@ public class AlertasService extends GService<Alertas> {
             create(alerta);
     }  
     
-    public void toggleVista(Alertas alerta) {
+    public void toggleVista(@Nonnull Alertas alerta) {
         try {
             alerta.setVista(!alerta.isVista());
             em.merge(alerta);
-        } catch (Exception e) {
-            alertasService.registrarAlerta("Error", "Error toggling vista: " + e.getMessage(), null, 0, "AlertasService.toggleVista()", null, e.getMessage());
+        } catch (jakarta.persistence.PersistenceException e) {
+            LOG.severe("Error toggling Alertas vista: " + e.getMessage());
         }
     }
 }

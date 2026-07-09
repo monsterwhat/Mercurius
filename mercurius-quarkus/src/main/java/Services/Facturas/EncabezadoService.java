@@ -2,11 +2,14 @@ package Services.Facturas;
 
 import Models.Encabezado.Encabezado;
 import Services.GService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
 import java.util.List;
 
 /**
@@ -17,23 +20,25 @@ import java.util.List;
 @ApplicationScoped
 public class EncabezadoService extends GService<Encabezado> {
     
-    @PersistenceContext EntityManager em;
+    @PersistenceContext @Nonnull EntityManager em;
     
     @Override
+    @Nonnull
     protected Class<Encabezado> getEntityClass() {
         return Encabezado.class;
     }
     
     @Override
-    public void create(Encabezado encabezado) {
+    public void create(@Nonnull Encabezado encabezado) {
         try {
             em.merge(encabezado);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "EncabezadoService.create()", null, e.getMessage());
         }
     }
     
-    public Encabezado createIfNotExists(Encabezado encabezado) {
+    @Nullable
+    public Encabezado createIfNotExists(@Nonnull Encabezado encabezado) {
         try {
             // Check if encabezado with same numeroConsecutivo exists using count query
             if (existsByNumeroConsecutivo(encabezado.getNumeroConsecutivo())) {
@@ -45,13 +50,13 @@ public class EncabezadoService extends GService<Encabezado> {
             em.merge(encabezado);
             alertasService.registrarAlerta("Info", "Successfully created encabezado for: " + encabezado.getNumeroConsecutivo(), null, 0, "EncabezadoService.createIfNotExists()", null, null);
             return encabezado;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating or finding encabezado: " + e.getMessage(), null, 0, "EncabezadoService.createIfNotExists()", null, e.getMessage());
             return null;
         }
     }
     
-    public boolean existsByNumeroConsecutivo(String numeroConsecutivo) {
+    public boolean existsByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
         try {
             // Use simple query to check existence
             TypedQuery<Long> query = em.createQuery(
@@ -61,7 +66,7 @@ public class EncabezadoService extends GService<Encabezado> {
             query.setParameter("numeroConsecutivo", numeroConsecutivo);
             Long count = query.getSingleResult();
             return count != null && count > 0;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error checking encabezado existence: " + e.getMessage(), null, 0, "EncabezadoService.existsByNumeroConsecutivo()", null, e.getMessage());
             return false;
         }
@@ -69,7 +74,7 @@ public class EncabezadoService extends GService<Encabezado> {
     
     // New method: Check if there's a valid ComprobantesRecibidos with this numeroConsecutivo
     // This ignores orphaned encabezados that have no parent ComprobantesRecibidos
-    public boolean existsByNumeroConsecutivoWithValidComprobante(String numeroConsecutivo) {
+    public boolean existsByNumeroConsecutivoWithValidComprobante(@Nonnull String numeroConsecutivo) {
         try {
             TypedQuery<Long> query = em.createQuery(
                 "SELECT COUNT(c.id) FROM ComprobantesRecibidos c " +
@@ -79,14 +84,15 @@ public class EncabezadoService extends GService<Encabezado> {
             query.setParameter("numeroConsecutivo", numeroConsecutivo);
             Long count = query.getSingleResult();
             return count != null && count > 0;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error checking valid comprobante existence: " + e.getMessage(), null, 0, "EncabezadoService.existsByNumeroConsecutivoWithValidComprobante()", null, e.getMessage());
             return false;
         }
     }
     
     // New method to find existing encabezado and handle duplicates properly
-    public Encabezado findExistingEncabezado(String numeroConsecutivo) {
+    @Nullable
+    public Encabezado findExistingEncabezado(@Nonnull String numeroConsecutivo) {
         try {
             jakarta.persistence.Query query = em.createNativeQuery(
                 "SELECT e.* FROM Encabezado e WHERE e.numeroConsecutivo = ? ORDER BY e.id DESC LIMIT 1", 
@@ -95,24 +101,25 @@ public class EncabezadoService extends GService<Encabezado> {
             query.setParameter(1, numeroConsecutivo);
             List<Encabezado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding existing encabezado: " + e.getMessage(), null, 0, "EncabezadoService.findExistingEncabezado()", null, e.getMessage());
             return null;
         }
     }
     
-public Encabezado getByNumeroConsecutivo(String numeroConsecutivo) {
+@Nullable
+public Encabezado getByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
         try {
             // Find existing record, handle duplicates gracefully
             return findExistingEncabezado(numeroConsecutivo);
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error getting encabezado by numeroConsecutivo: " + e.getMessage(), null, 0, "EncabezadoService.getByNumeroConsecutivo()", null, e.getMessage());
             return null;
         }
     }
     
     // Method to clean up duplicate Encabezado records by numeroConsecutivo
-    public int cleanDuplicateEncabezados(String numeroConsecutivo) {
+    public int cleanDuplicateEncabezados(@Nonnull String numeroConsecutivo) {
         try {
             TypedQuery<Encabezado> query = em.createQuery(
                 "SELECT e FROM Encabezado e WHERE e.numeroConsecutivo = :numeroConsecutivo ORDER BY e.id DESC", 
@@ -131,7 +138,7 @@ public Encabezado getByNumeroConsecutivo(String numeroConsecutivo) {
                 return duplicates.size() - 1; // Number of duplicates removed
             }
             return 0;
-        } catch (Exception e) {
+        } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error cleaning duplicate encabezados: " + e.getMessage(), null, 0, "EncabezadoService.cleanDuplicateEncabezados()", null, e.getMessage());
             return 0;
         }
