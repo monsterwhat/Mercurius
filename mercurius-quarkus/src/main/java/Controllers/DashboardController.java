@@ -1,5 +1,7 @@
 package Controllers;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.view.ViewScoped;
 import jakarta.faces.application.FacesMessage;
@@ -21,24 +23,24 @@ import java.util.List;
 @ViewScoped
 public class DashboardController implements Serializable {
     
-    @Inject private SessionController sessionController;
-    @Inject private DashboardService dashboardService;
-    @Inject private AlertasService alertasService;
+    @Inject @Nonnull private SessionController sessionController;
+    @Inject @Nonnull private DashboardService dashboardService;
+    @Inject @Nonnull private AlertasService alertasService;
     
     // Today's stats
-    private BigDecimal todaySales;
+    @Nullable private BigDecimal todaySales;
     private int transactionCount;
     private int itemsSold;
     
     // Last transaction
-    private ComprobantesEmitidos lastTransaction;
-    private String lastTransactionDisplay;
+    @Nullable private ComprobantesEmitidos lastTransaction;
+    @Nullable private String lastTransactionDisplay;
     
     // Recent activity
-    private List<ComprobantesEmitidos> recentSales;
+    @Nullable private List<ComprobantesEmitidos> recentSales;
     
     // Current date for display
-    private String currentDate;
+    @Nullable private String currentDate;
     
     // Flag to ensure data is loaded only once
     private boolean dataLoaded = false;
@@ -68,13 +70,14 @@ public void loadDashboardData() {
                     dataLoaded = true;
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error loading dashboard data: " + e.toString(), null, 0, "DashboardController.init()", null, e.toString());
             FacesContext.getCurrentInstance().addMessage(null, 
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron cargar los datos del dashboard"));
         }
     }
     
+    @Nonnull
     public String startNewSale() {
         return "/secured/pages/Facturas/Facturas/factura.xhtml?faces-redirect=true";
     }
@@ -89,7 +92,7 @@ public void loadDashboardData() {
                 
                 lastTransactionDisplay = String.format("Factura %s - %s colones a las %s", 
                     billNumber, total, timeStr);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 alertasService.registrarAlerta("Error", "Error formatting last transaction: " + e.toString(), null, 0, "DashboardController.updateLastTransactionDisplay()", null, e.toString());
                 lastTransactionDisplay = "Error al cargar última transacción";
             }
@@ -99,6 +102,7 @@ public void loadDashboardData() {
     }
     
     // Getters and Setters
+    @Nullable
     public String getCurrentDate() {
         if (!dataLoaded) {
             loadDashboardData();
@@ -106,6 +110,7 @@ public void loadDashboardData() {
         return currentDate;
     }
     
+    @Nullable
     public BigDecimal getTodaySales() {
         if (!dataLoaded) {
             loadDashboardData();
@@ -127,6 +132,7 @@ public void loadDashboardData() {
         return itemsSold;
     }
     
+    @Nullable
     public ComprobantesEmitidos getLastTransaction() {
         if (!dataLoaded) {
             loadDashboardData();
@@ -134,6 +140,7 @@ public void loadDashboardData() {
         return lastTransaction;
     }
     
+    @Nullable
     public String getLastTransactionDisplay() {
         if (!dataLoaded) {
             loadDashboardData();
@@ -141,6 +148,7 @@ public void loadDashboardData() {
         return lastTransactionDisplay;
     }
     
+    @Nullable
     public List<ComprobantesEmitidos> getRecentSales() {
         if (!dataLoaded) {
             loadDashboardData();

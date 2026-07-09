@@ -18,6 +18,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import org.primefaces.util.LangUtils;
 
@@ -26,22 +28,29 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class InventarioResumenController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private ArticulosService articuloService;
-    @Inject
+    @Inject @Nonnull
     private FamiliaService familiaService;
-    @Inject
+    @Inject @Nonnull
     private DepartamentoService departamentoService;
-    @Inject
+    @Inject @Nonnull
     private InventarioService inventarioService;
 
+    @Nullable
     private List<Articulos> articulos;
+    @Nonnull
     private List<Familia> familias;
+    @Nonnull
     private List<Departamento> departamentos;
+    @Nullable
     private List<ArticuloStock> stocks;
 
+    @Nullable
     private String globalFilter;
+    @Nullable
     private Integer familiaID;
+    @Nullable
     private Integer departamentoID;
 
     @PostConstruct
@@ -55,14 +64,14 @@ public class InventarioResumenController implements Serializable {
         stocks = inventarioService.getAllStock();
     }
 
-    public List<Articulos> getArticulos() {
+    public @Nonnull List<Articulos> getArticulos() {
         if (articulos == null) {
             articulos = articuloService.ListAllEnabled();
         }
         return articulos;
     }
 
-    public BigDecimal getStockForArticulo(Articulos articulo) {
+    public @Nonnull BigDecimal getStockForArticulo(@Nullable Articulos articulo) {
         if (stocks == null || articulo == null || articulo.getCodigoBarra() == null) {
             return BigDecimal.ZERO;
         }
@@ -73,7 +82,7 @@ public class InventarioResumenController implements Serializable {
                 .orElse(BigDecimal.ZERO);
     }
 
-    public String getStockStatus(Articulos articulo) {
+    public @Nonnull String getStockStatus(@Nonnull Articulos articulo) {
         BigDecimal currentStock = getStockForArticulo(articulo);
         Integer stockOptimo = articulo.getStockOptimo();
 
@@ -94,7 +103,7 @@ public class InventarioResumenController implements Serializable {
         return "OK";
     }
 
-    public String getStockStatusStyle(Articulos articulo) {
+    public @Nonnull String getStockStatusStyle(@Nonnull Articulos articulo) {
         String status = getStockStatus(articulo);
         switch (status) {
             case "Sin Stock":
@@ -106,7 +115,7 @@ public class InventarioResumenController implements Serializable {
         }
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -140,15 +149,15 @@ public class InventarioResumenController implements Serializable {
         return getTotalArticulos();
     }
 
-    public List<Articulos> getFilteredArticulos() {
+    public @Nonnull List<Articulos> getFilteredArticulos() {
         return getFilteredArticulosByType("all");
     }
 
-    public List<Articulos> getFilteredArticulosCero() {
+    public @Nonnull List<Articulos> getFilteredArticulosCero() {
         return getFilteredArticulosByType("cero");
     }
 
-    public List<Articulos> getFilteredArticulosNegativos() {
+    public @Nonnull List<Articulos> getFilteredArticulosNegativos() {
         return getFilteredArticulosByType("negativos");
     }
 

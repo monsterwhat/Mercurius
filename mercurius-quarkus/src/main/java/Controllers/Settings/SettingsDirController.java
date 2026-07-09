@@ -5,6 +5,8 @@ import Models.AppSettings;
 import Services.AppSettingsService;
 import Services.EmailService;
 import Services.AlertasService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -30,22 +32,33 @@ import org.primefaces.model.file.UploadedFile;
 @RequestScoped
 public class SettingsDirController implements Serializable {
 
+    @Nullable
     private List<AppSettings> currentSettingsList;
+    @Nullable
     private AppSettings currentSettings;
+    @Nullable
     private AppSettings newSettings;
+    @Nullable
     private AppSettings selectedSettings;
+    @Nullable
     private Boolean hasValidProfile;
+    @Nullable
     private UploadedFile imagen;
 
     @Inject
+    @Nonnull
     AppSettingsService settingsService;
     @Inject
+    @Nonnull
     private ServletContext servletContext;
     @Inject
+    @Nonnull
     private EmailService emailer;
     @Inject
+    @Nonnull
     private AlertasService alertasService;
     @Inject
+    @Nonnull
     private SessionController currentSession;
 
     @PostConstruct
@@ -164,13 +177,14 @@ public class SettingsDirController implements Serializable {
         alertasService.registrarAlerta("Configuración deshabilitada", "Se ha deshabilitado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.disableSelectedSettings", oldSettings.toString(), selectedSettings.toString());
     }
 
+    @Nonnull
     public String getMainDirectory() {
         FileSystemView fsv = FileSystemView.getFileSystemView();
         File docDir = fsv.getDefaultDirectory();
         return docDir.getAbsolutePath();
     }
 
-    public void createFolder(String documentsPath, String folderName) {
+    public void createFolder(@Nonnull String documentsPath, @Nonnull String folderName) {
         File newFolder = new File(documentsPath, folderName);
         if (newFolder.exists()) {
             // Directory already exists
@@ -182,10 +196,12 @@ public class SettingsDirController implements Serializable {
         }
     }
 
+    @Nonnull
     public String getHomeDirPath() {
         return getMainDirectory() + File.separator + "Mercurius";
     }
 
+    @Nonnull
     public String getProfileDirPath() {
         if (currentSettings == null || currentSettings.getNombrePerfil() == null) {
             return getHomeDirPath() + File.separator + "default";
@@ -193,35 +209,42 @@ public class SettingsDirController implements Serializable {
         return getHomeDirPath() + File.separator + currentSettings.getNombrePerfil();
     }
 
+    @Nonnull
     public String getReportesDirPath() {
         return getProfileDirPath() + File.separator + "reportes";
     }
 
+    @Nonnull
     public String getXMLDirPath() {
         return getProfileDirPath() + File.separator + "xml";
     }
 
+    @Nonnull
     public String getPDFDirPath() {
         return getProfileDirPath() + File.separator + "pdf";
     }
 
+    @Nonnull
     public String getImgDirPath() {
         return File.separator + "resources" + File.separator + "img";
     }
 
+    @Nonnull
     public String getLogoDirPath() {
         return getImgDirPath() + File.separator + "logo";
     }
 
+    @Nonnull
     public String getFacturasDirPath() {
         return getProfileDirPath() + File.separator + "facturas";
     }
 
+    @Nonnull
     public String getRecibosDirPath() {
         return getProfileDirPath() + File.separator + "recibos";
     }
 
-    public void saveUploadedFile(UploadedFile uploadedFile, String directoryPath) {
+    public void saveUploadedFile(@Nonnull UploadedFile uploadedFile, @Nonnull String directoryPath) {
         try {
             // Make sure the directory exists
             Path directory = Path.of(directoryPath);

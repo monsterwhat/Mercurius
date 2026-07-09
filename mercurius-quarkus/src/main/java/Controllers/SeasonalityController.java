@@ -3,6 +3,8 @@ package Controllers;
 import Services.SeasonalityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
@@ -23,16 +25,24 @@ import java.util.*;
 public class SeasonalityController implements Serializable {
 
     @Inject
+    @Nonnull
     private SeasonalityService seasonalityService;
 
+    @Nonnull
     private Date startDate;
+    @Nonnull
     private Date endDate;
 
+    @Nullable
     private String monthlyTrendConfig;
+    @Nullable
     private String dayOfWeekConfig;
+    @Nullable
     private String departmentConfig;
+    @Nullable
     private String familyConfig;
 
+    @Nullable
     private List<DailySalesRow> dailySalesData;
 
     private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("MMM yyyy", Locale.forLanguageTag("es"));
@@ -235,10 +245,12 @@ public class SeasonalityController implements Serializable {
 
     @Data
     public static class DailySalesRow implements Serializable {
+        @Nonnull
         private java.time.LocalDate date;
+        @Nonnull
         private BigDecimal total;
 
-        public DailySalesRow(java.time.LocalDate date, BigDecimal total) {
+        public DailySalesRow(@Nonnull java.time.LocalDate date, @Nullable BigDecimal total) {
             this.date = date;
             this.total = total != null ? total : BigDecimal.ZERO;
         }

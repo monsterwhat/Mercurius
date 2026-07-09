@@ -1,5 +1,6 @@
 package Controllers;
 
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
 import Services.AlertasService;
@@ -24,13 +25,13 @@ public class ThemeController implements Serializable {
         loadThemeFromCookie();
     }
 
-    public void switchThemeAndSave() {
+    public synchronized void switchThemeAndSave() {
         switchTheme();
         saveThemeToCookie();  
         reloadCurrentPage();
     }
 
-    public void saveThemeFromAjax() {
+    public synchronized void saveThemeFromAjax() {
         HttpServletRequest request = (HttpServletRequest) FacesContext.getCurrentInstance().getExternalContext().getRequest();
         String theme = request.getParameter("theme");
         if (theme != null) {
@@ -39,8 +40,10 @@ public class ThemeController implements Serializable {
         }
     }
     @Inject
+    @Nonnull
     private AlertasService alertas;
 
+    @Nonnull
     private String currentTheme = "light";
 
     public void switchTheme() {
@@ -51,10 +54,12 @@ public class ThemeController implements Serializable {
         }
     }
 
+    @Nonnull
     public String getDataTheme() {
         return currentTheme;
     }
 
+    @Nonnull
     public String currentThemeToIcon() {
         if ("dark".equals(currentTheme)) {
             return "🌚";

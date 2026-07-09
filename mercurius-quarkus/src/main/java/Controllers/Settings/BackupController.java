@@ -5,6 +5,8 @@ import Models.AppSettings;
 import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.BackupService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -29,23 +31,32 @@ public class BackupController implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @Nullable
     private List<BackupFileInfo> backupList;
+    @Nullable
     private AppSettings currentSettings;
+    @Nullable
     private String lastBackup;
     private boolean backupEnabled;
+    @Nullable
     private String selectedBackupFilename;
+    @Nullable
     private StreamedContent downloadFile;
 
     @Inject
+    @Nonnull
     private BackupService backupService;
 
     @Inject
+    @Nonnull
     private AppSettingsService appSettingsService;
 
     @Inject
+    @Nonnull
     private AlertasService alertasService;
 
     @Inject
+    @Nonnull
     private SessionController currentSession;
 
     @PostConstruct
@@ -149,7 +160,7 @@ public class BackupController implements Serializable {
                 .contentType("application/gzip")
                 .contentLength(filePath.toFile().length())
                 .build();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error preparando descarga: " + e.getMessage(), null, 0,
                 "BackupController.downloadBackup()", null, e.getMessage());
             FacesContext.getCurrentInstance().addMessage(null,

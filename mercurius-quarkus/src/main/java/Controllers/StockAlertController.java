@@ -12,6 +12,8 @@ import Services.StockAlertService;
 import Utils.ExcelExporter;
 import Utils.PDFGenerator;
 import Controllers.Settings.SettingsDirController;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -19,6 +21,7 @@ import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -37,40 +40,58 @@ import org.primefaces.util.LangUtils;
 public class StockAlertController implements Serializable {
 
     @Inject
+    @Nonnull
     private StockAlertService stockAlertService;
 
     @Inject
+    @Nonnull
     private DepartamentoService departamentoService;
 
     @Inject
+    @Nonnull
     private FamiliaService familiaService;
 
     @Inject
+    @Nonnull
     private AlertasService alertasService;
 
     @Inject
+    @Nonnull
     private SessionController currentSession;
 
     @Inject
+    @Nonnull
     private SettingsDirController dirController;
 
     // Filter properties
+    @Nullable
     private String selectedDepartment;
+    @Nullable
     private String selectedFamily;
+    @Nullable
     private String selectedPriority;
+    @Nullable
     private String alertFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 
     // Data lists
+    @Nullable
     private List<StockAlert> activeAlerts;
+    @Nullable
     private List<StockAlert> allAlerts;
+    @Nullable
     private List<ReorderSuggestion> reorderSuggestions;
+    @Nullable
     private Map<String, Integer> alertStatistics;
 
     // Form properties
+    @Nullable
     private StockAlert selectedAlert;
+    @Nullable
     private ReorderSuggestion selectedSuggestion;
+    @Nullable
     private String resolutionNotes;
 
     public StockAlertController() {
@@ -101,7 +122,7 @@ public class StockAlertController implements Serializable {
             } else {
                 activeAlerts = stockAlertService.getActiveStockAlerts();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron cargar las alertas de stock: " + e.getMessage()));
         }
@@ -119,7 +140,7 @@ public class StockAlertController implements Serializable {
 
         try {
             allAlerts = stockAlertService.getActiveStockAlerts();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron cargar todas las alertas: " + e.getMessage()));
         }
@@ -141,7 +162,7 @@ public class StockAlertController implements Serializable {
             } else {
                 reorderSuggestions = stockAlertService.getAllReorderSuggestions();
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron cargar las sugerencias de reorden: " + e.getMessage()));
         }
@@ -159,7 +180,7 @@ public class StockAlertController implements Serializable {
 
         try {
             alertStatistics = stockAlertService.getAlertStatistics();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron cargar las estadísticas: " + e.getMessage()));
         }
@@ -194,7 +215,7 @@ public class StockAlertController implements Serializable {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Verificación Completada", 
                     "Se han verificado y actualizado los niveles de stock"));
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudieron verificar las alertas: " + e.getMessage()));
         }
@@ -231,7 +252,7 @@ public class StockAlertController implements Serializable {
             
             selectedAlert = null;
             resolutionNotes = null;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo reconocer la alerta: " + e.getMessage()));
         }
@@ -268,7 +289,7 @@ public class StockAlertController implements Serializable {
             
             selectedAlert = null;
             resolutionNotes = null;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo resolver la alerta: " + e.getMessage()));
         }
@@ -277,7 +298,8 @@ public class StockAlertController implements Serializable {
     /**
      * Get alert type color for display
      */
-    public String getAlertTypeColor(String alertType) {
+    @Nonnull
+    public String getAlertTypeColor(@Nonnull String alertType) {
         switch (alertType) {
             case "out_of_stock":
                 return "#dc3545"; // Red for critical
@@ -293,7 +315,8 @@ public class StockAlertController implements Serializable {
     /**
      * Get priority color for display
      */
-    public String getPriorityColor(String priority) {
+    @Nonnull
+    public String getPriorityColor(@Nonnull String priority) {
         switch (priority) {
             case "urgent":
                 return "#dc3545"; // Red
@@ -311,6 +334,7 @@ public class StockAlertController implements Serializable {
     /**
      * Get filtered alerts
      */
+    @Nullable
     public List<StockAlert> getFilteredAlerts() {
         if (alertFilter != null && !alertFilter.isEmpty()) {
             return activeAlerts.stream()
@@ -375,7 +399,7 @@ public class StockAlertController implements Serializable {
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Exitosa", 
                     "Alertas exportadas a: " + excelFile.getAbsolutePath()));
 
-        } catch (Exception e) {
+        } catch (RuntimeException | IOException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", 
                     "No se pudo exportar a Excel: " + e.getMessage()));
@@ -411,7 +435,7 @@ public class StockAlertController implements Serializable {
                         "No se pudo generar el archivo PDF"));
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error de Exportación", 
                     "No se pudo exportar a PDF: " + e.getMessage()));
@@ -421,6 +445,7 @@ public class StockAlertController implements Serializable {
     /**
      * Get departments for filter dropdown
      */
+    @Nonnull
     public List<String> getDepartments() {
         return departamentoService.listAll().stream()
                 .map(Departamento::getNombre)
@@ -433,6 +458,7 @@ public class StockAlertController implements Serializable {
     /**
      * Get families for filter dropdown
      */
+    @Nonnull
     public List<String> getFamilies() {
         return familiaService.listAll().stream()
                 .map(Familia::getNombre)
@@ -443,14 +469,17 @@ public class StockAlertController implements Serializable {
     }
 
     // Getters for view
+    @Nullable
     public List<StockAlert> getActiveAlerts() {
         return activeAlerts;
     }
 
+    @Nullable
     public List<ReorderSuggestion> getReorderSuggestions() {
         return reorderSuggestions;
     }
 
+    @Nullable
     public Map<String, Integer> getAlertStatistics() {
         return alertStatistics;
     }

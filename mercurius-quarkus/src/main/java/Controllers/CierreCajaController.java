@@ -4,6 +4,8 @@ import Controllers.SessionController;
 import Models.CierreCaja;
 import Services.AlertasService;
 import Services.CierreCajaService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -21,23 +23,30 @@ import lombok.Data;
 @ViewScoped
 public class CierreCajaController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private CierreCajaService cierreCajaService;
 
-    @Inject
+    @Inject @Nonnull
     private SessionController sessionController;
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
+    @Nullable
     private CierreCaja sesionActual;
+    @Nullable
     private List<CierreCaja> historial;
     private boolean sesionAbierta;
 
+    @Nullable
     private BigDecimal montoApertura;
+    @Nullable
     private BigDecimal montoContadoEfectivo;
+    @Nullable
     private BigDecimal montoContadoSinpe;
+    @Nullable
     private BigDecimal montoContadoTarjeta;
+    @Nullable
     private String notasCierre;
 
     @PostConstruct

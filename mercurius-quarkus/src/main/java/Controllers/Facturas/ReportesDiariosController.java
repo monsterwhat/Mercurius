@@ -25,6 +25,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List; 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 /**
@@ -37,23 +39,30 @@ import lombok.Data;
 @ViewScoped
 public class ReportesDiariosController implements Serializable{
     
-    @Inject private UserService uService;
-    @Inject private SessionController currentSession;
-    @Inject private InventarioService inventarioService;
-    @Inject private ArticulosService articuloService;
-    @Inject PDFGenerator pdfGenerator;
-    @Inject PrinterService printer;
-    @Inject ComprobantesEmitidosService comprobanteService;
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull private UserService uService;
+    @Inject @Nonnull private SessionController currentSession;
+    @Inject @Nonnull private InventarioService inventarioService;
+    @Inject @Nonnull private ArticulosService articuloService;
+    @Inject @Nonnull PDFGenerator pdfGenerator;
+    @Inject @Nonnull PrinterService printer;
+    @Inject @Nonnull ComprobantesEmitidosService comprobanteService;
+    @Inject @Nonnull AlertasService alertasService;
     
+    @Nullable
     private Long usuarioSelecionadoId;
+    @Nonnull
     private List<Users> usuarios;
+    @Nullable
     private List<Date> range;
+    @Nullable
     private Date date;
     private boolean status = false;
+    @Nullable
     List<ReportesFamiliasYDepartamentos> reportes;
+    @Nonnull
     List<ComprobantesEmitidos> facturasEmitidas;
     
+    @Nullable
     private List<Inventario> movimientos;
     
     @PostConstruct
@@ -138,7 +147,7 @@ public class ReportesDiariosController implements Serializable{
         }
     }
     
-    public void listReportes(List<Date> range, Long userId) {
+    public void listReportes(@Nonnull List<Date> range, @Nonnull Long userId) {
         Date startDate = range.get(0);
         Date endDate = range.get(1);
         if (startDate != null && endDate != null) {
@@ -146,7 +155,7 @@ public class ReportesDiariosController implements Serializable{
         }
     }
     
-    public void listReportesVentas(List<Date> range, Long userId) {
+    public void listReportesVentas(@Nonnull List<Date> range, @Nonnull Long userId) {
         Date startDate = range.get(0);
         Date endDate = range.get(1);
         if (startDate != null && endDate != null) {
@@ -154,7 +163,7 @@ public class ReportesDiariosController implements Serializable{
         }
     }
     
-    public void listReportesVentasXFamilia(List<Date> range, Long userId){
+    public void listReportesVentasXFamilia(@Nonnull List<Date> range, @Nonnull Long userId){
         Date startDate = range.get(0);
         Date endDate = range.get(1);
         if (startDate != null && endDate != null) {
@@ -162,7 +171,7 @@ public class ReportesDiariosController implements Serializable{
         }
     }
     
-    public void listReportesVentasXDepartamento(List<Date> range, Long userId){
+    public void listReportesVentasXDepartamento(@Nonnull List<Date> range, @Nonnull Long userId){
         Date startDate = range.get(0);
         Date endDate = range.get(1);
         if (startDate != null && endDate != null) {
@@ -170,7 +179,7 @@ public class ReportesDiariosController implements Serializable{
         }
     }
     
-    public void listReportesVentasXCajero(List<Date> range, Long userId){
+    public void listReportesVentasXCajero(@Nonnull List<Date> range, @Nullable Long userId){
         Date startDate = range.get(0);
         Date endDate = range.get(1);
         
@@ -195,15 +204,15 @@ public class ReportesDiariosController implements Serializable{
         }
     }
     
-    public String getFecha(int posicion){
+    public @Nonnull String getFecha(int posicion){
         return range.get(posicion).toString();
     }
     
-    public BigDecimal totalReportes(){
+    public @Nullable BigDecimal totalReportes(){
         return ReportesFamiliasYDepartamentos.totalReportes(reportes);
     }
     
-    public BigDecimal totalReporteVentasXCajero() {
+    public @Nonnull BigDecimal totalReporteVentasXCajero() {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         if (facturasEmitidas != null) {
@@ -220,7 +229,7 @@ public class ReportesDiariosController implements Serializable{
         return totalAmount;
     }
     
-    public List<LineaDetalle> getLineasDetalle(){
+    public @Nonnull List<LineaDetalle> getLineasDetalle(){
         List<LineaDetalle> lineasDetalle = new ArrayList<>();
         if (facturasEmitidas != null) {
             for (ComprobantesEmitidos facturasEmitida : facturasEmitidas) {

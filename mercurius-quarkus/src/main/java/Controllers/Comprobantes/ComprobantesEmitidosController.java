@@ -3,6 +3,8 @@ package Controllers.Comprobantes;
 import Models.Detalles.LineaDetalle;
 import Services.ComprobantesEmitidosService;
 import Models.ComprobantesEmitidos;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
@@ -29,17 +31,23 @@ import Services.AlertasService;
 @ViewScoped
 public class ComprobantesEmitidosController implements Serializable {
     
-    @Inject ComprobantesEmitidosService comprobanteEmitidoService;
-    @Inject SessionController sessionController;
-    @Inject AlertasService alertasService;
+    @Inject @Nonnull ComprobantesEmitidosService comprobanteEmitidoService;
+    @Inject @Nonnull SessionController sessionController;
+    @Inject @Nonnull AlertasService alertasService;
     
+    @Nullable
     private List<UploadedFile> files;
+    @Nullable
     private List<ComprobantesEmitidos> comprobantesEmitidos;
     
+    @Nullable
     private LineaDetalle lineaDetalle;
     
+    @Nullable
     private ComprobantesEmitidos selectedComprobanteEmitido;
+    @Nullable
     private String comprobanteEmitidoFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
     
@@ -50,6 +58,7 @@ public class ComprobantesEmitidosController implements Serializable {
         selectedComprobanteEmitido = new ComprobantesEmitidos();
     }
     
+    @Nonnull
     public List<ComprobantesEmitidos> comprobantesEmitidosList() {
         if (comprobantesEmitidos == null) {
             comprobantesEmitidos = comprobanteEmitidoService.listAll();
@@ -68,7 +77,7 @@ public class ComprobantesEmitidosController implements Serializable {
                 comprobanteEmitidoService.softDelete(selectedComprobanteEmitido);
                 alertasService.registrarAlerta("Factura eliminada", "La factura ha sido eliminada correctamente.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.deleteFactura", oldComprobante.toString(), selectedComprobanteEmitido.toString());
                 clearFactura();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 alertasService.registrarAlerta("Error", "Error al eliminar la factura.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.deleteFactura", selectedComprobanteEmitido.toString(), e.getMessage());
             }
         }
@@ -80,7 +89,7 @@ public class ComprobantesEmitidosController implements Serializable {
                 var oldComprobante = selectedComprobanteEmitido;
                 comprobanteEmitidoService.toggle(selectedComprobanteEmitido);
                 alertasService.registrarAlerta("Estado de factura cambiado", "El estado de la factura ha sido cambiado correctamente.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.toggleFactura", oldComprobante.toString(), selectedComprobanteEmitido.toString());
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 alertasService.registrarAlerta("Error", "Error al cambiar el estado de la factura.", sessionController.getCurrentUser(), 0, "ComprobantesEmitidosController.toggleFactura", selectedComprobanteEmitido.toString(), e.getMessage());
             }
         }
@@ -94,6 +103,7 @@ public class ComprobantesEmitidosController implements Serializable {
         comprobantesEmitidos = null;
     }
 
+    @Nonnull
     public List<ComprobantesEmitidos> getFilteredComprobantesEmitidos() {
         if(comprobantesEmitidos == null){
             comprobantesEmitidos = comprobanteEmitidoService.listAll();
@@ -107,7 +117,7 @@ public class ComprobantesEmitidosController implements Serializable {
         }
     }
     
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;

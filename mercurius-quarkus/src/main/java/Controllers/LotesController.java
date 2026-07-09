@@ -13,6 +13,8 @@ import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 @Named
@@ -20,16 +22,21 @@ import lombok.Data;
 @Data
 public class LotesController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private LoteService loteService;
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
+    @Nullable
     private List<Lote> lotesProximosVencer;
+    @Nullable
     private List<Lote> lotesVencidos;
+    @Nullable
     private Lote selectedLote;
+    @Nonnull
     private Lote newLote;
+    @Nullable
     private Articulos selectedArticulo;
     private int diasAlerta = 30;
 
@@ -39,7 +46,7 @@ public class LotesController implements Serializable {
         refresh();
     }
 
-    public final void refresh() {
+    public final synchronized void refresh() {
         lotesProximosVencer = loteService.listProximosVencer(diasAlerta);
         lotesVencidos = loteService.listVencidos();
     }
@@ -52,7 +59,7 @@ public class LotesController implements Serializable {
         return loteService.countVencidos();
     }
 
-    public void ingresarLote() {
+    public synchronized void ingresarLote() {
         try {
             newLote.setStatus(true);
             if (newLote.getFechaIngreso() == null) {
@@ -68,7 +75,7 @@ public class LotesController implements Serializable {
                     new FacesMessage(FacesMessage.SEVERITY_INFO, "Lote ingresado exitosamente", null));
             newLote = new Lote();
             refresh();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error al crear lote: " + e.getMessage(), null, 0, "LotesController.ingresarLote()", null, e.getMessage());
             FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al crear lote", e.getMessage()));

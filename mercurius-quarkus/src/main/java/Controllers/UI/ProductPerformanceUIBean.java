@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 @Data
@@ -14,15 +16,24 @@ import lombok.Data;
 @ViewScoped
 public class ProductPerformanceUIBean implements Serializable {
 
+    @Nonnull
     private Date startDate;
+    @Nonnull
     private Date endDate;
     private int totalProducts;
+    @Nullable
     private String totalRevenue;
+    @Nullable
     private String avgPrice;
+    @Nullable
     private String topCategory;
+    @Nonnull
     private List<ProductData> bestSellers;
+    @Nonnull
     private List<ProductData> worstSellers;
+    @Nonnull
     private List<ProductData> bestByRevenue;
+    @Nonnull
     private List<DepartmentData> departmentPerformance;
 
     public ProductPerformanceUIBean() {
@@ -67,11 +78,13 @@ public class ProductPerformanceUIBean implements Serializable {
     @Data
     public static class ProductData {
         public int codigo;
+        @Nonnull
         public String nombre;
         public int cantidad;
+        @Nonnull
         public BigDecimal ingresos;
 
-        public ProductData(int codigo, String nombre, int cantidad, BigDecimal ingresos) {
+        public ProductData(int codigo, @Nonnull String nombre, int cantidad, @Nonnull BigDecimal ingresos) {
             this.codigo = codigo;
             this.nombre = nombre;
             this.cantidad = cantidad;
@@ -81,11 +94,14 @@ public class ProductPerformanceUIBean implements Serializable {
 
     @Data
     public static class DepartmentData {
+        @Nonnull
         public String nombre;
+        @Nonnull
         public BigDecimal ventas;
+        @Nonnull
         public String porcentaje;
 
-        public DepartmentData(String nombre, BigDecimal ventas, String porcentaje) {
+        public DepartmentData(@Nonnull String nombre, @Nonnull BigDecimal ventas, @Nonnull String porcentaje) {
             this.nombre = nombre;
             this.ventas = ventas;
             this.porcentaje = porcentaje;

@@ -29,6 +29,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
 import org.primefaces.component.datatable.DataTable;
@@ -40,23 +42,34 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class InventarioController implements Serializable {
     
-    @Inject private InventarioService inventarioService;
-    @Inject private ArticulosService articuloService;
-    @Inject private AlertasService alertasService;
-    @Inject private SessionController currentSession;
+    @Inject @Nonnull private InventarioService inventarioService;
+    @Inject @Nonnull private ArticulosService articuloService;
+    @Inject @Nonnull private AlertasService alertasService;
+    @Inject @Nonnull private SessionController currentSession;
     
+    @Nullable
     private List<Inventario> inventarioActivo;
+    @Nullable
     private List<Inventario> inventario;
+    @Nullable
     private List<Inventario> sinProcesar;
+    @Nullable
     private List<Inventario> activosYProcesados;
+    @Nullable
     private List<Inventario> inactivos;
 
+    @Nullable
     private Inventario selectedInventario;
+    @Nullable
     private Articulos selectedArticulo;
+    @Nullable
     private Inventario newInventario;
+    @Nullable
     private String inventarioFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
+    @Nullable
     private List<Articulos> articuloOptions;
     private int ArticuloID = 0;
 
@@ -69,35 +82,35 @@ public class InventarioController implements Serializable {
         inventarioActivoYProcesado();
     }
 
-    public List<Inventario> inventarioList() {
+    public @Nonnull List<Inventario> inventarioList() {
         if(inventarioActivo == null){
             inventarioActivo = inventarioService.ListAllEnabled();
         }
         return inventarioActivo;
     }
     
-    public List<Inventario> inventarioListAll() {
+    public @Nonnull List<Inventario> inventarioListAll() {
         if(inventario == null){
             inventario = inventarioService.listAll();
         }
         return inventario;
     }
     
-    public List<Inventario> inventarioSinProcesar() {
+    public @Nonnull List<Inventario> inventarioSinProcesar() {
         if(sinProcesar == null){
             sinProcesar = inventarioService.listAllSinProcesar();
         }
         return sinProcesar;
     }
     
-    public List<Inventario> inventarioActivoYProcesado() {
+    public @Nonnull List<Inventario> inventarioActivoYProcesado() {
         if(activosYProcesados == null){
             activosYProcesados = inventarioService.listAllActivosYProcesados();
         }
         return activosYProcesados;
     }
     
-    public List<Inventario> inventarioInactivo() {
+    public @Nonnull List<Inventario> inventarioInactivo() {
         if(inactivos == null){
             inactivos = inventarioService.listAllInactivos();
         }
@@ -340,7 +353,7 @@ public class InventarioController implements Serializable {
         }
     }
     
-    public void createSimpleInventario(Inventario inventario){
+    public void createSimpleInventario(@Nonnull Inventario inventario){
         inventarioService.create(inventario);
     }
 
@@ -359,7 +372,7 @@ public class InventarioController implements Serializable {
         clearInventario();
     }
 
-    public List<Inventario> getFilteredInventarioSinProcesar() {
+    public @Nonnull List<Inventario> getFilteredInventarioSinProcesar() {
         if(sinProcesar == null){
             sinProcesar = inventarioService.listAllSinProcesar();
         }
@@ -372,7 +385,7 @@ public class InventarioController implements Serializable {
         }
     }
     
-    public List<Inventario> getFilteredInventarioActivoYProcesado() {
+    public @Nonnull List<Inventario> getFilteredInventarioActivoYProcesado() {
         if(activosYProcesados == null){
             activosYProcesados = inventarioService.listAllActivosYProcesados();
         }
@@ -385,7 +398,7 @@ public class InventarioController implements Serializable {
         }
     }
     
-    public List<Inventario> getFilteredInventarioInactivo() {
+    public @Nonnull List<Inventario> getFilteredInventarioInactivo() {
         if(inactivos == null){
             inactivos = inventarioService.listAllInactivos();
         }
@@ -398,7 +411,7 @@ public class InventarioController implements Serializable {
         }
     }
     
-    public List<Inventario> getFilteredInventario() {
+    public @Nonnull List<Inventario> getFilteredInventario() {
         if(inventarioActivo == null){
             inventarioActivo = inventarioService.ListAllEnabled();
         }
@@ -411,7 +424,7 @@ public class InventarioController implements Serializable {
         }
     }
     
-    public List<Inventario> getFilteredInventarioDetallado() {
+    public @Nonnull List<Inventario> getFilteredInventarioDetallado() {
         if(inventario == null){
             inventario = inventarioService.listAll();
         }
@@ -424,7 +437,7 @@ public class InventarioController implements Serializable {
         }
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -524,7 +537,7 @@ public class InventarioController implements Serializable {
         facesContext.responseComplete();
     }
     
-    public String getContextPath() {
+    public @Nonnull String getContextPath() {
         ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
         HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
         return request.getContextPath();

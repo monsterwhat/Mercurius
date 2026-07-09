@@ -7,6 +7,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 @Data
@@ -14,11 +16,17 @@ import lombok.Data;
 @ViewScoped
 public class SalesTrendUIBean implements Serializable {
 
+    @Nonnull
     private Date startDate;
+    @Nonnull
     private Date endDate;
+    @Nonnull
     private List<TimeSeriesData> dailySales;
+    @Nonnull
     private List<TimeSeriesData> weeklySales;
+    @Nonnull
     private List<TimeSeriesData> monthlySales;
+    @Nonnull
     private GrowthMetrics metrics;
 
     public SalesTrendUIBean() {
@@ -64,11 +72,13 @@ public class SalesTrendUIBean implements Serializable {
 
     @Data
     public static class TimeSeriesData {
+        @Nonnull
         public String date;
+        @Nonnull
         public BigDecimal value;
         public int count;
 
-        public TimeSeriesData(String date, BigDecimal value, int count) {
+        public TimeSeriesData(@Nonnull String date, @Nonnull BigDecimal value, int count) {
             this.date = date;
             this.value = value;
             this.count = count;
@@ -77,9 +87,13 @@ public class SalesTrendUIBean implements Serializable {
 
     @Data
     public static class GrowthMetrics {
+        @Nullable
         public String growthRate;
+        @Nullable
         public String avgDailySales;
+        @Nullable
         public String maxDailySales;
+        @Nullable
         public String minDailySales;
     }
 }

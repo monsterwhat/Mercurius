@@ -3,6 +3,8 @@ package Controllers;
 import Models.Cabys;
 import Services.AlertasService;
 import Services.CabysService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -24,19 +26,26 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class CabysController implements Serializable {
     
-    @Inject private CabysService cabysService;
-    @Inject private SessionController currentSession;
-    @Inject private AlertasService alertas;
+    @Inject @Nonnull private CabysService cabysService;
+    @Inject @Nonnull private SessionController currentSession;
+    @Inject @Nonnull private AlertasService alertas;
 
+    @Nullable
     private List<Cabys> catalogo;
+    @Nullable
     private Cabys selectedCabys;
+    @Nonnull
     private Cabys newCabys;
+    @Nullable
     private String cabysFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
+    @Nonnull
+    private String selectedOption = "none";
+    @Nonnull
+    private String[] selectedOptions;
     private boolean globalFilterOnly;
     private boolean cabysStatus;
-    private String selectedOption = "none";
-    private String[] selectedOptions;
     
     // Column visibility
     private boolean showCodigo = true;
@@ -54,6 +63,7 @@ public class CabysController implements Serializable {
         selectedOptions = new String[]{"codigo", "categoria", "descripcion", "impuesto"};
     }
     
+    @Nonnull
     public List<Cabys> cabysList() {
         if (catalogo == null) {
             catalogo = cabysService.listAll();
@@ -64,6 +74,7 @@ public class CabysController implements Serializable {
         return catalogo;
     }
     
+    @Nonnull
     public List<Cabys> cabysListApi(){
         catalogo = cabysService.listAllAPI();
         saveAPItoDB();
@@ -113,6 +124,7 @@ public class CabysController implements Serializable {
         selectedCabys = null;
     }    
         
+    @Nonnull
     public List<Cabys> getFilteredCabys() {
         if(catalogo == null){
             catalogo = cabysService.listAll();
@@ -126,7 +138,7 @@ public class CabysController implements Serializable {
         }
     }
        
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -140,24 +152,24 @@ public class CabysController implements Serializable {
                String.valueOf(catalogo.getImpuesto()).contains(filterText);   
     }
     
-    public void addMessage(FacesMessage.Severity severity, String summary, String detail) {
+    public void addMessage(@Nonnull FacesMessage.Severity severity, @Nonnull String summary, @Nullable String detail) {
         FacesContext.getCurrentInstance().
                 addMessage(null, new FacesMessage(severity, summary, detail));
     }
 
-    public void showInfo(String message, String content) {
+    public void showInfo(@Nonnull String message, @Nullable String content) {
         addMessage(FacesMessage.SEVERITY_INFO, message, content);
     }
 
-    public void showWarn(String message, String content) {
+    public void showWarn(@Nonnull String message, @Nullable String content) {
         addMessage(FacesMessage.SEVERITY_WARN, message, content);
     }
 
-    public void showError(String message, String content) {
+    public void showError(@Nonnull String message, @Nullable String content) {
         addMessage(FacesMessage.SEVERITY_ERROR, message, content);
     }
 
-    public void showSticky(String message, String content) {
+    public void showSticky(@Nonnull String message, @Nullable String content) {
         FacesContext.getCurrentInstance().addMessage("sticky-key", new FacesMessage(FacesMessage.SEVERITY_INFO, message, content));
     }
     
@@ -221,6 +233,7 @@ public class CabysController implements Serializable {
         return state;
     }
 
+    @Nullable
     public Cabys getSelectedCabysForAssignment() {
         Cabys cabys = selectedCabys;
         selectedCabys = null; // Clear after getting

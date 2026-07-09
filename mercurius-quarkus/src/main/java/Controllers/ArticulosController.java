@@ -19,6 +19,8 @@ import com.lowagie.text.Meta;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfWriter;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.ExternalContext;
@@ -54,31 +56,45 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ArticulosController implements Serializable {
     
-    @Inject private ArticulosService articulosService;
-    @Inject private ArticuloPrecioService precioService;
-    @Inject private DepartamentoService departamentoService;
-    @Inject private FamiliaService familiaService;
-    @Inject private InventarioService inventarioService;
-    @Inject private SessionController currentSession;
-    @Inject private CabysController cabysController;
-    @Inject private SettingsDirController directoryConfig;
-    @Inject private PrinterService printer;
-    @Inject private AlertasService alertasService;
+    @Inject @Nonnull private ArticulosService articulosService;
+    @Inject @Nonnull private ArticuloPrecioService precioService;
+    @Inject @Nonnull private DepartamentoService departamentoService;
+    @Inject @Nonnull private FamiliaService familiaService;
+    @Inject @Nonnull private InventarioService inventarioService;
+    @Inject @Nonnull private SessionController currentSession;
+    @Inject @Nonnull private CabysController cabysController;
+    @Inject @Nonnull private SettingsDirController directoryConfig;
+    @Inject @Nonnull private PrinterService printer;
+    @Inject @Nonnull private AlertasService alertasService;
     
+    @Nullable
     private List<Articulos> articulosActivos;
+    @Nullable
     private List<Articulos> articulos;
+    @Nullable
     private List<Articulos> sinProcesar;
+    @Nullable
     private List<Articulos> activosYProcesados;
+    @Nullable
     private List<Articulos> inactivos;
+    @Nullable
     private Articulos selectedArticulo;
+    @Nullable
     private Articulos newArticulo;
+    @Nullable
     private String articulosFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
-    private boolean globalFilterOnly;
+    @Nullable
     private List<Departamento> departamentoOptions;
+    @Nullable
     private List<Familia> familiaOptions;
-    private int DepartamentoID,FamiliaID = 0;
-    private String SelectedUnidadMedida, SelectedUnidadMedidaComercial;
+    private int DepartamentoID, FamiliaID = 0;
+    @Nullable
+    private String SelectedUnidadMedida;
+    @Nullable
+    private String SelectedUnidadMedidaComercial;
+    @Nonnull
     private ArticuloPrecio precioArticulo;
 
 
@@ -91,6 +107,7 @@ public class ArticulosController implements Serializable {
         updateDepartamentoAndFamiliaOptions(); 
     }
 
+    @Nonnull
     public List<Articulos> articulosActivos() {
         if(articulosActivos == null){
             articulosActivos = articulosService.ListAllEnabled();
@@ -98,6 +115,7 @@ public class ArticulosController implements Serializable {
         return articulosActivos;
     }
     
+    @Nonnull
     public List<Articulos> articulosFull() {
         if(articulos == null){
             articulos = articulosService.listAll();
@@ -105,6 +123,7 @@ public class ArticulosController implements Serializable {
         return articulos;
     }
     
+    @Nonnull
     public List<Articulos> articulosSinProcesar(){
         if(sinProcesar == null){
             sinProcesar = articulosService.listAllSinProcesar();
@@ -112,6 +131,7 @@ public class ArticulosController implements Serializable {
         return sinProcesar;
     }
     
+    @Nonnull
     public List<Articulos> articulosActivosYProcesados(){
         if(activosYProcesados == null){
             activosYProcesados = articulosService.listAllActivosYProcesados();
@@ -347,7 +367,7 @@ public class ArticulosController implements Serializable {
         }
     }
     
-    public void updateSimpleArticulo(Articulos articulo){
+    public void updateSimpleArticulo(@Nonnull Articulos articulo){
         articulosService.update(articulo);
     }
         
@@ -411,7 +431,7 @@ public class ArticulosController implements Serializable {
         }
     }
     
-    public void createSimpleArticulo(Articulos articulo){
+    public void createSimpleArticulo(@Nonnull Articulos articulo){
         articulosService.create(articulo);
     }
 
@@ -448,6 +468,7 @@ public class ArticulosController implements Serializable {
         clearArticulo();
     }
       
+    @Nonnull
     public List<Articulos> getFilteredArticulosActivos() {
         if(articulosActivos == null){
             articulosActivos = articulosService.ListAllEnabled();
@@ -461,6 +482,7 @@ public class ArticulosController implements Serializable {
         }
     }
     
+    @Nonnull
     public List<Articulos> getFilteredArticulosInactivos() {
         if(inactivos == null){
             inactivos = articulosService.listAllInactivos();
@@ -474,6 +496,7 @@ public class ArticulosController implements Serializable {
         }
     }
     
+    @Nonnull
     public List<Articulos> getFilteredArticulosActivosYProcesados() {
         if(activosYProcesados == null){
             activosYProcesados = articulosService.listAllActivosYProcesados();
@@ -487,6 +510,7 @@ public class ArticulosController implements Serializable {
         }
     }
     
+    @Nonnull
     public List<Articulos> getFilteredArticulosSinProcesar() {
         if(sinProcesar == null){
             sinProcesar = articulosService.listAllSinProcesar();
@@ -500,6 +524,7 @@ public class ArticulosController implements Serializable {
         }
     }
     
+    @Nonnull
     public List<Articulos> getFilteredArticulosFull() {
         if(articulos == null){
             articulos = articulosService.listAll();
@@ -513,7 +538,7 @@ public class ArticulosController implements Serializable {
         }
     }
       
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -528,7 +553,7 @@ public class ArticulosController implements Serializable {
                 || (articulo.getUsuario() != null && articulo.getUsuario().getUsername().toLowerCase().contains(filterText));
     }
 
-    public void calcularPrecioConIVA(ArticuloPrecio articuloPrecio) {
+    public void calcularPrecioConIVA(@Nullable ArticuloPrecio articuloPrecio) {
         if (articuloPrecio != null && articuloPrecio.getPrecioConUtilidad() != null && newArticulo.getCodigoCabys() != null) {
             BigDecimal precioConUtilidad = articuloPrecio.getPrecioConUtilidad();
             BigDecimal precio0 = BigDecimal.ZERO;
@@ -559,7 +584,7 @@ public class ArticulosController implements Serializable {
         }
     }
 
-    public void calcularPrecioConUtilidad(ArticuloPrecio articuloPrecio) {
+    public void calcularPrecioConUtilidad(@Nullable ArticuloPrecio articuloPrecio) {
         try {
             if (articuloPrecio != null) {
                 BigDecimal porcentajeUtilidad = articuloPrecio.getPorcentajeUtilidad();
@@ -589,12 +614,12 @@ public class ArticulosController implements Serializable {
                     } 
                 }
             }
-        } catch (Exception e) {  
+        } catch (RuntimeException e) {  
             alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), currentSession.getCurrentUser(), 0, "ArticulosController.calcularPrecioConUtilidad()", null, e.getMessage());
         }
     }
     
-    public void calcularPrecioConUtilidadEdit(ArticuloPrecio articuloPrecio) {
+    public void calcularPrecioConUtilidadEdit(@Nullable ArticuloPrecio articuloPrecio) {
         try {
             if (articuloPrecio != null) {
                 BigDecimal porcentajeUtilidad = articuloPrecio.getPorcentajeUtilidad();
@@ -627,12 +652,12 @@ public class ArticulosController implements Serializable {
             } else {
                 return;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), currentSession.getCurrentUser(), 0, "ArticulosController.calcularPrecioConUtilidadEdit()", null, e.getMessage());
         }
     }
     
-    public void calcularPrecioConIVAEdit(ArticuloPrecio articuloPrecio) {
+    public void calcularPrecioConIVAEdit(@Nullable ArticuloPrecio articuloPrecio) {
         if (articuloPrecio != null) {
             BigDecimal precioConUtilidad = articuloPrecio.getPrecioConUtilidad();
             if (precioConUtilidad != null && precioConUtilidad.compareTo(BigDecimal.ZERO) != 0 && selectedArticulo.getCodigoCabys() != null) {
@@ -667,13 +692,14 @@ public class ArticulosController implements Serializable {
         familiaOptions = familiaService.listAll();
     }
     
-    public double getStock(Articulos articulo){
+    public double getStock(@Nonnull Articulos articulo){
         String codigoBarra = articulo.getCodigoBarra();
         double totalStock = inventarioService.getStock(codigoBarra);
         return totalStock;
     }
     
     //Returns the latest precio for an articulo.
+    @Nullable
     public ArticuloPrecio getLastPrecio() {
         List<ArticuloPrecio> precios = selectedArticulo.getPrecios();
         if (precios != null && !precios.isEmpty()) {
@@ -682,6 +708,7 @@ public class ArticulosController implements Serializable {
         return null;
     }
     
+    @Nonnull
     public ArticuloPrecio getLastPrecioNew() {
         List<ArticuloPrecio> precios = newArticulo.getPrecios();
         if (precios != null && !precios.isEmpty()) {
@@ -692,21 +719,25 @@ public class ArticulosController implements Serializable {
     }
     
     //Returns the latest precio for an articulo.
-    public ArticuloPrecio getLastPrecioFor(Articulos articulo) {
+    @Nullable
+    public ArticuloPrecio getLastPrecioFor(@Nonnull Articulos articulo) {
         ArticuloPrecio precio = precioService.findByArticulo(articulo);
         return precio;
     }
     
-    public List<ArticuloPrecio> getAllPreciosFor(Articulos articulo){
+    @Nullable
+    public List<ArticuloPrecio> getAllPreciosFor(@Nonnull Articulos articulo){
         List<ArticuloPrecio> precios = precioService.findAllByArticulo(articulo);
         return precios;
     }
     
-    public Articulos findArticuloByName(String name){
+    @Nullable
+    public Articulos findArticuloByName(@Nonnull String name){
         return articulosService.findByName(name);
     }
     
-    public Articulos findArticuloByBarCode(String barcode){
+    @Nullable
+    public Articulos findArticuloByBarCode(@Nonnull String barcode){
         return articulosService.findByBarCode(barcode);
     }
     
@@ -772,7 +803,7 @@ public class ArticulosController implements Serializable {
         newArticulo.setUnidadMedida(SelectedUnidadMedida);
     }
     
-    public void exportPDF(String table) throws IOException, DocumentException {
+    public void exportPDF(@Nonnull String table) throws IOException, DocumentException {
         FacesContext facesContext = FacesContext.getCurrentInstance();
 
         // Generate a unique file name using timestamp
@@ -875,6 +906,7 @@ public class ArticulosController implements Serializable {
         facesContext.responseComplete();
     }
     
+    @Nonnull
     public String getContextPath() {
         ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
         HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();

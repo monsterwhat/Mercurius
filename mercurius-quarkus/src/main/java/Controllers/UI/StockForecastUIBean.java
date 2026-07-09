@@ -6,6 +6,8 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 @Data
@@ -14,8 +16,11 @@ import lombok.Data;
 public class StockForecastUIBean implements Serializable {
 
     private int forecastDays;
+    @Nonnull
     private List<ForecastData> forecasts;
+    @Nonnull
     private HealthReport healthReport;
+    @Nonnull
     private List<ReorderData> reorderRecommendations;
 
     public StockForecastUIBean() {
@@ -57,13 +62,15 @@ public class StockForecastUIBean implements Serializable {
 
     @Data
     public static class ForecastData {
+        @Nonnull
         public String nombre;
         public int stockActual;
         public int demandaEstimada;
         public int diasRestantes;
+        @Nonnull
         public String recomendacion;
 
-        public ForecastData(String nombre, int stockActual, int demandaEstimada, int diasRestantes, String recomendacion) {
+        public ForecastData(@Nonnull String nombre, int stockActual, int demandaEstimada, int diasRestantes, @Nonnull String recomendacion) {
             this.nombre = nombre;
             this.stockActual = stockActual;
             this.demandaEstimada = demandaEstimada;
@@ -78,19 +85,22 @@ public class StockForecastUIBean implements Serializable {
         public int healthyProducts;
         public int lowStockProducts;
         public int outOfStockProducts;
+        @Nonnull
         public List<ProductHealth> productHealth = new ArrayList<>();
     }
 
     @Data
     public static class ProductHealth {
+        @Nonnull
         public String nombre;
         public int stock;
         public int stockMinimo;
         public double velocidadVenta;
         public int diasRestantes;
+        @Nonnull
         public String estado;
 
-        public ProductHealth(String nombre, int stock, int stockMinimo, double velocidadVenta, int diasRestantes, String estado) {
+        public ProductHealth(@Nonnull String nombre, int stock, int stockMinimo, double velocidadVenta, int diasRestantes, @Nonnull String estado) {
             this.nombre = nombre;
             this.stock = stock;
             this.stockMinimo = stockMinimo;
@@ -102,13 +112,16 @@ public class StockForecastUIBean implements Serializable {
 
     @Data
     public static class ReorderData {
+        @Nonnull
         public String nombre;
         public int stockActual;
         public int cantidadSugerida;
+        @Nonnull
         public BigDecimal costoEstimado;
+        @Nonnull
         public String prioridad;
 
-        public ReorderData(String nombre, int stockActual, int cantidadSugerida, BigDecimal costoEstimado, String prioridad) {
+        public ReorderData(@Nonnull String nombre, int stockActual, int cantidadSugerida, @Nonnull BigDecimal costoEstimado, @Nonnull String prioridad) {
             this.nombre = nombre;
             this.stockActual = stockActual;
             this.cantidadSugerida = cantidadSugerida;

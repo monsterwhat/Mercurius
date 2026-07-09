@@ -23,6 +23,8 @@ import Services.HaciendaApiService;
 import Services.HaciendaSigner;
 import Services.NotaCreditoService;
 import Models.NotaCredito;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -46,53 +48,62 @@ import java.util.concurrent.CompletableFuture;
 @ViewScoped
 public class ConsultasController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private ComprobantesEmitidosService comprobantesService;
     
-    @Inject
+    @Inject @Nonnull
     private ReportesProgramadosService reportesService;
     
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
     
-    @Inject
+    @Inject @Nonnull
     private SessionController sessionController;
     
-    @Inject
+    @Inject @Nonnull
     private CrearTiqueteController crearTiqueteController;
     
-    @Inject
+    @Inject @Nonnull
     private HaciendaApiService haciendaApiService;
     
-    @Inject
+    @Inject @Nonnull
     private HaciendaSigner haciendaSigner;
     
-    @Inject
+    @Inject @Nonnull
     private ComprobanteService comprobanteService;
     
-    @Inject
+    @Inject @Nonnull
     private DocumentoStrategyFactory strategyFactory;
     
-    @Inject
+    @Inject @Nonnull
     private NotaCreditoService notaCreditoService;
 
-    @Inject
+    @Inject @Nonnull
     private ClientService clientService;
 
-    @Inject
+    @Inject @Nonnull
     private ArticulosService articulosService;
 
-    @Inject
+    @Inject @Nonnull
     private CarritoService carritoService;
 
+    @Nullable
     private List<ComprobantesEmitidos> facturasPendientes;
+    @Nullable
     private List<ComprobantesEmitidos> facturasAceptadas;
+    @Nullable
     private List<ComprobantesEmitidos> facturasRechazadas;
+    @Nullable
     private ReporteProgramado proximoEnvio;
+    @Nullable
     private Long contadorPendientes;
+    @Nullable
     private Long contadorAceptadas;
+    @Nullable
     private Long contadorRechazadas;
+    @Nullable
     private String countdownDisplay;
+    @Nullable
     private Date nextScheduledTime;
 
     @PostConstruct
@@ -126,7 +137,7 @@ public class ConsultasController implements Serializable {
                 "Se han cargado los datos de facturas pendientes, aceptadas y rechazadas", 
                 sessionController.getCurrentUser(), 0, "ConsultasController.init", null, null);
                 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al cargar datos", e.getMessage()));
         }
@@ -218,7 +229,7 @@ public class ConsultasController implements Serializable {
                     } else {
                         fallidas[0]++;
                     }
-                } catch (Exception e) {
+                } catch (RuntimeException | jakarta.xml.bind.JAXBException e) {
                     fallidas[0]++;
                 }
             }
@@ -235,6 +246,7 @@ public class ConsultasController implements Serializable {
         });
     }
 
+    @Nonnull
     public String getProximoEnvioDisplay() {
         if (proximoEnvio != null && nextScheduledTime != null) {
             return "Próximo envío: " + nextScheduledTime.toString();
@@ -250,7 +262,8 @@ public class ConsultasController implements Serializable {
         return proximoEnvio != null;
     }
 
-    public String corregirFacturaRechazada(ComprobantesEmitidos facturaRechazada) {
+    @Nullable
+    public String corregirFacturaRechazada(@Nonnull ComprobantesEmitidos facturaRechazada) {
         try {
             // Registrar alerta
             alertasService.registrarAlerta("Corrección de factura iniciada", 
@@ -275,7 +288,7 @@ public class ConsultasController implements Serializable {
             
             return null; // Permanecer en la misma página
             
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error al corregir factura", e.getMessage()));
             return null;
@@ -321,7 +334,7 @@ public class ConsultasController implements Serializable {
             
             alertasService.registrarAlerta("Hacienda", "Nota de crédito creada automáticamente para factura rechazada: " + facturaRechazada.getId(), sessionController.getCurrentUser(), 0, "ConsultasController.crearNotaCreditoAutomatica()", null, null);
             
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error creando nota de crédito automática: " + e.getMessage(), sessionController.getCurrentUser(), 0, "ConsultasController.crearNotaCreditoAutomatica()", null, e.getMessage());
         }
     }
@@ -364,7 +377,7 @@ public class ConsultasController implements Serializable {
                     }
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException("Error al clonar factura al carrito: " + e.getMessage(), e);
         }
     }

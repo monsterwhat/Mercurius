@@ -18,6 +18,8 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 
 @Data
@@ -25,30 +27,37 @@ import lombok.Data;
 @ViewScoped
 public class DeclaracionIVAController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private ComprobantesEmitidosService emitidosService;
 
-    @Inject
+    @Inject @Nonnull
     private ComprobantesRecibidosService recibidosService;
 
-    @Inject
+    @Inject @Nonnull
     private SessionController sessionController;
 
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertasService;
 
     private int mes;
     private int anio;
 
+    @Nonnull
     private BigDecimal totalVentas;
+    @Nonnull
     private BigDecimal totalCompras;
+    @Nonnull
     private BigDecimal ivaDebito;
+    @Nonnull
     private BigDecimal ivaCredito;
+    @Nonnull
     private BigDecimal ivaNeto;
     private int totalFacturasEmitidas;
     private int totalFacturasRecibidas;
 
+    @Nullable
     private List<ComprobantesEmitidos> facturasEmitidas;
+    @Nullable
     private List<ComprobantesRecibidos> facturasRecibidas;
 
     @PostConstruct
@@ -108,7 +117,7 @@ public class DeclaracionIVAController implements Serializable {
 
             ivaNeto = ivaDebito.subtract(ivaCredito);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error IVA",
                 "Error al calcular declaracion IVA: " + e.getMessage(),
                 sessionController.getCurrentUser(), 0, "DeclaracionIVAController.calcular()",
@@ -119,14 +128,14 @@ public class DeclaracionIVAController implements Serializable {
         }
     }
 
-    public String[] getMeses() {
+    public @Nonnull String[] getMeses() {
         return new String[]{
             "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
             "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"
         };
     }
 
-    public String getNombreMes() {
+    public @Nonnull String getNombreMes() {
         return getMeses()[mes - 1];
     }
 }

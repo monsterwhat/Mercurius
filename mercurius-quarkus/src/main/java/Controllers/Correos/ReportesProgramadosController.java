@@ -4,6 +4,8 @@ import Controllers.SessionController;
 import Models.Correos.ReporteProgramado;
 import Services.AlertasService;
 import Services.Correos.ReportesProgramadosService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
@@ -31,15 +33,20 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class ReportesProgramadosController implements Serializable {
     
-    @Inject ReportesProgramadosService reportesProgramadosService;
-    @Inject private SessionController currentSession;
-    @Inject CorreosHelper helper;
-    @Inject private AlertasService alertasService;
+    @Inject @Nonnull ReportesProgramadosService reportesProgramadosService;
+    @Inject @Nonnull private SessionController currentSession;
+    @Inject @Nonnull CorreosHelper helper;
+    @Inject @Nonnull private AlertasService alertasService;
 
+    @Nullable
     private List<ReporteProgramado> reportes;
+    @Nullable
     private ReporteProgramado selectedReporte;
+    @Nullable
     private ReporteProgramado newReporte;
+    @Nullable
     private String reportesFilter;
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 
@@ -53,6 +60,7 @@ public class ReportesProgramadosController implements Serializable {
         filterBy = new ArrayList<>();        
     }
 
+    @Nonnull
     public List<ReporteProgramado> reportesList() {
         if (reportes == null) {
             reportes = reportesProgramadosService.listAll();
@@ -146,6 +154,7 @@ public class ReportesProgramadosController implements Serializable {
         selectedReporte = null;
     }    
         
+    @Nonnull
     public List<ReporteProgramado> getFilteredReportesProgramados() {
         if (reportesFilter != null && !reportesFilter.isEmpty()) {
             return reportesList().stream()

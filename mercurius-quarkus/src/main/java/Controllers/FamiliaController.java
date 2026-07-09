@@ -15,6 +15,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import lombok.Data;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
@@ -25,14 +27,19 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class FamiliaController implements Serializable {
     
-    @Inject private AlertasService alertas;
-    @Inject private FamiliaService familiaService;
-    @Inject private SessionController currentSession;
+    @Inject @Nonnull private AlertasService alertas;
+    @Inject @Nonnull private FamiliaService familiaService;
+    @Inject @Nonnull private SessionController currentSession;
 
+    @Nullable
     private List<Familia> familias;
+    @Nullable
     private Familia selectedFamilia;
+    @Nullable
     private Familia newFamilia;
+    @Nullable
     private String familiaFilter; 
+    @Nonnull
     private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
 
@@ -44,7 +51,7 @@ public class FamiliaController implements Serializable {
         filterBy = new ArrayList<>();
     }
 
-    public List<Familia> familiasList() {
+    public @Nonnull List<Familia> familiasList() {
         if (familias == null) {
             familias = familiaService.listAll();
         }
@@ -136,7 +143,7 @@ public class FamiliaController implements Serializable {
         selectedFamilia = null;
     }
 
-    public List<Familia> getFilteredFamilias() {
+    public @Nonnull List<Familia> getFilteredFamilias() {
         if (familiaFilter != null && !familiaFilter.trim().isEmpty()) {
             return familiasList().stream()
                     .filter(familia -> globalFilterFunction(familia, familiaFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
@@ -146,7 +153,7 @@ public class FamiliaController implements Serializable {
         }
     }
     
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;

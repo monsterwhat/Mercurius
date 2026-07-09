@@ -1,8 +1,11 @@
 package Controllers;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Articulos;
 import Models.Articulos.Promocion;
+import Models.Enums.Tipo_Codigo_Descuento;
 import Services.AlertasService;
 import Services.ArticuloCarritoService;
 import Services.ArticulosService;
@@ -35,30 +38,30 @@ import org.primefaces.util.LangUtils;
 @ViewScoped
 public class PromocionesController implements Serializable {
 
-    @Inject
+    @Inject @Nonnull
     private SessionController currentSession;
-    @Inject
+    @Inject @Nonnull
     private PromocionesService promoService;
-    @Inject
+    @Inject @Nonnull
     private AlertasService alertas;
-    @Inject
+    @Inject @Nonnull
     private ArticulosService articuloService;
-    @Inject
+    @Inject @Nonnull
     private ArticuloCarritoService articuloCarritoService;
 
-    private List<Promocion> promociones;
-    private List<ArticuloCarrito> lista;
-    private Promocion selectedPromocion;
-    private Promocion newPromocion;
-    private String promocionFilter;
-    private List<FilterMeta> filterBy;
+    @Nullable private List<Promocion> promociones;
+    @Nullable private List<ArticuloCarrito> lista;
+    @Nullable private Promocion selectedPromocion;
+    @Nullable private Promocion newPromocion;
+    @Nullable private String promocionFilter;
+    @Nonnull private List<FilterMeta> filterBy;
     private boolean globalFilterOnly;
-    private String selectedPromocionString;
-    private String totalDescuentoConIVA = "0";
-    private List<Date> fechasPromocion;
-    private Articulos selectedArticulo;
-    private ArticuloCarrito selectedArticuloCarrito;
-    private BigDecimal cantidad;
+    @Nullable private String selectedPromocionString;
+    @Nonnull private String totalDescuentoConIVA = "0";
+    @Nullable private List<Date> fechasPromocion;
+    @Nullable private Articulos selectedArticulo;
+    @Nullable private ArticuloCarrito selectedArticuloCarrito;
+    @Nullable private BigDecimal cantidad;
 
     @PostConstruct
     public void init() {
@@ -67,6 +70,7 @@ public class PromocionesController implements Serializable {
         filterBy = new ArrayList<>();
     }
 
+    @Nonnull
     public List<Promocion> promocionesList() {
         if (promociones == null) {
             promociones = promoService.listAll();
@@ -74,6 +78,7 @@ public class PromocionesController implements Serializable {
         return promociones;
     }
 
+    @Nonnull
     public List<Promocion> promocionesListAll() {
         return promoService.listAll();
     }
@@ -175,6 +180,7 @@ public class PromocionesController implements Serializable {
         lista = null;
     }
 
+    @Nonnull
     public List<Promocion> getFilteredPromocions() {
         if (promocionFilter != null && !promocionFilter.isEmpty()) {
             return promocionesList().stream()
@@ -185,6 +191,7 @@ public class PromocionesController implements Serializable {
         }
     }
 
+    @Nonnull
     public List<Promocion> getFilteredPromocionsDetallados() {
         if (promocionFilter != null && !promocionFilter.isEmpty()) {
             return promocionesListAll().stream()
@@ -195,7 +202,7 @@ public class PromocionesController implements Serializable {
         }
     }
 
-    public boolean globalFilterFunction(Object value, Object filter, Locale locale) {
+    public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
         String filterText = (filter == null) ? null : filter.toString().trim().toLowerCase();
         if (LangUtils.isBlank(filterText)) {
             return true;
@@ -207,7 +214,8 @@ public class PromocionesController implements Serializable {
                 || promocion.getUsuario().getUsername().toLowerCase().contains(filterText);
     }
 
-    public Promocion findPromocionById(Integer number) {
+    @Nullable
+    public Promocion findPromocionById(@Nonnull Integer number) {
 
         return promoService.findById(number);
 
@@ -328,6 +336,7 @@ public class PromocionesController implements Serializable {
         PrimeFaces.current().executeScript("PF('ArticuloRevisionDialog').hide();");
     }
 
+    @Nonnull
     public BigDecimal totalListaConIVA() {
 
         BigDecimal total = BigDecimal.ZERO;
@@ -344,6 +353,7 @@ public class PromocionesController implements Serializable {
         return total;
     }
 
+    @Nonnull
     public BigDecimal totalListaConUtilidad() {
 
         BigDecimal total = BigDecimal.ZERO;
@@ -425,6 +435,7 @@ public class PromocionesController implements Serializable {
         }
     }
 
+    @Nonnull
     public String createTotalDescuentoEIVAText() {
         if (selectedPromocion != null && newPromocion != null) {
             return selectedPromocion.getTotalPromo(lista, newPromocion.getDescuento()).toString();
@@ -433,12 +444,18 @@ public class PromocionesController implements Serializable {
         }
     }
 
+    @Nonnull
     public String updateTotalDescuentoEIVAText() {
         return newPromocion.getTotalPromo(lista, selectedPromocion.getDescuento()).toString();
     }
 
     public void descuentoChanged() {
         alertas.registrarAlerta("Info", "Descuento: " + newPromocion.getDescuento(), currentSession.getCurrentUser(), 0, "PromocionesController.descuentoChanged()", null, null);
+    }
+
+    @Nonnull
+    public Tipo_Codigo_Descuento[] getTiposDescuento() {
+        return Tipo_Codigo_Descuento.values();
     }
 
 }
