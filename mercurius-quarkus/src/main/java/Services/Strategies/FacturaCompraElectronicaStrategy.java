@@ -3,12 +3,13 @@ package Services.Strategies;
 import Models.AppSettings;
 import Models.Clients;
 import Models.ComprobantesEmitidos;
-import Models.Documentos.FacturaCompraElectronicaDocumento;
+import Models.Jaxb.FEC.FacturaCompraElectronicaDocumento;
 import Models.Encabezado.*;
-import Models.Encabezado.CorreoElectronicoEmisor;
 import Models.Enums.Tipo_CondicionVenta;
 import Services.Facturas.EmisorService;
 import Services.Facturas.ReceptorService;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.Set;
 import jakarta.inject.Inject;
@@ -17,10 +18,8 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import java.io.StringWriter;
 import java.util.logging.Level;
+import Utils.XmlEncabezadoFlattener;
 import java.util.logging.Logger;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 /**
@@ -83,7 +82,7 @@ public class FacturaCompraElectronicaStrategy implements DocumentoStrategy {
         StringWriter sw = new StringWriter();
         FacturaCompraElectronicaDocumento doc = new FacturaCompraElectronicaDocumento(comprobante);
         marshaller.marshal(doc, sw);
-        return sw.toString();
+        return XmlEncabezadoFlattener.flatten(sw.toString());
     }
 
     @Override
@@ -92,100 +91,45 @@ public class FacturaCompraElectronicaStrategy implements DocumentoStrategy {
 
         try {
             Encabezado encabezado = new Encabezado();
-            encabezado.setCodigoActividadEmisor(appSettings.getCodigoActividad());
-            encabezado.setProveedorSistemas(appSettings.getProvedor());
-            encabezado.setNumeroConsecutivo("");
-            LocalDateTime emision = LocalDateTime.now().withNano(0);
-            encabezado.setFechaEmision(emision);
+            EncabezadoBuilder.initEncabezado(appSettings, encabezado, getCodigoDocumento());
+
             if (encabezado.getCondicionVenta() == null) {
                 encabezado.setCondicionVenta(Tipo_CondicionVenta.CONTADO.getCodigo());
             }
-
-            // CondicionVentaOtros when "99"
             if ("99".equals(encabezado.getCondicionVenta())) {
                 encabezado.setCondicionVentaOtros("Condicion de venta no especificada");
             }
-
             validarCondicionVenta(encabezado.getCondicionVenta());
             validarPlazoCredito(encabezado.getCondicionVenta(), encabezado.getPlazoCredito());
 
-            encabezado.setCodigoDocumento(getCodigoDocumento());
-
-            // Emisor — the buyer (system user / appSettings)
-            Emisor emisor = new Emisor();
-            emisor.setNombre(appSettings.getNombre());
-            IdentificacionEmisor emisorId = new IdentificacionEmisor();
-            emisorId.setNumero(appSettings.getIdentificacion());
-            emisorId.setTipo(appSettings.getTipoIdentificacion());
-            emisor.setIdentificacion(emisorId);
-            emisor.setNombreComercial(appSettings.getNombreNegocio());
-            Ubicacion emisorUbicacion = new Ubicacion();
-            emisorUbicacion.setProvincia(appSettings.getProvincia());
-            emisorUbicacion.setCanton(appSettings.getCanton());
-            emisorUbicacion.setDistrito(appSettings.getDistrito());
-            emisorUbicacion.setBarrio(appSettings.getBarrio());
-            emisorUbicacion.setOtrasSenas(appSettings.getDireccionCompleta());
-            emisor.setUbicacion(emisorUbicacion);
-            Telefono emisorTelefono = new Telefono();
-            emisorTelefono.setCodigoPais(appSettings.getCodigoPais());
-            emisorTelefono.setNumeroTelefono(appSettings.getTelefono());
-            emisor.setTelefono(emisorTelefono);
-            List<CorreoElectronicoEmisor> correosElectronicos = new ArrayList<>();
-
-            if (appSettings.getCorreoElectronicoTributacion() != null && !appSettings.getCorreoElectronicoTributacion().trim().isEmpty()) {
-                CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
-                correo.setCorreo(appSettings.getCorreoElectronicoTributacion());
-                correo.setEmisor(emisor);
-                correosElectronicos.add(correo);
-            }
-
-            if (appSettings.getCorreoElectronicoTributacion2() != null && !appSettings.getCorreoElectronicoTributacion2().trim().isEmpty()) {
-                CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
-                correo.setCorreo(appSettings.getCorreoElectronicoTributacion2());
-                correo.setEmisor(emisor);
-                correosElectronicos.add(correo);
-            }
-            if (appSettings.getCorreoElectronicoTributacion3() != null && !appSettings.getCorreoElectronicoTributacion3().trim().isEmpty()) {
-                CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
-                correo.setCorreo(appSettings.getCorreoElectronicoTributacion3());
-                correo.setEmisor(emisor);
-                correosElectronicos.add(correo);
-            }
-            if (appSettings.getCorreoElectronicoTributacion4() != null && !appSettings.getCorreoElectronicoTributacion4().trim().isEmpty()) {
-                CorreoElectronicoEmisor correo = new CorreoElectronicoEmisor();
-                correo.setCorreo(appSettings.getCorreoElectronicoTributacion4());
-                correo.setEmisor(emisor);
-                correosElectronicos.add(correo);
-            }
-
-            emisor.setCorreosElectronicos(correosElectronicos);
+            Emisor emisor = EncabezadoBuilder.buildEmisor(appSettings, emisorService);
             encabezado.setEmisor(emisor);
-            emisorService.create(emisor);
 
             // FEC requires a receptor with valid ID — the seller (supplier)
             if (selectedClient == null || selectedClient.getName() == null) {
                 throw new IllegalArgumentException("Factura Electrónica de Compra requiere un proveedor/receptor");
             }
-            Receptor receptor = TiqueteElectronicoStrategy.buildReceptor(selectedClient);
+            Receptor receptor = EncabezadoBuilder.buildReceptor(selectedClient);
             encabezado.setReceptor(receptor);
             receptorService.createIfNotExist(receptor);
 
             // CodigoActividadReceptor from selectedClient
-            if (selectedClient != null && selectedClient.getCodigoActividadComercial() != null
+            if (selectedClient.getCodigoActividadComercial() != null
                 && !selectedClient.getCodigoActividadComercial().trim().isEmpty()) {
                 encabezado.setCodigoActividadReceptor(selectedClient.getCodigoActividadComercial());
             }
 
             return encabezado;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             throw new RuntimeException("Error building FEC encabezado: " + e.getMessage(), e);
         }
     }
 
     @Override
     public Set<String> getCondicionVentaPermitidas() {
+        // FEC XSD v4.4 allows: 01-08, 10, 13-15, 99. "12" is NOT valid for FEC.
         return Set.of("01", "02", "03", "04", "05", "06", "07", "08", "10",
-                      "12", "13", "14", "15", "99");
+                      "13", "14", "15", "99");
     }
 }
