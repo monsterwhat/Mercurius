@@ -1,12 +1,12 @@
 package Utils;
 
-import Controllers.Settings.SettingsDirController;
 import Models.AppSettings;
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import Models.Departamento;
 import Models.ReportesFamiliasYDepartamentos;
 import Services.AlertasService;
+import Services.AppSettingsService;
 import Services.BackupService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosCorrectionService;
@@ -17,8 +17,11 @@ import Services.EmailService;
 import Services.HaciendaApiService;
 import Services.InventarioService;
 import Services.LoteService;
+import Services.LoyaltyService;
 import Services.TipoCambioService;
 import io.quarkus.scheduler.Scheduled;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.inject.Singleton;
 import jakarta.inject.Inject;
 import java.math.BigDecimal;
@@ -39,19 +42,20 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 public class ProgramadorTareas {
     
-    @Inject private TipoCambioService tipoCambioService;
-    @Inject private EmailService emailer;
-    @Inject private SettingsDirController settings;
-    @Inject private AlertasService alertasService;
-    @Inject private ComprobantesEmitidosService comprobantesEmitidosService;
-    @Inject private ComprobantesRecibidosService comprobantesRecibidosService;
-    @Inject private HaciendaApiService haciendaApiService;
-    @Inject private ComprobanteService comprobanteService;
-    @Inject private ComprobantesEmitidosCorrectionService correctionService;
-    @Inject private DepartamentoService departamentoService;
-    @Inject private InventarioService inventarioService;
-    @Inject private LoteService loteService;
-    @Inject private BackupService backupService;
+    @Inject @Nonnull private TipoCambioService tipoCambioService;
+    @Inject @Nonnull private EmailService emailer;
+    @Inject @Nonnull private AppSettingsService appSettingsService;
+    @Inject @Nonnull private AlertasService alertasService;
+    @Inject @Nonnull private ComprobantesEmitidosService comprobantesEmitidosService;
+    @Inject @Nonnull private ComprobantesRecibidosService comprobantesRecibidosService;
+    @Inject @Nonnull private HaciendaApiService haciendaApiService;
+    @Inject @Nonnull private ComprobanteService comprobanteService;
+    @Inject @Nonnull private ComprobantesEmitidosCorrectionService correctionService;
+    @Inject @Nonnull private DepartamentoService departamentoService;
+    @Inject @Nonnull private InventarioService inventarioService;
+    @Inject @Nonnull private LoteService loteService;
+    @Inject @Nonnull private BackupService backupService;
+    @Inject @Nonnull private LoyaltyService loyaltyService;
 
     //Media noche
     @Scheduled(cron = "0 0 0 * * ?")
@@ -69,12 +73,12 @@ public class ProgramadorTareas {
             for (ComprobantesEmitidos factura : facturas) {
                 try {
                     comprobanteService.enviarComprobanteAHacienda(factura);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     alertasService.registrarAlerta("Error", "Error enviando factura pendiente: " + e.getMessage(),
                         null, 0, "ProgramadorTareas.enviarFacturasPendientes()", null, e.getMessage());
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en enviarFacturasPendientes: " + e.getMessage(),
                 null, 0, "ProgramadorTareas.enviarFacturasPendientes()", null, e.getMessage());
         }
@@ -86,8 +90,9 @@ public class ProgramadorTareas {
     @Fallback(fallbackMethod = "revisarRecibosEnCorreosFallback")
     public void revisarRecibosEnCorreos() {
         
-        String correoElectronico = settings.getCurrentSettings().getCorreoElectronico();
-        String contrasenaCorreo = settings.getCurrentSettings().getContrasenaCorreo();
+AppSettings currentSettings = appSettingsService.returnCurrent();
+String correoElectronico = currentSettings.getCorreoElectronico();
+String contrasenaCorreo = currentSettings.getContrasenaCorreo();
         
         emailer.processUnreadXmlAttachments(correoElectronico, contrasenaCorreo, this::handleEmailProcess);
     }
@@ -96,7 +101,7 @@ public class ProgramadorTareas {
         alertasService.registrarAlerta("Error", "FALLBACK: revisarRecibosEnCorreos skipped - circuit breaker open or repeated failures", null, 0, "ProgramadorTareas.revisarRecibosEnCorreosFallback()", null, null);
     }
     
-    public void handleEmailProcess(String emailResult) {
+    public void handleEmailProcess(@Nonnull String emailResult) {
     // Log the result of the email processing
     alertasService.registrarAlerta("Info", "Email processing result: " + emailResult, null, 0, "ProgramadorTareas.handleEmailProcess()", null, null);
 
@@ -139,7 +144,7 @@ public class ProgramadorTareas {
                                 if ("ACEPTADO".equals(nuevoEstado) && !"ACEPTADO".equals(estadoAnterior)) {
                                     try {
                                         comprobanteService.enviarFacturaACliente(factura, null, null, null, null);
-                                    } catch (Exception e) {
+                                    } catch (RuntimeException e) {
                                         alertasService.registrarAlerta("Error", "Error enviando factura a cliente: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, e.getMessage());
                                     }
                                 }
@@ -157,13 +162,13 @@ public class ProgramadorTareas {
                             if (correctionService.puedeCorregir(factura)) {
                                 correctionService.corregirFactura(factura);
                             }
-                        } catch (Exception ce) {
+                        } catch (RuntimeException ce) {
                             alertasService.registrarAlerta("Error", "Error en auto-corrección: " + ce.getMessage(), null, 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, ce.getMessage());
                         }
 
                         // Send email notification if configured
                         try {
-                            var currentSettings = settings.getCurrentSettings();
+                            var currentSettings = appSettingsService.returnCurrent();
                             if (Boolean.TRUE.equals(currentSettings.getNotificarRechazos())
                                 && currentSettings.getCorreoNotificaciones() != null
                                 && !currentSettings.getCorreoNotificaciones().isEmpty()) {
@@ -193,21 +198,22 @@ public class ProgramadorTareas {
                                         "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, null)
                                 );
                             }
-                        } catch (Exception ne) {
+                        } catch (RuntimeException ne) {
                             alertasService.registrarAlerta("Error", "Error enviando notificación de rechazo: " + ne.getMessage(),
                                 null, 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, ne.getMessage());
                         }
                     }
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     alertasService.registrarAlerta("Error", "Error verificando estado factura: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, e.getMessage());
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en verificarEstadoFacturasEnviadas: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, e.getMessage());
         }
     }
 
-    private String parseEstadoFromHaciendaResponse(String responseBody) {
+    @Nullable
+    private String parseEstadoFromHaciendaResponse(@Nullable String responseBody) {
         if (responseBody == null) return null;
         String lower = responseBody.toLowerCase();
         if (lower.contains("\"estado\":\"aceptado\"") || lower.contains("aceptado")) return "ACEPTADO";
@@ -251,11 +257,11 @@ public class ProgramadorTareas {
                             }
                         }
                     }
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     alertasService.registrarAlerta("Error", "Error verificando factura 3h: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarFacturasSinRespuesta3Horas()", null, e.getMessage());
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en verificarFacturasSinRespuesta3Horas: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarFacturasSinRespuesta3Horas()", null, e.getMessage());
         }
     }
@@ -284,7 +290,7 @@ public class ProgramadorTareas {
                         null, 0, "ProgramadorTareas.verificarVencimientoMensajeReceptor()", null, null);
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en verificarVencimientoMensajeReceptor: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarVencimientoMensajeReceptor()", null, e.getMessage());
         }
     }
@@ -300,7 +306,7 @@ public class ProgramadorTareas {
 
             if (!hasVencidos && !hasProximos) return;
 
-            var currentSettings = settings.getCurrentSettings();
+            var currentSettings = appSettingsService.returnCurrent();
             Boolean notificar = currentSettings.getNotificarRechazos();
             String correoNotif = currentSettings.getCorreoNotificaciones();
 
@@ -340,7 +346,7 @@ public class ProgramadorTareas {
             alertasService.registrarAlerta("Info", "Notificación de lotes próximos a vencer enviada a " + correoNotif,
                 null, 0, "ProgramadorTareas.notificarLotesProximosVencer()", null, null);
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en notificarLotesProximosVencer: " + e.getMessage(),
                 null, 0, "ProgramadorTareas.notificarLotesProximosVencer()", null, e.getMessage());
         }
@@ -349,8 +355,9 @@ public class ProgramadorTareas {
     @Scheduled(cron = "0 0 6 * * ?")
     public void notificarLlegadaProveedores() {
         try {
-            String correoElectronico = settings.getCurrentSettings().getCorreoElectronico();
-            String contrasenaCorreo = settings.getCurrentSettings().getContrasenaCorreo();
+            AppSettings currentSettings = appSettingsService.returnCurrent();
+            String correoElectronico = currentSettings.getCorreoElectronico();
+            String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
             if (correoElectronico == null || contrasenaCorreo == null) {
                 alertasService.registrarAlerta("Info", "Email not configured for supplier notifications", null, 0,
@@ -454,19 +461,20 @@ public class ProgramadorTareas {
                             "Notificación enviada a " + dept.getContactoEmail() + ": " + result, null, 0,
                             "ProgramadorTareas.notificarLlegadaProveedores()", null, null)
                     );
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     alertasService.registrarAlerta("Error",
                         "Error notificando proveedor " + dept.getNombre() + ": " + e.getMessage(),
                         null, 0, "ProgramadorTareas.notificarLlegadaProveedores()", null, e.getMessage());
                 }
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en notificarLlegadaProveedores: " + e.getMessage(),
                 null, 0, "ProgramadorTareas.notificarLlegadaProveedores()", null, e.getMessage());
         }
     }
 
-    private LocalDate calcularLimite8DiasHabiles(LocalDate inicio) {
+    @Nonnull
+    private LocalDate calcularLimite8DiasHabiles(@Nonnull LocalDate inicio) {
         int diasHabiles = 0;
         LocalDate fecha = inicio;
         while (diasHabiles < 8) {
@@ -479,11 +487,24 @@ public class ProgramadorTareas {
         return fecha;
     }
 
+    // First day of month, 3 AM — expire inactive loyalty points
+    @Scheduled(cron = "0 0 3 1 * ?")
+    public void expirePuntosInactivos() {
+        try {
+            loyaltyService.checkAndExpireInactivePoints();
+            alertasService.registrarAlerta("Info", "Expiración automática de puntos completada",
+                null, 0, "ProgramadorTareas.expirePuntosInactivos()", null, null);
+        } catch (RuntimeException e) {
+            alertasService.registrarAlerta("Error", "Error expirando puntos inactivos: " + e.getMessage(),
+                null, 0, "ProgramadorTareas.expirePuntosInactivos()", null, e.getMessage());
+        }
+    }
+
     //Daily at 9am — send summary of all currently rejected invoices
     @Scheduled(cron = "0 0 9 * * ?")
     public void notificarRechazosPendientes() {
         try {
-            var currentSettings = settings.getCurrentSettings();
+            var currentSettings = appSettingsService.returnCurrent();
             if (!Boolean.TRUE.equals(currentSettings.getNotificarRechazosResumen())
                 || currentSettings.getCorreoNotificaciones() == null
                 || currentSettings.getCorreoNotificaciones().isEmpty()) {
@@ -533,7 +554,7 @@ public class ProgramadorTareas {
 
             alertasService.registrarAlerta("Info", "Resumen diario de rechazos enviado a " + currentSettings.getCorreoNotificaciones(),
                 null, 0, "ProgramadorTareas.notificarRechazosPendientes()", null, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en notificarRechazosPendientes: " + e.getMessage(),
                 null, 0, "ProgramadorTareas.notificarRechazosPendientes()", null, e.getMessage());
         }
@@ -555,7 +576,7 @@ public class ProgramadorTareas {
             LocalTime scheduledTime;
             try {
                 scheduledTime = LocalTime.parse(backupHora);
-            } catch (Exception e) {
+            } catch (java.time.format.DateTimeParseException e) {
                 return;
             }
 
@@ -565,7 +586,7 @@ public class ProgramadorTareas {
                 backupService.ejecutarBackup();
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en backup programado: " + e.getMessage(), null, 0,
                 "ProgramadorTareas.ejecutarBackupProgramado()", null, e.getMessage());
         }

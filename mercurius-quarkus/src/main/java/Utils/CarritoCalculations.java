@@ -1,4 +1,7 @@
 package Utils;
+
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
  
 import Models.Articulos.Carrito.ArticuloCarrito;
 import java.math.BigDecimal;
@@ -9,13 +12,21 @@ import java.util.Map;
 
 public class CarritoCalculations {
 
-    public static BigDecimal getTotalArticulo(ArticuloCarrito articuloCarrito) {
+    private static double getImpuestoRate(ArticuloCarrito item) {
+        if (item == null || item.getArticulo() == null || item.getArticulo().getCodigoCabys() == null) {
+            return 0.0;
+        }
+        return item.getArticulo().getCodigoCabys().getImpuesto();
+    }
+
+    @Nonnull
+    public static BigDecimal getTotalArticulo(@Nullable ArticuloCarrito articuloCarrito) {
         if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
         if (articuloCarrito.isPromo()) {
             var discount = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
-            var tax = BigDecimal.valueOf(articuloCarrito.getArticulo().getCodigoCabys().getImpuesto());
+            var tax = BigDecimal.valueOf(getImpuestoRate(articuloCarrito));
             var precioArticulo = articuloCarrito.getPrecioEfectivo();
             var cantidadDescuento = precioArticulo.multiply(discount.divide(BigDecimal.valueOf(100)));
             var precioConDescuento = precioArticulo.subtract(cantidadDescuento);
@@ -28,7 +39,8 @@ public class CarritoCalculations {
         }
     }
 
-    public static BigDecimal getTotalArticulos(ArticuloCarrito articuloCarrito) {
+    @Nonnull
+    public static BigDecimal getTotalArticulos(@Nullable ArticuloCarrito articuloCarrito) {
         if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
@@ -37,7 +49,7 @@ public class CarritoCalculations {
 
         if (articuloCarrito.isPromo()) {
             BigDecimal discount = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
-            BigDecimal tax = BigDecimal.valueOf(articuloCarrito.getArticulo().getCodigoCabys().getImpuesto());
+            BigDecimal tax = BigDecimal.valueOf(getImpuestoRate(articuloCarrito));
             BigDecimal cantidadDescuento = precioArticulo.multiply(discount).divide(BigDecimal.valueOf(100));
             BigDecimal precioConDescuento = precioArticulo.subtract(cantidadDescuento);
             BigDecimal cantidadImpuesto = precioConDescuento.multiply(tax).divide(BigDecimal.valueOf(100));
@@ -50,13 +62,14 @@ public class CarritoCalculations {
         return total.setScale(2, RoundingMode.HALF_UP);
     }
 
-    public static BigDecimal getArticuloConDescuento(ArticuloCarrito articuloCarrito) {
+    @Nonnull
+    public static BigDecimal getArticuloConDescuento(@Nullable ArticuloCarrito articuloCarrito) {
         if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
         var descuento = articuloCarrito.getDescuento();
         var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
-        double tax = articuloCarrito.getArticulo().getCodigoCabys().getImpuesto();
+        double tax = getImpuestoRate(articuloCarrito);
         var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
 
         BigDecimal applicableTax, precioFinal;
@@ -75,7 +88,8 @@ public class CarritoCalculations {
         return precioFinal;
     }
 
-    public static BigDecimal getTotalDescuento(ArticuloCarrito articuloCarrito) {
+    @Nonnull
+    public static BigDecimal getTotalDescuento(@Nullable ArticuloCarrito articuloCarrito) {
         if (articuloCarrito == null || articuloCarrito.getDescuento() == null) {
             return BigDecimal.ZERO;
         }
@@ -86,13 +100,14 @@ public class CarritoCalculations {
         return descuentoTotal;
     }
 
-    public static BigDecimal getTotalImpuesto(ArticuloCarrito articuloCarrito) {
+    @Nonnull
+    public static BigDecimal getTotalImpuesto(@Nullable ArticuloCarrito articuloCarrito) {
         if (articuloCarrito == null) {
             return BigDecimal.ZERO;
         }
         var descuento = articuloCarrito.getDescuento();
         var precioConUtilidad = articuloCarrito.getPrecioEfectivo();
-        double tax = articuloCarrito.getArticulo().getCodigoCabys().getImpuesto();
+        double tax = getImpuestoRate(articuloCarrito);
         var taxPercentage = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
 
         BigDecimal applicableTax;
@@ -109,19 +124,19 @@ public class CarritoCalculations {
         return applicableTax;
     }
 
-    public static BigDecimal calculateTotalCarrito(List<ArticuloCarrito> carrito) {
+    @Nonnull
+    public static BigDecimal calculateTotalCarrito(@Nullable List<ArticuloCarrito> carrito) {
         BigDecimal total = BigDecimal.ZERO;
 
         if (carrito != null && !carrito.isEmpty()) {
             for (ArticuloCarrito item : carrito) {
-                var articulo = item;
                 var cantidad = item.getCantidad();
                 var isPromo = item.isPromo();
-                var tax = articulo.getArticulo().getCodigoCabys().getImpuesto();
+                var tax = getImpuestoRate(item);
                 var taxDecimal = BigDecimal.valueOf(tax).divide(BigDecimal.valueOf(100));
 
                 BigDecimal precioFinal;
-                BigDecimal precioUnidad = item.getPrecioEfectivo();
+                BigDecimal precioUnidad = item != null ? item.getPrecioEfectivo() : BigDecimal.ZERO;
                 BigDecimal cantidadDecimal = cantidad;
 
                 if (isPromo) {
@@ -139,7 +154,8 @@ public class CarritoCalculations {
         return total;
     }
 
-    public static BigDecimal calculateTotalDescuento(List<ArticuloCarrito> carrito) {
+    @Nonnull
+    public static BigDecimal calculateTotalDescuento(@Nullable List<ArticuloCarrito> carrito) {
         BigDecimal total = BigDecimal.ZERO;
 
         if (carrito != null && !carrito.isEmpty()) {
@@ -153,7 +169,8 @@ public class CarritoCalculations {
         return total;
     }
 
-    public static BigDecimal calculateTotalImpuesto(List<ArticuloCarrito> carrito) {
+    @Nonnull
+    public static BigDecimal calculateTotalImpuesto(@Nullable List<ArticuloCarrito> carrito) {
         BigDecimal total = BigDecimal.ZERO;
 
         if (carrito != null && !carrito.isEmpty()) {
@@ -167,12 +184,13 @@ public class CarritoCalculations {
         return total;
     }
 
-    public static Map<Integer, BigDecimal> calculateTotalTaxByRate(List<ArticuloCarrito> carrito) {
+    @Nonnull
+    public static Map<Integer, BigDecimal> calculateTotalTaxByRate(@Nullable List<ArticuloCarrito> carrito) {
         Map<Integer, BigDecimal> taxTotals = new HashMap<>();
 
         if (carrito != null && !carrito.isEmpty()) {
             for (ArticuloCarrito item : carrito) {
-                int taxRate = item.getArticulo().getCodigoCabys().getImpuesto();
+                int taxRate = (int) getImpuestoRate(item);
                 BigDecimal itemTaxTotal = getTotalImpuesto(item).multiply(item.getCantidad());
                 taxTotals.merge(taxRate, itemTaxTotal, BigDecimal::add);
             }
@@ -183,12 +201,14 @@ public class CarritoCalculations {
         return taxTotals;
     }
 
-    public static BigDecimal calculateTotalPromo(List<ArticuloCarrito> lista, BigDecimal descuento) {
+    @Nonnull
+    public static BigDecimal calculateTotalPromo(@Nullable List<ArticuloCarrito> lista, @Nullable BigDecimal descuento) {
         try {
             BigDecimal totalPromo = BigDecimal.ZERO;
 
             if (lista != null) {
                 for (ArticuloCarrito articulo : lista) {
+                    if (articulo == null) continue;
                     BigDecimal precioConUtilidad = articulo.getPrecioEfectivo();
 
                     BigDecimal porcentajeDescuento = (descuento != null ? descuento : BigDecimal.ZERO).divide(BigDecimal.valueOf(100));
@@ -196,7 +216,7 @@ public class CarritoCalculations {
                     BigDecimal descuentoPromo = precioConUtilidad.multiply(porcentajeDescuento);
                     BigDecimal precioFinal = precioConUtilidad.subtract(descuentoPromo);
 
-                    BigDecimal porcentajeImpuesto = BigDecimal.valueOf(articulo.getArticulo().getCodigoCabys().getImpuesto()).divide(BigDecimal.valueOf(100));
+                    BigDecimal porcentajeImpuesto = BigDecimal.valueOf(getImpuestoRate(articulo)).divide(BigDecimal.valueOf(100));
                     BigDecimal iva = precioFinal.multiply(porcentajeImpuesto);
 
                     BigDecimal precioConUtilidadEIVA = precioFinal.add(iva);
@@ -208,7 +228,7 @@ public class CarritoCalculations {
             }
             return BigDecimal.ZERO;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return BigDecimal.ZERO;
         }
     }

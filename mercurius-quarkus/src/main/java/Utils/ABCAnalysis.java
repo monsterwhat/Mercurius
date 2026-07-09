@@ -1,5 +1,7 @@
 package Utils;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import Models.Articulos.Articulos;
 import java.math.BigDecimal;
 
@@ -7,19 +9,19 @@ import java.math.BigDecimal;
  * Data class for ABC analysis
  */
 public class ABCAnalysis {
-    private Articulos articulo;
-    private String abcCategory;
+    @Nullable private Articulos articulo;
+    @Nullable private String abcCategory;
     private int totalSold;
-    private BigDecimal avgQuantity;
-    private BigDecimal unitPrice;
-    private BigDecimal totalRevenue;
-    private String departamento;
-    private String familia;
-    private BigDecimal cumulativeRevenue;
+    @Nullable private BigDecimal avgQuantity;
+    @Nullable private BigDecimal unitPrice;
+    @Nullable private BigDecimal totalRevenue;
+    @Nullable private String departamento;
+    @Nullable private String familia;
+    @Nullable private BigDecimal cumulativeRevenue;
 
     // Constructor and setters
-    public ABCAnalysis(Articulos articulo, String abcCategory, int totalSold, BigDecimal avgQuantity, 
-                      BigDecimal unitPrice, BigDecimal totalRevenue, String departamento, String familia, BigDecimal cumulativeRevenue) {
+    public ABCAnalysis(@Nullable Articulos articulo, @Nullable String abcCategory, int totalSold, @Nullable BigDecimal avgQuantity, 
+                      @Nullable BigDecimal unitPrice, @Nullable BigDecimal totalRevenue, @Nullable String departamento, @Nullable String familia, @Nullable BigDecimal cumulativeRevenue) {
         this.articulo = articulo;
         this.abcCategory = abcCategory;
         this.totalSold = totalSold;
@@ -32,13 +34,13 @@ public class ABCAnalysis {
     }
 
     // Getters
-    public Articulos getArticulo() { return articulo; }
-    public String getAbcCategory() { return abcCategory; }
+    @Nullable public Articulos getArticulo() { return articulo; }
+    @Nullable public String getAbcCategory() { return abcCategory; }
     public int getTotalSold() { return totalSold; }
-    public BigDecimal getAvgQuantity() { return avgQuantity; }
-    public BigDecimal getUnitPrice() { return unitPrice; }
-    public BigDecimal getTotalRevenue() { return totalRevenue; }
-    public String getDepartamento() { return departamento; }
-    public String getFamilia() { return familia; }
-    public BigDecimal getCumulativeRevenue() { return cumulativeRevenue; }
+    @Nullable public BigDecimal getAvgQuantity() { return avgQuantity; }
+    @Nullable public BigDecimal getUnitPrice() { return unitPrice; }
+    @Nullable public BigDecimal getTotalRevenue() { return totalRevenue; }
+    @Nullable public String getDepartamento() { return departamento; }
+    @Nullable public String getFamilia() { return familia; }
+    @Nullable public BigDecimal getCumulativeRevenue() { return cumulativeRevenue; }
 }

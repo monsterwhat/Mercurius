@@ -1,6 +1,7 @@
 package Utils;
 
-import Controllers.Settings.SettingsDirController;
+import Services.DirectoryService;
+import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -19,10 +20,10 @@ import java.nio.file.Files;
 @WebServlet("/facturas/*")
 public class PdfFileServlet extends HttpServlet {
     
-    @Inject SettingsDirController dirController;
+    @Inject @Nonnull DirectoryService dirService;
     
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String filePath = dirController.getFacturasDirPath() + request.getPathInfo();
+    protected void doGet(@Nonnull HttpServletRequest request, @Nonnull HttpServletResponse response) throws ServletException, IOException {
+        String filePath = dirService.getFacturasDirPath() + request.getPathInfo();
 
         File pdfFile = new File(filePath);
         if (pdfFile.exists() && !pdfFile.isDirectory()) {

@@ -1,5 +1,6 @@
 package Utils;
 
+import jakarta.annotation.Nonnull;
 import Services.AlertasService;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -24,12 +25,12 @@ public class AppLauncher {
     private static final String LOCK_FILE_PATH = System.getProperty("java.io.tmpdir") + "/mercurius.lock";
     private static final String APP_URL = "http://localhost:8081/Mercurius/index.xhtml";
     
-    private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    @Nonnull private final AtomicBoolean isRunning = new AtomicBoolean(false);
     
-    @Inject
+    @Inject @Nonnull
     SystemTrayManager trayManager;
 
-    @Inject
+    @Inject @Nonnull
     AlertasService alertasService;
 
     void onStart(@Observes StartupEvent event) {
@@ -46,7 +47,7 @@ public class AppLauncher {
             Thread trayThread = new Thread(() -> {
                 try {
                     trayManager.initializeTray();
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     // Silently ignore tray initialization failures on non-Windows systems
                     String os = System.getProperty("os.name").toLowerCase();
                     if (os.contains("win")) {
@@ -59,11 +60,11 @@ public class AppLauncher {
             trayThread.setName("TrayInitializer");
             trayThread.setDaemon(true);
             trayThread.start();
-            
+
             // Open browser after a short delay to ensure server is ready
             openBrowserAfterDelay(3000);
-            
-        } catch (Exception e) {
+
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error during application startup: " + e.getMessage(), null, 0, "AppLauncher.onStart()", null, null);
             // Don't crash the app, just continue without these features
         }
@@ -101,13 +102,13 @@ public class AppLauncher {
                     if (lockFile.exists()) {
                         lockFile.delete();
                     }
-                } catch (Exception e) {
+                } catch (IOException | RuntimeException e) {
                     // Ignore cleanup errors
                 }
             }));
-            
+
             return true;
-        } catch (Exception e) {
+        } catch (IOException | RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error checking single instance: " + e.getMessage(), null, 0, "AppLauncher.isSingleInstance()", null, null);
             return true; // Allow startup if we can't check
         }
@@ -163,7 +164,7 @@ public class AppLauncher {
             // Clean up tray manager
             try {
                 trayManager.shutdown();
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 alertasService.registrarAlerta("Error", "Error cleaning up tray manager: " + e.getMessage(), null, 0, "AppLauncher.shutdown()", null, null);
             }
             

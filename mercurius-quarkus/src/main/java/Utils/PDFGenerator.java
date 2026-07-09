@@ -1,6 +1,8 @@
 package Utils;
 
-import Controllers.Settings.SettingsDirController;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import Services.DirectoryService;
 import Models.AppSettings;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Promocion;
@@ -53,13 +55,17 @@ import lombok.Data;
 @Data
 public class PDFGenerator {
 
+    @Nullable
     private String pdfUrl;
+
+    @Nullable
+    private String pdfLocalPath;
     @Inject
-    SettingsDirController dirController;
+    DirectoryService dirService;
     @Inject
     AlertasService alertasService;
 
-    public void generarPDFTiqueteElectronico(ComprobantesEmitidos tiqueteElectronico, AppSettings settings, List<ArticuloCarrito> carrito, Clients cliente, Users user, BigDecimal pago, BigDecimal vuelto) {
+    public void generarPDFTiqueteElectronico(@Nonnull ComprobantesEmitidos tiqueteElectronico, @Nonnull AppSettings settings, @Nonnull List<ArticuloCarrito> carrito, @Nonnull Clients cliente, @Nonnull Users user, @Nonnull BigDecimal pago, @Nonnull BigDecimal vuelto) {
         // PDF generation logic here
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -340,7 +346,7 @@ public class PDFGenerator {
         codificacion2.setAlignment(Element.ALIGN_CENTER);
         document.add(codificacion2);
 
-        Paragraph autorizacion = new Paragraph("Autorizado mediante resolucion No. DGT-R033-2019 del dia 20 de junio de 2019. Version FE 4.3", font);
+        Paragraph autorizacion = new Paragraph("Autorizado mediante resolucion No. DGT-R033-2019 del dia 20 de junio de 2019. Version FE 4.4", font);
         autorizacion.setAlignment(Element.ALIGN_CENTER);
         document.add(autorizacion);
 
@@ -372,8 +378,7 @@ public class PDFGenerator {
     private void savePdfToFileSystem(ByteArrayOutputStream baos, ComprobantesEmitidos tiqueteElectronico) throws IOException {
         String fileName = "tiqueteElectronico_" + tiqueteElectronico.getId() + ".pdf";
 
-        // Use the directory path from the dirController
-        String dirPath = dirController.getFacturasDirPath();
+        String dirPath = dirService.getFacturasDirPath();
         String filePath = dirPath + File.separator + fileName;
 
         // Create the directory if it doesn't exist
@@ -398,11 +403,15 @@ public class PDFGenerator {
                 + externalContext.getRequestServerPort()
                 + externalContext.getRequestContextPath();
 
+        // Store local path (for direct file access, avoids URL round-trip)
+        this.pdfLocalPath = filePath;
+
         // Construct the URL to serve the PDF
         this.pdfUrl = baseUrl + "/facturas/" + fileName;
     }
 
-    public File generarPDFReportesDepartamentos(List<ReportesFamiliasYDepartamentos> reportes, List<Date> range) {
+    @Nullable
+    public File generarPDFReportesDepartamentos(@Nonnull List<ReportesFamiliasYDepartamentos> reportes, @Nonnull List<Date> range) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         File pdfFile = null; // Initialize the File object
         BigDecimal totalSum = BigDecimal.ZERO; // Variable to store the total sum
@@ -461,7 +470,8 @@ public class PDFGenerator {
         return pdfFile; // Return the created File
     }
 
-    public File generarPDFReportesFamilias(List<ReportesFamiliasYDepartamentos> reportes, List<Date> range) {
+    @Nullable
+    public File generarPDFReportesFamilias(@Nonnull List<ReportesFamiliasYDepartamentos> reportes, @Nonnull List<Date> range) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         File pdfFile = null; // Initialize the File object
         BigDecimal totalSum = BigDecimal.ZERO; // Variable to store the total sum
@@ -524,9 +534,9 @@ public class PDFGenerator {
         File pdfFile = null; // Initialize the File object
         try {
             // Ensure the PDF directory exists
-            dirController.createPDFDir();
+            dirService.createPDFDir();
             
-            pdfFile = new File(dirController.getPDFDirPath(), filename + ".pdf");
+            pdfFile = new File(dirService.getPDFDirPath(), filename + ".pdf");
             
             // Ensure parent directory exists
             File parentDir = pdfFile.getParentFile();
@@ -546,7 +556,8 @@ public class PDFGenerator {
         return pdfFile; // Return the created File
     }
 
-    public File generarPDFReportesVentasXCajero(List<ComprobantesEmitidos> reportes, String username, List<Date> range) {
+    @Nullable
+    public File generarPDFReportesVentasXCajero(@Nonnull List<ComprobantesEmitidos> reportes, @Nonnull String username, @Nonnull List<Date> range) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         File pdfFile = null; // Initialize the File object
         BigDecimal totalSum = BigDecimal.ZERO; // Variable to store the total sum
@@ -611,7 +622,8 @@ public class PDFGenerator {
         return pdfFile; // Return the created File
     }
 
-    public File generarPDFStockAlerts(List<StockAlert> stockAlerts) {
+    @Nullable
+    public File generarPDFStockAlerts(@Nonnull List<StockAlert> stockAlerts) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         File pdfFile = null;
 
@@ -666,7 +678,8 @@ public class PDFGenerator {
         return pdfFile;
     }
 
-    public File generarPDFProfitMarginSnapshots(List<ProfitMarginSnapshot> marginSnapshots) {
+    @Nullable
+    public File generarPDFProfitMarginSnapshots(@Nonnull List<ProfitMarginSnapshot> marginSnapshots) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         File pdfFile = null;
 

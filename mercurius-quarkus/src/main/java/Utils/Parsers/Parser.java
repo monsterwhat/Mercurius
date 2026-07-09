@@ -1,6 +1,5 @@
 package Utils.Parsers;
 
-import Controllers.SessionController;
 import Models.ComprobantesRecibidos;
 import Models.ComprobantesEmitidos;
 import Models.Detalles.CodigoComercial;
@@ -16,6 +15,7 @@ import Models.Encabezado.IdentificacionEmisor;
 import Models.Encabezado.IdentificacionReceptor;
 import Models.Encabezado.MedioPago;
 import Models.Encabezado.Receptor;
+import Models.Resumen.MedioPagoR;
 import Models.Encabezado.Telefono;
 import Models.Encabezado.Ubicacion;
 import Models.Enums.Tipo_MedioPago;
@@ -38,6 +38,8 @@ import Models.Registros.Alertas;
 import Utils.ComprobanteFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -46,6 +48,7 @@ import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
@@ -66,36 +69,33 @@ import java.time.temporal.ChronoUnit;
 @ApplicationScoped
 public class Parser {
 
-    private static final Object lock = new Object();
-
-    @Inject
+    @Inject @Nonnull
     DetalleServicioService detalleServicioService;
-    @Inject
+    @Inject @Nonnull
     EmisorService emisorService;
-    @Inject
+    @Inject @Nonnull
     ComprobantesRecibidosService facturaService;
-    @Inject
+    @Inject @Nonnull
     ComprobantesEmitidosService comprobantesEmitidosService;
-    @Inject
+    @Inject @Nonnull
     ComprobanteService comprobanteService;
-    @Inject
+    @Inject @Nonnull
     ImpuestoService impuestoService;
-    @Inject
+    @Inject @Nonnull
     DescuentoService descuentoService;
-    @Inject
+    @Inject @Nonnull
     ReceptorService receptorService;
-    @Inject
+    @Inject @Nonnull
     ResumenFacturaService resumenFacturaService;
-    @Inject
+    @Inject @Nonnull
     EncabezadoService encabezadoService;
-    @Inject
-    SessionController currentSession;
-    @Inject
+    @Inject @Nonnull
     LineaDetalleService lineaDetalleService;
-    @Inject
+    @Inject @Nonnull
     AlertasService alertasService;
 
-    public ComprobantesRecibidos parseComprobanteXML(File xmlFile) {
+    @Nullable
+    public ComprobantesRecibidos parseComprobanteXML(@Nonnull File xmlFile) {
         try {
             JAXBContext context = JAXBContext.newInstance(ComprobantesRecibidos.class);
 
@@ -110,7 +110,8 @@ public class Parser {
         }
     }
 
-    public LocalDateTime parseFechaEmision(String fechaEmision) {
+    @Nullable
+    public LocalDateTime parseFechaEmision(@Nonnull String fechaEmision) {
         try {
             if (fechaEmision == null || fechaEmision.isEmpty()) {
                 return null;
@@ -125,20 +126,21 @@ public class Parser {
             for (DateTimeFormatter formatter : formatters) {
                 try {
                     return LocalDateTime.parse(fechaEmision, formatter);
-                } catch (Exception ex) {
+                } catch (java.time.format.DateTimeParseException ex) {
                     // Ignore and try the next format
                 }
             }
 
             // If no format works, throw an exception
             return null;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing fecha emision: " + e.getMessage(), null, 0, "Parser.parseFechaEmision()", null, null);
             return null;
         }
     }
 
-    public Emisor parseEmisor(JsonNode emisorNode) {
+    @Nullable
+    public Emisor parseEmisor(@Nonnull JsonNode emisorNode) {
         try {
             String nombre = emisorNode.path("Nombre").asText();
             String identificacionTipo = emisorNode.path("Identificacion").path("Tipo").asText();
@@ -183,13 +185,14 @@ public class Parser {
             emisor.setCorreosElectronicos(correosElectronicos);
 
             return emisor;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error Parsing Emisor: " + e.getLocalizedMessage(), null, 0, "Parser.parseEmisor()", null, null);
             return null;
         }
     }
 
-    public Receptor parseReceptor(JsonNode receptorNode) {
+    @Nullable
+    public Receptor parseReceptor(@Nonnull JsonNode receptorNode) {
         try {
             String nombre = receptorNode.path("Nombre").asText();
             String identificacionTipo = receptorNode.path("Identificacion").path("Tipo").asText();
@@ -220,13 +223,14 @@ public class Parser {
             receptor.setCorreoElectronico(correoElectronico);
 
             return receptor;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing receptor: " + e.getLocalizedMessage(), null, 0, "Parser.parseReceptor()", null, null);
             return null;
         }
     }
 
-    public Ubicacion parseUbicacion(JsonNode ubicacionNode) {
+    @Nullable
+    public Ubicacion parseUbicacion(@Nonnull JsonNode ubicacionNode) {
         try {
             String provincia = ubicacionNode.path("Provincia").asText();
             String Canton = ubicacionNode.path("Canton").asText();
@@ -243,13 +247,14 @@ public class Parser {
 
             return parsedUbicacion;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing ubicacion: " + e.getLocalizedMessage(), null, 0, "Parser.parseUbicacion()", null, null);
             return null;
         }
     }
 
-    public Telefono parseTelefono(JsonNode telefonoNode) {
+    @Nullable
+    public Telefono parseTelefono(@Nonnull JsonNode telefonoNode) {
         try {
             String codigoPais = telefonoNode.path("CodigoPais").asText();
             String numTelefono = telefonoNode.path("NumTelefono").asText();
@@ -259,13 +264,14 @@ public class Parser {
             telefono.setNumeroTelefono(numTelefono);
 
             return telefono;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing telefono: " + e.getLocalizedMessage(), null, 0, "Parser.parseTelefono()", null, null);
             return null;
         }
     }
 
-    public Fax parseFax(JsonNode faxNode) {
+    @Nullable
+    public Fax parseFax(@Nonnull JsonNode faxNode) {
         try {
             String codigoPais = faxNode.path("CodigoPais").asText();
             String numTelefono = faxNode.path("NumFax").asText();
@@ -285,13 +291,14 @@ public class Parser {
             }
 
             return fax;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing fax: " + e.getLocalizedMessage(), null, 0, "Parser.parseFax()", null, null);
             return null;
         }
     }
 
-    public List<String> parseEmail(JsonNode emailNode) {
+    @Nullable
+    public List<String> parseEmail(@Nonnull JsonNode emailNode) {
         try {
             List<String> emails = new ArrayList<>();
             if (emailNode.isArray()) {
@@ -304,13 +311,14 @@ public class Parser {
                 emails.add(emailAddress);
             }
             return emails;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing emails: " + e.getLocalizedMessage(), null, 0, "Parser.parseEmail()", null, null);
             return null;
         }
     }
 
-    public List<LineaDetalle> parseDetalleServicio(JsonNode detalleServicio) {
+    @Nullable
+    public List<LineaDetalle> parseDetalleServicio(@Nonnull JsonNode detalleServicio) {
         try {
             List<LineaDetalle> lineasDetalle = new ArrayList<>();
 
@@ -330,14 +338,15 @@ public class Parser {
             }
 
             return lineasDetalle;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing detalle Servicio: " + e.getLocalizedMessage(), null, 0, "Parser.parseDetalleServicio()", null, null);
             return null;
         }
 
     }
 
-    public List<MedioPago> parseMedioPago(JsonNode medioPagoNode, Encabezado comprobante) {
+    @Nullable
+    public List<MedioPago> parseMedioPago(@Nonnull JsonNode medioPagoNode, @Nonnull Encabezado comprobante) {
         try {
             List<MedioPago> mediosPago = new ArrayList<>();
 
@@ -358,13 +367,14 @@ public class Parser {
             }
 
             return mediosPago;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing medio pago: " + e.getLocalizedMessage(), null, 0, "Parser.parseMedioPago()", null, null);
             return null;
         }
     }
 
-    public LineaDetalle parseLineaDetalle(JsonNode lineaDetalleNode) {
+    @Nullable
+    public LineaDetalle parseLineaDetalle(@Nonnull JsonNode lineaDetalleNode) {
         try {
             LineaDetalle lineaDetalle = new LineaDetalle();
 
@@ -464,13 +474,14 @@ public class Parser {
             lineaDetalle.setMontoTotalLinea(new BigDecimal(montoTotalLinea));
 
             return lineaDetalle;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing linea detalle: " + e.getLocalizedMessage(), null, 0, "Parser.parseLineaDetalle()", null, null);
             return null;
         }
     }
 
-    public CodigoComercial parseCodigoComercial(JsonNode codigoComercialNode) {
+    @Nullable
+    public CodigoComercial parseCodigoComercial(@Nonnull JsonNode codigoComercialNode) {
         try {
             String tipo = codigoComercialNode.path("Tipo").asText();
             String codigo = codigoComercialNode.path("Codigo").asText();
@@ -480,13 +491,14 @@ public class Parser {
             codigoComercial.setCodigo(codigo);
 
             return codigoComercial;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing codigo comercial: " + e.getLocalizedMessage(), null, 0, "Parser.parseCodigoComercial()", null, null);
             return null;
         }
     }
 
-    public Impuesto parseImpuesto(JsonNode impuestoNode) {
+    @Nullable
+    public Impuesto parseImpuesto(@Nonnull JsonNode impuestoNode) {
         try {
             String codigo = impuestoNode.path("Codigo").asText();
             String codigoTarifa = impuestoNode.path("CodigoTarifa").asText();
@@ -500,13 +512,14 @@ public class Parser {
             impuesto.setMonto(new BigDecimal(monto.trim()));
 
             return impuesto;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing impuestos: " + e.getLocalizedMessage(), null, 0, "Parser.parseImpuesto()", null, null);
             return null;
         }
     }
 
-    public ResumenFactura parseResumenFactura(JsonNode resumenFacturaNode) {
+    @Nullable
+    public ResumenFactura parseResumenFactura(@Nonnull JsonNode resumenFacturaNode) {
         try {
             JsonNode codigoMonedaPath = resumenFacturaNode.path("CodigoTipoMoneda");
             String codigoMonedaText = codigoMonedaPath.path("CodigoMoneda").asText();
@@ -574,15 +587,87 @@ public class Parser {
             resumenFactura.setTotalOtrosCargos(bigDecimalTotalOtrosCargos);
             resumenFactura.setTotalComprobante(bigDecimalTotalComprobante);
 
+            // V4.4: Parse MediosPago from ResumenFactura (moved from Encabezado per Bitácora 22/04/2026)
+            List<MedioPagoR> mediosPagoResumen = parseMedioPagoR(resumenFacturaNode);
+            if (mediosPagoResumen != null && !mediosPagoResumen.isEmpty()) {
+                mediosPagoResumen.forEach(mp -> mp.setResumenFactura(resumenFactura));
+                resumenFactura.setMediosPago(mediosPagoResumen);
+            }
+
             return resumenFactura;
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing resumen factura: " + e.getLocalizedMessage(), null, 0, "Parser.parseResumenFactura()", null, null);
             return null;
         }
     }
 
-    public CodigoTipoMoneda parseCodigoMoneda(String codigo, String tipo) {
+    /**
+     * Parse MedioPago from ResumenFactura (V4.4 format).
+     * Per the XSD, <MedioPago> appears directly inside <ResumenFactura> (no wrapper),
+     * repeating up to 4 times. Each has TipoMedioPago, optional MedioPagoOtros, and
+     * optional TotalMedioPago.
+     */
+    @Nullable
+    public List<MedioPagoR> parseMedioPagoR(@Nonnull JsonNode resumenFacturaNode) {
+        try {
+            JsonNode medioPagoNode = resumenFacturaNode.path("MedioPago");
+            if (medioPagoNode.isMissingNode()) {
+                return new ArrayList<>();
+            }
+
+            List<MedioPagoR> mediosPagoR = new ArrayList<>();
+
+            if (medioPagoNode.isArray()) {
+                for (JsonNode medioPago : medioPagoNode) {
+                    MedioPagoR mp = parseSingleMedioPagoR(medioPago);
+                    if (mp != null) {
+                        mediosPagoR.add(mp);
+                    }
+                }
+            } else {
+                MedioPagoR mp = parseSingleMedioPagoR(medioPagoNode);
+                if (mp != null) {
+                    mediosPagoR.add(mp);
+                }
+            }
+
+            return mediosPagoR;
+        } catch (RuntimeException e) {
+            alertasService.registrarAlerta("Error", "Error parsing medio pago in resumen: " + e.getLocalizedMessage(), null, 0, "Parser.parseMedioPagoR()", null, null);
+            return null;
+        }
+    }
+
+    private MedioPagoR parseSingleMedioPagoR(JsonNode medioPagoNode) {
+        try {
+            String tipoMedioPago = medioPagoNode.path("TipoMedioPago").asText();
+            if (tipoMedioPago.isEmpty()) {
+                return null;
+            }
+
+            MedioPagoR mp = new MedioPagoR();
+            mp.setTipoMedioPago(tipoMedioPago);
+
+            String otros = medioPagoNode.path("MedioPagoOtros").asText();
+            if (!otros.isEmpty()) {
+                mp.setMedioPagoOtros(otros);
+            }
+
+            String total = medioPagoNode.path("TotalMedioPago").asText();
+            if (!total.isEmpty()) {
+                mp.setTotalMedioPago(new BigDecimal(total));
+            }
+
+            return mp;
+        } catch (RuntimeException e) {
+            alertasService.registrarAlerta("Error", "Error parsing single medio pago in resumen: " + e.getLocalizedMessage(), null, 0, "Parser.parseSingleMedioPagoR()", null, null);
+            return null;
+        }
+    }
+
+    @Nullable
+    public CodigoTipoMoneda parseCodigoMoneda(@Nonnull String codigo, @Nullable String tipo) {
         try {
             CodigoTipoMoneda codigoMoneda = new CodigoTipoMoneda();
             codigoMoneda.setCodigoMoneda(codigo);
@@ -593,29 +678,39 @@ public class Parser {
             }
 
             return codigoMoneda;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing codigo moneda: " + e.getLocalizedMessage(), null, 0, "Parser.parseCodigoMoneda()", null, null);
             return null;
         }
     }
 
-    public Descuento parseDescuento(JsonNode descuentoNode) {
+    @Nullable
+    public Descuento parseDescuento(@Nonnull JsonNode descuentoNode) {
         try {
             String montoDescuento = descuentoNode.path("MontoDescuento").asText();
             String naturalezaDescuento = descuentoNode.path("NaturalezaDescuento").asText();
+            String codigoDescuento = descuentoNode.path("CodigoDescuento").asText();
+            String codigoDescuentoOtro = descuentoNode.path("CodigoDescuentoOtro").asText();
 
             Descuento descuento = new Descuento();
             descuento.setMontoDescuento(new BigDecimal(montoDescuento));
             descuento.setNaturalezaDescuento(naturalezaDescuento);
+            if (!codigoDescuento.isEmpty()) {
+                descuento.setCodigoDescuento(codigoDescuento);
+            }
+            if (!codigoDescuentoOtro.isEmpty()) {
+                descuento.setCodigoDescuentoOtro(codigoDescuentoOtro);
+            }
 
             return descuento;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing descuento: " + e.getLocalizedMessage(), null, 0, "Parser.parseDescuento()", null, null);
             return null;
         }
     }
 
-    public BigDecimal parseUnidadMedida(String unidad, String unidadComercial) {
+    @Nonnull
+    public BigDecimal parseUnidadMedida(@Nonnull String unidad, @Nonnull String unidadComercial) {
         switch (unidad) {
             case "Otros":
                 return parseUnidadComercial(unidadComercial);
@@ -628,7 +723,8 @@ public class Parser {
         }
     } // Default to 0 if no specific conversion found
 
-    public BigDecimal parseUnidadComercial(String unidadComercial) {
+    @Nonnull
+    public BigDecimal parseUnidadComercial(@Nonnull String unidadComercial) {
         switch (unidadComercial) {
             case "BOT":
                 return BigDecimal.ONE;
@@ -709,7 +805,7 @@ public class Parser {
                     xmlContent.length() > 1000 ? xmlContent.substring(0, 1000) : xmlContent, // antes
                     null // despues
             );
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             // Fallback to console logging if AlertasService fails
             alertasService.registrarAlerta("Error", "Failed to log async error: " + e.getMessage(), null, 0, "Parser.logAsyncError()", null, null);
             alertasService.registrarAlerta("Error", "Original error [" + level + "]: " + message, null, 0, "Parser.logAsyncError()", null, null);
@@ -743,9 +839,8 @@ public class Parser {
     }
  
     @Transactional
-    public void parseXML(InputStream inputStream) {
-        synchronized (lock) {
-            StringBuilder xmlContent = new StringBuilder();
+    public void parseXML(@Nonnull InputStream inputStream) {
+        StringBuilder xmlContent = new StringBuilder();
             try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = br.readLine()) != null) {
@@ -779,7 +874,7 @@ public class Parser {
                     schemaVersion = ComprobanteFactory.detectVersion(
                         new java.io.ByteArrayInputStream(xmlContent.toString().getBytes(StandardCharsets.UTF_8)));
                     alertasService.registrarAlerta("Debug", "Detected schema version: " + schemaVersion, null, 0, "Parser.parseXML()", null, null);
-                } catch (Exception e) {
+                } catch (RuntimeException e) {
                     alertasService.registrarAlerta("Error", "Warning: Could not detect schema version: " + e.getMessage(), null, 0, "Parser.parseXML()", null, null);
                 }
 
@@ -853,6 +948,9 @@ public class Parser {
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.resumenFactura", xmlContent.toString());
                     return;
                 }
+
+                // V4.4 Bitácora item 124/125: TotalComprobante must equal sum of TotalMedioPago
+                validarTotalMedioPago(resumenFactura, numeroConsecutivo, xmlContent.toString());
 
                 alertasService.registrarAlerta("Debug", "Parsing detalle servicio...", null, 0, "Parser.parseXML()", null, null);
                 List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
@@ -976,6 +1074,7 @@ nueva.setCantidad(original.getCantidad());
                                 Descuento newDescuento = new Descuento();
                                 newDescuento.setMontoDescuento(descuento.getMontoDescuento());
                                 newDescuento.setCodigoDescuento(descuento.getCodigoDescuento());
+                                newDescuento.setCodigoDescuentoOtro(descuento.getCodigoDescuentoOtro());
                                 newDescuento.setNaturalezaDescuento(descuento.getNaturalezaDescuento());
                                 newDescuento.setLineaDetalle(nueva);
                                 newDescuentos.add(newDescuento);
@@ -1061,27 +1160,26 @@ nueva.setCantidad(original.getCantidad());
                 alertasService.registrarAlerta("Info", "Successfully processed factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
                 // Note: No FacesContext calls in async context
 
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 String errorMsg = "Error parsing XML: " + e.getLocalizedMessage();
                 alertasService.registrarAlerta("Error", errorMsg, null, 0, "Parser.parseXML()", null, null);
                 logAsyncError("ERROR", errorMsg, "Parser.parseXML.exception", xmlContent.toString());
             }
-        }
     }
 
     private InformacionReferencia parseSingleInformacionReferencia(JsonNode node) {
         try {
             InformacionReferencia ref = new InformacionReferencia();
-            ref.setTipoDoc(node.path("TipoDoc").asText());
+            ref.setTipoDoc(node.path("TipoDocIR").asText());
             ref.setNumero(node.path("Numero").asText());
-            String fechaStr = node.path("FechaEmision").asText();
+            String fechaStr = node.path("FechaEmisionIR").asText();
             if (!fechaStr.isEmpty() && !"null".equals(fechaStr)) {
                 ref.setFechaEmision(LocalDateTime.parse(fechaStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME));
             }
             ref.setCodigo(node.path("Codigo").asText());
             ref.setRazon(node.path("Razon").asText());
             return ref;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing InformacionReferencia: " + e.getLocalizedMessage(), null, 0, "Parser.parseSingleInformacionReferencia()", null, null);
             return null;
         }
@@ -1138,7 +1236,7 @@ nueva.setCantidad(original.getCantidad());
                             // The actual email sending would require client lookup, 
                             // which can be done in a separate process or by the controller
                         }
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         alertasService.registrarAlerta("Error", "Error preparando envio a cliente: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
                     }
                 }
@@ -1157,14 +1255,14 @@ nueva.setCantidad(original.getCantidad());
                             + "CORRECCION_AUTOMATICA_PENDIENTE"
                         );
                         comprobantesEmitidosService.update(factura);
-                    } catch (Exception e) {
+                    } catch (RuntimeException e) {
                         alertasService.registrarAlerta("Error", "Error marcando factura para corrección automática: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
                     }
                 }
             }
 
             alertasService.registrarAlerta("Info", "MensajeHacienda procesado: " + clave + " -> " + nuevoEstado, null, 0, "Parser.processMensajeHacienda()", null, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error procesando MensajeHacienda: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
         }
     }
@@ -1175,6 +1273,10 @@ nueva.setCantidad(original.getCantidad());
             case "FacturaElectronica":
             case "FacturaElectrónica":
                 return "01";
+            case "FacturaElectronicaCompra":
+                return "08";
+            case "FacturaElectronicaExportacion":
+                return "09";
             case "NotaCreditoElectronica":
             case "NotaCréditoElectrónica":
             case "NotaCredito":
@@ -1183,11 +1285,33 @@ nueva.setCantidad(original.getCantidad());
             case "NotaDébitoElectrónica":
             case "NotaDebito":
                 return "03";
+            case "ReciboElectronico":
+            case "ReciboElectronicoPago":
+                return "10";
             case "TiqueteElectronico":
             case "TiqueteElectrónico":
                 return "04";
             default:
                 return "01";
+        }
+    }
+
+    private void validarTotalMedioPago(ResumenFactura resumenFactura, String numeroConsecutivo, String xmlContent) {
+        if (resumenFactura == null) return;
+        List<MedioPagoR> mediosPago = resumenFactura.getMediosPago();
+        if (mediosPago == null || mediosPago.isEmpty()) return;
+
+        BigDecimal totalComprobante = resumenFactura.getTotalComprobante();
+        BigDecimal sumaMediosPago = mediosPago.stream()
+            .map(mp -> mp.getTotalMedioPago() != null ? mp.getTotalMedioPago() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (sumaMediosPago.compareTo(totalComprobante) != 0) {
+            String warnMsg = "TotalMedioPago sum (" + sumaMediosPago
+                + ") no coincide con TotalComprobante (" + totalComprobante
+                + ") para comprobante " + numeroConsecutivo;
+            alertasService.registrarAlerta("Warning", warnMsg, null, 0, "Parser.validarTotalMedioPago()", null, null);
+            logAsyncError("WARN", warnMsg, "Parser.validarTotalMedioPago", xmlContent);
         }
     }
 }
