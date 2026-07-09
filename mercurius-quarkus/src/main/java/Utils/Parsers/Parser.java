@@ -1280,11 +1280,11 @@ nueva.setCantidad(original.getCantidad());
             case "NotaCreditoElectronica":
             case "NotaCréditoElectrónica":
             case "NotaCredito":
-                return "02";
+                return "03";
             case "NotaDebitoElectronica":
             case "NotaDébitoElectrónica":
             case "NotaDebito":
-                return "03";
+                return "02";
             case "ReciboElectronico":
             case "ReciboElectronicoPago":
                 return "10";
