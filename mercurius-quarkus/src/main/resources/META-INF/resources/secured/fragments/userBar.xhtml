@@ -1,0 +1,544 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head> 
+        <link rel="apple-touch-icon" href="#{resource['favicon/apple-touch-icon.png']}"/>
+        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-32x32.png']}"/>
+        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon-16x16.png']}"/>
+        <link rel="icon" type="image/x-icon" href="#{resource['favicon/favicon.ico']}"/>  
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="stylesheet" href="/Mercurius/resources/css/style.css"/>  
+        <link rel="stylesheet" href="/Mercurius/resources/css/base-theme.css"/> 
+        <link rel="stylesheet" href="/Mercurius/resources/css/button-stack.css"/> 
+        <link rel="stylesheet" href="/Mercurius/resources/css/datatable.css"/> 
+        <link rel="stylesheet" href="/Mercurius/resources/css/dialog.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/form-elements.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/tabs.css"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/timeline.css"/> 
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.css"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/primeicons/primeicons.css"/> 
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const burger = document.querySelector('.navbar-burger');
+                const menu = document.querySelector('#navbarMenu');
+
+                if (burger) {
+                    burger.addEventListener('click', () => {
+                        burger.classList.toggle('is-active');
+                        menu.classList.toggle('is-active');
+                    });
+                }
+
+                const themeToggle = document.getElementById('themeToggleButton');
+                const themeIcon = document.getElementById('themeIcon');
+                const themeLabel = document.getElementById('themeLabel');
+                const html = document.documentElement;
+
+                function updateThemeUI(theme) {
+                    if (theme === 'dark') {
+                        themeIcon.classList.remove('pi-sun');
+                        themeIcon.classList.add('pi-moon');
+                        themeLabel.textContent = 'Modo Oscuro';
+                    } else {
+                        themeIcon.classList.remove('pi-moon');
+                        themeIcon.classList.add('pi-sun');
+                        themeLabel.textContent = 'Modo Claro';
+                    }
+                }
+
+                function setTheme(theme) {
+                    html.setAttribute('data-theme', theme);
+                    localStorage.setItem('theme', theme);
+                    updateThemeUI(theme);
+                    saveThemeToServer(theme);
+                }
+
+                function saveThemeToServer(theme) {
+                    fetch('#{request.contextPath}\/ThemeController?action=saveTheme&amp;theme=' + theme, {
+                        method: 'POST',
+                        credentials: 'same-origin'
+                    }).catch(function(error) {
+                        console.log('Theme saved to localStorage only');
+                    });
+                }
+
+                const savedTheme = localStorage.getItem('theme') || 'light';
+                setTheme(savedTheme);
+
+                themeToggle.addEventListener('click', () => {
+                    const currentTheme = html.getAttribute('data-theme');
+                    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    setTheme(newTheme);
+                });
+            });
+        </script>
+
+        <script>
+            function openFactura(facturaId) {
+                window.open(
+                        '#{request.contextPath}/secured/pages/Facturas/Facturas/factura.xhtml?facturaId=' + facturaId,
+                        '_blank',
+                        'width=1000,height=700,resizable=yes,scrollbars=yes'
+                        );
+            }
+
+        </script>
+
+    </h:head>
+
+    <h:form id="MainMenu">
+
+        <h:outputScript>
+            function handleKeyPress(event) {
+            if (event.key === 'F5') {
+            event.preventDefault();
+            openFactura(Date.now()); // or generate UUID server-side
+            }
+            }
+            document.addEventListener('keydown', handleKeyPress);
+        </h:outputScript>
+
+        <nav class="navbar is-black" role="navigation" aria-label="main navigation">
+            <div class="navbar-brand">
+                <!-- Left-aligned items (empty here) -->
+                <a class="navbar-item" href="/Mercurius/secured/index.xhtml">
+                    <!-- SVG Logo (or Text) -->
+                    <p:graphicImage rendered="#{SettingsController.logo eq null}" value="/resources/imgs/logo/Mercurius.png" height="100%"  />
+                    <p:graphicImage rendered="#{SettingsController.logo != null}" value="#{SettingsController.logo}" stream="false" height="100%"  />
+
+                    <span class="icon-text">
+                        <span class="icon">
+                            <i class="pi pi-home"></i>
+                        </span>
+                        <span>
+                            Inicio
+                        </span>
+                    </span>  
+                </a>
+                <div class="navbar-burger burger" data-target="navbarMenu">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+
+            <div id="navbarMenu" class="navbar-menu">
+
+                <div class="navbar-start">   
+                    <a class="navbar-item" id="themeToggleButton" href="javascript:void(0)">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="pi" id="themeIcon"></i>
+                            </span>
+                            <span id="themeLabel"></span>
+                        </span>
+                    </a> 
+                </div>
+
+                <div class="navbar-end"> 
+                    <a class="navbar-item">   
+                        <p:commandLink rendered="#{SessionController.facturacion}" 
+                                       class="button is-dark"
+                                       actionListener="#{crearTiqueteController.openNewFactura}"
+                                       onclick="openFactura(Date.now());
+                                               return false;">
+                            <span class="icon">
+                                <i class="pi pi-receipt"></i>
+                            </span>
+                        </p:commandLink>
+                    </a>  
+
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.inventarios}">
+                        <a class="navbar-link">
+                            <span>
+                                Articulos
+                            </span>
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Articulos/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-box"/>
+                                    </span>
+                                    <span>
+                                        Articulos
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Categorias/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-truck"/>
+                                    </span>
+                                    <span>
+                                        Categorias
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Inventario/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-warehouse"/>
+                                    </span>
+                                    <span>
+                                        Inventarios
+                                    </span>
+                                </span> 
+                            </a>
+                            <hr class="navbar-divider"/>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Inventario/Reportes/Alertas/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-exclamation-triangle"/>
+                                    </span>
+                                    <span>
+                                        Alertas de Stock
+                                    </span>
+                                    <span class="tag is-danger is-small" 
+                                          style="margin-left: 0.5rem;"
+                                          rendered="#{stockAlertController.activeAlertsCount gt 0}">
+                                        #{stockAlertController.activeAlertsCount}
+                                    </span> 
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Inventario/Reportes/Merma/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-exclamation-triangle"/>
+                                    </span>
+                                    <span>
+                                        Mermas y Perdidas
+                                    </span>
+                                </span> 
+                            </a>
+                        </div> 
+                    </p:outputPanel>
+
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.inventarios}">
+                        <a class="navbar-link">
+                            <span>
+                                Compras
+                            </span>
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Compras/Ordenes/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-shopping-cart"/>
+                                    </span>
+                                    <span>
+                                        Órdenes de Compra
+                                    </span>
+                                </span>
+                            </a>
+                        </div>
+                    </p:outputPanel>
+
+                    <a class="navbar-item" href="/Mercurius/secured/pages/Usuarios/index.xhtml">
+                        <span class="icon-text">
+                            <span class="icon">
+                                <i class="pi pi-user"></i>
+                            </span>
+                            <span>
+                                Usuarios
+                            </span>
+                        </span> 
+                    </a> 
+
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.tributacion}">
+                        <a class="navbar-link">
+                            Tributacion
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Tributacion/Dashboard/index.xhtml" >
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-chart-pie"/>
+                                    </span>
+                                    <span>
+                                        Dashboard Hacienda
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Tributacion/Consultas/index.xhtml" >
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-building-columns"/>
+                                    </span>
+                                    <span>
+                                        Consultas
+                                    </span>
+                                </span> 
+                                <span class="tag is-danger is-small" 
+                                      style="margin-left: 0.5rem;"
+                                      rendered="#{request.requestURI ne null and request.requestURI.contains('Consultas') and consultasController.contadorRechazadas > 0}">
+                                    #{consultasController.contadorRechazadas}
+                                </span>
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/CaByS/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-book"/>
+                                    </span>
+                                    <span>
+                                        CaByS
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="javascript:void(0)" onclick="PF('dollarValueDialog').show(); return false;">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-dollar"/>
+                                    </span>
+                                    <span>
+                                        Tipo de cambio
+                                    </span>
+                                </span> 
+                            </a>
+                        </div>
+
+                    </p:outputPanel>
+
+                    <p:outputPanel class="navbar-item"  rendered="#{SessionController.registros}">
+                        <a style="color: white" href="/Mercurius/secured/pages/Registros/index.xhtml">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="pi pi-book"></i>
+                                </span>
+                                <span>
+                                    Reportes
+                                </span>
+                            </span> 
+                        </a>  
+                    </p:outputPanel>
+                    
+
+
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.admin}">
+                        <a class="navbar-link">
+                            Ajustes
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Impresoras/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-print"/>
+                                    </span>
+                                    <span>
+                                        Menu de Impresoras
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Correos/Reportes/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-at"/>
+                                    </span>
+                                    <span>
+                                        Menu de Correos
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Correos/Templates/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-file-edit"/>
+                                    </span>
+                                    <span>
+                                        Plantillas
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Aplicacion/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-crown"/>
+                                    </span>
+                                    <span>
+                                        Menu de Aplicacion
+                                    </span>
+                                </span> 
+                            </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Ajustes/Backups/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-database"/>
+                                    </span>
+                                    <span>
+                                        Backups
+                                    </span>
+                                </span> 
+                            </a>
+                            <hr class="navbar-divider"/>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Registros/LogActividad/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-history"/>
+                                    </span>
+                                    <span>
+                                        Log de Actividades
+                                    </span>
+                                </span> 
+                            </a>
+                        </div>
+                    </p:outputPanel>
+                    <!-- Logout Button -->
+                    <div class="navbar-item logout-button">
+                        <p:commandLink class="button is-rounded is-info" 
+                                       onclick="PF('userSettingsDialog').show(); return false;" > 
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="pi pi-user"/>
+                                </span>
+                                <span>
+                                    Perfil
+                                </span>
+                            </span>  
+                        </p:commandLink>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <ui:include src="../fragments/Monedas/DollarValueDialog.xhtml" />
+
+        <p:spacer height="1em"/>
+
+    </h:form>
+
+    <p:dialog widgetVar="userSettingsDialog" modal="false" 
+              fitViewport="true" responsive="true" dynamic="true" cache="false" >
+        <p:outputPanel>
+            <h:form id="userSettingsForm" >
+                <section class="section">
+                    <p:growl showDetail="true" showSummary="true" />
+
+                    <div class="columns is-centered is-vcentered is-multiline has-text-centered">
+                        <div class="column is-full">
+                            <p class="title is-5">Menu de Usuario</p>
+                        </div>
+
+                        <hr/>
+
+                        <div class="column is-full">
+                            <div class="columns is-multiline">
+                                <div class="column">
+                                    <p class="title is-5">Nombre de usuario:</p> 
+                                </div>
+                                <div class="column">
+                                    <p class="title is-5">#{SessionController.currentUser.username}</p>  
+                                </div>
+                                <div class="column">
+                                    <p:commandLink oncomplete="PF('nameDialog').show()" 
+                                                   styleClass="button is-rounded is-success"
+                                                   actionListener="#{SessionController.openUsername()}">
+                                        <i class="pi pi-pencil"></i>
+                                    </p:commandLink>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr/>
+
+                        <div class="column is-full">
+                            <div class="columns is-multiline">
+                                <div class="column">
+                                    <p class="title is-5">Correo Electronico:</p>   
+                                </div>
+                                <div class="column">
+                                    <p class="title is-5">#{SessionController.currentUser.email}</p>    
+                                </div>
+                                <div class="column">
+                                    <p:commandLink oncomplete="PF('emailDialog').show()"
+                                                   styleClass="button is-rounded is-success"
+                                                   actionListener="#{SessionController.openEmail()}">
+                                        <i class="pi pi-pencil"></i>
+                                    </p:commandLink>
+                                </div> 
+                            </div>
+                        </div> 
+
+                        <hr/>
+
+                        <div class="column is-full">
+                            <div class="columns is-multiline is-centered is-vcentered">
+                                <div class="column is-full">
+                                    <div class="buttons">
+                                        <p:commandLink  value="Cambiar Contrasena" oncomplete="PF('passwordDialog').show()" 
+                                                        styleClass="button is-rounded is-primary is-fullwidth"
+                                                        actionListener="#{SessionController.openPassword()}"/> 
+                                        <p:commandLink value="Cerrar Session" styleClass="button is-rounded is-danger is-fullwidth" 
+                                                       actionListener="#{SessionController.logOut()}"  />
+                                    </div> 
+                                </div> 
+                            </div> 
+                        </div>  
+                    </div>  
+                </section> 
+            </h:form>
+        </p:outputPanel> 
+    </p:dialog>
+
+    <!-- Dialog for changing Name -->
+    <p:dialog header="Cambiar Nombre de Usuario" dynamic="true" cache="false" widgetVar="nameDialog" modal="true" 
+              fitViewport="true" responsive="true">
+        <h:form class="ui-g p-4">
+            <p:growl showDetail="true" showSummary="true" />
+            <div class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round ui-g-12">
+                <p:inputText value="#{SessionController.newUsername}" required="true" requiredMessage="El nombre de usuario no puede estar vacio"/>
+                <p:commandButton value="Guardar" action="#{SessionController.changeName}" process="@this" update=":userSettingsForm @this" oncomplete="PF('nameDialog').hide()" />
+            </div>
+        </h:form>
+    </p:dialog>
+
+    <!-- Dialog for changing Email -->
+    <p:dialog header="Cambiar correo electronico" dynamic="true" cache="false"  widgetVar="emailDialog" modal="true"
+              fitViewport="true" responsive="true">
+        <h:form class="ui-g p-4">
+            <p:growl showDetail="true" showSummary="true" />
+            <div class="ui-panel ui-widget ui-widget-content ui-corner-all p-4 shadow-2 border-round ui-g-12">
+                <p:inputText value="#{SessionController.newEmail}" required="true" requiredMessage="El correo electronico no puede estar vacio"/>
+                <p:commandButton value="Guardar" action="#{userSettingsBean.changeEmail}" process="@this" update=":userSettingsForm @this" oncomplete="PF('emailDialog').hide()" />
+            </div>
+        </h:form>
+    </p:dialog>
+
+    <!-- Dialog for changing Password -->
+    <p:dialog header="Change Password" dynamic="true" cache="false"  widgetVar="passwordDialog" modal="true"
+              fitViewport="true" responsive="true">
+        <h:form>
+            <p:growl showDetail="true" showSummary="true" />
+            <p:panelGrid columns="1" layout="flex">
+                <p:outputPanel>
+                    <p:outputLabel for="currentPassword" value="Contrasena actual:" style="width: 100%"/>
+ <p:password id="currentPassword" value="#{SessionController.currentPassword}"
+                             required="true" style="width: 100%"
+                             autocomplete="off" redisplay="false"/>
+                </p:outputPanel>
+                <p:outputPanel >
+                    <p:outputLabel for="newPassword" value="Nueva Contrasena:" style="width: 100%"/>
+ <p:password id="newPassword" value="#{SessionController.newPassword}"
+                             required="true" style="width: 100%"
+                             autocomplete="off" redisplay="false"/>
+                </p:outputPanel>
+                <p:outputPanel  >
+                    <p:outputLabel for="confirmPassword" value="Confimar nueva contrasena:" style="width: 100%"/>
+ <p:password id="confirmPassword" value="#{SessionController.confirmPassword}"
+                             required="true" style="width: 100%"
+                             autocomplete="off" redisplay="false"/>
+                </p:outputPanel>
+                <p:outputPanel >
+                    <p:commandButton value="Guardar" action="#{SessionController.changePassword}" update=":userSettingsForm" 
+                                     oncomplete="PF('passwordDialog').hide()" style="width: 100%"/>
+                </p:outputPanel>
+            </p:panelGrid>            
+        </h:form>
+    </p:dialog>
+  
+</ui:composition>

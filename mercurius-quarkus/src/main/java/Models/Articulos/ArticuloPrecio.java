@@ -1,0 +1,61 @@
+package Models.Articulos;
+
+
+import Models.Users;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.util.Date; 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+/**
+ *
+ * @author Al
+ */
+
+//Se utiliza un array para mantener un historico de precios,
+//siempre el valor mas nuevo es el precio actual.
+@Entity
+@Data
+public class ArticuloPrecio {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @ManyToOne
+    @JoinColumn(name = "articulo_id", nullable = false)
+    private Articulos articulo;
+
+    @Nullable @Column(name = "precio_costo_sin_iva")
+    private BigDecimal precioCostoSinIVA; //Lo que costo sin agregar el IVA de nuestra parte
+
+    @Nullable @Column(name = "precio_final")
+    private BigDecimal precioFinal; // precioConUtilidad + el IVA;
+
+    @Nullable @Column(name = "porcentaje_utilidad")
+    private BigDecimal porcentajeUtilidad; //% De utilidad
+
+    @Nullable @Column(name = "precio_con_utilidad")
+    private BigDecimal precioConUtilidad; //Lo que costo + la utilidad (S/IVA)
+
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date fechaCompra;
+
+    @Nullable
+    @ManyToOne
+    @JoinColumn(name = "usuario_id")
+    private Users usuario; // Who made the purchase or set the price
+
+    @PrePersist
+    protected void onCreate() {
+        fechaCompra = new Date(); // Sets the current timestamp when creating the entity
+    }
+     
+}

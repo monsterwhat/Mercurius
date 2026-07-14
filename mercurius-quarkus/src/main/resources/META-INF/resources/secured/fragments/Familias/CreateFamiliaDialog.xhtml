@@ -1,0 +1,30 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    
+    <p:dialog header="Crear Familia" widgetVar="CrearFamiliaDialog" dynamic="true" cache="false" 
+        fitViewport="true" responsive="true" id="CrearFamiliaDialog" modal="true">
+        <p:outputPanel rendered="#{not empty FamiliasController.newFamilia}">
+            <h:form>
+                <p:panelGrid columns="1">
+                    <p:panel header="Crear una nueva familia">
+                        <p:messages id="messages" showDetail="true" showSummary="false"/>
+                        
+                        <p:messages showDetail="true" for="name" showSummary="false" closable="true" />
+                        <label class="label" for="name" style="color: var(--primary-color); text-align: center">Nombre:</label>
+                        <p:inputText id="name" value="#{FamiliasController.newFamilia.nombre}" style="width: 100%"
+                                     required="true" requiredMessage="El nombre no puede estar vacío"
+                                     />
+                        <p:spacer height="1em"/>
+                        <p:commandButton value="Crear Familia" process="@form" styleClass="button is-primary is-rounded is-fullwidth"
+                                        icon="pi pi-check"
+                                        update="@form Categorias growl" 
+                                        action="#{FamiliasController.createFamiliaDialog}"/>
+                    </p:panel>
+                </p:panelGrid>
+            </h:form>
+        </p:outputPanel> 
+    </p:dialog>
+</ui:composition>

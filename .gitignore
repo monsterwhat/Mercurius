@@ -520,3 +520,15 @@ MigrationBackup/
 # End of https://www.toptal.com/developers/gitignore/api/netbeans,java,maven,visualstudiocode,vs,intellij+all
 Mercurius/nb-configuration.xml
 new 1.txt
+/mercurius-quarkus/.settings
+/.doctor
+/.omo
+PLAN_Prevalidation_Service.md
+TODO.md
+CHECKLIST-HACIENDA-V4.4.md
+/docs
+/omo
+anchored-summary.md
+all.txt
+modified.txt
+/mercurius-quarkus/.omo

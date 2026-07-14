@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mercatus — Tienda en Línea — Mercurius</title>
+  <meta name="description" content="Aplicación frontend para clientes con catálogo, carrito de compras y pedidos auto-gestionados.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../index.html" class="nav__logo">
+        <img src="../assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="../getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="../architecture.html" class="api-sidebar__link">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="../getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="../deployment.html" class="api-sidebar__link">Despliegue</a>
+          <a href="../tutorials/first-invoice.html" class="api-sidebar__link">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="invoicing.html" class="api-sidebar__link">Facturación</a>
+          <a href="tax-compliance.html" class="api-sidebar__link">Cumplimiento Tributario</a>
+          <a href="analytics.html" class="api-sidebar__link">Analítica</a>
+          <a href="admin.html" class="api-sidebar__link">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="../fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="marketplace.html" class="api-sidebar__link api-sidebar__link--active">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Mercatus — Tienda en Línea</h1>
+      <p class="page-header__desc">Aplicación frontend para clientes con catálogo, carrito de compras y pedidos auto-gestionados.</p>
+    </div>
+  </div>
+
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <section class="section reveal">
+        <h2 class="section__title">Visión General</h2>
+        <p>Mercatus es la tienda en línea de Mercurius, una aplicación React que permite a sus clientes navegar el catálogo, agregar productos al carrito y realizar pedidos de forma auto-gestionada.</p>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Stack Tecnológico</h2>
+        <div class="feature-card">
+          <div class="feature-card__icon">⚛️</div>
+          <div class="feature-card__title">React 19 + TypeScript</div>
+          <div class="feature-card__desc">Frontend moderno con tipado estricto y componentes funcionales.</div>
+        </div>
+        <ul>
+          <li>React 19 + TypeScript</li>
+          <li>Vite 8 (bundler)</li>
+          <li>Framer Motion (animaciones)</li>
+          <li>Lucide React (iconos)</li>
+          <li>React Router DOM (navegación)</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Funcionalidades</h2>
+        <p>Mercatus ofrece todo lo que sus clientes necesitan para comprar en línea.</p>
+        <ul>
+          <li>Catálogo de productos con búsqueda y filtros</li>
+          <li>Detalle de producto con imágenes</li>
+          <li>Carrito de compras</li>
+          <li>Proceso de checkout</li>
+          <li>Registro e inicio de sesión (JWT)</li>
+          <li>Perfil de usuario</li>
+          <li>Historial de pedidos</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Autenticación</h2>
+        <div class="callout callout--info">
+          <p>Mercatus utiliza autenticación JWT separada del panel de administración. Los clientes se registran e inician sesión directamente desde la tienda.</p>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Comunicación con el Backend</h2>
+        <p>Mercatus se comunica con Mercurius a través de una API REST bajo <code>/api/marketplace/</code>. Los endpoints incluyen autenticación, productos, carrito, pedidos y perfil.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Método</th>
+                <th>Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>/api/marketplace/auth/register</code></td>
+                <td>POST</td>
+                <td>Registro de cliente</td>
+              </tr>
+              <tr>
+                <td><code>/api/marketplace/auth/login</code></td>
+                <td>POST</td>
+                <td>Inicio de sesión</td>
+              </tr>
+              <tr>
+                <td><code>/api/marketplace/auth/refresh</code></td>
+                <td>POST</td>
+                <td>Refrescar token</td>
+              </tr>
+              <tr>
+                <td><code>/api/marketplace/products</code></td>
+                <td>GET</td>
+                <td>Listar productos</td>
+              </tr>
+              <tr>
+                <td><code>/api/marketplace/cart</code></td>
+                <td>GET/POST</td>
+                <td>Gestionar carrito</td>
+              </tr>
+              <tr>
+                <td><code>/api/marketplace/orders</code></td>
+                <td>GET/POST</td>
+                <td>Gestionar pedidos</td>
+              </tr>
+              <tr>
+                <td><code>/api/marketplace/profile</code></td>
+                <td>GET/PUT</td>
+                <td>Perfil de usuario</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Configuración</h2>
+        <p>Para ejecutar Mercatus en desarrollo:</p>
+        <div class="code-block">
+          <div class="code-block__header">
+            <span class="code-block__lang">bash</span>
+            <button class="code-block__copy">Copiar</button>
+          </div>
+          <pre><code>cd Mercatus
+npm install
+npm run dev</code></pre>
+        </div>
+        <p>La aplicación estará disponible en <code>http://localhost:5173</code></p>
+      </section>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="../assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="../fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="../fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="../nav.js"></script>
+</body>
+</html>

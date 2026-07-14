@@ -1,0 +1,286 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administración — Mercurius</title>
+  <meta name="description" content="Gestión de usuarios, roles, configuración del sistema, copias de seguridad y registro de actividad.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../index.html" class="nav__logo">
+        <img src="../assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="../getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="../architecture.html" class="api-sidebar__link">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="../getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="../deployment.html" class="api-sidebar__link">Despliegue</a>
+          <a href="../tutorials/first-invoice.html" class="api-sidebar__link">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="invoicing.html" class="api-sidebar__link">Facturación</a>
+          <a href="tax-compliance.html" class="api-sidebar__link">Cumplimiento Tributario</a>
+          <a href="analytics.html" class="api-sidebar__link">Analítica</a>
+          <a href="admin.html" class="api-sidebar__link api-sidebar__link--active">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="../fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="marketplace.html" class="api-sidebar__link">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Administración</h1>
+      <p class="page-header__desc">Gestión de usuarios, roles, configuración del sistema, copias de seguridad y registro de actividad.</p>
+    </div>
+  </div>
+
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <section class="section reveal">
+        <h2 class="section__title">Visión General</h2>
+        <p>El módulo de administración de Mercurius le permite controlar todos los aspectos del sistema, desde la gestión de usuarios hasta la configuración avanzada. Incluye control de acceso basado en roles (RBAC), copias de seguridad automatizadas, registro de actividad completo y un sistema de alertas que mantiene al equipo informado sobre eventos críticos.</p>
+      </section>
+
+      <section class="section reveal">
+        <div class="features__grid" style="grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-8);">
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+            </div>
+            <div class="feature-card__title">Usuarios</div>
+            <p class="feature-card__desc">Crear, editar y desactivar usuarios con control de acceso basado en roles (RBAC). Gestión de credenciales, asignación de sucursales y seguimiento de actividad por usuario.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div class="feature-card__title">Roles</div>
+            <p class="feature-card__desc">6 roles predeterminados (admin, facturación, inventario, usuario, tributación, registro) con permisos granulares por módulo. Soporte para roles personalizados con combinación de permisos específicos.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            </div>
+            <div class="feature-card__title">Clientes</div>
+            <p class="feature-card__desc">Registro completo con datos fiscales (cédula, DIMEX, pasaporte), historial de compras y programa de puntos de lealtad. Soporte para clientes corporativos con datos de facturación múltiples.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
+            <div class="feature-card__title">Configuración</div>
+            <p class="feature-card__desc">Ajustes generales de la aplicación, configuración de impresoras térmicas, directorio de archivos para documentos generados y temas de interfaz personalizables.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+            </div>
+            <div class="feature-card__title">Copias de Seguridad</div>
+            <p class="feature-card__desc">Servicio de backup integrado con programación automática, exportación de base de datos completa y posibilidad de restaurar a un punto específico. Almacenamiento local con verificación de integridad.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            </div>
+            <div class="feature-card__title">Registro de Actividad</div>
+            <p class="feature-card__desc">Log completo de acciones del sistema con filtrado por usuario, fecha y tipo de acción. Trazabilidad total para auditorías internas y cumplimiento normativo.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </div>
+            <div class="feature-card__title">Alertas</div>
+            <p class="feature-card__desc">Sistema de notificaciones automáticas para eventos críticos: stock bajo, documentos rechazados por Hacienda, certificados por vencer y cambios de configuración sensibles.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Gestión de Usuarios</h2>
+        <p>Gestión completa de usuarios con roles y permisos granulares para controlar quién puede acceder a cada funcionalidad del sistema.</p>
+        <ul>
+          <li>Crear, editar y desactivar usuarios con perfiles completos</li>
+          <li>Asignación de roles con control de acceso basado en roles (RBAC)</li>
+          <li>Cambio de contraseña con políticas de seguridad configurables</li>
+          <li>Asignación de sucursales y puntos de venta</li>
+          <li>Bloqueo automático de cuentas después de intentos fallidos</li>
+          <li>Historial de actividad por usuario con timestamps</li>
+          <li>Soporte para autenticación con credenciales de Hacienda (facturación)</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Roles del Sistema</h2>
+        <p>Mercurius define 6 roles predeterminados, cada uno con permisos específicos diseñados para reflejar las responsabilidades típicas de un negocio. Los permisos se controlan a nivel de módulo y acción (lectura, escritura, eliminación).</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Rol</th>
+                <th>Permisos</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>admin</code></td>
+                <td>Acceso total: configuración, usuarios, todos los módulos</td>
+              </tr>
+              <tr>
+                <td><code>facturacion</code></td>
+                <td>Emisión, consulta y gestión de comprobantes electrónicos</td>
+              </tr>
+              <tr>
+                <td><code>inventario</code></td>
+                <td>CRUD de productos, categorías, lotes, stock</td>
+              </tr>
+              <tr>
+                <td><code>usuario</code></td>
+                <td>Consulta de productos, reportes básicos</td>
+              </tr>
+              <tr>
+                <td><code>tributacion</code></td>
+                <td>Consultas a Hacienda, tipo de cambio, declaraciones</td>
+              </tr>
+              <tr>
+                <td><code>registro</code></td>
+                <td>Gestión de usuarios y clientes</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Gestión de Clientes</h2>
+        <p>Mantenga un registro completo de sus clientes con toda la información fiscal necesaria para la facturación electrónica y el seguimiento de ventas.</p>
+        <ul>
+          <li>Registro de clientes con datos fiscales completos (nombre, cédula, correo electrónico)</li>
+          <li>Tipos de identificación soportados: cédula física, cédula jurídica, DIMEX, pasaporte y identificación temporal</li>
+          <li>Historial completo de compras vinculado a facturación electrónica</li>
+          <li>Programa de puntos de lealtad con acumulación y canje configurable</li>
+          <li>Soporte para clientes corporativos con datos de facturación múltiples</li>
+          <li>Búsqueda rápida por nombre, cédula o correo electrónico</li>
+          <li>Segmentación de clientes por frecuencia de compra y monto promedio</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Configuración del Sistema</h2>
+        <p>Personalice Mercurius según las necesidades de su negocio con un panel de configuración completo.</p>
+        <ul>
+          <li>Ajustes generales: nombre del negocio, número de cédula, datos del emisor para facturación</li>
+          <li>Configuración de impresoras térmicas para tickets y documentos de respaldo</li>
+          <li>Directorio de archivos para documentos generados (XML, PDF, reportes)</li>
+          <li>Temas de interfaz con soporte para modo claro y oscuro</li>
+          <li>Configuración de impuestos: tasa de IVA, productos exentos y sujetos a impuestos específicos</li>
+          <li>Parámetros de facturación: secuencias de documentos, moneda por defecto</li>
+          <li>Configuración de notificaciones y alertas del sistema</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Copias de Seguridad</h2>
+        <p>Mercurius incluye un servicio de backup integrado accesible desde Configuración &gt; Copias de Seguridad. El sistema protege sus datos con copias automáticas y verificación de integridad.</p>
+        <ul>
+          <li>Programación automática de backups con frecuencia configurable</li>
+          <li>Exportación de base de datos completa con todos los datos del sistema</li>
+          <li>Almacenamiento local con verificación de integridad mediante checksum</li>
+          <li>Posibilidad de restaurar el sistema a un punto específico de Backup</li>
+          <li>Historial de backups realizados con tamaño y fecha</li>
+          <li>Notificaciones de estado del proceso de backup (éxito, error, espacio insuficiente)</li>
+        </ul>
+        <div class="callout callout--info">
+          <p><strong>Recomendación</strong> — Configure backups automáticos diarios para proteger contra pérdida de datos. Los backups se almacenan localmente y pueden exportarse a almacenamiento externo.</p>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Registro de Actividad</h2>
+        <p>El sistema mantiene un registro completo y detallado de todas las acciones realizadas, proporcionando trazabilidad total para auditorías internas y cumplimiento normativo.</p>
+        <ul>
+          <li>Log de todas las acciones del sistema: creación, edición, eliminación y consultas</li>
+          <li>Filtrado por usuario, fecha, tipo de acción y módulo afectado</li>
+          <li>Auditoría completa de cambios con valores anteriores y nuevos</li>
+          <li>Registro de intentos de acceso fallidos y actividad sospechosa</li>
+          <li>Exportación de registros de actividad para auditorías externas</li>
+          <li>Retención de registros configurable según políticas de la empresa</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Alertas</h2>
+        <p>Mercurius notifica automáticamente sobre eventos importantes del sistema, manteniendo al equipo informado sin necesidad de monitoreo constante.</p>
+        <ul>
+          <li><strong>Alertas de stock bajo</strong> — Notificaciones cuando los productos alcanzan el nivel mínimo configurado, con detalle del producto, cantidad actual y punto de pedido sugerido.</li>
+          <li><strong>Documentos rechazados</strong> — Avisos inmediatos cuando Hacienda rechaza un comprobante, incluyendo el motivo del rechazo y pasos para corrección.</li>
+          <li><strong>Certificados por vencer</strong> — Recordatorios 30 días antes de la fecha de expiración del certificado P12, con enlace directo a la configuración de renovación.</li>
+          <li><strong>Modo contingencia activado</strong> — Notificación cuando el sistema entra en modo contingencia por indisponibilidad de Hacienda.</li>
+          <li><strong>Cambios de configuración sensibles</strong> — Alertas cuando se modifican parámetros críticos como credenciales de Hacienda, datos del emisor o configuración de impuestos.</li>
+        </ul>
+      </section>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="../assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="../fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="../fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="../nav.js"></script>
+</body>
+</html>

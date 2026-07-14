@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Consultas de Facturas</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .ui-tabs-nav {
+                display: none !important;
+            }
+
+            .consultas-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .consultas-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .consultas-header .subtitle {
+                color: rgba(255, 255, 255, 0.8);
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                background: rgba(255, 255, 255, 0.15);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+
+            .stat-card.active {
+                border: 2px solid white;
+                background: rgba(255, 255, 255, 0.25);
+            }
+
+            .stat-number {
+                font-size: 2rem;
+                font-weight: bold;
+                display: block;
+                margin-bottom: 0.5rem;
+                color: white;
+            }
+
+            .stat-label {
+                font-size: 0.875rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: white;
+            }
+
+            .timer-container {
+                text-align: center;
+                padding: 1rem;
+                background-color: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .timer-display {
+                font-size: 1.5rem;
+                font-weight: bold;
+                color: white;
+                font-family: monospace;
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+        <h:form id="consultasForm">
+            <ui:include src="/secured/fragments/userBar.xhtml" /> 
+            <p:growl showDetail="true" showSummary="true" />
+
+            <section class="section">
+                <div class="consultas-header" style="background: linear-gradient(135deg, #6f42c1 0%, #4a2c81 100%);">
+                    <p class="title is-3 has-text-centered">Consultas de Facturas</p>
+                    <p class="subtitle has-text-centered">Estado de facturas y envíos programados</p>
+                    
+                    <h:panelGroup id="counters">
+                        <div class="stats-grid">
+                            <div class="stat-card active" onclick="switchTab('ConsultasTabView', 0, this)">
+                                <span class="stat-number">#{consultasController.contadorPendientes}</span>
+                                <span class="stat-label">Facturas Pendientes</span>
+                            </div>
+                            <div class="stat-card" onclick="switchTab('ConsultasTabView', 1, this)">
+                                <span class="stat-number">#{consultasController.contadorAceptadas}</span>
+                                <span class="stat-label">Facturas Aceptadas</span>
+                            </div>
+                            <div class="stat-card" onclick="switchTab('ConsultasTabView', 2, this)">
+                                <span class="stat-number">#{consultasController.contadorRechazadas}</span>
+                                <span class="stat-label">Facturas Rechazadas</span>
+                            </div>
+                        </div>
+                    </h:panelGroup>
+                </div>
+
+                <h:panelGroup id="timerDisplay" rendered="#{consultasController.hasProximoEnvio()}">
+                    <div class="timer-container">
+                        <h3 style="color: white; margin-bottom: 0.5rem;">#{consultasController.proximoEnvioDisplay}</h3>
+                        <div class="timer-display">
+                            <h:outputText value="#{consultasController.countdownDisplay}" />
+                        </div>
+                    </div>
+                </h:panelGroup>
+
+                <div class="actions-bar">
+                    <div class="actions-group">
+                        <p:commandButton value="Actualizar Datos" 
+                                       action="#{consultasController.refreshData()}"
+                                       update="consultasForm:counters consultasForm:ConsultasTabView"
+                                       styleClass="action-btn button is-info"
+                                       icon="pi pi-refresh" />
+                        
+                        <p:commandButton value="Enviar Facturas Pendientes" 
+                                       action="#{consultasController.enviarFacturasPendientes()}"
+                                       update="consultasForm:counters consultasForm:ConsultasTabView"
+                                       styleClass="action-btn button is-warning"
+                                       icon="pi pi-send"
+                                       disabled="#{!consultasController.hasFacturasPendientes()}" />
+                    </div>
+                </div>
+
+                <div class="tab-content-card">
+                    <p:tabView id="ConsultasTabView" widgetVar="ConsultasTabView" activeIndex="#{param.tab}">
+                        <p:tab title="Facturas Pendientes (#{consultasController.contadorPendientes})">
+                            <f:facet name="title">
+                                <span class="icon-text">
+                                    <i class="pi pi-clock"></i>
+                                    <span>Pendientes</span>
+                                    <span class="tab-counter">#{consultasController.contadorPendientes}</span>
+                                </span>
+                            </f:facet>
+                            <p:dataTable value="#{consultasController.facturasPendientes}" 
+                                         var="factura"
+                                         rows="15"
+                                         paginator="true"
+                                         paginatorPosition="bottom"
+                                         emptyMessage="No hay facturas pendientes"
+                                         styleClass="articulos-table"
+                                         reflow="true">
+                                
+                                <p:column headerText="Número Consecutivo" width="150">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}" style="font-family: monospace;"/>
+                                </p:column>
+                                
+                                <p:column headerText="Fecha Emisión" width="120">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Cliente">
+                                    <h:outputText value="#{factura.encabezado.receptor.nombre}" style="font-weight: 500;"/>
+                                </p:column>
+                                
+                                <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                    <h:outputText value="#{factura.resumen.totalComprobante}">
+                                        <f:convertNumber type="currency" currencySymbol="₡" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Estado" width="100" style="text-align: center;">
+                                    <p:chip icon="pi pi-clock" styleClass="status-chip status-pending" rendered="true"/>
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+
+                        <p:tab title="Facturas Aceptadas (#{consultasController.contadorAceptadas})">
+                            <f:facet name="title">
+                                <span class="icon-text">
+                                    <i class="pi pi-check-circle"></i>
+                                    <span>Aceptadas</span>
+                                    <span class="tab-counter">#{consultasController.contadorAceptadas}</span>
+                                </span>
+                            </f:facet>
+                            <p:dataTable value="#{consultasController.facturasAceptadas}" 
+                                         var="factura"
+                                         rows="15"
+                                         paginator="true"
+                                         paginatorPosition="bottom"
+                                         emptyMessage="No hay facturas aceptadas"
+                                         styleClass="articulos-table"
+                                         reflow="true">
+                                
+                                <p:column headerText="Número Consecutivo" width="150">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}" style="font-family: monospace;"/>
+                                </p:column>
+                                
+                                <p:column headerText="Fecha Emisión" width="120">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Cliente">
+                                    <h:outputText value="#{factura.encabezado.receptor.nombre}" style="font-weight: 500;"/>
+                                </p:column>
+                                
+                                <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                    <h:outputText value="#{factura.resumen.totalComprobante}">
+                                        <f:convertNumber type="currency" currencySymbol="₡" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Estado" width="100" style="text-align: center;">
+                                    <p:chip icon="pi pi-check" styleClass="status-chip status-active"/>
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+
+                        <p:tab title="Facturas Rechazadas (#{consultasController.contadorRechazadas})">
+                            <f:facet name="title">
+                                <span class="icon-text">
+                                    <i class="pi pi-times-circle"></i>
+                                    <span>Rechazadas</span>
+                                    <span class="tab-counter">#{consultasController.contadorRechazadas}</span>
+                                </span>
+                            </f:facet>
+                            <p:dataTable value="#{consultasController.facturasRechazadas}" 
+                                         var="factura"
+                                         rows="15"
+                                         paginator="true"
+                                         paginatorPosition="bottom"
+                                         emptyMessage="No hay facturas rechazadas"
+                                         styleClass="articulos-table"
+                                         reflow="true">
+                                
+                                <p:column headerText="Número Consecutivo" width="150">
+                                    <h:outputText value="#{factura.encabezado.numeroConsecutivo}" style="font-family: monospace;"/>
+                                </p:column>
+                                
+                                <p:column headerText="Fecha Emisión" width="120">
+                                    <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Cliente">
+                                    <h:outputText value="#{factura.encabezado.receptor.nombre}" style="font-weight: 500;"/>
+                                </p:column>
+                                
+                                <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                    <h:outputText value="#{factura.resumen.totalComprobante}">
+                                        <f:convertNumber type="currency" currencySymbol="₡" />
+                                    </h:outputText>
+                                </p:column>
+                                
+                                <p:column headerText="Motivo Rechazo" width="200">
+                                    <h:outputText value="#{factura.encabezado.motivoRechazo}" 
+                                                 rendered="#{not empty factura.encabezado.motivoRechazo}" 
+                                                 title="#{factura.encabezado.motivoRechazo}" />
+                                    <h:outputText value="No especificado" 
+                                                 rendered="#{empty factura.encabezado.motivoRechazo}" />
+                                </p:column>
+                                
+                                <p:column headerText="Intentos" width="80" style="text-align: center;">
+                                    <h:outputText value="#{factura.correctionAttempts}"
+                                                 rendered="#{not empty factura.correctionAttempts}"
+                                                 style="font-family: monospace;" />
+                                    <h:outputText value="0"
+                                                 rendered="#{empty factura.correctionAttempts}"
+                                                 style="font-family: monospace;" />
+                                </p:column>
+
+                                <p:column headerText="Última Corrección" width="160">
+                                    <h:outputText value="#{factura.ultimaCorreccion}"
+                                                 rendered="#{not empty factura.ultimaCorreccion}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                    <h:outputText value="-"
+                                                 rendered="#{empty factura.ultimaCorreccion}" />
+                                </p:column>
+
+                                <p:column headerText="Fecha Rechazo" width="160">
+                                    <h:outputText value="#{factura.haciendaFechaRespuesta}"
+                                                 rendered="#{not empty factura.haciendaFechaRespuesta}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                                    </h:outputText>
+                                    <h:outputText value="-"
+                                                 rendered="#{empty factura.haciendaFechaRespuesta}" />
+                                </p:column>
+
+                                <p:column headerText="Estado" width="100" style="text-align: center;">
+                                    <p:chip icon="pi pi-times" styleClass="status-chip status-inactive"/>
+                                </p:column>
+                                
+                                <p:column headerText="Acciones" width="150" exportable="false" style="text-align: center;">
+                                    <p:commandButton value="Corregir" 
+                                                   icon="pi pi-refresh"
+                                                   styleClass="table-action-btn button is-primary is-small"
+                                                   title="Crear nueva factura corregida"
+                                                   action="#{consultasController.corregirFacturaRechazada(factura)}" />
+                                </p:column>
+                            </p:dataTable>
+                        </p:tab>
+                    </p:tabView>
+                </div>
+            </section>
+        </h:form>
+        
+        <p:poll interval="5" update="consultasForm:timerDisplay consultasForm:counters" listener="#{consultasController.actualizarCountdown()}" />
+
+        <script>
+            function switchTab(tabViewWidget, index, cardElement) {
+                PF(tabViewWidget).select(index);
+                setActiveCard(cardElement);
+            }
+
+            function setActiveCard(card) {
+                document.querySelectorAll('.stat-card').forEach(function(c) {
+                    c.classList.remove('active');
+                });
+                card.classList.add('active');
+            }
+        </script>
+
+    </h:body>
+</html>

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Declaracion IVA - D-104</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .iva-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+                background: linear-gradient(135deg, #0056b3 0%, #003d80 100%);
+            }
+            .iva-header .title { color: white; margin-bottom: 1rem; }
+            .iva-header .subtitle { color: rgba(255,255,255,0.8); }
+            .form-card {
+                background: var(--surface-card, white);
+                border-radius: 0.75rem;
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            .form-card h3 {
+                margin-top: 0;
+                margin-bottom: 1rem;
+                color: var(--text-color, #333);
+                border-bottom: 2px solid #0056b3;
+                padding-bottom: 0.5rem;
+            }
+            .form-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+            }
+            .form-field label {
+                display: block;
+                font-size: 0.875rem;
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+                color: var(--text-color-secondary, #666);
+            }
+            .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+            .summary-card {
+                background: var(--surface-ground, #f8f9fa);
+                border-radius: 0.75rem;
+                padding: 1.25rem;
+                text-align: center;
+                border: 1px solid var(--surface-border, #dee2e6);
+            }
+            .summary-card .label {
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: var(--text-color-secondary, #666);
+                margin-bottom: 0.5rem;
+            }
+            .summary-card .value {
+                font-size: 1.5rem;
+                font-weight: bold;
+            }
+            .summary-card .count {
+                font-size: 1rem;
+                color: var(--text-color-secondary, #666);
+            }
+            .value-positive { color: #0056b3; }
+            .value-negative { color: #dc3545; }
+            .value-neutral { color: #28a745; }
+        </style>
+    </h:head>
+
+    <h:body>
+        <h:form id="declaracionIVAForm">
+            <ui:include src="/secured/fragments/userBar.xhtml" />
+            <p:growl showDetail="true" showSummary="true" />
+
+            <section class="section">
+                <div class="iva-header">
+                    <p class="title is-3 has-text-centered">Declaracion IVA (D-104)</p>
+                    <p class="subtitle has-text-centered">
+                        Periodo: #{declaracionIVAController.nombreMes} #{declaracionIVAController.anio}
+                    </p>
+                </div>
+
+                <div class="form-card">
+                    <h3>Seleccionar Periodo</h3>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="mes">Mes</label>
+                            <p:selectOneMenu id="mes" value="#{declaracionIVAController.mes}" style="width: 100%;">
+                                <f:selectItem itemLabel="Enero" itemValue="1" />
+                                <f:selectItem itemLabel="Febrero" itemValue="2" />
+                                <f:selectItem itemLabel="Marzo" itemValue="3" />
+                                <f:selectItem itemLabel="Abril" itemValue="4" />
+                                <f:selectItem itemLabel="Mayo" itemValue="5" />
+                                <f:selectItem itemLabel="Junio" itemValue="6" />
+                                <f:selectItem itemLabel="Julio" itemValue="7" />
+                                <f:selectItem itemLabel="Agosto" itemValue="8" />
+                                <f:selectItem itemLabel="Setiembre" itemValue="9" />
+                                <f:selectItem itemLabel="Octubre" itemValue="10" />
+                                <f:selectItem itemLabel="Noviembre" itemValue="11" />
+                                <f:selectItem itemLabel="Diciembre" itemValue="12" />
+                            </p:selectOneMenu>
+                        </div>
+                        <div class="form-field">
+                            <label for="anio">Anio</label>
+                            <p:inputNumber id="anio" value="#{declaracionIVAController.anio}" min="2020" max="2040" style="width: 100%;" />
+                        </div>
+                    </div>
+                    <p:commandButton value="Calcular"
+                                   action="#{declaracionIVAController.calcular()}"
+                                   update="declaracionIVAForm"
+                                   styleClass="button is-info"
+                                   icon="pi pi-calculator"
+                                   style="margin-top: 1rem;" />
+                </div>
+
+                <div class="form-card">
+                    <h3>Resumen del Periodo</h3>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <div class="label">Total Ventas (Netas)</div>
+                            <div class="value value-positive">
+                                <h:outputText value="#{declaracionIVAController.totalVentas}">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </div>
+                            <div class="count">#{declaracionIVAController.totalFacturasEmitidas} facturas</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">Total Compras (Netas)</div>
+                            <div class="value value-neutral">
+                                <h:outputText value="#{declaracionIVAController.totalCompras}">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </div>
+                            <div class="count">#{declaracionIVAController.totalFacturasRecibidas} facturas</div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">IVA Debito (Ventas)</div>
+                            <div class="value value-positive">
+                                <h:outputText value="#{declaracionIVAController.ivaDebito}">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="label">IVA Credito (Compras)</div>
+                            <div class="value value-neutral">
+                                <h:outputText value="#{declaracionIVAController.ivaCredito}">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </div>
+                        </div>
+                        <div class="summary-card" style="grid-column: 1 / -1; max-width: 300px; margin: 0 auto;">
+                            <div class="label">IVA Neto a Pagar</div>
+                            <div class="value #{declaracionIVAController.ivaNeto >= 0 ? 'value-positive' : 'value-neutral'}">
+                                <h:outputText value="#{declaracionIVAController.ivaNeto}">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-card">
+                    <h3>Facturas Emitidas en el Periodo</h3>
+                    <p:dataTable value="#{declaracionIVAController.facturasEmitidas}"
+                                 var="factura"
+                                 rows="10"
+                                 paginator="true"
+                                 emptyMessage="No hay facturas emitidas en este periodo"
+                                 styleClass="articulos-table"
+                                 reflow="true">
+
+                        <p:column headerText="Numero Consecutivo" width="180">
+                            <h:outputText value="#{factura.encabezado.numeroConsecutivo}" />
+                        </p:column>
+                        <p:column headerText="Fecha" width="120">
+                            <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                <f:convertDateTime pattern="dd/MM/yyyy" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="Cliente">
+                            <h:outputText value="#{factura.encabezado.receptor.nombre}" />
+                        </p:column>
+                        <p:column headerText="Total Neto" width="120" styleClass="has-text-right">
+                            <h:outputText value="#{factura.resumen.totalVentaNeta}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="IVA" width="100" styleClass="has-text-right">
+                            <h:outputText value="#{factura.resumen.totalImpuesto}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </p:column>
+                    </p:dataTable>
+                </div>
+
+                <div class="form-card">
+                    <h3>Facturas Recibidas en el Periodo</h3>
+                    <p:dataTable value="#{declaracionIVAController.facturasRecibidas}"
+                                 var="factura"
+                                 rows="10"
+                                 paginator="true"
+                                 emptyMessage="No hay facturas recibidas en este periodo"
+                                 styleClass="articulos-table"
+                                 reflow="true">
+
+                        <p:column headerText="Numero Consecutivo" width="180">
+                            <h:outputText value="#{factura.encabezado.numeroConsecutivo}" />
+                        </p:column>
+                        <p:column headerText="Fecha" width="120">
+                            <h:outputText value="#{factura.encabezado.fechaEmision}">
+                                <f:convertDateTime pattern="dd/MM/yyyy" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="Proveedor">
+                            <h:outputText value="#{factura.encabezado.emisor.nombre}" />
+                        </p:column>
+                        <p:column headerText="Total Neto" width="120" styleClass="has-text-right">
+                            <h:outputText value="#{factura.resumen.totalVentaNeta}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </p:column>
+                        <p:column headerText="IVA" width="100" styleClass="has-text-right">
+                            <h:outputText value="#{factura.resumen.totalImpuesto}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </p:column>
+                    </p:dataTable>
+                </div>
+            </section>
+        </h:form>
+    </h:body>
+</html>

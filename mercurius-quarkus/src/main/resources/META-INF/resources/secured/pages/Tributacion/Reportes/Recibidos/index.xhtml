@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Comprobantes Recibidos - Reportes Tributarios</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .reportes-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .reportes-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+                font-weight: bold;
+                display: block;
+                margin-bottom: 0.5rem;
+                color: white;
+            }
+
+            .stat-label {
+                font-size: 0.875rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: white;
+            }
+
+            .filter-section {
+                background: var(--bulma-scheme-main);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .filter-section .ui-outputlabel,
+            .filter-section .ui-outputlabel-label,
+            .filter-section p\:outputLabel {
+                color: var(--bulma-text) !important;
+            }
+
+            .filter-section .columns {
+                align-items: flex-start;
+            }
+
+            .filter-section .field-row {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .summary-card {
+                background: var(--bulma-scheme-main-bis);
+                border-left: 4px solid #17a2b8;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                border-radius: 0.25rem;
+                color: var(--bulma-text);
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+
+            <div class="reportes-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                <p class="title is-3 has-text-centered">Comprobantes Recibidos</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">#{comprobantesRecibidosController.totalFacturasReporte}</span>
+                        <span class="stat-label">Total Recibidos</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">#{comprobantesRecibidosController.facturasProcesadasReporte}</span>
+                        <span class="stat-label">Procesados</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">#{comprobantesRecibidosController.facturasPendientesReporte}</span>
+                        <span class="stat-label">Pendientes</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <h:form id="filtros">
+                    <div class="columns is-vcentered is-multiline">
+                        <div class="column is-narrow">
+                            <div class="field-row">
+                                <p:outputLabel value="Fecha Inicio: " style="font-weight: bold;"/>
+                                <p:datePicker value="#{comprobantesRecibidosController.reportFechaInicio}" showIcon="true"
+                                              style="background: var(--bulma-background-l); color: var(--bulma-text);"/>
+                            </div>
+                        </div>
+                        <div class="column is-narrow">
+                            <div class="field-row">
+                                <p:outputLabel value="Fecha Fin: " style="font-weight: bold;"/>
+                                <p:datePicker value="#{comprobantesRecibidosController.reportFechaFin}" showIcon="true"
+                                              style="background: var(--bulma-background-l); color: var(--bulma-text);"/>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="buttons">
+                                <p:commandLink styleClass="button is-info"
+                                               action="#{comprobantesRecibidosController.generarReporteReport}"
+                                               update="comprobantesForm growl">
+                                    <i class="pi pi-calculator"></i>
+                                    <span>Generar Reporte</span>
+                                </p:commandLink>
+                                <p:commandLink styleClass="button is-light"
+                                               action="#{comprobantesRecibidosController.limpiarFiltrosReport}"
+                                               update="filtros comprobantesForm">
+                                    <i class="pi pi-filter-slash"></i>
+                                    <span>Limpiar</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                    </div>
+                </h:form>
+            </div>
+
+            <div class="summary-card">
+                <h:form id="resumen">
+                    <div class="columns">
+                        <div class="column">
+                            <h4 class="title is-5">Resumen de Compras</h4>
+                        </div>
+                    </div>
+                    <div class="columns">
+                        <div class="column">
+                            <p><strong>Total Comprobantes:</strong></p>
+                            <p class="title is-4">
+                                <h:outputText value="#{comprobantesRecibidosController.reportTotalComprobantes}">
+                                    <f:convertNumber type="currency" currencySymbol="₡"/>
+                                </h:outputText>
+                            </p>
+                        </div>
+                        <div class="column">
+                            <p><strong>Total Impuesto:</strong></p>
+                            <p class="title is-4">
+                                <h:outputText value="#{comprobantesRecibidosController.reportTotalImpuesto}">
+                                    <f:convertNumber type="currency" currencySymbol="₡"/>
+                                </h:outputText>
+                            </p>
+                        </div>
+                        <div class="column">
+                            <p><strong>Base Imponible:</strong></p>
+                            <p class="title is-4">
+                                <h:outputText value="#{comprobantesRecibidosController.reportTotalBaseImponible}">
+                                    <f:convertNumber type="currency" currencySymbol="₡"/>
+                                </h:outputText>
+                            </p>
+                        </div>
+                    </div>
+                </h:form>
+            </div>
+
+            <div class="tab-content-card">
+                <h:form id="comprobantesForm">
+                    <p:dataTable value="#{comprobantesRecibidosController.facturas}" var="factura" 
+                                 widgetVar="FacturasTable" paginator="true" rows="10"
+                                 emptyMessage="No hay comprobantes">
+                        
+                        <p:column headerText="ID">
+                            <h:outputText value="#{factura.id}"/>
+                        </p:column>
+                        
+                        <p:column headerText="Número">
+                            <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
+                        </p:column>
+                        
+                        <p:column headerText="Fecha">
+                            <h:outputText value="#{factura.encabezado.fechaEmision}" converter="localDateTimeConverter"/>
+                        </p:column>
+                        
+                        <p:column headerText="Emisor">
+                            <h:outputText value="#{factura.encabezado.emisor.nombre}"/>
+                        </p:column>
+                        
+                        <p:column headerText="Total">
+                            <h:outputText value="#{factura.resumen.totalComprobante}">
+                                <f:convertNumber type="currency" currencySymbol="₡"/>
+                            </h:outputText>
+                        </p:column>
+                        
+                        <p:column headerText="Impuesto">
+                            <h:outputText value="#{factura.resumen.totalImpuesto}">
+                                <f:convertNumber type="currency" currencySymbol="₡"/>
+                            </h:outputText>
+                        </p:column>
+                        
+                        <p:column headerText="Procesado">
+                            <p:tag severity="#{factura.processed ? 'success' : 'warning'}"
+                                   value="#{factura.processed ? 'Procesado' : 'Pendiente'}"/>
+                        </p:column>
+                        
+                        <p:column headerText="Pagado">
+                            <p:tag severity="#{factura.paid ? 'success' : 'danger'}"
+                                   value="#{factura.paid ? 'Pagado' : 'Pendiente'}"/>
+                        </p:column>
+                    </p:dataTable>
+                </h:form>
+            </div>
+        </section>
+
+    </h:body>
+</html>
