@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns="https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/mensajeHacienda" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/mensajeHacienda" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.4" vc:minVersion="1.1">
+<xs:schema xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/mensajeHacienda" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/mensajeHacienda" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.4" vc:minVersion="1.1">
 	<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="../../xmldsig-core-schema.xsd"/>
 	<xs:element name="MensajeHacienda">
 		<xs:annotation>
@@ -73,7 +73,7 @@
 					<xs:simpleType>
 						<xs:restriction base="xs:string">
 							<xs:maxLength value="12"/>
-							<xs:pattern value="\d{9,12}"/>
+							<xs:pattern value="[\dA-Za-z]{9,12}"/>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
@@ -134,7 +134,7 @@
 					<xs:simpleType>
 						<xs:restriction base="xs:string">
 							<xs:maxLength value="20"/>
-							<xs:pattern value="\d{9,20}"/>
+							<xs:pattern value="[\dA-Za-z]{9,20}"/>
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
@@ -194,7 +194,7 @@
 						</xs:restriction>
 					</xs:simpleType>
 				</xs:element>
-				<xs:element ref="ds:Signature" minOccurs="1" maxOccurs="1"/>
+				<xs:element ref="ds:Signature" minOccurs="1" maxOccurs="5"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
