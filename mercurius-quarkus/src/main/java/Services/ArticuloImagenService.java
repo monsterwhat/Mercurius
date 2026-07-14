@@ -1,0 +1,82 @@
+package Services;
+
+import Models.Articulos.ArticuloImagen;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Named;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
+import java.util.Collections;
+import java.util.List;
+
+@Named
+@ApplicationScoped
+public class ArticuloImagenService extends GService<ArticuloImagen> {
+
+    @Override
+    protected @Nonnull Class<ArticuloImagen> getEntityClass() {
+        return ArticuloImagen.class;
+    }
+
+    public @Nullable ArticuloImagen findById(@Nonnull Long id) {
+        try {
+            return em.find(getEntityClass(), id);
+        } catch (PersistenceException e) {
+            alertasService.registrarAlerta("Error", "Error finding image: " + e.getMessage(), null, 0, "ArticuloImagenService.findById()", null, e.getMessage());
+            return null;
+        }
+    }
+
+    @Transactional
+    public void deleteById(@Nonnull Long id) {
+        try {
+            ArticuloImagen entity = em.find(getEntityClass(), id);
+            if (entity != null) {
+                em.remove(entity);
+            }
+        } catch (PersistenceException e) {
+            alertasService.registrarAlerta("Error", "Error deleting image: " + e.getMessage(), null, 0, "ArticuloImagenService.deleteById()", null, e.getMessage());
+        }
+    }
+
+    public @Nonnull List<ArticuloImagen> findByArticuloCodigo(@Nonnull Long articuloCodigo) {
+        try {
+            TypedQuery<ArticuloImagen> query = em.createQuery(
+                "SELECT i FROM ArticuloImagen i WHERE i.articulo.codigo = :codigo ORDER BY i.orden ASC",
+                ArticuloImagen.class);
+            query.setParameter("codigo", articuloCodigo);
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            alertasService.registrarAlerta("Error", "Error listing images: " + e.getMessage(), null, 0, "ArticuloImagenService.findByArticuloCodigo()", null, e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Transactional
+    public void updateOrden(@Nonnull Long imagenId, int nuevoOrden) {
+        try {
+            ArticuloImagen imagen = em.find(getEntityClass(), imagenId);
+            if (imagen != null) {
+                imagen.setOrden(nuevoOrden);
+                em.merge(imagen);
+            }
+        } catch (PersistenceException e) {
+            alertasService.registrarAlerta("Error", "Error updating image order: " + e.getMessage(), null, 0, "ArticuloImagenService.updateOrden()", null, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public int getNextOrden(@Nonnull Long articuloCodigo) {
+        try {
+            TypedQuery<Integer> query = em.createQuery(
+                "SELECT COALESCE(MAX(i.orden), -1) + 1 FROM ArticuloImagen i WHERE i.articulo.codigo = :codigo",
+                Integer.class);
+            query.setParameter("codigo", articuloCodigo);
+            return query.getSingleResult();
+        } catch (PersistenceException e) {
+            return 0;
+        }
+    }
+}
