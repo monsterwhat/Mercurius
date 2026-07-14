@@ -143,6 +143,14 @@
                                             <p:tooltip for="unprocessedChip" value="Sin procesar" position="top"/>
                                         </p:column>
 
+                                        <p:column headerText="Foto" exportable="false" style="width: 60px; text-align: center;">
+                                            <p:graphicImage value="#{ArticulosController.getImagenStream(articulo.imagenes.get(0).id)}"
+                                                            rendered="#{not empty articulo.imagenes}"
+                                                            style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;"/>
+                                            <i class="pi pi-image has-text-grey-light" style="font-size: 1.5rem;"
+                                               rendered="#{empty articulo.imagenes}"/>
+                                        </p:column>
+
                                         <p:column headerText="Código" sortBy="#{articulo.codigo}" visible="false">
                                             <h:outputText value="#{articulo.codigo}"/>
                                         </p:column>

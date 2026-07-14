@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Métricas de Proveedores</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <style>
+            .reportes-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+            .reportes-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 1rem;
+                margin-top: 1rem;
+            }
+            .stat-card {
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 0.75rem;
+                padding: 1rem;
+                text-align: center;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .stat-number {
+                font-size: 1.5rem;
+                font-weight: bold;
+                display: block;
+                margin-bottom: 0.5rem;
+                color: white;
+            }
+            .stat-label {
+                font-size: 0.875rem;
+                opacity: 0.9;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: white;
+            }
+            .chart-container {
+                background: var(--bulma-scheme-main);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .progress-container {
+                background: #e0e0e0;
+                border-radius: 1rem;
+                height: 1.2rem;
+                overflow: hidden;
+                min-width: 120px;
+            }
+            .progress-bar {
+                height: 100%;
+                border-radius: 1rem;
+                transition: width 0.5s ease;
+            }
+            .progress-bar.is-success { background-color: #48c78e; }
+            .progress-bar.is-warning { background-color: #ffdd57; }
+            .progress-bar.is-danger { background-color: #f14668; }
+            .rank-number {
+                font-weight: bold;
+                font-size: 1.2rem;
+                width: 2rem;
+                display: inline-block;
+                text-align: center;
+            }
+            .rank-1 { color: #ffd700; }
+            .rank-2 { color: #c0c0c0; }
+            .rank-3 { color: #cd7f32; }
+        </style>
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+
+            <!-- Header -->
+            <div class="reportes-header" style="background: linear-gradient(135deg, #363636 0%, #5a5a5a 100%);">
+                <p class="title is-3 has-text-centered">Métricas de Proveedores</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">#{departamentoMetricoController.totalProveedores}</span>
+                        <span class="stat-label">Proveedores</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">
+                            <h:outputText value="#{departamentoMetricoController.scorePromedio}">
+                                <f:convertNumber pattern="#0.0" />
+                            </h:outputText>
+                        </span>
+                        <span class="stat-label">Score Promedio</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">
+                            <h:outputText value="#{departamentoMetricoController.comprasTotalesMes}">
+                                <f:convertNumber type="currency" currencySymbol="&#8353;" />
+                            </h:outputText>
+                        </span>
+                        <span class="stat-label">Compras Totales</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recalculate button (admin only) -->
+            <h:form id="actions">
+                <div class="buttons is-centered mb-4">
+                    <p:commandLink styleClass="button is-link"
+                                   action="#{departamentoMetricoController.calcularMetricas}"
+                                   update="charts ranking growl"
+                                   rendered="#{SessionController.admin}">
+                        <span class="icon is-small"><i class="pi pi-refresh"></i></span>
+                        <span>Recalcular Métricas</span>
+                    </p:commandLink>
+                </div>
+            </h:form>
+
+            <!-- Charts Section -->
+            <h:form id="charts">
+                <div class="columns is-multiline">
+                    <!-- Top 5 Volume Chart -->
+                    <div class="column is-half">
+                        <div class="chart-container">
+                            <p class="title is-5 has-text-centered">Top 5 Proveedores por Volumen de Compra</p>
+                            <p:chart type="bar" value="#{departamentoMetricoController.topVolumeChartConfig}"
+                                     style="height: 300px; width: 100%;"/>
+                        </div>
+                    </div>
+
+                    <!-- On-Time Delivery Chart -->
+                    <div class="column is-half">
+                        <div class="chart-container">
+                            <p class="title is-5 has-text-centered">Comparación de Entregas a Tiempo</p>
+                            <p:chart type="bar" value="#{departamentoMetricoController.onTimeDeliveryChartConfig}"
+                                     style="height: 300px; width: 100%;"/>
+                        </div>
+                    </div>
+
+                    <!-- Score Distribution Chart -->
+                    <div class="column is-half">
+                        <div class="chart-container">
+                            <p class="title is-5 has-text-centered">Distribución de Scores</p>
+                            <p:chart type="doughnut" value="#{departamentoMetricoController.scoreDistributionConfig}"
+                                     style="height: 300px; width: 100%;"/>
+                        </div>
+                    </div>
+                </div>
+            </h:form>
+
+            <!-- Performance Ranking Table -->
+            <h:form id="ranking">
+                <div class="chart-container">
+                    <p class="title is-5 has-text-centered">Ranking de Rendimiento de Proveedores</p>
+
+                    <p:dataTable value="#{departamentoMetricoController.metricas}" var="m"
+                                 widgetVar="MetricasTable" paginator="true" rows="10"
+                                 paginatorPosition="bottom"
+                                 emptyMessage="No hay métricas disponibles. Haga clic en 'Recalcular Métricas' para generar datos."
+                                 sortBy="#{m.score}" sortOrder="descending"
+                                 reflow="true">
+
+                        <f:facet name="header">
+                            <div class="columns is-vcentered">
+                                <div class="column">
+                                    <p:inputText id="globalFilter" onkeyup="PF('MetricasTable').filter()"
+                                                 style="width: 100%"
+                                                 placeholder="Buscar proveedor..." />
+                                </div>
+                            </div>
+                        </f:facet>
+
+                        <p:column headerText="#" width="5%" styleClass="has-text-centered">
+                            <span class="rank-number #{m.score >= 80 ? 'rank-1' : (m.score >= 60 ? 'rank-2' : 'rank-3')}">
+                                <h:outputText value="#{m.id}" />
+                            </span>
+                        </p:column>
+
+                        <p:column headerText="Proveedor" sortBy="#{m.departamento.nombre}">
+                            <h:outputText value="#{m.departamento.nombre != null ? m.departamento.nombre : 'Sin nombre'}" />
+                        </p:column>
+
+                        <p:column headerText="Score" sortBy="#{m.score}" styleClass="has-text-centered">
+                            <p:tag severity="#{departamentoMetricoController.getScoreSeverity(m.score)}"
+                                   value="#{m.score}" rounded="true">
+                                <f:convertNumber pattern="#0.0" />
+                            </p:tag>
+                        </p:column>
+
+                        <p:column headerText="Progreso" styleClass="has-text-centered">
+                            <div class="progress-container">
+                                <div class="progress-bar #{departamentoMetricoController.getBarColor(m.score)}"
+                                     style="#{departamentoMetricoController.getBarWidth(m.score)}">
+                                </div>
+                            </div>
+                        </p:column>
+
+                        <p:column headerText="Facturas" sortBy="#{m.totalFacturasRecibidas}" styleClass="has-text-centered">
+                            <h:outputText value="#{m.totalFacturasRecibidas}" />
+                        </p:column>
+
+                        <p:column headerText="Pagadas" sortBy="#{m.facturasPagadas}" styleClass="has-text-centered">
+                            <h:outputText value="#{m.facturasPagadas}" />
+                        </p:column>
+
+                        <p:column headerText="Monto Total" sortBy="#{m.montoTotalCompras}" styleClass="has-text-right">
+                            <h:outputText value="#{m.montoTotalCompras}">
+                                <f:convertNumber type="currency" currencySymbol="&#8353;" />
+                            </h:outputText>
+                        </p:column>
+
+                        <p:column headerText="On-Time %" sortBy="#{m.tasaOnTimeDelivery}" styleClass="has-text-centered">
+                            <h:outputText value="#{m.tasaOnTimeDelivery}">
+                                <f:convertNumber pattern="#0.0'%" />
+                            </h:outputText>
+                        </p:column>
+
+                        <p:column headerText="Entrega Prom." sortBy="#{m.tiempoEntregaPromedio}" styleClass="has-text-centered">
+                            <h:outputText value="#{m.tiempoEntregaPromedio}">
+                                <f:convertNumber pattern="#0.0' días'" />
+                            </h:outputText>
+                        </p:column>
+
+                        <p:column headerText="Artículos" sortBy="#{m.articulosComprados}" styleClass="has-text-centered">
+                            <h:outputText value="#{m.articulosComprados}" />
+                        </p:column>
+
+                        <p:column headerText="Último Cálculo" sortBy="#{m.fechaCalculo}">
+                            <h:outputText value="#{m.fechaCalculo}">
+                                <f:convertDateTime type="date" dateStyle="medium" />
+                            </h:outputText>
+                        </p:column>
+
+                    </p:dataTable>
+                </div>
+            </h:form>
+
+        </section>
+    </h:body>
+</html>
