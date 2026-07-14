@@ -6,20 +6,18 @@ import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import javax.xml.crypto.dsig.CanonicalizationMethod;
-import javax.xml.crypto.dsig.DigestMethod;
-import javax.xml.crypto.dsig.Reference;
-import javax.xml.crypto.dsig.SignatureMethod;
-import javax.xml.crypto.dsig.SignedInfo;
-import javax.xml.crypto.dsig.Transform;
-import javax.xml.crypto.dsig.XMLSignature;
-import javax.xml.crypto.dsig.XMLSignatureException;
-import javax.xml.crypto.dsig.XMLSignatureFactory;
-import javax.xml.crypto.dsig.dom.DOMSignContext;
-import javax.xml.crypto.dsig.keyinfo.KeyInfo;
-import javax.xml.crypto.dsig.keyinfo.KeyInfoFactory;
-import javax.xml.crypto.dsig.keyinfo.X509Data;
-import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
+import xades4j.production.XadesEpesSigningProfile;
+import xades4j.production.XadesSigner;
+import xades4j.production.Enveloped;
+import xades4j.production.SigningCertificateMode;
+import xades4j.production.BasicSignatureOptions;
+import xades4j.properties.SignaturePolicyIdentifierProperty;
+import xades4j.properties.ObjectIdentifier;
+import xades4j.properties.IdentifierType;
+import xades4j.providers.KeyingDataProvider;
+import xades4j.providers.SignaturePolicyInfoProvider;
+import xades4j.providers.impl.DirectKeyingDataProvider;
+import xades4j.XAdES4jException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -38,19 +36,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.LocalDate;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
-import javax.security.auth.x500.X500Principal;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 
@@ -142,101 +132,26 @@ public class HaciendaSigner {
                 return SignResult.error("No private key or certificate found in keystore");
             }
 
-            // ── XAdES-EPES: Build QualifyingProperties ──────────────────────
-            String xadesNs = "http://uri.etsi.org/01903/v1.3.2#";
-            String dsNs    = "http://www.w3.org/2000/09/xmldsig#";
+            // ── XAdES-EPES: Build signature using xades4j ────────────────
+            KeyingDataProvider kdp = new DirectKeyingDataProvider(certificate, privateKey);
 
-            Element qualifyingProps = doc.createElementNS(xadesNs, "xades:QualifyingProperties");
-            qualifyingProps.setAttributeNS(null, "Target", "#signatureId");
+            SignaturePolicyInfoProvider policyInfoProvider = () ->
+                new SignaturePolicyIdentifierProperty(
+                    new ObjectIdentifier(
+                        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.2/facturaElectronica",
+                        IdentifierType.URI,
+                        "Política de firma para factura electrónica de Costa Rica"),
+                    new ByteArrayInputStream("Politica de Factura Digital".getBytes()));
 
-            Element signedProps = doc.createElementNS(xadesNs, "xades:SignedProperties");
-            signedProps.setAttributeNS(null, "Id", "signedPropsId");
+            XadesSigner signer = new XadesEpesSigningProfile(kdp, policyInfoProvider)
+                .withBasicSignatureOptions(new BasicSignatureOptions()
+                    .includeSigningCertificate(SigningCertificateMode.SIGNING_CERTIFICATE)
+                    .includeSubjectName(true)
+                    .includeIssuerSerial(true))
+                .newSigner();
 
-            Element signedSigProps = doc.createElementNS(xadesNs, "xades:SignedSignatureProperties");
-
-            // SigningTime
-            Element signingTime = doc.createElementNS(xadesNs, "xades:SigningTime");
-            signingTime.setTextContent(ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT));
-            signedSigProps.appendChild(signingTime);
-
-            // SigningCertificate → Cert → CertDigest + IssuerSerial
-            Element signingCert = doc.createElementNS(xadesNs, "xades:SigningCertificate");
-            Element cert = doc.createElementNS(xadesNs, "xades:Cert");
-
-            // CertDigest (SHA-256 of the certificate)
-            Element certDigest = doc.createElementNS(xadesNs, "xades:CertDigest");
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] certDigestVal = md.digest(certificate.getEncoded());
-
-            Element digestMethod = doc.createElementNS(dsNs, "ds:DigestMethod");
-            digestMethod.setAttributeNS(null, "Algorithm", DigestMethod.SHA256);
-            Element digestValue = doc.createElementNS(dsNs, "ds:DigestValue");
-            digestValue.setTextContent(java.util.Base64.getEncoder().encodeToString(certDigestVal));
-
-            certDigest.appendChild(digestMethod);
-            certDigest.appendChild(digestValue);
-            cert.appendChild(certDigest);
-
-            // IssuerSerial
-            Element issuerSerial = doc.createElementNS(xadesNs, "xades:IssuerSerial");
-            X500Principal issuerPrincipal = certificate.getIssuerX500Principal();
-
-            Element x509IssuerName = doc.createElementNS(dsNs, "ds:X509IssuerName");
-            x509IssuerName.setTextContent(issuerPrincipal.getName());
-
-            Element x509SerialNumber = doc.createElementNS(dsNs, "ds:X509SerialNumber");
-            x509SerialNumber.setTextContent(certificate.getSerialNumber().toString());
-
-            issuerSerial.appendChild(x509IssuerName);
-            issuerSerial.appendChild(x509SerialNumber);
-            cert.appendChild(issuerSerial);
-            signingCert.appendChild(cert);
-            signedSigProps.appendChild(signingCert);
-
-            // SignaturePolicyIdentifier → SignaturePolicyImplied (EPES)
-            Element sigPolicyId = doc.createElementNS(xadesNs, "xades:SignaturePolicyIdentifier");
-            Element sigPolicyImplied = doc.createElementNS(xadesNs, "xades:SignaturePolicyImplied");
-            sigPolicyId.appendChild(sigPolicyImplied);
-            signedSigProps.appendChild(sigPolicyId);
-
-            signedProps.appendChild(signedSigProps);
-            qualifyingProps.appendChild(signedProps);
-
-            // Insert QualifyingProperties into the document BEFORE signing
-            doc.getDocumentElement().appendChild(qualifyingProps);
-
-            // ── Create the XML Signature with TWO references ─────────────────
-            XMLSignatureFactory sigFactory = XMLSignatureFactory.getInstance("DOM");
-
-            // Reference 1: the document (enveloped → removes itself from digest)
-            Reference contentRef = sigFactory.newReference("",
-                sigFactory.newDigestMethod(DigestMethod.SHA256, null),
-                Collections.singletonList(
-                    sigFactory.newTransform(Transform.ENVELOPED, (javax.xml.crypto.dsig.spec.TransformParameterSpec) null)),
-                null, null);
-
-            // Reference 2: XAdES SignedProperties (type per ETSI TS 101 903)
-            Reference signedPropsRef = sigFactory.newReference("#signedPropsId",
-                sigFactory.newDigestMethod(DigestMethod.SHA256, null),
-                Collections.emptyList(),
-                "http://uri.etsi.org/01903#SignedProperties", null);
-
-            SignedInfo signedInfo = sigFactory.newSignedInfo(
-                sigFactory.newCanonicalizationMethod(CanonicalizationMethod.INCLUSIVE, (C14NMethodParameterSpec) null),
-                sigFactory.newSignatureMethod(SignatureMethod.RSA_SHA256, null),
-                Arrays.asList(contentRef, signedPropsRef));
-
-            // KeyInfo with X509Data
-            KeyInfoFactory kiFactory = sigFactory.getKeyInfoFactory();
-            List<X509Certificate> x509Content = new ArrayList<>();
-            x509Content.add(certificate);
-            X509Data x509Data = kiFactory.newX509Data(x509Content);
-            KeyInfo keyInfo = kiFactory.newKeyInfo(Collections.singletonList(x509Data));
-
-            // Sign — XMLSignature(id="signatureId") so QualifyingProperties.Target resolves
-            DOMSignContext signContext = new DOMSignContext(privateKey, doc.getDocumentElement());
-            XMLSignature signature = sigFactory.newXMLSignature(signedInfo, keyInfo, null, "signatureId", null);
-            signature.sign(signContext);
+            Element elemToSign = doc.getDocumentElement();
+            new Enveloped(signer).sign(elemToSign);
 
             // Serialize
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -249,7 +164,7 @@ public class HaciendaSigner {
 
             return SignResult.ok(outputStream.toString("UTF-8"));
 
-        } catch (ParserConfigurationException | SAXException | IOException | GeneralSecurityException | TransformerException | XMLSignatureException | javax.xml.crypto.MarshalException e) {
+        } catch (ParserConfigurationException | SAXException | IOException | GeneralSecurityException | TransformerException | XAdES4jException e) {
             alertasService.registrarAlerta("Error Firmando XML", "Error al firmar XML: " + e.getMessage(), null, 0, "HaciendaSigner.signXml()", null, e.getMessage());
             throw new RuntimeException("Error signing XML: " + e.getMessage(), e);
         } catch (Exception e) {
