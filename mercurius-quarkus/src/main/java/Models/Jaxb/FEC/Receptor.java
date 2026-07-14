@@ -3,6 +3,8 @@ package Models.Jaxb.FEC;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.Data;
 
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -27,7 +29,7 @@ public class Receptor {
     private String otrasSenasExtranjero;
 
     @XmlElement(name = "CorreoElectronico")
-    private String correoElectronico;
+    private List<CorreoElectronicoReceptor> correosElectronicos;
 
     public Receptor() {}
 
@@ -36,7 +38,9 @@ public class Receptor {
             this.nombre = src.getNombre();
             this.nombreComercial = src.getNombreComercial();
             this.otrasSenasExtranjero = src.getOtrasSenasExtranjero();
-            this.correoElectronico = src.getCorreoElectronico();
+            if (src.getCorreosElectronicos() != null)
+                this.correosElectronicos = src.getCorreosElectronicos().stream()
+                    .map(CorreoElectronicoReceptor::new).collect(Collectors.toList());
             if (src.getIdentificacion() != null)
                 this.identificacion = new IdentificacionReceptor(src.getIdentificacion());
             if (src.getUbicacion() != null)
