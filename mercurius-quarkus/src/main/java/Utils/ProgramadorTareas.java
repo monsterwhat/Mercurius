@@ -18,7 +18,9 @@ import Services.HaciendaApiService;
 import Services.InventarioService;
 import Services.LoteService;
 import Services.LoyaltyService;
+import Services.StockAlertService;
 import Services.TipoCambioService;
+import Models.StockAlert;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -56,6 +58,7 @@ public class ProgramadorTareas {
     @Inject @Nonnull private LoteService loteService;
     @Inject @Nonnull private BackupService backupService;
     @Inject @Nonnull private LoyaltyService loyaltyService;
+    @Inject @Nonnull private StockAlertService stockAlertService;
 
     //Media noche
     @Scheduled(cron = "0 0 0 * * ?")
@@ -143,7 +146,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                                 // If newly accepted, send to client
                                 if ("ACEPTADO".equals(nuevoEstado) && !"ACEPTADO".equals(estadoAnterior)) {
                                     try {
-                                        comprobanteService.enviarFacturaACliente(factura, null, null, null, null);
+                                        comprobanteService.enviarFacturaACliente(factura, null, null, null, null, null);
                                     } catch (RuntimeException e) {
                                         alertasService.registrarAlerta("Error", "Error enviando factura a cliente: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, e.getMessage());
                                     }
@@ -253,7 +256,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                             alertasService.registrarAlerta("Hacienda", "Estado recuperado tras 3h: " + clave + " -> " + nuevoEstado, null, 0, "ProgramadorTareas.verificarFacturasSinRespuesta3Horas()", null, null);
 
                             if ("ACEPTADO".equals(nuevoEstado)) {
-                                comprobanteService.enviarFacturaACliente(factura, null, null, null, null);
+                                comprobanteService.enviarFacturaACliente(factura, null, null, null, null, null);
                             }
                         }
                     }
@@ -558,6 +561,84 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
             alertasService.registrarAlerta("Error", "Error en notificarRechazosPendientes: " + e.getMessage(),
                 null, 0, "ProgramadorTareas.notificarRechazosPendientes()", null, e.getMessage());
         }
+    }
+
+    @Scheduled(cron = "0 30 7 * * ?")
+    public void notificarAlertasStock() {
+        try {
+            stockAlertService.checkAndCreateStockAlerts();
+
+            List<StockAlert> alertas = stockAlertService.getActiveStockAlerts();
+            if (alertas == null || alertas.isEmpty()) {
+                alertasService.registrarAlerta("Info", "Notificación diaria de stock: No hay alertas activas",
+                    null, 0, "ProgramadorTareas.notificarAlertasStock()", null, null);
+                return;
+            }
+
+            var currentSettings = appSettingsService.returnCurrent();
+            String correoNotif = currentSettings.getCorreoNotificaciones();
+            if (correoNotif == null || correoNotif.isEmpty()) {
+                alertasService.registrarAlerta("Info",
+                    "Notificación de stock omitida: correo de notificaciones no configurado",
+                    null, 0, "ProgramadorTareas.notificarAlertasStock()", null, null);
+                return;
+            }
+
+            String subject = "Alertas de Stock - " + alertas.size() + " artículos necesitan reabastecimiento";
+            String body = construirCuerpoAlertasStock(alertas);
+
+            emailer.sendEmails(
+                List.of(correoNotif),
+                subject, body,
+                currentSettings.getCorreoElectronico(),
+                currentSettings.getContrasenaCorreo(),
+                result -> alertasService.registrarAlerta("Info",
+                    "Notificación de stock enviada: " + result, null, 0,
+                    "ProgramadorTareas.notificarAlertasStock()", null, null)
+            );
+
+            alertasService.registrarAlerta("Info",
+                "Notificación de alertas de stock enviada a " + correoNotif + " (" + alertas.size() + " alertas)",
+                null, 0, "ProgramadorTareas.notificarAlertasStock()", null, null);
+
+        } catch (RuntimeException e) {
+            alertasService.registrarAlerta("Error", "Error en notificarAlertasStock: " + e.getMessage(),
+                null, 0, "ProgramadorTareas.notificarAlertasStock()", null, e.getMessage());
+        }
+    }
+
+    private String construirCuerpoAlertasStock(List<StockAlert> alertas) {
+        StringBuilder body = new StringBuilder();
+        body.append("Reporte Diario de Alertas de Stock\n");
+        body.append("===================================\n\n");
+        body.append("Total de artículos con stock bajo: ").append(alertas.size()).append("\n\n");
+
+        String fmt = "%-30s | %-12s | %-12s | %-15s | %-20s%n";
+        body.append(String.format(fmt, "Artículo", "Stock Actual", "Stock Mínimo", "Tipo", "Departamento"));
+        body.append(String.format(fmt, "------------------------------", "------------", "------------", "---------------", "--------------------"));
+
+        for (StockAlert alerta : alertas) {
+            String nombre = alerta.getArticulo() != null ? alerta.getArticulo().getNombre() : "N/A";
+            String depto = alerta.getDepartamento() != null ? alerta.getDepartamento().getNombre() : "N/A";
+            String tipo;
+            if ("out_of_stock".equals(alerta.getTipoAlerta())) {
+                tipo = "Sin Stock";
+            } else if ("low_stock".equals(alerta.getTipoAlerta())) {
+                tipo = "Stock Bajo";
+            } else {
+                tipo = alerta.getTipoAlerta();
+            }
+
+            body.append(String.format(fmt,
+                nombre,
+                alerta.getCantidadActual() != null ? alerta.getCantidadActual().toString() : "0",
+                alerta.getCantidadMinima() != null ? alerta.getCantidadMinima().toString() : "0",
+                tipo,
+                depto));
+        }
+
+        body.append("\nEste es un reporte automático generado por Mercurius.");
+        return body.toString();
     }
 
     @Scheduled(cron = "0 0 * * * ?")
