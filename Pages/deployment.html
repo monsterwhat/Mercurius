@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Despliegue en Producción — Mercurius</title>
+  <meta name="description" content="Guía para desplegar Mercurius en un entorno de producción.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <img src="assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="architecture.html" class="api-sidebar__link">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="deployment.html" class="api-sidebar__link api-sidebar__link--active">Despliegue</a>
+          <a href="tutorials/first-invoice.html" class="api-sidebar__link">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="features/inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="features/invoicing.html" class="api-sidebar__link">Facturación</a>
+          <a href="features/tax-compliance.html" class="api-sidebar__link">Cumplimiento Tributario</a>
+          <a href="features/analytics.html" class="api-sidebar__link">Analítica</a>
+          <a href="features/admin.html" class="api-sidebar__link">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="features/marketplace.html" class="api-sidebar__link">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Despliegue en Producción</h1>
+      <p class="page-header__desc">Guía para desplegar Mercurius en un entorno de producción.</p>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <section class="section reveal">
+        <h2 class="section__title">Descripción General</h2>
+        <p>Esta guía cubre los pasos necesarios para desplegar Mercurius en un servidor de producción.</p>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Compilar para Producción</h2>
+        <div class="code-block">
+          <div class="code-block__header">
+            <span class="code-block__lang">bash</span>
+            <button class="code-block__copy">Copiar</button>
+          </div>
+          <pre><code>mvn clean package -Dquarkus.package.type=uber-jar</code></pre>
+        </div>
+        <p>El uber-jar incluye todas las dependencias en un solo archivo JAR.</p>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Configuración de Producción</h2>
+        <p>Ajuste las propiedades de conexión y pool para el entorno de producción:</p>
+        <div class="code-block">
+          <div class="code-block__header">
+            <span class="code-block__lang">properties</span>
+            <button class="code-block__copy">Copiar</button>
+          </div>
+          <pre><code># Database (production)
+quarkus.datasource.jdbc.url=jdbc:mysql://localhost:3306/mercurius?serverTimezone=America/Costa_Rica&useSSL=true
+quarkus.datasource.jdbc.username=${DB_USERNAME}
+quarkus.datasource.jdbc.password=${DB_PASSWORD}
+
+# Schema strategy (do NOT use drop-and-create in production!)
+quarkus.hibernate.orm.database.generation=none
+
+# Connection pool
+quarkus.datasource.jdbc.min-size=5
+quarkus.datasource.jdbc.max-size=20</code></pre>
+        </div>
+        <div class="callout callout--warning">
+          <p><strong>Importante:</strong> Nunca use <code>drop-and-create</code> en producción. Use <code>none</code> o <code>validate</code> para el esquema.</p>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Certificados Digitales</h2>
+        <p>Para la facturación electrónica con Hacienda, necesita un certificado digital P12:</p>
+        <ul>
+          <li>Genere el certificado P12 con la información de su contribuyente.</li>
+          <li>Guárdelo en una ubicación segura con permisos restringidos.</li>
+          <li>Configure la ruta en <code>application.properties</code>.</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Credenciales de Hacienda</h2>
+        <p>Configure el acceso a la API de Hacienda para envío de comprobantes electrónicos:</p>
+        <ul>
+          <li>Registre su contribuyente en el portal de Hacienda para obtener acceso a la API.</li>
+          <li>Configure las credenciales OIDC proporcionadas por Hacienda.</li>
+          <li>Almacene las credenciales cifradas con AES-256-GCM.</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Ejecutar en Producción</h2>
+        <div class="code-block">
+          <div class="code-block__header">
+            <span class="code-block__lang">bash</span>
+            <button class="code-block__copy">Copiar</button>
+          </div>
+          <pre><code>java -jar target/mercurius-quarkus-1.0.0-SNAPSHOT-runner.jar</code></pre>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Configuración del Servidor</h2>
+        <p>Para un despliegue estable en producción, considere los siguientes ajustes:</p>
+
+        <h3>Proxy inverso con HTTPS</h3>
+        <p>Coloque nginx o Apache frente a Mercurius para terminar TLS y servir el certificado SSL:</p>
+        <ul>
+          <li>Certificado SSL wildcard o específico para su dominio.</li>
+          <li>Redirección automática de HTTP a HTTPS.</li>
+          <li>Compresión gzip para respuestas.</li>
+        </ul>
+
+        <h3>Ajustes de JVM</h3>
+        <p>Optimice el rendimiento de la JVM con estas banderas:</p>
+        <div class="code-block">
+          <div class="code-block__header">
+            <span class="code-block__lang">bash</span>
+            <button class="code-block__copy">Copiar</button>
+          </div>
+          <pre><code>java -Xms512m -Xmx2g -XX:+UseG1GC -XX:MaxGCPauseMillis=200 \
+  -jar target/mercurius-quarkus-1.0.0-SNAPSHOT-runner.jar</code></pre>
+        </div>
+
+        <h3>Pool de conexiones</h3>
+        <p>Ajuste el tamaño del pool según la carga esperada:</p>
+        <ul>
+          <li><code>min-size=5</code> — Conexiones mínimas mantenidas en el pool.</li>
+          <li><code>max-size=20</code> — Conexiones máximas simultáneas.</li>
+        </ul>
+
+        <h3>Niveles de registro</h3>
+        <p>Configure los logs para producción minimizando el ruido:</p>
+        <div class="code-block">
+          <div class="code-block__header">
+            <span class="code-block__lang">properties</span>
+            <button class="code-block__copy">Copiar</button>
+          </div>
+          <pre><code>quarkus.log.level=INFO
+quarkus.log.console.enable=false
+quarkus.log.file.enable=true
+quarkus.log.file.path=/var/log/mercurius/mercurius.log</code></pre>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Copias de Seguridad</h2>
+        <p>Bajo Configuración &gt; Copias de Seguridad, Mercurius ofrece un servicio de backup integrado.</p>
+        <div class="callout callout--info">
+          <p>Configure copias de seguridad periódicas de la base de datos MySQL. Combine el backup integrado con dump externo de MySQL para protección completa.</p>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Monitoreo</h2>
+        <p>Quarkus expone endpoints de salud y métricas listos para integrar con su sistema de monitoreo:</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Endpoint</th>
+                <th>Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>/q/health</code></td><td>Estado de salud de la aplicación y sus dependencias</td></tr>
+              <tr><td><code>/q/metrics</code></td><td>Métricas en formato Prometheus para dashboards</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="btn-group" style="justify-content: flex-end; margin-top: var(--space-8);">
+        <a href="tutorials/first-invoice.html" class="btn btn--primary">Primera Factura →</a>
+      </div>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="nav.js"></script>
+</body>
+</html>

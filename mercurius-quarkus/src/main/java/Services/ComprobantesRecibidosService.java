@@ -54,22 +54,24 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     
     // Method to create ComprobantesRecibidos with pre-persisted related entities
     // Uses proper cascading to ensure atomic transaction - if any entity fails, all rollback
-    public void createWithRelatedEntities(@Nonnull ComprobantesRecibidos entity, @Nonnull Encabezado encabezado, @Nonnull ResumenFactura resumenFactura) {
+    @Nonnull
+    public PrevalidationResult createWithRelatedEntities(@Nonnull ComprobantesRecibidos entity, @Nonnull Encabezado encabezado, @Nonnull ResumenFactura resumenFactura) {
+        PrevalidationResult prevalidation = null;
         try {
             entity.setEncabezado(encabezado);
             entity.setResumen(resumenFactura);
 
-            // Pre-validate before persisting — reject on ERROR-level issues
-            PrevalidationResult prevalidation = prevalidationService.prevalidarCompleto(entity);
+            // Pre-validate — record errors but ALWAYS persist
+            prevalidation = prevalidationService.prevalidarCompleto(entity);
             if (prevalidation.hasErrors()) {
                 String errorSummary = prevalidation.getErrors().stream()
                     .map(e -> e.getField() + ": " + e.getMessage())
                     .collect(java.util.stream.Collectors.joining("; "));
-                alertasService.registrarAlerta("Error",
-                    "Pre-validation failed for " + (entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : "?") +
+                entity.setPrevalidationErrors(errorSummary);
+                alertasService.registrarAlerta("Warning",
+                    "Pre-validation warnings for " + (entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : "?") +
                     ": " + errorSummary, null, 0,
                     "ComprobantesRecibidosService.createWithRelatedEntities()", null, errorSummary);
-                throw new RuntimeException("Pre-validation failed: " + errorSummary);
             }
 
             em.persist(entity);
@@ -81,9 +83,8 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity with related entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
-        } catch (RuntimeException e) {
-            throw e; // re-throw our own pre-validation failure
         }
+        return prevalidation;
     }
 
     @Override

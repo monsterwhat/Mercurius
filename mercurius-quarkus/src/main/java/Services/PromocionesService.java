@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**
@@ -50,6 +51,7 @@ public class PromocionesService extends GService<Promocion> {
     }
 
     @Override
+    @Transactional
     public void create(Promocion entity) {
         try {
             em.persist(entity);

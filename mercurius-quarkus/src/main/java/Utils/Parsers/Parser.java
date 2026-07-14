@@ -22,6 +22,7 @@ import Models.Encabezado.Ubicacion;
 import Models.Enums.Tipo_MedioPago;
 import Models.Resumen.CodigoTipoMoneda;
 import Models.Resumen.ResumenFactura;
+import Models.Validacion.PrevalidationResult;
 import Services.ComprobantesRecibidosService;
 import Services.ComprobantesEmitidosService;
 import Services.ComprobanteService;
@@ -1138,7 +1139,16 @@ nueva.setCantidad(original.getCantidad());
                     }
                 }
 
-                facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
+                PrevalidationResult prevalidation = facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
+
+                if (prevalidation != null && prevalidation.hasErrors()) {
+                    String errorSummary = prevalidation.getErrors().stream()
+                        .map(e -> e.getField() + ": " + e.getMessage())
+                        .collect(java.util.stream.Collectors.joining("; "));
+                    alertasService.registrarAlerta("Warning",
+                        "Factura saved with pre-validation warnings: " + factura.getEncabezado().getNumeroConsecutivo() +
+                        " — " + errorSummary, null, 0, "Parser.parseXML()", null, errorSummary);
+                }
 
                 // Verify ID assignment after creation
                 if (factura.getId() == null) {

@@ -1,0 +1,297 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analítica y Reportes — Mercurius</title>
+  <meta name="description" content="Dashboard en tiempo real, tendencias de ventas, análisis de rentabilidad y exportación.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../index.html" class="nav__logo">
+        <img src="../assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="../getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="../architecture.html" class="api-sidebar__link">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="../getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="../deployment.html" class="api-sidebar__link">Despliegue</a>
+          <a href="../tutorials/first-invoice.html" class="api-sidebar__link">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="invoicing.html" class="api-sidebar__link">Facturación</a>
+          <a href="tax-compliance.html" class="api-sidebar__link">Cumplimiento Tributario</a>
+          <a href="analytics.html" class="api-sidebar__link api-sidebar__link--active">Analítica</a>
+          <a href="admin.html" class="api-sidebar__link">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="../fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="marketplace.html" class="api-sidebar__link">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Analítica y Reportes</h1>
+      <p class="page-header__desc">Dashboard en tiempo real, tendencias de ventas, análisis de rentabilidad y exportación.</p>
+    </div>
+  </div>
+
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <section class="section reveal">
+        <h2 class="section__title">Visión General</h2>
+        <p>Mercurius incluye un motor de analítica avanzada que transforma los datos de su negocio en información accionable. Desde métricas en tiempo real hasta pronósticos de demanda basados en inteligencia artificial, el sistema le permite tomar decisiones informadas sobre inventario, precios y estrategia comercial.</p>
+      </section>
+
+      <section class="section reveal">
+        <div class="features__grid" style="grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-8);">
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </div>
+            <div class="feature-card__title">Dashboard Principal</div>
+            <p class="feature-card__desc">Métricas en tiempo real con ventas del día, semana y mes. Incluye productos más vendidos, alertas de stock bajo y caching multinivel con Caffeine para tiempos de carga óptimos.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </div>
+            <div class="feature-card__title">Análisis de Ventas</div>
+            <p class="feature-card__desc">Tendencias por período, ventas por categoría y producto, ticket promedio y comparativas período a período. Visualice el rendimiento desde múltiples ángulos para identificar oportunidades de crecimiento.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div class="feature-card__title">Rentabilidad</div>
+            <p class="feature-card__desc">Margen de ganancia por producto, análisis de costo vs precio de venta y ranking de productos más y menos rentables. Identifique qué productos generan mayor retorno sobre la inversión en inventario.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="feature-card__title">Estacionalidad</div>
+            <p class="feature-card__desc">Análisis de patrones estacionales con identificación de picos y valles de demanda. Utilice estos datos para planificar inventario, promociones y contratación de personal.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            </div>
+            <div class="feature-card__title">Pronóstico</div>
+            <p class="feature-card__desc">Motor de predicción de demanda basado en datos históricos con algoritmos de suavizado exponencial. Genera alertas de reabastecimiento y optimiza automáticamente los puntos de pedido.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <div class="feature-card__title">Merma</div>
+            <p class="feature-card__desc">Seguimiento detallado de pérdidas y daños con causas categorizadas (vencimiento, daño, robo, obsolescencia). Analice el impacto real de la merma en la rentabilidad del negocio.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </div>
+            <div class="feature-card__title">Exportación</div>
+            <p class="feature-card__desc">Generación de reportes en Excel (XLS/XLSX) y PDF con programación de envío automático por correo electrónico. Incluye 7 tipos de reportes predefinidos para diferentes necesidades del negocio.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Dashboard Principal</h2>
+        <p>El panel de control ofrece una vista completa del rendimiento de su negocio en todo momento, con datos actualizados en tiempo real y caching multinivel con Caffeine (5 tiers) para tiempos de carga óptimos.</p>
+        <ul>
+          <li>Métricas en tiempo real: ventas del día, transacciones procesadas y ticket promedio</li>
+          <li>Ventas del día, semana y mes con gráficos de tendencia</li>
+          <li>Top 10 productos más vendidos por período</li>
+          <li>Alertas de stock bajo con niveles configurables por producto</li>
+          <li>Distribución de ventas por método de pago</li>
+          <li>Resumen de documentos emitidos y su estado en Hacienda</li>
+          <li>Indicadores de rendimiento comparativos (día vs día anterior, semana vs semana anterior)</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Análisis de Ventas</h2>
+        <p>Visualice las tendencias de ventas desde múltiples ángulos para tomar decisiones informadas sobre precios, promociones y estrategia comercial.</p>
+        <ul>
+          <li>Tendencias por período: diario, semanal, mensual y anual</li>
+          <li>Ventas desglosadas por producto, categoría, familia y departamento</li>
+          <li>Comparativas período a período (mes vs mes anterior, año vs año anterior)</li>
+          <li>Ticket promedio y distribución de montos de transacción</li>
+          <li>Análisis de ventas por cliente con segmentación de compradores frecuentes vs ocasionales</li>
+          <li>Horarios pico de venta para optimizar turnos y atención</li>
+          <li>Productos complementarios y patrones de compra asociada</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Análisis de Rentabilidad</h2>
+        <p>Comprenda la rentabilidad real de cada producto en su inventario para optimizar precios y catálogo.</p>
+        <ul>
+          <li>Margen de ganancia por producto calculado sobre costo de adquisición</li>
+          <li>Análisis de costo vs. precio de venta con historial de cambios</li>
+          <li>Ranking de productos más y menos rentables por margen y por volumen</li>
+          <li>Rentabilidad por categoría y departamento</li>
+          <li>Impacto de descuentos y promociones en la rentabilidad neta</li>
+          <li>Análisis de punto de equilibrio por línea de producto</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Estacionalidad</h2>
+        <p>Identifique patrones en la demanda para planificar su inventario de forma inteligente y anticiparse a fluctuaciones estacionales.</p>
+        <ul>
+          <li>Análisis de patrones estacionales por producto, categoría y departamento</li>
+          <li>Identificación de picos y valles de demanda con visualización gráfica</li>
+          <li>Planificación de inventario basada en estacionalidad histórica</li>
+          <li>Detección de tendencias de crecimiento o declive a largo plazo</li>
+          <li>Comparativa de rendimiento entre períodos equivalentes</li>
+          <li>Recomendaciones de stock para períodos de alta demanda</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Pronóstico</h2>
+        <p>El motor de pronóstico utiliza datos históricos y algoritmos de suavizado exponencial para anticipar la demanda futura de cada producto.</p>
+        <ul>
+          <li>Predicción de demanda basada en datos históricos con algoritmos de suavizado exponencial</li>
+          <li>Alertas de reabastecimiento automáticas cuando el stock proyectado alcanza el punto de pedido</li>
+          <li>Optimización del punto de pedido basada enLead Time y variabilidad de demanda</li>
+          <li>Pronóstico por producto, categoría y departamento</li>
+          <li>Ajuste automático de predicciones según patrones estacionales detectados</li>
+          <li>Horizonte de pronóstico configurable (semanal, mensual, trimestral)</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Análisis de Merma</h2>
+        <p>Controle las pérdidas y comprenda su impacto en la rentabilidad del negocio con un sistema de seguimiento y categorización de mermas.</p>
+        <ul>
+          <li>Registro de pérdidas y daños con cantidad, producto y costo afectado</li>
+          <li>Causas de merma categorizadas: vencimiento, daño físico, robo, obsolescencia, errores de inventario</li>
+          <li>Impacto en rentabilidad calculado automáticamente</li>
+          <li>Tendencias de merma por período para detectar problemas recurrentes</li>
+          <li>Análisis de merma por producto, categoría y responsable</li>
+          <li>Reportes de merma comparativos para medir efectividad de controles implementados</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Exportación</h2>
+        <p>Genere reportes detallados en múltiples formatos y programe su envío automático por correo electrónico. Cada reporte se genera con los datos más recientes y puede personalizarse por período y filtros específicos.</p>
+        <ul>
+          <li>Excel (Apache POI): exportación en formato XLS y XLSX con formato condicional y gráficos</li>
+          <li>PDF (OpenPDF + PDFBox): documentos profesionales con tablas formateadas y encabezados personalizados</li>
+          <li>Reportes programados por correo electrónico con frecuencia configurable (diario, semanal, mensual)</li>
+          <li>Filtros por período, categoría, departamento y estado de documento</li>
+        </ul>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo de Reporte</th>
+                <th>Contenido</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Facturación</td>
+                <td>Resumen de ventas, impuestos y totales por período</td>
+              </tr>
+              <tr>
+                <td>Recibos</td>
+                <td>Detalle de comprobantes emitidos y su estado</td>
+              </tr>
+              <tr>
+                <td>Inventario</td>
+                <td>Stock actual, movimientos y valorización</td>
+              </tr>
+              <tr>
+                <td>Usuarios</td>
+                <td>Actividad y permisos de usuarios del sistema</td>
+              </tr>
+              <tr>
+                <td>Clientes</td>
+                <td>Historial de compras y datos fiscales</td>
+              </tr>
+              <tr>
+                <td>Familias</td>
+                <td>Desglose de ventas por subcategoría</td>
+              </tr>
+              <tr>
+                <td>Departamentos</td>
+                <td>Rendimiento por categoría principal</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div class="btn-group" style="justify-content: flex-end; margin-top: var(--space-8);">
+        <a href="admin.html" class="btn btn--primary">Administración →</a>
+      </div>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="../assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="../fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="../fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="../nav.js"></script>
+</body>
+</html>

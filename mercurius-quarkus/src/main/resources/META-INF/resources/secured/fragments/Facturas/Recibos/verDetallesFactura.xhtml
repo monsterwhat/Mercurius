@@ -8,6 +8,11 @@
               fitViewport="true" responsive="true" maximizable="true" dynamic="true" cache="false" modal="true">
 
         <h:form>
+            <p:outputPanel rendered="#{facturasController.selectedFactura.prevalidationErrors != null}" styleClass="notification is-warning is-light" style="margin-bottom: 1rem;">
+                <p><strong><i class="pi pi-exclamation-triangle"></i> Advertencias de validación:</strong></p>
+                <p style="white-space: pre-wrap; font-size: 0.9em;">#{facturasController.selectedFactura.prevalidationErrors}</p>
+            </p:outputPanel>
+
             <p:card styleClass="has-text-centered" title="Resumen Factura">
                 <p:dataTable var="Servicios" reflow="true" value="#{facturasController.selectedFactura.resumen}" >
                     <p:column styleClass="has-text-centered" headerText="Total Servicios Gravados">

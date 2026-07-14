@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Calendar;
+import jakarta.transaction.Transactional;
 import java.util.Date; 
 import java.util.List; 
 
@@ -41,6 +42,7 @@ public class InventarioService extends GService<Inventario> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull Inventario entity) {
         try {
             em.persist(entity);

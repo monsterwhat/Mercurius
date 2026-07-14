@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Primera Factura Electrónica — Mercurius</title>
+  <meta name="description" content="Tutorial paso a paso para crear y enviar su primera factura electrónica a Hacienda con Mercurius.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../index.html" class="nav__logo">
+        <img src="../assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="../getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="../architecture.html" class="api-sidebar__link">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="../getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="../deployment.html" class="api-sidebar__link">Despliegue</a>
+          <a href="first-invoice.html" class="api-sidebar__link api-sidebar__link--active">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="../features/inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="../features/invoicing.html" class="api-sidebar__link">Facturación</a>
+          <a href="../features/tax-compliance.html" class="api-sidebar__link">Cumplimiento Tributario</a>
+          <a href="../features/analytics.html" class="api-sidebar__link">Analítica</a>
+          <a href="../features/admin.html" class="api-sidebar__link">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="../fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="../features/marketplace.html" class="api-sidebar__link">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Primera Factura Electrónica</h1>
+      <p class="page-header__desc">Tutorial paso a paso para crear y enviar su primera factura electrónica a Hacienda con Mercurius.</p>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <!-- Prerrequisitos -->
+      <section class="section reveal">
+        <h2 class="section__title">Prerrequisitos</h2>
+        <div class="callout callout--info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>Antes de comenzar, asegúrese de tener Mercurius ejecutándose (ver la guía de <a href="../getting-started.html">Primeros Pasos</a>). Necesitará una conexión a Hacienda configurada con credenciales válidas para enviar facturas reales.</div>
+        </div>
+      </section>
+
+      <!-- Paso 1 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 1: Descargar el Catálogo CABYS</h2>
+        <p>Antes de crear productos, necesita el catálogo CABYS (Código de Actividades Económicas y Bienes y Servicios) de Hacienda. Este catálogo es obligatorio para identificar cada producto y servicio.</p>
+
+        <div class="callout callout--info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>Si no tiene el catálogo descargado, solo verá un botón para importarlo directamente desde Hacienda.</div>
+        </div>
+
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Acceder al Catálogo CABYS</h4>
+              <p>Vaya a <strong>Tributación &gt; Catálogo CABYS</strong>.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Importar desde Hacienda</h4>
+              <p>Si no tiene el catálogo, verá un botón <strong>Importar CABYS</strong>. Haga clic para descargarlo directamente desde los servicios de Hacienda. El proceso puede tomar unos minutos.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 2 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 2: Crear un Producto</h2>
+        <p>Primero, necesitamos un producto para facturar. Vaya a <strong>Inventario &gt; Productos &gt; Nuevo Producto</strong>.</p>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Complete los campos del producto</h4>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Campo</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><strong>Nombre</strong></td><td>Café Tarrazú Premium</td></tr>
+                    <tr><td><strong>Descripción</strong></td><td>Café de origen único, tueste medio, 250g</td></tr>
+                    <tr><td><strong>Código CABYS</strong></td><td><code>2020100000000</code> (Café tostado)</td></tr>
+                    <tr><td><strong>Precio</strong></td><td>₡4,500</td></tr>
+                    <tr><td><strong>Impuesto</strong></td><td>13% IVA</td></tr>
+                    <tr><td><strong>Estado</strong></td><td>Activo</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Guarde el producto</h4>
+              <p>Haga clic en <strong>Guardar</strong>. El producto aparecerá en el catálogo listo para facturarse.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 2 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 2: Registrar un Cliente</h2>
+        <p>Cree un cliente receptor de la factura. Vaya a <strong>Clientes &gt; Nuevo Cliente</strong>.</p>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Complete los datos del cliente</h4>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Campo</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><strong>Nombre</strong></td><td>Cafetería El grano de Oro S.A.</td></tr>
+                    <tr><td><strong>Cédula Jurídica</strong></td><td><code>3-101-XXXXXX</code></td></tr>
+                    <tr><td><strong>Tipo de identificación</strong></td><td>Cédula Jurídica</td></tr>
+                    <tr><td><strong>Dirección</strong></td><td>Avenida Central, San José</td></tr>
+                    <tr><td><strong>Correo</strong></td><td>facturacion@granooro.cr</td></tr>
+                    <tr><td><strong>Teléfono</strong></td><td>+506 2222-3333</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Guarde el cliente</h4>
+              <p>Haga clic en <strong>Guardar</strong>. Este cliente estará disponible como receptor al crear facturas.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 3 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 3: Configurar Datos de la Empresa Emisora</h2>
+        <p>Verifique que los datos de su empresa estén correctamente configurados. Vaya a <strong>Configuración &gt; Datos de la Empresa</strong>.</p>
+
+        <div class="callout callout--warning">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <div><strong>Importante:</strong> Los datos de la empresa emisora deben coincidir exactamente con los registrados ante Hacienda. Cualquier discrepancia causará el rechazo del documento.</div>
+        </div>
+
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Campos requeridos</h4>
+              <p>Asegúrese de completar cada uno de estos campos con la información exacta de su empresa:</p>
+              <ul>
+                <li><strong>Cédula Jurídica</strong>, número de cédula registrado ante Hacienda.</li>
+                <li><strong>Nombre legal (razón social)</strong>, denominación oficial de la empresa.</li>
+                <li><strong>Nombre comercial</strong>, nombre bajo el cual opera.</li>
+                <li><strong>Dirección física</strong>, dirección exacta registrada.</li>
+                <li><strong>Teléfono</strong>, línea telefónica de la empresa.</li>
+                <li><strong>Correo electrónico</strong>, correo electrónico oficial.</li>
+                <li><strong>Código de actividad económica (CAEA)</strong>, código asignado por Hacienda.</li>
+                <li><strong>Situación fiscal</strong>, Activo, Inactivo, etc.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Guarde la configuración</h4>
+              <p>Revise cada campo dos veces antes de guardar. Estos datos aparecerán en todos los comprobantes electrónicos que emita.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 4 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 4: Configurar Certificado Digital</h2>
+        <p>Para firmar documentos electrónicos, necesita un certificado digital P12 emitido por un proveedor autorizado por Hacienda.</p>
+
+        <div class="callout callout--info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>El certificado digital es requerido para la firma XAdES-EPES. Sin un certificado válido, no será posible enviar documentos a Hacienda.</div>
+        </div>
+
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Obtener certificado P12</h4>
+              <p>Adquiera su certificado digital de un proveedor autorizado por Hacienda (EJIE, Banco de Costa Rica, Firma &amp; Cripto, entre otros).</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Subir el certificado al sistema</h4>
+              <p>Vaya a <strong>Tributación &gt; Certificados &gt; Nuevo Certificado</strong>. Suba el archivo <code>.p12</code> e ingrese la contraseña del certificado.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">3</div>
+            <div class="steps__content">
+              <h4>Validación automática</h4>
+              <p>El sistema validará el certificado automáticamente: verifica la fecha de vencimiento, el emisor y la coherencia con los datos de la empresa. Si todo es correcto, el certificado quedará habilitado para firma.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 5 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 5: Crear la Factura</h2>
+        <p>Ahora está listo para crear su primera factura electrónica. Vaya a <strong>Facturación &gt; Nueva Factura</strong>.</p>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Seleccionar cliente</h4>
+              <p>En el campo de receptor, seleccione <strong>Cafetería El grano de Oro S.A.</strong></p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Agregar línea de producto</h4>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Campo</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><strong>Producto</strong></td><td>Café Tarrazú Premium</td></tr>
+                    <tr><td><strong>Cantidad</strong></td><td>10</td></tr>
+                    <tr><td><strong>Precio unitario</strong></td><td>₡4,500</td></tr>
+                    <tr><td><strong>Descuento</strong></td><td>0%</td></tr>
+                    <tr><td><strong>Impuesto</strong></td><td>13% IVA</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">3</div>
+            <div class="steps__content">
+              <h4>Resumen automático</h4>
+              <p>Mercurius calcula el desglose de impuestos de forma automática:</p>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Concepto</th>
+                      <th>Monto</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><strong>Subtotal</strong></td><td>₡45,000</td></tr>
+                    <tr><td><strong>IVA (13%)</strong></td><td>₡5,850</td></tr>
+                    <tr><td><strong>Total</strong></td><td>₡50,850</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 6 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 6: Generar y Validar el XML</h2>
+        <p>Al guardar la factura, Mercurius genera automáticamente el XML y lo valida contra los esquemas de Hacienda. A continuación se muestra una estructura simplificada del documento generado:</p>
+        <div class="code-block">
+          <div class="code-block__header">
+            <span class="code-block__lang">xml</span>
+            <button class="code-block__copy">Copiar</button>
+          </div>
+          <pre><code>&lt;FacturaElectronica xmlns="...facturaelectronica"&gt;
+  &lt;Clave&gt;...&lt;/Clave&gt;
+  &lt;CodigoActividad&gt;2020100&lt;/CodigoActividad&gt;
+  &lt;NumeroConsecutivo&gt;0010000101000000001&lt;/NumeroConsecutivo&gt;
+  &lt;FechaEmision&gt;2026-07-13T10:30:00-06:00&lt;/FechaEmision&gt;
+
+  &lt;Emisor&gt;
+    &lt;Nombre&gt;Su Empresa S.A.&lt;/Nombre&gt;
+    &lt;Identificacion&gt;
+      &lt;Tipo&gt;02&lt;/Tipo&gt;
+      &lt;Numero&gt;3-101-XXXXXX&lt;/Numero&gt;
+    &lt;/Identificacion&gt;
+    &lt;Ubicacion&gt;
+      &lt;Provincia&gt;01&lt;/Provincia&gt;
+      &lt;Canton&gt;01&lt;/Canton&gt;
+      &lt;Distrito&gt;01&lt;/Distrito&gt;
+    &lt;/Ubicacion&gt;
+  &lt;/Emisor&gt;
+
+  &lt;Receptor&gt;
+    &lt;Nombre&gt;Cafetería El grano de Oro S.A.&lt;/Nombre&gt;
+    &lt;Identificacion&gt;
+      &lt;Tipo&gt;02&lt;/Tipo&gt;
+      &lt;Numero&gt;3-101-XXXXXX&lt;/Numero&gt;
+    &lt;/Identificacion&gt;
+    &lt;CorreoElectronico&gt;facturacion@granooro.cr&lt;/CorreoElectronico&gt;
+  &lt;/Receptor&gt;
+
+  &lt;Detalles&gt;
+    &lt;LineaDetalle&gt;
+      &lt;NumeroLinea&gt;1&lt;/NumeroLinea&gt;
+      &lt;Codigo&gt;2020100000000&lt;/Codigo&gt;
+      &lt;Detalle&gt;Café Tarrazú Premium 250g&lt;/Detalle&gt;
+      &lt;Cantidad&gt;10&lt;/Cantidad&gt;
+      &lt;PrecioUnitario&gt;4500&lt;/PrecioUnitario&gt;
+      &lt;MontoTotal&gt;45000&lt;/MontoTotal&gt;
+      &lt;Descuento&gt;
+        &lt;MontoDescuento&gt;0&lt;/MontoDescuento&gt;
+      &lt;/Descuento&gt;
+      &lt;Impuesto&gt;
+        &lt;Codigo&gt;01&lt;/Codigo&gt;
+        &lt;CodigoTarifa&gt;08&lt;/CodigoTarifa&gt;
+        &lt;Tarifa&gt;13&lt;/Tarifa&gt;
+        &lt;Monto&gt;5850&lt;/Monto&gt;
+      &lt;/Impuesto&gt;
+      &lt;MontoTotalLinea&gt;50850&lt;/MontoTotalLinea&gt;
+    &lt;/LineaDetalle&gt;
+  &lt;/Detalles&gt;
+
+  &lt;ResumenFactura&gt;
+    &lt;CodigoMoneda&gt;CR&lt;/CodigoMoneda&gt;
+    &lt;TotalServGravados&gt;0&lt;/TotalServGravados&gt;
+    &lt;TotalServExentos&gt;0&lt;/TotalServExentos&gt;
+    &lt;TotalMercGravadas&gt;45000&lt;/TotalMercGravadas&gt;
+    &lt;TotalMercExentas&gt;0&lt;/TotalMercExentas&gt;
+    &lt;TotalGravado&gt;45000&lt;/TotalGravado&gt;
+    &lt;TotalExento&gt;0&lt;/TotalExento&gt;
+    &lt;TotalVenta&gt;45000&lt;/TotalVenta&gt;
+    &lt;TotalImpuestos&gt;5850&lt;/TotalImpuestos&gt;
+    &lt;TotalComprobante&gt;50850&lt;/TotalComprobante&gt;
+  &lt;/ResumenFactura&gt;
+&lt;/FacturaElectronica&gt;</code></pre>
+        </div>
+      </section>
+
+      <!-- Paso 7 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 7: Firmar el Documento</h2>
+        <p>Una vez validado el XML, firme el documento digitalmente. Mercurius aplica una firma XAdES-EPES utilizando su certificado P12.</p>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>¿Qué hace la firma XAdES?</h4>
+              <ul>
+                <li><strong>Garantiza la autoría</strong> del documento, confirma que fue emitido por su empresa.</li>
+                <li><strong>Protege contra modificaciones</strong> post-firma, cualquier alteración invalida la firma.</li>
+                <li><strong>Cumple con los requisitos legales</strong> de Costa Rica para comprobantes electrónicos.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Proceso automático</h4>
+              <p>Mercurius ejecuta la firma de forma transparente. El documento pasa de estado <strong>Generado</strong> a <strong>Firmado</strong> automáticamente al completar el proceso de firma XAdES-EPES.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 8 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 8: Enviar a Hacienda</h2>
+        <p>Envíe el documento firmado a la API MREC de Hacienda para su procesamiento.</p>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Autenticación</h4>
+              <p>Mercurius se autentica con Hacienda usando OIDC (OpenID Connect). El token se obtiene y almacena automáticamente.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Envío del documento</h4>
+              <p>El XML firmado se transmite a la API MREC de Hacienda junto con la clave de acceso y el tipo de comprobante.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">3</div>
+            <div class="steps__content">
+              <h4>Respuesta de Hacienda</h4>
+              <p>Hacienda valida y procesa el documento. El estado retornado puede ser:</p>
+              <ul>
+                <li><strong>Aceptado</strong>, el documento fue procesado correctamente.</li>
+                <li><strong>Rechazado</strong>, Hacienda detectó un error. Consulte el mensaje de rechazo para corregirlo.</li>
+                <li><strong>Procesando</strong>, el documento está en cola. Mercurius consultará el estado automáticamente.</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Paso 9 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 9: Verificar el Estado</h2>
+        <p>Después del envío, verifique el estado del documento en <strong>Tributación &gt; Comprobantes Emitidos</strong>.</p>
+        <p>El documento atraviesa estos estados durante su ciclo de vida:</p>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Borrador</h4>
+              <p>Documento creado pero aún no procesado. Puede editarlo libremente.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Generado</h4>
+              <p>XML generado y validado contra los esquemas XSD de Hacienda.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">3</div>
+            <div class="steps__content">
+              <h4>Firmado</h4>
+              <p>Firma XAdES-EPES aplicada con su certificado digital P12.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">4</div>
+            <div class="steps__content">
+              <h4>Enviado</h4>
+              <p>Documento transmitido a la API MREC de Hacienda.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">5</div>
+            <div class="steps__content">
+              <h4>Aceptado ✓</h4>
+              <p>Hacienda aceptó el documento. El comprobante es legalmente válido.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="callout callout--info">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <div>Si Hacienda retorna <strong>"procesando"</strong>, el sistema consultará automáticamente hasta recibir una respuesta final. No necesita realizar ninguna acción manual.</div>
+        </div>
+      </section>
+
+      <!-- Paso 10 -->
+      <section class="section reveal">
+        <h2 class="section__title">Paso 10: Generar el PDF</h2>
+        <p>Una vez aceptado, genere el PDF del comprobante con código QR para impresión o envío al cliente.</p>
+        <p>El PDF incluye:</p>
+        <ul>
+          <li><strong>Datos del comprobante</strong> en formato oficial con todos los campos requeridos.</li>
+          <li><strong>Código QR</strong> con la clave de acceso para verificación en el portal de Hacienda.</li>
+          <li><strong>Desglose de impuestos</strong> con el detalle de IVA y cualquier otro gravamen aplicable.</li>
+          <li><strong>Datos del emisor y receptor</strong> completos, incluyendo identificación y dirección.</li>
+        </ul>
+      </section>
+
+      <!-- Siguientes Pasos -->
+      <section class="section reveal">
+        <h2 class="section__title">Siguientes Pasos</h2>
+        <p>Ya creó su primera factura electrónica. Continúe explorando:</p>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h4>Tipos de Documento</h4>
+              <p>Aprenda más sobre los tipos de documento en <a href="../features/invoicing.html">Facturación Electrónica</a>: facturas, notas de crédito, notas de débito y tiquetes electrónicos.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h4>Tienda en Línea</h4>
+              <p>Configure la tienda en línea <strong>Mercatus</strong> para que sus clientes compren productos directamente desde su catálogo digital.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">3</div>
+            <div class="steps__content">
+              <h4>Reportes y Analítica</h4>
+              <p>Explore los reportes y analítica para obtener información detallada sobre ventas, impuestos y comprobantes emitidos.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <div class="btn-group" style="justify-content: flex-end; margin-top: var(--space-8);">
+        <a href="../features/inventory.html" class="btn btn--primary">Inventario →</a>
+      </div>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="../assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="../fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="../fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="../nav.js"></script>
+</body>
+</html>
