@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns="https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/reciboElectronicoPago" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/reciboElectronicoPago" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.4" vc:minVersion="1.1">
+<xs:schema xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/reciboElectronicoPago" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/reciboElectronicoPago" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.4" vc:minVersion="1.1">
 	<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="../../xmldsig-core-schema.xsd"/>
 	<xs:element name="ReciboElectronicoPago">
 		<xs:annotation>
@@ -309,10 +309,15 @@ se obtiene de la sumatoria de los campos “Subtotal”, “Impuesto Neto”.</x
 						</xs:sequence>
 					</xs:complexType>
 				</xs:element>
-				<xs:element ref="ds:Signature" minOccurs="1" maxOccurs="1"/>
+				<xs:element ref="ds:Signature" minOccurs="1" maxOccurs="5"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:simpleType name="CorreoElectronicoReceptor">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="160"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:complexType name="EmisorType">
 		<xs:sequence>
 			<xs:element name="Nombre" nillable="false">
@@ -355,17 +360,10 @@ se obtiene de la sumatoria de los campos “Subtotal”, “Impuesto Neto”.</x
 				</xs:simpleType>
 			</xs:element>
 			<xs:element name="Identificacion" type="IdentificacionType"/>
-			<xs:element name="CorreoElectronico" minOccurs="0">
+			<xs:element name="CorreoElectronico" type="CorreoElectronicoReceptor" minOccurs="0" maxOccurs="unbounded">
 				<xs:annotation>
-					<xs:documentation>Este campo será de condición obligatoria, cuando el cliente lo requiera. Debe cumplir con la siguiente estructura: 
- \s*\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*\s*
-</xs:documentation>
+					<xs:documentation>Correo(s) electrónico(s) del receptor</xs:documentation>
 				</xs:annotation>
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:maxLength value="160"/>
-					</xs:restriction>
-				</xs:simpleType>
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
@@ -982,6 +980,21 @@ Cuando en el código de impuesto se defina IVA Bienes Usados se deberá utilizar
 			<xs:enumeration value="12">
 				<xs:annotation>
 					<xs:documentation>Crédito por exoneración posterior a la facturación</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="13">
+				<xs:annotation>
+					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="14">
+				<xs:annotation>
+					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="15">
+				<xs:annotation>
+					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
 				</xs:annotation>
 			</xs:enumeration>
 			<xs:enumeration value="99">
