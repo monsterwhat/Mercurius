@@ -30,40 +30,69 @@
 
                             <p:growl showDetail="true" showSummary="true" />
 
-                            <p:dataTable value="#{ComprobantesEmitidosController.filteredComprobantesEmitidos}" var="factura" widgetVar="FacturasTableData"
-                                         paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
-                                         emptyMessage="No se encontraron registros de factura con la critería proporcionada"
-                                         globalFilterFunction="#{ComprobantesEmitidosController.globalFilterFunction}" lazy="false"
-                                         filterBy="#{ComprobantesEmitidosController.filterBy}" reflow="true"
-                                         selection="#{ComprobantesEmitidosController.selectedComprobanteEmitido}" rowKey="#{factura.id}">
+                             <p:dataTable value="#{ComprobantesEmitidosController.filteredComprobantesEmitidos}" var="factura" widgetVar="FacturasTableData"
+                                          paginator="true" rows="10" paginatorPosition="bottom" id="FacturasTableData"
+                                          emptyMessage="No se encontraron registros de factura con la critería proporcionada"
+                                          globalFilterFunction="#{ComprobantesEmitidosController.globalFilterFunction}" lazy="false"
+                                          filterBy="#{ComprobantesEmitidosController.filterBy}" reflow="true"
+                                          selection="#{ComprobantesEmitidosController.selectedComprobantes}" rowKey="#{factura.id}"
+                                          selectionMode="multiple">
 
-                                <p:ajax event="rowSelect" update="recibos selectedComprobanteEmitidoDetallado"/>
-                                <p:ajax event="rowUnselect" update="recibos selectedComprobanteEmitidoDetallado" />
-                                <p:ajax event="toggleSelect" update="recibos selectedComprobanteEmitidoDetallado" />
+                                 <p:ajax event="rowSelect" update="recibos selectedComprobanteEmitidoDetallado"/>
+                                 <p:ajax event="rowUnselect" update="recibos selectedComprobanteEmitidoDetallado" />
+                                 <p:ajax event="toggleSelect" update="recibos selectedComprobanteEmitidoDetallado" />
 
                                 <p:autoUpdate/>
 
-                                <f:facet name="header"> 
+                                 <f:facet name="header">
 
-                                    <p:commandLink class="button is-fullwidth is-rounded is-success" 
-                                                   ajax="false">
-                                        <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
-                                        <span class="icon-text">
-                                            <span class="icon">
-                                                <i class="pi pi-file-excel"></i>
-                                            </span>
-                                            <span>
-                                                Exportar Excel
-                                            </span>
-                                        </span> 
-                                    </p:commandLink>
+                                     <div class="buttons is-centered">
+                                         <p:commandLink class="button is-rounded is-success" 
+                                                        ajax="false">
+                                             <p:dataExporter type="xlsx" target="FacturasTableData" fileName="Facturas-Mercurius-Excel" />
+                                             <span class="icon-text">
+                                                 <span class="icon">
+                                                     <i class="pi pi-file-excel"></i>
+                                                 </span>
+                                                 <span>
+                                                     Exportar Excel
+                                                 </span>
+                                             </span> 
+                                         </p:commandLink>
 
-                                    <p:spacer height="1em"/>
+                                         <p:commandLink class="button is-rounded is-info"
+                                                        actionListener="#{ComprobantesEmitidosController.selectAllPendientes()}"
+                                                        process="@this" update="recibos">
+                                             <span class="icon-text">
+                                                 <span class="icon">
+                                                     <i class="pi pi-check-square"></i>
+                                                 </span>
+                                                 <span>
+                                                     Seleccionar Pendientes
+                                                 </span>
+                                             </span>
+                                         </p:commandLink>
 
-                                    <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
-                                                 placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                         <p:commandLink class="button is-rounded is-warning"
+                                                        actionListener="#{ComprobantesEmitidosController.reenviarSeleccionados()}"
+                                                        process="@this" update="recibos">
+                                             <span class="icon-text">
+                                                 <span class="icon">
+                                                     <i class="pi pi-send"></i>
+                                                 </span>
+                                                 <span>
+                                                     Reenviar Seleccionados
+                                                 </span>
+                                             </span>
+                                         </p:commandLink>
+                                     </div>
 
-                                </f:facet>
+                                     <p:spacer height="1em"/>
+
+                                     <p:inputText id="globalFilter" onkeyup="PF('FacturasTableData').filter()"
+                                                  placeholder="Búsqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+
+                                 </f:facet>
 
 
 

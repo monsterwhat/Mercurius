@@ -100,6 +100,18 @@
                         </div>
 
                         <div class="column is-full mt-4">
+                            <div class="is-flex is-align-items-center" style="gap: 0.5rem;">
+                                <p:selectBooleanCheckbox id="editEnsambladoOrigen" 
+                                                         value="#{PromocionesController.selectedPromocion.ensambladoOrigen}"/>
+                                <label class="label has-text-link" for="editEnsambladoOrigen" style="margin-bottom: 0; cursor: pointer;">
+                                    Ensamblado en Origen
+                                </label>
+                                <i class="pi pi-info-circle" style="color: var(--bulma-text-light); cursor: help;"
+                                   title="Marque solo si el combo fue ensamblado por el fabricante/distribuidor (tiene su propio SKU/GTIN). Los combos armados en mostrador NO deben marcarse."></i>
+                            </div>
+                        </div>
+
+                        <div class="column is-full mt-4">
                             <label class="label has-text-link">Fechas de Promoción:</label>
                             <p:datePicker id="datePicker" value="#{PromocionesController.fechasPromocion}" readonlyInput="true"
                                            selectionMode="range" style="width: 100%"/>

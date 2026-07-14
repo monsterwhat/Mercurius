@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Órdenes de Compra</title>
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+        <style>
+            .stat-card {
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+                border-radius: 8px;
+            }
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .stat-card.active {
+                border: 2px solid var(--bulma-primary);
+                background: rgba(72, 199, 142, 0.1);
+            }
+            .stat-number {
+                font-size: 1.8rem;
+                font-weight: 700;
+                display: block;
+            }
+            .stat-label {
+                font-size: 0.85rem;
+                opacity: 0.7;
+            }
+            .stats-grid {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 1rem;
+            }
+            .actions-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 1rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .actions-group {
+                display: flex;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+            .filters-section {
+                padding: 0.5rem;
+            }
+            .table-actions {
+                display: flex;
+                gap: 0.25rem;
+                justify-content: center;
+            }
+            .table-action-btn {
+                padding: 0.25rem 0.5rem !important;
+            }
+            .header-bar {
+                padding: 5px 10px;
+                border-radius: 4px 4px 0 0;
+            }
+            .orden-total {
+                font-weight: 700;
+                font-size: 1.1rem;
+            }
+            .detalle-articulo-info {
+                font-size: 0.85rem;
+                color: #666;
+            }
+            .estado-tag {
+                padding: 0.2rem 0.75rem;
+                border-radius: 4px;
+                font-weight: 600;
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                display: inline-block;
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+            <div class="columns is-centered is-multiline">
+                <div class="column is-full">
+                    <p class="title is-3 has-text-centered">Órdenes de Compra</p>
+
+                    <!-- Stats cards for filtering -->
+                    <div class="stats-grid">
+                        <div class="stat-card active" onclick="filterByEstado('', this)">
+                            <span class="stat-number">#{OrdenCompraController.ordenCount()}</span>
+                            <span class="stat-label">Todas</span>
+                        </div>
+                        <div class="stat-card" onclick="filterByEstado('BORRADOR', this)">
+                            <span class="stat-number">#{OrdenCompraController.ordenCountByEstado('BORRADOR')}</span>
+                            <span class="stat-label">Borrador</span>
+                        </div>
+                        <div class="stat-card" onclick="filterByEstado('ENVIADA', this)">
+                            <span class="stat-number">#{OrdenCompraController.ordenCountByEstado('ENVIADA')}</span>
+                            <span class="stat-label">Enviadas</span>
+                        </div>
+                        <div class="stat-card" onclick="filterByEstado('CONFIRMADA', this)">
+                            <span class="stat-number">#{OrdenCompraController.ordenCountByEstado('CONFIRMADA')}</span>
+                            <span class="stat-label">Confirmadas</span>
+                        </div>
+                        <div class="stat-card" onclick="filterByEstado('RECIBIDA', this)">
+                            <span class="stat-number">#{OrdenCompraController.ordenCountByEstado('RECIBIDA')}</span>
+                            <span class="stat-label">Recibidas</span>
+                        </div>
+                        <div class="stat-card" onclick="filterByEstado('FACTURADA', this)">
+                            <span class="stat-number">#{OrdenCompraController.ordenCountByEstado('FACTURADA')}</span>
+                            <span class="stat-label">Facturadas</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column is-full">
+                    <h:form id="ordenesForm">
+                        <div class="actions-bar">
+                            <div class="actions-group">
+                                <p:commandLink actionListener="#{OrdenCompraController.openNewOrden()}"
+                                               styleClass="button is-success"
+                                               onclick="PF('CrearOrdenDialog').show();" process="@this">
+                                    <i class="pi pi-plus"></i>
+                                    <span>Nueva Orden</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+
+                        <p:dataTable value="#{OrdenCompraController.filteredOrdenes}" var="orden"
+                                     widgetVar="OrdenesTable" paginator="true" rows="10"
+                                     paginatorPosition="bottom" id="OrdenesTableData"
+                                     styleClass="articulos-table"
+                                     emptyMessage="No se encontraron órdenes de compra"
+                                     globalFilterFunction="#{OrdenCompraController.globalFilterFunction}"
+                                     reflow="true" selectionMode="single"
+                                     selection="#{OrdenCompraController.selectedOrden}"
+                                     rowKey="#{orden.id}">
+
+                            <p:ajax event="rowSelect" update="@form" />
+
+                            <f:facet name="header">
+                                <div class="filters-section">
+                                    <p:inputText id="globalFilter"
+                                                 onkeyup="PF('OrdenesTable').filter()"
+                                                 placeholder="Buscar órdenes..."
+                                                 style="width: 100%"
+                                                 value="#{OrdenCompraController.ordenFilter}" />
+                                </div>
+                            </f:facet>
+
+                            <!-- N° Orden -->
+                            <p:column headerText="N° Orden" sortBy="#{orden.numeroOrden}" filterMatchMode="contains">
+                                <h:outputText value="#{orden.numeroOrden}" style="font-weight: 600;" />
+                            </p:column>
+
+                            <!-- Proveedor -->
+                            <p:column headerText="Proveedor" sortBy="#{orden.proveedor.nombre}" filterMatchMode="contains">
+                                <h:outputText value="#{orden.proveedor.nombre}" />
+                            </p:column>
+
+                            <!-- Fecha Orden -->
+                            <p:column headerText="Fecha" sortBy="#{orden.fechaOrden}" filterMatchMode="contains">
+                                <h:outputText value="#{orden.fechaOrden}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy" />
+                                </h:outputText>
+                            </p:column>
+
+                            <!-- Entrega Estimada -->
+                            <p:column headerText="Entrega Est." sortBy="#{orden.fechaEntregaEstimada}" filterMatchMode="contains">
+                                <h:outputText value="#{orden.fechaEntregaEstimada}" rendered="#{orden.fechaEntregaEstimada != null}">
+                                    <f:convertDateTime pattern="dd/MM/yyyy" />
+                                </h:outputText>
+                                <h:outputText value="-" rendered="#{orden.fechaEntregaEstimada == null}" style="color: #999;" />
+                            </p:column>
+
+                            <!-- Estado -->
+                            <p:column headerText="Estado" sortBy="#{orden.estado}" filterMatchMode="contains"
+                                      style="text-align: center;">
+                                <span class="estado-tag #{OrdenCompraController.getEstadoStyleClass(orden.estado)}">
+                                    #{orden.estado}
+                                </span>
+                            </p:column>
+
+                            <!-- Total -->
+                            <p:column headerText="Total" sortBy="#{orden.totalEstimado}" filterMatchMode="contains"
+                                      style="text-align: right;">
+                                <h:outputText value="#{orden.totalEstimado}" styleClass="orden-total">
+                                    <f:convertNumber type="currency" currencySymbol="₡" />
+                                </h:outputText>
+                            </p:column>
+
+                            <!-- Acciones -->
+                            <p:column headerText="Acciones" exportable="false" style="text-align: center; min-width: 200px;">
+                                <div class="table-actions">
+                                    <!-- Ver detalles -->
+                                    <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye"
+                                                     title="Ver detalles"
+                                                     actionListener="#{OrdenCompraController.prepararDetalles(orden)}"
+                                                     onclick="PF('DetallesOrdenDialog').show();"
+                                                     process="@this" update="detallesForm" />
+
+                                    <!-- Editar (solo BORRADOR) -->
+                                    <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-pencil"
+                                                     title="Editar orden"
+                                                     rendered="#{orden.estado eq 'BORRADOR'}"
+                                                     actionListener="#{OrdenCompraController.prepararEdicion(orden)}"
+                                                     onclick="PF('EditarOrdenDialog').show();"
+                                                     process="@this" update="editarForm" />
+
+                                    <!-- Cambiar Estado -->
+                                    <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-arrow-right"
+                                                     title="Cambiar estado"
+                                                     rendered="#{OrdenCompraController.puedeCambiarEstado(orden.estado)}"
+                                                     actionListener="#{OrdenCompraController.abrirDialogoCambiarEstado(orden)}"
+                                                     onclick="PF('CambiarEstadoDialog').show();"
+                                                     process="@this" update="estadoForm" />
+
+                                    <!-- Eliminar (solo BORRADOR) -->
+                                    <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-trash"
+                                                     title="Eliminar orden"
+                                                     rendered="#{orden.estado eq 'BORRADOR'}"
+                                                     actionListener="#{OrdenCompraController.setSelectedOrden(orden)}"
+                                                     onclick="confirm('¿Está seguro de eliminar esta orden?');"
+                                                     process="@this" update="@form"
+                                                     actionListener="#{OrdenCompraController.deleteOrden()}" />
+                                </div>
+                            </p:column>
+                        </p:dataTable>
+                    </h:form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========== DIALOG: Crear Orden ========== -->
+        <p:dialog header="Nueva Orden de Compra" widgetVar="CrearOrdenDialog" modal="true"
+                  dynamic="true" cache="false" fitViewport="true" responsive="true"
+                  width="900" closable="true">
+            <h:form id="crearForm">
+                <p:growl showDetail="true" showSummary="true" />
+
+                <div class="columns is-multiline">
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Proveedor *</label>
+                            <div class="control">
+                                <p:selectOneMenu id="proveedorCrear" value="#{OrdenCompraController.newOrden.proveedor}"
+                                                 converter="jakarta.faces.Model"
+                                                 style="width: 100%" required="true"
+                                                 requiredMessage="Debe seleccionar un proveedor">
+                                    <f:selectItem itemLabel="-- Seleccionar proveedor --" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItems value="#{OrdenCompraController.proveedoresList}"
+                                                   var="prov" itemLabel="#{prov.nombre}" itemValue="#{prov}" />
+                                </p:selectOneMenu>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Fecha Entrega Estimada</label>
+                            <div class="control">
+                                <p:calendar id="fechaEntregaCrear"
+                                            value="#{OrdenCompraController.newOrden.fechaEntregaEstimada}"
+                                            pattern="dd/MM/yyyy" style="width: 100%"
+                                            placeholder="Seleccionar fecha" showIcon="true" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-12">
+                        <div class="field">
+                            <label class="label">Notas</label>
+                            <div class="control">
+                                <p:inputTextarea id="notasCrear" value="#{OrdenCompraController.newOrden.notas}"
+                                                 rows="2" style="width: 100%"
+                                                 placeholder="Notas adicionales..." />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles / Líneas de artículos -->
+                <hr />
+                <p class="title is-6">Artículos de la Orden</p>
+
+                <p:dataTable value="#{OrdenCompraController.detallesOrden}" var="detalle"
+                             id="detallesCrearTable" editable="true" styleClass="articulos-table"
+                             emptyMessage="No hay artículos agregados. Use el botón para agregar.">
+
+                    <p:column headerText="Artículo" style="min-width: 250px;">
+                        <p:autoComplete id="articuloAuto"
+                                        value="#{detalle.articulo}"
+                                        completeMethod="#{OrdenCompraController.completeArticulo}"
+                                        var="art" itemLabel="#{art.nombre}" itemValue="#{art}"
+                                        converter="jakarta.faces.Model"
+                                        placeholder="Buscar artículo..."
+                                        style="width: 100%"
+                                        minQueryLength="1" queryDelay="300" />
+                    </p:column>
+
+                    <p:column headerText="Cantidad" style="width: 120px; text-align: center;">
+                        <p:inputNumber id="cantidadCrear" value="#{detalle.cantidad}"
+                                       decimalPlaces="4" style="width: 100%; text-align: center;"
+                                       min="0.0001" placeholder="0" />
+                    </p:column>
+
+                    <p:column headerText="Precio Unitario" style="width: 150px; text-align: center;">
+                        <p:inputNumber id="precioUnitarioCrear" value="#{detalle.precioUnitario}"
+                                       decimalPlaces="4" style="width: 100%; text-align: center;"
+                                       min="0" placeholder="0.00" />
+                    </p:column>
+
+                    <p:column headerText="Subtotal" style="width: 130px; text-align: right;">
+                        <h:outputText value="#{detalle.subtotal}">
+                            <f:convertNumber type="currency" currencySymbol="₡" />
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column headerText="" style="width: 50px; text-align: center;" exportable="false">
+                        <p:commandButton icon="pi pi-times" styleClass="table-action-btn button is-danger is-small"
+                                         title="Eliminar artículo"
+                                         actionListener="#{OrdenCompraController.removeDetalle(detalle)}"
+                                         process="@this" update="crearForm" />
+                    </p:column>
+                </p:dataTable>
+
+                <div class="buttons mt-3">
+                    <p:commandButton value="Agregar Artículo" styleClass="button is-light"
+                                     actionListener="#{OrdenCompraController.addDetalle()}"
+                                     process="@this" update="crearForm" icon="pi pi-plus" />
+                </div>
+
+                <!-- Total -->
+                <div class="columns is-vcentered mt-3">
+                    <div class="column has-text-right">
+                        <span class="title is-5">Total Estimado: </span>
+                        <span class="title is-4 has-text-success">
+                            <h:outputText value="#{OrdenCompraController.newOrden.totalEstimado}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="buttons is-centered mt-4">
+                    <p:commandButton value="Guardar Orden" styleClass="button is-success"
+                                     actionListener="#{OrdenCompraController.saveOrden()}"
+                                     process="@form" update="crearForm @form" icon="pi pi-check" />
+                    <p:commandButton value="Cancelar" styleClass="button is-light"
+                                     onclick="PF('CrearOrdenDialog').hide();" immediate="true" />
+                </div>
+            </h:form>
+        </p:dialog>
+
+        <!-- ========== DIALOG: Editar Orden ========== -->
+        <p:dialog header="Editar Orden de Compra" widgetVar="EditarOrdenDialog" modal="true"
+                  dynamic="true" cache="false" fitViewport="true" responsive="true"
+                  width="900" closable="true">
+            <h:form id="editarForm">
+                <p:growl showDetail="true" showSummary="true" />
+
+                <div class="columns is-multiline">
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">N° Orden</label>
+                            <div class="control">
+                                <p:inputText value="#{OrdenCompraController.selectedOrden.numeroOrden}"
+                                             readonly="true" style="width: 100%" styleClass="input is-static" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Proveedor *</label>
+                            <div class="control">
+                                <p:selectOneMenu id="proveedorEditar"
+                                                 value="#{OrdenCompraController.selectedOrden.proveedor}"
+                                                 converter="jakarta.faces.Model"
+                                                 style="width: 100%">
+                                    <f:selectItem itemLabel="-- Seleccionar proveedor --" itemValue="#{null}" noSelectionOption="true" />
+                                    <f:selectItems value="#{OrdenCompraController.proveedoresList}"
+                                                   var="prov" itemLabel="#{prov.nombre}" itemValue="#{prov}" />
+                                </p:selectOneMenu>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Fecha Entrega Estimada</label>
+                            <div class="control">
+                                <p:calendar id="fechaEntregaEditar"
+                                            value="#{OrdenCompraController.selectedOrden.fechaEntregaEstimada}"
+                                            pattern="dd/MM/yyyy" style="width: 100%"
+                                            showIcon="true" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-6">
+                        <div class="field">
+                            <label class="label">Estado</label>
+                            <div class="control">
+                                <p:inputText value="#{OrdenCompraController.selectedOrden.estado}"
+                                             readonly="true" style="width: 100%" styleClass="input is-static" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-12">
+                        <div class="field">
+                            <label class="label">Notas</label>
+                            <div class="control">
+                                <p:inputTextarea id="notasEditar"
+                                                 value="#{OrdenCompraController.selectedOrden.notas}"
+                                                 rows="2" style="width: 100%"
+                                                 placeholder="Notas adicionales..." />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detalles -->
+                <hr />
+                <p class="title is-6">Artículos de la Orden</p>
+
+                <p:dataTable value="#{OrdenCompraController.detallesOrden}" var="detalle"
+                             id="detallesEditarTable" editable="true" styleClass="articulos-table"
+                             emptyMessage="No hay artículos en esta orden.">
+
+                    <p:column headerText="Artículo" style="min-width: 250px;">
+                        <p:autoComplete id="articuloAutoEditar"
+                                        value="#{detalle.articulo}"
+                                        completeMethod="#{OrdenCompraController.completeArticulo}"
+                                        var="art" itemLabel="#{art.nombre}" itemValue="#{art}"
+                                        converter="jakarta.faces.Model"
+                                        placeholder="Buscar artículo..."
+                                        style="width: 100%"
+                                        minQueryLength="1" queryDelay="300" />
+                    </p:column>
+
+                    <p:column headerText="Cantidad" style="width: 120px; text-align: center;">
+                        <p:inputNumber id="cantidadEditar" value="#{detalle.cantidad}"
+                                       decimalPlaces="4" style="width: 100%; text-align: center;"
+                                       min="0.0001" placeholder="0" />
+                    </p:column>
+
+                    <p:column headerText="Precio Unitario" style="width: 150px; text-align: center;">
+                        <p:inputNumber id="precioUnitarioEditar" value="#{detalle.precioUnitario}"
+                                       decimalPlaces="4" style="width: 100%; text-align: center;"
+                                       min="0" placeholder="0.00" />
+                    </p:column>
+
+                    <p:column headerText="Subtotal" style="width: 130px; text-align: right;">
+                        <h:outputText value="#{detalle.subtotal}">
+                            <f:convertNumber type="currency" currencySymbol="₡" />
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column headerText="" style="width: 50px; text-align: center;" exportable="false">
+                        <p:commandButton icon="pi pi-times" styleClass="table-action-btn button is-danger is-small"
+                                         title="Eliminar artículo"
+                                         actionListener="#{OrdenCompraController.removeDetalle(detalle)}"
+                                         process="@this" update="editarForm" />
+                    </p:column>
+                </p:dataTable>
+
+                <div class="buttons mt-3">
+                    <p:commandButton value="Agregar Artículo" styleClass="button is-light"
+                                     actionListener="#{OrdenCompraController.addDetalle()}"
+                                     process="@this" update="editarForm" icon="pi pi-plus" />
+                </div>
+
+                <!-- Total -->
+                <div class="columns is-vcentered mt-3">
+                    <div class="column has-text-right">
+                        <span class="title is-5">Total Estimado: </span>
+                        <span class="title is-4 has-text-success">
+                            <h:outputText value="#{OrdenCompraController.selectedOrden.totalEstimado}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="buttons is-centered mt-4">
+                    <p:commandButton value="Guardar Cambios" styleClass="button is-success"
+                                     actionListener="#{OrdenCompraController.updateOrden()}"
+                                     process="@form" update="editarForm @form" icon="pi pi-check" />
+                    <p:commandButton value="Cancelar" styleClass="button is-light"
+                                     onclick="PF('EditarOrdenDialog').hide();" immediate="true" />
+                </div>
+            </h:form>
+        </p:dialog>
+
+        <!-- ========== DIALOG: Detalles de Orden (Solo lectura) ========== -->
+        <p:dialog header="Detalles de Orden de Compra" widgetVar="DetallesOrdenDialog" modal="true"
+                  dynamic="true" cache="false" fitViewport="true" responsive="true"
+                  width="900" closable="true">
+            <h:form id="detallesForm">
+                <p:growl showDetail="true" showSummary="true" />
+
+                <!-- Información de la orden -->
+                <div class="columns is-multiline mb-4">
+                    <div class="column is-4">
+                        <p class="heading">N° Orden</p>
+                        <p class="title is-5">#{OrdenCompraController.selectedOrden.numeroOrden}</p>
+                    </div>
+                    <div class="column is-4">
+                        <p class="heading">Proveedor</p>
+                        <p class="title is-5">#{OrdenCompraController.selectedOrden.proveedor.nombre}</p>
+                    </div>
+                    <div class="column is-4">
+                        <p class="heading">Estado</p>
+                        <p class="title is-5">
+                            <span class="estado-tag #{OrdenCompraController.getEstadoStyleClass(OrdenCompraController.selectedOrden.estado)}">
+                                #{OrdenCompraController.selectedOrden.estado}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="column is-4">
+                        <p class="heading">Fecha de Orden</p>
+                        <p class="title is-6">
+                            <h:outputText value="#{OrdenCompraController.selectedOrden.fechaOrden}">
+                                <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                            </h:outputText>
+                        </p>
+                    </div>
+                    <div class="column is-4">
+                        <p class="heading">Entrega Estimada</p>
+                        <p class="title is-6">
+                            <h:outputText value="#{OrdenCompraController.selectedOrden.fechaEntregaEstimada}"
+                                          rendered="#{OrdenCompraController.selectedOrden.fechaEntregaEstimada != null}">
+                                <f:convertDateTime pattern="dd/MM/yyyy" />
+                            </h:outputText>
+                            <h:outputText value="No definida"
+                                          rendered="#{OrdenCompraController.selectedOrden.fechaEntregaEstimada == null}"
+                                          style="color: #999;" />
+                        </p>
+                    </div>
+                    <div class="column is-4">
+                        <p class="heading">Entrega Real</p>
+                        <p class="title is-6">
+                            <h:outputText value="#{OrdenCompraController.selectedOrden.fechaEntregaReal}"
+                                          rendered="#{OrdenCompraController.selectedOrden.fechaEntregaReal != null}">
+                                <f:convertDateTime pattern="dd/MM/yyyy HH:mm" />
+                            </h:outputText>
+                            <h:outputText value="-"
+                                          rendered="#{OrdenCompraController.selectedOrden.fechaEntregaReal == null}"
+                                          style="color: #999;" />
+                        </p>
+                    </div>
+                    <div class="column is-6">
+                        <p class="heading">Creado por</p>
+                        <p class="title is-6">#{OrdenCompraController.selectedOrden.usuario.username}</p>
+                    </div>
+                    <div class="column is-6">
+                        <p class="heading">Total Estimado</p>
+                        <p class="title is-4 has-text-success">
+                            <h:outputText value="#{OrdenCompraController.selectedOrden.totalEstimado}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </p>
+                    </div>
+                    <div class="column is-12" rendered="#{OrdenCompraController.selectedOrden.notas != null and !OrdenCompraController.selectedOrden.notas.isEmpty()}">
+                        <p class="heading">Notas</p>
+                        <p class="subtitle is-6">#{OrdenCompraController.selectedOrden.notas}</p>
+                    </div>
+                </div>
+
+                <!-- Tabla de artículos -->
+                <hr />
+                <p class="title is-6">Artículos</p>
+
+                <p:dataTable value="#{OrdenCompraController.detallesOrden}" var="detalle"
+                             id="detallesReadOnlyTable" styleClass="articulos-table"
+                             emptyMessage="No hay artículos en esta orden.">
+
+                    <p:column headerText="Artículo">
+                        <h:outputText value="#{detalle.articulo.nombre}" style="font-weight: 500;" />
+                        <br />
+                        <span class="detalle-articulo-info">
+                            Código: #{detalle.articulo.codigo}
+                            <h:outputText value=" | #{detalle.articulo.codigoBarra}"
+                                          rendered="#{detalle.articulo.codigoBarra != null}" />
+                        </span>
+                    </p:column>
+
+                    <p:column headerText="Cantidad" style="text-align: center; width: 100px;">
+                        <h:outputText value="#{detalle.cantidad}">
+                            <f:convertNumber maxFractionDigits="4" />
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column headerText="Precio Unit." style="text-align: right; width: 120px;">
+                        <h:outputText value="#{detalle.precioUnitario}">
+                            <f:convertNumber type="currency" currencySymbol="₡" />
+                        </h:outputText>
+                    </p:column>
+
+                    <p:column headerText="Subtotal" style="text-align: right; width: 120px;">
+                        <h:outputText value="#{detalle.subtotal}" style="font-weight: 600;">
+                            <f:convertNumber type="currency" currencySymbol="₡" />
+                        </h:outputText>
+                    </p:column>
+                </p:dataTable>
+
+                <!-- Total real si existe -->
+                <div class="columns is-vcentered mt-3"
+                     rendered="#{OrdenCompraController.selectedOrden.totalReal != null and OrdenCompraController.selectedOrden.totalReal > 0}">
+                    <div class="column has-text-right">
+                        <span class="title is-5">Total Real: </span>
+                        <span class="title is-4 has-text-danger">
+                            <h:outputText value="#{OrdenCompraController.selectedOrden.totalReal}">
+                                <f:convertNumber type="currency" currencySymbol="₡" />
+                            </h:outputText>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Acciones de estado -->
+                <div class="buttons is-centered mt-4">
+                    <p:commandButton value="Marcar como Recibida"
+                                     styleClass="button is-success"
+                                     rendered="#{OrdenCompraController.selectedOrden.estado eq 'CONFIRMADA'}"
+                                     actionListener="#{OrdenCompraController.recibirOrden()}"
+                                     process="@form" update="detallesForm @form"
+                                     icon="pi pi-check" />
+
+                    <p:commandButton value="Cancelar Orden"
+                                     styleClass="button is-danger"
+                                     rendered="#{OrdenCompraController.puedeCambiarEstado(OrdenCompraController.selectedOrden.estado) and OrdenCompraController.selectedOrden.estado ne 'CONFIRMADA'}"
+                                     actionListener="#{OrdenCompraController.abrirDialogoCancelar()}"
+                                     onclick="PF('CancelarOrdenDialog').show();"
+                                     process="@this" update="detallesForm"
+                                     icon="pi pi-times" />
+
+                    <p:commandButton value="Cerrar" styleClass="button is-light"
+                                     onclick="PF('DetallesOrdenDialog').hide();" />
+                </div>
+            </h:form>
+        </p:dialog>
+
+        <!-- ========== DIALOG: Cambiar Estado ========== -->
+        <p:dialog header="Cambiar Estado de Orden" widgetVar="CambiarEstadoDialog" modal="true"
+                  dynamic="true" cache="false" fitViewport="true" responsive="true"
+                  width="500" closable="true">
+            <h:form id="estadoForm">
+                <p:growl showDetail="true" showSummary="true" />
+
+                <div class="columns is-multiline">
+                    <div class="column is-12">
+                        <p class="heading">Orden</p>
+                        <p class="title is-5">#{OrdenCompraController.selectedOrden.numeroOrden}</p>
+                    </div>
+                    <div class="column is-6">
+                        <p class="heading">Estado Actual</p>
+                        <p class="title is-5">
+                            <span class="estado-tag #{OrdenCompraController.getEstadoStyleClass(OrdenCompraController.selectedOrden.estado)}">
+                                #{OrdenCompraController.selectedOrden.estado}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="column is-6">
+                        <p class="heading">Nuevo Estado</p>
+                        <p class="title is-5">
+                            <h:outputText value="#{OrdenCompraController.nuevoEstado}"
+                                          rendered="#{OrdenCompraController.nuevoEstado != null}"
+                                          styleClass="estado-tag #{OrdenCompraController.getEstadoStyleClass(OrdenCompraController.nuevoEstado)}" />
+                            <h:outputText value="No disponible" rendered="#{OrdenCompraController.nuevoEstado == null}"
+                                          style="color: #999;" />
+                        </p>
+                    </div>
+                </div>
+
+                <div class="buttons is-centered mt-4">
+                    <p:commandButton value="Confirmar Cambio" styleClass="button is-warning"
+                                     actionListener="#{OrdenCompraController.cambiarEstado()}"
+                                     process="@form" update="estadoForm @form"
+                                     icon="pi pi-check"
+                                     disabled="#{OrdenCompraController.nuevoEstado eq null}" />
+                    <p:commandButton value="Cancelar" styleClass="button is-light"
+                                     onclick="PF('CambiarEstadoDialog').hide();" immediate="true" />
+                </div>
+            </h:form>
+        </p:dialog>
+
+        <!-- ========== DIALOG: Cancelar Orden ========== -->
+        <p:dialog header="Cancelar Orden de Compra" widgetVar="CancelarOrdenDialog" modal="true"
+                  dynamic="true" cache="false" fitViewport="true" responsive="true"
+                  width="500" closable="true">
+            <h:form id="cancelarForm">
+                <p:growl showDetail="true" showSummary="true" />
+
+                <div class="columns is-multiline">
+                    <div class="column is-12">
+                        <p class="heading">¿Está seguro de cancelar la orden?</p>
+                        <p class="title is-5">#{OrdenCompraController.selectedOrden.numeroOrden}</p>
+                    </div>
+                    <div class="column is-12">
+                        <div class="field">
+                            <label class="label">Motivo de cancelación</label>
+                            <div class="control">
+                                <p:inputTextarea id="motivoCancelar"
+                                                 value="#{OrdenCompraController.cancelarMotivo}"
+                                                 rows="3" style="width: 100%"
+                                                 placeholder="Ingrese el motivo de la cancelación..." />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="buttons is-centered mt-4">
+                    <p:commandButton value="Confirmar Cancelación" styleClass="button is-danger"
+                                     actionListener="#{OrdenCompraController.cancelarOrden()}"
+                                     process="@form" update="cancelarForm @form"
+                                     icon="pi pi-check" />
+                    <p:commandButton value="Volver" styleClass="button is-light"
+                                     onclick="PF('CancelarOrdenDialog').hide();" immediate="true" />
+                </div>
+            </h:form>
+        </p:dialog>
+
+        <!-- Scripts -->
+        <script>
+            function filterByEstado(estado, cardElement) {
+                // Update hidden field and trigger filter
+                var filterInput = document.querySelector('[id$="globalFilter"]');
+                if (filterInput) {
+                    filterInput.value = '';
+                }
+
+                // Set the estado filter via PrimeFaces
+                var ordenFilterVar = PF('OrdenesTable');
+
+                // Update active card
+                document.querySelectorAll('.stat-card').forEach(function(c) {
+                    c.classList.remove('active');
+                });
+                cardElement.classList.add('active');
+
+                // Apply filter through the form
+                if (typeof jsf !== 'undefined') {
+                    jsf.ajax.request('ordenesForm:estadoFilterInput', {
+                        execute: 'ordenesForm',
+                        render: 'ordenesForm'
+                    });
+                }
+            }
+        </script>
+    </h:body>
+</html>

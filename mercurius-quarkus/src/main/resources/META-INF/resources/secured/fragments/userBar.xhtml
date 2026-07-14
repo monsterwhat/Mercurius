@@ -220,6 +220,26 @@
                         </div> 
                     </p:outputPanel>
 
+                    <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.inventarios}">
+                        <a class="navbar-link">
+                            <span>
+                                Compras
+                            </span>
+                        </a>
+                        <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Compras/Ordenes/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-shopping-cart"/>
+                                    </span>
+                                    <span>
+                                        Órdenes de Compra
+                                    </span>
+                                </span>
+                            </a>
+                        </div>
+                    </p:outputPanel>
+
                     <a class="navbar-item" href="/Mercurius/secured/pages/Usuarios/index.xhtml">
                         <span class="icon-text">
                             <span class="icon">
@@ -236,6 +256,16 @@
                             Tributacion
                         </a>
                         <div class="navbar-dropdown">
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Tributacion/Dashboard/index.xhtml" >
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-chart-pie"/>
+                                    </span>
+                                    <span>
+                                        Dashboard Hacienda
+                                    </span>
+                                </span> 
+                            </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/Tributacion/Consultas/index.xhtml" >
                                 <span class="icon-text">
                                     <span class="icon">
@@ -288,17 +318,7 @@
                         </a>  
                     </p:outputPanel>
                     
-                    <a class="navbar-item" href="/Mercurius/secured/pages/Reportes/Estacionalidad/index.xhtml"
-                       rendered="#{SessionController.registros}">
-                        <span class="icon-text">
-                            <span class="icon">
-                                <i class="pi pi-chart-bar"></i>
-                            </span>
-                            <span>
-                                Estacionalidad
-                            </span>
-                        </span> 
-                    </a> 
+
 
                     <p:outputPanel class="navbar-item has-dropdown is-hoverable" rendered="#{SessionController.admin}">
                         <a class="navbar-link">
@@ -325,6 +345,16 @@
                                     </span>
                                 </span> 
                             </a>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Correos/Templates/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-file-edit"/>
+                                    </span>
+                                    <span>
+                                        Plantillas
+                                    </span>
+                                </span> 
+                            </a>
                             <a class="navbar-item" href="/Mercurius/secured/pages/Aplicacion/index.xhtml">
                                 <span class="icon-text">
                                     <span class="icon">
@@ -342,6 +372,17 @@
                                     </span>
                                     <span>
                                         Backups
+                                    </span>
+                                </span> 
+                            </a>
+                            <hr class="navbar-divider"/>
+                            <a class="navbar-item" href="/Mercurius/secured/pages/Registros/LogActividad/index.xhtml">
+                                <span class="icon-text">
+                                    <span class="icon">
+                                        <i class="pi pi-history"/>
+                                    </span>
+                                    <span>
+                                        Log de Actividades
                                     </span>
                                 </span> 
                             </a>
