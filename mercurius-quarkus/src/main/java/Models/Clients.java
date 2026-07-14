@@ -85,6 +85,16 @@ public class Clients {
     @JoinColumn(name = "usuario_id")
     private Users usuario; //Referencia a quien creo el cliente
 
+    // Client authentication fields (for Mercatus marketplace self-registration)
+    @Nullable @Column(length = 255)
+    private String password; // BCrypt-hashed password (null for admin-created clients without marketplace access)
+
+    @Nullable @Column(length = 512, name = "refresh_token")
+    private String refreshToken; // Current JWT refresh token
+
+    @Nullable @Column(name = "token_expiry")
+    private Date tokenExpiry; // Refresh token expiration date
+
     public Clients() {
     }
 
@@ -110,12 +120,14 @@ public class Clients {
         "Cédula Jurídica", "02",
         "Cedula Juridica", "02",
         "DIMEX", "03",
-        "NITE", "04"
+        "NITE", "04",
+        "Extranjero No Domiciliado", "05",
+        "No Contribuyente", "06"
     );
 
     /**
      * Maps idType display name to Hacienda TipoIdentificacion code.
-     * @return "01" for Cédula Física, "02" for Cédula Jurídica, "03" for DIMEX, "04" for NITE, null if unknown
+     * @return "01"–"06" code, or null if unknown
      */
     @jakarta.annotation.Nullable
     public String getHaciendaIdTypeCode() {

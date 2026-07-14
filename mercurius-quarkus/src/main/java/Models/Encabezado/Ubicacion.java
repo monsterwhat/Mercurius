@@ -44,7 +44,7 @@ public class Ubicacion {
 
     @XmlElement(name = "Barrio")
     @Nullable
-    @Column(name = "barrio", length = 2)
+    @Column(name = "barrio", length = 100)
     private String barrio;
 
     @XmlElement(name = "OtrasSenas")

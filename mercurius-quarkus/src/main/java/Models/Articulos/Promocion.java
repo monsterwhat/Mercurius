@@ -43,6 +43,16 @@ public class Promocion {
 
     private boolean activa;
 
+    /**
+     * Indicates whether this promo/combo was assembled at origin
+     * (manufacturer/distributor/importer with own SKU/GTIN).
+     * Per Hacienda v4.4 rules, only origin-assembled combos qualify
+     * for DetalleSurtido (Tipo 03). In-store bundles must use
+     * individual line items with discounts instead.
+     */
+    @Column(name = "ensamblado_origen")
+    private boolean ensambladoOrigen = false;
+
     @Column(name = "codigo_descuento", length = 2)
     private String codigoDescuento = "06"; // Default: DESCUENTO_PROMOCIONAL per Nota 20
 
