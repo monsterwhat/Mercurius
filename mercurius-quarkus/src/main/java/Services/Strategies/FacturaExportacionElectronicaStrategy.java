@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import java.util.Objects;
 
 /**
- * Strategy for Factura Electrónica de Exportación (FEE, code "09").
+ * Strategy for Factura Electrónica de Exportación (FEE, code "05").
  * Receptor is required with valid identification (no consumer fallback).
  */
 @ApplicationScoped
@@ -53,7 +53,7 @@ public class FacturaExportacionElectronicaStrategy implements DocumentoStrategy 
 
     @Override
     public String getCodigoDocumento() {
-        return "09";
+        return "05";
     }
 
     @Override
@@ -63,7 +63,7 @@ public class FacturaExportacionElectronicaStrategy implements DocumentoStrategy 
 
     @Override
     public String getNamespace() {
-        return "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronicaExportacion";
+        return "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaExportacion";
     }
 
     @Override

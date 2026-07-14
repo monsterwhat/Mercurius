@@ -364,14 +364,14 @@ public class ComprobantesRecibidosPrevalidationService {
         validarUbicacion(receptor.getUbicacion(), result);
 
         // Validate email (informational only for TE documents)
-        if (receptor.getCorreoElectronico() == null || receptor.getCorreoElectronico().trim().isEmpty()) {
-            if (!"04".equals(docCode)) {
-                result.addWarning(new ValidationError(
-                    ValidationError.Category.valueOf("RECEPTOR_INFO"),
-                    "correoElectronico", "MISSING_EMAIL",
-                    "Receptor email is missing",
-                    ValidationError.Severity.WARNING));
-            }
+        boolean hasEmail = receptor.getCorreosElectronicos() != null
+            && receptor.getCorreosElectronicos().stream().anyMatch(c -> c.getCorreo() != null && !c.getCorreo().trim().isEmpty());
+        if (!hasEmail && !"04".equals(docCode)) {
+            result.addWarning(new ValidationError(
+                ValidationError.Category.valueOf("RECEPTOR_INFO"),
+                "correoElectronico", "MISSING_EMAIL",
+                "Receptor email is missing",
+                ValidationError.Severity.WARNING));
         }
     }
 
@@ -574,11 +574,11 @@ public class ComprobantesRecibidosPrevalidationService {
                     ValidationError.Severity.WARNING));
             } else {
                 String codigo = ref.getCodigo().trim();
-                if (!codigo.matches("0[1-6]")) {
+                if (!codigo.matches("0[1-9]|1[0-7]|99")) {
                     result.addWarning(new ValidationError(
                         ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                         prefix + ".codigo", "UNKNOWN_CODIGO",
-                        "InformacionReferencia codigo '" + codigo + "' is unknown (expected 01-06)",
+                        "InformacionReferencia codigo '" + codigo + "' is unknown (expected 01-17, 99)",
                         ValidationError.Severity.WARNING));
                 }
             }

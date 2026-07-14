@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import java.util.Objects;
 
 /**
- * Strategy for Nota de Crédito Electrónica (NC, code "03").
+ * Strategy for Nota de Crédito Electrónica (NC, code "02").
  * Receptor is required with valid identification (no consumer fallback).
  */
 @ApplicationScoped
@@ -54,7 +54,7 @@ public class NotaCreditoElectronicaStrategy implements DocumentoStrategy {
 
     @Override
     public String getCodigoDocumento() {
-        return "03";
+        return "02";
     }
 
     @Override
@@ -64,7 +64,7 @@ public class NotaCreditoElectronicaStrategy implements DocumentoStrategy {
 
     @Override
     public String getNamespace() {
-        return "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/notaCreditoElectronica";
+        return "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica";
     }
 
     @Override
