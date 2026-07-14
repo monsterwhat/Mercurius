@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facturación Electrónica — Mercurius</title>
+  <meta name="description" content="Punto de venta integrado con los 7 tipos de documento y firma digital XAdES.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../index.html" class="nav__logo">
+        <img src="../assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="../getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="../architecture.html" class="api-sidebar__link">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="../getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="../deployment.html" class="api-sidebar__link">Despliegue</a>
+          <a href="../tutorials/first-invoice.html" class="api-sidebar__link">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="invoicing.html" class="api-sidebar__link api-sidebar__link--active">Facturación</a>
+          <a href="tax-compliance.html" class="api-sidebar__link">Cumplimiento Tributario</a>
+          <a href="analytics.html" class="api-sidebar__link">Analítica</a>
+          <a href="admin.html" class="api-sidebar__link">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="../fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="marketplace.html" class="api-sidebar__link">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Facturación Electrónica</h1>
+      <p class="page-header__desc">Punto de venta integrado con los 7 tipos de documento y firma digital XAdES.</p>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <!-- Visión General -->
+      <section class="section reveal">
+        <h2 class="section__title">Visión General</h2>
+        <p>Mercurius integra un punto de venta completo con facturación electrónica cumpliendo el 100% de los requisitos de Hacienda para Costa Rica. Desde la emisión de comprobantes hasta el cierre de caja, cada paso del proceso está diseñado para ser rápido, seguro y compliant con la normativa vigente.</p>
+      </section>
+
+      <section class="section reveal">
+        <div class="features__grid" style="grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-8);">
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            </div>
+            <div class="feature-card__title">Punto de Venta</div>
+            <p class="feature-card__desc">Interfaz intuitiva de venta rápida con búsqueda por código de barras, cálculo automático de impuestos (IVA 13%, Exento 4%) y soporte para múltiples métodos de pago en una sola transacción.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            </div>
+            <div class="feature-card__title">Tipos de Documento</div>
+            <p class="feature-card__desc">7 tipos de comprobantes electrónicos soportados: Factura (FE), Tiquete (TE), Nota de Crédito (NC), Nota de Débito (ND), Recibo de Pago (REP), Factura de Compra (FEC) y Factura de Exportación (FEE).</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            </div>
+            <div class="feature-card__title">Flujo Electrónico</div>
+            <p class="feature-card__desc">Proceso automatizado de 5 pasos para cada documento: crear el XML, validar contra esquemas XSD, firmar digitalmente con XAdES, enviar a la API MREC de Hacienda y confirmar la aceptación.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div class="feature-card__title">Firma XAdES</div>
+            <p class="feature-card__desc">Firma digital XAdES-EPES que garantiza autenticidad e integridad de cada comprobante. Los certificados P12 se almacenan de forma segura con cifrado en reposo y se renuevan automáticamente antes de su expiración.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </div>
+            <div class="feature-card__title">Envío a Hacienda</div>
+            <p class="feature-card__desc">Envío automático a la API MREC con manejo de respuestas asíncronas. Cuando Hacienda no está disponible, el sistema activa el modo contingencia y reintentos programados según la normativa.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+            </div>
+            <div class="feature-card__title">Cierre de Caja</div>
+            <p class="feature-card__desc">Control completo de caja con arqueo detallado, desglose por método de pago (efectivo, tarjeta, transferencia, puntos), cálculo automático de diferencias y reporte de cierre exportable.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Punto de Venta (POS) -->
+      <section class="section reveal">
+        <h2 class="section__title">Punto de Venta (POS)</h2>
+        <p>La interfaz de venta está diseñada para agilizar el proceso de cobro en cualquier negocio, desde tiendas de conveniencia hasta restaurantes y servicios profesionales.</p>
+        <ul>
+          <li>Interfaz intuitiva de venta rápida optimizada para pantallas táctiles</li>
+          <li>Selección de productos por código de barras, búsqueda por nombre o referencia</li>
+          <li>Cálculo automático de impuestos (IVA 13%, Exento 4%) con desglose visible</li>
+          <li>Métodos de pago múltiples: efectivo, tarjeta de crédito/débito, transferencia bancaria y puntos de lealtad</li>
+          <li>Soporte para ventas a crédito con seguimiento de cuentas por cobrar</li>
+          <li>Integración con impresora térmica para tickets y documentos de respaldo</li>
+          <li>Devoluciones y anulaciones con generación automática de notas de crédito</li>
+        </ul>
+      </section>
+
+      <!-- Tipos de Documento -->
+      <section class="section reveal">
+        <h2 class="section__title">Tipos de Documento Soportados</h2>
+        <p>Mercurius soporta los 7 tipos de comprobantes electrónicos definidos por Hacienda, cada uno con su caso de uso específico dentro del ciclo de facturación.</p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Tipo</th>
+                <th>Descripción</th>
+                <th>Caso de Uso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>01</code></td>
+                <td>Factura Electrónica (FE)</td>
+                <td>Documento principal de venta</td>
+                <td>Ventas a clientes que requieren factura con datos fiscales completos</td>
+              </tr>
+              <tr>
+                <td><code>02</code></td>
+                <td>Tiquete Electrónico (TE)</td>
+                <td>Ticket de venta menor a ₡137,000</td>
+                <td>Ventas al detal donde el cliente no solicita factura electrónica</td>
+              </tr>
+              <tr>
+                <td><code>03</code></td>
+                <td>Nota de Crédito (NC)</td>
+                <td>Devoluciones y descuentos</td>
+                <td>Devoluciones de mercadería, descuentos aplicados o correcciones a facturas emitidas</td>
+              </tr>
+              <tr>
+                <td><code>04</code></td>
+                <td>Nota de Débito (ND)</td>
+                <td>Cargos adicionales</td>
+                <td>Cargos adicionales por intereses, penalidades o ajustes a facturas anteriores</td>
+              </tr>
+              <tr>
+                <td><code>05</code></td>
+                <td>Recibo Electrónico de Pago (REP)</td>
+                <td>Comprobante de pago</td>
+                <td>Comprobación de pagos parciales o totales de facturas a crédito</td>
+              </tr>
+              <tr>
+                <td><code>06</code></td>
+                <td>Factura de Compra Electrónica (FEC)</td>
+                <td>Compras a proveedores</td>
+                <td>Registro de compras a proveedores para fines de crédito fiscal de IVA</td>
+              </tr>
+              <tr>
+                <td><code>07</code></td>
+                <td>Factura de Exportación Electrónica (FEE)</td>
+                <td>Ventas al exterior</td>
+                <td>Exportaciones de bienes y servicios a clientes fuera del territorio nacional</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Flujo de Documento Electrónico -->
+      <section class="section reveal">
+        <h2 class="section__title">Flujo de Documento Electrónico</h2>
+        <p>Cada documento electrónico sigue un proceso de 5 pasos hasta su validación definitiva. Este flujo está completamente automatizado y monitoreado por el sistema.</p>
+        <div class="steps">
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h3><strong>Crear</strong></h3>
+              <p>El POS genera el comprobante XML con todos los datos del emisor, receptor, líneas de detalle, impuestos aplicables y totales calculados automáticamente.</p>
+            </div>
+          </div>
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h3><strong>Validar</strong></h3>
+              <p>El XML se valida contra los esquemas XSD oficiales de Hacienda para cada tipo de documento. Se verifican estructura, tipos de datos, códigos CABYS y obligatoriedad de campos.</p>
+            </div>
+          </div>
+          <div class="steps__item">
+            <div class="steps__number">3</div>
+            <div class="steps__content">
+              <h3><strong>Firmar</strong></h3>
+              <p>Se aplica firma digital XAdES-EPES usando el certificado P12 del emisor. La firma garantiza la autenticidad del emisor y la integridad del contenido del documento.</p>
+            </div>
+          </div>
+          <div class="steps__item">
+            <div class="steps__number">4</div>
+            <div class="steps__content">
+              <h3><strong>Enviar</strong></h3>
+              <p>El documento firmado se envía a la API MREC de Hacienda. El sistema gestiona autenticación, reintentos automáticos y manejo de colas cuando el servicio presenta alta demanda.</p>
+            </div>
+          </div>
+          <div class="steps__item">
+            <div class="steps__number">5</div>
+            <div class="steps__content">
+              <h3><strong>Aceptar/Rechazar</strong></h3>
+              <p>Hacienda procesa el documento y responde con el estado (aceptado, rechazado o en proceso). El receptor tiene 1 día hábil para aceptar o rechazar. Mercurius gestiona automáticamente las notificaciones de estado.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mensaje Receptor -->
+      <section class="section reveal">
+        <h2 class="section__title">Mensaje Receptor</h2>
+        <p>El Mensaje Receptor es la respuesta del destinatario respecto a la aceptación o rechazo de un comprobante electrónico. Mercurius automatiza completamente este proceso, incluyendo:</p>
+        <ul>
+          <li>Notificación automática al receptor cuando recibe un comprobante</li>
+          <li>Gestión del plazo de 1 día hábil para aceptar o rechazar</li>
+          <li>Aceptación explícita, aceptación tácita (vencimiento del plazo) y rechazo con motivo</li>
+          <li>Actualización automática del estado del documento en el sistema</li>
+          <li>Generación de notas de crédito para comprobantes rechazados</li>
+        </ul>
+        <div class="callout callout--info">
+          <p>El receptor tiene 1 día hábil para aceptar o rechazar un comprobante electrónico. Si no responde dentro del plazo, el sistema registra la aceptación tácita automáticamente.</p>
+        </div>
+      </section>
+
+      <!-- Código CABYS -->
+      <section class="section reveal">
+        <h2 class="section__title">Código CABYS</h2>
+        <p>Todos los productos incluyen el código CABYS (Clasificación de Actividades Económicas de Costa Rica) necesario para la facturación electrónica. Mercurius gestiona el catálogo de forma integral:</p>
+        <ul>
+          <li>Sincronización automática del catálogo nacional desde Hacienda</li>
+          <li>Búsqueda y selección de códigos por descripción o código numérico</li>
+          <li>Validación de códigos CABYS al momento de crear productos</li>
+          <li>Mapeo entre productos del inventario y códigos del catálogo oficial</li>
+          <li>Soporte para códigos de bienes y servicios con impuestos exentos, gravados y sujetos a impuestos específicos</li>
+        </ul>
+      </section>
+
+      <!-- Cierre de Caja -->
+      <section class="section reveal">
+        <h2 class="section__title">Cierre de Caja</h2>
+        <p>Al finalizar la jornada, el sistema genera un reporte de cierre con el total de ventas, impuestos y pagos por método. Este reporte es esencial para la conciliación contable y el control diario del negocio.</p>
+        <ul>
+          <li>Desglose de ventas por método de pago: efectivo, tarjeta de crédito, tarjeta de débito, transferencia bancaria y puntos de lealtad</li>
+          <li>Cálculo automático de IVA recaudado y exento del período</li>
+          <li>Arqueo de caja con comparación entre efectivo esperado y contado</li>
+          <li>Detección de diferencias y registro de sobrantes o faltantes</li>
+          <li>Exportación del reporte de cierre en formato PDF o Excel</li>
+          <li>Historial de cierres con acceso para consulta y auditoría</li>
+        </ul>
+      </section>
+
+      <div class="btn-group" style="justify-content: flex-end; margin-top: var(--space-8);">
+        <a href="tax-compliance.html" class="btn btn--primary">Cumplimiento Tributario →</a>
+      </div>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="../assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="../fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="../fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="../nav.js"></script>
+</body>
+</html>

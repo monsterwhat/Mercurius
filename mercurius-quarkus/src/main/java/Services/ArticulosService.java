@@ -12,6 +12,7 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import jakarta.transaction.Transactional;
 import java.util.Date;
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class ArticulosService extends GService<Articulos> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull Articulos entity) {
         try {
             em.persist(entity);

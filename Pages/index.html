@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mercurius — Documentación</title>
+  <meta name="description" content="Documentación del sistema de inventario y facturación electrónica de Costa Rica. Cumplimiento total con Hacienda.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <img src="assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero__overline reveal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"></path><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+        Sistema de Inventario y Facturación
+      </div>
+      <img src="assets/icon.png" alt="Mercurius" width="96" height="96" class="hero__logo reveal">
+      <h1 class="hero__title reveal">Mercurius</h1>
+      <p class="hero__subtitle reveal">Sistema integral de inventario, punto de venta y facturación electrónica para Costa Rica. Cumplimiento total con Hacienda.</p>
+      <div class="hero__actions reveal">
+        <a href="architecture.html" class="btn btn--primary">
+          Arquitectura
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <div class="container">
+      <div class="features__grid">
+        <div class="feature-card reveal">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          </div>
+          <div class="feature-card__title">Inventario</div>
+          <p class="feature-card__desc">Gestión completa de productos, categorías, lotes, códigos de barras y control de stock con alertas y pronósticos.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div class="feature-card__title">Facturación Electrónica</div>
+          <p class="feature-card__desc">Punto de venta integrado con los 7 tipos de documento: FE, TE, NC, ND, REP, FEC, FEE. Firma XAdES y envío a Hacienda.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          </div>
+          <div class="feature-card__title">Cumplimiento Tributario</div>
+          <p class="feature-card__desc">Integración directa con Hacienda: catálogo CABYS, tipo de cambio, validación XSD y presentación de declaraciones.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          </div>
+          <div class="feature-card__title">Analítica y Reportes</div>
+          <p class="feature-card__desc">Dashboard en tiempo real, tendencias de ventas, análisis de rentabilidad, estacionalidad y pronóstico de inventario.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </div>
+          <div class="feature-card__title">API de Facturación Externa</div>
+          <p class="feature-card__desc">Conecta servicios de facturación electrónica externos como Fides. Mercurius delega la generación, firma y envío de comprobantes a través de una API configurable.</p>
+        </div>
+        <div class="feature-card reveal">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <div class="feature-card__title">Administración</div>
+          <p class="feature-card__desc">Gestión de usuarios con 6 roles, copias de seguridad, registro de actividad y configuración del sistema.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Ecosystem -->
+  <section class="section reveal">
+    <div class="container container--narrow">
+      <h2 class="section__title">Ecosistema Mercurius</h2>
+      <p class="section__subtitle">Extensiones privadas que amplían las capacidades de Mercurius.</p>
+      <div class="features__grid" style="grid-template-columns: repeat(2, 1fr); max-width: 700px;">
+        <div class="feature-card">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+          </div>
+          <div class="feature-card__title">Fides</div>
+          <p class="feature-card__desc">API de facturación electrónica independiente para generación, firma y envío de comprobantes a Hacienda. Se integra con Mercurius como backend de facturación externo.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-card__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          </div>
+          <div class="feature-card__title">Mercatus</div>
+          <p class="feature-card__desc">Tienda en línea para clientes con catálogo digital, carrito de compras y pedidos auto-gestionados. Se conecta al backend de Mercurius a través de su API.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Document Types -->
+  <section class="section reveal">
+    <div class="container container--narrow">
+      <h2 class="section__title">Tipos de Documento</h2>
+      <p class="section__subtitle">Mercurius soporta los 7 tipos de documento electrónico definidos por Hacienda para la facturación electrónica.</p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Tipo de Documento</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>01</code></td><td>Factura Electrónica (FE)</td></tr>
+            <tr><td><code>02</code></td><td>Tiquete Electrónico (TE)</td></tr>
+            <tr><td><code>03</code></td><td>Nota de Crédito (NC)</td></tr>
+            <tr><td><code>04</code></td><td>Nota de Débito (ND)</td></tr>
+            <tr><td><code>05</code></td><td>Recibo Electrónico de Pago (REP)</td></tr>
+            <tr><td><code>06</code></td><td>Factura de Compra Electrónica (FEC)</td></tr>
+            <tr><td><code>07</code></td><td>Factura de Exportación Electrónica (FEE)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section reveal">
+    <div class="container container--narrow" style="text-align: center;">
+      <h2 class="section__title">¿Listo para empezar?</h2>
+      <p class="section__subtitle" style="margin-left: auto; margin-right: auto;">Configura tu primer entorno de facturación electrónica y comienza a generar documentos válidos para Hacienda en minutos.</p>
+      <div class="hero__actions" style="margin-top: var(--space-6);">
+        <a href="getting-started.html" class="btn btn--primary">
+          Primeros Pasos
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Disclaimer -->
+  <section class="section">
+    <div class="container container--narrow" style="text-align: center;">
+      <p style="color: var(--color-text-muted); font-size: 0.875rem; line-height: 1.6;">
+        Mercurius se proporciona tal cual está, sin garantías de ningún tipo.
+        <strong>Fides</strong> y <strong>Mercatus</strong> son extensiones privadas no públicas del ecosistema Mercurius.
+      </p>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+<script src="nav.js"></script>
+</body>
+</html>

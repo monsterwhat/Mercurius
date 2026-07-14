@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cumplimiento Tributario — Mercurius</title>
+  <meta name="description" content="Integración completa con Hacienda: CABYS, tipo de cambio, validación XSD y declaraciones.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="../index.html" class="nav__logo">
+        <img src="../assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="../getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="../architecture.html" class="api-sidebar__link">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="../getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="../deployment.html" class="api-sidebar__link">Despliegue</a>
+          <a href="../tutorials/first-invoice.html" class="api-sidebar__link">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="invoicing.html" class="api-sidebar__link">Facturación</a>
+          <a href="tax-compliance.html" class="api-sidebar__link api-sidebar__link--active">Cumplimiento Tributario</a>
+          <a href="analytics.html" class="api-sidebar__link">Analítica</a>
+          <a href="admin.html" class="api-sidebar__link">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="../fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="marketplace.html" class="api-sidebar__link">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Cumplimiento Tributario</h1>
+      <p class="page-header__desc">Integración completa con Hacienda: CABYS, tipo de cambio, validación XSD y declaraciones.</p>
+    </div>
+  </div>
+
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <section class="section reveal">
+        <h2 class="section__title">Visión General</h2>
+        <p>Mercurius está diseñado desde cero para el cumplimiento tributario total con la Dirección General de Tributación de Costa Rica (Hacienda). El sistema gestiona automáticamente la conexión con los servicios de Hacienda, la validación de documentos, la firma digital y el envío de comprobantes, eliminando la carga administrativa del cumplimiento fiscal.</p>
+      </section>
+
+      <section class="section reveal">
+        <div class="features__grid" style="grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-8);">
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </div>
+            <div class="feature-card__title">Integración Hacienda</div>
+            <p class="feature-card__desc">Autenticación OIDC/ROPC con Keycloak, token caching con refresh automático y envío directo a la API MREC. El sistema gestiona toda la vida útil del token sin intervención manual.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            </div>
+            <div class="feature-card__title">Catálogo CABYS</div>
+            <p class="feature-card__desc">Sincronización automática del catálogo nacional con búsqueda por código o descripción. Valida que cada producto tenga asignado un código CABYS válido antes de la emisión de comprobantes.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </div>
+            <div class="feature-card__title">Tipo de Cambio</div>
+            <p class="feature-card__desc">Consulta automática del tipo de cambio del día desde la API de Hacienda. Se aplica automáticamente al generar comprobantes en moneda extranjera y se almacena para referencia histórica.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </div>
+            <div class="feature-card__title">Validación XSD</div>
+            <p class="feature-card__desc">Validación de documentos contra los 9 esquemas XSD oficiales de Hacienda antes del envío. Detecta errores de estructura, tipos de datos y campos obligatorios, evitando rechazos en Hacienda.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            </div>
+            <div class="feature-card__title">Firma XAdES</div>
+            <p class="feature-card__desc">Firma digital XAdES-EPES con certificados P12 que garantiza autenticidad e integridad. Los certificados se almacenan cifrados y el sistema monitorea fechas de expiración con alertas anticipadas.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <div class="feature-card__title">Modo Contingencia</div>
+            <p class="feature-card__desc">Generación de documentos offline cuando Hacienda no está disponible. Calcula automáticamente los plazos de envío según las reglas de contingencia y sincroniza al recuperar la conexión.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-card__icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            </div>
+            <div class="feature-card__title">Declaraciones</div>
+            <p class="feature-card__desc">Consultas de IVA, resúmenes de ventas y preparación de declaraciones tributarias. Genera reportes consolidados con el desglose de impuestos para facilitar la declaración mensual ante Hacienda.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Integración con Hacienda</h2>
+        <p>La conexión con los servicios de Hacienda es automática y segura, diseñada para operar 24/7 sin intervención manual.</p>
+        <ul>
+          <li>Autenticación OIDC/ROPC con Keycloak de Hacienda con gestión automática de tokens</li>
+          <li>Token caching con refresh automático antes de la expiración</li>
+          <li>Envío directo a la API MREC con manejo de colas y reintentos</li>
+          <li>Recepción y procesamiento de callbacks de estado en tiempo real</li>
+          <li>Monitoreo de la disponibilidad del servicio de Hacienda</li>
+          <li>Activación automática del modo contingencia ante caídas del servicio</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Catálogo CABYS</h2>
+        <p>El Código de Actividades Económicas y Bienes y Servicios (CABYS) es el catálogo nacional que identifica cada producto y servicio. Mercurius sincroniza y valida automáticamente este catálogo, asegurando que cada comprobante electrónico incluya el código correcto.</p>
+        <ul>
+          <li>Sincronización automática periódica desde el servicio web de Hacienda</li>
+          <li>Búsqueda de códigos por descripción, código numérico o categoría</li>
+          <li>Asignación de códigos CABYS a productos del inventario con validación</li>
+          <li>Identificación automática de productos exentos, gravados con tarifa general y sujetos a impuestos específicos</li>
+          <li>Historial de cambios en el catálogo para trazabilidad</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Tipo de Cambio</h2>
+        <p>Consulta automática del tipo de cambio del día desde la API de Hacienda para operaciones en moneda extranjera.</p>
+        <ul>
+          <li>Consulta diaria automática del tipo de cambio oficial de compra y venta</li>
+          <li>Caché del tipo de cambio para evitar consultas redundantes</li>
+          <li>Aplicación automática al generar comprobantes en dólares u otras monedas</li>
+          <li>Conversión de totales y líneas de detalle con precisión decimal</li>
+          <li>Historial de tipos de cambio para reportes y auditoría</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Validación XSD</h2>
+        <p>Todos los documentos electrónicos se validan contra los 9 esquemas XSD oficiales de Hacienda antes de ser enviados. Este proceso previene rechazos al detectar errores de estructura, tipos de datos y campos obligatorios en etapa local.</p>
+        <div class="callout callout--info">
+          <p>La validación XSD es el primer filtro de calidad antes de la firma y el envío. Si el XML no cumple con el esquema, el sistema reporta el error específico y el usuario puede corregir antes de proceder.</p>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Esquema</th>
+                <th>Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>FE</code></td>
+                <td>Factura Electrónica</td>
+              </tr>
+              <tr>
+                <td><code>TE</code></td>
+                <td>Tiquete Electrónico</td>
+              </tr>
+              <tr>
+                <td><code>NC</code></td>
+                <td>Nota de Crédito</td>
+              </tr>
+              <tr>
+                <td><code>ND</code></td>
+                <td>Nota de Débito</td>
+              </tr>
+              <tr>
+                <td><code>REP</code></td>
+                <td>Recibo Electrónico de Pago</td>
+              </tr>
+              <tr>
+                <td><code>FEC</code></td>
+                <td>Factura de Compra Electrónica</td>
+              </tr>
+              <tr>
+                <td><code>FEE</code></td>
+                <td>Factura de Exportación Electrónica</td>
+              </tr>
+              <tr>
+                <td><code>MensajeReceptor</code></td>
+                <td>Aceptación/Rechazo del receptor</td>
+              </tr>
+              <tr>
+                <td><code>MensajeHacienda</code></td>
+                <td>Mensajes del gateway</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Firma Digital XAdES</h2>
+        <p>La firma digital XAdES-EPES garantiza la autenticidad e integridad de cada documento electrónico. Mercurius gestiona certificados P12 de forma segura.</p>
+        <ul>
+          <li>Firma digital XAdES-EPES (Advanced Electronic Signature)</li>
+          <li>Almacenamiento seguro de certificados P12 con cifrado en reposo</li>
+          <li>Monitoreo automático de fechas de expiración con alertas 30 días antes del vencimiento</li>
+          <li>Soporte para renovación de certificados sin interrupción del servicio</li>
+          <li>Validación de la cadena de certificados contra autoridades de certificación</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Modo Contingencia</h2>
+        <p>Cuando Hacienda no está disponible, Mercurius genera documentos en modo contingencia para garantizar que el negocio no se detenga. El sistema calcula automáticamente los plazos de envío según las reglas establecidas por Hacienda.</p>
+        <ul>
+          <li>Detección automática de indisponibilidad del servicio de Hacienda</li>
+          <li>Generación de comprobantes con secuencia de contingencia</li>
+          <li>Cálculo automático del plazo máximo de envío según el tipo de documento</li>
+          <li>Cola de documentos pendientes de envío al restaurar la conexión</li>
+          <li>Sincronización automática y envío en lote cuando el servicio se recupera</li>
+          <li>Registro detallado del motivo de contingencia para auditoría</li>
+        </ul>
+        <div class="callout callout--warning">
+          <p><strong>Plazos de contingencia</strong> — Hacienda establece plazos específicos según el tipo de documento y el motivo de la contingencia. Mercurius calcula y vigila estos plazos automáticamente.</p>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Declaraciones</h2>
+        <p>El módulo de tributación incluye consultas de IVA, resúmenes de ventas y preparación de declaraciones para facilitar el cumplimiento mensual ante Hacienda.</p>
+        <ul>
+          <li>Consulta de IVA cobrado y pagado por período</li>
+          <li>Resúmenes de ventas diarios, semanales y mensuales</li>
+          <li>Desglose de ventas gravadas, exentas y sujetas a impuestos específicos</li>
+          <li>Preparación de datos para declaraciones de IVA (formato 101)</li>
+          <li>Resumen de comprobantes emitidos y recibidos por tipo</li>
+          <li>Historial de declaraciones presentadas con enlaces a comprobantes</li>
+        </ul>
+      </section>
+
+      <div class="btn-group" style="justify-content: flex-end; margin-top: var(--space-8);">
+        <a href="analytics.html" class="btn btn--primary">Analítica →</a>
+      </div>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="../assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="../fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="../fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="../nav.js"></script>
+</body>
+</html>

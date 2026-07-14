@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 
@@ -28,6 +29,7 @@ public class UserService extends GService<Users> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull Users entity) {
         try {
             // Hash the password before storing

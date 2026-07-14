@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arquitectura — Mercurius</title>
+  <meta name="description" content="Arquitectura del sistema Mercurius: inventario, facturación electrónica y punto de venta para Costa Rica.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav__inner">
+      <a href="index.html" class="nav__logo">
+        <img src="assets/icon.png" alt="Mercurius" width="24" height="24">
+        Mercurius
+      </a>
+
+      <a href="getting-started.html" class="nav__cta">
+        Primeros Pasos
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+      </a>
+      <button class="nav__hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+    </div>
+  </nav>
+  <div class="nav__mobile-menu">
+
+  </div>
+
+  <div class="api-layout">
+
+    <aside class="api-sidebar" id="sidebar">
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__links">
+          <a href="architecture.html" class="api-sidebar__link api-sidebar__link--active">Arquitectura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Guias</div>
+        <div class="api-sidebar__links">
+          <a href="getting-started.html" class="api-sidebar__link">Primeros Pasos</a>
+          <a href="deployment.html" class="api-sidebar__link">Despliegue</a>
+          <a href="tutorials/first-invoice.html" class="api-sidebar__link">Primera Factura</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Características</div>
+        <div class="api-sidebar__links">
+          <a href="features/inventory.html" class="api-sidebar__link">Inventario</a>
+          <a href="features/invoicing.html" class="api-sidebar__link">Facturación</a>
+          <a href="features/tax-compliance.html" class="api-sidebar__link">Cumplimiento Tributario</a>
+          <a href="features/analytics.html" class="api-sidebar__link">Analítica</a>
+          <a href="features/admin.html" class="api-sidebar__link">Administración</a>
+        </div>
+      </div>
+      <div class="api-sidebar__group">
+        <div class="api-sidebar__heading">Extensiones</div>
+        <div class="api-sidebar__links">
+          <a href="fides/index.html" class="api-sidebar__link">Fides</a>
+          <a href="features/marketplace.html" class="api-sidebar__link">Mercatus</a>
+        </div>
+      </div>
+    </aside>
+
+    <main class="api-main">
+      <button class="sidebar-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="container container--narrow">
+      <h1 class="page-header__title">Arquitectura</h1>
+      <p class="page-header__desc">Arquitectura del sistema de inventario, facturación electrónica y punto de venta.</p>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="guide-content">
+    <div class="container container--narrow">
+
+      <section class="section reveal">
+        <h2 class="section__title">Descripción General</h2>
+        <p>Mercurius es un sistema de inventario, punto de venta y facturación electrónica para Costa Rica. Soporta los 7 tipos de documento electrónico y se integra directamente con la API de Hacienda.</p>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Stack Tecnológico</h2>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Capa</th>
+                <th>Tecnología</th>
+                <th>Versión</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Lenguaje</td><td>Java</td><td>25</td></tr>
+              <tr><td>Framework</td><td>Quarkus</td><td>3.36.2</td></tr>
+              <tr><td>Frontend (Admin)</td><td>JSF + PrimeFaces</td><td>4.1.3 / 4.15.16</td></tr>
+              <tr><td>Base de Datos</td><td>MySQL</td><td>8.0+</td></tr>
+              <tr><td>Build</td><td>Maven</td><td>3.9+</td></tr>
+              <tr><td>Seguridad</td><td>BCrypt + JWT</td><td>—</td></tr>
+              <tr><td>PDF</td><td>OpenPDF + PDFBox</td><td>2.0.2 / 3.0.6</td></tr>
+              <tr><td>Excel</td><td>Apache POI</td><td>5.2.5</td></tr>
+              <tr><td>Código de Barras</td><td>Okapi Barcode</td><td>0.5.0</td></tr>
+              <tr><td>QR</td><td>ZXing (Quarkus ext)</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Modelo de Seguridad</h2>
+        <p>Mercurius implementa un modelo de seguridad robusto con dos mecanismos de autenticación y seis roles definidos.</p>
+
+        <h3>Mecanismos de autenticación</h3>
+        <ul>
+          <li><strong>Sesión (JSF)</strong> — Para el panel de administración. Filtrado mediante SecurityFilter.</li>
+        </ul>
+
+        <h3>Roles</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Rol</th>
+                <th>Descripción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>admin</code></td><td>Acceso total al sistema</td></tr>
+              <tr><td><code>facturacion</code></td><td>Emisión y gestión de comprobantes electrónicos</td></tr>
+              <tr><td><code>inventario</code></td><td>Gestión de productos, categorías y stock</td></tr>
+              <tr><td><code>usuario</code></td><td>Consulta y reportes básicos</td></tr>
+              <tr><td><code>tributacion</code></td><td>Consultas a Hacienda y declaraciones</td></tr>
+              <tr><td><code>registro</code></td><td>Gestión de usuarios y clientes</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Flujo de Datos</h2>
+        <p>Cada interacción en Mercurius sigue uno de estos caminos según el punto de origen:</p>
+        <ul>
+          <li><strong>Panel Admin</strong> → JSF/PrimeFaces → Quarkus REST → MySQL</li>
+          <li><strong>Facturación Electrónica</strong> → Quarkus → External API (Fides) → Hacienda MREC</li>
+          <li><strong>Firma Digital</strong> → XAdES-EPES → P12 Certificate → XML Firmado</li>
+        </ul>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Flujo de Facturación Electrónica</h2>
+        <div class="steps">
+
+          <div class="steps__item">
+            <div class="steps__number">1</div>
+            <div class="steps__content">
+              <h3>Crear Documento</h3>
+              <p>El usuario crea un comprobante electrónico desde el punto de venta o el panel de administración.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">2</div>
+            <div class="steps__content">
+              <h3>Validar XSD</h3>
+              <p>El sistema valida el XML contra los esquemas de Hacienda.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">3</div>
+            <div class="steps__content">
+              <h3>Firmar XAdES</h3>
+              <p>Se aplica firma digital XAdES-EPES usando el certificado P12 del contribuyente.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">4</div>
+            <div class="steps__content">
+              <h3>Enviar a Hacienda</h3>
+              <p>El documento firmado se envía a la API MREC de Hacienda para procesamiento.</p>
+            </div>
+          </div>
+
+          <div class="steps__item">
+            <div class="steps__number">5</div>
+            <div class="steps__content">
+              <h3>Recibir Estado</h3>
+              <p>Hacienda procesa y responde con aceptación, rechazo o procesando.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <section class="section reveal">
+        <h2 class="section__title">Seguridad de Datos</h2>
+        <ul>
+          <li>Cifrado AES-256-GCM para secretos en reposo (claves API, contraseñas de certificados).</li>
+          <li>Contraseñas con BCrypt (factor de trabajo 10).</li>
+          <li>Conexión a Hacienda mediante OIDC/ROPC con token caching.</li>
+        </ul>
+      </section>
+
+      <div class="btn-group" style="justify-content: flex-end; margin-top: var(--space-8);">
+        <a href="getting-started.html" class="btn btn--primary">Primeros Pasos →</a>
+      </div>
+
+    </div>
+  </div>
+
+    </main>
+    <div class="sidebar-overlay"></div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <img src="assets/icon.png" alt="Mercurius" width="20" height="20"> Mercurius <span class="footer__separator">·</span> <img src="fides/assets/icon.png" alt="Fides" width="20" height="20"> Fides <span class="footer__separator">·</span> <img src="fides/assets/Mercatus.svg" alt="Mercatus" width="20" height="20"> Mercatus
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="nav.js"></script>
+</body>
+</html>
