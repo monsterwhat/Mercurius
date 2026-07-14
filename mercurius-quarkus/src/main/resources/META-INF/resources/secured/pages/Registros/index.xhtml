@@ -15,31 +15,6 @@
                 padding: 5px 10px;
                 border-radius: 4px 4px 0 0; /* Rounded corners at the top */
             }
-            /* Override is-vcentered so card rows stretch to equal height */
-            section > .columns.is-multiline {
-                align-items: stretch;
-            }
-            /* Uniform card layout: columns stretch, cards fill, buttons sink to bottom */
-            .column.is-one-quarter {
-                display: flex;
-                align-items: stretch;
-            }
-            .column.is-one-quarter > .card {
-                display: flex;
-                flex-direction: column;
-                width: 100%;
-            }
-            .column.is-one-quarter > .card > .columns {
-                flex-grow: 1;
-            }
-            .column.is-one-quarter > .card .buttons {
-                margin-top: auto;
-            }
-            /* Make p:outputPanel wrapper transparent so its column child
-               participates directly in the parent flex layout */
-            .ui-outputpanel {
-                display: contents;
-            }
         </style>
  
     </h:head>
