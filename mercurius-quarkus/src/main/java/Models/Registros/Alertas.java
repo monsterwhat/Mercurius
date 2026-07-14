@@ -1,6 +1,7 @@
 package Models.Registros;
 
 import Models.Users;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,6 +27,7 @@ public class Alertas {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int codigo;
 
+    @Lob
     private String mensaje;
     
     private String tipo; // This will be used as logLevel

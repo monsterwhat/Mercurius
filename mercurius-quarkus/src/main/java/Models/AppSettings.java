@@ -123,6 +123,8 @@ public class AppSettings {
 
     // ============ FIDES E-INVOICING CONFIGURATION ============
 
+    private Boolean useFides; // true = Fides API, false/null = direct Hacienda
+
     @Nullable @Column(length = 200)
     private String fidesApiUrl;
 
@@ -137,4 +139,8 @@ public class AppSettings {
 
     @Nullable @Column(length = 100)
     private String fidesUserId;
+
+    public boolean isUseFides() {
+        return useFides != null && useFides;
+    }
 }

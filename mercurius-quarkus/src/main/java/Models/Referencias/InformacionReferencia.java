@@ -54,6 +54,16 @@ public class InformacionReferencia {
     @Column(name = "razon", length = 180)
     private String razon;
 
+    @Nullable
+    @XmlElement(name = "TipoDocRefOTRO")
+    @Column(name = "tipo_doc_otro", length = 100)
+    private String tipoDocRefOTRO;
+
+    @Nullable
+    @XmlElement(name = "CodigoReferenciaOTRO")
+    @Column(name = "codigo_otro", length = 100)
+    private String codigoReferenciaOTRO;
+
     /**
      * Creates an InformacionReferencia referencing an existing emitted comprobante.
      * Used when issuing NC/ND/REP that refer to a previously issued invoice.

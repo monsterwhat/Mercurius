@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -107,6 +108,7 @@ public class LineaDetalle {
     private List<LineaDetalleSurtido> detallesSurtidos;
 
     @XmlElement(name = "DetalleSurtido")
+    @Transient
     private DetalleSurtido detalleSurtido;
  
     @XmlElement(name = "PrecioUnitario")

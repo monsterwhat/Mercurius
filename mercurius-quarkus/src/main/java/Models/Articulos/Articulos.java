@@ -88,6 +88,13 @@ public class Articulos implements Serializable {
     @Nullable
     @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<ArticuloPrecio> precios; // List of pricing details
+
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @Nullable
+    @OneToMany(mappedBy = "articulo", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy("orden ASC")
+    private List<ArticuloImagen> imagenes;
    
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)

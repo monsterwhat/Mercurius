@@ -3,10 +3,12 @@ package Models.Encabezado;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlAccessType;
@@ -15,6 +17,7 @@ import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.annotation.Nullable;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -77,8 +80,10 @@ public class Receptor {
     
     @XmlElement(name = "CorreoElectronico")
     @Nullable
-    @Column(name = "correo_electronico", length = 160)
-    private String correoElectronico;
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToMany(mappedBy = "receptor", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<CorreoElectronicoReceptor> correosElectronicos;
       
     @XmlTransient
     @Nullable
