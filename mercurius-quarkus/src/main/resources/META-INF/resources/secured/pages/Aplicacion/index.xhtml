@@ -344,9 +344,22 @@
                                             <p class="has-text-centered">
                                                 <small class="has-text-grey">
                                                     Fides gestiona la generación de XML, firma digital y envío a Hacienda.
-                                                    Deje estos campos vacíos para usar el flujo directo de Hacienda.
+                                                    Active esta opción para usar Fides como proveedor de facturación.
                                                 </small>
                                             </p>
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Usar Fides:" for="useFides" style="color: var(--primary-color); font-weight: bold;" />
+                                            <p:selectBooleanCheckbox id="useFides" 
+                                                value="#{SettingsController.currentSettings.useFides}"
+                                                itemLabel="Habilitar facturación vía Fides"
+                                                style="margin-left: 8px;" />
+                                            <br/>
+                                            <small class="has-text-grey">
+                                                Cuando está activo, todas las facturas se envían a través de la API de Fides.
+                                                Al desactivarlo, se usa el flujo directo de XML → Firma → Hacienda.
+                                            </small>
                                         </div>
 
                                         <div class="column is-full">
@@ -442,6 +455,11 @@
                                                     </div>
                                                     <div class="column is-full">
                                                         <p:outputLabel value="Correo Electronico: #{SettingsController.currentSettings.correoElectronico}" style="color: var(--primary-color);"/>
+                                                    </div>
+                                                    <div class="column is-full">
+                                                        <p:outputLabel value="Facturación vía Fides: " style="color: var(--primary-color);"/>
+                                                        <p:badge value="#{SettingsController.currentSettings.useFides ? 'Activado' : 'Desactivado'}"
+                                                            severity="#{SettingsController.currentSettings.useFides ? 'success' : 'info'}" />
                                                     </div>
                                                 </div> 
                                             </div>

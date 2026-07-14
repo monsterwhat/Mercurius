@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Plantillas de Correo</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/> 
+    </h:head>
+
+    <h:body>
+
+        <ui:include src="/secured/fragments/userBar.xhtml" /> 
+
+        <section class="section">
+            <div class="columns is-centered is-vcentered has-text-centered is-multiline">
+                <div class="column is-full">
+                    <p class="title has-text-centered">
+                        Plantillas de Correo Electronico
+                    </p> 
+                </div> 
+            </div>
+            <div class="card"> 
+                <div class="columns is-centered is-vcentered has-text-centered is-multiline"> 
+                    <div class="column mx-4">
+                        <p:growl showDetail="true" showSummary="true" />
+ 
+                        <h:form id="Templates">
+                            <p:dataTable value="#{emailTemplateController.filteredTemplates}" var="template" widgetVar="TemplatesTableData"
+                                         paginator="true" rows="8" paginatorPosition="bottom" id="TemplatesTableData"
+                                         emptyMessage="No se encontraron plantillas con la criteria proporcionada"
+                                         reflow="true" selectionMode="single"
+                                         selection="#{emailTemplateController.selectedTemplate}" rowKey="#{template.id}">
+
+                                <p:ajax event="rowSelect" update=":TemplatesForm:EditarTemplateDialog"/>
+                                <p:ajax event="rowUnselect" update=":TemplatesForm:EditarTemplateDialog"/>
+
+                                <f:facet name="header">
+                                    <p:commandButton value="Crear Plantilla" onclick="PF('CrearTemplateDialog').show();" actionListener="#{emailTemplateController.openNewTemplate()}" 
+                                             styleClass="rounded-button ui-button-primary" style="width: 100%" process="@form"/>
+
+                                    <p:spacer height="1em"/>
+
+                                    <p:inputText id="globalFilter" onkeyup="PF('TemplatesTableData').filter()"
+                                                 placeholder="Busqueda general de todos los campos" style="color: var(--primary-color); width: 100%"/>
+                                </f:facet>
+
+                                <p:column exportable="false">
+                                    <p:chip id="activo" icon="pi pi-check-circle" style="background: var(--green-500)" rendered="#{template.status}"/>
+                                    <p:tooltip for="activo" value="Activa" position="top"/>                            
+                                    <p:chip id="inactivo" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!template.status}"/>
+                                    <p:tooltip for="inactivo" value="Inactiva" position="top"/>
+                                </p:column>
+
+                                <p:column headerText="ID" visible="false">
+                                    <h:outputText value="#{template.id}"/>
+                                </p:column>
+                                <p:column headerText="Nombre" sortBy="#{template.nombre}">
+                                    <h:outputText value="#{template.nombre}" />
+                                </p:column>
+                                <p:column headerText="Tipo" sortBy="#{template.tipo}">
+                                    <span class="tag #{emailTemplateController.getTipoBadgeClass(template.tipo)}">
+                                        #{emailTemplateController.getTipoLabel(template.tipo)}
+                                    </span>
+                                </p:column>
+                                <p:column headerText="Asunto" sortBy="#{template.asunto}">
+                                    <h:outputText value="#{template.asunto}" />
+                                </p:column>
+                                <p:column headerText="Estado" sortBy="#{template.status}">
+                                    <h:outputText value="#{template.status ? 'Activa' : 'Inactiva'}" />
+                                </p:column>
+                                <p:column headerText="Ultima Modificacion" sortBy="#{template.fechaModificacion}">
+                                    <h:outputText value="#{template.fechaModificacion}">
+                                        <f:convertDateTime pattern="dd/MM/yyyy HH:mm"/>
+                                    </h:outputText>
+                                </p:column>
+                                <p:column headerText="Acciones" exportable="false">
+                                    <div class="buttons">
+                                        <p:commandButton styleClass="rounded-button ui-button-success" icon="pi pi-pencil"
+                                                         process="@this" onclick="PF('EditarTemplateDialog').show();">
+                                            <f:setPropertyActionListener value="#{template}" target="#{emailTemplateController.selectedTemplate}" />
+                                        </p:commandButton>
+                                        <p:commandButton styleClass="rounded-button ui-button-help" icon="pi pi-eye"
+                                                         onclick="PF('PreviewTemplateDialog').show();" process="@this"
+                                                         update=":TemplatesForm:previewPanel">
+                                            <f:setPropertyActionListener value="#{template}" target="#{emailTemplateController.selectedTemplate}" />
+                                        </p:commandButton>
+                                        <p:commandButton styleClass="rounded-button ui-button-warning" icon="pi pi-power-off"
+                                                         action="#{emailTemplateController.toggleTemplate()}" process="@this" update="Templates">
+                                            <f:setPropertyActionListener value="#{template}" target="#{emailTemplateController.selectedTemplate}" />
+                                        </p:commandButton>
+                                        <p:commandButton styleClass="rounded-button ui-button-danger" icon="pi pi-trash"
+                                                         onclick="PF('deleteTemplateDialog').show();" process="@this">
+                                            <f:setPropertyActionListener value="#{template}" target="#{emailTemplateController.selectedTemplate}" />
+                                        </p:commandButton>
+                                    </div>
+                                </p:column>
+                            </p:dataTable>
+                         </h:form>  
+                    </div>
+                </div>
+            </div>
+        </section>
+         
+        <h:form id="TemplatesForm">
+        <ui:include src="/secured/fragments/Correos/Templates/CreateTemplateDialog.xhtml" />
+        <ui:include src="/secured/fragments/Correos/Templates/EditTemplateDialog.xhtml"  />
+        <ui:include src="/secured/fragments/Correos/Templates/PreviewTemplateDialog.xhtml" />
+        </h:form>
+
+        <p:dialog header="Confirmar Eliminacion" widgetVar="deleteTemplateDialog" modal="true" resizable="false" width="400">
+            <h:form id="deleteForm">
+                <div class="field">
+                    <p class="has-text-centered">
+                        Esta seguro que desea eliminar esta plantilla de correo?
+                    </p>
+                    <p class="has-text-centered has-text-danger">
+                        Esta accion no se puede deshacer.
+                    </p>
+                </div>
+                
+                <div class="buttons is-centered" style="margin-top: 1.5rem;">
+                    <p:commandButton value="Cancelar" styleClass="rounded-button" 
+                                     onclick="PF('deleteTemplateDialog').hide();" process="@this" />
+                    <p:commandButton value="Eliminar" styleClass="rounded-button ui-button-danger" 
+                                     action="#{emailTemplateController.deleteTemplate()}" 
+                                     update="Templates" 
+                                     oncomplete="PF('deleteTemplateDialog').hide();" />
+                </div>
+            </h:form>
+        </p:dialog>
+
+    </h:body>
+</html>

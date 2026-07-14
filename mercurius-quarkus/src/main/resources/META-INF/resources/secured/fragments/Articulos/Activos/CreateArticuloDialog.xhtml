@@ -11,184 +11,197 @@
               widgetVar="CrearArticuloDialog" fitViewport="true" responsive="true">                   
         <p:outputPanel id="CrearArticuloDialog" rendered="#{not empty ArticulosController.newArticulo}">
             <h:form>
-                <section class="section">
-                    <p:growl showDetail="true" showSummary="false"/>
+                <p:tabView dynamic="true" cache="false" style="width: 100%">
+                    <p:tab title="Información">
+                        <section class="section">
+                            <p:growl showDetail="true" showSummary="false"/>
 
-                    <div class="columns is-multiline">
+                            <div class="columns is-multiline">
 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newName">Nombre:</label>
-                            <p:inputText id="newName" value="#{ArticulosController.newArticulo.nombre}"
-                                         required="true" requiredMessage="El nombre no puede estar vacío"
-                                         style="width: 100%"/>
-                        </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newName" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newName">Nombre:</label>
+                                    <p:inputText id="newName" value="#{ArticulosController.newArticulo.nombre}"
+                                                 required="true" requiredMessage="El nombre no puede estar vacío"
+                                                 style="width: 100%"/>
+                                </div> 
 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newCodigoBarra" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newCodigoBarra">Codigo de Barra:</label>
-                            <p:inputText id="newCodigoBarra" value="#{ArticulosController.newArticulo.codigoBarra}"
-                                         required="true" requiredMessage="El codigo de barra no puede estar vacío"
-                                         style="width: 100%">
-                            </p:inputText>
-                        </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newCodigoBarra" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newCodigoBarra">Codigo de Barra:</label>
+                                    <p:inputText id="newCodigoBarra" value="#{ArticulosController.newArticulo.codigoBarra}"
+                                                 required="true" requiredMessage="El codigo de barra no puede estar vacío"
+                                                 style="width: 100%">
+                                    </p:inputText>
+                                </div> 
 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newDescripcion" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newDescripcion">Descripción:</label>
-                            <p:inputTextarea id="newDescripcion" value="#{ArticulosController.newArticulo.descripcion}"
-                                             style="width: 100%" rows="3" maxlength="500"
-                                             placeholder="Descripción del artículo (opcional)"/>
-                        </div>
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newDescripcion" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newDescripcion">Descripción:</label>
+                                    <p:inputTextarea id="newDescripcion" value="#{ArticulosController.newArticulo.descripcion}"
+                                                     style="width: 100%" rows="3" maxlength="500"
+                                                     placeholder="Descripción del artículo (opcional)"/>
+                                </div>
 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newCodigoCabys" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newCodigoCabys">Código CABYS:</label>
-                            <p:commandLink value="Seleccionar" id="selectCabysCreate" styleClass="button is-primary is-rounded"  
-                                             immediate="true" process="@this"
-                                             onclick="PF('codigoCabysDialogCreate').show();">
-                                <i class="pi pi-search"></i>
-                                <span>Seleccionar</span>
-                            </p:commandLink>
-                            <p:spacer height="1em"/>
-                            <p:card class="selected-option is-flex">
-                                <p:outputLabel value="#{ArticulosController.newArticulo.codigoCabys.codigo} - #{ArticulosController.newArticulo.codigoCabys.descripcion} - #{ArticulosController.newArticulo.codigoCabys.impuesto} %"
-                                               >
-                                    <p:autoUpdate/>
-                                </p:outputLabel>
-                            </p:card>
-                        </div> 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newUnidadMedida" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newUnidadMedida">Unidad de Medida:</label>
-                            <p:selectOneMenu id="newUnidadMedida" value="#{ArticulosController.newArticulo.unidadMedida}"
-                                             style="width: 100%">
-                                <p:ajax listener="#{ArticulosController.createUnidadMedidaChanged}"/>
-                                <f:selectItem itemLabel="Unid" itemValue="Unid"/>
-                                <f:selectItem itemLabel="Otros" itemValue="Otros"/>
-                                <f:selectItem itemLabel="g" itemValue="g"/>
-                            </p:selectOneMenu>
-                        </div> 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newUnidadMedidaComercial" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newUnidadMedidaComercial">Unidad de Medida Comercial:</label>
-                            <p:selectOneMenu id="newUnidadMedidaComercial" value="#{ArticulosController.newArticulo.unidadMedidaComercial}"
-                                             style="width: 100%">
-                                <p:ajax listener="#{ArticulosController.createUnidadMedidaComercialChanged}"/>
-                                <f:selectItem itemLabel="Botella" itemValue="BOT"/>
-                                <f:selectItem itemLabel="Lata" itemValue="LT"/>
-                                <f:selectItem itemLabel="SixPack" itemValue="ST"/>
-                                <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
-                                <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
-                                <f:selectItem itemLabel="Generico" itemValue=""/>
-                            </p:selectOneMenu>
-                        </div> 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newDepartamento" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newDepartamento">Departamento:</label>
-                            <p:selectOneMenu id="newDepartamentoSelect" value="#{ArticulosController.departamentoID}"
-                                             required="true" requiredMessage="El Departamento no puede estar vacío"
-                                             widgetVar="newDepartamentoSelect" style="width: 100%">
-                                <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
-                                <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
-                                               itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
-                            </p:selectOneMenu>
-                        </div> 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newFamilia" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newFamilia">Familia:</label>
-                            <p:selectOneMenu id="newFamiliaSelect" value="#{ArticulosController.familiaID}"
-                                             required="true" requiredMessage="La Familia no puede estar vacía"
-                                             widgetVar="newFamiliaSelect" style="width: 100%">
-                                <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
-                                <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
-                                               itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
-                            </p:selectOneMenu>
-                        </div>
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newCodigoCabys" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newCodigoCabys">Código CABYS:</label>
+                                    <p:commandLink value="Seleccionar" id="selectCabysCreate" styleClass="button is-primary is-rounded"  
+                                                     immediate="true" process="@this"
+                                                     onclick="PF('codigoCabysDialogCreate').show();">
+                                        <i class="pi pi-search"></i>
+                                        <span>Seleccionar</span>
+                                    </p:commandLink>
+                                    <p:spacer height="1em"/>
+                                    <p:card class="selected-option is-flex">
+                                        <p:outputLabel value="#{ArticulosController.newArticulo.codigoCabys.codigo} - #{ArticulosController.newArticulo.codigoCabys.descripcion} - #{ArticulosController.newArticulo.codigoCabys.impuesto} %"
+                                                       >
+                                            <p:autoUpdate/>
+                                        </p:outputLabel>
+                                    </p:card>
+                                </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newUnidadMedida" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newUnidadMedida">Unidad de Medida:</label>
+                                    <p:selectOneMenu id="newUnidadMedida" value="#{ArticulosController.newArticulo.unidadMedida}"
+                                                     style="width: 100%">
+                                        <p:ajax listener="#{ArticulosController.createUnidadMedidaChanged}"/>
+                                        <f:selectItem itemLabel="Unid" itemValue="Unid"/>
+                                        <f:selectItem itemLabel="Otros" itemValue="Otros"/>
+                                        <f:selectItem itemLabel="g" itemValue="g"/>
+                                    </p:selectOneMenu>
+                                </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newUnidadMedidaComercial" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newUnidadMedidaComercial">Unidad de Medida Comercial:</label>
+                                    <p:selectOneMenu id="newUnidadMedidaComercial" value="#{ArticulosController.newArticulo.unidadMedidaComercial}"
+                                                     style="width: 100%">
+                                        <p:ajax listener="#{ArticulosController.createUnidadMedidaComercialChanged}"/>
+                                        <f:selectItem itemLabel="Botella" itemValue="BOT"/>
+                                        <f:selectItem itemLabel="Lata" itemValue="LT"/>
+                                        <f:selectItem itemLabel="SixPack" itemValue="ST"/>
+                                        <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
+                                        <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                        <f:selectItem itemLabel="Generico" itemValue=""/>
+                                    </p:selectOneMenu>
+                                </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newDepartamento" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newDepartamento">Departamento:</label>
+                                    <p:selectOneMenu id="newDepartamentoSelect" value="#{ArticulosController.departamentoID}"
+                                                     required="true" requiredMessage="El Departamento no puede estar vacío"
+                                                     widgetVar="newDepartamentoSelect" style="width: 100%">
+                                        <f:selectItem itemLabel="Seleccionar Departamento" itemValue="" />
+                                        <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
+                                                       itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
+                                    </p:selectOneMenu>
+                                </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newFamilia" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newFamilia">Familia:</label>
+                                    <p:selectOneMenu id="newFamiliaSelect" value="#{ArticulosController.familiaID}"
+                                                     required="true" requiredMessage="La Familia no puede estar vacía"
+                                                     widgetVar="newFamiliaSelect" style="width: 100%">
+                                        <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                        <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                       itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
+                                    </p:selectOneMenu>
+                                </div>
 
 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newPrecioCostoSinIVA" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newPrecioCostoSinIVA">Precio Costo sin IVA:</label>
-                            <p:inputText id="newPrecioCostoSinIVA" type="number" value="#{ArticulosController.lastPrecioNew.precioCostoSinIVA}"
-                                         required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
-                                         style="width: 100%">
-                                <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad(ArticulosController.lastPrecioNew)}"
-                                        update="newPrecioCostoSinIVA newprecioConUtilidad newprecioFinal" process="@this"/>
-                            </p:inputText>
-                        </div> 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newPorcentajeUtilidad" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newPorcentajeUtilidad">Porcentaje de Utilidad:</label>
-                            <p:inputText id="newPorcentajeUtilidad" type="number" value="#{ArticulosController.lastPrecioNew.porcentajeUtilidad}"
-                                         required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
-                                         style="width: 100%">
-                                <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad(ArticulosController.lastPrecioNew)}"
-                                        update="newPrecioCostoSinIVA newprecioConUtilidad newprecioFinal"/>
-                            </p:inputText>
-                        </div> 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newprecioConUtilidad" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newprecioConUtilidad">Precio Final:</label>
-                            <p:card>
-                                <p:outputLabel id="newprecioConUtilidad" value="#{ArticulosController.lastPrecioNew.precioConUtilidad}"/>
-                            </p:card>
-                        </div> 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newprecioFinal" showSummary="false" closable="true"/>
-                            <label class="label has-text-link" for="newprecioFinal" >Precio Final con IVA:</label>
-                            <p:card>
-                                <p:outputLabel id="newprecioFinal" value="#{ArticulosController.lastPrecioNew.precioFinal}">
-                                    <p:autoUpdate/>
-                                </p:outputLabel>
-                            </p:card>
-                        </div>
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newPrecioCostoSinIVA" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newPrecioCostoSinIVA">Precio Costo sin IVA:</label>
+                                    <p:inputText id="newPrecioCostoSinIVA" type="number" value="#{ArticulosController.lastPrecioNew.precioCostoSinIVA}"
+                                                 required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
+                                                 style="width: 100%">
+                                        <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad(ArticulosController.lastPrecioNew)}"
+                                                update="newPrecioCostoSinIVA newprecioConUtilidad newprecioFinal" process="@this"/>
+                                    </p:inputText>
+                                </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newPorcentajeUtilidad" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newPorcentajeUtilidad">Porcentaje de Utilidad:</label>
+                                    <p:inputText id="newPorcentajeUtilidad" type="number" value="#{ArticulosController.lastPrecioNew.porcentajeUtilidad}"
+                                                 required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
+                                                 style="width: 100%">
+                                        <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidad(ArticulosController.lastPrecioNew)}"
+                                                update="newPrecioCostoSinIVA newprecioConUtilidad newprecioFinal"/>
+                                    </p:inputText>
+                                </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newprecioConUtilidad" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newprecioConUtilidad">Precio Final:</label>
+                                    <p:card>
+                                        <p:outputLabel id="newprecioConUtilidad" value="#{ArticulosController.lastPrecioNew.precioConUtilidad}"/>
+                                    </p:card>
+                                </div> 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newprecioFinal" showSummary="false" closable="true"/>
+                                    <label class="label has-text-link" for="newprecioFinal" >Precio Final con IVA:</label>
+                                    <p:card>
+                                        <p:outputLabel id="newprecioFinal" value="#{ArticulosController.lastPrecioNew.precioFinal}">
+                                            <p:autoUpdate/>
+                                        </p:outputLabel>
+                                    </p:card>
+                                </div>
 
-                        <!-- Stock Alert Configuration Section -->
-                        <div class="column is-full">
-                            <hr/>
-                            <p class="title is-6 has-text-link">Configuración de Alertas de Stock</p>
-                        </div>
+                                <!-- Stock Alert Configuration Section -->
+                                <div class="column is-full">
+                                    <hr/>
+                                    <p class="title is-6 has-text-link">Configuración de Alertas de Stock</p>
+                                </div>
 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newStockOptimo" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newStockOptimo">Stock Óptimo:</label>
-                            <p:inputText id="newStockOptimo" type="number" 
-                                         value="#{ArticulosController.newArticulo.stockOptimo}"
-                                         style="width: 100%"
-                                         placeholder="Nivel de stock óptimo calculado automáticamente"/>
-                            <p:tooltip for="newStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
-                        </div>
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newStockOptimo" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newStockOptimo">Stock Óptimo:</label>
+                                    <p:inputText id="newStockOptimo" type="number" 
+                                                 value="#{ArticulosController.newArticulo.stockOptimo}"
+                                                 style="width: 100%"
+                                                 placeholder="Nivel de stock óptimo calculado automáticamente"/>
+                                    <p:tooltip for="newStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
+                                </div>
 
-                        <div class="column is-full">
-                            <p:messages showDetail="true" for="newDiasStockSeguridad" showSummary="false" closable="true" />
-                            <label class="label has-text-link" for="newDiasStockSeguridad">Días de Stock Seguridad:</label>
-                            <p:inputText id="newDiasStockSeguridad" type="number" 
-                                         value="#{ArticulosController.newArticulo.diasStockSeguridad}"
-                                         style="width: 100%"
-                                         placeholder="7 (por defecto)"/>
-                            <p:tooltip for="newDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
-                        </div>
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="newDiasStockSeguridad" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="newDiasStockSeguridad">Días de Stock Seguridad:</label>
+                                    <p:inputText id="newDiasStockSeguridad" type="number" 
+                                                 value="#{ArticulosController.newArticulo.diasStockSeguridad}"
+                                                 style="width: 100%"
+                                                 placeholder="7 (por defecto)"/>
+                                    <p:tooltip for="newDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
+                                </div>
 
-                        <div class="column is-full">
-                            <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
-                                <p:selectBooleanCheckbox id="newEstadoAlertas" 
-                                                         value="#{ArticulosController.newArticulo.estadoAlertas}"/>
-                                <label class="label has-text-link" for="newEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                                <div class="column is-full">
+                                    <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                        <p:selectBooleanCheckbox id="newEstadoAlertas" 
+                                                                 value="#{ArticulosController.newArticulo.estadoAlertas}"/>
+                                        <label class="label has-text-link" for="newEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                                    </div>
+                                    <p:tooltip for="newEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
+                                </div>
+
+                                <div class="column is-full mt-3">
+                                    <div class="buttons is-centered">
+                                        <p:commandLink value="Crear Artículo" update="@form Articulos:ArticulosActivos" process="@form"
+                                                         action="#{ArticulosController.createArticuloByDialog()}" 
+                                                         styleClass="button is-primary is-rounded is-fullwidth" />
+                                    </div>
+                                </div>
+
+                            </div> 
+                        </section>
+                    </p:tab>
+                    <p:tab title="Imágenes">
+                        <section class="section">
+                            <div class="columns is-multiline">
+                                <div class="column is-full has-text-centered">
+                                    <p class="title is-6 has-text-grey">Guarde el artículo primero para poder agregar imágenes</p>
+                                </div>
                             </div>
-                            <p:tooltip for="newEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
-                        </div>
-
-                        <div class="column is-full mt-3">
-                            <div class="buttons is-centered">
-                                <p:commandLink value="Crear Artículo" update="@form Articulos:ArticulosActivos" process="@form"
-                                                 action="#{ArticulosController.createArticuloByDialog()}" 
-                                                 styleClass="button is-primary is-rounded is-fullwidth" />
-                            </div>
-                        </div>
-
-                    </div> 
-                </section> 
+                        </section>
+                    </p:tab>
+                </p:tabView>
             </h:form>
         </p:outputPanel>
     </p:dialog>

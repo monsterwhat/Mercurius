@@ -101,12 +101,60 @@
                                         </span>
                                     </p:commandLink>
                                 </p:column>
+                                <p:column headerText="Cambios" width="90" rendered="#{SessionController.admin}">
+                                    <p:commandButton icon="pi pi-history" 
+                                                     styleClass="rounded-button ui-button-info"
+                                                     process="@this"
+                                                     rendered="#{alertasController.hasDiff(registro)}"
+                                                     actionListener="#{alertasController.openDiff(registro)}"
+                                                     oncomplete="PF('DiffDialog').show()"
+                                                     update="DiffDialog"/>
+                                </p:column>
                             </p:dataTable>
                         </h:form>
                     </div> 
                 </div> 
             </div> 
         </section>
+
+        <p:dialog header="Detalle de Cambios" widgetVar="DiffDialog" modal="true" 
+                  dynamic="true" cache="false" closable="true" fitViewport="true" 
+                  responsive="true" width="700">
+            <h:form id="diffForm">
+                <p:outputPanel rendered="#{not empty alertasController.selectedAlerta}">
+                    <div style="margin-bottom: 1rem;">
+                        <p><strong>Tipo:</strong> #{alertasController.selectedAlerta.tipo}</p>
+                        <p><strong>Mensaje:</strong> #{alertasController.selectedAlerta.mensaje}</p>
+                        <p><strong>Fecha:</strong> 
+                            <h:outputText value="#{alertasController.selectedAlerta.timestampAsDate}">
+                                <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
+                            </h:outputText>
+                        </p>
+                        <p><strong>Origen:</strong> #{alertasController.selectedAlerta.source}</p>
+                    </div>
+
+                    <p:dataTable value="#{alertasController.currentDiff.entrySet().toArray()}" 
+                                 var="entry" emptyMessage="No hay cambios registrados"
+                                 rendered="#{not empty alertasController.currentDiff}">
+                        <p:column headerText="Campo" width="200">
+                            <h:outputText value="#{alertasController.fieldLabel(entry.key)}" style="font-weight: bold;"/>
+                        </p:column>
+                        <p:column headerText="Antes" width="250">
+                            <h:outputText value="#{entry.value[0]}" style="color: var(--red-500);"/>
+                        </p:column>
+                        <p:column headerText="Después" width="250">
+                            <h:outputText value="#{entry.value[1]}" style="color: var(--green-500);"/>
+                        </p:column>
+                    </p:dataTable>
+
+                    <p:outputPanel rendered="#{empty alertasController.currentDiff}">
+                        <p class="has-text-centered has-text-grey" style="padding: 2rem;">
+                            No hay cambios detallados disponibles para este registro.
+                        </p>
+                    </p:outputPanel>
+                </p:outputPanel>
+            </h:form>
+        </p:dialog>
 
     </h:body>
 </html>

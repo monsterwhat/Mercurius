@@ -249,6 +249,18 @@
                                              placeholder="-1 para ilimitadas"/>
                                 <p class="help">Ingrese -1 para cantidades ilimitadas</p>
                             </div>
+
+                            <div class="field">
+                                <div class="is-flex is-align-items-center" style="gap: 0.5rem; margin-top: 1.5rem;">
+                                    <p:selectBooleanCheckbox id="newEnsambladoOrigen" 
+                                                             value="#{PromocionesController.newPromocion.ensambladoOrigen}"/>
+                                    <label class="label" for="newEnsambladoOrigen" style="margin-bottom: 0; cursor: pointer;">
+                                        Ensamblado en Origen
+                                    </label>
+                                    <i class="pi pi-info-circle" style="color: var(--bulma-text-light); cursor: help;"
+                                       title="Marque solo si el combo fue ensamblado por el fabricante/distribuidor (tiene su propio SKU/GTIN). Los combos armados en mostrador NO deben marcarse."></i>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Total con descuento -->

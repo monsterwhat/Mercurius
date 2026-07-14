@@ -199,6 +199,31 @@
                     </div> 
                 </div>
 
+                <!-- Órdenes de Compra -->
+                <div class="column is-one-quarter">
+                    <div class="card">
+                        <div class="header-bar" style="background-color: #e67e22"/>
+                        <br/>
+                        <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
+                            <div class="column is-full">
+                                <p class="title is-5">Órdenes de Compra</p>
+                            </div>
+                            <div class="column">
+                                <div class="buttons">
+                                    <p:link styleClass="button is-warning is-fullwidth" href="/Mercurius/secured/pages/Compras/Ordenes/index.xhtml" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-shopping-cart"></i>
+                                        </span>
+                                        <span>
+                                            Gestionar Órdenes
+                                        </span>
+                                    </p:link>
+                                </div>
+                            </div>
+                        </div>
+                    </div> 
+                </div>
+
                 <!-- Registros Internos (Admin Only) -->
                 <p:outputPanel rendered="#{SessionController.admin}">
                     <div class="column is-one-quarter">
@@ -347,6 +372,14 @@
                                             Reportes por Email
                                         </span>
                                     </p:link>
+                                    <p:link styleClass="button is-dark is-fullwidth" href="/Mercurius/secured/pages/Correos/Templates/index.xhtml" >
+                                        <span class="icon is-small">
+                                            <i class="pi pi-file-edit"></i>
+                                        </span>
+                                        <span>
+                                            Plantillas de Correo
+                                        </span>
+                                    </p:link>
                                 </div>
                             </div>
                         </div>
@@ -453,23 +486,23 @@
                     </div> 
                 </div>
 
-                <!-- Estacionalidad -->
+                <!-- Métricas de Proveedores -->
                 <div class="column is-one-quarter">
                     <div class="card">
-                        <div class="header-bar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)"/>
+                        <div class="header-bar" style="background-color: #363636"/>
                         <br/>
                         <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
                             <div class="column is-full"> 
-                                <p class="title is-5">Estacionalidad</p>
+                                <p class="title is-5">Métricas de Proveedores</p>
                             </div>
                             <div class="column">
                                 <div class="buttons">
-                                    <p:link styleClass="button is-primary is-fullwidth" href="/Mercurius/secured/pages/Reportes/Estacionalidad/index.xhtml" >
+                                    <p:link styleClass="button is-dark is-fullwidth" href="/Mercurius/secured/pages/Departamentos/Reportes/Metricas/index.xhtml" >
                                         <span class="icon is-small">
                                             <i class="pi pi-chart-bar"></i>
                                         </span>
                                         <span>
-                                            Análisis de Estacionalidad
+                                            Scorecard de Proveedores
                                         </span>
                                     </p:link>
                                 </div>
@@ -477,8 +510,5 @@
                         </div>
                     </div> 
                 </div>
-            </div>
-        </section>  
-    </h:body>
 
-</html>
+                <!-- Correos Programados -->

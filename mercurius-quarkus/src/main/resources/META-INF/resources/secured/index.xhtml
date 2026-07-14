@@ -36,12 +36,13 @@
     </h:head>
 
     <h:body>
-        <ui:include src="/secured/fragments/userBar.xhtml" /> 
+        <ui:include src="/secured/fragments/userBar.xhtml" />
         <p:growl showDetail="true" showSummary="true" />
-        
+
         <div class="dashboard-container">
             <div class="dashboard-main">
-            <!-- Welcome Section -->
+
+            <!-- ═══════════ Welcome Hero (all roles) ═══════════ -->
             <div class="welcome-hero">
                 <div class="columns is-vcentered">
                     <div class="column">
@@ -55,33 +56,33 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Quick Actions - Top Priority -->
+
+            <!-- ═══════════ Quick Actions (all roles, role-filtered buttons) ═══════════ -->
             <div class="mb-5">
                 <div class="dashboard-card">
                     <div class="card-content">
                         <h3 class="title is-5 mb-5 has-text-centered">Acciones Rápidas</h3>
                         <div class="buttons is-centered">
-                            <p:commandButton value="Nueva Venta" 
+                            <p:commandButton value="Nueva Venta"
                                            actionListener="#{crearTiqueteController.openNewFactura}"
                                            onclick="openFactura(Date.now());
                                                    return false;"
                                            styleClass="is-primary is-large"
                                            icon="pi pi-shopping-cart" />
-                            
-                            <p:commandButton value="Inventario" 
+
+                            <p:commandButton value="Inventario"
                                            action="/secured/pages/inventario/inventario"
                                            styleClass="is-info is-medium"
                                            icon="pi pi-box"
                                            rendered="#{sessionController.inventarios}" />
-                            
-                            <p:commandButton value="Clientes" 
+
+                            <p:commandButton value="Clientes"
                                            action="/secured/pages/Clientes/index.xhtml"
                                            styleClass="is-link is-medium"
                                            icon="pi pi-users"
                                            rendered="#{sessionController.registros}" />
-                            
-                            <p:commandButton value="Artículos" 
+
+                            <p:commandButton value="Artículos"
                                            action="/secured/pages/Articulos/index.xhtml"
                                            styleClass="is-warning is-medium"
                                            icon="pi pi-tag"
@@ -90,84 +91,326 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Main Content Area -->
-            <div class="columns is-multiline">
-                <!-- Left Column - Stats -->
-                <div class="column is-4">
-                    <div class="dashboard-card">
-                        <div class="card-content">
-                            <h3 class="title is-5 mb-4">Resumen de Hoy</h3>
-                            
-                            <div class="columns is-multiline">
-                                <div class="column is-12">
-                                    <div class="box has-background-primary-light">
-                                        <p class="title is-3 has-text-primary">#{dashboardController.transactionCount}</p>
-                                        <p class="subtitle is-6">Transacciones</p>
+
+            <!-- ═══════════════════════════════════════════════════
+                 SALES COMPARISON KPIs (admin + facturacion)
+                 ═══════════════════════════════════════════════════ -->
+            <h:form id="kpiSection" rendered="#{sessionController.admin or sessionController.facturacion}">
+                <div class="columns is-multiline mb-5">
+
+                    <!-- Hoy -->
+                    <div class="column is-3">
+                        <div class="dashboard-card">
+                            <div class="card-content has-text-centered">
+                                <p class="heading">Ventas Hoy</p>
+                                <p class="title is-4 has-text-primary">#{dashboardController.todaySalesFormatted}</p>
+                                <p class="subtitle is-6 #{dashboardController.dailyGrowthCssClass}">
+                                    #{dashboardController.dailyGrowthDisplay} vs ayer
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ayer -->
+                    <div class="column is-3">
+                        <div class="dashboard-card">
+                            <div class="card-content has-text-centered">
+                                <p class="heading">Ventas Ayer</p>
+                                <p class="title is-4 has-text-info">#{dashboardController.yesterdaySalesFormatted}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Esta Semana -->
+                    <div class="column is-3">
+                        <div class="dashboard-card">
+                            <div class="card-content has-text-centered">
+                                <p class="heading">Esta Semana</p>
+                                <p class="title is-4 has-text-link">#{dashboardController.weekSalesFormatted}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Últimos 30 Días -->
+                    <div class="column is-3">
+                        <div class="dashboard-card">
+                            <div class="card-content has-text-centered">
+                                <p class="heading">Últimos 30 Días</p>
+                                <p class="title is-4 has-text-warning">#{dashboardController.monthSalesFormatted}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Average Ticket Size -->
+                <div class="columns mb-5">
+                    <div class="column is-4">
+                        <div class="dashboard-card">
+                            <div class="card-content has-text-centered">
+                                <p class="heading">Ticket Promedio (30 días)</p>
+                                <p class="title is-3 has-text-success">#{dashboardController.avgTicketFormatted}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-4">
+                        <div class="dashboard-card">
+                            <div class="card-content has-text-centered">
+                                <p class="heading">Transacciones Hoy</p>
+                                <p class="title is-3 has-text-primary">#{dashboardController.transactionCount}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-4">
+                        <div class="dashboard-card">
+                            <div class="card-content has-text-centered">
+                                <p class="heading">Artículos Vendidos Hoy</p>
+                                <p class="title is-3 has-text-success">#{dashboardController.itemsSold}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </h:form>
+
+            <!-- ═══════════════════════════════════════════════════
+                 TODAY STATS (all other roles — not admin/facturacion since they see the KPI section)
+                 ═══════════════════════════════════════════════════ -->
+            <h:form id="basicStats" rendered="#{not (sessionController.admin or sessionController.facturacion)}">
+                <div class="columns is-multiline mb-5">
+                    <div class="column is-4">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <h3 class="title is-5 mb-4">Resumen de Hoy</h3>
+                                <div class="columns is-multiline">
+                                    <div class="column is-12">
+                                        <div class="box has-background-primary-light">
+                                            <p class="title is-3 has-text-primary">#{dashboardController.transactionCount}</p>
+                                            <p class="subtitle is-6">Transacciones</p>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div class="column is-12">
-                                    <div class="box has-background-success-light">
-                                        <p class="title is-3 has-text-success">#{dashboardController.itemsSold}</p>
-                                        <p class="subtitle is-6">Artículos Vendidos</p>
+                                    <div class="column is-12">
+                                        <div class="box has-background-success-light">
+                                            <p class="title is-3 has-text-success">#{dashboardController.itemsSold}</p>
+                                            <p class="subtitle is-6">Artículos Vendidos</p>
+                                        </div>
                                     </div>
-                                </div>
-                                
-                                <div class="column is-12">
-                                    <div class="box has-background-warning-light">
-                                        <p class="title is-5 has-text-warning">#{dashboardController.lastTransactionDisplay}</p>
-                                        <p class="subtitle is-6">Última Transacción</p>
+                                    <div class="column is-12">
+                                        <div class="box has-background-warning-light">
+                                            <p class="title is-5 has-text-warning">#{dashboardController.lastTransactionDisplay}</p>
+                                            <p class="subtitle is-6">Última Transacción</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Right Column - Recent Activity -->
-                <div class="column is-8">
-                    <div class="dashboard-card">
-                        <div class="card-content">
-                            <h3 class="title is-5 mb-4">Ventas Recientes</h3>
-                            <p:dataTable id="recentSalesPanel" 
-                                       value="#{dashboardController.recentSales}" 
-                                       var="sale"
-                                       rows="10"
-                                       paginator="false"
-                                       scrollable="true"
-                                       scrollHeight="350"
-                                       emptyMessage="No se encontraron ventas con la critería proporcionada"
-                                       styleClass="is-fullwidth">
-                                 
-                                 <p:column headerText="Factura #" width="120">
-                                     <h:outputText value="#{sale.encabezado.numeroConsecutivo}" />
-                                 </p:column>
-                                 
-                                 <p:column headerText="Hora" width="80">
-                                     <h:outputText value="#{sale.encabezado.fechaEmision}">
-                                         <f:convertDateTime pattern="HH:mm" />
-                                     </h:outputText>
-                                 </p:column>
-                                 
-                                 <p:column headerText="Cliente">
-                                     <h:outputText value="#{sale.encabezado.receptor.nombre}" />
-                                 </p:column>
-                                 
-                                 <p:column headerText="Total" width="120" styleClass="has-text-right">
-                                     <h:outputText value="#{sale.resumen.totalComprobante} colones" />
-                                 </p:column>
-                                 
-                                 <p:column headerText="Pago" width="100">
-                                     <h:outputText value="#{sale.encabezado.medioPago}" />
-                                 </p:column>
-                            </p:dataTable>
+                    <div class="column is-8">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <h3 class="title is-5 mb-4">Ventas Recientes</h3>
+                                <p:dataTable id="recentSalesBasic"
+                                           value="#{dashboardController.recentSales}"
+                                           var="sale"
+                                           rows="10"
+                                           paginator="false"
+                                           scrollable="true"
+                                           scrollHeight="350"
+                                           emptyMessage="No se encontraron ventas"
+                                           styleClass="is-fullwidth">
+                                    <p:column headerText="Factura #" width="120">
+                                        <h:outputText value="#{sale.encabezado.numeroConsecutivo}" />
+                                    </p:column>
+                                    <p:column headerText="Hora" width="80">
+                                        <h:outputText value="#{sale.encabezado.fechaEmision}">
+                                            <f:convertDateTime pattern="HH:mm" />
+                                        </h:outputText>
+                                    </p:column>
+                                    <p:column headerText="Cliente">
+                                        <h:outputText value="#{sale.encabezado.receptor.nombre}" />
+                                    </p:column>
+                                    <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                        <h:outputText value="#{sale.resumen.totalComprobante} colones" />
+                                    </p:column>
+                                    <p:column headerText="Pago" width="100">
+                                        <h:outputText value="#{sale.encabezado.medioPago}" />
+                                    </p:column>
+                                </p:dataTable>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </h:form>
+
+            <!-- ═══════════════════════════════════════════════════
+                 CHARTS (admin + facturacion)
+                 ═══════════════════════════════════════════════════ -->
+            <h:form id="chartsSection" rendered="#{sessionController.admin or sessionController.facturacion}">
+                <div class="columns is-multiline mb-5">
+                    <!-- Hourly Sales Distribution -->
+                    <div class="column is-half">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <p class="title is-5 has-text-centered mb-4">Ventas por Hora</p>
+                                <div style="height: 300px; width: 100%;">
+                                    <p:chart type="bar" value="#{dashboardController.hourlyChartConfig}"
+                                             style="height: 300px; width: 100%;" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Sales Trend -->
+                    <div class="column is-half">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <p class="title is-5 has-text-centered mb-4">Tendencia Semanal</p>
+                                <div style="height: 300px; width: 100%;">
+                                    <p:chart type="line" value="#{dashboardController.weeklyChartConfig}"
+                                             style="height: 300px; width: 100%;" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </h:form>
+
+            <!-- ═══════════════════════════════════════════════════
+                 TOP PRODUCTS (admin + inventario)
+                 ═══════════════════════════════════════════════════ -->
+            <h:form id="topProductsSection" rendered="#{sessionController.admin or sessionController.inventarios}">
+                <div class="columns mb-5">
+                    <div class="column is-6">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <h3 class="title is-5 mb-4">
+                                    <span class="icon"><i class="pi pi-trophy"></i></span>
+                                    Productos Más Vendidos (7 días)
+                                </h3>
+                                <p:dataTable id="topProductsTable"
+                                           value="#{dashboardController.topProducts}"
+                                           var="prod"
+                                           rows="5"
+                                           paginator="false"
+                                           emptyMessage="No hay datos de ventas disponibles"
+                                           styleClass="is-fullwidth">
+                                    <p:column headerText="Producto">
+                                        <h:outputText value="#{prod.name}" />
+                                    </p:column>
+                                    <p:column headerText="Unidades" width="100" styleClass="has-text-centered">
+                                        <span class="tag is-info is-light">
+                                            <h:outputText value="#{prod.quantity}" />
+                                        </span>
+                                    </p:column>
+                                    <p:column headerText="Ingresos" width="140" styleClass="has-text-right">
+                                        <h:outputText value="#{prod.revenue} colones" />
+                                    </p:column>
+                                </p:dataTable>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Sales (also shown for inventario role) -->
+                    <div class="column is-6">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <h3 class="title is-5 mb-4">
+                                    <span class="icon"><i class="pi pi-list"></i></span>
+                                    Últimas Transacciones
+                                </h3>
+                                <p:dataTable id="recentSalesInventario"
+                                           value="#{dashboardController.recentSales}"
+                                           var="sale"
+                                           rows="5"
+                                           paginator="false"
+                                           scrollable="true"
+                                           scrollHeight="300"
+                                           emptyMessage="No hay ventas recientes"
+                                           styleClass="is-fullwidth">
+                                    <p:column headerText="Factura" width="120">
+                                        <h:outputText value="#{sale.encabezado.numeroConsecutivo}" />
+                                    </p:column>
+                                    <p:column headerText="Hora" width="70">
+                                        <h:outputText value="#{sale.encabezado.fechaEmision}">
+                                            <f:convertDateTime pattern="HH:mm" />
+                                        </h:outputText>
+                                    </p:column>
+                                    <p:column headerText="Cliente">
+                                        <h:outputText value="#{sale.encabezado.receptor.nombre}" />
+                                    </p:column>
+                                    <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                        <h:outputText value="#{sale.resumen.totalComprobante} colones" />
+                                    </p:column>
+                                </p:dataTable>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </h:form>
+
+            <!-- ═══════════════════════════════════════════════════
+                 RECENT SALES + LAST TRANSACTION (admin + facturacion — detailed view)
+                 ═══════════════════════════════════════════════════ -->
+            <h:form id="recentSalesSection" rendered="#{sessionController.admin or sessionController.facturacion}">
+                <div class="columns is-multiline mb-5">
+                    <!-- Recent Sales Table -->
+                    <div class="column is-8">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <h3 class="title is-5 mb-4">Ventas Recientes</h3>
+                                <p:dataTable id="recentSalesPanel"
+                                           value="#{dashboardController.recentSales}"
+                                           var="sale"
+                                           rows="10"
+                                           paginator="false"
+                                           scrollable="true"
+                                           scrollHeight="350"
+                                           emptyMessage="No se encontraron ventas con la critería proporcionada"
+                                           styleClass="is-fullwidth">
+                                    <p:column headerText="Factura #" width="120">
+                                        <h:outputText value="#{sale.encabezado.numeroConsecutivo}" />
+                                    </p:column>
+                                    <p:column headerText="Hora" width="80">
+                                        <h:outputText value="#{sale.encabezado.fechaEmision}">
+                                            <f:convertDateTime pattern="HH:mm" />
+                                        </h:outputText>
+                                    </p:column>
+                                    <p:column headerText="Cliente">
+                                        <h:outputText value="#{sale.encabezado.receptor.nombre}" />
+                                    </p:column>
+                                    <p:column headerText="Total" width="120" styleClass="has-text-right">
+                                        <h:outputText value="#{sale.resumen.totalComprobante} colones" />
+                                    </p:column>
+                                    <p:column headerText="Pago" width="100">
+                                        <h:outputText value="#{sale.encabezado.medioPago}" />
+                                    </p:column>
+                                </p:dataTable>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Last Transaction Detail -->
+                    <div class="column is-4">
+                        <div class="dashboard-card">
+                            <div class="card-content">
+                                <h3 class="title is-5 mb-4">Última Transacción</h3>
+                                <div class="box has-background-warning-light">
+                                    <p class="title is-5 has-text-warning">#{dashboardController.lastTransactionDisplay}</p>
+                                </div>
+                                <div class="box has-background-primary-light mt-4">
+                                    <p class="heading">Ventas Hoy</p>
+                                    <p class="title is-4 has-text-primary">#{dashboardController.todaySalesFormatted}</p>
+                                </div>
+                                <div class="box has-background-info-light mt-4">
+                                    <p class="heading">Ticket Promedio</p>
+                                    <p class="title is-4 has-text-info">#{dashboardController.avgTicketFormatted}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </h:form>
+
             </div>
         </div>
-        
+
     </h:body>
 </html>
