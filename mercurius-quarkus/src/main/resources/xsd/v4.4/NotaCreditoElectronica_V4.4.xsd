@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns="https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/notaCreditoElectronica" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/notaCreditoElectronica" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.4" vc:minVersion="1.1">
+<xs:schema xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.4" vc:minVersion="1.1">
 	<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="../../xmldsig-core-schema.xsd"/>
 	<xs:element name="NotaCreditoElectronica">
 		<xs:annotation>
@@ -556,15 +556,15 @@ Validación: Se verificará el cumplimiento de nota 8.1. cuando se utilice el c�
 																								</xs:restriction>
 																							</xs:simpleType>
 																						</xs:element>
-																						<xs:element name="ProporcionSurtido" minOccurs="0">
+<xs:element name="ProporcionSurtido" minOccurs="0">
 																							<xs:annotation>
 																								<xs:documentation>Este campo es de condición obligatoria, cuando se utilice el código de impuesto 04 de la nota 8
 Este campo se obtiene de multiplicar la "Cantidad de la unidad de medida a utilizar" por el "Porcentaje"</xs:documentation>
 																							</xs:annotation>
 																							<xs:simpleType>
 																								<xs:restriction base="xs:decimal">
-																									<xs:totalDigits value="5"/>
-																									<xs:fractionDigits value="2"/>
+																									<xs:totalDigits value="10"/>
+																									<xs:fractionDigits value="5"/>
 																								</xs:restriction>
 																							</xs:simpleType>
 																						</xs:element>
@@ -978,10 +978,15 @@ se obtiene de la sumatoria de los campos “Subtotal”, “Impuesto Neto”.</x
 						</xs:sequence>
 					</xs:complexType>
 				</xs:element>
-				<xs:element ref="ds:Signature" minOccurs="1" maxOccurs="1"/>
+				<xs:element ref="ds:Signature" minOccurs="1" maxOccurs="5"/>
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
+	<xs:simpleType name="CorreoElectronicoReceptor">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="160"/>
+		</xs:restriction>
+	</xs:simpleType>
 	<xs:complexType name="EmisorType">
 		<xs:sequence>
 			<xs:element name="Nombre" nillable="false">
@@ -1074,17 +1079,10 @@ alcohólicas, suministrado por la Dirección General de Aduanas</xs:documentatio
 				</xs:simpleType>
 			</xs:element>
 			<xs:element name="Telefono" type="TelefonoType" minOccurs="0"/>
-			<xs:element name="CorreoElectronico" minOccurs="0">
+			<xs:element name="CorreoElectronico" type="CorreoElectronicoReceptor" minOccurs="0" maxOccurs="unbounded">
 				<xs:annotation>
-					<xs:documentation>Este campo será de condición obligatoria, cuando el cliente lo requiera. Debe cumplir con la siguiente estructura: 
- \s*\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*\s*
-</xs:documentation>
+					<xs:documentation>Correo(s) electrónico(s) del receptor</xs:documentation>
 				</xs:annotation>
-				<xs:simpleType>
-					<xs:restriction base="xs:string">
-						<xs:maxLength value="160"/>
-					</xs:restriction>
-				</xs:simpleType>
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
@@ -1203,7 +1201,7 @@ alcohólicas, suministrado por la Dirección General de Aduanas</xs:documentatio
 				</xs:annotation>
 				<xs:simpleType>
 					<xs:restriction base="xs:integer">
-						<xs:minInclusive value="10000000"/>
+						<xs:minInclusive value="100"/>
 						<xs:maxInclusive value="99999999999999999999"/>
 					</xs:restriction>
 				</xs:simpleType>
@@ -1448,14 +1446,14 @@ componentes del surtido que se deben incluir en estos casos</xs:documentation>
 								</xs:restriction>
 							</xs:simpleType>
 						</xs:element>
-						<xs:element name="Proporcion" minOccurs="0">
+<xs:element name="Proporcion" minOccurs="0">
 							<xs:annotation>
-								<xs:documentation>Este campo es de condición obligatoria, cuando se utilice el código de impuesto 04 de la nota 8 Este campo se obtiene de multiplicar la “Cantidad de la unidad de medida a utilizar” por el “Porcentaje”</xs:documentation>
+								<xs:documentation>Este campo es de condición obligatoria, cuando se utilice el código de impuesto 04 de la nota 8 Este campo se obtiene de multiplicar la "Cantidad de la unidad de medida a utilizar" por el "Porcentaje"</xs:documentation>
 							</xs:annotation>
 							<xs:simpleType>
 								<xs:restriction base="xs:decimal">
-									<xs:totalDigits value="5"/>
-									<xs:fractionDigits value="2"/>
+									<xs:totalDigits value="10"/>
+									<xs:fractionDigits value="5"/>
 								</xs:restriction>
 							</xs:simpleType>
 						</xs:element>
@@ -2936,6 +2934,21 @@ Además, cuando se seleccione el código 04, 08, 09 y 10 de la nota 16 en “Tip
 			<xs:enumeration value="12">
 				<xs:annotation>
 					<xs:documentation>Crédito por exoneración posterior a la facturación</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="13">
+				<xs:annotation>
+					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="14">
+				<xs:annotation>
+					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="15">
+				<xs:annotation>
+					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
 				</xs:annotation>
 			</xs:enumeration>
 			<xs:enumeration value="99">
