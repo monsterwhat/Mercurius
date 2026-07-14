@@ -58,19 +58,19 @@ class XsdModelAlignmentTest {
 
     // Namespaces
     private static final String FE_NS =
-        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronica";
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica";
     private static final String TE_NS =
-        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/tiqueteElectronico";
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico";
     private static final String NC_NS =
-        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/notaCreditoElectronica";
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica";
     private static final String ND_NS =
-        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/notaDebitoElectronica";
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaDebitoElectronica";
     private static final String FEC_NS =
-        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronicaCompra";
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaCompra";
     private static final String FEE_NS =
-        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronicaExportacion";
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaExportacion";
     private static final String REP_NS =
-        "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/reciboElectronicoPago";
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/reciboElectronicoPago";
 
     @BeforeAll
     static void setUp() throws Exception {
@@ -187,8 +187,10 @@ class XsdModelAlignmentTest {
         ref.setTipoDoc("01");
         ref.setNumero("00100001000000000001");
         ref.setFechaEmision(LocalDateTime.of(2026, 7, 2, 10, 0, 0));
-        ref.setCodigo("01");
+        ref.setCodigo("13");
         ref.setRazon("Referencia de prueba");
+        ref.setTipoDocRefOTRO(null);
+        ref.setCodigoReferenciaOTRO(null);
         return List.of(ref);
     }
 
