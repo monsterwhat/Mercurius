@@ -12,6 +12,7 @@ import Models.Detalles.LineaDetalle;
 import Models.Enums.Tipo_CodigoImpuesto;
 import Models.ReportesFamiliasYDepartamentos;
 import Models.StockAlert;
+import Models.PagoEntry;
 import Models.ProfitMarginSnapshot;
 import Models.Users;
 import com.lowagie.text.Document;
@@ -65,13 +66,13 @@ public class PDFGenerator {
     @Inject
     AlertasService alertasService;
 
-    public void generarPDFTiqueteElectronico(@Nonnull ComprobantesEmitidos tiqueteElectronico, @Nonnull AppSettings settings, @Nonnull List<ArticuloCarrito> carrito, @Nonnull Clients cliente, @Nonnull Users user, @Nonnull BigDecimal pago, @Nonnull BigDecimal vuelto) {
+    public void generarPDFTiqueteElectronico(@Nonnull ComprobantesEmitidos tiqueteElectronico, @Nonnull AppSettings settings, @Nonnull List<ArticuloCarrito> carrito, @Nonnull Clients cliente, @Nonnull Users user, @Nonnull BigDecimal pago, @Nonnull BigDecimal vuelto, @Nullable List<PagoEntry> pagos) {
         // PDF generation logic here
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         try {
             // Add content to the document
-            Document document = addContentToDocument(baos, settings, tiqueteElectronico, cliente, user, carrito, pago, vuelto);
+            Document document = addContentToDocument(baos, settings, tiqueteElectronico, cliente, user, carrito, pago, vuelto, pagos);
 
             // Close the document after finishing adding content
             document.close();
@@ -84,7 +85,7 @@ public class PDFGenerator {
 
     }
 
-    private Document addContentToDocument(ByteArrayOutputStream baos, AppSettings settings, ComprobantesEmitidos tiqueteElectronico, Clients cliente, Users user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto) throws DocumentException {
+    private Document addContentToDocument(ByteArrayOutputStream baos, AppSettings settings, ComprobantesEmitidos tiqueteElectronico, Clients cliente, Users user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto, @Nullable List<PagoEntry> pagos) throws DocumentException {
         Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
         PdfWriter.getInstance(document, baos);
         document.add(new Meta("charset", "UTF-8"));
@@ -293,26 +294,48 @@ public class PDFGenerator {
         document.add(separator); // End list separator
 
         PdfPTable paymentTable = new PdfPTable(2);
-        paymentTable.setWidthPercentage(100); // Set table width to 100% of the page width
-
-        PdfPCell pagaConCell = new PdfPCell(new Phrase("Paga con: ", font));
-        pagaConCell.setBorder(PdfPCell.NO_BORDER); // Optional: Remove border for a cleaner look
-        pagaConCell.setHorizontalAlignment(Element.ALIGN_LEFT); // Align left
-        paymentTable.addCell(pagaConCell);
-
-        PdfPCell pagoValueCell = new PdfPCell(new Phrase(pago.toString(), font));
-        pagoValueCell.setBorder(PdfPCell.NO_BORDER); // Optional: Remove border for a cleaner look
-        pagoValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT); // Align right
-        paymentTable.addCell(pagoValueCell);
-
-        PdfPCell vueltoCell = new PdfPCell(new Phrase("Vuelto: ", font));
-        vueltoCell.setBorder(PdfPCell.NO_BORDER); // Optional: Remove border for a cleaner look
-        vueltoCell.setHorizontalAlignment(Element.ALIGN_LEFT); // Align left
-        paymentTable.addCell(vueltoCell);
-
+        paymentTable.setWidthPercentage(100);
+        BigDecimal sumaMostrada = BigDecimal.ZERO;
+        if (pagos != null && !pagos.isEmpty()) {
+            for (PagoEntry pe : pagos) {
+                if (pe.getMonto() == null || pe.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
+                String label = PagoEntry.metodoPagoLabel(pe.getMetodoPago()) + ":";
+                PdfPCell labelCell = new PdfPCell(new Phrase(label, font));
+                labelCell.setBorder(PdfPCell.NO_BORDER);
+                labelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+                paymentTable.addCell(labelCell);
+                PdfPCell paymentValueCell = new PdfPCell(new Phrase(pe.getMonto().toString(), font));
+                paymentValueCell.setBorder(PdfPCell.NO_BORDER);
+                paymentValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                paymentTable.addCell(paymentValueCell);
+                sumaMostrada = sumaMostrada.add(pe.getMonto());
+            }
+        } else {
+            PdfPCell labelCell = new PdfPCell(new Phrase("Paga con:", font));
+            labelCell.setBorder(PdfPCell.NO_BORDER);
+            labelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+            paymentTable.addCell(labelCell);
+            PdfPCell fallbackValueCell = new PdfPCell(new Phrase(pago.toString(), font));
+            fallbackValueCell.setBorder(PdfPCell.NO_BORDER);
+            fallbackValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            paymentTable.addCell(fallbackValueCell);
+            sumaMostrada = pago;
+        }
+        PdfPCell totalLabelCell = new PdfPCell(new Phrase("Total Pagado:", font));
+        totalLabelCell.setBorder(PdfPCell.NO_BORDER);
+        totalLabelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+        paymentTable.addCell(totalLabelCell);
+        PdfPCell totalValueCell = new PdfPCell(new Phrase(sumaMostrada.toString(), font));
+        totalValueCell.setBorder(PdfPCell.NO_BORDER);
+        totalValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        paymentTable.addCell(totalValueCell);
+        PdfPCell vueltoLabelCell = new PdfPCell(new Phrase("Vuelto:", font));
+        vueltoLabelCell.setBorder(PdfPCell.NO_BORDER);
+        vueltoLabelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
+        paymentTable.addCell(vueltoLabelCell);
         PdfPCell vueltoValueCell = new PdfPCell(new Phrase(vuelto.negate().toString(), font));
-        vueltoValueCell.setBorder(PdfPCell.NO_BORDER); // Optional: Remove border for a cleaner look
-        vueltoValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT); // Align right
+        vueltoValueCell.setBorder(PdfPCell.NO_BORDER);
+        vueltoValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
         paymentTable.addCell(vueltoValueCell);
 
         document.add(paymentTable);

@@ -8,6 +8,7 @@ import Models.Detalles.DetalleServicio;
 import Models.Detalles.Impuesto;
 import Models.Detalles.LineaDetalle;
 import Models.Encabezado.CorreoElectronicoEmisor;
+import Models.Encabezado.CorreoElectronicoReceptor;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.Fax;
@@ -207,7 +208,7 @@ public class Parser {
             if (!receptorNode.path("Telefono").isMissingNode()) {
                 telefono = parseTelefono(receptorNode.path("Telefono"));
             }
-            String correoElectronico = receptorNode.path("CorreoElectronico").asText();
+            List<String> correosElectronicos = parseEmail(receptorNode.path("CorreoElectronico"));
 
             Receptor receptor = new Receptor();
             receptor.setNombre(nombre);
@@ -220,7 +221,16 @@ public class Parser {
             receptor.setNombreComercial(nombreComercial);
             receptor.setUbicacion(ubicacion);
             receptor.setTelefono(telefono);
-            receptor.setCorreoElectronico(correoElectronico);
+            if (correosElectronicos != null && !correosElectronicos.isEmpty()) {
+                List<CorreoElectronicoReceptor> correoList = new ArrayList<>();
+                for (String correoStr : correosElectronicos) {
+                    CorreoElectronicoReceptor correo = new CorreoElectronicoReceptor();
+                    correo.setCorreo(correoStr);
+                    correo.setReceptor(receptor);
+                    correoList.add(correo);
+                }
+                receptor.setCorreosElectronicos(correoList);
+            }
 
             return receptor;
         } catch (RuntimeException e) {
@@ -1178,6 +1188,8 @@ nueva.setCantidad(original.getCantidad());
             }
             ref.setCodigo(node.path("Codigo").asText());
             ref.setRazon(node.path("Razon").asText());
+            ref.setTipoDocRefOTRO(node.path("TipoDocRefOTRO").asText(null));
+            ref.setCodigoReferenciaOTRO(node.path("CodigoReferenciaOTRO").asText(null));
             return ref;
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing InformacionReferencia: " + e.getLocalizedMessage(), null, 0, "Parser.parseSingleInformacionReferencia()", null, null);
