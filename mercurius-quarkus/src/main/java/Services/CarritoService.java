@@ -53,6 +53,7 @@ public class CarritoService implements Serializable {
 
     private List<ArticuloCarrito> carrito = new ArrayList<>();
     private BigDecimal totalCarrito, colones, dolares, vuelto, pago;
+    private BigDecimal totalPagado = BigDecimal.ZERO;
     private BigDecimal descuentoPuntos = BigDecimal.ZERO;
 
     public void addArticulo(@Nonnull Articulos articulo, @Nonnull BigDecimal cantidad) {
@@ -300,16 +301,8 @@ public class CarritoService implements Serializable {
 
     public void calcularVuelto(@Nonnull BigDecimal tipoCambioValue) {
         try {
-            BigDecimal cambio = tipoCambioValue;
             BigDecimal totalFactura = calculateTotalCarrito();
-
-            BigDecimal pagoColones = colones != null ? colones : BigDecimal.ZERO;
-            BigDecimal pagoDolares = dolares != null ? dolares.multiply(cambio) : BigDecimal.ZERO;
-
-            // Pago total en colones
-            pago = pagoColones.add(pagoDolares);
-
-            // Diferencia total: puede ser negativa
+            pago = totalPagado != null ? totalPagado : BigDecimal.ZERO;
             BigDecimal montoAPagar = totalFactura.subtract(
                 descuentoPuntos != null ? descuentoPuntos : BigDecimal.ZERO);
             vuelto = pago.subtract(montoAPagar).setScale(0, RoundingMode.HALF_UP);

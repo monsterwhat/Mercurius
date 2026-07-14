@@ -123,7 +123,6 @@ public class SeasonalityService {
     }
 
     @Transactional(TxType.SUPPORTS)
-    @CacheResult(cacheName = "analytics-seasonality")
     @Nonnull
     public List<Object[]> getDailySales(@Nonnull Date start, @Nonnull Date end) {
         LocalDateTime startLdt = toLocalDateTime(start);

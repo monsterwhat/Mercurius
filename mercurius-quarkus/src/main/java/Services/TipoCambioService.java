@@ -100,7 +100,7 @@ public class TipoCambioService extends GService<TipoCambio> {
         try {
             TypedQuery<Long> query = em.createQuery(
                 "SELECT COUNT(t) FROM TipoCambio t WHERE CAST(t.fecha AS date) = :date", Long.class);
-            query.setParameter("date", date);
+            query.setParameter("date", java.sql.Date.valueOf(date.toLocalDate()));
             return query.getSingleResult() > 0;
         } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error checking TipoCambio existence for date: " + e.getMessage(), null, 0, "TipoCambioService.tipoCambioExistsForDate()", null, e.getMessage());
