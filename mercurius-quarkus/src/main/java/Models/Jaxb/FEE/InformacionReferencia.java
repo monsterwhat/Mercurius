@@ -29,6 +29,12 @@ public class InformacionReferencia {
     @XmlElement(name = "Razon")
     private String razon;
 
+    @XmlElement(name = "TipoDocRefOTRO")
+    private String tipoDocRefOTRO;
+
+    @XmlElement(name = "CodigoReferenciaOTRO")
+    private String codigoReferenciaOTRO;
+
     public InformacionReferencia() {}
 
     public InformacionReferencia(Models.Referencias.InformacionReferencia src) {
@@ -38,6 +44,8 @@ public class InformacionReferencia {
             this.fechaEmision = src.getFechaEmision();
             this.codigo = src.getCodigo();
             this.razon = src.getRazon();
+            this.tipoDocRefOTRO = src.getTipoDocRefOTRO();
+            this.codigoReferenciaOTRO = src.getCodigoReferenciaOTRO();
         }
     }
 }
