@@ -31,13 +31,17 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.component.datatable.DataTable;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
+import Utils.DiffUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "InventarioController")
 @ViewScoped
 public class InventarioController implements Serializable {
@@ -136,7 +140,7 @@ public class InventarioController implements Serializable {
     public void updateInventarioRevisionDialog() {
         if(currentSession.isValid()){
             if(selectedInventario != null){
-                var oldInventario = selectedInventario;
+                String antes = DiffUtils.snapshotEntity(selectedInventario);
                 selectedInventario.setUsuario(currentSession.getCurrentUser());
                 selectedInventario.setProcessed(true);
                 if(selectedInventario.getArticulo() != null){
@@ -146,7 +150,7 @@ public class InventarioController implements Serializable {
                         selectedInventario.setTipoMovimiento("Stock por Factura");
                         selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
                         inventarioService.markAsProcessed(selectedInventario);
-                        alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventarioRevisionDialog", oldInventario.toString(), selectedInventario.toString());
+                        alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventarioRevisionDialog", antes, DiffUtils.snapshotEntity(selectedInventario));
                         clearSelectedInventario();
                         PrimeFaces.current().executeScript("PF('RevisionMovimientoDialog').hide();");
                     }
@@ -167,7 +171,7 @@ public class InventarioController implements Serializable {
     public void updateInventariosRevisionDialog() {
         if(currentSession.isValid()){
             if(selectedInventario != null){
-                var oldInventario = selectedInventario;
+                String antes = DiffUtils.snapshotEntity(selectedInventario);
                 selectedInventario.setUsuario(currentSession.getCurrentUser());
                 selectedInventario.setProcessed(true);
                 if(selectedInventario.getArticulo() != null){
@@ -178,7 +182,7 @@ public class InventarioController implements Serializable {
                         selectedInventario.setNotas("Procesado mediante el sistema por: " + currentSession.getUsername());
                         inventarioService.markAsProcessed(selectedInventario);
                         // Save an alert (log) for updating an inventory item
-                        alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventariosRevisionDialog", oldInventario.toString(), selectedInventario.toString());
+                        alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.updateInventariosRevisionDialog", antes, DiffUtils.snapshotEntity(selectedInventario));
                         
                         // Refresh cache and load next
                         clearCache();
@@ -231,9 +235,9 @@ public class InventarioController implements Serializable {
     public void skipCurrentMovement() {
         // Skip current movement without processing - just move to next
         if(selectedInventario != null){
-            var oldInventario = selectedInventario;
+            String antes = DiffUtils.snapshotEntity(selectedInventario);
             
-            alertasService.registrarAlerta("Movimiento omitido", "Se ha omitido el movimiento: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentMovement()", oldInventario.toString(), selectedInventario.toString());
+            alertasService.registrarAlerta("Movimiento omitido", "Se ha omitido el movimiento: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentMovement()", antes, DiffUtils.snapshotEntity(selectedInventario));
             
             clearSelectedInventario();
             loadNextAjuste();
@@ -254,7 +258,7 @@ public class InventarioController implements Serializable {
         // Procesar movimiento actual y cargar siguiente
         if(currentSession.isValid()){
             if(selectedInventario != null){
-                var oldInventario = selectedInventario;
+                String antes = DiffUtils.snapshotEntity(selectedInventario);
                 selectedInventario.setUsuario(currentSession.getCurrentUser());
                 selectedInventario.setProcessed(true);
                 if(selectedInventario.getArticulo() != null){
@@ -272,7 +276,7 @@ public class InventarioController implements Serializable {
                     }
                     
                     inventarioService.markAsProcessed(selectedInventario);
-                    alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "procesarMovimientoYSiguiente()", oldInventario.toString(), selectedInventario.toString());
+                    alertasService.registrarAlerta("Inventario actualizado", "Se ha actualizado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "procesarMovimientoYSiguiente()", antes, DiffUtils.snapshotEntity(selectedInventario));
                     
                     clearCache();
                     loadNextAjuste();
@@ -359,10 +363,10 @@ public class InventarioController implements Serializable {
 
     public void deleteInventario() {
         if (selectedInventario != null) {
-            var oldInventario = selectedInventario;
+            String antes = DiffUtils.snapshotEntity(selectedInventario);
             inventarioService.softDelete(selectedInventario);
             // Save an alert (log) for deleting an inventory item
-            alertasService.registrarAlerta("Inventario eliminado", "Se ha eliminado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.deleteInventario", oldInventario.toString() , selectedInventario.toString());
+            alertasService.registrarAlerta("Inventario eliminado", "Se ha eliminado el inventario: " + selectedInventario.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "InventarioController.deleteInventario", antes, DiffUtils.snapshotEntity(selectedInventario));
             clearSelectedInventario();
         }
     }

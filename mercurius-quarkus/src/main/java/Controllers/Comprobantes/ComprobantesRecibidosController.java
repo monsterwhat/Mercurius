@@ -12,6 +12,7 @@ import Models.Detalles.CodigoComercial;
 import Models.ComprobantesRecibidos;
 import Models.Departamento;
 import Models.Inventario;
+import Utils.DiffUtils;
 import Services.ArticuloPrecioService;
 import Services.Facturas.*;
 import Utils.Parsers.Parser;   
@@ -35,14 +36,17 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.file.UploadedFile;
 import org.primefaces.util.LangUtils;
 
 @Named
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @ViewScoped
 public class ComprobantesRecibidosController implements Serializable {
     
@@ -126,9 +130,9 @@ public class ComprobantesRecibidosController implements Serializable {
 
     public void deleteFactura() {
         if (selectedFactura != null) {
-            var oldFactura = selectedFactura;
+            String antes = DiffUtils.snapshotEntity(selectedFactura);
             facturaService.softDelete(selectedFactura);
-             alertaService.registrarAlerta("Exito", "La factura recibida ha sido eliminada correctamente.", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.deleteFactura()", oldFactura.toString(), selectedFactura.toString());
+             alertaService.registrarAlerta("Exito", "La factura recibida ha sido eliminada correctamente.", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.deleteFactura()", antes, DiffUtils.snapshotEntity(selectedFactura));
 
             clearFactura();
         }
@@ -136,9 +140,9 @@ public class ComprobantesRecibidosController implements Serializable {
     
     public void toggleFactura(){
         if(selectedFactura != null){
-            var oldFactura = selectedFactura;
+            String antes = DiffUtils.snapshotEntity(selectedFactura);
             facturaService.toggle(selectedFactura);
-            alertaService.registrarAlerta("Exito", "El estado de la factura recibida ha sido cambiado correctamente.", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.toggleFactura()", oldFactura.toString(), selectedFactura.toString());
+            alertaService.registrarAlerta("Exito", "El estado de la factura recibida ha sido cambiado correctamente.", currentSession.getCurrentUser(), 0, "ComprobantesRecibidosController.toggleFactura()", antes, DiffUtils.snapshotEntity(selectedFactura));
         }
     }
 

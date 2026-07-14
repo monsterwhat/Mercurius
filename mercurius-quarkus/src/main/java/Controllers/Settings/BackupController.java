@@ -20,11 +20,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.model.DefaultStreamedContent;
 import org.primefaces.model.StreamedContent;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named("backupController")
 @ViewScoped
 public class BackupController implements Serializable {
@@ -168,7 +171,7 @@ public class BackupController implements Serializable {
         }
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class BackupFileInfo implements Serializable {
         private static final long serialVersionUID = 1L;
         private final String filename;

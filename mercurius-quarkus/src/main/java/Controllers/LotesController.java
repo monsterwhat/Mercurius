@@ -15,11 +15,14 @@ import java.util.Date;
 import java.util.List;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Named
 @SessionScoped
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 public class LotesController implements Serializable {
 
     @Inject @Nonnull

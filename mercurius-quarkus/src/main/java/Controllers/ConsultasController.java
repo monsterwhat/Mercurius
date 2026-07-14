@@ -16,11 +16,8 @@ import Services.CarritoService;
 import Services.ClientService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
-import Services.Strategies.DocumentoStrategy;
-import Services.Strategies.DocumentoStrategyFactory;
 import Services.Correos.ReportesProgramadosService;
-import Services.HaciendaApiService;
-import Services.HaciendaSigner;
+import Services.HaciendaServiceFacade;
 import Services.NotaCreditoService;
 import Models.NotaCredito;
 import jakarta.annotation.Nonnull;
@@ -31,10 +28,10 @@ import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.Marshaller;
-import java.io.StringWriter;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 
 import java.io.Serializable;
@@ -43,7 +40,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named("consultasController")
 @ViewScoped
 public class ConsultasController implements Serializable {
@@ -64,16 +61,10 @@ public class ConsultasController implements Serializable {
     private CrearTiqueteController crearTiqueteController;
     
     @Inject @Nonnull
-    private HaciendaApiService haciendaApiService;
-    
-    @Inject @Nonnull
-    private HaciendaSigner haciendaSigner;
+    private HaciendaServiceFacade haciendaServiceFacade;
     
     @Inject @Nonnull
     private ComprobanteService comprobanteService;
-    
-    @Inject @Nonnull
-    private DocumentoStrategyFactory strategyFactory;
     
     @Inject @Nonnull
     private NotaCreditoService notaCreditoService;
@@ -188,48 +179,24 @@ public class ConsultasController implements Serializable {
                         continue;
                     }
 
-                    String docCode = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
-                    DocumentoStrategy strategy = strategyFactory.forCode(docCode);
-                    String xmlContent = strategy.buildXml(factura);
+                    HaciendaServiceFacade.SubmitResult result = haciendaServiceFacade.submitDocument(factura);
 
-                    HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlContent);
-                    if (signResult.success) {
-                        String emisorTipo = "02";
-                        String emisorNumero = "000000000";
-                        String receptorTipo = "01";
-                        String receptorNumero = "000000000";
-                        if (factura.getEncabezado() != null) {
-                            if (factura.getEncabezado().getEmisor() != null 
-                                && factura.getEncabezado().getEmisor().getIdentificacion() != null) {
-                                emisorTipo = factura.getEncabezado().getEmisor().getIdentificacion().getTipo();
-                                emisorNumero = factura.getEncabezado().getEmisor().getIdentificacion().getNumero();
-                            }
-                            if (factura.getEncabezado().getReceptor() != null
-                                && factura.getEncabezado().getReceptor().getIdentificacion() != null) {
-                                receptorTipo = factura.getEncabezado().getReceptor().getIdentificacion().getTipo();
-                                receptorNumero = factura.getEncabezado().getReceptor().getIdentificacion().getNumero();
-                            }
-                        }
-                        HaciendaApiService.ApiResponse apiResponse = haciendaApiService.submitAndWait(
-                            clave, signResult.signedXml,
-                            emisorTipo, emisorNumero, receptorTipo, receptorNumero);
-                        if (apiResponse.isSuccess()) {
-                            factura.setHaciendaEstado("ACEPTADO");
-                            factura.setHaciendaFechaEnvio(LocalDateTime.now());
-                            factura.setHaciendaFechaRespuesta(LocalDateTime.now());
-                            if (factura.getEncabezado() != null) factura.getEncabezado().setEstado("ACEPTADO");
-                            comprobantesService.update(factura);
-                            enviadas[0]++;
-                        } else {
-                            factura.getEncabezado().setEstado("RECHAZADO");
-                            factura.getEncabezado().setMotivoRechazo(apiResponse.errorMessage);
-                            comprobantesService.update(factura);
-                            fallidas[0]++;
-                        }
+                    if (result.success) {
+                        factura.setHaciendaEstado("ACEPTADO");
+                        factura.setHaciendaFechaEnvio(LocalDateTime.now());
+                        factura.setHaciendaFechaRespuesta(LocalDateTime.now());
+                        if (factura.getEncabezado() != null) factura.getEncabezado().setEstado("ACEPTADO");
+                        comprobantesService.update(factura);
+                        enviadas[0]++;
                     } else {
+                        if (factura.getEncabezado() != null) {
+                            factura.getEncabezado().setEstado("RECHAZADO");
+                            factura.getEncabezado().setMotivoRechazo(result.errorMessage);
+                        }
+                        comprobantesService.update(factura);
                         fallidas[0]++;
                     }
-                } catch (RuntimeException | jakarta.xml.bind.JAXBException e) {
+                } catch (RuntimeException e) {
                     fallidas[0]++;
                 }
             }

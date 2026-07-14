@@ -8,6 +8,7 @@ import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
+import Utils.DiffUtils;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -17,11 +18,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "CabysController")
 @ViewScoped
 public class CabysController implements Serializable {
@@ -95,9 +99,9 @@ public class CabysController implements Serializable {
     }
 
     public void updateCabys() {
-        var oldCabys = selectedCabys;
+        String antes = DiffUtils.snapshotEntity(selectedCabys);
         cabysService.update(selectedCabys);
-        alertas.registrarAlerta("CABYS actualizado", "Se ha actualizado el CABYS: " + selectedCabys.getCodigo(), currentSession.getCurrentUser(), 0, "CabysController.updateCabys", oldCabys.toString(), selectedCabys.toString());
+        alertas.registrarAlerta("CABYS actualizado", "Se ha actualizado el CABYS: " + selectedCabys.getCodigo(), currentSession.getCurrentUser(), 0, "CabysController.updateCabys", antes, DiffUtils.snapshotEntity(selectedCabys));
         clearSelectedCabys();
     }
 

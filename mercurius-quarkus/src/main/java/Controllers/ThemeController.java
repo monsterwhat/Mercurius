@@ -13,11 +13,14 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Named("ThemeController")
 @SessionScoped
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 public class ThemeController implements Serializable {
 
     @PostConstruct

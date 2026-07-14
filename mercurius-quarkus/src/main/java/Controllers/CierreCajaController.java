@@ -16,9 +16,12 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named("cierreCajaController")
 @ViewScoped
 public class CierreCajaController implements Serializable {

@@ -9,9 +9,12 @@ import java.util.Date;
 import java.util.List;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "productPerformanceUIBean")
 @ViewScoped
 public class ProductPerformanceUIBean implements Serializable {
@@ -75,7 +78,7 @@ public class ProductPerformanceUIBean implements Serializable {
         }
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class ProductData {
         public int codigo;
         @Nonnull
@@ -92,7 +95,7 @@ public class ProductPerformanceUIBean implements Serializable {
         }
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class DepartmentData {
         @Nonnull
         public String nombre;

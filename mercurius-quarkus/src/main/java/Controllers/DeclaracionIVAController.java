@@ -20,9 +20,12 @@ import java.util.Date;
 import java.util.List;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named("declaracionIVAController")
 @ViewScoped
 public class DeclaracionIVAController implements Serializable {

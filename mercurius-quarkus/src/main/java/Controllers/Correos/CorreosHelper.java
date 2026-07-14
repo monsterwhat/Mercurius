@@ -39,15 +39,22 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
  
+import Models.Correos.EmailTemplate;
 import Services.AlertasService;
-import lombok.Data;
+import Services.Correos.EmailTemplateService;
+import java.util.HashMap;
+import java.util.Map;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  *
  * @author Al
  */
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @ApplicationScoped
 @Named
 public class CorreosHelper {
@@ -61,6 +68,7 @@ public class CorreosHelper {
     @Inject @Nonnull private EmailService emailer;
     @Inject @Nonnull ReportesProgramadosService rpService;    
     @Inject @Nonnull AlertasService alertasService;
+    @Inject @Nonnull EmailTemplateService emailTemplateService;
     
     @Nonnull
     ExcelExporter exporter = new ExcelExporter();
@@ -315,14 +323,30 @@ public class CorreosHelper {
         List<String> to = reporte.getCorreos();
         String nombreReporte = reporte.getPerfil();
 
-        // Use current date and time for the subject
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String formattedDate = now.format(formatter);
         String subject = "Reporte Automatico - " + formattedDate;
-        String body = "Adjunto encontrara el reporte " + nombreReporte;
         
-        emailer.sendEmailsWithAttachment(to, subject, body, correoElectronico, contrasenaCorreo, changes, this::handleEmailResult);
+        EmailTemplate template = emailTemplateService.findActivoByTipo("REPORTES");
+        
+        if (template != null) {
+            Map<String, String> variables = new HashMap<>();
+            variables.put("nombre", nombreReporte);
+            variables.put("fecha", formattedDate);
+            variables.put("_empresa", "Mercurius");
+            variables.put("mensaje", "Adjunto encontrara el reporte " + nombreReporte);
+            String htmlBody = emailTemplateService.procesarPlantilla(template, variables);
+            
+            String subjectFinal = template.getAsunto() != null && !template.getAsunto().isEmpty()
+                ? template.getAsunto().replace("{{nombre}}", nombreReporte).replace("{{fecha}}", formattedDate)
+                : subject;
+            
+            emailer.sendHtmlEmails(to, subjectFinal, htmlBody, correoElectronico, contrasenaCorreo, this::handleEmailResult);
+        } else {
+            String body = "Adjunto encontrara el reporte " + nombreReporte;
+            emailer.sendEmailsWithAttachment(to, subject, body, correoElectronico, contrasenaCorreo, changes, this::handleEmailResult);
+        }
         
         reporte.setLastRun(new Date());
         

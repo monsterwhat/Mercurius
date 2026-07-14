@@ -14,10 +14,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "reportesClientesController")
 @ViewScoped
 public class ReportesClientesController implements Serializable {

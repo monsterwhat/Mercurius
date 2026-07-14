@@ -8,6 +8,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
+import Utils.DiffUtils;
 import jakarta.faces.context.FacesContext;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
@@ -18,7 +19,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
@@ -28,7 +32,7 @@ import org.primefaces.util.LangUtils;
  * @author Al
  */
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named
 @ViewScoped
 public class ReportesProgramadosController implements Serializable {
@@ -78,12 +82,12 @@ public class ReportesProgramadosController implements Serializable {
 
     public void updateReporte() {
         if(currentSession.isValid()){
-            var oldReporte = selectedReporte;
+            String antes = DiffUtils.snapshotEntity(selectedReporte);
             selectedReporte.setLastRun(new Date());
             reportesProgramadosService.update(selectedReporte);
             
             // Save an alert (log) for updating the scheduled report
-            alertasService.registrarAlerta("Reporte programado actualizado", "Se ha actualizado el reporte programado: " + selectedReporte.getPerfil(), currentSession.getCurrentUser(), 0, "ReportesProgramadosController.updateReporte", oldReporte.toString(), selectedReporte.toString());
+            alertasService.registrarAlerta("Reporte programado actualizado", "Se ha actualizado el reporte programado: " + selectedReporte.getPerfil(), currentSession.getCurrentUser(), 0, "ReportesProgramadosController.updateReporte", antes, DiffUtils.snapshotEntity(selectedReporte));
             
             clearSelectedReporte();
             PrimeFaces.current().executeScript("PF('EditarReporteDialog').hide();");
@@ -124,11 +128,11 @@ public class ReportesProgramadosController implements Serializable {
     
     public void deleteReporte() {
         if (selectedReporte != null && currentSession.isValid()) {
-            var oldReporte = selectedReporte;
+            String antes = DiffUtils.snapshotEntity(selectedReporte);
             reportesProgramadosService.delete(selectedReporte);
             
             // Save an alert (log) for deleting the scheduled report
-            alertasService.registrarAlerta("Reporte programado eliminado", "Se ha eliminado el reporte programado: " + oldReporte.getPerfil(), currentSession.getCurrentUser(), 0, "ReportesProgramadosController.deleteReporte", oldReporte.toString(), null);
+            alertasService.registrarAlerta("Reporte programado eliminado", "Se ha eliminado el reporte programado: " + selectedReporte.getPerfil(), currentSession.getCurrentUser(), 0, "ReportesProgramadosController.deleteReporte", antes, null);
             
             clearSelectedReporte();
         }
