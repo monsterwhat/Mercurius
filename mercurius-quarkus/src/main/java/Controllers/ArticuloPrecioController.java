@@ -15,16 +15,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
+import Utils.DiffUtils;
 
 /**
  *
  * @author Al
  */
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "ArticulosPrecioController")
 @ViewScoped
 public class ArticuloPrecioController implements Serializable  {
@@ -109,9 +113,9 @@ public class ArticuloPrecioController implements Serializable  {
     
     public void updateSelectedPrecio() {
         try {
-            var oldPrecio = selectedPrecio;
+            String antes = DiffUtils.snapshotEntity(selectedPrecio);
             precioService.update(selectedPrecio);
-            alertasService.registrarAlerta("Precio actualizado", "Se ha actualizado el precio del artículo: " + selectedPrecio.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "ArticuloPrecioController.updateSelectedPrecio", oldPrecio.toString() , selectedPrecio.toString());
+            alertasService.registrarAlerta("Precio actualizado", "Se ha actualizado el precio del artículo: " + selectedPrecio.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "ArticuloPrecioController.updateSelectedPrecio", antes, DiffUtils.snapshotEntity(selectedPrecio));
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error al actualizar el precio del artículo: " + selectedPrecio.getArticulo().getNombre(), currentSession.getCurrentUser(), 0, "ArticuloPrecioController.updateSelectedPrecio", selectedPrecio.toString(), e.getMessage());
         }

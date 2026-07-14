@@ -19,14 +19,17 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Serializable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  *
  * @author Al
  */
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "SessionController")
 @SessionScoped
 public class SessionController implements Serializable{
@@ -189,6 +192,9 @@ public class SessionController implements Serializable{
             Users user = loginService.findByUsername(username);
             if (user != null && loginService.verifyPassword(password, user.getPassword())) {
                 currentUser = user;
+                // Set the user in the HTTP session so SecurityFilter can verify authentication
+                // without relying on container-managed FORM auth (which is not configured in Quarkus)
+                getRequest().getSession().setAttribute("authUser", user);
                 return true;
             }
             return false;
@@ -196,6 +202,10 @@ public class SessionController implements Serializable{
             alertas.registrarAlerta("Error", "Authentication error: " + e.getLocalizedMessage(), null, 0, "SessionController.authenticate()", null, e.getLocalizedMessage());
             return false;
         }
+    }
+    
+    private HttpServletRequest getRequest() {
+        return (HttpServletRequest) facesContext.getExternalContext().getRequest();
     }
     
     private ExternalContext getExternalContext(){

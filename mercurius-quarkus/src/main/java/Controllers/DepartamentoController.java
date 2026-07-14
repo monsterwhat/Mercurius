@@ -16,12 +16,16 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
+import Utils.DiffUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "DepartamentosController")
 @ViewScoped
 public class DepartamentoController implements Serializable {
@@ -80,10 +84,10 @@ public class DepartamentoController implements Serializable {
     public void updateDepartamento() {
         if(currentSession.isValid()){
             if(selectedDepartamento !=null ){
-                var oldDepartamento = selectedDepartamento;
+                String antes = DiffUtils.snapshotEntity(selectedDepartamento);
                 selectedDepartamento.setUsuario(currentSession.getCurrentUser());
                 departamentoService.update(selectedDepartamento);
-                alertas.registrarAlerta("Departamento Actualizado", "Se actualizó el departamento: " + selectedDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "updateDepartamento()", oldDepartamento.toString(), selectedDepartamento.toString());
+                alertas.registrarAlerta("Departamento Actualizado", "Se actualizó el departamento: " + selectedDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "updateDepartamento()", antes, DiffUtils.snapshotEntity(selectedDepartamento));
                 clearSelectedDepartamento();
                 
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -131,9 +135,9 @@ public class DepartamentoController implements Serializable {
 
     public void deleteDepartamento() {
         if (selectedDepartamento != null) {
-            var oldDepartamento = selectedDepartamento;
+            String antes = DiffUtils.snapshotEntity(selectedDepartamento);
             departamentoService.softDelete(selectedDepartamento);
-            alertas.registrarAlerta("Departamento Eliminado", "Se eliminó el departamento: " + oldDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "deleteDepartamento()", oldDepartamento.toString(), selectedDepartamento.toString());
+            alertas.registrarAlerta("Departamento Eliminado", "Se eliminó el departamento: " + selectedDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "deleteDepartamento()", antes, DiffUtils.snapshotEntity(selectedDepartamento));
             clearSelectedDepartamento();
         }
     }

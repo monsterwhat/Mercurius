@@ -9,9 +9,12 @@ import java.util.Date;
 import java.util.List;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "salesTrendUIBean")
 @ViewScoped
 public class SalesTrendUIBean implements Serializable {
@@ -70,7 +73,7 @@ public class SalesTrendUIBean implements Serializable {
         metrics.minDailySales = "₡150,000";
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class TimeSeriesData {
         @Nonnull
         public String date;
@@ -85,7 +88,7 @@ public class SalesTrendUIBean implements Serializable {
         }
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class GrowthMetrics {
         @Nullable
         public String growthRate;

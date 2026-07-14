@@ -13,6 +13,7 @@ import Services.PromocionesService;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
+import Utils.DiffUtils;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -24,7 +25,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
@@ -33,7 +37,7 @@ import org.primefaces.util.LangUtils;
  *
  * @author Al
  */
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "PromocionesController")
 @ViewScoped
 public class PromocionesController implements Serializable {
@@ -103,10 +107,10 @@ public class PromocionesController implements Serializable {
     public void updatePromocion() {
         if (currentSession.isValid()) {
             if (selectedPromocion != null) {
-                var oldPromocion = selectedPromocion;
+                String antes = DiffUtils.snapshotEntity(selectedPromocion);
                 selectedPromocion.setUsuario(currentSession.getCurrentUser());
                 promoService.update(selectedPromocion);
-                alertas.registrarAlerta("Promocion Actualizada", "Se actualizo la promocion: " + selectedPromocion.getNombre(), currentSession.getCurrentUser(), 0, "updatePromocion()", oldPromocion.toString(), selectedPromocion.toString());
+                alertas.registrarAlerta("Promocion Actualizada", "Se actualizo la promocion: " + selectedPromocion.getNombre(), currentSession.getCurrentUser(), 0, "updatePromocion()", antes, DiffUtils.snapshotEntity(selectedPromocion));
                 clearSelectedPromocion();
 
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -141,9 +145,9 @@ public class PromocionesController implements Serializable {
 
     public void deletePromocion() {
         if (selectedPromocion != null) {
-            var oldPromo = selectedPromocion;
+            String antes = DiffUtils.snapshotEntity(selectedPromocion);
             promoService.delete(selectedPromocion);
-            alertas.registrarAlerta("Promocion Eliminada", "Se elimino la promocion: " + selectedPromocion.getNombre(), currentSession.getCurrentUser(), 0, "deletePromocion()", oldPromo.toString(), selectedPromocion.toString());
+            alertas.registrarAlerta("Promocion Eliminada", "Se elimino la promocion: " + selectedPromocion.getNombre(), currentSession.getCurrentUser(), 0, "deletePromocion()", antes, DiffUtils.snapshotEntity(selectedPromocion));
             clearSelectedPromocion();
         }
     }

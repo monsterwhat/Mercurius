@@ -8,9 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "stockForecastUIBean")
 @ViewScoped
 public class StockForecastUIBean implements Serializable {
@@ -60,7 +63,7 @@ public class StockForecastUIBean implements Serializable {
         loadData();
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class ForecastData {
         @Nonnull
         public String nombre;
@@ -79,7 +82,7 @@ public class StockForecastUIBean implements Serializable {
         }
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class HealthReport {
         public int totalProducts;
         public int healthyProducts;
@@ -89,7 +92,7 @@ public class StockForecastUIBean implements Serializable {
         public List<ProductHealth> productHealth = new ArrayList<>();
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class ProductHealth {
         @Nonnull
         public String nombre;
@@ -110,7 +113,7 @@ public class StockForecastUIBean implements Serializable {
         }
     }
 
-    @Data
+    @Getter @Setter @ToString @EqualsAndHashCode
     public static class ReorderData {
         @Nonnull
         public String nombre;

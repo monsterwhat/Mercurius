@@ -16,8 +16,10 @@ import Models.Clients;
 import Models.ComprobantesEmitidos;
 import Models.Users;
 import Models.ComprobantesRecibidos;
+import Models.PagoEntry;
 import Services.AlertasService;
 import Services.AppSettingsService;
+import Services.ArticulosService;
 import Services.ClientService;
 import Services.ComprobantesEmitidosService;
 import Services.PrinterService;
@@ -40,14 +42,17 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.StreamedContent;
 import org.primefaces.util.LangUtils;
 
 @Named("crearTiqueteController")
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @ViewScoped
 public class CrearTiqueteController implements Serializable {
 
@@ -84,6 +89,9 @@ public class CrearTiqueteController implements Serializable {
     private DocumentoStrategyFactory strategyFactory;
     @Inject
     @Nonnull
+    private ArticulosService articulosService;
+    @Inject
+    @Nonnull
     private PrinterService printer;
     @Inject
     @Nonnull
@@ -113,8 +121,12 @@ public class CrearTiqueteController implements Serializable {
     private String facturaId;
     @Nonnull
     private String tipoDocumento = "04";
+
     @Nonnull
-    private String medioPago = "01";
+    private List<PagoEntry> pagos = new ArrayList<>();
+
+    @Nullable
+    private Articulos selectedArticulo;
 
     @Nullable
     private String authUsername;
@@ -154,6 +166,12 @@ public class CrearTiqueteController implements Serializable {
         carritoService.setColones(new BigDecimal(0));
         carritoService.setDolares(new BigDecimal(0));
         carritoService.setVuelto(new BigDecimal(0));
+        carritoService.setTotalPagado(BigDecimal.ZERO);
+        pagos = new ArrayList<>();
+        PagoEntry entry = new PagoEntry();
+        entry.setMetodoPago("01");
+        entry.setMonto(BigDecimal.ZERO);
+        pagos.add(entry);
     }
 
     public void authorize() {
@@ -217,7 +235,42 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public void calcularVuelto() {
+        BigDecimal total = BigDecimal.ZERO;
+        for (PagoEntry entry : pagos) {
+            if (entry.getMonto() != null) {
+                total = total.add(entry.getMonto());
+            }
+        }
+        // Keep backward-compat colones/dolares for any remaining bindings
+        carritoService.setColones(total);
+        carritoService.setDolares(BigDecimal.ZERO);
+        carritoService.setTotalPagado(total);
         carritoService.calcularVuelto(BigDecimal.valueOf(tipoCambio.getTipoCambioActual().getValorCompra()));
+    }
+
+    @Nonnull
+    public List<Articulos> completeArticulo(@Nonnull String query) {
+        List<Articulos> results = articulosService.findByNameContaining(query);
+        return results != null ? results : List.of();
+    }
+
+    public void onArticuloSelect() {
+        if (selectedArticulo != null) {
+            selectArticulo(selectedArticulo);
+            selectedArticulo = null;
+        }
+    }
+
+    public void addPagoEntry() {
+        PagoEntry entry = new PagoEntry();
+        entry.setMetodoPago("01");
+        entry.setMonto(BigDecimal.ZERO);
+        pagos.add(entry);
+    }
+
+    public void removePagoEntry(@Nonnull PagoEntry entry) {
+        pagos.remove(entry);
+        calcularVuelto();
     }
 
     public void selectArticulo(@Nullable Articulos articulo) {
@@ -336,11 +389,17 @@ public class CrearTiqueteController implements Serializable {
         carritoService.setVuelto(BigDecimal.ZERO);
         carritoService.setDolares(BigDecimal.ZERO);
         carritoService.setColones(BigDecimal.ZERO);
+        carritoService.setTotalPagado(BigDecimal.ZERO);
+        pagos.clear();
+        PagoEntry entry = new PagoEntry();
+        entry.setMetodoPago("01");
+        entry.setMonto(BigDecimal.ZERO);
+        pagos.add(entry);
         removeDescuentoPuntos();
     }
 
     public void verificarPago() {
-        carritoService.calcularVuelto(BigDecimal.valueOf(tipoCambio.getTipoCambioActual().getValorCompra()));
+        calcularVuelto();
         if (carritoService.getVuelto() != null && carritoService.getVuelto().doubleValue() >= 0) {
             facturar(); 
         } else {
@@ -370,6 +429,13 @@ public class CrearTiqueteController implements Serializable {
         // 1. Hacer ajustes en inventario
         carritoService.ajustarInventario(currentSession.getCurrentUser());
         // 2. Crear Comprobante y enviar a Hacienda
+        List<PagoEntry> pagosParaFactura = pagos;
+        if (pagosParaFactura == null || pagosParaFactura.isEmpty()) {
+            PagoEntry entry = new PagoEntry();
+            entry.setMetodoPago("01");
+            entry.setMonto(carritoService.getTotalCarrito());
+            pagosParaFactura = List.of(entry);
+        }
         CrearComprobanteResult result = comprobanteService.crearComprobante(
                 settings,
                 carritoService.getCarrito(),
@@ -377,7 +443,7 @@ public class CrearTiqueteController implements Serializable {
                 cliente,
                 currentSession.getCurrentUser(),
                 strategy,
-                medioPago
+                pagosParaFactura
         );
 
         if (result != null && result.comprobante != null) {
@@ -414,7 +480,8 @@ public class CrearTiqueteController implements Serializable {
                         cliente,
                         currentSession.getCurrentUser(),
                         carritoService.getPago(),
-                        carritoService.getVuelto()
+                        carritoService.getVuelto(),
+                        pagosParaFactura
                 );
 
                 pdfUrl = pdfGenerator.getPdfUrl();
@@ -425,7 +492,8 @@ public class CrearTiqueteController implements Serializable {
                         selectedClient,
                         currentSession.getCurrentUser(),
                         carritoService.getPago(),
-                        carritoService.getVuelto()
+                        carritoService.getVuelto(),
+                        pagosParaFactura
                     );
                 }
 

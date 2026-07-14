@@ -13,6 +13,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.servlet.ServletContext;
 import java.io.File;
+import Utils.DiffUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -20,14 +21,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import javax.swing.filechooser.FileSystemView;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.model.file.UploadedFile;
 
 /**
  *
  * @author Al
  */
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named("SettingsDirController")
 @RequestScoped
 public class SettingsDirController implements Serializable {
@@ -162,19 +166,19 @@ public class SettingsDirController implements Serializable {
     }
 
     public void updateSelectedSettings() {
-        var oldSettings = selectedSettings;
+        String antes = DiffUtils.snapshotEntity(selectedSettings);
         settingsService.update(selectedSettings);
 
         // Save an alert (log) for updating the selected settings
-        alertasService.registrarAlerta("Configuración actualizada", "Se ha actualizado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.updateSelectedSettings", oldSettings.toString(), selectedSettings.toString());
+        alertasService.registrarAlerta("Configuración actualizada", "Se ha actualizado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.updateSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings));
     }
 
     public void disableSelectedSettings() {
-        var oldSettings = selectedSettings;
+        String antes = DiffUtils.snapshotEntity(selectedSettings);
         settingsService.disable(selectedSettings);
 
         // Save an alert (log) for disabling the selected settings
-        alertasService.registrarAlerta("Configuración deshabilitada", "Se ha deshabilitado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.disableSelectedSettings", oldSettings.toString(), selectedSettings.toString());
+        alertasService.registrarAlerta("Configuración deshabilitada", "Se ha deshabilitado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.disableSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings));
     }
 
     @Nonnull
@@ -232,6 +236,15 @@ public class SettingsDirController implements Serializable {
     @Nonnull
     public String getLogoDirPath() {
         return getImgDirPath() + File.separator + "logo";
+    }
+
+    @Nonnull
+    public String getProductosImgDirPath() {
+        return getProfileDirPath() + File.separator + "img" + File.separator + "productos";
+    }
+
+    public void createProductosImgDir() {
+        createFolder(getProfileDirPath() + File.separator + "img", "productos");
     }
 
     @Nonnull

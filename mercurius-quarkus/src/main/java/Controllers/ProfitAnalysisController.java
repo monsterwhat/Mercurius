@@ -29,7 +29,10 @@ import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
@@ -37,7 +40,7 @@ import org.primefaces.util.LangUtils;
 /**
  * Controller for managing profit margin analysis and reporting
  */
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "profitAnalysisController")
 @ViewScoped
 public class ProfitAnalysisController implements Serializable {

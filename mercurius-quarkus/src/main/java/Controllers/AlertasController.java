@@ -2,6 +2,7 @@ package Controllers;
 
 import Models.Registros.Alertas;
 import Services.AlertasService;
+import Utils.DiffUtils;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -13,12 +14,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "alertasController")
 @ViewScoped
 public class AlertasController implements Serializable {
@@ -34,6 +39,9 @@ public class AlertasController implements Serializable {
     private String alertasFilter;
     @Nonnull
     private List<FilterMeta> filterBy;
+
+    @Nullable
+    private Map<String, String[]> currentDiff;
 
     @PostConstruct
     public void init() {
@@ -77,5 +85,52 @@ public class AlertasController implements Serializable {
     public void toggleVista(@Nonnull Alertas alerta) {
         alertasService.toggleVista(alerta);
         refreshAlertas();
+    }
+
+    public boolean hasDiff(@Nonnull Alertas alerta) {
+        return DiffUtils.hasDiff(alerta.getAntes(), alerta.getDespues());
+    }
+
+    public void openDiff(@Nonnull Alertas alerta) {
+        selectedAlerta = alerta;
+        currentDiff = DiffUtils.parseDiff(alerta.getAntes(), alerta.getDespues());
+    }
+
+    @Nonnull
+    public Map<String, String[]> getCurrentDiff() {
+        return currentDiff != null ? currentDiff : java.util.Map.of();
+    }
+
+    @Nonnull
+    public String fieldLabel(@Nonnull String fieldName) {
+        return switch (fieldName) {
+            case "codigo" -> "Código";
+            case "nombre" -> "Nombre";
+            case "codigoBarra" -> "Código de Barra";
+            case "descripcion" -> "Descripción";
+            case "UnidadMedida" -> "Unidad de Medida";
+            case "unidadMedidaComercial" -> "Unidad Comercial";
+            case "departamento" -> "Departamento";
+            case "familia" -> "Familia";
+            case "status" -> "Estado";
+            case "processed" -> "Procesado";
+            case "stockOptimo" -> "Stock Óptimo";
+            case "diasStockSeguridad" -> "Días Stock Seguridad";
+            case "estadoAlertas" -> "Alertas Habilitadas";
+            case "fecha" -> "Fecha";
+            case "usuario" -> "Usuario";
+            case "contactoNombre" -> "Contacto";
+            case "contactoTelefono" -> "Teléfono Contacto";
+            case "contactoEmail" -> "Email Contacto";
+            case "plazoPagoDias" -> "Plazo de Pago (días)";
+            case "tiempoEntregaDias" -> "Tiempo de Entrega (días)";
+            case "notas" -> "Notas";
+            case "username" -> "Usuario";
+            case "groupName" -> "Grupo";
+            case "email" -> "Correo";
+            case "id" -> "ID";
+            case "value" -> "Valor";
+            default -> fieldName;
+        };
     }
 }
