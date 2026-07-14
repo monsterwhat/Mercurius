@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 import java.util.Objects;
 
 /**
- * Strategy for Factura Electrónica de Compra (FEC, code "09").
+ * Strategy for Factura Electrónica de Compra (FEC, code "08").
  * The Emisor is the buyer (system user / appSettings) and the Receptor
  * is the seller (supplier / selectedClient) — reversed roles from FE.
  */
@@ -64,7 +64,7 @@ public class FacturaCompraElectronicaStrategy implements DocumentoStrategy {
 
     @Override
     public String getNamespace() {
-        return "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronicaCompra";
+        return "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaCompra";
     }
 
     @Override

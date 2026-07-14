@@ -63,7 +63,7 @@ public class FacturaElectronicaStrategy implements DocumentoStrategy {
 
     @Override
     public String getNamespace() {
-        return "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronica";
+        return "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica";
     }
 
     @Override

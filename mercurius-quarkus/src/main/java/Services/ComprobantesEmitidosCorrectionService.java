@@ -3,8 +3,7 @@ package Services;
 import Models.Cabys;
 import Models.Clients;
 import Models.ComprobantesEmitidos;
-import Services.Strategies.DocumentoStrategy;
-import Services.Strategies.DocumentoStrategyFactory;
+import Services.HaciendaServiceFacade;
 import Models.Detalles.DetalleServicio;
 import Models.Detalles.LineaDetalle;
 import Models.Detalles.OtroCargo;
@@ -47,19 +46,13 @@ public class ComprobantesEmitidosCorrectionService {
     private @Nonnull ClientService clientService;
 
     @Inject
-    private @Nonnull HaciendaSigner haciendaSigner;
-
-    @Inject
-    private @Nonnull HaciendaApiService haciendaApiService;
+    private @Nonnull HaciendaServiceFacade haciendaServiceFacade;
 
     @Inject
     private @Nonnull AlertasService alertasService;
 
     @Inject
     private @Nonnull PrevalidationConfigService prevalidationConfigService;
-
-    @Inject
-    private @Nonnull DocumentoStrategyFactory strategyFactory;
 
     // ─── Public API ─────────────────────────────────────────────────
 
@@ -128,49 +121,8 @@ public class ComprobantesEmitidosCorrectionService {
                 return;
             }
 
-            // Marshal via type-specific strategy, sign, and send
-            String docCode = nuevaFactura.getEncabezado() != null ? nuevaFactura.getEncabezado().getCodigoDocumento() : null;
-            DocumentoStrategy strategy = strategyFactory.forCode(docCode);
-            String xmlContent;
-            try {
-                xmlContent = strategy.buildXml(nuevaFactura);
-            } catch (jakarta.xml.bind.JAXBException e) {
-                alertasService.registrarAlerta("Error",
-                    "Error generating XML for corrected invoice: " + e.getMessage(), null, 0,
-                    "ComprobantesEmitidosCorrectionService.corregirFactura()", null, e.getMessage());
-                incrementarAttempts(factura);
-                return;
-            }
-
-            HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlContent);
-            if (!signResult.success) {
-                alertasService.registrarAlerta("Error",
-                    "Error firmando factura corregida: " + signResult.errorMessage, null, 0,
-                    "ComprobantesEmitidosCorrectionService.corregirFactura()", null, signResult.errorMessage);
-                incrementarAttempts(factura);
-                return;
-            }
-
-            String emisorTipo = "02";
-            String emisorNumero = "000000000";
-            String receptorTipo = "01";
-            String receptorNumero = "000000000";
-            if (nuevaFactura.getEncabezado() != null) {
-                if (nuevaFactura.getEncabezado().getEmisor() != null 
-                    && nuevaFactura.getEncabezado().getEmisor().getIdentificacion() != null) {
-                    emisorTipo = nuevaFactura.getEncabezado().getEmisor().getIdentificacion().getTipo();
-                    emisorNumero = nuevaFactura.getEncabezado().getEmisor().getIdentificacion().getNumero();
-                }
-                if (nuevaFactura.getEncabezado().getReceptor() != null
-                    && nuevaFactura.getEncabezado().getReceptor().getIdentificacion() != null) {
-                    receptorTipo = nuevaFactura.getEncabezado().getReceptor().getIdentificacion().getTipo();
-                    receptorNumero = nuevaFactura.getEncabezado().getReceptor().getIdentificacion().getNumero();
-                }
-            }
-            HaciendaApiService.ApiResponse response = haciendaApiService.submitAndWait(
-                nuevaClave, signResult.signedXml,
-                emisorTipo, emisorNumero, receptorTipo, receptorNumero);
-            if (response.isSuccess()) {
+            HaciendaServiceFacade.SubmitResult result = haciendaServiceFacade.submitDocument(nuevaFactura);
+            if (result.success) {
                 nuevaFactura.setHaciendaEstado("ACEPTADO");
                 nuevaFactura.setHaciendaFechaEnvio(LocalDateTime.now());
                 nuevaFactura.setHaciendaFechaRespuesta(LocalDateTime.now());
@@ -184,8 +136,8 @@ public class ComprobantesEmitidosCorrectionService {
                     null, 0, "ComprobantesEmitidosCorrectionService.corregirFactura()", null, null);
             } else {
                 alertasService.registrarAlerta("Error",
-                    "Hacienda rechazó factura corregida: " + response.errorMessage, null, 0,
-                    "ComprobantesEmitidosCorrectionService.corregirFactura()", null, response.errorMessage);
+                    "Hacienda rechazó factura corregida: " + result.errorMessage, null, 0,
+                    "ComprobantesEmitidosCorrectionService.corregirFactura()", null, result.errorMessage);
             }
 
             incrementarAttempts(factura);

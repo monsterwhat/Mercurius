@@ -6,8 +6,10 @@ import Models.ComprobantesEmitidos;
 import Models.Detalles.CodigoComercial;
 import Models.Detalles.Descuento;
 import Models.Detalles.DetalleServicio;
+import Models.Detalles.DetalleSurtido;
 import Models.Detalles.Impuesto;
 import Models.Detalles.LineaDetalle;
+import Models.Detalles.LineaDetalleSurtido;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.IdentificacionEmisor;
@@ -25,6 +27,7 @@ import Models.Enums.Tipo_CondicionVenta;
 import Models.Enums.Tipo_MedioPago;
 import Models.Enums.Tipo_Codigo_Descuento;
 import Models.Enums.Tipo_TarifaIVA;
+import Models.PagoEntry;
 import Models.AppSettings;
 import Models.Articulos.Promocion;
 import Models.Users;
@@ -73,6 +76,9 @@ import Models.Users;
 public class ComprobanteService implements Serializable {
 
     @Inject
+    private @Nonnull HaciendaServiceFacade haciendaServiceFacade;
+
+    @Inject
     private @Nonnull AlertasService alertasService;
     @Inject
     private @Nonnull EncabezadoService encabezadoService;
@@ -92,12 +98,6 @@ public class ComprobanteService implements Serializable {
     private @Nonnull LineaDetalleService lineaService;
     @Inject
     private @Nonnull LoyaltyService loyaltyService;
-    
-    @Inject
-    private @Nonnull HaciendaApiService haciendaApiService;
-
-    @Inject
-    private @Nonnull FidesApiService fidesApiService;
 
     @Inject
     private @Nonnull HaciendaSigner haciendaSigner;
@@ -128,7 +128,7 @@ public class ComprobanteService implements Serializable {
 
     public @Nullable CrearComprobanteResult crearComprobante(@Nonnull AppSettings appSettings, @Nonnull List<ArticuloCarrito> carrito,
                                                     @Nullable Clients selectedClient, @Nullable Clients cliente, @Nonnull Users currentUser,
-                                                    @Nonnull DocumentoStrategy strategy, @Nonnull String medioPago) {
+                                                    @Nonnull DocumentoStrategy strategy, @Nonnull List<PagoEntry> pagos) {
         CrearComprobanteResult result = new CrearComprobanteResult();
         result.haciendaEnviado = false;
         
@@ -148,12 +148,20 @@ public class ComprobanteService implements Serializable {
             Encabezado encabezado = strategy.buildEncabezado(appSettings, selectedClient);
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
 
-            // Set medioPago from user selection (strategies no longer hardcode it)
             List<MedioPago> medioPagoList = new ArrayList<>();
-            MedioPago medio = new MedioPago();
-            medio.setMedioPago(medioPago);
-            medio.setComprobante(encabezado);
-            medioPagoList.add(medio);
+            for (PagoEntry entry : pagos) {
+                if (entry.getMonto() == null || entry.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
+                MedioPago medio = new MedioPago();
+                medio.setMedioPago(entry.getMetodoPago());
+                medio.setComprobante(encabezado);
+                medioPagoList.add(medio);
+            }
+            if (medioPagoList.isEmpty()) {
+                MedioPago medio = new MedioPago();
+                medio.setMedioPago("01");
+                medio.setComprobante(encabezado);
+                medioPagoList.add(medio);
+            }
             encabezado.setMedioPago(medioPagoList);
             
             // Generate the Hacienda document key (50-digit clave with check digit)
@@ -166,7 +174,7 @@ public class ComprobanteService implements Serializable {
             encabezado.setClave(clave);
             
             encabezadoService.create(encabezado);
-            DetalleServicio detalles = detallesTiqueteElectronico(carrito, tipoDocumento);
+            DetalleServicio detalles = detallesComprobante(carrito, tipoDocumento);
 
             // REP V4.4: DetalleServicio is MANDATORY (minOccurs="1")
             if ("10".equals(tipoDocumento) && (detalles == null
@@ -177,16 +185,35 @@ public class ComprobanteService implements Serializable {
             }
 
             detallesService.create(detalles);
-            ResumenFactura resumen = resumenTiqueteElectronico(carrito);
+            ResumenFactura resumen = resumenComprobante(carrito);
 
-            // MedioPago moved to ResumenFactura per V4.4 Bitácora 22/04/2026 (mandatory Nov 1, 2026)
             List<MedioPagoR> mediosPagoResumen = new ArrayList<>();
-            MedioPagoR medioR = new MedioPagoR();
-            medioR.setTipoMedioPago(medioPago);
-            // Single payment method: total = full comprobante amount
-            medioR.setTotalMedioPago(resumen.getTotalComprobante());
-            medioR.setResumenFactura(resumen);
-            mediosPagoResumen.add(medioR);
+            BigDecimal totalComprobante = resumen.getTotalComprobante();
+            BigDecimal sumaPagos = BigDecimal.ZERO;
+            int pagoCount = 0;
+            for (PagoEntry entry : pagos) {
+                if (entry.getMonto() == null || entry.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
+                MedioPagoR medioR = new MedioPagoR();
+                medioR.setTipoMedioPago(entry.getMetodoPago());
+                medioR.setTotalMedioPago(entry.getMonto());
+                medioR.setResumenFactura(resumen);
+                mediosPagoResumen.add(medioR);
+                sumaPagos = sumaPagos.add(entry.getMonto());
+                pagoCount++;
+            }
+            // Hacienda v4.4 requires sum of TotalMedioPago == TotalComprobante
+            if (pagoCount > 0 && sumaPagos.compareTo(totalComprobante) != 0) {
+                // Adjust last entry to match total — prevents rounding mismatch
+                MedioPagoR last = mediosPagoResumen.get(pagoCount - 1);
+                last.setTotalMedioPago(last.getTotalMedioPago().add(totalComprobante.subtract(sumaPagos)));
+            }
+            if (mediosPagoResumen.isEmpty()) {
+                MedioPagoR medioR = new MedioPagoR();
+                medioR.setTipoMedioPago("01");
+                medioR.setTotalMedioPago(totalComprobante);
+                medioR.setResumenFactura(resumen);
+                mediosPagoResumen.add(medioR);
+            }
             resumen.setMediosPago(mediosPagoResumen);
 
             // V4.4 Bitácora item 124/125: TotalComprobante must equal sum of TotalMedioPago
@@ -263,55 +290,25 @@ public class ComprobanteService implements Serializable {
                 return false;
             }
 
-            // ── BEGIN FIDES FLOW ──────────────────────────────────────────
-            // Mercurius delegates XML generation, signing, and submission to Fides.
-            // FidesApiService handles: auth → create invoice → sign → submit → poll.
-            // Old direct Hacienda flow is commented below as reference (lines with //>).
+            // ── Route through HaciendaServiceFacade ────────────────────────
+            // The facade checks AppSettings.useFides and chooses the active provider:
+            //   Fides API   → FidesApiService (auth → create → sign → submit → poll)
+            //   Direct Hacienda → XML build → sign → HaciendaApiService.submitAndWait
             // ──────────────────────────────────────────────────────────────
 
-            FidesApiService.InvoiceData invoiceData = new FidesApiService.InvoiceData();
-
-            invoiceData.issuerTaxId = appSettings.getIdentificacion();
-            invoiceData.issuerName = appSettings.getNombreNegocio();
-
-            if (comprobante.getEncabezado() != null && comprobante.getEncabezado().getReceptor() != null) {
-                invoiceData.receiverTaxId = comprobante.getEncabezado().getReceptor().getIdentificacion() != null
-                    ? comprobante.getEncabezado().getReceptor().getIdentificacion().getNumero() : null;
-                invoiceData.receiverName = comprobante.getEncabezado().getReceptor().getNombre();
-            }
-
-            invoiceData.accessKey = clave;
-
-            if (comprobante.getDetalles() != null && comprobante.getDetalles().getLineasDetalle() != null) {
-                invoiceData.items = new java.util.ArrayList<>();
-                for (LineaDetalle linea : comprobante.getDetalles().getLineasDetalle()) {
-                    FidesApiService.InvoiceData.ItemData item = new FidesApiService.InvoiceData.ItemData();
-                    item.code = linea.getCodigoCabys();
-                    item.description = linea.getDetalle();
-                    item.quantity = linea.getCantidad() != null ? linea.getCantidad().toPlainString() : "1";
-                    item.unitPrice = linea.getPrecioUnitario() != null ? linea.getPrecioUnitario().toPlainString() : "0";
-                    if (linea.getImpuestos() != null && !linea.getImpuestos().isEmpty()) {
-                        item.taxRate = linea.getImpuestos().get(0).getTarifa() != null
-                            ? linea.getImpuestos().get(0).getTarifa().toPlainString() : null;
-                    }
-                    invoiceData.items.add(item);
-                }
-            }
-
-            invoiceData.total = comprobante.getResumen() != null && comprobante.getResumen().getTotalComprobante() != null
-                ? comprobante.getResumen().getTotalComprobante().toPlainString() : "0";
-
-            alertasService.registrarAlerta("Hacienda", "Enviando comprobante " + clave + " a traves de Fides",
+            String provider = haciendaServiceFacade.isFidesEnabled() ? "Fides" : "Hacienda directa";
+            alertasService.registrarAlerta("Hacienda", "Enviando comprobante " + clave + " via " + provider,
                 null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+
             comprobante.setHaciendaEstado("ENVIADO");
             if (comprobante.getEncabezado() != null) {
                 comprobante.getEncabezado().setEstado("ENVIADO");
             }
             comprobantesEmitidosService.update(comprobante);
 
-            FidesApiService.FidesResponse fidesResp = fidesApiService.submitToHaciendaViaFides(invoiceData);
+            HaciendaServiceFacade.SubmitResult result = haciendaServiceFacade.submitDocument(comprobante);
 
-            if (fidesResp.success) {
+            if (result.success) {
                 comprobante.setHaciendaEstado("ACEPTADO");
                 comprobante.setHaciendaFechaEnvio(LocalDateTime.now());
                 comprobante.setHaciendaFechaRespuesta(LocalDateTime.now());
@@ -319,86 +316,19 @@ public class ComprobanteService implements Serializable {
                     comprobante.getEncabezado().setEstado("ACEPTADO");
                 }
                 comprobantesEmitidosService.update(comprobante);
-                alertasService.registrarAlerta("Hacienda", "Comprobante " + (comprobante.getEncabezado() != null ? comprobante.getEncabezado().getNumeroConsecutivo() : clave) + " aceptado por Hacienda (via Fides)",
+                alertasService.registrarAlerta("Hacienda", "Comprobante " + (comprobante.getEncabezado() != null ? comprobante.getEncabezado().getNumeroConsecutivo() : clave) + " aceptado por Hacienda",
                     null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
                 return true;
             } else {
                 if (comprobante.getEncabezado() != null) {
                     comprobante.getEncabezado().setEstado("RECHAZADO");
-                    comprobante.getEncabezado().setMotivoRechazo(fidesResp.errorMessage);
+                    comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
                 }
                 comprobantesEmitidosService.update(comprobante);
-                alertasService.registrarAlerta("Hacienda", "Fides/Hacienda rechazo comprobante: " + fidesResp.errorMessage,
-                    null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, fidesResp.errorMessage);
+                alertasService.registrarAlerta("Hacienda", "Hacienda rechazo comprobante: " + result.errorMessage,
+                    null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, result.errorMessage);
                 return false;
             }
-
-            // ── END FIDES FLOW ────────────────────────────────────────────
-
-            /* ── OLD DIRECT HACIENDA FLOW (kept for reference) ────────────
-            //> // Determine document type from the encabezado and build type-specific XML
-            //> String docCode = comprobante.getEncabezado() != null
-            //>     ? comprobante.getEncabezado().getCodigoDocumento() : null;
-            //> DocumentoStrategy strategy = strategyFactory.forCode(docCode);
-            //> String xmlContent;
-            //> try {
-            //>     xmlContent = strategy.buildXml(comprobante);
-            //> } catch (jakarta.xml.bind.JAXBException e) {
-            //>     alertasService.registrarAlerta("Error", "Error generating XML for comprobante: " + e.getMessage(), null, 0,
-            //>         "ComprobanteService.enviarComprobanteAHacienda()", null, e.getMessage());
-            //>     return false;
-            //> }
-            //> 
-            //> HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlContent);
-            //> if (!signResult.success) {
-            //>     alertasService.registrarAlerta("Hacienda", "Error al firmar comprobante: " + signResult.errorMessage,
-            //>         null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, signResult.errorMessage);
-            //>     return false;
-            //> }
-            //> 
-            //> String emisorTipo = appSettings.getTipoIdentificacion();
-            //> String emisorNumero = appSettings.getIdentificacion();
-            //> String receptorTipo = "01";
-            //> String receptorNumero = "000000000";
-            //> if (comprobante.getEncabezado() != null && comprobante.getEncabezado().getReceptor() != null
-            //>     && comprobante.getEncabezado().getReceptor().getIdentificacion() != null) {
-            //>     receptorTipo = comprobante.getEncabezado().getReceptor().getIdentificacion().getTipo();
-            //>     receptorNumero = comprobante.getEncabezado().getReceptor().getIdentificacion().getNumero();
-            //> }
-            //> 
-            //> alertasService.registrarAlerta("Hacienda XML", "Enviando comprobante " + clave + " a Hacienda:\n" + signResult.signedXml,
-            //>     null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
-            //> comprobante.setHaciendaEstado("ENVIADO");
-            //> if (comprobante.getEncabezado() != null) {
-            //>     comprobante.getEncabezado().setEstado("ENVIADO");
-            //> }
-            //> comprobantesEmitidosService.update(comprobante);
-            //> HaciendaApiService.ApiResponse apiResponse = haciendaApiService.submitAndWait(
-            //>     clave, signResult.signedXml,
-            //>     emisorTipo, emisorNumero, receptorTipo, receptorNumero);
-            //> 
-            //> if (apiResponse.isSuccess()) {
-            //>     comprobante.setHaciendaEstado("ACEPTADO");
-            //>     comprobante.setHaciendaFechaEnvio(LocalDateTime.now());
-            //>     comprobante.setHaciendaFechaRespuesta(LocalDateTime.now());
-            //>     if (comprobante.getEncabezado() != null) {
-            //>         comprobante.getEncabezado().setEstado("ACEPTADO");
-            //>     }
-            //>     comprobantesEmitidosService.update(comprobante);
-            //>     alertasService.registrarAlerta("Hacienda", "Comprobante " + (comprobante.getEncabezado() != null ? comprobante.getEncabezado().getNumeroConsecutivo() : clave) + " aceptado por Hacienda",
-            //>         null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
-            //>     return true;
-            //> } else {
-            //>     if (comprobante.getEncabezado() != null) {
-            //>         comprobante.getEncabezado().setEstado("RECHAZADO");
-            //>         comprobante.getEncabezado().setMotivoRechazo(apiResponse.errorMessage);
-            //>     }
-            //>     comprobantesEmitidosService.update(comprobante);
-            //>     alertasService.registrarAlerta("Hacienda", "Hacienda rechazo comprobante: " + apiResponse.errorMessage,
-            //>         null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, apiResponse.errorMessage);
-            //>     return false;
-            //> }
-            //> ── END OLD HACIENDA FLOW (kept for reference) ─────────────── */
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error al enviar comprobante a Hacienda: " + e.getMessage(),
                 null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, e.getMessage());
@@ -406,7 +336,7 @@ public class ComprobanteService implements Serializable {
         }
     }
 
-    public ResumenFactura resumenTiqueteElectronico(List<ArticuloCarrito> carrito) {
+    public ResumenFactura resumenComprobante(List<ArticuloCarrito> carrito) {
         try {
             BigDecimal totalServGravados = BigDecimal.ZERO;
             BigDecimal totalServExentos = BigDecimal.ZERO;
@@ -491,13 +421,13 @@ public class ComprobanteService implements Serializable {
             }
             return resumen;
         } catch (RuntimeException e) {
-alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tiquete: " + e.getMessage(), null, 0, "resumenTiqueteElectronico()", null, e.getMessage());
+alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tiquete: " + e.getMessage(), null, 0, "resumenComprobante()", null, e.getMessage());
             return null;
         }
 
     }
 
-    public DetalleServicio detallesTiqueteElectronico(List<ArticuloCarrito> carrito, String tipoDocumento) {
+    public DetalleServicio detallesComprobante(List<ArticuloCarrito> carrito, String tipoDocumento) {
         try {
             // Enforce line limits per Hacienda v4.4 spec
             int maxLines;
@@ -583,12 +513,42 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                         }
                     }
                 }
-                // DetalleSurtido is REMOVED for all promo items.
-                // Per Hacienda v4.4 rules, DetalleSurtido is only valid for
-                // manufacturer-assembled combos with their own SKU/GTIN (Tipo 03).
-                // All POS promos in this app are in-store bundles assembled at checkout,
-                // which must NOT use DetalleSurtido. The discount code ("06" or Nota 20)
-                // is set on the main line above, which is the correct approach.
+                // Conditional DetalleSurtido for manufacturer-origin combos
+                // Per Hacienda v4.4 (Tipo 03), only combos assembled at origin
+                // (ensambladoOrigen=true) with own SKU/GTIN qualify for DetalleSurtido.
+                // In-store bundles use discounts instead and must NOT emit DetalleSurtido.
+                if (articulo.isPromo() && !isRep) {
+                    List<Promocion> promociones = articulo.getPromociones();
+                    if (promociones != null && !promociones.isEmpty()) {
+                        for (Promocion promocion : promociones) {
+                            if (promocion.isEnsambladoOrigen()
+                                && promocion.getArticulosCarrito() != null
+                                && !promocion.getArticulosCarrito().isEmpty()) {
+
+                                List<LineaDetalleSurtido> surtidos = new ArrayList<>();
+                                for (ArticuloCarrito compArticulo : promocion.getArticulosCarrito()) {
+                                    LineaDetalleSurtido surtido = new LineaDetalleSurtido();
+                                    surtido.setCodigoCabysSurtido(
+                                        compArticulo.getArticulo().getCodigoCabys().getCodigo());
+                                    surtido.setCantidadSurtido(compArticulo.getCantidad());
+                                    surtido.setUnidadMedidaSurtido(
+                                        compArticulo.getArticulo().getUnidadMedida());
+                                    surtido.setDetalleSurtido(
+                                        compArticulo.getArticulo().getNombre());
+                                    surtido.setPrecioUnitarioSurtido(
+                                        compArticulo.getPrecioEfectivo());
+                                    surtido.setMontoTotalSurtido(
+                                        compArticulo.getTotalArticulo());
+                                    surtido.setSubTotalSurtido(
+                                        compArticulo.getTotalArticulo());
+                                    surtidos.add(surtido);
+                                }
+                                linea.setDetallesSurtidos(surtidos);
+                                linea.setDetalleSurtido(new DetalleSurtido(surtidos));
+                            }
+                        }
+                    }
+                }
                 if (!isRep) {
                     linea.setDescuentos(descuentos);
                 }
@@ -628,7 +588,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
             detalles.setStatus(true);
             return detalles;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiquete: " + e.getMessage(), null, 0, "detallesTiqueteElectronico()", null, e.getMessage());
+            alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiquete: " + e.getMessage(), null, 0, "detallesComprobante()", null, e.getMessage());
             return null;
         }
 
@@ -642,7 +602,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
         try {
             StringBuilder xml = new StringBuilder();
             // NOTE: No XML declaration (<?xml?>) — Hacienda's MR parser rejects it
-            xml.append("<MensajeReceptor xmlns=\"https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/mensajeReceptor\">");
+            xml.append("<MensajeReceptor xmlns=\"https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/mensajeReceptor\">");
             xml.append("<Clave>").append(escapeXml(clave)).append("</Clave>");
             // NumeroCedulaEmisor: the original invoice emitter (seller), NOT the MR sender
             xml.append("<NumeroCedulaEmisor>").append(escapeXml(numeroCedulaEmisor)).append("</NumeroCedulaEmisor>");
@@ -686,7 +646,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                    .replace("'", "&apos;");
     }
 
-    public void enviarFacturaACliente(ComprobantesEmitidos tiqueteElectronico, Clients cliente, Users user, BigDecimal pago, BigDecimal vuelto) {
+    public void enviarFacturaACliente(ComprobantesEmitidos tiqueteElectronico, Clients cliente, Users user, BigDecimal pago, BigDecimal vuelto, List<PagoEntry> pagos) {
         try {
             if (cliente == null || cliente.getEmail() == null || cliente.getEmail().isEmpty()) {
                 alertasService.registrarAlerta("Info", "Cliente sin email, no se envia factura: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo(), null, 0, "ComprobanteService.enviarFacturaACliente()", null, null);
@@ -701,7 +661,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
 
             // Generate PDF
             pdfGenerator.generarPDFTiqueteElectronico(tiqueteElectronico, settings, 
-                new ArrayList<>(), cliente, user, pago, vuelto);
+                new ArrayList<>(), cliente, user, pago, vuelto, pagos);
             String pdfUrl = pdfGenerator.getPdfUrl();
             if (pdfUrl == null || pdfUrl.isEmpty()) {
                 alertasService.registrarAlerta("Error", "No se pudo generar PDF para envio", null, 0, "ComprobanteService.enviarFacturaACliente()", null, null);

@@ -6,6 +6,7 @@ import Models.AppSettings;
 import Models.Clients;
 import Models.Encabezado.*;
 import Models.Encabezado.CorreoElectronicoEmisor;
+import Models.Encabezado.CorreoElectronicoReceptor;
 import Services.Facturas.EmisorService;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -94,6 +95,15 @@ public final class EncabezadoBuilder {
             // Unknown idType — fall back to IdentificacionExtranjero
             receptor.setIdentificacionExtranjero(selectedClient.getIdNumber() != null ? selectedClient.getIdNumber() : "");
         }
+        if (selectedClient.getEmail() != null && !selectedClient.getEmail().trim().isEmpty()) {
+            List<CorreoElectronicoReceptor> correos = new ArrayList<>();
+            CorreoElectronicoReceptor correo = new CorreoElectronicoReceptor();
+            correo.setCorreo(selectedClient.getEmail().trim());
+            correo.setReceptor(receptor);
+            correos.add(correo);
+            receptor.setCorreosElectronicos(correos);
+        }
+
         return receptor;
     }
 
