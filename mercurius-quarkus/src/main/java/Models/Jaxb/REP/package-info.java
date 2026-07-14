@@ -1,5 +1,5 @@
 @XmlSchema(
-    namespace = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/reciboElectronicoPago",
+    namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/reciboElectronicoPago",
     elementFormDefault = XmlNsForm.QUALIFIED
 )
 package Models.Jaxb.REP;

@@ -6,14 +6,14 @@ $BASE = "F:\Documents\GitHub\Mercurius\mercurius-quarkus\src\main\java\Models\Ja
 
 # Document-specific namespaces (from @XmlRootElement in Documento classes)
 $DOCUMENTS = @{
-    FE  = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronica"
-    TE  = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/tiqueteElectronico"
-    NC  = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/notaCreditoElectronica"
-    ND  = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/notaDebitoElectronica"
-    FEE = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronicaExportacion"
-    FCE = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/facturaElectronicaCompra"
-    MR  = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/mensajeReceptor"
-    REP = "https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.4/reciboElectronicoPago"
+    FE  = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica"
+    TE  = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/tiqueteElectronico"
+    NC  = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica"
+    ND  = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaDebitoElectronica"
+    FEE = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaExportacion"
+    FCE = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaCompra"
+    MR  = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/mensajeReceptor"
+    REP = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/reciboElectronicoPago"
 }
 
 # All shared entity types that need wrappers
