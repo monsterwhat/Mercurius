@@ -143,6 +143,20 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
 
+    public @Nonnull List<Articulos> findByNameContaining(@Nonnull String name) {
+        try {
+            TypedQuery<Articulos> query = em.createQuery(
+                "SELECT a FROM Articulos a WHERE a.processed = true AND a.status = true AND LOWER(a.nombre) LIKE LOWER(CONCAT('%', :name, '%'))",
+                Articulos.class);
+            query.setParameter("name", name);
+            query.setMaxResults(20);
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            alertasService.registrarAlerta("Error", "Error searching by name: " + e.getMessage(), null, 0, "ArticulosService.findByNameContaining()", null, e.getMessage());
+            return List.of();
+        }
+    }
+
     public @Nullable Articulos findByBarCode(@Nonnull String barcode) {
         try {
             TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.codigoBarra = :barcode", Articulos.class);

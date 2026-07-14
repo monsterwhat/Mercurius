@@ -119,6 +119,15 @@ public class StockAlertService extends GService<StockAlert> {
             
             // Check if stock is below optimal level
             if (currentStock < optimalStock && articulo.getEstadoAlertas()) {
+                // Deduplication: skip if an active alert already exists for this article
+                String checkJpql = "SELECT COUNT(sa) FROM StockAlert sa WHERE sa.articulo = :articulo AND sa.estado = 'active'";
+                Long existingCount = em.createQuery(checkJpql, Long.class)
+                        .setParameter("articulo", articulo)
+                        .getSingleResult();
+                if (existingCount != null && existingCount > 0) {
+                    continue; // Active alert already exists — skip
+                }
+
                 // Determine alert type
                 String alertType;
                 if (currentStock == 0) {

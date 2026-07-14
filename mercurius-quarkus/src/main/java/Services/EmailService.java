@@ -218,8 +218,64 @@ public class EmailService implements Serializable {
     }
     
     private void sendEmailsWithAttachmentFallback(List<String> to, String subject, String body, String email, String pass, File attachment, Consumer<String> callback) {
-        alertasService.registrarAlerta("Error", "FALLBACK: sendEmailsWithAttachment failed, notifying via callback", null, 0, "EmailService.sendEmailsWithAttachmentFallback()", null, null);
+        alertasService.registrarAlerta("Error", "FALLBACK: sendEmailsWithAttachment failed", null, 0, "EmailService.sendEmailsWithAttachmentFallback()", null, null);
         CompletableFuture.runAsync(() -> callback.accept("Email with attachment failed: Timeout or error - please try again later"));
+    }
+    
+    @Timeout(value = 60, unit = ChronoUnit.SECONDS)
+    @Retry(maxRetries = 2, delay = 1000, jitter = 500)
+    @Fallback(fallbackMethod = "sendHtmlEmailsFallback")
+    public void sendHtmlEmails(@Nonnull List<String> to, @Nonnull String subject, @Nonnull String htmlBody, @Nullable String email, @Nullable String pass, @Nonnull Consumer<String> callback) {
+        final String[] status = {null};
+        
+        if (email != null && pass != null) {
+            Properties props = new Properties();
+            props.put("mail.smtp.auth", "true");
+            props.put("mail.smtp.starttls.enable", "true");
+            props.put("mail.smtp.host", "smtp.gmail.com");
+            props.put("mail.smtp.port", "587");
+
+            Session session = Session.getInstance(props, new jakarta.mail.Authenticator() {
+                @Override
+                protected jakarta.mail.PasswordAuthentication getPasswordAuthentication() {
+                    return new jakarta.mail.PasswordAuthentication(email, pass);
+                }
+            });
+
+            try {
+                Message message = new MimeMessage(session);
+                message.setHeader("Content-Type","text/html; charset=utf-8");
+                message.setFrom(new InternetAddress(email));
+
+                // Set multiple recipients
+                InternetAddress[] toAddresses = new InternetAddress[to.size()];
+                for (int i = 0; i < to.size(); i++) {
+                    toAddresses[i] = new InternetAddress(to.get(i));
+                }
+                message.setRecipients(Message.RecipientType.TO, toAddresses);
+
+                message.setSubject(subject);
+                message.setContent(htmlBody, "text/html; charset=utf-8");
+
+                Transport.send(message);
+                status[0] = "Sent";
+                
+            } catch (MessagingException e) {
+                status[0] = "Encountered an Error: " + e.getLocalizedMessage();
+                alertasService.registrarAlerta("Error", "Error sending HTML email: " + e.getMessage(), null, 0, "EmailService.sendHtmlEmails()", null, e.getMessage());
+            }
+        } else {
+            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendHtmlEmails()", null, null);
+            status[0] = "No Email Setup!";
+        }
+        
+        // Complete the CompletableFuture asynchronously
+        CompletableFuture.runAsync(() -> callback.accept(status[0]));
+    }
+    
+    private void sendHtmlEmailsFallback(List<String> to, String subject, String htmlBody, String email, String pass, Consumer<String> callback) {
+        alertasService.registrarAlerta("Error", "FALLBACK: sendHtmlEmails failed, notifying via callback", null, 0, "EmailService.sendHtmlEmailsFallback()", null, null);
+        CompletableFuture.runAsync(() -> callback.accept("HTML email send failed: Timeout or error - please try again later"));
     }
     
     @Timeout(value = 120, unit = ChronoUnit.SECONDS)
