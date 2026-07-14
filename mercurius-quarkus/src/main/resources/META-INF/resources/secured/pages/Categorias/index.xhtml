@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Gestión de Categorías</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <style>
+            /* Hide tab headers - use stat-cards as navigation instead */
+            .ui-tabs-nav {
+                display: none !important;
+            }
+            
+            /* Clickable stat-cards */
+            .stat-card {
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .stat-card.active {
+                border: 2px solid var(--bulma-primary);
+                background: rgba(72, 199, 142, 0.1);
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+
+            <!-- Header mejorado con métricas -->
+            <div class="categorias-header">
+                <p class="title is-3">Gestión de Categorías</p>
+                <div class="stats-grid">
+                    <div class="stat-card active" onclick="switchTab('CategoriasTabView', 0, this)">
+                        <span class="stat-number">#{FamiliasController.familiaCount()}</span>
+                        <span class="stat-label">Familias</span>
+                    </div>
+                    <div class="stat-card" onclick="switchTab('CategoriasTabView', 1, this)">
+                        <span class="stat-number">#{DepartamentosController.departamentoCount()}</span>
+                        <span class="stat-label">Departamentos</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="columns is-multiline has-text-centered">
+                <div class="column is-full"> 
+                    <p:tabView cache="false" dynamic="true" id="Categorias" widgetVar="CategoriasTabView">
+                        <p:tab title="Familias">
+                            <f:facet name="title">
+                                <span class="icon-text">
+                                    <i class="pi pi-tag"></i>
+                                    <span>Familias</span>
+                                    <span class="tab-counter">#{FamiliasController.familiaCount()}</span>
+                                </span>
+                            </f:facet>
+                            <div class="tab-content-card">
+                                <h:form id="familias">  
+                                    <div class="actions-bar">
+                                        <div class="actions-group">
+                                            <p:commandLink actionListener="#{FamiliasController.openNewFamilia}"
+                                                           styleClass="action-btn button is-success"
+                                                           onclick="PF('CrearFamiliaDialog').show();" process="@this">
+                                                <i class="pi pi-plus"></i>
+                                                <span>Crear Familia</span>
+                                            </p:commandLink>
+                                            <p:commandLink rendered="#{SessionController.registros}"
+                                                           styleClass="action-btn button is-info">
+                                                <i class="pi pi-file-excel"></i>
+                                                <span>Exportar Excel</span>
+                                                <p:dataExporter type="xls" target="FamiliasTableData" fileName="Familias"/>
+                                            </p:commandLink>
+                                        </div>
+                                    </div>
+
+                                    <p:dataTable value="#{FamiliasController.filteredFamilias}" var="familia"  widgetVar="FamiliasTable"
+                                                 paginator="true" rows="10" paginatorPosition="bottom" id="FamiliasTableData"
+                                                 styleClass="articulos-table"
+                                                 emptyMessage="No se encontraron familias con los criterios proporcionados"
+                                                 globalFilterFunction="#{FamiliasController.globalFilterFunction}" reflow="true" 
+                                                 selectionMode="single" selection="#{FamiliasController.selectedFamilia}" rowKey="#{familia.id}">
+
+                                        <p:ajax event="rowSelect" update="@form"/>
+
+                                        <f:facet name="header">
+                                            <div class="filters-section">
+                                                <p:inputText id="globalFilter" onkeyup="PF('FamiliasTable').filter()"
+                                                             placeholder="Buscar familias..." style="width: 100%"
+                                                             value="#{FamiliasController.familiaFilter}"/>
+                                            </div>
+                                        </f:facet>
+
+                                        <p:column exportable="false" style="width: 100px; text-align: center;">
+                                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="status-chip status-active" rendered="#{familia.status}"/>
+                                            <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+                                            <p:chip id="inActiveChip" icon="pi pi-times" styleClass="status-chip status-inactive" rendered="#{!familia.status}"/>
+                                            <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                                        </p:column>
+
+                                        <p:column headerText="ID Familia" visible="false">
+                                            <h:outputText value="#{familia.id}"/>
+                                        </p:column>
+                                        <p:column headerText="Nombre" sortBy="#{familia.nombre}">
+                                            <h:outputText value="#{familia.nombre}" style="font-weight: 500;"/>
+                                        </p:column>
+
+                                        <p:column headerText="Acciones" exportable="false" style="width: 120px; text-align: center;">
+                                            <div class="table-actions">
+                                                <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-pencil" update="editFamilia"
+                                                                 onclick="PF('EditarFamiliaDialog').show();" process="@this" title="Editar familia">
+                                                    <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                                </p:commandButton>
+                                                <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-power-off"
+                                                                 actionListener="#{FamiliasController.deleteFamilia()}" process="@this" update="Categorias:familias" title="Cambiar estado">
+                                                    <f:setPropertyActionListener value="#{familia}" target="#{FamiliasController.selectedFamilia}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable>  
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                        <p:tab title="Departamentos">
+                            <f:facet name="title">
+                                <span class="icon-text">
+                                    <i class="pi pi-building"></i>
+                                    <span>Departamentos</span>
+                                    <span class="tab-counter">#{DepartamentosController.departamentoCount()}</span>
+                                </span>
+                            </f:facet>
+                            <div class="tab-content-card">
+                                <h:form id="departamentos"> 
+                                    <div class="actions-bar">
+                                        <div class="actions-group">
+                                            <p:commandLink actionListener="#{DepartamentosController.openNewDepartamento()}" 
+                                                           styleClass="action-btn button is-success"
+                                                           onclick="PF('CrearDepartamentoDialog').show();" process="@this">
+                                                <i class="pi pi-plus"></i>
+                                                <span>Crear Departamento</span>
+                                            </p:commandLink>
+                                            <p:commandLink rendered="#{SessionController.registros}"
+                                                           styleClass="action-btn button is-info">
+                                                <i class="pi pi-file-excel"></i>
+                                                <span>Exportar Excel</span>
+                                                <p:dataExporter type="xls" target="DepartamentosTableData" fileName="Departamentos"/>
+                                            </p:commandLink>
+                                        </div>
+                                    </div>
+
+                                    <p:dataTable value="#{DepartamentosController.filteredDepartamentos}" var="departamento"  widgetVar="DepartamentosTable"
+                                                 paginator="true" rows="10" paginatorPosition="bottom" id="DepartamentosTableData"
+                                                 styleClass="articulos-table"
+                                                 emptyMessage="No se encontraron departamentos con los criterios proporcionados"
+                                                 globalFilterFunction="#{DepartamentosController.globalFilterFunction}" reflow="true" 
+                                                 selectionMode="single" selection="#{DepartamentosController.selectedDepartamento}" rowKey="#{departamento.id}">
+                                        <p:ajax event="rowSelect" update="@form"/>
+                                        <f:facet name="header">
+                                            <div class="filters-section">
+                                                <p:inputText id="globalFilter" onkeyup="PF('DepartamentosTable').filter()" 
+                                                             placeholder="Buscar departamentos..." style="width: 100%" 
+                                                             value="#{DepartamentosController.departamentoFilter}"/>
+                                            </div>
+                                        </f:facet>
+                                        <p:column exportable="false" style="width: 100px; text-align: center;"> 
+                                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="status-chip status-active" rendered="#{departamento.status}"/>
+                                            <p:tooltip for="ActiveChip" value="Activa" position="top"/>
+                                            <p:chip id="inActiveChip" icon="pi pi-times" styleClass="status-chip status-inactive" rendered="#{!departamento.status}"/>
+                                            <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
+                                        </p:column>
+                                        <p:column headerText="ID Departamento" visible="false">
+                                            <h:outputText value="#{departamento.id}"/>
+                                        </p:column>
+                                        <p:column headerText="Nombre" sortBy="#{departamento.nombre}">
+                                            <h:outputText value="#{departamento.nombre}" style="font-weight: 500;"/>
+                                        </p:column>
+                                        <p:column headerText="Acciones" exportable="false" style="width: 120px; text-align: center;">
+                                            <div class="table-actions">
+                                                <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-pencil"
+                                                                 onclick="PF('EditarDepartamentoDialog').show();" process="@this" update="editDepartamento" title="Editar departamento">
+                                                    <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
+                                                </p:commandButton>
+                                                <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-power-off" update="@form Categorias:departamentos"
+                                                                 actionListener="#{DepartamentosController.deleteDepartamento()}" process="@this" title="Cambiar estado">
+                                                    <f:setPropertyActionListener value="#{departamento}" target="#{DepartamentosController.selectedDepartamento}" />
+                                                </p:commandButton>
+                                            </div>
+                                        </p:column>
+                                    </p:dataTable> 
+                                </h:form>
+                            </div> 
+                        </p:tab>
+                    </p:tabView>
+                </div>
+            </div>
+        </section>
+
+        <ui:include src="/secured/fragments/Departamentos/CrearDepartamentoDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Departamentos/EditDepartamentoDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Familias/CreateFamiliaDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Familias/EditFamiliasDialog.xhtml"/>
+
+        <!-- Scripts adicionales -->
+        <script>
+            // Función para cambiar tabs mediante stat-cards
+            function switchTab(tabViewWidget, index, cardElement) {
+                PF(tabViewWidget).select(index);
+                setActiveCard(cardElement);
+            }
+
+            // Función para establecer la tarjeta activa
+            function setActiveCard(card) {
+                document.querySelectorAll('.stat-card').forEach(function(c) {
+                    c.classList.remove('active');
+                });
+                card.classList.add('active');
+            }
+
+            // Mejoras para las animaciones
+            document.addEventListener('DOMContentLoaded', function() {
+                // Agregar efectos de carga a las tablas
+                const tables = document.querySelectorAll('.ui-datatable');
+                tables.forEach(function(table) {
+                    table.classList.add('fade-in');
+                });
+
+                // Mejorar accesibilidad de los botones
+                const actionButtons = document.querySelectorAll('.table-action-btn');
+                actionButtons.forEach(function(btn) {
+                    if (!btn.getAttribute('title')) {
+                        const icon = btn.querySelector('i');
+                        if (icon &amp;&amp; icon.classList.contains('pi-pencil')) {
+                            btn.setAttribute('title', 'Editar');
+                        } else if (icon &amp;&amp; icon.classList.contains('pi-power-off')) {
+                            btn.setAttribute('title', 'Cambiar estado');
+                        }
+                    }
+                });
+                
+                // Manejar el evento de borrado en los campos de filtro global
+                const globalFilters = document.querySelectorAll('input[id*="globalFilter"]');
+                globalFilters.forEach(function(filter) {
+                    filter.addEventListener('input', function() {
+                        if (this.value.trim() === '') {
+                            setTimeout(function() {
+                                this.dispatchEvent(new Event('keyup'));
+                            }, 100);
+                        }
+                    });
+                });
+            });
+        </script>
+
+    </h:body>
+</html>

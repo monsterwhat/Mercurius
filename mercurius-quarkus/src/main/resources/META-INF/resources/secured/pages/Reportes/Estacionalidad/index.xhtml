@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>An\u00e1lisis de Estacionalidad</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <link rel="stylesheet" href="/Mercurius/resources/css/headers.css"/>
+        <style>
+            .reportes-header {
+                padding: 1rem;
+                border-radius: 0.75rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .reportes-header .title {
+                color: white;
+                margin-bottom: 1rem;
+            }
+
+            .filter-section {
+                background: var(--bulma-scheme-main);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+
+            .filter-section .field-row {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                flex-wrap: wrap;
+            }
+
+            .chart-container {
+                background: var(--bulma-scheme-main);
+                padding: 1rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+        </style>
+    </h:head>
+
+    <h:body>
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl id="growl" showDetail="true" showSummary="true" />
+
+        <section class="section">
+
+            <div class="reportes-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <p class="title is-3 has-text-centered">An\u00e1lisis de Estacionalidad</p>
+            </div>
+
+            <div class="filter-section">
+                <h:form id="filtros">
+                    <div class="columns is-vcentered is-multiline">
+                        <div class="column">
+                            <div class="field-row">
+                                <p:outputLabel value="Fecha Inicio: " style="font-weight: bold;"/>
+                                <p:datePicker value="#{seasonalityController.startDate}" showIcon="true"
+                                              style="background: var(--bulma-background-l); color: var(--bulma-text);"/>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="field-row">
+                                <p:outputLabel value="Fecha Fin: " style="font-weight: bold;"/>
+                                <p:datePicker value="#{seasonalityController.endDate}" showIcon="true"
+                                              style="background: var(--bulma-background-l); color: var(--bulma-text);"/>
+                            </div>
+                        </div>
+                        <div class="column is-narrow">
+                            <div class="buttons">
+                                <p:commandLink styleClass="button is-primary"
+                                               action="#{seasonalityController.refreshData}"
+                                               update="charts growl">
+                                    <i class="pi pi-refresh"></i>
+                                    <span>Actualizar</span>
+                                </p:commandLink>
+                            </div>
+                        </div>
+                    </div>
+                </h:form>
+            </div>
+
+            <h:form id="charts">
+                <div class="columns is-multiline">
+                    <div class="column is-half">
+                        <div class="chart-container">
+                            <p class="title is-5 has-text-centered">Tendencia Mensual de Ventas</p>
+                            <p:chart type="line" value="#{seasonalityController.monthlyTrendConfig}"
+                                     style="height: 300px; width: 100%;"/>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="chart-container">
+                            <p class="title is-5 has-text-centered">Ventas por D\u00eda de la Semana</p>
+                            <p:chart type="bar" value="#{seasonalityController.dayOfWeekConfig}"
+                                     style="height: 300px; width: 100%;"/>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="chart-container">
+                            <p class="title is-5 has-text-centered">Ventas por Departamento</p>
+                            <p:chart type="bar" value="#{seasonalityController.departmentConfig}"
+                                     style="height: 300px; width: 100%;"/>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="chart-container">
+                            <p class="title is-5 has-text-centered">Ventas por Familia</p>
+                            <p:chart type="bar" value="#{seasonalityController.familyConfig}"
+                                     style="height: 300px; width: 100%;"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <p class="title is-5 has-text-centered">Datos Diarios</p>
+                    <p:dataTable value="#{seasonalityController.dailySalesData}" var="row"
+                                 widgetVar="dailySalesTable" paginator="true" rows="15"
+                                 emptyMessage="No hay datos disponibles">
+                        <p:column headerText="Fecha" sortBy="#{row.date}">
+                            <h:outputText value="#{row.date}"/>
+                        </p:column>
+                        <p:column headerText="Total Ventas" sortBy="#{row.total}">
+                            <h:outputText value="#{row.total}">
+                                <f:convertNumber type="currency" currencySymbol="\u20a1"/>
+                            </h:outputText>
+                        </p:column>
+                    </p:dataTable>
+                </div>
+            </h:form>
+        </section>
+    </h:body>
+</html>

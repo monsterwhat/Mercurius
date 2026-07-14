@@ -1,0 +1,49 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    
+    <h:body>
+        <!-- Dialog for Código CABYS -->
+        <p:dialog header="Seleccionar Código CABYS" widgetVar="codigoCabysDialogCreate" 
+                  dynamic="true" cache="false" responsive="true" fitViewport="true">
+            <p:outputPanel rendered="#{not empty CabysController.catalogo}">
+                <h:form>
+                <p:dataTable value="#{CabysController.filteredCabys}" var="cabys" widgetVar="CabysTableCreate"
+                            paginator="true" rows="5" paginatorPosition="bottom" id="CabysTableCreate"
+                            emptyMessage="No se encontraron bienes ni servicios con la critería proporcionada"
+                            globalFilterFunction="#{CabysController.globalFilterFunction}"
+                            filterBy="#{CabysController.filterBy}" showGridlines="true" reflow="true"
+                            selection="#{CabysController.selectedCabys}" rowKey="#{cabys.codigo}">
+
+                    <f:facet name="header">
+                        <p:inputText id="globalFilter" onkeyup="PF('CabysTableCreate').filter()" style="color: var(--primary-color); width: 100%"
+                                         placeholder="Búsqueda general de todos los campos"/>
+                    </f:facet>
+
+                   <p:column style="width: 3%" />
+                   <p:column headerText="Código" sortBy="#{cabys.codigo}">
+                       <h:outputText value="#{cabys.codigo}" />
+                   </p:column>
+                   <p:column headerText="Descripción Categoría" sortBy="#{cabys.descripcion}">
+                       <h:outputText value="#{cabys.descripcion}" />
+                   </p:column>
+                   <p:column headerText="Impuesto" sortBy="#{cabys.impuesto}">
+                       <h:outputText value="#{cabys.impuesto}" />
+                   </p:column>
+                   <p:column headerText="Estado" sortBy="#{cabys.estado}" rendered="false">
+                       <h:outputText value="#{cabys.estado}" />
+                   </p:column>
+
+                </p:dataTable>
+                <p:commandButton value="Seleccionar" action="#{CabysController.selectCabysCreateAndAssign()}" 
+                                 oncomplete="PF('codigoCabysDialogCreate').hide();" styleClass="button is-primary is-rounded is-fullwidth"
+                                 icon="pi pi-check">
+                </p:commandButton>
+                </h:form>
+                </p:outputPanel>
+            </p:dialog>
+    </h:body>
+
+</ui:composition>

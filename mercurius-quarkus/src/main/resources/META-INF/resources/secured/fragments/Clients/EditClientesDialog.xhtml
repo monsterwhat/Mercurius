@@ -1,0 +1,120 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    <p:dialog header="Editar Cliente: #{ClientsController.selectedClient.name}" widgetVar="EditarClienteDialog" dynamic="true" cache="false" 
+              fitViewport="true" responsive="true" id="EditarClienteDialog" modal="true"
+              styleClass="modern-dialog">
+        <p:outputPanel rendered="#{not empty ClientsController.selectedClient}">
+            <h:form id="editClientForm">
+                <p:growl showDetail="true" showSummary="false"/>
+
+                <div class="columns is-multiline">
+                    
+                    <div class="column is-full">
+                        <p:messages showDetail="true" for="name" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="name">Nombre:</label>
+                        <p:inputText id="name" value="#{ClientsController.selectedClient.name}"
+                                     required="true" requiredMessage="El nombre no puede estar vacío"
+                                     style="width: 100%"/>
+                    </div>
+                    
+                    <div class="column is-full">
+                        <p:messages showDetail="true" for="email" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="email">Correo:</label>
+                        <p:inputText id="email" value="#{ClientsController.selectedClient.email}"
+                                     required="true" requiredMessage="El correo no puede estar vacío"
+                                     style="width: 100%"/>
+                    </div>
+                    
+                    <div class="column is-full">
+                        <p:messages showDetail="true" for="address" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="address">Dirección:</label>
+                        <p:inputText id="address" value="#{ClientsController.selectedClient.address}"
+                                     required="true" requiredMessage="La dirección no puede estar vacía"
+                                     style="width: 100%"/>
+                    </div>
+                    
+                    <div class="column is-half">
+                        <p:messages showDetail="true" for="phoneNumber" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="phoneNumber">Teléfono:</label>
+                        <p:inputText id="phoneNumber" value="#{ClientsController.selectedClient.phoneNumber}"
+                                     required="true" requiredMessage="El teléfono no puede estar vacío"
+                                     style="width: 100%"/>
+                    </div>
+                    
+                    <div class="column is-half">
+                        <p:messages showDetail="true" for="zoneCode" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="zoneCode">Código de Zona:</label>
+                        <p:inputText id="zoneCode" value="#{ClientsController.selectedClient.zoneCode}"
+                                     required="true" requiredMessage="El código de zona no puede estar vacío"
+                                     style="width: 100%"/>
+                    </div>
+                    
+                    <div class="column is-half">
+                        <p:messages showDetail="true" for="idType" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="idType">Tipo de Cédula:</label>
+                        <p:selectOneMenu id="idType" value="#{ClientsController.selectedClient.idType}"
+                                         required="true" requiredMessage="El tipo de cédula no puede estar vacío"
+                                         style="width: 100%">
+                            <f:selectItem itemLabel="Cédula Física" itemValue="Cédula Física"/>
+                            <f:selectItem itemLabel="Cédula Jurídica" itemValue="Cédula Jurídica"/>
+                            <f:selectItem itemLabel="DIMEX" itemValue="DIMEX"/>
+                            <f:selectItem itemLabel="NITE" itemValue="NITE"/>
+                        </p:selectOneMenu>
+                    </div>
+                    
+                    <div class="column is-half">
+                        <p:messages showDetail="true" for="idNumber" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="idNumber">Número de Cédula:</label>
+                        <p:inputText id="idNumber" value="#{ClientsController.selectedClient.idNumber}"
+                                     required="true" requiredMessage="El número de cédula no puede estar vacío"
+                                     style="width: 100%"/>
+                    </div>
+                    
+                    <div class="column is-half">
+                        <p:messages showDetail="true" for="birthDate" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="birthDate">Fecha de Nacimiento:</label>
+                        <p:calendar id="birthDate" value="#{ClientsController.selectedClient.birthDate}"
+                                    pattern="dd/MM/yyyy" required="true" 
+                                    requiredMessage="La fecha de nacimiento no puede estar vacía"
+                                    style="width: 100%"/>
+                    </div>
+                    
+                    
+                    <div class="column is-half">
+                        <p:messages showDetail="true" for="taxpayer" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="taxpayer">Contribuyente:</label>
+                        <p:selectBooleanCheckbox id="taxpayer" value="#{ClientsController.selectedClient.taxpayer}"
+                                                 itemLabel="Es contribuyente"/>
+                    </div>
+                    
+                    <div class="column is-half">
+                        <p:messages showDetail="true" for="codigoActividad" showSummary="false" closable="true" />
+                        <label class="label has-text-link" for="codigoActividad">Código Actividad:</label>
+                        <p:inputText id="codigoActividad" value="#{ClientsController.selectedClient.codigoActividadComercial}"
+                                     required="false" style="width: 100%"/>
+                    </div>
+                    
+                    <div class="column is-full mt-3">
+                        <div class="buttons is-centered">
+                            <p:commandLink process="@form" update="@form Clientes:clientesActivos"
+                                           action="#{ClientsController.updateClient}" 
+                                           class="button is-primary is-rounded" >
+                                <i class="pi pi-check"></i>
+                                Actualizar Cliente
+                            </p:commandLink>
+                            <p:commandLink onclick="PF('EditarClienteDialog').hide();"
+                                           class="button is-light is-rounded"
+                                           process="@this">
+                                <i class="pi pi-times"></i>
+                                Cancelar
+                            </p:commandLink>
+                        </div>
+                    </div>
+                </div>      
+            </h:form>
+        </p:outputPanel>
+    </p:dialog>
+</ui:composition>

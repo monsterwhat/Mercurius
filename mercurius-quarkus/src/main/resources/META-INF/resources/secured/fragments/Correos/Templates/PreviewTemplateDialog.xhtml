@@ -1,0 +1,23 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    
+    <p:dialog header="Vista Previa - #{emailTemplateController.selectedTemplate.nombre}" widgetVar="PreviewTemplateDialog" 
+              dynamic="true" cache="false" fitViewport="true" responsive="true" 
+              id="PreviewTemplateDialog" modal="true" width="800" height="600">
+        <p:outputPanel id="previewPanel">
+            <p:outputPanel rendered="#{not empty emailTemplateController.selectedTemplate}">
+                <div style="border: 1px solid #dbdbdb; border-radius: 4px; padding: 1rem; background: white; overflow: auto; max-height: 500px;">
+                    <h:outputText value="#{emailTemplateController.previewHtml}" escape="false" />
+                </div>
+            </p:outputPanel>
+            <p:outputPanel rendered="#{empty emailTemplateController.selectedTemplate}">
+                <div class="notification is-warning">
+                    <p>Seleccione una plantilla para ver la vista previa.</p>
+                </div>
+            </p:outputPanel>
+        </p:outputPanel>
+    </p:dialog>
+</ui:composition>

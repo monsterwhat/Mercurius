@@ -1,0 +1,187 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <p:dialog header="Informacion de Articulo"
+              dynamic="true" fitViewport="true" cache="false" widgetVar="ArticuloActivoYProcesadoDetailsDialog" 
+              responsive="true" id="ArticuloActivoYProcesadoDetailsDialog" modal="true">
+        <p:outputPanel id="selectedArticuloActivoYProcesado" rendered="#{not empty ArticulosController.selectedArticulo}">
+            
+            <section class="section"> 
+                
+                <div class="columns is-multiline has-text-centered">
+                    
+                    <div class="column is-full" >
+                        <div class="columns is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Código</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.codigo}</p> 
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Código Barra</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.codigoBarra}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Nombre</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.nombre}</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Descripción</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.descripcion}</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Unidad Medida</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.unidadMedida}</p>    
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Unidad Medida Comercial</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.unidadMedidaComercial}</p>    
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Departamento</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.departamento.nombre}</p> 
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Familia</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.familia.nombre}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Precio Costo</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.precioCostoSinIVA}</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Utilidad</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.porcentajeUtilidad} %</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Precio Sin Iva</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.precioConUtilidad}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Precio Final</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.lastPrecio.precioFinal}</p>   
+                            </div>
+                        </div> 
+                    </div>
+                    
+                    <div class="column is-full" >
+                        <div class="columns  is-vcentered">
+                            <div class="column is-narrow">
+                                <p class="title is-5">Creador</p>
+                            </div>
+                            <div class="column is-narrow">
+                                <p class="subtitle">#{ArticulosController.selectedArticulo.usuario.username}</p>  
+                            </div>
+                        </div> 
+                    </div>
+                    
+                </div>
+
+                <!-- Galería de Imágenes -->
+                <div class="columns is-multiline is-mobile" style="margin-top: 1.5rem;"
+                     rendered="#{not empty ArticulosController.selectedArticulo.imagenes}">
+                    <div class="column is-full">
+                        <hr/>
+                        <p class="title is-5">Imágenes</p>
+                    </div>
+                    <ui:repeat value="#{ArticulosController.selectedArticulo.imagenes}" var="img">
+                        <div class="column is-4-mobile is-3-tablet is-2-desktop">
+                            <div class="card">
+                                <div class="card-image" style="padding: 0.5rem; text-align: center;">
+                                    <p:graphicImage value="#{ArticulosController.getImagenStream(img.id)}"
+                                                    style="max-width: 100%; max-height: 120px; border-radius: 4px;"/>
+                                </div>
+                                <div class="card-content" style="padding: 0.5rem;">
+                                    <p class="is-size-7 has-text-grey" style="word-break: break-all;">#{img.nombreOriginal}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </ui:repeat>
+                </div>
+
+            </section> 
+        </p:outputPanel>
+    </p:dialog>
+
+</ui:composition>

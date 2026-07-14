@@ -1,0 +1,71 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+    
+    <p:dialog header="Crear Plantilla de Correo" widgetVar="CrearTemplateDialog" dynamic="true" cache="false" 
+        fitViewport="true" responsive="true" id="CrearTemplateDialog" modal="true" width="800">
+        <p:outputPanel rendered="#{not empty emailTemplateController.newTemplate}">
+            <h:form id="createTemplateForm">
+                <p:panel header="Crear nueva plantilla de correo" style="width: 100%;">
+                    <p:growl showDetail="true" showSummary="false"/>
+                    <div class="columns is-multiline">
+                        <div class="column is-half">
+                            <p:messages showDetail="true" for="tpl-name" showSummary="false" closable="true" />
+                            <label class="label" for="tpl-name" style="color: var(--primary-color);">Nombre:</label>
+                            <p:inputText id="tpl-name" value="#{emailTemplateController.newTemplate.nombre}" style="width: 100%"
+                                        required="true" requiredMessage="El nombre no puede estar vacio" />
+                        </div>
+                        
+                        <div class="column is-half">
+                            <p:messages showDetail="true" for="tpl-tipo" showSummary="false" closable="true" />
+                            <label class="label" for="tpl-tipo" style="color: var(--primary-color);">Tipo:</label>
+                            <p:selectOneMenu id="tpl-tipo" value="#{emailTemplateController.newTemplate.tipo}" style="width: 100%"
+                                              required="true" requiredMessage="Debe seleccionar un tipo">
+                                <f:selectItem itemLabel="-- Seleccionar --" itemValue="" noSelectionOption="true" />
+                                <f:selectItems value="#{emailTemplateController.tipoOptions}" />
+                            </p:selectOneMenu>
+                        </div>
+
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="tpl-asunto" showSummary="false" closable="true" />
+                            <label class="label" for="tpl-asunto" style="color: var(--primary-color);">Asunto por defecto:</label>
+                            <p:inputText id="tpl-asunto" value="#{emailTemplateController.newTemplate.asunto}" style="width: 100%"
+                                        placeholder="Ej: Reporte Automatico - {{nombre}}" />
+                        </div>
+
+                        <div class="column is-full">
+                            <p:messages showDetail="true" for="tpl-cuerpo" showSummary="false" closable="true" />
+                            <label class="label" for="tpl-cuerpo" style="color: var(--primary-color);">Cuerpo HTML:</label>
+                            <p:inputTextarea id="tpl-cuerpo" value="#{emailTemplateController.newTemplate.cuerpoHtml}" 
+                                             style="width: 100%; font-family: monospace; min-height: 300px;"
+                                             autoResize="false" 
+                                             required="true" requiredMessage="El cuerpo HTML no puede estar vacio" />
+                        </div>
+
+                        <div class="column is-full">
+                            <div class="notification is-info is-light">
+                                <p><strong>Placeholders disponibles:</strong></p>
+                                <p style="font-family: monospace; font-size: 0.9em;">
+                                    {{nombre}} - Nombre del reporte &#160;|&#160;
+                                    {{fecha}} - Fecha actual &#160;|&#160;
+                                    {{total}} - Total de registros &#160;|&#160;
+                                    {{tabla}} - Tabla de datos &#160;|&#160;
+                                    {{mensaje}} - Mensaje descriptivo &#160;|&#160;
+                                    {{_empresa}} - Nombre de la empresa
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="buttons" style="margin-top: 1rem;">
+                        <p:commandButton value="Crear Plantilla" process="@form" styleClass="rounded-button ui-button-primary"
+                                        update="@form Templates" style="width: 100%"
+                                        action="#{emailTemplateController.saveTemplate}"/>
+                    </div>
+                </p:panel>
+            </h:form>
+        </p:outputPanel> 
+    </p:dialog>
+</ui:composition>

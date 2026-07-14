@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+      data-theme="#{ThemeController.currentTheme}">
+
+    <h:head>
+        <title>Menu Principal de la Aplicacion</title>
+
+    </h:head>
+
+    <h:body>
+
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+        
+        <p:confirmDialog global="true" showEffect="fade" hideEffect="fade">
+            <p:commandButton value="Sí" type="button" styleClass="ui-confirmdialog-yes" icon="pi pi-check" />
+            <p:commandButton value="No" type="button" styleClass="ui-confirmdialog-no" icon="pi pi-times" />
+        </p:confirmDialog>
+        
+        <section class="section">
+            <div class="columns is-centered is-vcentered has-text-centered is-multiline">
+                <div class="column is-full">
+                    <p class="title has-text-centered">
+                        Menu de Aplicacion
+                    </p> 
+                </div> 
+            </div>
+            <div class="columns is-centered is-vcentered has-text-centered is-multiline"> 
+                <div class="column"> 
+                    <div class="card">
+                        <p:outputPanel id="mainPanel" >
+                            <p:panel rendered="#{SettingsController.currentSettings.completedSteps lt 5}">
+                                <p:steps activeIndex="#{SettingsController.currentSettings.completedSteps}">
+                                    <p:menuitem value="Perfil" />
+                                    <p:menuitem value="Logo" />
+                                    <p:menuitem value="Correo" />
+                                    <p:menuitem value="Tributacion" />
+                                    <p:menuitem value="Confirmacion" />
+                                </p:steps>
+                            </p:panel>
+
+                            <h:form rendered="#{SettingsController.pasoSeleccionNombre}">
+
+                                <div class="columns is-multiline is-centered is-vcentered">
+                                    <div class="column is-full">
+                                        <p class="title is-5 has-text-centered">
+                                            Configuracion de Aplicacion
+                                        </p> 
+                                    </div>
+                                    <div class="column is-10">
+                                        <div class="block">
+                                            <p:growl showDetail="true" showSummary="true"/>
+                                            <p:messages for="nombre"/>
+                                            <div class="columns is-multiline">
+                                                <div class="column is-full">
+                                                    <p:outputLabel value="Nombre del perfil: " for="nombre" style="color: var(--primary-color);"/>
+                                                </div>
+                                                <div class="column is-full">
+                                                    <p:inputText id="nombre" value="#{SettingsController.currentSettings.nombrePerfil}" required="true"
+                                                                 style="width: 100%" requiredMessage="El nombre no puede estar vacio"/>
+                                                </div>
+                                                <div class="column is-full">
+                                                    <p:commandLink actionListener="#{SettingsController.saveUsername()}" process="@form"
+                                                                   class="button is-primary is-rounded is-fullwidth" update="@this mainPanel">
+                                                        Guardar
+                                                    </p:commandLink>
+                                                </div> 
+                                            </div> 
+                                        </div>
+                                    </div>
+                                </div> 
+                            </h:form>
+
+                            <h:form enctype="multipart/form-data" id="LogoSelect" rendered="#{SettingsController.pasoSeleccionLogo}">
+                                <div class="column is-vcentered">
+                                    <p:fileUpload 
+                                        listener="#{SettingsController.uploadLogo}" mode="advanced" update="mainPanel" process="@form"
+                                        previewWidth="120" chooseButtonStyleClass="ui-button-primary rounded-button"
+                                        uploadButtonStyleClass="ui-button-primary rounded-button"
+                                        cancelLabel="Cancelar" cancelButtonStyleClass="ui-button-danger rounded-button"
+                                        label="Seleccionar Logo" uploadLabel="Subir">
+                                    </p:fileUpload>
+                                </div> 
+                            </h:form>
+
+                            <h:form id="Correo" rendered="#{SettingsController.pasoSeleccionEmail}"  >
+                                <div class="columns is-half is-centered is-mobile"> 
+                                    <div class="card">
+                                        <div class="column">
+                                            <p:messages for="correo"/>
+                                            <p:outputLabel value="Correo Electronico Principal: " for="correo" styleClass="has-text-link"/>
+                                            <p:inputText id="correo" value="#{SettingsController.currentSettings.correoElectronico}"
+                                                         required="true" requiredMessage="El correo electronico no puede estar vacío"
+                                                         style="width: 100%"/>
+                                        </div>
+                                        <div class="column">
+                                            <p:messages for="correoPass" />
+                                            <p:outputLabel value="Contrasena Correo Electronico: " for="correoPass" styleClass="has-text-link"/>
+                                            <p:inputText id="correoPass" value="#{SettingsController.currentSettings.contrasenaCorreo}"
+                                                         required="true" requiredMessage="La contrasena no puede estar vacía"
+                                                         style="width: 100%"/>
+                                        </div>
+                                        <div class="column">
+                                            <div class="buttons">
+                                                <p:commandLink class="button is-rounded is-primary is-fullwidth" process="@form" update="mainPanel"
+                                                               actionListener="#{SettingsController.saveCorreo()}"  >
+                                                    Guardar
+                                                </p:commandLink>
+                                            </div>
+                                        </div> 
+                                    </div> 
+                                </div> 
+                            </h:form>
+
+                            <h:form id="Tributacion" rendered="#{SettingsController.pasoSeleccionTributacion}">
+                                <div class="columns is-half is-centered is-mobile"> 
+                                    <div class="card">
+                                        <div class="column">
+                                            <p:outputLabel value="Tipo de Identificación:" for="tipoIdentificacion" style="color: var(--primary-color);" />
+                                            <p:selectOneMenu id="tipoIdentificacion" value="#{SettingsController.currentSettings.tipoIdentificacion}" required="true" 
+                                                             requiredMessage="El tipo de identificación es obligatorio">
+                                                <f:selectItem itemLabel="Seleccione..." itemValue="" noSelectionOption="true" />
+                                                <f:selectItem itemLabel="Nacional" itemValue="1" />
+                                                <f:selectItem itemLabel="Internacional" itemValue="2" />
+                                            </p:selectOneMenu>
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Identificación:" for="identificacion" style="color: var(--primary-color);" />
+                                            <p:inputText id="identificacion" value="#{SettingsController.currentSettings.identificacion}" maxlength="12" required="true"
+                                                         requiredMessage="La identificación es obligatoria y no puede tener más de 12 caracteres" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Nombre:" for="nombre1" style="color: var(--primary-color);" />
+                                            <p:inputText id="nombre1" value="#{SettingsController.currentSettings.nombre}" maxlength="100" required="true"
+                                                         requiredMessage="El nombre es obligatorio y no puede tener más de 100 caracteres" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Nombre del Negocio:" for="nombreNegocio" style="color: var(--primary-color);" />
+                                            <p:inputText id="nombreNegocio" value="#{SettingsController.currentSettings.nombreNegocio}" maxlength="80" required="true"
+                                                         requiredMessage="El nombre del negocio es obligatorio y no puede tener más de 80 caracteres" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Código País:" for="codigoPais" style="color: var(--primary-color);" />
+                                            <p:inputText id="codigoPais" value="#{SettingsController.currentSettings.codigoPais}" maxlength="3" required="true"
+                                                         requiredMessage="El código del país es obligatorio y debe tener máximo 3 dígitos" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Teléfono:" for="telefono" style="color: var(--primary-color);" />
+                                            <p:inputText id="telefono" value="#{SettingsController.currentSettings.telefono}" maxlength="20" required="true"
+                                                         requiredMessage="El teléfono es obligatorio y no puede tener más de 20 caracteres" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Código País Fax:" for="codigoPaisFax" style="color: var(--primary-color);" />
+                                            <p:inputText id="codigoPaisFax" value="#{SettingsController.currentSettings.codigoPaisFax}" maxlength="3" required="true"
+                                                         requiredMessage="El código del país para fax es obligatorio y debe tener máximo 3 dígitos" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Teléfono Fax:" for="telefonoFax" style="color: var(--primary-color);" />
+                                            <p:inputText id="telefonoFax" value="#{SettingsController.currentSettings.telefonoFax}" maxlength="20" required="true"
+                                                         requiredMessage="El teléfono de fax es obligatorio y no puede tener más de 20 caracteres" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Correo Electrónico Tributación:" for="correoElectronicoTributacion" style="color: var(--primary-color);" />
+                                            <p:inputText id="correoElectronicoTributacion" value="#{SettingsController.currentSettings.correoElectronicoTributacion}"
+                                                         maxlength="160" required="true"
+                                                         requiredMessage="El correo electrónico es obligatorio y no puede tener más de 160 caracteres" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Provincia:" for="provincia" style="color: var(--primary-color);" />
+                                            <p:selectOneMenu id="provincia" value="#{SettingsController.currentSettings.provincia}" required="true" 
+                                                             requiredMessage="La provincia es obligatoria">
+                                                <f:selectItem itemLabel="Seleccione la provincia" itemValue="" noSelectionOption="true" />
+                                                <f:selectItem itemLabel="San José" itemValue="1" />
+                                                <f:selectItem itemLabel="Alajuela" itemValue="2" />
+                                                <f:selectItem itemLabel="Cartago" itemValue="3" />
+                                                <f:selectItem itemLabel="Heredia" itemValue="4" />
+                                                <f:selectItem itemLabel="Guanacaste" itemValue="5" />
+                                                <f:selectItem itemLabel="Puntarenas" itemValue="6" />
+                                                <f:selectItem itemLabel="Limón" itemValue="7" />
+                                            </p:selectOneMenu>
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Canton:" for="canton" style="color: var(--primary-color);" />
+                                            <p:selectOneMenu id="canton" value="#{SettingsController.currentSettings.canton}" required="true" 
+                                                             requiredMessage="El cantón es obligatorio">
+                                                <f:selectItem itemLabel="Seleccione el cantón" itemValue="" noSelectionOption="true" />
+                                                <!-- Add options based on selected Provincia, e.g. -->
+                                                <f:selectItem itemLabel="Santa Cruz" itemValue="3" />
+                                                <f:selectItem itemLabel="Cantón de Ejemplo 1" itemValue="1" /> 
+                                                <f:selectItem itemLabel="Cantón de Ejemplo 2" itemValue="2" />
+                                                <!-- Add more cantones as needed -->
+                                            </p:selectOneMenu>
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Distrito:" for="distrito" style="color: var(--primary-color);" />
+                                            <p:selectOneMenu id="distrito" value="#{SettingsController.currentSettings.distrito}" required="true" 
+                                                             requiredMessage="El distrito es obligatorio">
+                                                <f:selectItem itemLabel="Seleccione el distrito" itemValue="" noSelectionOption="true" />
+                                                <!-- Add options based on selected Canton, e.g. -->
+                                                <f:selectItem itemLabel="Tamarindo" itemValue="9" />
+                                                <f:selectItem itemLabel="Distrito de Ejemplo 1" itemValue="1" />
+                                                <f:selectItem itemLabel="Distrito de Ejemplo 2" itemValue="2" />
+                                                <!-- Add more distritos as needed -->
+                                            </p:selectOneMenu>
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Barrio:" for="barrio" style="color: var(--primary-color);" />
+                                            <p:selectOneMenu id="barrio" value="#{SettingsController.currentSettings.barrio}" required="true" 
+                                                             requiredMessage="El barrio es obligatorio">
+                                                <f:selectItem itemLabel="Seleccione el barrio" itemValue="" noSelectionOption="true" />
+                                                <!-- Add options based on selected Distrito, e.g. -->
+                                                <f:selectItem itemLabel="Tamarindo" itemValue="15" />
+                                                <f:selectItem itemLabel="Barrio de Ejemplo 1" itemValue="1" />
+                                                <f:selectItem itemLabel="Barrio de Ejemplo 2" itemValue="2" />
+                                                <!-- Add more barrios as needed -->
+                                            </p:selectOneMenu>
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Dirección Completa:" for="direccionCompleta" style="color: var(--primary-color);" />
+                                            <p:inputTextarea id="direccionCompleta" value="#{SettingsController.currentSettings.direccionCompleta}" maxlength="250"
+                                                             autoResize="true" required="true" requiredMessage="La dirección es obligatoria y no puede tener más de 250 caracteres" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Razón Social:" for="razonSocial" style="color: var(--primary-color);" />
+                                            <p:inputText id="razonSocial" value="#{SettingsController.currentSettings.razonSocial}" maxlength="100" 
+                                                         required="false" placeholder="Puede dejarse vacío"
+                                                         title="Razón social de la empresa, puede ser opcional" />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Provedor de Sistemas:" for="provedor" style="color: var(--primary-color);" />
+                                            <p:inputText id="provedor" value="#{SettingsController.currentSettings.provedor}" maxlength="100" 
+                                                         required="true" placeholder="MERCURIUS"
+                                                         title="Debe escribir Mercurius a menos de que haya modificado el sistema." />
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Codigo Actividad:" for="codigoActividad" style="color: var(--primary-color);" />
+                                            <p:inputText id="codigoActividad" value="#{SettingsController.currentSettings.codigoActividad}" maxlength="100" 
+                                                         required="true"
+                                                         title="El codigo de Actividad vinculado a la actividad economica." />
+                                        </div>
+                                        
+                                        <!-- HACIENDA CERTIFICATE SECTION -->
+                                        <div class="column is-full">
+                                            <p:separator />
+                                            <p class="title is-6 has-text-centered" style="color: var(--primary-color);">
+                                                Configuración Hacienda - Facturación Electrónica
+                                            </p>
+                                        </div>
+                                        
+                                        <!-- Environment Selection -->
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Entorno:" style="color: var(--primary-color);" />
+                                            <div class="buttons is-centered">
+                                                <p:commandButton value="Pruebas" 
+                                                    styleClass="#{SettingsController.isSandbox() ? 'ui-button-success' : 'ui-button-secondary'}"
+                                                    actionListener="#{SettingsController.setSandbox()}" 
+                                                    update="@form" />
+                                                <p:commandButton value="Producción" 
+                                                    styleClass="#{SettingsController.isProduction() ? 'ui-button-success' : 'ui-button-secondary'}"
+                                                    actionListener="#{SettingsController.setProduction()}" 
+                                                    update="@form" />
+                                            </div>
+                                            <p:outputLabel value="Entorno actual: #{SettingsController.environmentLabel}" 
+                                                styleClass="has-text-centered" />
+                                        </div>
+                                        
+                                        <!-- Certificate Status -->
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Certificado:" style="color: var(--primary-color);" />
+                                            <br/>
+                                            <p:badge value="#{SettingsController.certificateStatus}" 
+                                                severity="#{SettingsController.hasValidCertificate ? 'success' : (SettingsController.hasCertificate ? 'danger' : 'warning')}" />
+                                            
+                                            <h:panelGroup rendered="#{SettingsController.certificateInfo != null}">
+                                                <br/>
+                                                <small>
+                                                    <p:outputLabel value="Válido desde: #{SettingsController.certificateInfo.notBefore}" />
+                                                    <br/>
+                                                    <p:outputLabel value="Vence: #{SettingsController.certificateInfo.notAfter}" />
+                                                </small>
+                                            </h:panelGroup>
+                                        </div>
+                                        
+                                        <!-- Certificate Upload -->
+                                        <div class="column is-full">
+                                            <p:fileUpload 
+                                                listener="#{SettingsController.uploadCertificado}" mode="advanced" 
+                                                update="@form" process="@form"
+                                                previewWidth="120" 
+                                                chooseButtonStyleClass="ui-button-primary rounded-button"
+                                                uploadButtonStyleClass="ui-button-success rounded-button"
+                                                cancelLabel="Cancelar" cancelButtonStyleClass="ui-button-danger rounded-button"
+                                                label="Subir Certificado (.p12)" uploadLabel="Validar y Guardar"
+                                                accept=".p12,.pfx"
+                                                styleClass="certificate-upload">
+                                                <f:attribute name="password" value="#{SettingsController.certificadoPassword}" />
+                                            </p:fileUpload>
+                                        </div>
+                                        
+                                        <!-- Certificate Password -->
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Contraseña del Certificado:" for="certPassword" style="color: var(--primary-color);" />
+                                            <p:password id="certPassword" value="#{SettingsController.certificadoPassword}" 
+                                                feedback="false" toggleMask="true" redisplay="true"
+                                                placeholder="Ingrese la contraseña del archivo .p12"
+                                                style="width: 100%;" />
+                                        </div>
+                                        
+                                        <!-- Clear Certificate -->
+                                        <div class="column is-full">
+                                            <p:commandButton value="Eliminar Certificado" 
+                                                styleClass="ui-button-danger"
+                                                actionListener="#{SettingsController.clearCertificate()}" 
+                                                update="@form"
+                                                rendered="#{SettingsController.hasCertificate}">
+                                                <p:confirm header="Confirmar" message="¿Está seguro de eliminar el certificado?" icon="ui-icon-alert" />
+                                            </p:commandButton>
+                                        </div>
+                                        
+                                        <!-- API Key -->
+                                        <div class="column is-full">
+                                            <p:separator />
+                                            <p:outputLabel value="API Key Hacienda:" for="apiKey" style="color: var(--primary-color);" />
+                                            <p:password id="apiKey" value="#{SettingsController.haciendaApiKey}" 
+                                                feedback="false" toggleMask="true"
+                                                placeholder="Ingrese su API Key de Hacienda"
+                                                style="width: 100%;" />
+                                            <p:commandButton value="Guardar API Key" 
+                                                styleClass="ui-button-success"
+                                                actionListener="#{SettingsController.saveApiKey()}" 
+                                                update="@form"
+                                                style="margin-top: 5px;" />
+                                        </div>
+                                        
+                                        <!-- ── FIDES SECTION ────────────────────────────── -->
+                                        <div class="column is-full">
+                                            <p:separator />
+                                            <p class="title is-6 has-text-centered" style="color: var(--primary-color);">
+                                                Configuración Fides - Servicio de Facturación Externa
+                                            </p>
+                                            <p class="has-text-centered">
+                                                <small class="has-text-grey">
+                                                    Fides gestiona la generación de XML, firma digital y envío a Hacienda.
+                                                    Active esta opción para usar Fides como proveedor de facturación.
+                                                </small>
+                                            </p>
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Usar Fides:" for="useFides" style="color: var(--primary-color); font-weight: bold;" />
+                                            <p:selectBooleanCheckbox id="useFides" 
+                                                value="#{SettingsController.currentSettings.useFides}"
+                                                itemLabel="Habilitar facturación vía Fides"
+                                                style="margin-left: 8px;" />
+                                            <br/>
+                                            <small class="has-text-grey">
+                                                Cuando está activo, todas las facturas se envían a través de la API de Fides.
+                                                Al desactivarlo, se usa el flujo directo de XML → Firma → Hacienda.
+                                            </small>
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="URL de Fides:" for="fidesUrl" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesUrl" value="#{SettingsController.currentSettings.fidesApiUrl}"
+                                                placeholder="http://localhost:8080"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Correo de Autenticación:" for="fidesEmail" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesEmail" value="#{SettingsController.currentSettings.fidesAuthEmail}"
+                                                placeholder="admin@fides.local"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Contraseña de Autenticación:" for="fidesPass" style="color: var(--primary-color);" />
+                                            <p:password id="fidesPass" value="#{SettingsController.currentSettings.fidesAuthPassword}"
+                                                feedback="false" toggleMask="true" redisplay="true"
+                                                placeholder="Contraseña del usuario de Fides"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="Tenant ID:" for="fidesTenant" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesTenant" value="#{SettingsController.currentSettings.fidesTenantId}"
+                                                placeholder="UUID del tenant en Fides"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <div class="column is-full">
+                                            <p:outputLabel value="User ID (opcional):" for="fidesUserId" style="color: var(--primary-color);" />
+                                            <p:inputText id="fidesUserId" value="#{SettingsController.currentSettings.fidesUserId}"
+                                                placeholder="ID del usuario en Fides"
+                                                style="width: 100%;" />
+                                        </div>
+
+                                        <!-- ── END FIDES SECTION ────────────────────────── -->
+                                        <div class="column">
+                                            <div class="buttons">
+                                                <p:commandLink class="button is-primary is-rounded is-fullwidth" process="@form" update="mainPanel"
+                                                               actionListener="#{SettingsController.saveTributacion()}"  >
+                                                    Guardar
+                                                </p:commandLink>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> 
+                            </h:form> 
+
+                            <h:form id="Confirmacion" rendered="#{SettingsController.pasoSeleccionConfirmacion}">
+                                <div class="columns is-half is-centered is-mobile"> 
+                                    <p:card class="card">
+                                        <div class="column">
+                                            <p:outputLabel value="Nombre del perfil: #{SettingsController.currentSettings.nombrePerfil}" style="color: var(--primary-color);"/>
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Logo: " style="color: var(--primary-color);" rendered="#{SettingsController.currentSettings.logo != null}"/>
+                                            <p:graphicImage value="#{SettingsController.logo}" stream="false" height="100px" width="100px"
+                                                rendered="#{SettingsController.currentSettings.logo != null}"/>
+                                        </div>
+                                        <div class="column">
+                                            <p:outputLabel value="Correo Electronico: #{SettingsController.currentSettings.correoElectronico}" style="color: var(--primary-color);"/>
+                                        </div>
+                                        <div class="column">
+                                            <div class="buttons">
+                                                <p:commandButton class="button is-primary is-rounded is-fullwidth" 
+                                                    action="#{SettingsController.saveProfile()}" 
+                                                    value="Confirmar" />
+                                            </div> 
+                                        </div>
+                                    </p:card>
+                                </div> 
+                            </h:form>  
+
+                            <h:form id="CurrentSettings" rendered="#{SettingsController.configuracionActual}">
+                                <div class="columns is-centered is-mobile">
+                                    <div class="column is-half"> 
+                                        <div class="columns is-multiline has-text-centered px-3">
+                                            <div class="column is-full">
+                                                <p class="title is-5 has-text-centered">Perfil Actual</p>
+                                            </div>
+                                            <div class="column is-full">
+                                                <div class="columns is-multiline px-3">
+                                                    <div class="column is-full">
+                                                        <p:outputLabel value="Nombre del perfil: #{SettingsController.currentSettings.nombrePerfil}" style="color: var(--primary-color);"/>
+                                                    </div>
+                                                    <div class="column is-full">
+                                                        <p:outputLabel value="Logo: " style="color: var(--primary-color);" rendered="#{SettingsController.currentSettings.logo != null}"/>
+                                                        <p:graphicImage value="#{SettingsController.logo}" stream="false" height="100px" width="100px"
+                                                            rendered="#{SettingsController.currentSettings.logo != null}"/>
+                                                    </div>
+                                                    <div class="column is-full">
+                                                        <p:outputLabel value="Correo Electronico: #{SettingsController.currentSettings.correoElectronico}" style="color: var(--primary-color);"/>
+                                                    </div>
+                                                    <div class="column is-full">
+                                                        <p:outputLabel value="Facturación vía Fides: " style="color: var(--primary-color);"/>
+                                                        <p:badge value="#{SettingsController.currentSettings.useFides ? 'Activado' : 'Desactivado'}"
+                                                            severity="#{SettingsController.currentSettings.useFides ? 'success' : 'info'}" />
+                                                    </div>
+                                                </div> 
+                                            </div>
+                                            <div class="column is-full py-2">
+                                                <div class="buttons">
+                                                    <p:commandLink actionListener="#{SettingsController.seleccionar('nombre')}" value="Perfil" update="mainPanel"
+                                                                   class="button is-rounded is-success "/>
+
+                                                    <p:commandLink actionListener="#{SettingsController.seleccionar('logo')}" value="Logo" update="mainPanel"
+                                                                   class="button is-rounded is-info "/>
+
+                                                    <p:commandLink actionListener="#{SettingsController.seleccionar('correo')}" value="Correo" update="mainPanel"
+                                                                   class="button is-rounded is-warning "/>
+
+                                                    <p:commandLink actionListener="#{SettingsController.seleccionar('tributacion')}" value="Tributacion" update="mainPanel"
+                                                                   class="button is-rounded is-link "/>
+ 
+                                                </div>  
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div> 
+                            </h:form> 
+                        </p:outputPanel>  
+                    </div>
+                </div>    
+            </div>
+        </section> 
+    </h:body>
+</html>

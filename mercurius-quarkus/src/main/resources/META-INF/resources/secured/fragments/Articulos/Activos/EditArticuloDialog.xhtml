@@ -1,0 +1,257 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <ui:include src="/secured/fragments/CaByS/CabysDialogEdit.xhtml"/>      
+    <!-- Dialog for Edit Articulo -->
+    <p:dialog header="Editar Artículo: #{ArticulosController.selectedArticulo.nombre}" dynamic="true" cache="false" 
+              widgetVar="EditArticuloDialog" fitViewport="true" responsive="true" modal="true">
+        <p:outputPanel id="EditArticuloDialog" rendered="#{not empty ArticulosController.selectedArticulo}">
+            <h:form>
+                <p:tabView dynamic="true" cache="false" style="width: 100%">
+                    <p:tab title="Información">
+                        <section class="section">
+                            <p:growl showDetail="true" showSummary="false"/>
+                            
+                            <div class="columns is-multiline">
+ 
+                                <div class="column is-full">
+                                    <p:messages for="editName" showSummary="false" showDetail="true" closable="true" />
+                                    <label class="label has-text-link" for="editName">Nombre:</label>
+                                    <p:inputText id="editName" value="#{ArticulosController.selectedArticulo.nombre}"
+                                                 required="true" requiredMessage="El nombre no puede estar vacío"
+                                                 style="width: 100%"/>
+                                </div>
+                                 
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editCodigoBarra" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editCodigoBarra">Codigo de Barra:</label>
+                                    <p:inputText id="editCodigoBarra" value="#{ArticulosController.selectedArticulo.codigoBarra}"
+                                                 required="true" requiredMessage="El codigo de barra no puede estar vacío"
+                                                 style="width: 100%">
+                                    </p:inputText>
+                                </div>
+
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editDescripcion" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editDescripcion">Descripción:</label>
+                                    <p:inputTextarea id="editDescripcion" value="#{ArticulosController.selectedArticulo.descripcion}"
+                                                     style="width: 100%" rows="3" maxlength="500"
+                                                     placeholder="Descripción del artículo (opcional)"/>
+                                </div>
+
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editRecomendacionCabys" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editRecomendacionCabys">Recomendacion Cabys:</label>
+                                    <p:card>
+                                        <p:outputLabel id="editRecomendacionCabys" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
+                                    </p:card>    
+
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editCodigoCabys" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editCodigoCabys">Código CABYS:</label>
+                                    <p:commandLink value="Seleccionar" id="selectCabysEdit" styleClass="button is-primary is-rounded"
+                                                     immediate="true" process="@this"
+                                                     onclick="PF('codigoCabysDialogEdit').show();">
+                                        <i class="pi pi-search"></i>
+                                        <span>Seleccionar</span>
+                                    </p:commandLink>
+                                    <p:spacer height="1em"/>
+                                    <p:card class="selected-option is-flex">
+                                        <p:outputLabel id="codigoCabys" value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto} %"
+                                                       styleClass="label">
+                                        </p:outputLabel>
+                                    </p:card>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editUnidadMedida" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editUnidadMedida">Unidad de Medida:</label>
+                                    <p:selectOneMenu id="editUnidadMedida" value="#{ArticulosController.selectedArticulo.unidadMedida}"
+                                                     style="width: 100%">
+                                        <p:ajax listener="#{ArticulosController.selectedUnidadMedidaChanged}"/>
+                                        <f:selectItem itemLabel="Unid" itemValue="Unid"/>
+                                        <f:selectItem itemLabel="Otros" itemValue="Otros"/>
+                                        <f:selectItem itemLabel="g" itemValue="g"/>
+                                    </p:selectOneMenu>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editUnidadMedidaComercial" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editUnidadMedidaComercial">Unidad de Medida Comercial:</label>
+                                    <p:selectOneMenu id="editUnidadMedidaComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
+                                                     style="width: 100%">
+                                        <p:ajax listener="#{ArticulosController.selectedUnidadMedidaComercialChanged}"/>
+                                        <f:selectItem itemLabel="Generico" itemValue=""/>
+                                        <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                        <f:selectItem itemLabel="Botella" itemValue="BOT"/>
+                                        <f:selectItem itemLabel="Lata" itemValue="LT"/>
+                                        <f:selectItem itemLabel="SixPack" itemValue="ST"/>
+                                        <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
+                                    </p:selectOneMenu>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editDepartamento" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editDepartamento">Departamento:</label>
+                                    <p:selectOneMenu id="editDepartamentoSelect" value="#{ArticulosController.departamentoID}"
+                                                     required="true" requiredMessage="El Departamento no puede estar vacío"
+                                                     styleClass="input" widgetVar="editDepartamentoSelect" 
+                                                     style="width: 100%">
+                                        <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" itemValue="#{ArticulosController.selectedArticulo.departamento.id}" />
+                                        <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
+                                                       itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}" />
+                                    </p:selectOneMenu>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editFamilia" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editFamilia">Familia:</label>
+                                    <p:selectOneMenu id="editFamiliaSelect" value="#{ArticulosController.familiaID}"
+                                                     required="true" requiredMessage="La Familia no puede estar vacía"
+                                                     widgetVar="editFamiliaSelect" 
+                                                     style="width: 100%">
+                                        <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                        <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                       itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
+                                    </p:selectOneMenu>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="precioCostoSinIVA" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="precioCostoSinIVA">Precio Costo sin IVA:</label>
+                                    <p:inputText id="precioCostoSinIVA" type="number" value="#{ArticulosController.lastPrecio.precioCostoSinIVA}"
+                                                 required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
+                                                 style="width: 100%">
+                                        <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                update="precioCostoSinIVA precioConUtilidad precioFinal" process="@this"/>
+                                    </p:inputText>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="porcentajeUtilidad" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="porcentajeUtilidad">Porcentaje de Utilidad:</label>
+                                    <p:inputText id="porcentajeUtilidad" type="number" value="#{ArticulosController.lastPrecio.porcentajeUtilidad}"
+                                                 required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
+                                                 style="width: 100%">
+                                        <p:ajax event="change" listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                update="precioCostoSinIVA precioConUtilidad precioFinal"/>
+                                    </p:inputText>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="precioConUtilidad" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="precioConUtilidad">Precio Final:</label>
+                                    <p:card>
+                                        <p:outputLabel id="precioConUtilidad" value="#{ArticulosController.lastPrecio.precioConUtilidad}"/>
+                                    </p:card>
+                                </div>
+                                
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="precioFinal" showSummary="false" closable="true"/>
+                                    <label class="label has-text-link" for="precioFinal">Precio Final con IVA:</label>
+                                    <p:card>
+                                        <p:outputLabel id="precioFinal" value="#{ArticulosController.lastPrecio.precioFinal}">
+                                            <p:autoUpdate/>
+                                        </p:outputLabel>
+                                    </p:card>
+                                </div> 
+                                
+                                <!-- Stock Alert Configuration Section -->
+                                <div class="column is-full">
+                                    <hr/>
+                                    <p class="title is-6 has-text-link">Configuración de Alertas de Stock</p>
+                                </div>
+
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editStockOptimo" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editStockOptimo">Stock Óptimo:</label>
+                                    <p:inputText id="editStockOptimo" type="number" 
+                                                 value="#{ArticulosController.selectedArticulo.stockOptimo}"
+                                                 style="width: 100%"
+                                                 placeholder="Nivel de stock óptimo calculado automáticamente"/>
+                                    <p:tooltip for="editStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
+                                </div>
+
+                                <div class="column is-full">
+                                    <p:messages showDetail="true" for="editDiasStockSeguridad" showSummary="false" closable="true" />
+                                    <label class="label has-text-link" for="editDiasStockSeguridad">Días de Stock Seguridad:</label>
+                                    <p:inputText id="editDiasStockSeguridad" type="number" 
+                                                 value="#{ArticulosController.selectedArticulo.diasStockSeguridad}"
+                                                 style="width: 100%"
+                                                 placeholder="7 (por defecto)"/>
+                                    <p:tooltip for="editDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
+                                </div>
+
+                                <div class="column is-full">
+                                    <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                        <p:selectBooleanCheckbox id="editEstadoAlertas" 
+                                                                 value="#{ArticulosController.selectedArticulo.estadoAlertas}"/>
+                                        <label class="label has-text-link" for="editEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                                    </div>
+                                    <p:tooltip for="editEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
+                                </div>
+
+                                <div class="column is-full">
+                                    <p:commandLink value="Actualizar datos" update="@form Articulos:ArticulosActivos" process="@form"
+                                                     action="#{ArticulosController.updateArticuloByDialog()}" 
+                                                     styleClass="button is-rounded is-link is-fullwidth"/>
+                                </div> 
+
+                            </div>
+                        </section>
+                    </p:tab>
+                    <p:tab title="Imágenes" id="imagenesTab">
+                        <section class="section">
+                            <div class="columns is-multiline">
+                                <div class="column is-full">
+                                    <p:growl showDetail="true" showSummary="false"/>
+                                    <p:fileUpload listener="#{ArticulosController.uploadImagen}"
+                                                  mode="advanced" auto="true"
+                                                  update="imagenesTab @form"
+                                                  allowTypes="/(\.|\/)(gif|jpe?g|png|webp)$/"
+                                                  invalidFileMessage="Solo imágenes (gif, jpg, png, webp)">
+                                    </p:fileUpload>
+                                </div>
+                                <div class="column is-full">
+                                    <p:dataTable id="imagenesTable" var="img"
+                                                 value="#{ArticulosController.selectedArticulo.imagenes}"
+                                                 emptyMessage="No hay imágenes"
+                                                 reflow="true" showGridlines="true">
+                                        <p:column headerText="Vista Previa" style="width:80px">
+                                            <p:graphicImage value="#{ArticulosController.getImagenStream(img.id)}"
+                                                            style="max-width:60px;max-height:60px"/>
+                                        </p:column>
+                                        <p:column headerText="Nombre">
+                                            <h:outputText value="#{img.nombreOriginal}"/>
+                                        </p:column>
+                                        <p:column headerText="Orden">
+                                            <h:outputText value="#{img.orden}"/>
+                                        </p:column>
+                                        <p:column headerText="Acciones" style="width:160px">
+                                            <p:commandButton icon="pi pi-chevron-up" styleClass="ui-button-rounded"
+                                                             actionListener="#{ArticulosController.subirOrdenImagen(img)}"
+                                                             update="imagenesTab">
+                                                <p:ajax update="imagenesTab"/>
+                                            </p:commandButton>
+                                            <p:commandButton icon="pi pi-chevron-down" styleClass="ui-button-rounded"
+                                                             actionListener="#{ArticulosController.bajarOrdenImagen(img)}"
+                                                             update="imagenesTab"/>
+                                            <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger ui-button-rounded"
+                                                             actionListener="#{ArticulosController.eliminarImagen(img)}"
+                                                             update="imagenesTab"/>
+                                        </p:column>
+                                    </p:dataTable>
+                                </div>
+                            </div>
+                        </section>
+                    </p:tab>
+                </p:tabView>
+            </h:form>
+        </p:outputPanel>
+    </p:dialog> 
+</ui:composition>

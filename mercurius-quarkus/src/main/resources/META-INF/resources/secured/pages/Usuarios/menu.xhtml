@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui"
+      xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <title>Menu Principal Usuarios</title>
+        <meta charset="utf-8" name="viewport" content="width=device-width, initial-scale=1"/>
+        <h:outputStylesheet name="primefaces/themes/#{ThemeController.currentTheme}/theme.css" />
+    </h:head>
+
+    <h:body>
+
+        <ui:include src="/secured/fragments/userBar.xhtml" />
+
+        <p:growl showDetail="true" showSummary="true" />
+
+        <div class="card">
+
+            <h:form id="usuarios">
+                <p:dataTable value="#{UsersController.filteredUsers}" var="user" widgetVar="UsersTableData"
+                             paginator="true" rows="8" paginatorPosition="bottom" id="UsersTableData"
+                             emptyMessage="No se encontraron usuarios con la critería proporcionada"
+                             globalFilterFunction="#{UsersController.globalFilterFunction}"
+                             filterBy="#{UsersController.filterBy}" reflow="true"
+                             selection="#{UsersController.selectedUser}" rowKey="#{user.id}">
+
+                    <p:ajax event="rowSelect" update="EditarUsuarioDialog"/>
+                    <p:ajax event="rowUnselect" update="EditarUsuarioDialog"/>
+
+                    <f:facet name="header">
+                        <p:commandButton value="Crear Usuario" onclick="PF('CrearUsuarioDialog').show();" style="width: 100%"
+                                         actionListener="#{UsersController.openNewUser}" styleClass="ui-button-primary rounded-button"/>
+                        
+                        <p:spacer height="1em"/>
+                        
+                        <p:inputText id="globalFilter" onkeyup="PF('UsersTableData').filter()" style="color: var(--primary-color); width: 100%"
+                                     placeholder="Búsqueda general de todos los campos" />
+                    </f:facet>
+
+                    <p:column exportable="false">
+                        <p:chip id="activo" icon="pi pi-exclamation-circle" style="background: var(--green-500)"
+                                rendered="#{user.status}"/>
+                        <p:tooltip for="activo" value="Activo" position="top"/>
+                        <p:chip id="inactivo" icon="pi pi-times" style="background: var(--red-500);"
+                                rendered="#{!user.status}"/>
+                        <p:tooltip for="inactivo" value="Inactivo" position="top"/>
+                    </p:column>
+
+                    <p:column headerText="Identificador de perfil" visible="false" sortBy="#{user.id}">
+                        <h:outputText value="#{user.id}"/>
+                    </p:column>
+                    <p:column headerText="Nombre de usuario" sortBy="#{user.username}">
+                        <h:outputText value="#{user.username}" />
+                    </p:column>
+                    <p:column headerText="Contraseña (HASH)" rendered="false">
+                        <h:outputText value="#{user.password}" />
+                    </p:column>
+                    <p:column headerText="Permisos" sortBy="#{user.groupName}">
+                        <h:outputText value="#{user.groupName}" />
+                    </p:column>
+                    <p:column headerText="Activo" visible="false" sortBy="#{user.status}">
+                        <h:outputText value="#{user.status}" />
+                    </p:column>
+
+                    <p:column headerText="Acciones" width="20%" exportable="false">
+                        <p:commandButton styleClass="ui-button-success rounded-button" icon="pi pi-pencil"
+                                         process="@this" onclick="PF('EditarUsuarioDialog').show();">
+                            <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
+                        </p:commandButton>
+                        <p:commandButton styleClass="ui-button-warning rounded-button" icon="pi pi-power-off"
+                                         actionListener="#{UsersController.toggleUser()}" process="@this" update="usuarios">
+                            <f:setPropertyActionListener value="#{user}" target="#{UsersController.selectedUser}" />
+                        </p:commandButton>
+                    </p:column>
+                </p:dataTable>
+ 
+            </h:form>
+
+        </div>
+
+        <ui:include src="/secured/fragments/Users/CreateUsersDialog.xhtml"/>
+        <ui:include src="/secured/fragments/Users/EditUsersDialog.xhtml"/>
+
+    </h:body>
+</html>

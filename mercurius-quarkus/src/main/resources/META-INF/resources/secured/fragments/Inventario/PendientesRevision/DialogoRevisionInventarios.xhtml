@@ -1,0 +1,70 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+
+    <ui:include src="/secured/fragments/Inventario/PendientesRevision/ArticuloDialog.xhtml"/>  
+
+    <!-- Dialog for Revision de Movimiento -->
+    <p:dialog header="Revision de Movimiento" widgetVar="RevisionMovimientosDialog"
+              responsive="true" modal="true" dynamic="true" cache="false"  fitViewport="true">
+        <p:outputPanel rendered="#{not empty InventarioController.selectedInventario}" >
+            <h:form id="RevisionMovimientosDialog">
+                <p:panelGrid columns="1" layout="flex">
+                    <p:autoUpdate/>
+                    <p:panel header="Editar Inventario: #{InventarioController.selectedInventario.articulo.nombre}">
+                        <p:growl showDetail="true" showSummary="false"/>
+
+                        <p:column>
+                            <label class="label" style="color: var(--primary-color);">Artículo:</label>
+                            <p:inputText value="#{InventarioController.selectedInventario.articulo.nombre}" 
+                                                style="width: 100%" disabled="true" />
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:messages showDetail="true" for="ArticuloSelectR" showSummary="false" closable="true" />
+                            <label class="label" for="ArticuloSelectR" style="color: var(--primary-color);">Articulo Seleccionado:</label>
+                            <p:commandButton value="Seleccionar" styleClass="rounded-button ui-button-primary" style="width: 100%"
+                                                 onclick="PF('ArticuloRevisionDialog').show();"/> 
+                            <p:spacer height="1em"/>
+                            <p:card>
+                                <p:outputLabel id="ArticuloSelectR" value="#{InventarioController.selectedInventario.articulo.nombre}"
+                                                   style="width: 100%">
+                                        
+                                </p:outputLabel>
+                            </p:card>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:messages for="cantidadRRecomendadaR" showSummary="false" showDetail="true" closable="true" />
+                                <label class="label" for="cantidadRRecomendadaR" style="color: var(--primary-color);">Cantidad recomendada:</label>
+                                <p:card>
+                                    <p:outputLabel id="cantidadRRecomendadaR" value="#{InventarioController.selectedInventario.unidadesRecomendadasFactura}"
+                                                 />
+                                </p:card>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:messages for="cantidadR" showSummary="false" showDetail="true" closable="true" />
+                            <label class="label" for="cantidadR" style="color: var(--primary-color);">Cantidad:</label>
+                            <p:inputText id="cantidadR" value="#{InventarioController.selectedInventario.cantidad}"
+                                required="true" requiredMessage="La cantidad no puede estar vacía"
+                                style="width: 100%; "/>
+                        </p:column>
+                        <p:spacer height="1em"/>
+                        <p:column>
+                            <p:commandButton value="Salvar -> Siguiente" update="@form Inventarios:inventarioPendiente" process="@form"
+                                             action="#{InventarioController.updateInventariosRevisionDialog()}" resetValues="true"
+                                                     styleClass="rounded-button ui-button-primary" style="width: 100%"/>
+                        </p:column>
+
+                    </p:panel>
+                    
+                </p:panelGrid>
+            </h:form>
+        </p:outputPanel>
+    </p:dialog>
+  
+</ui:composition>    

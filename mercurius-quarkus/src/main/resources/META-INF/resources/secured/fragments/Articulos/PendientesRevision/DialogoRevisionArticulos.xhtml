@@ -1,0 +1,441 @@
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="http://xmlns.jcp.org/jsf/html"
+                xmlns:f="http://xmlns.jcp.org/jsf/core"
+                xmlns:p="http://primefaces.org/ui"
+                xmlns:ui="http://xmlns.jcp.org/jsf/facelets">
+
+    <h:head>
+        <style>
+            .procesado-rapido-dialog {
+                max-width: 90vw;
+                width: 1200px;
+            }
+
+            .procesado-header {
+                background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                color: white;
+                padding: 1rem;
+                border-radius: 0.5rem 0.5rem 0 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .procesado-content {
+                padding: 1.5rem;
+                background: var(--bulma-white);
+            }
+
+            .articulo-info-card {
+                background: var(--bulma-light);
+                border-radius: 0.5rem;
+                padding: 1rem;
+                margin-bottom: 1rem;
+                border-left: 4px solid #ff9800;
+            }
+
+            .form-section {
+                margin-bottom: 2rem;
+            }
+
+            .form-section-title {
+                font-weight: 600;
+                color: #ff9800;
+                margin-bottom: 1rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 2px solid #ff9800;
+            }
+
+            .price-calculation {
+                background: var(--bulma-info-light);
+                border-radius: 0.5rem;
+                padding: 1rem;
+                border: 1px solid var(--bulma-info);
+            }
+
+            .navigation-buttons {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 1rem;
+                padding: 1rem;
+                background: var(--bulma-light);
+                border-radius: 0.5rem;
+            }
+
+            .required-field:after {
+                content: " *";
+                color: var(--bulma-danger);
+                font-weight: bold;
+            }
+
+            .validation-error {
+                border: 2px solid var(--bulma-danger) !important;
+                background-color: var(--bulma-danger-light) !important;
+            }
+
+            .success-highlight {
+                animation: successPulse 0.5s ease-in-out;
+            }
+
+            @keyframes successPulse {
+                0% {
+                    background-color: var(--bulma-success-light);
+                }
+                50% {
+                    background-color: var(--bulma-success);
+                }
+                100% {
+                    background-color: var(--bulma-white);
+                }
+            }
+
+            .loading-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(255, 255, 255, 0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            }
+
+            .field-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+                margin-bottom: 1rem;
+            }
+
+            @media (max-width: 768px) {
+                .field-group {
+                    grid-template-columns: 1fr;
+                }
+
+                .procesado-rapido-dialog {
+                    max-width: 95vw;
+                    width: 100%;
+                }
+            }
+        </style>
+    </h:head>
+
+    <p:dialog header="Procesado Rápido de Artículo" widgetVar="RevisionArticulosDialog" 
+              modal="true" fitViewport="true" responsive="true" dynamic="true" cache="false"
+              styleClass="procesado-rapido-dialog">
+
+        <h:form id="procesadoRapidoForm">
+            <p:outputPanel id="articuloHeader">
+                <div class="procesado-header">
+                    <div>
+                        <h3 class="title is-5 has-text-white">#{ArticulosController.selectedArticulo.nombre}</h3>
+                        <p class="subtitle is-7 has-text-light">Artículo pendiente de procesamiento</p>
+                    </div>
+                    <div class="buttons">
+                        <button type="button" class="button is-small is-light" onclick="PF('keyboardShortcutsDialog').show();">
+                            <i class="pi pi-keyboard"></i>
+                            <span>Atajos</span>
+                        </button>
+                    </div>
+                </div>
+            </p:outputPanel>
+
+            <div class="procesado-content">
+                <p:outputPanel id="articuloContent">
+                    <p:outputPanel rendered="#{not empty ArticulosController.selectedArticulo}">
+                        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+                            <div class="has-text-centered">
+                                <i class="pi pi-spin pi-spinner" style="font-size: 2rem;"></i>
+                                <p class="mt-3">Procesando...</p>
+                            </div>
+                        </div>
+
+                        <section class="section">
+                            <p:growl id="growl" showDetail="true" showSummary="true" sticky="true" />
+
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-info-circle"></i> Información Básica
+                            </h4>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label required-field" for="nameR">Nombre del Artículo:</label>
+                                    <div class="control">
+                                        <p:inputText id="nameR" value="#{ArticulosController.selectedArticulo.nombre}"
+                                                     required="true" requiredMessage="El nombre no puede estar vacío"
+                                                     styleClass="input" style="width: 100%"
+                                                     placeholder="Ingrese el nombre del artículo"/>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label required-field" for="codigoBarraR">Código de Barras:</label>
+                                    <div class="control">
+                                        <p:inputText id="codigoBarraR" value="#{ArticulosController.selectedArticulo.codigoBarra}"
+                                                     required="true" requiredMessage="El código de barra no puede estar vacío"
+                                                     styleClass="input" style="width: 100%"
+                                                     placeholder="Ingrese el código de barras"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="field">
+                                <label class="label" for="descripcionR">Descripción:</label>
+                                <div class="control">
+                                    <p:inputTextarea id="descripcionR" value="#{ArticulosController.selectedArticulo.descripcion}"
+                                                     styleClass="textarea" style="width: 100%" rows="3" maxlength="500"
+                                                     placeholder="Descripción del artículo (opcional)"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-tag"></i> Información CABYS
+                            </h4>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label" for="recomendacionCabysR">Recomendación CABYS:</label>
+                                    <div class="control">
+                                        <p:card styleClass="card" 
+                                                style="cursor: pointer; background: var(--bulma-light);"
+                                                onclick="navigator.clipboard.writeText('#{ArticulosController.selectedArticulo.recomendacionCabys}')">
+                                            <p:outputLabel id="recomendacionCabysR" value="#{ArticulosController.selectedArticulo.recomendacionCabys}"/>
+                                        </p:card>
+                                        <p class="help">Click para copiar al portapapeles</p>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label required-field" for="codigoCabysR">Código CABYS:</label>
+                                    <div class="control">
+                                        <p:commandButton id="selectCabysEdit" value="Seleccionar Código CABYS" 
+                                                         styleClass="button is-link is-fullwidth"
+                                                         onclick="PF('codigoCabysDialogEdit').show();" type="button">
+                                            <p:autoUpdate/>
+                                        </p:commandButton>
+                                    </div>
+                                    <div class="control mt-2">
+                                        <p:card styleClass="card selected-option is-flex" 
+                                                style="background: var(--bulma-success-light); border-color: var(--bulma-success);">
+                                            <p:outputLabel value="#{ArticulosController.selectedArticulo.codigoCabys.codigo} - #{ArticulosController.selectedArticulo.codigoCabys.descripcion} - #{ArticulosController.selectedArticulo.codigoCabys.impuesto}%"
+                                                           style="color: var(--bulma-success);">
+                                                <p:autoUpdate/>
+                                            </p:outputLabel>
+                                        </p:card>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-ruler"></i> Unidades de Medida
+                            </h4>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label" for="unidadMedidaR">Unidad de Medida:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="unidadMedidaR" value="#{ArticulosController.selectedArticulo.unidadMedida}"
+                                                         styleClass="select" style="width: 100%">
+                                            <p:ajax listener="#{ArticulosController.selectedUnidadMedidaChanged}"/>
+                                            <f:selectItem itemLabel="Seleccione..." itemValue=""/>
+                                            <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                            <f:selectItem itemLabel="Otros" itemValue="Otros"/>
+                                            <f:selectItem itemLabel="Gramos" itemValue="g"/>
+                                        </p:selectOneMenu>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label" for="unidadMedidaRComercial">Unidad de Medida Comercial:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="unidadMedidaRComercial" value="#{ArticulosController.selectedArticulo.unidadMedidaComercial}"
+                                                         styleClass="select" style="width: 100%">
+                                            <p:ajax listener="#{ArticulosController.selectedUnidadMedidaComercialChanged}"/>
+                                            <f:selectItem itemLabel="Seleccione..." itemValue=""/>
+                                            <f:selectItem itemLabel="Botella" itemValue="BOT"/>
+                                            <f:selectItem itemLabel="Lata" itemValue="LT"/>
+                                            <f:selectItem itemLabel="Six-Pack" itemValue="ST"/>
+                                            <f:selectItem itemLabel="Pieza" itemValue="Pieza"/>
+                                            <f:selectItem itemLabel="Unidad" itemValue="Unid"/>
+                                            <f:selectItem itemLabel="Genérico" itemValue=""/>
+                                        </p:selectOneMenu>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-sitemap"></i> Clasificación
+                            </h4>
+
+                            <div class="field-group">
+                                <div class="field">
+                                    <label class="label required-field" for="departamentoR">Departamento:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="departamentoR" value="#{ArticulosController.departamentoID}"
+                                                         required="true" requiredMessage="El Departamento no puede estar vacío"
+                                                         styleClass="select" style="width: 100%">
+                                            <f:selectItem itemLabel="#{ArticulosController.selectedArticulo.departamento.nombre}" itemValue="#{ArticulosController.selectedArticulo.departamento.id}"/>
+                                            <f:selectItems value="#{ArticulosController.departamentoOptions}" var="departamento"
+                                                           itemLabel="#{departamento.nombre}" itemValue="#{departamento.id}"/>
+                                        </p:selectOneMenu>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label required-field" for="familiaR">Familia:</label>
+                                    <div class="control">
+                                        <p:selectOneMenu id="familiaR" value="#{ArticulosController.familiaID}"
+                                                         required="true" requiredMessage="La Familia no puede estar vacía"
+                                                         styleClass="select" style="width: 100%">
+                                            <f:selectItem itemLabel="Seleccionar Familia" itemValue=""/>
+                                            <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                           itemLabel="#{familia.nombre}" itemValue="#{familia.id}"/>
+                                        </p:selectOneMenu>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4 class="form-section-title">
+                                <i class="pi pi-calculator"></i> Cálculo de Precios
+                            </h4>
+
+                            <div class="price-calculation">
+                                <div class="field-group">
+                                    <div class="field">
+                                        <label class="label required-field" for="precioCostoSinIVAR">Precio Costo sin IVA:</label>
+                                        <div class="control has-icons-left">
+                                            <p:inputText id="precioCostoSinIVAR" type="number" 
+                                                         value="#{ArticulosController.lastPrecio.precioCostoSinIVA}"
+                                                         required="true" requiredMessage="El Precio Costo sin IVA no puede estar vacío"
+                                                         styleClass="input" style="width: 100%"
+                                                         placeholder="0.00">
+                                                <p:ajax event="change" 
+                                                        listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                        update="precioConUtilidadR precioConUtilidadRConIVA"/>
+                                            </p:inputText>
+                                            <span class="icon is-small is-left">
+                                                <i class="pi pi-money-bill"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="field">
+                                        <label class="label required-field" for="porcentajeUtilidadR">Porcentaje de Utilidad:</label>
+                                        <div class="control has-icons-left">
+                                            <p:inputNumber id="porcentajeUtilidadR" decimalPlaces="0" minValue="0" 
+                                                           value="#{ArticulosController.lastPrecio.porcentajeUtilidad}"
+                                                           required="true" requiredMessage="El Porcentaje de Utilidad no puede estar vacío"
+                                                           styleClass="input" style="width: 100%" symbol="%"
+                                                           placeholder="0">
+                                                <p:ajax event="change" 
+                                                        listener="#{ArticulosController.calcularPrecioConUtilidadEdit(ArticulosController.lastPrecio)}"
+                                                        update="precioConUtilidadR precioConUtilidadRConIVA"/>
+                                            </p:inputNumber>
+                                            <span class="icon is-small is-left">
+                                                <i class="pi pi-percentage"></i>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="field-group">
+                                    <div class="field">
+                                        <label class="label">Precio con Utilidad:</label>
+                                        <div class="control">
+                                            <p:card styleClass="card has-background-light">
+                                                <p:outputLabel id="precioConUtilidadR" 
+                                                               value="#{ArticulosController.lastPrecio.precioConUtilidad}"
+                                                               styleClass="has-text-weight-bold has-text-link"/>
+                                            </p:card>
+                                        </div>
+                                    </div>
+
+                                    <div class="field">
+                                        <label class="label">Precio Final con IVA:</label>
+                                        <div class="control">
+                                            <p:card styleClass="card has-background-success-light">
+                                                <p:outputLabel id="precioConUtilidadRConIVA" 
+                                                               value="#{ArticulosController.lastPrecio.precioFinal}"
+                                                               styleClass="has-text-weight-bold has-text-success">
+                                                    <p:autoUpdate/>
+                                                </p:outputLabel>
+                                            </p:card>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="buttons is-centered mt-4">
+                            <p:commandLink styleClass="button is-light is-rounded"
+                                           onclick="alert('Función de navegación anterior no implementada')">
+                                <i class="pi pi-arrow-left"></i>
+                                <span>Anterior</span>
+                            </p:commandLink>
+                            <p:commandLink styleClass="button is-warning is-rounded"
+                                           action="#{ArticulosController.skipCurrentArticle}" process="@this"
+                                           update="@form Articulos:ArticulosPendientes">
+                                <i class="pi pi-forward"></i>
+                                <span>Saltar</span>
+                            </p:commandLink>
+                            <p:commandLink styleClass="button is-success is-medium is-rounded"
+                                           action="#{ArticulosController.updateArticulosRevision}"
+                                           update="@form Articulos:ArticulosPendientes @form:articuloHeader @form:articuloContent">
+                                <i class="pi pi-check"></i>
+                                <span>Guardar y Siguiente</span>
+                            </p:commandLink>
+                        </div> 
+                    </section>
+                    </p:outputPanel>
+                    <p:outputPanel rendered="#{empty ArticulosController.selectedArticulo}">
+                        <div class="has-text-centered p-5">
+                            <p class="has-text-grey">No hay artículos pendientes para procesar</p>
+                        </div>
+                    </p:outputPanel>
+                </p:outputPanel>
+            </div>
+        </h:form>
+    </p:dialog>
+
+    <p:dialog header="Atajos de Teclado" widgetVar="keyboardShortcutsDialog" 
+              modal="true" resizable="false" width="400">
+        <div class="content">
+            <table class="table is-fullwidth is-narrow">
+                <tr>
+                    <td><kbd>Ctrl + Enter</kbd></td>
+                    <td>Guardar y Siguiente</td>
+                </tr>
+                <tr>
+                    <td><kbd>Ctrl + ←</kbd></td>
+                    <td>Artículo Anterior</td>
+                </tr>
+                <tr>
+                    <td><kbd>Ctrl + →</kbd></td>
+                    <td>Siguiente Artículo</td>
+                </tr>
+                <tr>
+                    <td><kbd>Escape</kbd></td>
+                    <td>Cerrar Diálogo</td>
+                </tr>
+            </table>
+        </div>
+        <div class="field">
+            <button type="button" class="button is-primary" onclick="PF('keyboardShortcutsDialog').hide()">
+                Cerrar
+            </button>
+        </div>
+    </p:dialog>
+
+</ui:composition>
