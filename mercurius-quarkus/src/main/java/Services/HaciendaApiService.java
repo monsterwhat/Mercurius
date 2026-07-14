@@ -322,7 +322,7 @@ public class HaciendaApiService {
         return result;
     }
 
-    @Retry(maxRetries = 3, delay = 7200000)
+    @Retry(maxRetries = 3, delay = 7200000, maxDuration = 14400000)
     @Fallback(fallbackMethod = "sendInvoiceFallback")
     public ApiResponse sendInvoice(String clave, String xmlContent, 
                                     String emisorTipoId, String emisorNumeroId,
