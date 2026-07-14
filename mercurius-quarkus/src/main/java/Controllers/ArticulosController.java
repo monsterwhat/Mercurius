@@ -1,11 +1,13 @@
 package Controllers;
 
 import Controllers.Settings.SettingsDirController;
+import Models.Articulos.ArticuloImagen;
 import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
 import Models.Cabys;
 import Models.Departamento;
 import Models.Familia; 
+import Services.ArticuloImagenService;
 import Services.ArticuloPrecioService;
 import Services.ArticulosService;
 import Services.DepartamentoService;
@@ -30,28 +32,41 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.component.datatable.DataTable;
+import org.primefaces.event.FileUploadEvent;
+import org.primefaces.model.DefaultStreamedContent;
 import org.primefaces.model.FilterMeta;
+import org.primefaces.model.StreamedContent;
+import org.primefaces.model.file.UploadedFile;
 import org.primefaces.util.LangUtils;
+import Utils.DiffUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "ArticulosController")
 @ViewScoped
 public class ArticulosController implements Serializable {
@@ -66,6 +81,7 @@ public class ArticulosController implements Serializable {
     @Inject @Nonnull private SettingsDirController directoryConfig;
     @Inject @Nonnull private PrinterService printer;
     @Inject @Nonnull private AlertasService alertasService;
+    @Inject @Nonnull private ArticuloImagenService imagenService;
     
     @Nullable
     private List<Articulos> articulosActivos;
@@ -166,7 +182,7 @@ public class ArticulosController implements Serializable {
     public void updateArticuloByDialog() {
         if(currentSession.isValid()){
             if(DepartamentoID != 0 || FamiliaID != 0){
-            var oldArticulo = selectedArticulo;
+            String antes = DiffUtils.snapshotEntity(selectedArticulo);
             selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
             selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
             selectedArticulo.setUsuario(currentSession.getCurrentUser());
@@ -175,7 +191,7 @@ public class ArticulosController implements Serializable {
                 if(selectedArticulo.getCodigoCabys() != null){
                     selectedArticulo.setProcessed(true);
                     articulosService.update(selectedArticulo);
-                    alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", oldArticulo.toString(), selectedArticulo.toString());
+                    alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", antes, DiffUtils.snapshotEntity(selectedArticulo));
                     clearCache();
                     clearArticulo();
 
@@ -201,7 +217,7 @@ public class ArticulosController implements Serializable {
     public void updateArticuloRevision() {
         if(currentSession.isValid()){
             if(DepartamentoID != 0 || FamiliaID != 0){
-                var oldArticulo = selectedArticulo;
+                String antes = DiffUtils.snapshotEntity(selectedArticulo);
                 selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
                 selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
@@ -211,7 +227,7 @@ public class ArticulosController implements Serializable {
                         if(selectedArticulo.getLastPrecio().getPrecioFinal() != null){
                             selectedArticulo.setProcessed(true);
                             articulosService.update(selectedArticulo);
-                            alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", oldArticulo.toString(), selectedArticulo.toString());
+                            alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", antes, DiffUtils.snapshotEntity(selectedArticulo));
                             clearCache();
                             clearArticulo();
 
@@ -234,7 +250,7 @@ public class ArticulosController implements Serializable {
             }
         }else{
             FacesContext.getCurrentInstance().addMessage(null,
-            new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesion es invalida", null));
+                new FacesMessage(FacesMessage.SEVERITY_WARN, "La sesion es invalida", null));
             
         }
         
@@ -247,7 +263,7 @@ public class ArticulosController implements Serializable {
     public void updateArticulosRevision() {
         if(currentSession.isValid()) {
             if(DepartamentoID != 0 || FamiliaID != 0) {
-                var oldArticulo = selectedArticulo;
+                String antes = DiffUtils.snapshotEntity(selectedArticulo);
                 selectedArticulo.setDepartamento(departamentoService.findById(DepartamentoID));
                 selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
                 selectedArticulo.setUsuario(currentSession.getCurrentUser());
@@ -259,7 +275,7 @@ public class ArticulosController implements Serializable {
                             selectedArticulo.setProcessed(true);
                             articulosService.update(selectedArticulo);
                               
-                            alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "updateArticulosRevision()", oldArticulo.toString(), selectedArticulo.toString());
+                            alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "updateArticulosRevision()", antes, DiffUtils.snapshotEntity(selectedArticulo));
                             clearCache();
 
                             // Load the next article or reset if none available
@@ -351,11 +367,10 @@ public class ArticulosController implements Serializable {
     }
     
     public void skipCurrentArticle() {
-        // Skip current article without processing - just move to next
         if(selectedArticulo != null){
-            var oldArticulo = selectedArticulo;
+            String antes = DiffUtils.snapshotEntity(selectedArticulo);
             
-            alertasService.registrarAlerta("Artículo omitido", "Se ha omitido el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentArticle()", oldArticulo.toString(), selectedArticulo.toString());
+            alertasService.registrarAlerta("Artículo omitido", "Se ha omitido el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "skipCurrentArticle()", antes, DiffUtils.snapshotEntity(selectedArticulo));
             
             clearCache();
             loadNextArticulo();
@@ -424,9 +439,9 @@ public class ArticulosController implements Serializable {
 
     public void deleteArticulo() {
         if (selectedArticulo != null) {
-            var oldArticulo = selectedArticulo;
+            String antes = DiffUtils.snapshotEntity(selectedArticulo);
             articulosService.softDelete(selectedArticulo);
-            alertasService.registrarAlerta("Artículo eliminado", "Se ha eliminado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.deleteArticulo", oldArticulo.toString() , selectedArticulo.toString());
+            alertasService.registrarAlerta("Artículo eliminado", "Se ha eliminado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.deleteArticulo", antes, DiffUtils.snapshotEntity(selectedArticulo));
             clearSelectedArticulo();
         }
     }
@@ -911,6 +926,104 @@ public class ArticulosController implements Serializable {
         ExternalContext externalContext = FacesContext.getCurrentInstance().getExternalContext();
         HttpServletRequest request = (HttpServletRequest) externalContext.getRequest();
         return request.getContextPath();
+    }
+
+    public void uploadImagen(@Nonnull FileUploadEvent event) {
+        if (selectedArticulo == null) {
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Seleccione un artículo primero"));
+            return;
+        }
+        try {
+            UploadedFile file = event.getFile();
+            if (file == null || file.getFileName() == null) return;
+
+            directoryConfig.createProductosImgDir();
+            String articuloDir = directoryConfig.getProductosImgDirPath()
+                + File.separator + selectedArticulo.getCodigo();
+
+            Path dirPath = Path.of(articuloDir);
+            if (!Files.exists(dirPath)) Files.createDirectories(dirPath);
+
+            String fileName = System.currentTimeMillis() + "_" + file.getFileName();
+            Path target = dirPath.resolve(fileName);
+            try (InputStream input = file.getInputStream()) {
+                Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            ArticuloImagen img = new ArticuloImagen();
+            img.setArticulo(selectedArticulo);
+            img.setRuta(target.toString());
+            img.setNombreOriginal(file.getFileName());
+            img.setMimeType(file.getContentType());
+            img.setOrden(imagenService.getNextOrden(selectedArticulo.getCodigo()));
+            imagenService.create(img);
+
+            clearCache();
+
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_INFO, "Imagen subida", file.getFileName()));
+        } catch (IOException e) {
+            alertasService.registrarAlerta("Error", "Error uploading image: " + e.getMessage(),
+                currentSession.getCurrentUser(), 0, "ArticulosController.uploadImagen()", null, e.getMessage());
+            FacesContext.getCurrentInstance().addMessage(null,
+                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo subir la imagen"));
+        }
+    }
+
+    public void eliminarImagen(@Nullable ArticuloImagen imagen) {
+        if (imagen == null || imagen.getId() == null) return;
+        try {
+            Path filePath = Path.of(imagen.getRuta());
+            Files.deleteIfExists(filePath);
+        } catch (IOException ignored) {}
+        imagenService.deleteById(imagen.getId());
+        clearCache();
+        FacesContext.getCurrentInstance().addMessage(null,
+            new FacesMessage(FacesMessage.SEVERITY_INFO, "Imagen eliminada", imagen.getNombreOriginal()));
+    }
+
+    public void subirOrdenImagen(@Nullable ArticuloImagen imagen) {
+        if (imagen == null || selectedArticulo == null || selectedArticulo.getImagenes() == null) return;
+        int idx = selectedArticulo.getImagenes().indexOf(imagen);
+        if (idx <= 0) return;
+        ArticuloImagen above = selectedArticulo.getImagenes().get(idx - 1);
+        int temp = imagen.getOrden();
+        imagen.setOrden(above.getOrden());
+        above.setOrden(temp);
+        imagenService.update(imagen);
+        imagenService.update(above);
+        clearCache();
+    }
+
+    public void bajarOrdenImagen(@Nullable ArticuloImagen imagen) {
+        if (imagen == null || selectedArticulo == null || selectedArticulo.getImagenes() == null) return;
+        int idx = selectedArticulo.getImagenes().indexOf(imagen);
+        if (idx < 0 || idx >= selectedArticulo.getImagenes().size() - 1) return;
+        ArticuloImagen below = selectedArticulo.getImagenes().get(idx + 1);
+        int temp = imagen.getOrden();
+        imagen.setOrden(below.getOrden());
+        below.setOrden(temp);
+        imagenService.update(imagen);
+        imagenService.update(below);
+        clearCache();
+    }
+
+    @Nullable
+    public StreamedContent getImagenStream(@Nullable Long imagenId) {
+        if (imagenId == null) return null;
+        ArticuloImagen img = imagenService.findById(imagenId);
+        if (img == null) return null;
+        try {
+            Path path = Path.of(img.getRuta());
+            byte[] data = Files.readAllBytes(path);
+            return DefaultStreamedContent.builder()
+                .contentType(img.getMimeType() != null ? img.getMimeType() : "image/jpeg")
+                .stream(() -> new ByteArrayInputStream(data))
+                .build();
+        } catch (IOException e) {
+            return null;
+        }
     }
     
 }

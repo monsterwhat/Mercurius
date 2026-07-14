@@ -23,7 +23,10 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
@@ -31,7 +34,7 @@ import org.primefaces.util.LangUtils;
 /**
  * Controller for managing customer loyalty points system
  */
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "loyaltyController")
 @ViewScoped
 public class LoyaltyController implements Serializable {

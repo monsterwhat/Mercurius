@@ -17,12 +17,16 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
+import Utils.DiffUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "FamiliasController")  
 @ViewScoped
 public class FamiliaController implements Serializable {
@@ -77,11 +81,11 @@ public class FamiliaController implements Serializable {
     public void updateFamiliaDialog() {
         if(currentSession.isValid()){
             if(selectedFamilia != null){
-                var oldFamilia = selectedFamilia;
+                String antes = DiffUtils.snapshotEntity(selectedFamilia);
                 selectedFamilia.setUsuario(currentSession.getCurrentUser());
                 selectedFamilia.setFecha(new Date());
                 familiaService.updateAndDisable(selectedFamilia);
-                alertas.registrarAlerta("Familia actualizada", "Se ha actualizado la familia: " + selectedFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.updateFamiliaDialog", oldFamilia.toString(), selectedFamilia.toString());
+                alertas.registrarAlerta("Familia actualizada", "Se ha actualizado la familia: " + selectedFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.updateFamiliaDialog", antes, DiffUtils.snapshotEntity(selectedFamilia));
                 clearSelectedFamilia();
                 
                 FacesContext.getCurrentInstance().addMessage(null,
@@ -130,9 +134,9 @@ public class FamiliaController implements Serializable {
     
     public void deleteFamilia() {
         if (selectedFamilia != null) {
-            var oldFamilia = selectedFamilia;
+            String antes = DiffUtils.snapshotEntity(selectedFamilia);
             familiaService.softDelete(selectedFamilia);
-            alertas.registrarAlerta("Familia eliminada", "Se ha eliminado la familia: " + selectedFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.deleteFamilia", oldFamilia.toString() , selectedFamilia.toString());
+            alertas.registrarAlerta("Familia eliminada", "Se ha eliminado la familia: " + selectedFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.deleteFamilia", antes, DiffUtils.snapshotEntity(selectedFamilia));
             clearSelectedFamilia();
         }
     }

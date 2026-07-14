@@ -20,10 +20,13 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.util.LangUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "InventarioResumenController")
 @ViewScoped
 public class InventarioResumenController implements Serializable {

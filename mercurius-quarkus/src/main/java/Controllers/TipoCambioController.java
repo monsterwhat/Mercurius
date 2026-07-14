@@ -11,9 +11,12 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
 import java.util.List;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
-@Data
+@Getter @Setter @ToString(exclude = {"settings", "currentSession"}) @EqualsAndHashCode(exclude = {"settings", "currentSession"})
 @Named(value = "TipoCambioController")
 @ApplicationScoped
 public class TipoCambioController implements Serializable {

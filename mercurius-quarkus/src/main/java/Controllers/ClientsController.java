@@ -15,12 +15,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import Utils.DiffUtils;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.util.LangUtils;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "ClientsController")
 @ViewScoped
 public class ClientsController implements Serializable {
@@ -78,10 +82,10 @@ public class ClientsController implements Serializable {
 
     public void updateClient() {
         if(currentSession.isValid()){
-            var oldClient = selectedClient;
+            String antes = DiffUtils.snapshotEntity(selectedClient);
             selectedClient.setUsuario(currentSession.getCurrentUser());
             clientService.update(selectedClient);
-            alertas.registrarAlerta("Cliente Actualizado", "Se actualizo el cliente: " + selectedClient.getName(), currentSession.getCurrentUser(), 0, "updateClient()", oldClient.toString() , selectedClient.toString());
+            alertas.registrarAlerta("Cliente Actualizado", "Se actualizo el cliente: " + selectedClient.getName(), currentSession.getCurrentUser(), 0, "updateClient()", antes, DiffUtils.snapshotEntity(selectedClient));
             clearSelectedClient();
             PrimeFaces.current().executeScript("PF('EditarClienteDialog').hide();");
         }
@@ -89,7 +93,7 @@ public class ClientsController implements Serializable {
 
     public void createClient() {
         if(currentSession.isValid()){
-            var oldClient = newClient;
+            String antes = DiffUtils.snapshotEntity(newClient);
 
             // Check tax ID uniqueness if idNumber is provided
             String idNumber = newClient.getIdNumber();
@@ -107,7 +111,7 @@ public class ClientsController implements Serializable {
                 newClient.setUsuario(currentSession.getCurrentUser());
                 newClient.setStatus(true);
                 clientService.create(newClient);
-                alertas.registrarAlerta("Se creo el cliente", "Se creo el cliente: " + newClient.getName(), currentSession.getCurrentUser(), 0, "createClient()", oldClient.toString(), newClient.toString());
+                alertas.registrarAlerta("Se creo el cliente", "Se creo el cliente: " + newClient.getName(), currentSession.getCurrentUser(), 0, "createClient()", antes, DiffUtils.snapshotEntity(newClient));
                 clearSelectedClient();    
                 PrimeFaces.current().executeScript("PF('CrearClienteDialog').hide();");
             }
@@ -116,14 +120,14 @@ public class ClientsController implements Serializable {
 
     public void toggleClient() {
         if (selectedClient != null) {
-            var oldClient = selectedClient;
+            String antes = DiffUtils.snapshotEntity(selectedClient);
             if(selectedClient.getStatus()){
                 disableCliente();
             }else{
                 enableCliente();
             }
             clientService.update(selectedClient);
-            alertas.registrarAlerta("Se cambio el status del cliente", "El estatus cambio", currentSession.getCurrentUser(), 0, "toggleClient()", oldClient.toString(), selectedClient.toString());
+            alertas.registrarAlerta("Se cambio el status del cliente", "El estatus cambio", currentSession.getCurrentUser(), 0, "toggleClient()", antes, DiffUtils.snapshotEntity(selectedClient));
             clearSelectedClient();
         }
     }

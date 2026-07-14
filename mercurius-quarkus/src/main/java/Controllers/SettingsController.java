@@ -12,6 +12,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.ExternalContext;
 import jakarta.faces.context.FacesContext;
+import Utils.DiffUtils;
 import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -25,7 +26,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import javax.swing.filechooser.FileSystemView;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.event.FileUploadEvent;
 import org.primefaces.model.DefaultStreamedContent;
 import org.primefaces.model.StreamedContent;
@@ -35,7 +39,7 @@ import org.primefaces.model.file.UploadedFile;
  *
  * @author Al
  */
-@Data
+@Getter @Setter @ToString(exclude = {"tipoCambioController", "currentSession"}) @EqualsAndHashCode(exclude = {"tipoCambioController", "currentSession"})
 @Named("SettingsController")
 @ViewScoped
 public class SettingsController implements Serializable {
@@ -253,15 +257,15 @@ public class SettingsController implements Serializable {
     }
 
     public void updateSelectedSettings() {
-        var oldSettings = selectedSettings;
+        String antes = DiffUtils.snapshotEntity(selectedSettings);
         settingsService.update(selectedSettings);
-        alertas.registrarAlerta("Configuración Actualizada", "Se actualizó la configuración seleccionada", currentSession.getCurrentUser(), 0, "updateSelectedSettings()", oldSettings.toString(), selectedSettings.toString());
+        alertas.registrarAlerta("Configuración Actualizada", "Se actualizó la configuración seleccionada", currentSession.getCurrentUser(), 0, "updateSelectedSettings()", antes, DiffUtils.snapshotEntity(selectedSettings));
     }
 
     public void disableSelectedSettings() {
-        var oldSettings = selectedSettings;
+        String antes = DiffUtils.snapshotEntity(selectedSettings);
         settingsService.disable(selectedSettings);
-        alertas.registrarAlerta("Configuración Deshabilitada", "Se deshabilitó la configuración seleccionada", currentSession.getCurrentUser(), 0, "disableSelectedSettings()", oldSettings.toString(), selectedSettings.toString());
+        alertas.registrarAlerta("Configuración Deshabilitada", "Se deshabilitó la configuración seleccionada", currentSession.getCurrentUser(), 0, "disableSelectedSettings()", antes, DiffUtils.snapshotEntity(selectedSettings));
     }
 
     @Nonnull

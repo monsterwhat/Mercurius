@@ -13,6 +13,7 @@ import Models.Encabezado.CorreoElectronicoEmisor;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Departamento;
+import Utils.DiffUtils;
 import Models.Inventario;
 import Services.AlertasService;
 import Services.ArticuloPrecioService;
@@ -47,14 +48,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.primefaces.PrimeFaces;
 import org.primefaces.model.FilterMeta;
 import org.primefaces.model.file.UploadedFile;
 import org.primefaces.util.LangUtils;
 
 @Named
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @ViewScoped
 public class FacturasController implements Serializable {
     
@@ -282,18 +286,18 @@ public class FacturasController implements Serializable {
 
     public void deleteFactura() {
         if (selectedFactura != null) {
-            var oldFactura = selectedFactura;
+            String antes = DiffUtils.snapshotEntity(selectedFactura);
             facturaService.softDelete(selectedFactura);
-            alertas.registrarAlerta("Factura eliminada", "La factura #" + selectedFactura.getId() + "fue eliminada", currentSession.getCurrentUser(), 0, "deleteFactura()", oldFactura.toString(), selectedFactura.toString());
+            alertas.registrarAlerta("Factura eliminada", "La factura #" + selectedFactura.getId() + "fue eliminada", currentSession.getCurrentUser(), 0, "deleteFactura()", antes, DiffUtils.snapshotEntity(selectedFactura));
             clearFactura();
         }
     }
 
     public void toggleFactura() {
         if (selectedFactura != null) {
-            var oldFactura = selectedFactura;
+            String antes = DiffUtils.snapshotEntity(selectedFactura);
             facturaService.toggle(selectedFactura);
-            alertas.registrarAlerta("Factura toggled", "Se cambio el estado de la factura", currentSession.getCurrentUser(), 0, "toggleFactura()", oldFactura.toString(), selectedFactura.toString());
+            alertas.registrarAlerta("Factura toggled", "Se cambio el estado de la factura", currentSession.getCurrentUser(), 0, "toggleFactura()", antes, DiffUtils.snapshotEntity(selectedFactura));
         }
     }
 

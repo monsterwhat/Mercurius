@@ -10,6 +10,10 @@ import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -19,7 +23,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
-@Data
+@Getter @Setter @ToString @EqualsAndHashCode
 @Named("seasonalityController")
 @ViewScoped
 public class SeasonalityController implements Serializable {
