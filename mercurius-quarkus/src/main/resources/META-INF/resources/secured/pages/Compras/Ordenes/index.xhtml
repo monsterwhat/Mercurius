@@ -230,10 +230,11 @@
                                     <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-trash"
                                                      title="Eliminar orden"
                                                      rendered="#{orden.estado eq 'BORRADOR'}"
-                                                     actionListener="#{OrdenCompraController.setSelectedOrden(orden)}"
+                                                     actionListener="#{OrdenCompraController.deleteOrden()}"
                                                      onclick="confirm('¿Está seguro de eliminar esta orden?');"
-                                                     process="@this" update="@form"
-                                                     actionListener="#{OrdenCompraController.deleteOrden()}" />
+                                                     process="@this" update="@form">
+                                        <f:setPropertyActionListener value="#{orden}" target="#{OrdenCompraController.selectedOrden}" />
+                                    </p:commandButton>
                                 </div>
                             </p:column>
                         </p:dataTable>
@@ -255,7 +256,7 @@
                             <label class="label">Proveedor *</label>
                             <div class="control">
                                 <p:selectOneMenu id="proveedorCrear" value="#{OrdenCompraController.newOrden.proveedor}"
-                                                 converter="jakarta.faces.Model"
+                                                 
                                                  style="width: 100%" required="true"
                                                  requiredMessage="Debe seleccionar un proveedor">
                                     <f:selectItem itemLabel="-- Seleccionar proveedor --" itemValue="#{null}" noSelectionOption="true" />
@@ -301,7 +302,7 @@
                                         value="#{detalle.articulo}"
                                         completeMethod="#{OrdenCompraController.completeArticulo}"
                                         var="art" itemLabel="#{art.nombre}" itemValue="#{art}"
-                                        converter="jakarta.faces.Model"
+                                        
                                         placeholder="Buscar artículo..."
                                         style="width: 100%"
                                         minQueryLength="1" queryDelay="300" />
@@ -385,7 +386,7 @@
                             <div class="control">
                                 <p:selectOneMenu id="proveedorEditar"
                                                  value="#{OrdenCompraController.selectedOrden.proveedor}"
-                                                 converter="jakarta.faces.Model"
+                                                 
                                                  style="width: 100%">
                                     <f:selectItem itemLabel="-- Seleccionar proveedor --" itemValue="#{null}" noSelectionOption="true" />
                                     <f:selectItems value="#{OrdenCompraController.proveedoresList}"
@@ -440,7 +441,7 @@
                                         value="#{detalle.articulo}"
                                         completeMethod="#{OrdenCompraController.completeArticulo}"
                                         var="art" itemLabel="#{art.nombre}" itemValue="#{art}"
-                                        converter="jakarta.faces.Model"
+                                        
                                         placeholder="Buscar artículo..."
                                         style="width: 100%"
                                         minQueryLength="1" queryDelay="300" />

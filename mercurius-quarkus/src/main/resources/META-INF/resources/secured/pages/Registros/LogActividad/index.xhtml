@@ -121,7 +121,7 @@
                                         </div>
                                         <div class="column is-half has-text-right">
                                             <p:commandLink class="button is-rounded is-success is-small" ajax="false">
-                                                <p:dataExporter type="xlsx" target="LogActividadTable" 
+                                                <p:dataExporter type="xlsx" target=":logForm:logTable" 
                                                                fileName="Log-Actividades-Mercurius" />
                                                 <span class="icon-text">
                                                     <span class="icon">
@@ -157,25 +157,36 @@
                                 <p:column headerText="Valor Nuevo" width="120">
                                     <h:outputText value="#{registro.despues}" rendered="#{registro.despues ne null}"/>
                                 </p:column>
-                                <p:column headerText="Estado" width="80">
-                                    <p:commandLink class="button is-rounded is-small" 
-                                                   actionListener="#{logActividadController.toggleVista(registro)}" 
-                                                   process="@this" 
-                                                   update="logTable"
-                                                   rendered="#{!registro.vista}">
-                                        <span class="icon">
-                                            <i class="pi pi-eye-slash"/>
-                                        </span>
-                                    </p:commandLink>
-                                    <p:commandLink class="button is-rounded is-small is-success" 
-                                                   actionListener="#{logActividadController.toggleVista(registro)}" 
-                                                   process="@this" 
-                                                   update="logTable"
-                                                   rendered="#{registro.vista}">
-                                        <span class="icon">
-                                            <i class="pi pi-eye"/>
-                                        </span>
-                                    </p:commandLink>
+                                <p:column headerText="Estado" width="120">
+                                    <div class="buttons">
+                                        <p:commandLink class="button is-rounded is-small" 
+                                                       actionListener="#{logActividadController.toggleVista(registro)}" 
+                                                       process="@this" 
+                                                       update="logTable"
+                                                       rendered="#{!registro.vista}">
+                                            <span class="icon">
+                                                <i class="pi pi-eye-slash"/>
+                                            </span>
+                                        </p:commandLink>
+                                        <p:commandLink class="button is-rounded is-small is-success" 
+                                                       actionListener="#{logActividadController.toggleVista(registro)}" 
+                                                       process="@this" 
+                                                       update="logTable"
+                                                       rendered="#{registro.vista}">
+                                            <span class="icon">
+                                                <i class="pi pi-eye"/>
+                                            </span>
+                                        </p:commandLink>
+                                        <p:commandButton class="button is-rounded is-small is-info"
+                                                         actionListener="#{logActividadController.showDetails(registro)}"
+                                                         process="@this" update="logDetailForm"
+                                                         oncomplete="PF('logDetailDialog').show();"
+                                                         title="Ver detalles">
+                                            <span class="icon">
+                                                <i class="pi pi-info-circle"/>
+                                            </span>
+                                        </p:commandButton>
+                                    </div>
                                 </p:column>
                             </p:dataTable>
                         </h:form>
@@ -183,6 +194,52 @@
                 </div> 
             </div> 
         </section>
+
+        <p:dialog id="logDetailDialog" widgetVar="logDetailDialog" header="Detalle del Registro" 
+                  modal="true" responsive="true" width="600" closable="true" styleClass="log-detail-dialog">
+            <h:form id="logDetailForm">
+                <p:panelGrid columns="2" styleClass="detail-grid" style="width: 100%">
+                    <p><strong>Fecha/Hora:</strong></p>
+                    <p>
+                        <h:outputText value="#{logActividadController.selectedRegistro.timestampAsDate}">
+                            <f:convertDateTime pattern="yyyy-MM-dd HH:mm:ss"/>
+                        </h:outputText>
+                    </p>
+
+                    <p><strong>Tipo:</strong></p>
+                    <p><h:outputText value="#{logActividadController.selectedRegistro.tipo}"/></p>
+
+                    <p><strong>Código:</strong></p>
+                    <p><h:outputText value="#{logActividadController.selectedRegistro.codigo}"/></p>
+
+                    <p><strong>Usuario:</strong></p>
+                    <p><h:outputText value="#{logActividadController.selectedRegistro.user != null ? logActividadController.selectedRegistro.user.username : 'Sistema'}"/></p>
+
+                    <p><strong>Origen:</strong></p>
+                    <p><h:outputText value="#{logActividadController.selectedRegistro.source}"/></p>
+
+                    <p><strong>Estado:</strong></p>
+                    <p><h:outputText value="#{logActividadController.selectedRegistro.vista ? 'Leído' : 'No leído'}"/></p>
+
+                    <p><strong>Mensaje:</strong></p>
+                    <p><h:outputText value="#{logActividadController.selectedRegistro.mensaje}" style="white-space: pre-wrap;"/></p>
+
+                    <p:outputPanel rendered="#{logActividadController.selectedRegistro.antes ne null}">
+                        <p><strong>Valor Anterior:</strong></p>
+                    </p:outputPanel>
+                    <p:outputPanel rendered="#{logActividadController.selectedRegistro.antes ne null}">
+                        <pre style="font-size: 0.85em; background: var(--bulma-background-l); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; max-height: 200px; overflow: auto;"><h:outputText value="#{logActividadController.selectedRegistro.antes}"/></pre>
+                    </p:outputPanel>
+
+                    <p:outputPanel rendered="#{logActividadController.selectedRegistro.despues ne null}">
+                        <p><strong>Valor Nuevo:</strong></p>
+                    </p:outputPanel>
+                    <p:outputPanel rendered="#{logActividadController.selectedRegistro.despues ne null}">
+                        <pre style="font-size: 0.85em; background: var(--bulma-background-l); padding: 0.5rem; border-radius: 4px; white-space: pre-wrap; max-height: 200px; overflow: auto;"><h:outputText value="#{logActividadController.selectedRegistro.despues}"/></pre>
+                    </p:outputPanel>
+                </p:panelGrid>
+            </h:form>
+        </p:dialog>
 
     </h:body>
 </html>

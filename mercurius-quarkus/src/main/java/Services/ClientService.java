@@ -7,6 +7,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped; 
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Named
@@ -23,6 +24,7 @@ public class ClientService extends GService<Clients> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull Clients entity) {
         try {
             em.persist(entity);

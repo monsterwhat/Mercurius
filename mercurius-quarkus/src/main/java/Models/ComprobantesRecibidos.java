@@ -71,6 +71,10 @@ public class ComprobantesRecibidos {
     
     @Column(nullable = false)
     private Boolean paid = false;
+
+    @Nullable
+    @Column(columnDefinition = "TEXT")
+    private String prevalidationErrors;
     
     @Nullable
     @Column(length = 50)

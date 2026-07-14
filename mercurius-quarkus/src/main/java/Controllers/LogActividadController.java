@@ -50,6 +50,9 @@ public class LogActividadController implements Serializable {
     @Nonnull
     private List<String> sourcesDisponibles;
 
+    @Nullable
+    private Alertas selectedRegistro;
+
     @PostConstruct
     public void init() {
         users = userService.listAll();
@@ -77,5 +80,9 @@ public class LogActividadController implements Serializable {
 
     public long getTotalRegistros() {
         return registros != null ? registros.size() : 0;
+    }
+
+    public void showDetails(@Nonnull Alertas registro) {
+        selectedRegistro = registro;
     }
 }

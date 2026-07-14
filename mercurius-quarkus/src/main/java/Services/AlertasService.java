@@ -41,6 +41,7 @@ public class AlertasService extends GService<Alertas> {
     }
     
     @Override
+    @Transactional
     public void create(@Nonnull Alertas alerta) {
         try {
             em.persist(alerta);
