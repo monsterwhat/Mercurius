@@ -128,13 +128,13 @@
                             <div class="buttons">
                                 <p:commandLink styleClass="button is-info"
                                                action="#{facturasController.generarReporteReport}"
-                                               update="comprobantesForm growl">
+                                                update=":comprobantesForm :growl">
                                     <i class="pi pi-calculator"></i>
                                     <span>Generar Reporte</span>
                                 </p:commandLink>
                                 <p:commandLink styleClass="button is-light"
                                                action="#{facturasController.limpiarFiltrosReport}"
-                                               update="filtros comprobantesForm">
+                                                update=":filtros :comprobantesForm">
                                     <i class="pi pi-filter-slash"></i>
                                     <span>Limpiar</span>
                                 </p:commandLink>
@@ -217,9 +217,9 @@
                                                  globalFilterFunction="#{facturasController.globalFilterFunction}" reflow="true"
                                                  selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
-                                        <p:ajax event="rowSelect" update="recibos selectedFacturaDetallado"/>
-                                        <p:ajax event="rowUnselect" update="recibos selectedFacturaDetallado" />
-                                        <p:ajax event="toggleSelect" update="recibos selectedFacturaDetallado" />
+                                        <p:ajax event="rowSelect" update=":recibosTodas :selectedFacturaDetallado"/>
+                                        <p:ajax event="rowUnselect" update=":recibosTodas :selectedFacturaDetallado" />
+                                        <p:ajax event="toggleSelect" update=":recibosTodas :selectedFacturaDetallado" />
 
                                         <f:facet name="header">
                                             <div class="filters-section">
@@ -268,34 +268,34 @@
 
                                         <p:column headerText="Acciones" exportable="false" style="width: 180px; text-align: center;">
                                             <div class="table-actions">
-                                                <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-wallet" 
-                                                                 disabled="#{factura.paid}" process="@this"
-                                                                 actionListener="#{facturasController.paySelectedFactura()}" update="@this recibosTodas statsForm resumen growl"
-                                                                 title="Marcar como pagada">
+                                                 <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-wallet" 
+                                                                  disabled="#{factura.paid}" process="@this"
+                                                                  actionListener="#{facturasController.paySelectedFactura()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Marcar como pagada">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-sync" 
-                                                                 disabled="#{factura.processed}" process="@this"
-                                                                 actionListener="#{facturasController.processSelectedFactura()}" update="@this recibosTodas recibosPagadas recibosProcesadas recibosVencidos statsForm resumen growl"
-                                                                 title="Procesar">
+                                                                  disabled="#{factura.processed}" process="@this"
+                                                                  actionListener="#{facturasController.processSelectedFactura()}" update="@this :recibosPagadas :recibosProcesadas :recibosVencidos :statsForm :resumen :growl"
+                                                                  title="Procesar">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this recibosTodas statsForm resumen growl"
-                                                                 title="Aceptar factura (Mensaje Receptor)">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Aceptar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this recibosTodas statsForm resumen growl"
-                                                                 title="Rechazar factura (Mensaje Receptor)">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Rechazar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.showDetailsDialog()}" update="@this selectedFacturaDetallado"
-                                                                 title="Ver detalles">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
+                                                                  title="Ver detalles">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                             </div>
@@ -322,8 +322,8 @@
                                                  globalFilterFunction="#{facturasController.globalFilterFunction}" reflow="true"
                                                  selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
-                                        <p:ajax event="rowSelect" update="recibosPagadas selectedFacturaDetallado"/>
-                                        <p:ajax event="rowUnselect" update="recibosPagadas selectedFacturaDetallado" />
+                                        <p:ajax event="rowSelect" update=":recibosPagadas :selectedFacturaDetallado"/>
+                                        <p:ajax event="rowUnselect" update=":recibosPagadas :selectedFacturaDetallado" />
 
                                         <f:facet name="header">
                                             <div class="filters-section">
@@ -334,6 +334,11 @@
                                         </f:facet>
 
                                         <p:column exportable="false" style="width: 100px; text-align: center;">
+                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" rendered="#{factura.paid}"/>
+                                            <p:tooltip for="PaidChip" value="Pagada" position="top"/>
+                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.paid}"/>
+                                            <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
+
                                             <p:chip id="ProcessedChip" icon="pi pi-check" styleClass="status-chip status-processed" rendered="#{factura.processed}"/>
                                             <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
                                             <p:chip id="unProcessedChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.processed}"/>
@@ -359,21 +364,21 @@
                                         <p:column headerText="Acciones" exportable="false" style="width: 180px; text-align: center;">
                                             <div class="table-actions">
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this recibosPagadas statsForm resumen growl"
-                                                                 title="Aceptar factura (Mensaje Receptor)">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Aceptar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this recibosPagadas statsForm resumen growl"
-                                                                 title="Rechazar factura (Mensaje Receptor)">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Rechazar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.showDetailsDialog()}" update="@this selectedFacturaDetallado"
-                                                                 title="Ver detalles">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
+                                                                  title="Ver detalles">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                             </div>
@@ -400,8 +405,8 @@
                                                  globalFilterFunction="#{facturasController.globalFilterFunction}" reflow="true"
                                                  selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
-                                        <p:ajax event="rowSelect" update="recibosProcesadas selectedFacturaDetallado"/>
-                                        <p:ajax event="rowUnselect" update="recibosProcesadas selectedFacturaDetallado" />
+                                        <p:ajax event="rowSelect" update=":recibosProcesadas :selectedFacturaDetallado"/>
+                                        <p:ajax event="rowUnselect" update=":recibosProcesadas :selectedFacturaDetallado" />
 
                                         <f:facet name="header">
                                             <div class="filters-section">
@@ -441,21 +446,21 @@
                                         <p:column headerText="Acciones" exportable="false" style="width: 180px; text-align: center;">
                                             <div class="table-actions">
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this recibosProcesadas statsForm resumen growl"
-                                                                 title="Aceptar factura (Mensaje Receptor)">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Aceptar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this recibosProcesadas statsForm resumen growl"
-                                                                 title="Rechazar factura (Mensaje Receptor)">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Rechazar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.showDetailsDialog()}" update="@this selectedFacturaDetallado"
-                                                                 title="Ver detalles">
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
+                                                                  title="Ver detalles">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                             </div>
@@ -482,7 +487,7 @@
                                                  reflow="true"
                                                  selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
-                                        <p:ajax event="rowSelect" update="recibosVencidos selectedFacturaDetallado"/>
+                                        <p:ajax event="rowSelect" update=":recibosVencidos :selectedFacturaDetallado"/>
 
                                         <f:facet name="header">
                                             <div class="filters-section">
@@ -516,26 +521,26 @@
                                             <div class="table-actions">
                                                 <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-wallet" 
                                                                  disabled="#{factura.paid}" process="@this"
-                                                                 actionListener="#{facturasController.paySelectedFactura()}" update="@this recibosVencidos statsForm resumen growl"
-                                                                 title="Marcar como pagada">
-                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
-                                                </p:commandButton>
-                                                <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this recibosVencidos statsForm resumen growl"
-                                                                 title="Aceptar factura (Mensaje Receptor)">
-                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
-                                                </p:commandButton>
-                                                <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this recibosVencidos statsForm resumen growl"
-                                                                 title="Rechazar factura (Mensaje Receptor)">
-                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
-                                                </p:commandButton>
-                                                <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
-                                                                 process="@this"
-                                                                 actionListener="#{facturasController.showDetailsDialog()}" update="@this selectedFacturaDetallado"
-                                                                 title="Ver detalles">
+                                                                  actionListener="#{facturasController.paySelectedFactura()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Marcar como pagada">
+                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
+                                                 </p:commandButton>
+                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Aceptar factura (Mensaje Receptor)">
+                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                                 </p:commandButton>
+                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                  title="Rechazar factura (Mensaje Receptor)">
+                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                                 </p:commandButton>
+                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
+                                                                  process="@this"
+                                                                  actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
+                                                                  title="Ver detalles">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                             </div>
