@@ -7,7 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
-
+import jakarta.transaction.Transactional;
 /**
  *
  * @author Al
@@ -52,5 +52,36 @@ public class AppSettingsService extends GService<AppSettings> {
         }
     }
 
+    /**
+     * Returns the current active settings, or falls back to the most recent row
+     * by Id if no row has estatus=true. Creates and returns a new settings row
+     * only if the table is completely empty.
+     */
+    @Transactional
+    public @Nonnull AppSettings findOrCreateCurrent() {
+        AppSettings current = returnCurrent();
+        if (current != null) {
+            return current;
+        }
+
+        try {
+            TypedQuery<AppSettings> query = em.createQuery(
+                "SELECT a FROM AppSettings a ORDER BY a.Id DESC", getEntityClass());
+            query.setMaxResults(1);
+            current = query.getSingleResult();
+            current.setEstatus(true);
+            return em.merge(current);
+        } catch (NoResultException e) {
+            // table empty — fall through to create
+        } catch (jakarta.persistence.PersistenceException e) {
+            alertasService.registrarAlerta("Error", "Error fallback: " + e.getMessage(), null, 0,
+                "AppSettingsService.findOrCreateCurrent()", null, e.getMessage());
+        }
+
+        current = new AppSettings();
+        current.setEstatus(true);
+        em.persist(current);
+        return current;
+    }
 
 }
