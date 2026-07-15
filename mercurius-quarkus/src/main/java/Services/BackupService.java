@@ -51,9 +51,11 @@ public class BackupService implements Serializable {
     @ConfigProperty(name = "quarkus.datasource.password")
     @Nonnull String dbPass;
 
+    private String resolvedMysqldump;
+
     public boolean ejecutarBackup() {
         try {
-            AppSettings settings = appSettingsService.returnCurrent();
+            AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) {
                 alertasService.registrarAlerta("Error", "No se encontró configuración activa para ejecutar backup", null, 0, "BackupService.ejecutarBackup()", null, null);
                 return false;
@@ -75,7 +77,7 @@ public class BackupService implements Serializable {
             Path outputFile = backupDir.resolve(filename);
 
             ProcessBuilder pb = new ProcessBuilder(
-                "mysqldump",
+                resolveMysqldump(),
                 "-u" + dbUser,
                 "-p" + dbPass,
                 "-h" + dbInfo.host,
@@ -127,7 +129,7 @@ public class BackupService implements Serializable {
 
     public void limpiarBackupsViejos() {
         try {
-            AppSettings settings = appSettingsService.returnCurrent();
+            AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return;
 
             String backupRuta = settings.getBackupRuta();
@@ -168,7 +170,7 @@ public class BackupService implements Serializable {
     public @Nonnull List<String> listarBackups() {
         List<String> result = new ArrayList<>();
         try {
-            AppSettings settings = appSettingsService.returnCurrent();
+            AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return result;
 
             String backupRuta = settings.getBackupRuta();
@@ -202,7 +204,7 @@ public class BackupService implements Serializable {
 
     public @Nonnull String getTamanioBackup(@Nonnull String filename) {
         try {
-            AppSettings settings = appSettingsService.returnCurrent();
+            AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return "0 B";
 
             String backupRuta = settings.getBackupRuta();
@@ -220,7 +222,7 @@ public class BackupService implements Serializable {
 
     public @Nullable Path getBackupFilePath(@Nonnull String filename) {
         try {
-            AppSettings settings = appSettingsService.returnCurrent();
+            AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return null;
             String backupRuta = settings.getBackupRuta();
             if (backupRuta == null || backupRuta.isBlank()) return null;
@@ -235,7 +237,7 @@ public class BackupService implements Serializable {
     }
 
     public @Nullable AppSettings getSettings() {
-        return appSettingsService.returnCurrent();
+        return appSettingsService.findOrCreateCurrent();
     }
 
     public void saveSettings(@Nonnull AppSettings settings) {
@@ -251,8 +253,19 @@ public class BackupService implements Serializable {
     }
 
     private String getDefaultBackupPath() {
-        String userHome = System.getProperty("user.home");
-        return userHome + File.separator + "Documents" + File.separator + "Mercurius" + File.separator + "backups";
+        String mainDir;
+        try {
+            javax.swing.filechooser.FileSystemView fsv = javax.swing.filechooser.FileSystemView.getFileSystemView();
+            mainDir = fsv.getDefaultDirectory().getAbsolutePath();
+        } catch (Exception e) {
+            mainDir = System.getProperty("user.home") + File.separator + "Documents";
+        }
+
+        AppSettings settings = appSettingsService.findOrCreateCurrent();
+        String profileName = (settings != null && settings.getNombrePerfil() != null)
+            ? settings.getNombrePerfil() : "default";
+
+        return mainDir + File.separator + "Mercurius" + File.separator + profileName + File.separator + "backups";
     }
 
     private DbConnectionInfo parseJdbcUrl(String url) {
@@ -295,5 +308,55 @@ public class BackupService implements Serializable {
         String host;
         int port;
         String dbName;
+    }
+
+    private String resolveMysqldump() {
+        if (resolvedMysqldump != null) {
+            return resolvedMysqldump;
+        }
+
+        try {
+            ProcessBuilder test = new ProcessBuilder("mysqldump", "--version");
+            test.redirectErrorStream(true);
+            Process p = test.start();
+            int code = p.waitFor();
+            p.getInputStream().close();
+            if (code == 0) {
+                resolvedMysqldump = "mysqldump";
+                return resolvedMysqldump;
+            }
+        } catch (Exception ignored) {}
+
+        String os = System.getProperty("os.name", "").toLowerCase();
+        List<String> candidates = new ArrayList<>();
+
+        if (os.contains("win")) {
+            String progFiles = System.getenv("ProgramFiles");
+            String progFilesX86 = System.getenv("ProgramFiles(x86)");
+            String[] roots = { progFiles, progFilesX86 };
+            for (String root : roots) {
+                if (root == null) continue;
+                candidates.add(root + "\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe");
+                candidates.add(root + "\\MySQL\\MySQL Server 8.4\\bin\\mysqldump.exe");
+                candidates.add(root + "\\MySQL\\MySQL Server 9.0\\bin\\mysqldump.exe");
+                candidates.add(root + "\\MySQL\\MySQL Workbench 8.0\\mysqldump.exe");
+            }
+            candidates.add("C:\\mysql\\bin\\mysqldump.exe");
+        } else {
+            candidates.add("/usr/bin/mysqldump");
+            candidates.add("/usr/local/bin/mysqldump");
+            candidates.add("/opt/homebrew/bin/mysqldump");
+            candidates.add("/usr/local/mysql/bin/mysqldump");
+        }
+
+        for (String candidate : candidates) {
+            if (Files.exists(Paths.get(candidate))) {
+                resolvedMysqldump = candidate;
+                return resolvedMysqldump;
+            }
+        }
+
+        resolvedMysqldump = "mysqldump";
+        return resolvedMysqldump;
     }
 }

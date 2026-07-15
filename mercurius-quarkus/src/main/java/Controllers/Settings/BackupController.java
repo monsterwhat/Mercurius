@@ -14,6 +14,7 @@ import jakarta.faces.view.ViewScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
@@ -74,10 +75,13 @@ public class BackupController implements Serializable {
     }
 
     private void loadSettings() {
-        currentSettings = backupService.getSettings();
-        if (currentSettings == null) {
-            currentSettings = new AppSettings();
+        currentSettings = appSettingsService.findOrCreateCurrent();
+
+        String computedPath = getBackupDirPath();
+        if (currentSettings.getBackupRuta() == null || currentSettings.getBackupRuta().isBlank()) {
+            currentSettings.setBackupRuta(computedPath);
         }
+
         backupEnabled = Boolean.TRUE.equals(currentSettings.getBackupHabilitado());
         if (currentSettings.getBackupUltimoEjecutado() != null) {
             lastBackup = currentSettings.getBackupUltimoEjecutado()
@@ -85,6 +89,22 @@ public class BackupController implements Serializable {
         } else {
             lastBackup = "Nunca";
         }
+    }
+
+    @Nonnull
+    public String getBackupDirPath() {
+        String mainDir;
+        try {
+            javax.swing.filechooser.FileSystemView fsv = javax.swing.filechooser.FileSystemView.getFileSystemView();
+            mainDir = fsv.getDefaultDirectory().getAbsolutePath();
+        } catch (Exception e) {
+            mainDir = System.getProperty("user.home") + File.separator + "Documents";
+        }
+
+        String profileName = (currentSettings != null && currentSettings.getNombrePerfil() != null)
+            ? currentSettings.getNombrePerfil() : "default";
+
+        return mainDir + File.separator + "Mercurius" + File.separator + profileName + File.separator + "backups";
     }
 
     public void executeBackupNow() {
@@ -111,6 +131,7 @@ public class BackupController implements Serializable {
 
         if (currentSettings != null) {
             currentSettings.setBackupHabilitado(backupEnabled);
+            currentSettings.setEstatus(true);
             backupService.saveSettings(currentSettings);
 
             FacesContext.getCurrentInstance().addMessage(null,
