@@ -93,7 +93,13 @@ public class TipoCambioService extends GService<TipoCambio> {
     @Nonnull
     private LocalDateTime parseFechaVenta(@Nonnull JsonNode ventaNode) {
         String fecha = ventaNode.get("fecha").asText();
-        return LocalDateTime.parse(fecha.substring(0, 10) + "T" + fecha.substring(11));
+        // API may return "2026-07-15" (10 chars) or "2026-07-15 00:00:00" (19 chars) or ISO format
+        if (fecha.length() <= 10) {
+            return LocalDateTime.parse(fecha + "T00:00:00");
+        }
+        String datePart = fecha.substring(0, 10);
+        String timePart = fecha.substring(11).replace(" ", "T");
+        return LocalDateTime.parse(datePart + "T" + timePart);
     }
 
     private boolean tipoCambioExistsForDate(@Nonnull LocalDateTime date) {
