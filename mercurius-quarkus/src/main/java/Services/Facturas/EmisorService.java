@@ -12,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Named
@@ -31,6 +32,7 @@ public class EmisorService extends GService<Emisor> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull Emisor entity) {
         try {
             em.merge(entity);
@@ -40,6 +42,7 @@ public class EmisorService extends GService<Emisor> {
     }
 
     @Override
+    @Transactional
     public void delete(@Nonnull Emisor entity) {
         try {
             if (!em.contains(entity)) {
@@ -57,6 +60,7 @@ public class EmisorService extends GService<Emisor> {
     }
 
     @Override
+    @Transactional
     public void update(@Nonnull Emisor entity) {
         try {
             em.merge(entity);
@@ -99,6 +103,7 @@ public class EmisorService extends GService<Emisor> {
     }
 
     @Nullable
+    @Transactional
     public Emisor createIfNotExist(@Nonnull Emisor emisor) {
         try {
             // Correct query to join identificacion and check the identificacion.numero field

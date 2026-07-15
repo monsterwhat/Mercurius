@@ -12,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Named
@@ -30,7 +31,8 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
     public void init() {
     }
 
-@Override
+@Transactional
+    @Override
     public void create(@Nonnull LineaDetalle entity) {
         try {
             em.persist(entity);
@@ -43,6 +45,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
         }
     }
 
+    @Transactional
     @Override
     public void delete(@Nonnull LineaDetalle entity) {
         try {
@@ -60,6 +63,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
         }
     }
 
+    @Transactional
     @Override
     public void update(@Nonnull LineaDetalle entity) {
         try {
@@ -121,6 +125,7 @@ public List<LineaDetalle> listAllWhereID(@Nonnull Long detalleServicioId) {
         }
     }
     
+    @Transactional
     @Nullable
     public LineaDetalle createAndReturnEntity(@Nonnull LineaDetalle entity) {
         try {

@@ -7,6 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 
 /**
  *
@@ -25,6 +26,7 @@ public class ImpuestoService extends GService<Impuesto>{
     }
     
     @Override
+    @Transactional
     public void create(@Nonnull Impuesto impuesto) {
         try {
             em.persist(impuesto);

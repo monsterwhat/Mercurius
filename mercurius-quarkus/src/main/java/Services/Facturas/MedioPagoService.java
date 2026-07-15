@@ -7,6 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 
 /**
  *
@@ -24,6 +25,7 @@ public class MedioPagoService extends GService<MedioPago>  {
         return MedioPago.class;
     }
     
+    @Transactional
     @Override
     public void create(@Nonnull MedioPago medioPago) {
         try {
