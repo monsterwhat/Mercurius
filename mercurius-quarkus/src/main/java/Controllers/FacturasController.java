@@ -337,6 +337,8 @@ public class FacturasController implements Serializable {
     public void clearCache() {
         facturas = null;
         facturasDetalladas = null;
+        facturasPendientes = null;
+        facturasVencidas = null;
     }
 
     public @Nonnull List<ComprobantesRecibidos> getFilteredFacturas() {
