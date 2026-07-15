@@ -172,6 +172,9 @@ public class FacturasController implements Serializable {
                 if (factura.getResumen().getTotalImpuesto() != null) {
                     reportTotalImpuesto = reportTotalImpuesto.add(factura.getResumen().getTotalImpuesto());
                 }
+                if (factura.getResumen().getTotalMercanciasGravadas() != null) {
+                    reportTotalBaseImponible = reportTotalBaseImponible.add(factura.getResumen().getTotalMercanciasGravadas());
+                }
             }
         }
     }
