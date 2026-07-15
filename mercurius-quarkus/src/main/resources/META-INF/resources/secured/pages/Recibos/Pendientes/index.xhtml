@@ -35,9 +35,9 @@
                                          filterBy="#{facturasController.filterBy}" reflow="true"
                                          selection="#{facturasController.selectedFactura}" rowKey="#{factura.id}">
 
-                                <p:ajax event="rowSelect" update="recibos selectedFacturaDetallado"/>
-                                <p:ajax event="rowUnselect" update="recibos selectedFacturaDetallado" />
-                                <p:ajax event="toggleSelect" update="recibos selectedFacturaDetallado" />
+                                <p:ajax event="rowSelect" update=":recibos :selectedFacturaDetallado"/>
+                                <p:ajax event="rowUnselect" update=":recibos :selectedFacturaDetallado" />
+                                <p:ajax event="toggleSelect" update=":recibos :selectedFacturaDetallado" />
 
                                 <p:autoUpdate/>
 
