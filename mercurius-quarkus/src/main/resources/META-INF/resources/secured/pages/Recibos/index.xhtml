@@ -230,26 +230,26 @@
                                         </f:facet>
 
                                         <p:column exportable="false" style="width: 100px; text-align: center;">
-                                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="status-chip status-active" rendered="#{factura.status}"/>
+                                            <p:chip id="ActiveChip" icon="pi pi-check" styleClass="status-chip status-active" style="#{factura.status ? '' : 'display:none'}"/>
                                             <p:tooltip for="ActiveChip" value="Activa" position="top"/>
-                                            <p:chip id="inActiveChip" icon="pi pi-times" styleClass="status-chip status-inactive" rendered="#{!factura.status}"/>
+                                            <p:chip id="inActiveChip" icon="pi pi-times" styleClass="status-chip status-inactive" style="#{!factura.status ? '' : 'display:none'}"/>
                                             <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
 
-                                            <p:chip id="ProcessedChip" icon="pi pi-check" styleClass="status-chip status-processed" rendered="#{factura.processed}"/>
+                                            <p:chip id="ProcessedChip" icon="pi pi-check" styleClass="status-chip status-processed" style="#{factura.processed ? '' : 'display:none'}"/>
                                             <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
-                                            <p:chip id="unProcessedChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.processed}"/>
+                                            <p:chip id="unProcessedChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" style="#{!factura.processed ? '' : 'display:none'}"/>
                                             <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
 
-                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" rendered="#{factura.paid}"/>
+                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" style="#{factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="PaidChip" value="Pagada" position="top"/>
-                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.paid}"/>
+                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" style="#{!factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
                                         </p:column>
 
                                         <p:column headerText="Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
                                             <h:outputText value="#{factura.encabezado.numeroConsecutivo}" style="font-weight: 500;"/>
                                         </p:column>
-                                        <p:column headerText="Fecha">
+                                        <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
                                             <h:outputText value="#{factura.encabezado.fechaEmision}" rendered="#{factura.encabezado.fechaEmision != null}"/>
                                         </p:column>
                                         <p:column headerText="Emisor" sortBy="#{factura.encabezado.emisor.nombre}">
@@ -270,31 +270,31 @@
                                             <div class="table-actions">
                                                  <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-wallet" 
                                                                   disabled="#{factura.paid}" process="@this"
-                                                                  actionListener="#{facturasController.paySelectedFactura()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Marcar como pagada">
-                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
-                                                </p:commandButton>
-                                                <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-sync" 
-                                                                  disabled="#{factura.processed}" process="@this"
-                                                                  actionListener="#{facturasController.processSelectedFactura()}" update="@this :recibosPagadas :recibosProcesadas :recibosVencidos :statsForm :resumen :growl"
+actionListener="#{facturasController.paySelectedFactura()}" update="@this :recibosTodas :statsForm :resumen :growl"
+                                                                   title="Marcar como pagada">
+                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
+                                                 </p:commandButton>
+                                                 <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-sync" 
+                                                                   disabled="#{factura.processed}" process="@this"
+                                                                    actionListener="#{facturasController.processSelectedFactura()}" update="@this :recibosTodas :statsForm :resumen :growl"
                                                                   title="Procesar">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
                                                                   process="@this"
-                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Aceptar factura (Mensaje Receptor)">
+                                                                   actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :recibosTodas :statsForm :resumen :growl"
+                                                                   title="Aceptar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Rechazar factura (Mensaje Receptor)">
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :recibosTodas :statsForm :resumen :growl"
+                                                                   title="Rechazar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
                                                                   title="Ver detalles">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
@@ -334,21 +334,21 @@
                                         </f:facet>
 
                                         <p:column exportable="false" style="width: 100px; text-align: center;">
-                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" rendered="#{factura.paid}"/>
+                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" style="#{factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="PaidChip" value="Pagada" position="top"/>
-                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.paid}"/>
+                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" style="#{!factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
 
-                                            <p:chip id="ProcessedChip" icon="pi pi-check" styleClass="status-chip status-processed" rendered="#{factura.processed}"/>
+                                            <p:chip id="ProcessedChip" icon="pi pi-check" styleClass="status-chip status-processed" style="#{factura.processed ? '' : 'display:none'}"/>
                                             <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
-                                            <p:chip id="unProcessedChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.processed}"/>
+                                            <p:chip id="unProcessedChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" style="#{!factura.processed ? '' : 'display:none'}"/>
                                             <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
                                         </p:column>
 
                                         <p:column headerText="Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
                                             <h:outputText value="#{factura.encabezado.numeroConsecutivo}" style="font-weight: 500;"/>
                                         </p:column>
-                                        <p:column headerText="Fecha">
+                                        <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
                                             <h:outputText value="#{factura.encabezado.fechaEmision}" rendered="#{factura.encabezado.fechaEmision != null}"/>
                                         </p:column>
                                         <p:column headerText="Emisor" sortBy="#{factura.encabezado.emisor.nombre}">
@@ -363,22 +363,22 @@
 
                                         <p:column headerText="Acciones" exportable="false" style="width: 180px; text-align: center;">
                                             <div class="table-actions">
-                                                <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Aceptar factura (Mensaje Receptor)">
+                                        <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :recibosPagadas :statsForm :resumen :growl"
+                                                                   title="Aceptar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Rechazar factura (Mensaje Receptor)">
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :recibosPagadas :statsForm :resumen :growl"
+                                                                   title="Rechazar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
-                                                                  title="Ver detalles">
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
+                                                                   title="Ver detalles">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                             </div>
@@ -417,16 +417,16 @@
                                         </f:facet>
 
                                         <p:column exportable="false" style="width: 100px; text-align: center;">
-                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" rendered="#{factura.paid}"/>
+                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" style="#{factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="PaidChip" value="Pagada" position="top"/>
-                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.paid}"/>
+                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" style="#{!factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
                                         </p:column>
 
                                         <p:column headerText="Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
                                             <h:outputText value="#{factura.encabezado.numeroConsecutivo}" style="font-weight: 500;"/>
                                         </p:column>
-                                        <p:column headerText="Fecha">
+                                        <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
                                             <h:outputText value="#{factura.encabezado.fechaEmision}" rendered="#{factura.encabezado.fechaEmision != null}"/>
                                         </p:column>
                                         <p:column headerText="Emisor" sortBy="#{factura.encabezado.emisor.nombre}">
@@ -445,22 +445,22 @@
 
                                         <p:column headerText="Acciones" exportable="false" style="width: 180px; text-align: center;">
                                             <div class="table-actions">
-                                                <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Aceptar factura (Mensaje Receptor)">
+                                        <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :recibosProcesadas :statsForm :resumen :growl"
+                                                                   title="Aceptar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Rechazar factura (Mensaje Receptor)">
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :recibosProcesadas :statsForm :resumen :growl"
+                                                                   title="Rechazar factura (Mensaje Receptor)">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                                 <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-eye" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
-                                                                  title="Ver detalles">
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.showDetailsDialog()}" update="@this :selectedFacturaDetallado"
+                                                                   title="Ver detalles">
                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                 </p:commandButton>
                                             </div>
@@ -498,16 +498,16 @@
                                         </f:facet>
 
                                         <p:column exportable="false" style="width: 80px; text-align: center;">
-                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" rendered="#{factura.paid}"/>
+                                            <p:chip id="PaidChip" icon="pi pi-wallet" styleClass="status-chip status-active" style="#{factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="PaidChip" value="Pagada" position="top"/>
-                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" rendered="#{!factura.paid}"/>
+                                            <p:chip id="unPaidChip" icon="pi pi-clock" styleClass="status-chip status-unprocessed" style="#{!factura.paid ? '' : 'display:none'}"/>
                                             <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
                                         </p:column>
 
                                         <p:column headerText="Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
                                             <h:outputText value="#{factura.encabezado.numeroConsecutivo}" style="font-weight: 500;"/>
                                         </p:column>
-                                        <p:column headerText="Fecha">
+                                        <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
                                             <h:outputText value="#{factura.encabezado.fechaEmision}" rendered="#{factura.encabezado.fechaEmision != null}"/>
                                         </p:column>
                                         <p:column headerText="Emisor" sortBy="#{factura.encabezado.emisor.nombre}">
@@ -521,19 +521,19 @@
                                             <div class="table-actions">
                                                 <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-wallet" 
                                                                  disabled="#{factura.paid}" process="@this"
-                                                                  actionListener="#{facturasController.paySelectedFactura()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Marcar como pagada">
+                                                                   actionListener="#{facturasController.paySelectedFactura()}" update="@this :recibosVencidos :statsForm :resumen :growl"
+                                                                   title="Marcar como pagada">
                                                      <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
                                                  </p:commandButton>
                                                  <p:commandButton styleClass="table-action-btn button is-info" icon="pi pi-check-circle" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
-                                                                  title="Aceptar factura (Mensaje Receptor)">
-                                                     <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
-                                                 </p:commandButton>
-                                                 <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
-                                                                  process="@this"
-                                                                  actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :statsForm :resumen :growl"
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.aceptarFacturaRecibida()}" update="@this :recibosVencidos :statsForm :resumen :growl"
+                                                                   title="Aceptar factura (Mensaje Receptor)">
+                                                    <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
+                                                </p:commandButton>
+                                                <p:commandButton styleClass="table-action-btn button is-danger" icon="pi pi-times-circle" 
+                                                                   process="@this"
+                                                                   actionListener="#{facturasController.rechazarFacturaRecibida()}" update="@this :recibosVencidos :statsForm :resumen :growl"
                                                                   title="Rechazar factura (Mensaje Receptor)">
                                                      <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                                  </p:commandButton>

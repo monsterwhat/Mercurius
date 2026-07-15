@@ -50,22 +50,22 @@
 
 
                                 <p:column exportable="false">
-                                    <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.status}"/>
+                                    <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500) #{factura.status ? '' : ';display:none'}"/>
                                     <p:tooltip for="ActiveChip" value="Activa" position="top"/>
 
-                                    <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500);" rendered="#{!factura.status}"/>
+                                    <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500); #{!factura.status ? '' : 'display:none'}"/>
                                     <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
 
-                                    <p:chip id="ProcessedChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.processed}"/>
+                                    <p:chip id="ProcessedChip" icon="pi pi-check" style="background: var(--green-500) #{factura.processed ? '' : ';display:none'}"/>
                                     <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
 
-                                    <p:chip id="unProcessedChip" icon="pi pi-clock" style="background: var(--yellow-500)" rendered="#{!factura.processed}"/>
+                                    <p:chip id="unProcessedChip" icon="pi pi-clock" style="background: var(--yellow-500) #{!factura.processed ? '' : ';display:none'}"/>
                                     <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
 
-                                    <p:chip id="PaidChip" icon="pi pi-check" style="background: var(--green-500)" rendered="#{factura.paid}"/>
+                                    <p:chip id="PaidChip" icon="pi pi-check" style="background: var(--green-500) #{factura.paid ? '' : ';display:none'}"/>
                                     <p:tooltip for="PaidChip" value="Pagada" position="top"/>
 
-                                    <p:chip id="unPaidChip" icon="pi pi-clock" style="background: var(--red-500)" rendered="#{!factura.paid}"/>
+                                    <p:chip id="unPaidChip" icon="pi pi-clock" style="background: var(--red-500) #{!factura.paid ? '' : ';display:none'}"/>
                                     <p:tooltip for="unPaidChip" value="Sin pagar" position="top"/>
                                 </p:column>
 
@@ -75,7 +75,7 @@
                                 <p:column headerText="Numero Consecutivo" sortBy="#{factura.encabezado.numeroConsecutivo}">
                                     <h:outputText value="#{factura.encabezado.numeroConsecutivo}"/>
                                 </p:column>
-                                <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}">
+                                <p:column headerText="Fecha" sortBy="#{factura.encabezado.fechaEmision}" sortBy="#{factura.encabezado.fechaEmision}">
                                     <h:outputText value="#{factura.encabezado.fechaEmision}"/>
                                 </p:column>
                                 <p:column headerText="Emisor: " sortBy="#{factura.encabezado.emisor.nombre}">
