@@ -10,6 +10,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 /**
@@ -29,6 +30,7 @@ public class EncabezadoService extends GService<Encabezado> {
     }
     
     @Override
+    @Transactional
     public void create(@Nonnull Encabezado encabezado) {
         try {
             em.merge(encabezado);
@@ -38,6 +40,7 @@ public class EncabezadoService extends GService<Encabezado> {
     }
     
     @Nullable
+    @Transactional
     public Encabezado createIfNotExists(@Nonnull Encabezado encabezado) {
         try {
             // Check if encabezado with same numeroConsecutivo exists using count query
@@ -119,6 +122,7 @@ public Encabezado getByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
     }
     
     // Method to clean up duplicate Encabezado records by numeroConsecutivo
+    @Transactional
     public int cleanDuplicateEncabezados(@Nonnull String numeroConsecutivo) {
         try {
             TypedQuery<Encabezado> query = em.createQuery(

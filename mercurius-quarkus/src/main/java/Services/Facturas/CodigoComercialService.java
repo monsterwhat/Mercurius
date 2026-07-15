@@ -4,7 +4,8 @@ import Models.Detalles.CodigoComercial;
 import Services.GService;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.persistence.PersistenceException; 
+import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 
 /**
  *
@@ -21,6 +22,7 @@ public class CodigoComercialService extends GService<CodigoComercial>{
     }
     
     @Override
+    @Transactional
     public void create(@Nonnull CodigoComercial codigoComercial) {
         try {
             this.em.persist(codigoComercial);

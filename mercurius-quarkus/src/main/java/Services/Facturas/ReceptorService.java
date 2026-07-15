@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Named
@@ -28,6 +29,7 @@ public class ReceptorService extends GService<Receptor> {
     public void init() {
     }
 
+    @Transactional
     @Override
     public void create(@Nonnull Receptor entity) {
         try {
@@ -37,6 +39,7 @@ public class ReceptorService extends GService<Receptor> {
         }
     }
 
+    @Transactional
     @Override
     public void delete(@Nonnull Receptor entity) {
         try {
@@ -54,6 +57,7 @@ public class ReceptorService extends GService<Receptor> {
         }
     }
 
+    @Transactional
     @Override
     public void update(@Nonnull Receptor entity) {
         try {
@@ -93,6 +97,7 @@ public class ReceptorService extends GService<Receptor> {
         }
     }
 
+    @Transactional
     public @Nullable Receptor createIfNotExist(@Nonnull Receptor receptor) {
         try {
             // Check if a Receptor with the same identification number already exists

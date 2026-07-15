@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Named
@@ -27,6 +28,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
     public void init() {
     }
 
+    @Transactional
     @Override
     public void create(@Nonnull ResumenFactura entity) {
         try {
@@ -36,6 +38,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
         }
     }
 
+    @Transactional
     @Override
     public void delete(@Nonnull ResumenFactura entity) {
         try {
@@ -53,6 +56,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
         }
     }
 
+    @Transactional
     @Override
     public void update(@Nonnull ResumenFactura entity) {
         try {

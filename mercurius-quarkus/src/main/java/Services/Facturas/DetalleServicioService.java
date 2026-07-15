@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Named 
@@ -30,6 +31,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull DetalleServicio entity) {
         try {
             em.merge(entity);
@@ -39,6 +41,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
     }
 
     @Override
+    @Transactional
     public void delete(@Nonnull DetalleServicio entity) {
         try {
             if (!em.contains(entity)) {
@@ -56,6 +59,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
     }
 
     @Override
+    @Transactional
     public void update(@Nonnull DetalleServicio entity) {
         try {
             em.merge(entity);
