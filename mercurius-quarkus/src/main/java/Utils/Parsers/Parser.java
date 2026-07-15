@@ -5,6 +5,8 @@ import Models.ComprobantesEmitidos;
 import Models.Detalles.CodigoComercial;
 import Models.Detalles.Descuento;
 import Models.Detalles.DetalleServicio;
+import Models.Detalles.DatosImpuestoEspecifico;
+import Models.Detalles.Exoneracion;
 import Models.Detalles.Impuesto;
 import Models.Detalles.LineaDetalle;
 import Models.Encabezado.CorreoElectronicoEmisor;
@@ -186,6 +188,23 @@ public class Parser {
             emisor.setTelefono(telefono);
             emisor.setCorreosElectronicos(correosElectronicos);
 
+            String registroFiscal = emisorNode.path("Registrofiscal8707").asText();
+            if (registroFiscal != null && !registroFiscal.isEmpty()) {
+                emisor.setRegistrofiscal8707(registroFiscal);
+            }
+
+            String otrasSenasExtranjero = emisorNode.path("OtrasSenasExtranjero").asText();
+            if (otrasSenasExtranjero != null && !otrasSenasExtranjero.isEmpty()) {
+                emisor.setOtrasSenasExtranjero(otrasSenasExtranjero);
+            }
+
+            if (!emisorNode.path("Fax").isMissingNode()) {
+                Fax fax = parseFax(emisorNode.path("Fax"));
+                if (fax != null) {
+                    emisor.setFax(fax);
+                }
+            }
+
             return emisor;
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error Parsing Emisor: " + e.getLocalizedMessage(), null, 0, "Parser.parseEmisor()", null, null);
@@ -231,6 +250,18 @@ public class Parser {
                     correoList.add(correo);
                 }
                 receptor.setCorreosElectronicos(correoList);
+            }
+
+            String otrasSenasExtranjero = receptorNode.path("OtrasSenasExtranjero").asText();
+            if (otrasSenasExtranjero != null && !otrasSenasExtranjero.isEmpty()) {
+                receptor.setOtrasSenasExtranjero(otrasSenasExtranjero);
+            }
+
+            if (!receptorNode.path("Fax").isMissingNode()) {
+                Fax fax = parseFax(receptorNode.path("Fax"));
+                if (fax != null) {
+                    receptor.setFax(fax);
+                }
             }
 
             return receptor;
@@ -390,7 +421,7 @@ public class Parser {
             LineaDetalle lineaDetalle = new LineaDetalle();
 
             int numeroLinea = lineaDetalleNode.path("NumeroLinea").asInt();
-            String codigo = lineaDetalleNode.path("Codigo").asText();
+            String codigo = lineaDetalleNode.path("CodigoCABYS").asText();
 
             List<CodigoComercial> codigosComerciales = new ArrayList<>();
             // Parse multiple CodigoComercial if present
@@ -469,18 +500,24 @@ public class Parser {
             }
 
             String montoTotalLinea = lineaDetalleNode.path("MontoTotalLinea").asText();
+            String baseImponible = lineaDetalleNode.path("BaseImponible").asText();
+            String impuestoNeto = lineaDetalleNode.path("ImpuestoNeto").asText();
+            String tipoTransaccion = lineaDetalleNode.path("TipoTransaccion").asText();
 
             lineaDetalle.setNumeroLinea(numeroLinea);
             lineaDetalle.setCodigoCabys(codigo);
             lineaDetalle.setCodigosComerciales(codigosComerciales);
             lineaDetalle.setCantidad(new BigDecimal(cantidad));
             lineaDetalle.setUnidadMedida(unidadMedida);
+            lineaDetalle.setTipoTransaccion(tipoTransaccion);
             lineaDetalle.setUnidadMedidaComercial(unidadMedidaComercial);
             lineaDetalle.setDetalle(detalle);
             lineaDetalle.setPrecioUnitario(new BigDecimal(precioUnitario));
             lineaDetalle.setMontoTotal(new BigDecimal(montoTotal));
             lineaDetalle.setDescuentos(descuentos);
             lineaDetalle.setSubTotal(new BigDecimal(subTotal));
+            lineaDetalle.setBaseImponible(baseImponible.isEmpty() ? null : new BigDecimal(baseImponible));
+            lineaDetalle.setImpuestoNeto(impuestoNeto.isEmpty() ? null : new BigDecimal(impuestoNeto));
             lineaDetalle.setImpuestos(impuestos);
             lineaDetalle.setMontoTotalLinea(new BigDecimal(montoTotalLinea));
 
@@ -522,9 +559,138 @@ public class Parser {
             impuesto.setTarifa(new BigDecimal(tarifa.trim()));
             impuesto.setMonto(new BigDecimal(monto.trim()));
 
+            String codigoImpuestoOtro = impuestoNode.path("CodigoImpuestoOtro").asText();
+            if (codigoImpuestoOtro != null && !codigoImpuestoOtro.isEmpty()) {
+                impuesto.setCodigoImpuestoOtro(codigoImpuestoOtro);
+            }
+
+            String factorCalculoIVA = impuestoNode.path("FactorCalculoIVA").asText();
+            if (factorCalculoIVA != null && !factorCalculoIVA.isEmpty()) {
+                impuesto.setFactorCalculoIVA(new BigDecimal(factorCalculoIVA.trim()));
+            }
+
+            String montoExportacion = impuestoNode.path("MontoExportacion").asText();
+            if (montoExportacion != null && !montoExportacion.isEmpty()) {
+                impuesto.setMontoExportacion(new BigDecimal(montoExportacion.trim()));
+            }
+
+            if (!impuestoNode.path("DatosImpuestoEspecifico").isMissingNode()) {
+                DatosImpuestoEspecifico datos = parseDatosImpuestoEspecifico(impuestoNode.path("DatosImpuestoEspecifico"));
+                if (datos != null) {
+                    impuesto.setDatosImpuestoEspeficio(datos);
+                }
+            }
+
+            if (!impuestoNode.path("Exoneracion").isMissingNode()) {
+                Exoneracion exoneracion = parseExoneracion(impuestoNode.path("Exoneracion"));
+                if (exoneracion != null) {
+                    exoneracion.setImpuesto(impuesto);
+                    impuesto.setExoneracion(exoneracion);
+                }
+            }
+
             return impuesto;
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error parsing impuestos: " + e.getLocalizedMessage(), null, 0, "Parser.parseImpuesto()", null, null);
+            return null;
+        }
+    }
+
+    @Nullable
+    public DatosImpuestoEspecifico parseDatosImpuestoEspecifico(@Nonnull JsonNode datosNode) {
+        try {
+            DatosImpuestoEspecifico datos = new DatosImpuestoEspecifico();
+
+            String cantidad = datosNode.path("CantidadUnidadMedida").asText();
+            if (cantidad != null && !cantidad.isEmpty()) {
+                datos.setCantidadUnidadMedida(new BigDecimal(cantidad.trim()));
+            }
+
+            String porcentaje = datosNode.path("Porcentaje").asText();
+            if (porcentaje != null && !porcentaje.isEmpty()) {
+                datos.setPorcentaje(new BigDecimal(porcentaje.trim()));
+            }
+
+            String proporcion = datosNode.path("Proporcion").asText();
+            if (proporcion != null && !proporcion.isEmpty()) {
+                datos.setProporcion(new BigDecimal(proporcion.trim()));
+            }
+
+            String volumen = datosNode.path("VolumenUnidadConsumo").asText();
+            if (volumen != null && !volumen.isEmpty()) {
+                datos.setVolumenUnidadConsumo(new BigDecimal(volumen.trim()));
+            }
+
+            String impuestoUnidad = datosNode.path("ImpuestoUnidad").asText();
+            if (impuestoUnidad != null && !impuestoUnidad.isEmpty()) {
+                datos.setImpuestoUnidad(new BigDecimal(impuestoUnidad.trim()));
+            }
+
+            return datos;
+        } catch (RuntimeException e) {
+            alertasService.registrarAlerta("Error", "Error parsing datos impuesto especifico: " + e.getLocalizedMessage(), null, 0, "Parser.parseDatosImpuestoEspecifico()", null, null);
+            return null;
+        }
+    }
+
+    @Nullable
+    public Exoneracion parseExoneracion(@Nonnull JsonNode exoneracionNode) {
+        try {
+            Exoneracion exoneracion = new Exoneracion();
+
+            String tipoDocumento = exoneracionNode.path("TipoDocumentoEX1").asText();
+            if (tipoDocumento != null && !tipoDocumento.isEmpty()) {
+                exoneracion.setTipoDocumentoEX1(tipoDocumento);
+            }
+
+            String tipoDocumentoOtro = exoneracionNode.path("TipoDocumentoOtro").asText();
+            if (tipoDocumentoOtro != null && !tipoDocumentoOtro.isEmpty()) {
+                exoneracion.setTipoDocumentoOTRO(tipoDocumentoOtro);
+            }
+
+            String numeroDocumento = exoneracionNode.path("NumeroDocumento").asText();
+            if (numeroDocumento != null && !numeroDocumento.isEmpty()) {
+                exoneracion.setNumeroDocumento(numeroDocumento);
+            }
+
+            String articulo = exoneracionNode.path("Articulo").asText();
+            if (articulo != null && !articulo.isEmpty()) {
+                exoneracion.setArticulo(new BigDecimal(articulo.trim()));
+            }
+
+            String inciso = exoneracionNode.path("Inciso").asText();
+            if (inciso != null && !inciso.isEmpty()) {
+                exoneracion.setInciso(new BigDecimal(inciso.trim()));
+            }
+
+            String nombreInstitucion = exoneracionNode.path("NombreInstitucion").asText();
+            if (nombreInstitucion != null && !nombreInstitucion.isEmpty()) {
+                exoneracion.setNombreInstitucion(nombreInstitucion);
+            }
+
+            String nombreInstitucionOtros = exoneracionNode.path("NombreInstitucionOtros").asText();
+            if (nombreInstitucionOtros != null && !nombreInstitucionOtros.isEmpty()) {
+                exoneracion.setNombreInstitucionOtros(nombreInstitucionOtros);
+            }
+
+            String fechaEmision = exoneracionNode.path("FechaEmisionEx").asText();
+            if (fechaEmision != null && !fechaEmision.isEmpty()) {
+                exoneracion.setFechaEmisionEX(parseFechaEmision(fechaEmision));
+            }
+
+            String tarifaExonerada = exoneracionNode.path("TarifaExonerada").asText();
+            if (tarifaExonerada != null && !tarifaExonerada.isEmpty()) {
+                exoneracion.setTarifaExonerada(new BigDecimal(tarifaExonerada.trim()));
+            }
+
+            String montoExoneracion = exoneracionNode.path("MontoExoneracion").asText();
+            if (montoExoneracion != null && !montoExoneracion.isEmpty()) {
+                exoneracion.setMontoExoneracion(new BigDecimal(montoExoneracion.trim()));
+            }
+
+            return exoneracion;
+        } catch (RuntimeException e) {
+            alertasService.registrarAlerta("Error", "Error parsing exoneracion: " + e.getLocalizedMessage(), null, 0, "Parser.parseExoneracion()", null, null);
             return null;
         }
     }
@@ -546,12 +712,15 @@ public class Parser {
             String totalServiciosGravados = resumenFacturaNode.path("TotalServGravados").asText();
             String totalServiciosExentos = resumenFacturaNode.path("TotalServExentos").asText();
             String totalServiciosExonerados = resumenFacturaNode.path("TotalServExonerado").asText();
+            String totalServNoSujeto = resumenFacturaNode.path("TotalServNoSujeto").asText();
             String totalMercanciasGravadas = resumenFacturaNode.path("TotalMercanciasGravadas").asText();
             String totalMercanciasExentas = resumenFacturaNode.path("TotalMercanciasExentas").asText();
             String totalMercanciaExonerada = resumenFacturaNode.path("TotalMercExonerada").asText();
+            String totalMercNoSujeta = resumenFacturaNode.path("TotalMercNoSujeta").asText();
             String totalGravado = resumenFacturaNode.path("TotalGravado").asText();
             String totalExento = resumenFacturaNode.path("TotalExento").asText();
             String totalExonerado = resumenFacturaNode.path("TotalExonerado").asText();
+            String totalNoSujeto = resumenFacturaNode.path("TotalNoSujeto").asText();
             String totalVenta = resumenFacturaNode.path("TotalVenta").asText();
             String totalDescuentos = resumenFacturaNode.path("TotalDescuentos").asText();
             String totalVentaNeta = resumenFacturaNode.path("TotalVentaNeta").asText();
@@ -564,12 +733,15 @@ public class Parser {
             BigDecimal bigDecimalTotalServiciosGravados = totalServiciosGravados.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServiciosGravados);
             BigDecimal bigDecimalTotalServiciosExentos = totalServiciosExentos.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServiciosExentos);
             BigDecimal bigDecimalTotalServiciosExonerados = totalServiciosExonerados.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServiciosExonerados);
+            BigDecimal bigDecimalTotalServNoSujeto = totalServNoSujeto.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServNoSujeto);
             BigDecimal bigDecimalTotalMercanciasGravadas = totalMercanciasGravadas.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalMercanciasGravadas);
             BigDecimal bigDecimalTotalMercanciasExentas = totalMercanciasExentas.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalMercanciasExentas);
             BigDecimal bigDecimalTotalMercanciaExonerada = totalMercanciaExonerada.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalMercanciaExonerada);
+            BigDecimal bigDecimalTotalMercNoSujeta = totalMercNoSujeta.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalMercNoSujeta);
             BigDecimal bigDecimalTotalGravado = totalGravado.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalGravado);
             BigDecimal bigDecimalTotalExento = totalExento.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalExento);
             BigDecimal bigDecimalTotalExonerado = totalExonerado.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalExonerado);
+            BigDecimal bigDecimalTotalNoSujeto = totalNoSujeto.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalNoSujeto);
             BigDecimal bigDecimalTotalVenta = totalVenta.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalVenta);
             BigDecimal bigDecimalTotalDescuentos = totalDescuentos.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalDescuentos);
             BigDecimal bigDecimalTotalVentaNeta = totalVentaNeta.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalVentaNeta);
@@ -584,12 +756,15 @@ public class Parser {
             resumenFactura.setTotalServGravados(bigDecimalTotalServiciosGravados);
             resumenFactura.setTotalServExentos(bigDecimalTotalServiciosExentos);
             resumenFactura.setTotalServExonerado(bigDecimalTotalServiciosExonerados);
+            resumenFactura.setTotalServNoSujeto(bigDecimalTotalServNoSujeto);
             resumenFactura.setTotalMercanciasGravadas(bigDecimalTotalMercanciasGravadas);
             resumenFactura.setTotalMercanciasExentas(bigDecimalTotalMercanciasExentas);
             resumenFactura.setTotalMercExonerada(bigDecimalTotalMercanciaExonerada);
+            resumenFactura.setTotalMercNoSujeta(bigDecimalTotalMercNoSujeta);
             resumenFactura.setTotalGravado(bigDecimalTotalGravado);
             resumenFactura.setTotalExento(bigDecimalTotalExento);
             resumenFactura.setTotalExonerado(bigDecimalTotalExonerado);
+            resumenFactura.setTotalNoSujeto(bigDecimalTotalNoSujeto);
             resumenFactura.setTotalVenta(bigDecimalTotalVenta);
             resumenFactura.setTotalDescuentos(bigDecimalTotalDescuentos);
             resumenFactura.setTotalVentaNeta(bigDecimalTotalVentaNeta);
@@ -1055,17 +1230,21 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
                 if (detalles.getLineasDetalle() != null) {
                     for (LineaDetalle original : detalles.getLineasDetalle()) {
                         LineaDetalle nueva = new LineaDetalle();
-nueva.setCantidad(original.getCantidad());
+                        nueva.setNumeroLinea(original.getNumeroLinea());
+                        nueva.setCantidad(original.getCantidad());
                         nueva.setCodigoCabys(original.getCodigoCabys());
-                        // codigosComerciales will be copied with deep copy below
                         nueva.setDetalle(original.getDetalle());
-                        // descuentos will be copied with deep copy below
                         nueva.setMontoTotal(original.getMontoTotal()); 
                         nueva.setPrecioUnitario(original.getPrecioUnitario());
                         nueva.setSubTotal(original.getSubTotal());
                         nueva.setUnidadMedida(original.getUnidadMedida());
+                        nueva.setTipoTransaccion(original.getTipoTransaccion());
                         nueva.setUnidadMedidaComercial(original.getUnidadMedidaComercial());
                         nueva.setMontoTotalLinea(original.getMontoTotalLinea());
+                        nueva.setBaseImponible(original.getBaseImponible());
+                        nueva.setImpuestoNeto(original.getImpuestoNeto());
+                        nueva.setIvaCobradoFabrica(original.getIvaCobradoFabrica());
+                        nueva.setImpuestoAsumidoEmisorFabrica(original.getImpuestoAsumidoEmisorFabrica());
                         
 // Copy collections with proper deep copies and bidirectional relationships
                         if (original.getCodigosComerciales() != null) {
@@ -1103,6 +1282,7 @@ nueva.setCantidad(original.getCantidad());
                                 newImpuesto.setFactorCalculoIVA(impuesto.getFactorCalculoIVA());
                                 newImpuesto.setDatosImpuestoEspeficio(impuesto.getDatosImpuestoEspeficio());
                                 newImpuesto.setMonto(impuesto.getMonto());
+                                newImpuesto.setMontoExportacion(impuesto.getMontoExportacion());
                                 newImpuesto.setLineaDetalle(nueva);
                                 newImpuestos.add(newImpuesto);
                             }
