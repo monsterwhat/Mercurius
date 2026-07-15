@@ -12,7 +12,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException; 
-import jakarta.persistence.PersistenceException;
+import jakarta.persistence.PersistenceException; 
+import jakarta.transaction.Transactional;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -40,6 +41,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     }
 
     @Override
+    @Transactional
     public void create(ComprobantesRecibidos entity) {
         try {
             em.persist(entity);
@@ -54,6 +56,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     
     // Method to create ComprobantesRecibidos with pre-persisted related entities
     // Uses proper cascading to ensure atomic transaction - if any entity fails, all rollback
+    @Transactional
     @Nonnull
     public PrevalidationResult createWithRelatedEntities(@Nonnull ComprobantesRecibidos entity, @Nonnull Encabezado encabezado, @Nonnull ResumenFactura resumenFactura) {
         PrevalidationResult prevalidation = null;
@@ -88,6 +91,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     }
 
     @Override
+    @Transactional
     public void delete(ComprobantesRecibidos entity) {
         try {
             if (!em.contains(entity)) {
@@ -105,6 +109,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     }
 
     @Override
+    @Transactional
     public void update(ComprobantesRecibidos entity) {
         try {
             em.merge(entity);
@@ -113,6 +118,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         }
     }
     
+    @Transactional
     public void softDelete(@Nonnull ComprobantesRecibidos entity) {
         try {
             // Find the item by its ID
@@ -130,6 +136,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         }
     }
     
+    @Transactional
     public void toggle(@Nonnull ComprobantesRecibidos entity){
         try {
             // Find the item by its ID

@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import jakarta.transaction.Transactional;
 import java.util.List;
 
 @Named
@@ -54,6 +55,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
     /**
      * Crea una orden de compra con sus detalles
      */
+    @Transactional
     public void crearOrden(@Nonnull OrdenCompra orden, @Nonnull List<OrdenCompraDetalle> detalles) {
         try {
             orden.setDetalles(detalles);
@@ -78,6 +80,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
     /**
      * Cambia el estado de una orden validando la transición
      */
+    @Transactional
     public void cambiarEstado(@Nonnull OrdenCompra orden, @Nonnull String nuevoEstado) {
         try {
             OrdenCompra existing = em.find(getEntityClass(), orden.getId());
@@ -143,6 +146,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
     /**
      * Marca una orden como recibida
      */
+    @Transactional
     public void recibirOrden(@Nonnull OrdenCompra orden) {
         try {
             OrdenCompra existing = em.find(getEntityClass(), orden.getId());
@@ -162,6 +166,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
     /**
      * Cancela una orden con motivo
      */
+    @Transactional
     public void cancelarOrden(@Nonnull OrdenCompra orden, @Nullable String motivo) {
         try {
             OrdenCompra existing = em.find(getEntityClass(), orden.getId());
@@ -212,6 +217,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
     /**
      * Soft delete: marca status como false
      */
+    @Transactional
     public void softDelete(@Nonnull OrdenCompra entity) {
         try {
             OrdenCompra existingItem = em.find(getEntityClass(), entity.getId());

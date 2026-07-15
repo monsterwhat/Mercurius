@@ -10,6 +10,7 @@ import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -73,6 +74,7 @@ public class DepartamentoService extends GService<Departamento> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull Departamento entity) {
         try {
             em.persist(entity);
@@ -82,6 +84,7 @@ public class DepartamentoService extends GService<Departamento> {
     }
 
     @Override
+    @Transactional
     public void delete(@Nonnull Departamento entity) {
         try {
             if (!em.contains(entity)) {
@@ -99,6 +102,7 @@ public class DepartamentoService extends GService<Departamento> {
     }
 
     @Override
+    @Transactional
     public void update(@Nonnull Departamento entity) {
         try {
             if(!entity.getStatus()){
@@ -143,6 +147,7 @@ public class DepartamentoService extends GService<Departamento> {
         }
     }
 
+    @Transactional
     public void softDelete(@Nonnull Departamento entity) {
         try {
             // Find the item by its ID
@@ -167,6 +172,7 @@ public class DepartamentoService extends GService<Departamento> {
         }
     }
     
+    @Transactional
     @Nullable
     public Departamento createIfNotExist(@Nonnull Departamento departamento) {
         try {

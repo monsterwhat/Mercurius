@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.util.Date;
 
 /**
@@ -28,6 +29,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
     }
     
     @Override
+    @Transactional
     public void create(@Nonnull ReporteProgramado entity) {
         try {
             // Set initial next run time
@@ -48,6 +50,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
         return !query.getResultList().isEmpty();
     }
     
+    @Transactional
     public void updateAndDisable(@Nonnull ReporteProgramado entity) {
         try {
             // Find the existing item by its ID
@@ -73,6 +76,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
         }
     }
     
+    @Transactional
     public boolean createIfNotExists(@Nonnull ReporteProgramado entity) {
         try {
             String queryStr = "SELECT COUNT(f) FROM ReporteProgramado f WHERE f.perfil = :nombre";
@@ -93,6 +97,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
         }
     }
     
+    @Transactional
     public void delete(@Nonnull ReporteProgramado entity) {
         try {
             ReporteProgramado existingItem = em.find(getEntityClass(), entity.getId());

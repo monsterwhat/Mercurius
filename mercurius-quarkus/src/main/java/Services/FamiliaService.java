@@ -9,6 +9,7 @@ import jakarta.faces.application.FacesMessage;
 import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -51,6 +52,7 @@ public class FamiliaService extends GService<Familia> {
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull Familia entity) {
         try {
             em.persist(entity);
@@ -59,6 +61,7 @@ public class FamiliaService extends GService<Familia> {
         }
     }
     
+    @Transactional
     public boolean createIfNotExists(@Nonnull Familia entity) {
         try {
             String queryStr = "SELECT COUNT(f) FROM Familia f WHERE f.nombre = :nombre";
@@ -81,6 +84,7 @@ public class FamiliaService extends GService<Familia> {
 
 
     @Override
+    @Transactional
     public void delete(@Nonnull Familia entity) {
         try {
             if (!em.contains(entity)) {
@@ -98,6 +102,7 @@ public class FamiliaService extends GService<Familia> {
     }
 
     @Override
+    @Transactional
     public void update(@Nonnull Familia entity) {
         try {
             em.merge(entity);
@@ -126,6 +131,7 @@ public class FamiliaService extends GService<Familia> {
         }
     }
     
+    @Transactional
     public void updateAndDisable(@Nonnull Familia entity) {
         try {
             // Find the existing item by its ID
@@ -151,6 +157,7 @@ public class FamiliaService extends GService<Familia> {
         }
     }
 
+    @Transactional
     public void softDelete(@Nonnull Familia entity) {
         try {
             // Find the item by its ID
