@@ -71,7 +71,7 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "comprobanteId", "NULL_ID",
-                "Comprobante ID cannot be null"));
+                "El ID del comprobante no puede ser nulo"));
             return result;
         }
         result.setComprobanteId(String.valueOf(comprobanteId));
@@ -82,7 +82,7 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "comprobanteId", "NOT_FOUND",
-                "Comprobante not found: " + comprobanteId));
+                "Comprobante no encontrado: " + comprobanteId));
             return result;
         }
 
@@ -121,7 +121,7 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "comprobante", "NULL_ENTITY",
-                "ComprobantesRecibidos entity cannot be null"));
+                "La entidad ComprobantesRecibidos no puede ser nula"));
             return result;
         }
 
@@ -157,7 +157,7 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "comprobanteId", "INVALID_ID",
-                "Comprobante ID is not a valid number: " + comprobanteId));
+                "El ID del comprobante no es un número válido: " + comprobanteId));
             return result;
         }
     }
@@ -182,27 +182,25 @@ public class ComprobantesRecibidosPrevalidationService {
                 result.addError(new ValidationError(
                     ValidationError.Category.valueOf("CABYS"),
                     "codigoCabys", "EMPTY_CABYS",
-                    "Line " + (linea.getNumeroLinea() != null ? linea.getNumeroLinea() : "?") +
-                    ": CAByS code is missing"));
+                    "Línea " + (linea.getNumeroLinea() != null ? linea.getNumeroLinea() : String.valueOf(lineas.indexOf(linea) + 1)) +
+                    ": código CAByS faltante"));
                 continue;
             }
 
             codigo = codigo.trim();
 
-            // Validate 13-digit format
             if (!codigo.matches("\\d{13}")) {
                 result.addError(new ValidationError(
                     ValidationError.Category.valueOf("CABYS"),
                     "codigoCabys", "INVALID_FORMAT",
-                    "CAByS code '" + codigo + "' is not 13 digits",
-                    "13-digit number", codigo));
+                    "El código CAByS '" + codigo + "' no tiene 13 dígitos",
+                    "13 dígitos", codigo));
                 continue;
             }
 
-            // Look up in local DB only
             Cabys cabys = cabysService.find(codigo);
             if (cabys == null) {
-                String msg = "CAByS code '" + codigo + "' not found in local catalog";
+                String msg = "El código CAByS '" + codigo + "' no fue encontrado en el catálogo local";
                 if (getConfig().isCabysStrictMode()) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("CABYS"),
@@ -218,12 +216,11 @@ public class ComprobantesRecibidosPrevalidationService {
                 continue;
             }
 
-            // Check if CAByS is active
             if (!"ACTIVO".equalsIgnoreCase(cabys.getEstado())) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("CABYS"),
                     "codigoCabys", "INACTIVE_CABYS",
-                    "CAByS code '" + codigo + "' is not ACTIVE (estado=" + cabys.getEstado() + ")",
+                    "El código CAByS '" + codigo + "' no está ACTIVO (estado=" + cabys.getEstado() + ")",
                     ValidationError.Severity.WARNING));
             }
         }
@@ -231,70 +228,79 @@ public class ComprobantesRecibidosPrevalidationService {
 
     // ─── Tax Calculation Validator ────────────────────────────────────
 
-    /**
-     * Verifies tax calculations both line-by-line and at resumen level.
-     * Tolerance: ±0.01 on all comparisons.
-     */
     void verificarCalculosImpuestos(@Nullable List<LineaDetalle> lineas, @Nullable ResumenFactura resumen, @Nonnull PrevalidationResult result) {
         if (lineas == null || lineas.isEmpty()) {
             return;
         }
 
-        // Line-level check: baseImponible * (impuesto / 100) ≈ monto
         BigDecimal sumaBaseImponible = BigDecimal.ZERO;
         BigDecimal sumaMonto = BigDecimal.ZERO;
         BigDecimal sumaSubTotal = BigDecimal.ZERO;
 
         for (LineaDetalle linea : lineas) {
-            String lineLabel = "Line " + (linea.getNumeroLinea() != null ? linea.getNumeroLinea() : "?");
+            String lineLabel = "Línea " + (linea.getNumeroLinea() != null ? linea.getNumeroLinea() : String.valueOf(lineas.indexOf(linea) + 1));
 
-            // Check individual line tax calculation if all fields present
-            if (linea.getBaseImponible() != null && linea.getImpuestoNeto() != null) {
-                // baseImponible + impuestoNeto should approximate montoTotal
-                if (linea.getMontoTotal() != null) {
-                    BigDecimal expectedTotal = linea.getBaseImponible().add(linea.getImpuestoNeto());
-                    if (expectedTotal.compareTo(linea.getMontoTotal()) != 0) {
-                        BigDecimal diff = expectedTotal.subtract(linea.getMontoTotal()).abs();
-                        if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
-                            result.addError(new ValidationError(
-                                ValidationError.Category.valueOf("TAX_CALCULATION"),
-                                "impuestoNeto", "LINE_TAX_MISMATCH",
-                                lineLabel + ": baseImponible + impuestoNeto (" + expectedTotal +
-                                ") != montoTotal (" + linea.getMontoTotal() + "), diff=" + diff,
-                                expectedTotal, linea.getMontoTotal()));
-                        }
+            // ── Line-level: impuestoNeto should equal baseImponible × tarifa ──
+            // In CR XML, baseImponible ≈ montoTotal (both pre-tax). The correct
+            // relationship is impuestoNeto = baseImponible * (tarifa / 100).
+            if (linea.getBaseImponible() != null && linea.getImpuestoNeto() != null
+                    && linea.getImpuestos() != null && !linea.getImpuestos().isEmpty()) {
+                BigDecimal tarifa = linea.getImpuestos().get(0).getTarifa();
+                if (tarifa != null && tarifa.compareTo(BigDecimal.ZERO) != 0) {
+                    // impuestoNeto = baseImponible × tarifa / 100
+                    BigDecimal expectedImpuesto = linea.getBaseImponible()
+                            .multiply(tarifa)
+                            .divide(new BigDecimal("100"), 6, java.math.RoundingMode.HALF_UP)
+                            .setScale(2, java.math.RoundingMode.HALF_UP);
+                    BigDecimal diff = expectedImpuesto.subtract(linea.getImpuestoNeto()).abs();
+                    if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
+                        result.addError(new ValidationError(
+                            ValidationError.Category.valueOf("TAX_CALCULATION"),
+                            "impuestoNeto", "LINE_TAX_MISMATCH",
+                            lineLabel + ": impuestoNeto (" + linea.getImpuestoNeto() +
+                            ") != baseImponible (" + linea.getBaseImponible() + ") × tarifa (" + tarifa + "%) = " + expectedImpuesto +
+                            ", diff=" + diff,
+                            expectedImpuesto, linea.getImpuestoNeto()));
                     }
                 }
             }
 
-            // Accumulate for resumen checks
             if (linea.getBaseImponible() != null) {
                 sumaBaseImponible = sumaBaseImponible.add(linea.getBaseImponible());
+            } else if (linea.getSubTotal() != null) {
+                sumaBaseImponible = sumaBaseImponible.add(linea.getSubTotal());
             }
+
             if (linea.getImpuestoNeto() != null) {
                 sumaMonto = sumaMonto.add(linea.getImpuestoNeto());
+            } else if (linea.getImpuestos() != null) {
+                for (Models.Detalles.Impuesto imp : linea.getImpuestos()) {
+                    if (imp.getMonto() != null) {
+                        sumaMonto = sumaMonto.add(imp.getMonto());
+                    }
+                }
             }
+
             if (linea.getSubTotal() != null) {
                 sumaSubTotal = sumaSubTotal.add(linea.getSubTotal());
             }
         }
 
-        // Resumen-level checks
         if (resumen != null) {
-            // sum(baseImponible) ≈ resumen.totalMercancia
             checkResumenMatch(result, "totalMercancia", sumaBaseImponible, resumen.getTotalMercanciasGravadas(),
-                "sum(linea.baseImponible) vs resumen.totalMercanciasGravadas");
+                "La suma de baseImponible de las líneas no coincide con resumen.totalMercanciasGravadas");
 
-            // sum(monto) ≈ resumen.totalImpuesto
             if (resumen.getTotalImpuesto() != null) {
                 checkResumenMatch(result, "totalImpuesto", sumaMonto, resumen.getTotalImpuesto(),
-                    "sum(linea.monto) vs resumen.totalImpuesto");
+                    "La suma de impuestos de las líneas no coincide con resumen.totalImpuesto");
             }
 
-            // sum(subTotal) ≈ resumen.totalComprobante
+            // totalComprobante = sum(subTotal) + sum(impuestoNeto) — the resumen
+            // total includes IVA, so we must add the tax to the subtotal sum.
             if (resumen.getTotalComprobante() != null) {
-                checkResumenMatch(result, "totalComprobante", sumaSubTotal, resumen.getTotalComprobante(),
-                    "sum(linea.subTotal) vs resumen.totalComprobante");
+                BigDecimal sumaSubTotalConImpuesto = sumaSubTotal.add(sumaMonto);
+                checkResumenMatch(result, "totalComprobante", sumaSubTotalConImpuesto, resumen.getTotalComprobante(),
+                    "La suma de subTotal + impuestos de las líneas no coincide con resumen.totalComprobante");
             }
         }
     }
@@ -327,50 +333,45 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "receptor", "NULL_RECEPTOR",
-                "Receptor information is missing"));
+                "La información del receptor está faltante"));
             return;
         }
 
-        // Validate receptor name (optional for TE documents)
         if (receptor.getNombre() == null || receptor.getNombre().trim().isEmpty()) {
             if ("04".equals(docCode)) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("RECEPTOR_INFO"),
                     "nombre", "MISSING_NAME",
-                    "Receptor name is missing (optional for TE documents)",
+                    "El nombre del receptor está faltante (opcional para documentos TE)",
                     ValidationError.Severity.WARNING));
             } else {
                 result.addError(new ValidationError(
                     ValidationError.Category.valueOf("RECEPTOR_INFO"),
                     "nombre", "MISSING_NAME",
-                    "Receptor name is required"));
+                    "El nombre del receptor es requerido"));
             }
         }
 
-        // Validate identification
         IdentificacionReceptor id = receptor.getIdentificacion();
         if (id != null) {
             validarIdentificacion(id, result);
         } else if (receptor.getIdentificacionExtranjero() == null || receptor.getIdentificacionExtranjero().trim().isEmpty()) {
-            // Foreign receptors must have identificacionExtranjero
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "identificacion", "MISSING_IDENTIFICATION",
-                "Receptor has no identification (Costa Rican or foreign)",
+                "El receptor no tiene identificación (costarricense o extranjero)",
                 ValidationError.Severity.WARNING));
         }
 
-        // Validate ubicacion
         validarUbicacion(receptor.getUbicacion(), result);
 
-        // Validate email (informational only for TE documents)
         boolean hasEmail = receptor.getCorreosElectronicos() != null
             && receptor.getCorreosElectronicos().stream().anyMatch(c -> c.getCorreo() != null && !c.getCorreo().trim().isEmpty());
         if (!hasEmail && !"04".equals(docCode)) {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "correoElectronico", "MISSING_EMAIL",
-                "Receptor email is missing",
+                "El correo electrónico del receptor está faltante",
                 ValidationError.Severity.WARNING));
         }
     }
@@ -394,18 +395,17 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "identificacion.tipo", "MISSING_ID_TYPE",
-                "Identification type is required"));
+                "El tipo de identificación es requerido"));
             return;
         }
 
         tipo = tipo.trim();
 
-        // Valid ID types for Costa Rica per Anexos V4.4: 01-06
         if (!tipo.matches("0[1-6]")) {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "identificacion.tipo", "UNKNOWN_ID_TYPE",
-                "Unknown identification type: " + tipo + " (expected 01-06)",
+                "Tipo de identificación desconocido: " + tipo + " (se esperaba 01-06)",
                 ValidationError.Severity.WARNING));
             return;
         }
@@ -414,72 +414,65 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addError(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "identificacion.numero", "MISSING_ID_NUMBER",
-                "Identification number is required for type " + tipo));
+                "El número de identificación es requerido para el tipo " + tipo));
             return;
         }
 
         numero = numero.trim().replace("-", "").replace(" ", "");
 
         switch (tipo) {
-            case "01": // Cedula Fisica
+            case "01":
                 if (!numero.matches("[01]\\d{8,9}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_01_FORMAT",
-                        "Cedula Fisica (01) must be 9-10 digits starting with 0 or 1",
-                        "9-10 digits starting with 0 or 1", numero));
+                        "La Cédula Física (01) debe tener 9-10 dígitos comenzando con 0 o 1",
+                        "9-10 dígitos comenzando con 0 o 1", numero));
                 }
                 break;
-            case "02": // Cedula Juridica
-                // Accept both: old numeric (3XXXXXXXXX) and new alfanumerico per RN Decreto 44648-MJ Art.137
-                //   Old format: 3\d{9} (10 digits, starts with 3)
-                //   New format: 3\d{3}[0-9A-Za-z]{6} (class code 3-digit numeric + consecutivo 6-char alfanumerico)
-                //                e.g. 3-101-A00001 → stripped 3101A00001
-                //   New format effective: Q4 2026, pending RN activation (min 2 months notice)
+            case "02":
                 if (!numero.matches("3\\d{9,11}") && !numero.matches("3\\d{3}[0-9A-Za-z]{6}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_02_FORMAT",
-                        "Cedula Juridica (02) must be 10-12 digits starting with 3, or 10 alfanumericos (3 + 3 digitos + 6 alfanumericos)",
-                        "10-12 digits starting with 3, or 10 alfanumericos", numero));
+                        "La Cédula Jurídica (02) debe tener 10-12 dígitos comenzando con 3, o 10 alfanuméricos (3 + 3 dígitos + 6 alfanuméricos)",
+                        "10-12 dígitos comenzando con 3, o 10 alfanuméricos", numero));
                 }
                 break;
-            case "03": // DIMEX
+            case "03":
                 if (!numero.matches("\\d{11,12}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_03_FORMAT",
-                        "DIMEX (03) must be 11-12 digits",
-                        "11-12 digits", numero));
+                        "El DIMEX (03) debe tener 11-12 dígitos",
+                        "11-12 dígitos", numero));
                 }
                 break;
-            case "04": // NITE
+            case "04":
                 if (!numero.matches("\\d{10,12}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_04_FORMAT",
-                        "NITE (04) must be 10-12 digits",
-                        "10-12 digits", numero));
+                        "El NITE (04) debe tener 10-12 dígitos",
+                        "10-12 dígitos", numero));
                 }
                 break;
-            case "05": // Extranjero No Domiciliado — V4.4 redefined (FEC exclusivo)
-                // Hasta 20 caracteres alfanumericos per Anexos V4.4 Nota 4
+            case "05":
                 if (!numero.matches("[0-9A-Za-z]{1,20}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_05_FORMAT",
-                        "Extranjero No Domiciliado (05) must be 1-20 alfanumericos",
-                        "1-20 alfanumericos", numero));
+                        "El Extranjero No Domiciliado (05) debe tener 1-20 caracteres alfanuméricos",
+                        "1-20 caracteres alfanuméricos", numero));
                 }
                 break;
-            case "06": // No Contribuyente — V4.4 new (FEC exclusivo)
-                // Hasta 20 caracteres alfanumericos per Anexos V4.4 Nota 4
+            case "06":
                 if (!numero.matches("[0-9A-Za-z]{1,20}")) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("RECEPTOR_INFO"),
                         "identificacion.numero", "INVALID_06_FORMAT",
-                        "No Contribuyente (06) must be 1-20 alfanumericos",
-                        "1-20 alfanumericos", numero));
+                        "El No Contribuyente (06) debe tener 1-20 caracteres alfanuméricos",
+                        "1-20 caracteres alfanuméricos", numero));
                 }
                 break;
         }
@@ -493,35 +486,32 @@ public class ComprobantesRecibidosPrevalidationService {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "ubicacion", "MISSING_UBICACION",
-                "Receptor ubicacion is missing",
+                "La ubicación del receptor está faltante",
                 ValidationError.Severity.WARNING));
             return;
         }
 
-        // Provincia is required (1 digit)
         if (ubicacion.getProvincia() == null || ubicacion.getProvincia().trim().isEmpty()) {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "ubicacion.provincia", "MISSING_PROVINCIA",
-                "Provincia is required in ubicacion",
+                "La provincia es requerida en la ubicación",
                 ValidationError.Severity.WARNING));
         }
 
-        // Canton is required (2 digits)
         if (ubicacion.getCanton() == null || ubicacion.getCanton().trim().isEmpty()) {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "ubicacion.canton", "MISSING_CANTON",
-                "Canton is required in ubicacion",
+                "El cantón es requerido en la ubicación",
                 ValidationError.Severity.WARNING));
         }
 
-        // Distrito is required (2 digits)
         if (ubicacion.getDistrito() == null || ubicacion.getDistrito().trim().isEmpty()) {
             result.addWarning(new ValidationError(
                 ValidationError.Category.valueOf("RECEPTOR_INFO"),
                 "ubicacion.distrito", "MISSING_DISTRITO",
-                "Distrito is required in ubicacion",
+                "El distrito es requerido en la ubicación",
                 ValidationError.Severity.WARNING));
         }
     }
@@ -536,41 +526,36 @@ public class ComprobantesRecibidosPrevalidationService {
      * For all present entries: validates tipoDoc, codigo, numero, fechaEmision, and razon.
      */
     private void validarInformacionReferencia(@Nullable List<InformacionReferencia> refs, @Nullable String docCode, @Nonnull PrevalidationResult result) {
-        // NC (02) and ND (03) require at least one InformacionReferencia
         if ("02".equals(docCode) || "03".equals(docCode)) {
             if (refs == null || refs.isEmpty()) {
                 result.addError(new ValidationError(
                     ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                     "informacionReferencia", "MISSING_INFORMACION_REFERENCIA",
-                    "Document type " + docCode + " requires at least one InformacionReferencia entry"));
+                    "El tipo de documento " + docCode + " requiere al menos una entrada de InformaciónReferencia"));
                 return;
             }
         }
 
-        // No refs to validate — nothing more to do
         if (refs == null || refs.isEmpty()) {
             return;
         }
 
-        // Validate each InformacionReferencia entry
         for (InformacionReferencia ref : refs) {
             String prefix = "informacionReferencia";
 
-            // tipoDoc must be present
             if (ref.getTipoDoc() == null || ref.getTipoDoc().trim().isEmpty()) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                     prefix + ".tipoDoc", "MISSING_TIPO_DOC",
-                    "InformacionReferencia tipoDoc is missing",
+                    "El tipoDoc de InformaciónReferencia está faltante",
                     ValidationError.Severity.WARNING));
             }
 
-            // codigo must be present and one of the valid codes (01-06)
             if (ref.getCodigo() == null || ref.getCodigo().trim().isEmpty()) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                     prefix + ".codigo", "MISSING_CODIGO",
-                    "InformacionReferencia codigo is missing",
+                    "El código de InformaciónReferencia está faltante",
                     ValidationError.Severity.WARNING));
             } else {
                 String codigo = ref.getCodigo().trim();
@@ -578,41 +563,38 @@ public class ComprobantesRecibidosPrevalidationService {
                     result.addWarning(new ValidationError(
                         ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                         prefix + ".codigo", "UNKNOWN_CODIGO",
-                        "InformacionReferencia codigo '" + codigo + "' is unknown (expected 01-17, 99)",
+                        "El código de InformaciónReferencia '" + codigo + "' es desconocido (se esperaba 01-17, 99)",
                         ValidationError.Severity.WARNING));
                 }
             }
 
-            // numero must be present
             if (ref.getNumero() == null || ref.getNumero().trim().isEmpty()) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                     prefix + ".numero", "MISSING_NUMERO",
-                    "InformacionReferencia numero is missing",
+                    "El número de InformaciónReferencia está faltante",
                     ValidationError.Severity.WARNING));
             }
 
-            // fechaEmision must be present
             if (ref.getFechaEmision() == null) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                     prefix + ".fechaEmision", "MISSING_FECHA_EMISION",
-                    "InformacionReferencia fechaEmision is missing",
+                    "La fecha de emisión de InformaciónReferencia está faltante",
                     ValidationError.Severity.WARNING));
             }
 
-            // razon must be present and max 180 characters
             if (ref.getRazon() == null || ref.getRazon().trim().isEmpty()) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                     prefix + ".razon", "MISSING_RAZON",
-                    "InformacionReferencia razon is missing",
+                    "La razón de InformaciónReferencia está faltante",
                     ValidationError.Severity.WARNING));
             } else if (ref.getRazon().length() > 180) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                     prefix + ".razon", "RAZON_TOO_LONG",
-                    "InformacionReferencia razon exceeds 180 characters (length=" + ref.getRazon().length() + ")",
+                    "La razón de InformaciónReferencia excede 180 caracteres (longitud=" + ref.getRazon().length() + ")",
                     ValidationError.Severity.WARNING));
             }
         }
