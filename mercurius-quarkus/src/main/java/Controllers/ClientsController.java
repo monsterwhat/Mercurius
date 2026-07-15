@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Clients;
+import Models.ClienteActividad;
 import Services.AlertasService;
 import Services.ClientService;
 import jakarta.annotation.Nonnull;
@@ -144,6 +145,38 @@ public class ClientsController implements Serializable {
         clients = null;
         newClient = null;
         selectedClient = null;
+    }
+
+    public void addActividadNew() {
+        if (newClient != null) {
+            if (newClient.getActividades() == null) {
+                newClient.setActividades(new ArrayList<>());
+            }
+            newClient.getActividades().add(new ClienteActividad());
+        }
+    }
+
+    public void removeActividadNew(int index) {
+        if (newClient != null && newClient.getActividades() != null
+                && index >= 0 && index < newClient.getActividades().size()) {
+            newClient.getActividades().remove(index);
+        }
+    }
+
+    public void addActividadSelected() {
+        if (selectedClient != null) {
+            if (selectedClient.getActividades() == null) {
+                selectedClient.setActividades(new ArrayList<>());
+            }
+            selectedClient.getActividades().add(new ClienteActividad());
+        }
+    }
+
+    public void removeActividadSelected(int index) {
+        if (selectedClient != null && selectedClient.getActividades() != null
+                && index >= 0 && index < selectedClient.getActividades().size()) {
+            selectedClient.getActividades().remove(index);
+        }
     }    
         
     @Nonnull

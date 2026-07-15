@@ -6,6 +6,7 @@ package Models;
  */
 
 import jakarta.annotation.Nullable;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,9 +14,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -61,8 +65,14 @@ public class Clients {
     @Column
     private String TipoIdentificacion; //Tipo de identificacion Fisica/Juridica/DiMEX/NITE
     
+    @Deprecated(since = "v4.5", forRemoval = true)
     @Column
-    private String CodigoActividadComercial;
+    private String CodigoActividadComercial; // DEPRECATED: use actividades list instead
+    
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
+    @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ClienteActividad> actividades = new ArrayList<>(); // Códigos de actividad económica CIIU4 del cliente ante Hacienda
     
     private Boolean status; //En caso de querer archivar o desabilitar
 
@@ -133,5 +143,21 @@ public class Clients {
     public String getHaciendaIdTypeCode() {
         if (this.idType == null) return null;
         return ID_TYPE_TO_HACIENDA_CODE.get(this.idType.trim());
+    }
+
+    /**
+     * Returns the best available activity code for use as CodigoActividadReceptor
+     * in electronic documents. Prefers the new actividades list; falls back to the
+     * deprecated CodigoActividadComercial field for backward compatibility.
+     */
+    @jakarta.annotation.Nullable
+    public String getPrimaryActividadCode() {
+        if (actividades != null && !actividades.isEmpty()) {
+            String codigo = actividades.get(0).getCodigo();
+            if (codigo != null && !codigo.isBlank()) {
+                return codigo;
+            }
+        }
+        return CodigoActividadComercial;
     }
 }

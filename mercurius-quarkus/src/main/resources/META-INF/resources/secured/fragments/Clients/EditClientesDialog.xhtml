@@ -90,11 +90,26 @@
                                                  itemLabel="Es contribuyente"/>
                     </div>
                     
-                    <div class="column is-half">
-                        <p:messages showDetail="true" for="codigoActividad" showSummary="false" closable="true" />
-                        <label class="label has-text-link" for="codigoActividad">Código Actividad:</label>
-                        <p:inputText id="codigoActividad" value="#{ClientsController.selectedClient.codigoActividadComercial}"
-                                     required="false" style="width: 100%"/>
+                    <div class="column is-full">
+                        <label class="label has-text-link">Códigos de Actividad Económica (CIIU4):</label>
+                        <p:outputPanel id="actividadesEditPanel">
+                            <p:repeat value="#{ClientsController.selectedClient.actividades}" var="actividad" varStatus="status">
+                                <div class="field has-addons mb-2">
+                                    <div class="control is-expanded">
+                                        <p:inputText value="#{actividad.codigo}" style="width: 100%" 
+                                                     placeholder="Ej: 561110"/>
+                                    </div>
+                                    <div class="control">
+                                        <p:commandButton action="#{ClientsController.removeActividadSelected(status.index)}" 
+                                                         icon="pi pi-trash" styleClass="button is-danger is-light"
+                                                         update="actividadesEditPanel"/>
+                                    </div>
+                                </div>
+                            </p:repeat>
+                            <p:commandButton action="#{ClientsController.addActividadSelected()}" icon="pi pi-plus" 
+                                             value="Agregar actividad" styleClass="button is-light is-small"
+                                             update="actividadesEditPanel"/>
+                        </p:outputPanel>
                     </div>
                     
                     <div class="column is-full mt-3">
