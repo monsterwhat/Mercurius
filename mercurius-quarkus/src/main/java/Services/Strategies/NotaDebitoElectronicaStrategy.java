@@ -113,10 +113,9 @@ public class NotaDebitoElectronicaStrategy implements DocumentoStrategy {
             encabezado.setReceptor(receptor);
             receptorService.createIfNotExist(receptor);
 
-            // CodigoActividadReceptor from selectedClient
-            if (selectedClient.getCodigoActividadComercial() != null
-                && !selectedClient.getCodigoActividadComercial().trim().isEmpty()) {
-                encabezado.setCodigoActividadReceptor(selectedClient.getCodigoActividadComercial());
+        String codigoAct = selectedClient.getPrimaryActividadCode();
+        if (codigoAct != null && !codigoAct.isBlank()) {
+            encabezado.setCodigoActividadReceptor(codigoAct);
             }
 
             return encabezado;
