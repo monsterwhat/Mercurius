@@ -216,7 +216,8 @@ public class ComprobantesRecibidosPrevalidationService {
                 continue;
             }
 
-            if (!"ACTIVO".equalsIgnoreCase(cabys.getEstado())) {
+            if (cabys.getEstado() != null && !cabys.getEstado().trim().isEmpty()
+                    && !"ACTIVO".equalsIgnoreCase(cabys.getEstado())) {
                 result.addWarning(new ValidationError(
                     ValidationError.Category.valueOf("CABYS"),
                     "codigoCabys", "INACTIVE_CABYS",
@@ -233,42 +234,88 @@ public class ComprobantesRecibidosPrevalidationService {
             return;
         }
 
-        BigDecimal sumaBaseImponible = BigDecimal.ZERO;
+        // Costa Rica XSD requires separating merchandise (tipoTransaccion=01) from
+        // services (tipoTransaccion=02) because resumen totals are split:
+        //   TotalMercanciasGravadas = sum(baseImponible) for merchandise lines only
+        //   TotalServGravados       = sum(baseImponible) for service lines only
+        //   TotalGravado            = merchandise + services
+        BigDecimal sumaBaseMercancias = BigDecimal.ZERO;
+        BigDecimal sumaBaseServicios = BigDecimal.ZERO;
+        BigDecimal sumaBaseImponible = BigDecimal.ZERO; // total (all lines)
         BigDecimal sumaMonto = BigDecimal.ZERO;
         BigDecimal sumaSubTotal = BigDecimal.ZERO;
 
         for (LineaDetalle linea : lineas) {
             String lineLabel = "Línea " + (linea.getNumeroLinea() != null ? linea.getNumeroLinea() : String.valueOf(lineas.indexOf(linea) + 1));
 
-            // ── Line-level: impuestoNeto should equal baseImponible × tarifa ──
-            // In CR XML, baseImponible ≈ montoTotal (both pre-tax). The correct
-            // relationship is impuestoNeto = baseImponible * (tarifa / 100).
+            // ── Line-level: impuestoNeto validation ──
+            // Without exoneración: impuestoNeto = baseImponible × tarifa / 100
+            // With exoneración:    impuestoNeto = baseImponible × tarifa / 100 × (1 - tarifaExonerada / 100)
+            //                   or: impuestoNeto = baseImponible × tarifa / 100 - montoExoneracion
             if (linea.getBaseImponible() != null && linea.getImpuestoNeto() != null
                     && linea.getImpuestos() != null && !linea.getImpuestos().isEmpty()) {
-                BigDecimal tarifa = linea.getImpuestos().get(0).getTarifa();
+                Models.Detalles.Impuesto imp = linea.getImpuestos().get(0);
+                BigDecimal tarifa = imp.getTarifa();
                 if (tarifa != null && tarifa.compareTo(BigDecimal.ZERO) != 0) {
-                    // impuestoNeto = baseImponible × tarifa / 100
-                    BigDecimal expectedImpuesto = linea.getBaseImponible()
+                    BigDecimal baseImpuesto = linea.getBaseImponible()
                             .multiply(tarifa)
-                            .divide(new BigDecimal("100"), 6, java.math.RoundingMode.HALF_UP)
-                            .setScale(2, java.math.RoundingMode.HALF_UP);
+                            .divide(new BigDecimal("100"), 6, java.math.RoundingMode.HALF_UP);
+
+                    // Apply exoneración if present
+                    BigDecimal expectedImpuesto;
+                    Models.Detalles.Exoneracion exoneracion = imp.getExoneracion();
+                    if (exoneracion != null) {
+                        if (exoneracion.getMontoExoneracion() != null
+                                && exoneracion.getMontoExoneracion().compareTo(BigDecimal.ZERO) > 0) {
+                            expectedImpuesto = baseImpuesto.subtract(exoneracion.getMontoExoneracion());
+                        } else if (exoneracion.getTarifaExonerada() != null
+                                && exoneracion.getTarifaExonerada().compareTo(BigDecimal.ZERO) > 0) {
+                            BigDecimal factor = BigDecimal.ONE.subtract(
+                                exoneracion.getTarifaExonerada()
+                                    .divide(new BigDecimal("100"), 6, java.math.RoundingMode.HALF_UP));
+                            expectedImpuesto = baseImpuesto.multiply(factor);
+                        } else {
+                            expectedImpuesto = baseImpuesto;
+                        }
+                    } else {
+                        expectedImpuesto = baseImpuesto;
+                    }
+                    expectedImpuesto = expectedImpuesto.setScale(2, java.math.RoundingMode.HALF_UP);
+
                     BigDecimal diff = expectedImpuesto.subtract(linea.getImpuestoNeto()).abs();
                     if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
-                        result.addError(new ValidationError(
+                        String exoneracionNote = (exoneracion != null) ? " [exoneración aplicada]" : "";
+                        ValidationError taxError = new ValidationError(
                             ValidationError.Category.valueOf("TAX_CALCULATION"),
                             "impuestoNeto", "LINE_TAX_MISMATCH",
                             lineLabel + ": impuestoNeto (" + linea.getImpuestoNeto() +
                             ") != baseImponible (" + linea.getBaseImponible() + ") × tarifa (" + tarifa + "%) = " + expectedImpuesto +
-                            ", diff=" + diff,
-                            expectedImpuesto, linea.getImpuestoNeto()));
+                            ", diff=" + diff + exoneracionNote,
+                            expectedImpuesto, linea.getImpuestoNeto());
+                        taxError.setSeverity(ValidationError.Severity.WARNING);
+                        result.addWarning(taxError);
                     }
                 }
             }
 
-            if (linea.getBaseImponible() != null) {
-                sumaBaseImponible = sumaBaseImponible.add(linea.getBaseImponible());
-            } else if (linea.getSubTotal() != null) {
-                sumaBaseImponible = sumaBaseImponible.add(linea.getSubTotal());
+            // Sum baseImponible into total
+            BigDecimal baseImponibleLinea = linea.getBaseImponible() != null ? linea.getBaseImponible() : BigDecimal.ZERO;
+            if (linea.getBaseImponible() == null && linea.getSubTotal() != null) {
+                baseImponibleLinea = linea.getSubTotal();
+            }
+            sumaBaseImponible = sumaBaseImponible.add(baseImponibleLinea);
+
+            // Separate merchandise vs services by tipoTransaccion
+            // "01" = Mercancías, "02" = Servicios
+            // Null/empty defaults to "01" (merchandise) — most common case for received purchase invoices
+            String tipo = linea.getTipoTransaccion();
+            if (tipo == null || tipo.trim().isEmpty()) {
+                tipo = "01";
+            }
+            if ("01".equals(tipo)) {
+                sumaBaseMercancias = sumaBaseMercancias.add(baseImponibleLinea);
+            } else if ("02".equals(tipo)) {
+                sumaBaseServicios = sumaBaseServicios.add(baseImponibleLinea);
             }
 
             if (linea.getImpuestoNeto() != null) {
@@ -287,8 +334,24 @@ public class ComprobantesRecibidosPrevalidationService {
         }
 
         if (resumen != null) {
-            checkResumenMatch(result, "totalMercancia", sumaBaseImponible, resumen.getTotalMercanciasGravadas(),
-                "La suma de baseImponible de las líneas no coincide con resumen.totalMercanciasGravadas");
+            // Compare merchandise baseImponible against TotalMercanciasGravadas
+            if (sumaBaseMercancias.compareTo(BigDecimal.ZERO) != 0 || resumen.getTotalMercanciasGravadas() != null) {
+                checkResumenMatch(result, "totalMercancia", sumaBaseMercancias, resumen.getTotalMercanciasGravadas(),
+                    "La suma de baseImponible de líneas de mercancía (tipoTransaccion=01) no coincide con resumen.TotalMercanciasGravadas");
+            }
+
+            // Compare service baseImponible against TotalServGravados
+            if (sumaBaseServicios.compareTo(BigDecimal.ZERO) != 0 || resumen.getTotalServGravados() != null) {
+                checkResumenMatch(result, "totalServGravados", sumaBaseServicios, resumen.getTotalServGravados(),
+                    "La suma de baseImponible de líneas de servicio (tipoTransaccion=02) no coincide con resumen.TotalServGravados");
+            }
+
+            // TotalGravado should equal mercancias + servicios
+            if (resumen.getTotalGravado() != null) {
+                BigDecimal sumaTotalGravado = sumaBaseMercancias.add(sumaBaseServicios);
+                checkResumenMatch(result, "totalGravado", sumaTotalGravado, resumen.getTotalGravado(),
+                    "La suma de baseImponible (mercancías + servicios) no coincide con resumen.TotalGravado");
+            }
 
             if (resumen.getTotalImpuesto() != null) {
                 checkResumenMatch(result, "totalImpuesto", sumaMonto, resumen.getTotalImpuesto(),
@@ -311,12 +374,14 @@ public class ComprobantesRecibidosPrevalidationService {
         if (sumValue == null || resumenValue == null) return;
         BigDecimal diff = sumValue.subtract(resumenValue).abs();
         if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
-            result.addError(new ValidationError(
+            ValidationError mismatchError = new ValidationError(
                 ValidationError.Category.valueOf("TAX_CALCULATION"),
                 field, "RESUMEN_MISMATCH",
                 description + " mismatch: sum=" + sumValue +
                 ", resumen=" + resumenValue + ", diff=" + diff,
-                resumenValue, sumValue));
+                resumenValue, sumValue);
+            mismatchError.setSeverity(ValidationError.Severity.WARNING);
+            result.addWarning(mismatchError);
         }
     }
 
