@@ -29,7 +29,7 @@
             <div class="column has-text-centered">
                 <p:commandButton value="Procesar Facturas" actionListener="#{facturasController.processFacturas}"
                                  styleClass="ui-button-primary rounded-button" style="width: 100%" 
-                                 update="upload:uploadedFiles"
+                                 update="upload:uploadedFiles ::statsForm ::recibosTodas ::recibosPagadas ::recibosProcesadas ::recibosVencidos ::resumen growl"
                                  onstart="this.disabled=true;"
                                  oncomplete="this.disabled=false;"
                                  onerror="this.disabled=false;"/>
