@@ -10,6 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
+import jakarta.transaction.Transactional;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -34,6 +35,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     }
 
     @Override
+    @Transactional
     public void create(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.persist(entity);
@@ -42,6 +44,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
     
+    @Transactional
     public @Nullable ComprobantesEmitidos createAndReturn(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.persist(entity);
@@ -55,6 +58,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     }
 
     @Override
+    @Transactional
     public void delete(@Nonnull ComprobantesEmitidos entity) {
         try {
             if (!em.contains(entity)) {
@@ -72,6 +76,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     }
 
     @Override
+    @Transactional
     public void update(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.merge(entity);
@@ -80,6 +85,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
     
+    @Transactional
     public void softDelete(@Nonnull ComprobantesEmitidos entity) {
         try {
             // Find the item by its ID
@@ -97,6 +103,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
     
+    @Transactional
     public void toggle(@Nonnull ComprobantesEmitidos entity){
         try {
             // Find the item by its ID
