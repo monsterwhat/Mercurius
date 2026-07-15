@@ -66,8 +66,9 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
 
             // Pre-validate — record errors but ALWAYS persist
             prevalidation = prevalidationService.prevalidarCompleto(entity);
-            if (prevalidation.hasErrors()) {
-                String errorSummary = prevalidation.getErrors().stream()
+            if (prevalidation.hasErrors() || prevalidation.hasWarnings()) {
+                List<Models.Validacion.ValidationError> allIssues = prevalidation.getAllIssues();
+                String errorSummary = allIssues.stream()
                     .map(e -> e.getField() + ": " + e.getMessage())
                     .collect(java.util.stream.Collectors.joining("; "));
                 entity.setPrevalidationErrors(errorSummary);
