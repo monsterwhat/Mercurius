@@ -216,6 +216,7 @@ public class SettingsController implements Serializable {
         createFacturasDir();
         createRecibosDir();
         createReportesDir();
+        createBackupsDir();
     }
 
     public void createHomeDir() {
@@ -244,6 +245,10 @@ public class SettingsController implements Serializable {
 
     public void createRecibosDir() {
         createFolder(getMainDirectory() + File.separator + "Mercurius" + File.separator + currentSettings.getNombrePerfil(), "recibos");
+    }
+
+    public void createBackupsDir() {
+        createFolder(getMainDirectory() + File.separator + "Mercurius" + File.separator + currentSettings.getNombrePerfil(), "backups");
     }
 
     public void createNewSettings() {
@@ -326,6 +331,11 @@ public class SettingsController implements Serializable {
     @Nonnull
     public String getRecibosDirPath() {
         return getProfileDirPath() + File.separator + "recibos";
+    }
+
+    @Nonnull
+    public String getBackupsDirPath() {
+        return getProfileDirPath() + File.separator + "backups";
     }
 
     public void uploadLogo(@Nonnull FileUploadEvent event) {

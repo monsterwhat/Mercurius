@@ -16,6 +16,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -122,6 +123,53 @@ public class JwtTokenUtil {
             return null;
         } catch (MalformedJwtException | SecurityException | IllegalArgumentException e) {
             LOG.log(Level.WARNING, "Invalid JWT token", e);
+            return null;
+        }
+    }
+
+    /**
+     * Generates a JWT access token for an API client with scope claims.
+     * Used by OAuth2 client_credentials grant.
+     *
+     * @param clientId the API client's public identifier
+     * @param scopes   set of granted scopes (e.g. "mercatus", "accounting")
+     * @return signed JWT string
+     */
+    @Nonnull
+    public String generateApiAccessToken(@Nonnull String clientId, @Nonnull Set<String> scopes) {
+        Date now = new Date();
+        Date expiry = new Date(now.getTime() + accessTokenExpiryMs);
+
+        return Jwts.builder()
+                .subject(clientId)
+                .issuedAt(now)
+                .expiration(expiry)
+                .claim("type", "api_access")
+                .claim("scope", String.join(" ", scopes))
+                .signWith(signingKey)
+                .compact();
+    }
+
+    /**
+     * Validates an API access token and returns the Claims (including scope).
+     * Returns null if token is invalid or expired.
+     *
+     * @param token the JWT string
+     * @return Claims payload if valid, null otherwise
+     */
+    @Nullable
+    public Claims validateApiToken(@Nonnull String token) {
+        try {
+            Jws<Claims> claims = Jwts.parser()
+                    .verifyWith(signingKey)
+                    .build()
+                    .parseSignedClaims(token);
+            return claims.getPayload();
+        } catch (ExpiredJwtException e) {
+            LOG.log(Level.FINE, "API JWT token expired", e);
+            return null;
+        } catch (MalformedJwtException | SecurityException | IllegalArgumentException e) {
+            LOG.log(Level.WARNING, "Invalid API JWT token", e);
             return null;
         }
     }
