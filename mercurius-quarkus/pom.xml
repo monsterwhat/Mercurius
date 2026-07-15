@@ -69,6 +69,10 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-cache</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-openapi</artifactId>
+        </dependency>
         <!-- Add Jakarta Mail API for compatibility -->
         <dependency>
             <groupId>jakarta.mail</groupId>
