@@ -43,7 +43,9 @@
                 <p class="title is-3">Catálogo de Bienes y Servicios (CAByS)</p>
                 <div class="stats-grid">
                     <div class="stat-card" onclick="switchTab('CaBySTabView', 0, this)">
-                        <span class="stat-number">#{CabysController.cabysCount()}</span>
+                        <h:outputPanel id="cabysCounter">
+                            <span class="stat-number">#{CabysController.cabysCount()}</span>
+                        </h:outputPanel>
                         <span class="stat-label">Códigos CAByS</span>
                     </div>
                 </div>
@@ -65,7 +67,7 @@
 
                                     <div class="actions-bar">
                                         <div class="actions-group">
-                                            <p:commandLink process="@this" update="cabys"
+                                            <p:commandLink process="@this" update="cabys :cabysCounter"
                                                            actionListener="#{CabysController.cabysListApi}" 
                                                            styleClass="action-btn button is-danger"
                                                            rendered="#{empty CabysController.catalogo}">
@@ -79,7 +81,7 @@
                                         <div class="empty-state">
                                             <i class="pi pi-inbox" style="font-size: 3rem; color: var(--bulma-text-light);"></i>
                                             <p class="has-text-grey">No hay catálogo cargado</p>
-                                            <p:commandLink process="@this" update="CabysTable cabys cabysPanel"
+                                            <p:commandLink process="@this" update="CabysTable cabys cabysPanel :cabysCounter"
                                                            actionListener="#{CabysController.cabysListApi}" 
                                                            class="button is-primary is-rounded mt-3">
                                                 <i class="pi pi-cloud-download"></i>
