@@ -50,16 +50,24 @@
 
 
                                 <p:column exportable="false">
-                                    <p:chip id="ActiveChip" icon="pi pi-check" style="background: var(--green-500) #{factura.status ? '' : ';display:none'}"/>
+                                    <p:outputPanel id="ActiveChip" styleClass="status-chip status-active" style="#{factura.status ? '' : 'display:none'}">
+                                        <i class="pi pi-check"></i>
+                                    </p:outputPanel>
                                     <p:tooltip for="ActiveChip" value="Activa" position="top"/>
 
-                                    <p:chip id="inActiveChip" icon="pi pi-times" style="background: var(--red-500); #{!factura.status ? '' : 'display:none'}"/>
+                                    <p:outputPanel id="inActiveChip" styleClass="status-chip status-inactive" style="#{!factura.status ? '' : 'display:none'}">
+                                        <i class="pi pi-times"></i>
+                                    </p:outputPanel>
                                     <p:tooltip for="inActiveChip" value="Inactiva" position="top"/>
 
-                                    <p:chip id="ProcessedChip" icon="pi pi-check" style="background: var(--green-500) #{factura.processed ? '' : ';display:none'}"/>
+                                    <p:outputPanel id="ProcessedChip" styleClass="status-chip status-processed" style="#{factura.processed ? '' : 'display:none'}">
+                                        <i class="pi pi-check"></i>
+                                    </p:outputPanel>
                                     <p:tooltip for="ProcessedChip" value="Procesada" position="top"/>
 
-                                    <p:chip id="unProcessedChip" icon="pi pi-clock" style="background: var(--yellow-500) #{!factura.processed ? '' : ';display:none'}"/>
+                                    <p:outputPanel id="unProcessedChip" styleClass="status-chip status-unprocessed" style="#{!factura.processed ? '' : 'display:none'}">
+                                        <i class="pi pi-clock"></i>
+                                    </p:outputPanel>
                                     <p:tooltip for="unProcessedChip" value="Sin procesar" position="top"/>
                                 </p:column>
 
