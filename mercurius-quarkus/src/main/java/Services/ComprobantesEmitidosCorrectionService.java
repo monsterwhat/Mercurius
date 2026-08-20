@@ -20,6 +20,7 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.Marshaller;
 import java.io.StringWriter;
 import java.math.BigDecimal;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -290,6 +291,10 @@ public class ComprobantesEmitidosCorrectionService {
         nueva.setHaciendaClave(nuevaClave);
         if (nueva.getEncabezado() != null) {
             nueva.getEncabezado().setClave(nuevaClave);
+            // Sync numeroConsecutivo with the new clave's consecutive (positions 21-41)
+            if (nuevaClave != null && nuevaClave.length() == 50) {
+                nueva.getEncabezado().setNumeroConsecutivo(nuevaClave.substring(21, 41));
+            }
         }
 
         nueva.setStatus(true);
@@ -356,7 +361,7 @@ public class ComprobantesEmitidosCorrectionService {
             Cabys mejor = candidatos.get(0);
             linea.setCodigoCabys(mejor.getCodigo());
             if (linea.getBaseImponible() != null) {
-                BigDecimal tarifa = BigDecimal.valueOf(mejor.getImpuesto());
+                BigDecimal tarifa = new BigDecimal(mejor.getImpuesto());
                 linea.setImpuestoNeto(linea.getBaseImponible()
                     .multiply(tarifa)
                     .divide(new BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP));
@@ -430,7 +435,7 @@ public class ComprobantesEmitidosCorrectionService {
         // Situation stays "2" (corrected document)
         String situation = claveOriginal.substring(41, 42);
         // Generate 7-digit fresh security code
-        int random7 = (int)(Math.random() * 100000000) % 10000000;
+        int random7 = new SecureRandom().nextInt(10000000);
         String securityCode7 = String.format("%07d", random7);
 
         // Assemble 49-digit prefix for check digit calculation
