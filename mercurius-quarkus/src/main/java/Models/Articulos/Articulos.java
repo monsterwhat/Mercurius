@@ -83,6 +83,9 @@ public class Articulos implements Serializable {
     @Column(name = "estadoAlertas")
     private Boolean estadoAlertas = true; // Enable stock alerts
 
+    @Column
+    private boolean exento; // Whether the product is tax-exempt (exonerado)
+
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @Nullable

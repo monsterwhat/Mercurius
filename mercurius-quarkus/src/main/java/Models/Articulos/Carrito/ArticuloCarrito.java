@@ -99,7 +99,7 @@ public class ArticuloCarrito {
         return CarritoCalculations.calculateTotalCarrito(carrito);
     }
 
-    public static Map<Integer, BigDecimal> calculateTotalTaxForUniqueRates(List<ArticuloCarrito> carrito) {
+    public static Map<BigDecimal, BigDecimal> calculateTotalTaxForUniqueRates(List<ArticuloCarrito> carrito) {
         return CarritoCalculations.calculateTotalTaxByRate(carrito);
     }
 
