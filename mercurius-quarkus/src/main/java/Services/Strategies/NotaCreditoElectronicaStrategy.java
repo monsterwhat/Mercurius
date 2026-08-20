@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import java.util.Objects;
 
 /**
- * Strategy for Nota de Crédito Electrónica (NC, code "02").
+ * Strategy for Nota de Crédito Electrónica (NC, code "03").
  * Receptor is required with valid identification (no consumer fallback).
  */
 @ApplicationScoped
@@ -54,7 +54,7 @@ public class NotaCreditoElectronicaStrategy implements DocumentoStrategy {
 
     @Override
     public String getCodigoDocumento() {
-        return "02";
+        return "03";
     }
 
     @Override
