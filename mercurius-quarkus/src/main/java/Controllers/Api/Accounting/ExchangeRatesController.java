@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,7 +73,7 @@ public class ExchangeRatesController {
     public static class ExchangeRateDTO {
         public Long id;
         public LocalDateTime fecha;
-        public double valorCompra;
-        public double valorVenta;
+        public BigDecimal valorCompra;
+        public BigDecimal valorVenta;
     }
 }

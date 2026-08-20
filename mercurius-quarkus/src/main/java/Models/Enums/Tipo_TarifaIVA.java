@@ -63,17 +63,8 @@ public enum Tipo_TarifaIVA {
             case "4":
                 tarifa = Tipo_TarifaIVA.TARIFA_REDUCIDA_4;
                 break;
-            case "5":
-                tarifa = Tipo_TarifaIVA.TRANSITORIO_4;
-                break;
             case "8":
                 tarifa = Tipo_TarifaIVA.TRANSITORIO_8;
-                break;
-            case "10":
-                tarifa = Tipo_TarifaIVA.TARIFA_EXENTA;
-                break;
-            case "11":
-                tarifa = Tipo_TarifaIVA.TARIFA_0_SIN_CREDITO;
                 break;
             case "13":
                 tarifa = Tipo_TarifaIVA.TARIFA_GENERAL_13;

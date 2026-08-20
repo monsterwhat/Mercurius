@@ -197,6 +197,76 @@
                                 </div>
 
                                 <div class="column is-full">
+                                    <hr/>
+                                    <p class="title is-6 has-text-link">Exoneracion</p>
+                                </div>
+
+                                <div class="column is-full">
+                                    <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                        <p:selectBooleanCheckbox id="editExento"
+                                                                 value="#{ArticulosController.selectedArticulo.exento}"/>
+                                        <label class="label has-text-link" for="editExento" style="margin-bottom: 0;">Producto Exento (Exonerado)</label>
+                                    </div>
+                                    <p:tooltip for="editExento" value="Marcar si el producto esta exento de IVA (requiere documentos de exoneracion)." position="top"/>
+                                </div>
+
+                                <div class="column is-full" rendered="#{ArticulosController.selectedArticulo.exento}">
+                                    <div class="columns is-multiline" style="border: 1px solid #dbdbdb; border-radius: 6px; padding: 1rem;">
+                                        <div class="column is-full">
+                                            <p class="subtitle is-6">Datos de Exoneracion</p>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editTipoDocEX1">Tipo Documento EX1</label>
+                                            <p:inputText id="editTipoDocEX1" value="#{ArticulosController.selectedExoneracion.tipoDocumentoEX1}"
+                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editTipoDocOtro">Tipo Documento Otro</label>
+                                            <p:inputText id="editTipoDocOtro" value="#{ArticulosController.selectedExoneracion.tipoDocumentoOTRO}"
+                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editNumDocExoneracion">Numero Documento</label>
+                                            <p:inputText id="editNumDocExoneracion" value="#{ArticulosController.selectedExoneracion.numeroDocumento}"
+                                                         style="width: 100%" maxlength="20"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editNombreInstitucion">Nombre Institucion</label>
+                                            <p:inputText id="editNombreInstitucion" value="#{ArticulosController.selectedExoneracion.nombreInstitucion}"
+                                                         style="width: 100%" maxlength="255"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editFechaEmisionEX">Fecha Emision</label>
+                                            <p:calendar id="editFechaEmisionEX" value="#{ArticulosController.selectedExoneracion.fechaEmisionEX}"
+                                                        pattern="yyyy-MM-dd" style="width: 100%" mask="true"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editMontoExoneracion">Monto Exoneracion</label>
+                                            <p:inputText id="editMontoExoneracion" type="number" value="#{ArticulosController.selectedExoneracion.montoExoneracion}"
+                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editTarifaExonerada">Tarifa Exonerada (%)</label>
+                                            <p:inputText id="editTarifaExonerada" type="number" value="#{ArticulosController.selectedExoneracion.tarifaExonerada}"
+                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="editNombreInstitucionOtros">Nombre Institucion Otros</label>
+                                            <p:inputText id="editNombreInstitucionOtros" value="#{ArticulosController.selectedExoneracion.nombreInstitucionOtros}"
+                                                         style="width: 100%" maxlength="255"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="column is-full">
                                     <p:commandLink value="Actualizar datos" update="@form Articulos:ArticulosActivos" process="@form"
                                                      action="#{ArticulosController.updateArticuloByDialog()}" 
                                                      styleClass="button is-rounded is-link is-fullwidth"/>

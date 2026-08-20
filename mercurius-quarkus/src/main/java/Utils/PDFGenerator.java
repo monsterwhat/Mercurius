@@ -191,8 +191,21 @@ public class PDFGenerator {
 
         // Agregar filas a la tabla
         for (ArticuloCarrito articulo : carrito) {
-            int impuesto = articulo.getArticulo().getCodigoCabys().getImpuesto();
-            String codigoLetra = Tipo_CodigoImpuesto.getCodigoLetra(impuesto);
+            String impuestoStr = articulo.getArticulo().getCodigoCabys().getImpuesto();
+            int impuesto = 0;
+            if (impuestoStr != null && !impuestoStr.isEmpty()) {
+                try {
+                    impuesto = new java.math.BigDecimal(impuestoStr).intValue();
+                } catch (NumberFormatException ignored) {
+                    // Non-integer rate (e.g. 0.5) — default to 0 for PDF letter mapping
+                }
+            }
+            String codigoLetra = "E";
+            try {
+                codigoLetra = Tipo_CodigoImpuesto.getCodigoLetra(impuesto);
+            } catch (IllegalArgumentException ignored) {
+                // Unknown rate — default to "E" (exento)
+            }
 
             // Create and configure the cell for Cantidad
             PdfPCell cantidadCell = new PdfPCell(new Phrase(articulo.getCantidad().toString(), font));
@@ -342,7 +355,7 @@ public class PDFGenerator {
 
         document.add(separator); // End list separator
 
-        Map<Integer, BigDecimal> totalTaxes = ArticuloCarrito.calculateTotalTaxForUniqueRates(carrito);
+        Map<BigDecimal, BigDecimal> totalTaxes = ArticuloCarrito.calculateTotalTaxForUniqueRates(carrito);
         // Create a table for taxes
         PdfPTable taxTable = new PdfPTable(2);
         taxTable.setWidthPercentage(100);

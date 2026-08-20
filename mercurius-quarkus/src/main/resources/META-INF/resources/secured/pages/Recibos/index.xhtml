@@ -146,9 +146,21 @@
 
             <div class="summary-card">
                 <h:form id="resumen">
-                    <div class="columns">
+                    <div class="columns is-vcentered">
                         <div class="column">
                             <h4 class="title is-5">Resumen de Compras</h4>
+                        </div>
+                        <div class="column is-narrow">
+                            <div class="buttons has-addons is-right">
+                                <p:commandButton value="1M" styleClass="button is-small #{facturasController.selectedSummaryRange eq '1m' ? 'is-link is-selected' : ''}"
+                                                 action="#{facturasController.setSummaryRange('1m')}" update="resumen"/>
+                                <p:commandButton value="3M" styleClass="button is-small #{facturasController.selectedSummaryRange eq '3m' ? 'is-link is-selected' : ''}"
+                                                 action="#{facturasController.setSummaryRange('3m')}" update="resumen"/>
+                                <p:commandButton value="1Y" styleClass="button is-small #{facturasController.selectedSummaryRange eq '1y' ? 'is-link is-selected' : ''}"
+                                                 action="#{facturasController.setSummaryRange('1y')}" update="resumen"/>
+                                <p:commandButton value="Todo" styleClass="button is-small #{facturasController.selectedSummaryRange eq 'all' ? 'is-link is-selected' : ''}"
+                                                 action="#{facturasController.setSummaryRange('all')}" update="resumen"/>
+                            </div>
                         </div>
                     </div>
                     <div class="columns">
@@ -192,7 +204,7 @@
                                 </span>
                             </f:facet>
                             <div class="tab-content-card">
-                                <h:form id="recibosTodas">  
+                                <h:form id="recibosTodas">
 
                                     <div class="actions-bar">
                                         <div class="actions-group">
@@ -325,7 +337,7 @@ actionListener="#{facturasController.paySelectedFactura()}" update="@this :recib
                                 </span>
                             </f:facet>
                             <div class="tab-content-card">
-                                <h:form id="recibosPagadas">  
+                                <h:form id="recibosPagadas">
 
                                     <p:dataTable value="#{facturasController.filteredFacturasPagadas}" var="factura" widgetVar="FacturasPagadasTable"
                                                  paginator="true" rows="10" paginatorPosition="bottom" id="FacturasPagadasTable"
@@ -416,7 +428,7 @@ actionListener="#{facturasController.paySelectedFactura()}" update="@this :recib
                                 </span>
                             </f:facet>
                             <div class="tab-content-card">
-                                <h:form id="recibosProcesadas">  
+                                <h:form id="recibosProcesadas">
 
                                     <p:dataTable value="#{facturasController.filteredFacturasProcesadas}" var="factura" widgetVar="FacturasProcesadasTable"
                                                  paginator="true" rows="10" paginatorPosition="bottom" id="FacturasProcesadasTable"
@@ -502,7 +514,7 @@ actionListener="#{facturasController.paySelectedFactura()}" update="@this :recib
                                 </span>
                             </f:facet>
                             <div class="tab-content-card">
-                                <h:form id="recibosVencidos">  
+                                <h:form id="recibosVencidos">
 
                                     <p:dataTable value="#{facturasController.filteredFacturasVencidas}" var="factura" widgetVar="FacturasVencidasTable"
                                                  paginator="true" rows="10" paginatorPosition="bottom" id="FacturasVencidasTable"
