@@ -33,9 +33,6 @@ public class Impuesto {
     @XmlElement(name = "MontoExportacion")
     private BigDecimal montoExportacion;
 
-    @XmlElement(name = "Exoneracion")
-    private Exoneracion exoneracion;
-
     public Impuesto() {}
 
     public Impuesto(Models.Detalles.Impuesto src) {
@@ -49,8 +46,6 @@ public class Impuesto {
             this.montoExportacion = src.getMontoExportacion();
             if (src.getDatosImpuestoEspeficio() != null)
                 this.datosImpuestoEspeficio = new DatosImpuestoEspecifico(src.getDatosImpuestoEspeficio());
-            if (src.getExoneracion() != null)
-                this.exoneracion = new Exoneracion(src.getExoneracion());
         }
     }
 }
