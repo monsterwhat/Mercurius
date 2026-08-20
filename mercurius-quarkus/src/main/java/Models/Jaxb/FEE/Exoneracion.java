@@ -7,35 +7,31 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import lombok.Data;
 
+/**
+ * FEE (Factura Electrónica de Exportación) Exoneración.
+ * FEE XSD ExoneracionType has different field names than FE/NC/ND:
+ * - TipoDocumento (not TipoDocumentoEX1)
+ * - FechaEmision (not FechaEmisionEX)
+ * - PorcentajeExoneracion (not TarifaExonerada)
+ * - No TipoDocumentoOTRO, Articulo, Inciso, or NombreInstitucionOtros
+ */
 @XmlAccessorType(XmlAccessType.FIELD)
 @Data
 public class Exoneracion {
-    @XmlElement(name = "TipoDocumentoEX1")
-    private String tipoDocumentoEX1;
-
-    @XmlElement(name = "TipoDocumentoOtro")
-    private String tipoDocumentoOTRO;
+    @XmlElement(name = "TipoDocumento")
+    private String tipoDocumento;
 
     @XmlElement(name = "NumeroDocumento")
     private String numeroDocumento;
 
-    @XmlElement(name = "Articulo")
-    private BigDecimal articulo;
-
-    @XmlElement(name = "Inciso")
-    private BigDecimal inciso;
-
     @XmlElement(name = "NombreInstitucion")
     private String nombreInstitucion;
 
-    @XmlElement(name = "NombreInstitucionOtros")
-    private String nombreInstitucionOtros;
+    @XmlElement(name = "FechaEmision")
+    private LocalDateTime fechaEmision;
 
-    @XmlElement(name = "FechaEmisionEx")
-    private LocalDateTime fechaEmisionEX;
-
-    @XmlElement(name = "TarifaExonerada")
-    private BigDecimal tarifaExonerada;
+    @XmlElement(name = "PorcentajeExoneracion")
+    private BigDecimal porcentajeExoneracion;
 
     @XmlElement(name = "MontoExoneracion")
     private BigDecimal montoExoneracion;
@@ -44,15 +40,11 @@ public class Exoneracion {
 
     public Exoneracion(Models.Detalles.Exoneracion src) {
         if (src != null) {
-            this.tipoDocumentoEX1 = src.getTipoDocumentoEX1();
-            this.tipoDocumentoOTRO = src.getTipoDocumentoOTRO();
+            this.tipoDocumento = src.getTipoDocumentoEX1();
             this.numeroDocumento = src.getNumeroDocumento();
-            this.articulo = src.getArticulo();
-            this.inciso = src.getInciso();
             this.nombreInstitucion = src.getNombreInstitucion();
-            this.nombreInstitucionOtros = src.getNombreInstitucionOtros();
-            this.fechaEmisionEX = src.getFechaEmisionEX();
-            this.tarifaExonerada = src.getTarifaExonerada();
+            this.fechaEmision = src.getFechaEmisionEX();
+            this.porcentajeExoneracion = src.getTarifaExonerada();
             this.montoExoneracion = src.getMontoExoneracion();
         }
     }
