@@ -40,7 +40,20 @@ public enum Tipo_CodigoImpuesto {
         }
         throw new IllegalArgumentException("Código de impuesto no válido: " + codigo);
     }
-    
+
+    public static Tipo_CodigoImpuesto fromCodigoOrNull(String codigo) {
+        for (Tipo_CodigoImpuesto impuesto : Tipo_CodigoImpuesto.values()) {
+            if (impuesto.getCodigo().equals(codigo)) {
+                return impuesto;
+            }
+        }
+        return null;
+    }
+
+    public static boolean isValidCodigo(String codigo) {
+        return fromCodigoOrNull(codigo) != null;
+    }
+
     public static String getCodigoLetra(int porcentajeImpuesto) {
         switch (porcentajeImpuesto) {
             case 0:
@@ -49,8 +62,14 @@ public enum Tipo_CodigoImpuesto {
                 return "U";
             case 2:
                 return "D";
+            case 4:
+                return "F";
+            case 5:
+            case 8:
             case 13:
                 return "T";
+            case 10:
+                return "E";
             default:
                 throw new IllegalArgumentException("Porcentaje de impuesto no válido: " + porcentajeImpuesto);
         }

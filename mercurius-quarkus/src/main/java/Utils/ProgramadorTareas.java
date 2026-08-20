@@ -18,10 +18,12 @@ import Services.HaciendaApiService;
 import Services.InventarioService;
 import Services.LoteService;
 import Services.LoyaltyService;
+import Services.MensajeReceptorService;
 import Services.StockAlertService;
 import Services.TipoCambioService;
 import Models.StockAlert;
 import io.quarkus.scheduler.Scheduled;
+import org.eclipse.microprofile.faulttolerance.Retry;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Singleton;
@@ -59,6 +61,7 @@ public class ProgramadorTareas {
     @Inject @Nonnull private BackupService backupService;
     @Inject @Nonnull private LoyaltyService loyaltyService;
     @Inject @Nonnull private StockAlertService stockAlertService;
+    @Inject @Nonnull private MensajeReceptorService mensajeReceptorService;
 
     //Media noche
     @Scheduled(cron = "0 0 0 * * ?")
@@ -295,6 +298,51 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
             }
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error en verificarVencimientoMensajeReceptor: " + e.getMessage(), null, 0, "ProgramadorTareas.verificarVencimientoMensajeReceptor()", null, e.getMessage());
+        }
+    }
+
+    @Scheduled(cron = "0 0 6 * * ?")
+    @Retry(maxRetries = 3, delay = 300000, maxDuration = 900000)
+    public void enviarMensajesReceptorPendientes() {
+        try {
+            List<ComprobantesRecibidos> proximosVencer = comprobantesRecibidosService.findProximosVencerMensajeReceptor(2);
+            if (proximosVencer == null || proximosVencer.isEmpty()) return;
+
+            for (ComprobantesRecibidos factura : proximosVencer) {
+                try {
+                    if (factura.getHaciendaMensajeReceptorEstado() != null) continue;
+
+                    java.math.BigDecimal montoTotalImpuesto = null;
+                    java.math.BigDecimal montoTotalFactura = null;
+                    if (factura.getResumen() != null) {
+                        montoTotalImpuesto = factura.getResumen().getTotalImpuesto();
+                        montoTotalFactura = factura.getResumen().getTotalComprobante();
+                    }
+
+                    String consecutivo = factura.getEncabezado() != null ? factura.getEncabezado().getNumeroConsecutivo() : "N/A";
+                    long diasRestantes = factura.getDiasRestantesMensajeReceptor();
+
+                    MensajeReceptorService.MRResult result = mensajeReceptorService.enviarMensajeReceptor(
+                        factura, 1, "ACEPTADO", montoTotalImpuesto, montoTotalFactura);
+
+                    if (result.success) {
+                        alertasService.registrarAlerta("Hacienda",
+                            "Auto-envío MR aceptado para factura " + consecutivo + " (" + diasRestantes + " días restantes)",
+                            null, 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, null);
+                    } else {
+                        alertasService.registrarAlerta("Advertencia Hacienda",
+                            "No se pudo auto-enviar MR para factura " + consecutivo + ": " + result.message,
+                            null, 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, result.message);
+                    }
+                } catch (RuntimeException e) {
+                    alertasService.registrarAlerta("Error",
+                        "Error auto-enviando MR: " + e.getMessage(),
+                        null, 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, e.getMessage());
+                }
+            }
+        } catch (RuntimeException e) {
+            alertasService.registrarAlerta("Error", "Error en enviarMensajesReceptorPendientes: " + e.getMessage(),
+                null, 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, e.getMessage());
         }
     }
 

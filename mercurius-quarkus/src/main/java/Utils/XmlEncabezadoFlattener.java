@@ -129,6 +129,7 @@ public final class XmlEncabezadoFlattener {
 
             if (encabezadoElem == null) {
                 // No Encabezado wrapper found — return as-is
+                LOG.warning("XmlEncabezadoFlattener: Encabezado tag not found, returning XML as-is. Input may not be a valid comprobante.");
                 return xml;
             }
 

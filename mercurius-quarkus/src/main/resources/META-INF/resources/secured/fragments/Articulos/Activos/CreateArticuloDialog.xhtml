@@ -181,9 +181,79 @@
                                     <p:tooltip for="newEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
                                 </div>
 
+                                <div class="column is-full">
+                                    <hr/>
+                                    <p class="title is-6 has-text-link">Exoneracion</p>
+                                </div>
+
+                                <div class="column is-full">
+                                    <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                        <p:selectBooleanCheckbox id="newExento"
+                                                                 value="#{ArticulosController.newArticulo.exento}"/>
+                                        <label class="label has-text-link" for="newExento" style="margin-bottom: 0;">Producto Exento (Exonerado)</label>
+                                    </div>
+                                    <p:tooltip for="newExento" value="Marcar si el producto esta exento de IVA (requiere documentos de exoneracion)." position="top"/>
+                                </div>
+
+                                <div class="column is-full" rendered="#{ArticulosController.newArticulo.exento}">
+                                    <div class="columns is-multiline" style="border: 1px solid #dbdbdb; border-radius: 6px; padding: 1rem;">
+                                        <div class="column is-full">
+                                            <p class="subtitle is-6">Datos de Exoneracion</p>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newTipoDocEX1">Tipo Documento EX1</label>
+                                            <p:inputText id="newTipoDocEX1" value="#{ArticulosController.exoneracion.tipoDocumentoEX1}"
+                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newTipoDocOtro">Tipo Documento Otro</label>
+                                            <p:inputText id="newTipoDocOtro" value="#{ArticulosController.exoneracion.tipoDocumentoOTRO}"
+                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newNumDocExoneracion">Numero Documento</label>
+                                            <p:inputText id="newNumDocExoneracion" value="#{ArticulosController.exoneracion.numeroDocumento}"
+                                                         style="width: 100%" maxlength="20"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newNombreInstitucion">Nombre Institucion</label>
+                                            <p:inputText id="newNombreInstitucion" value="#{ArticulosController.exoneracion.nombreInstitucion}"
+                                                         style="width: 100%" maxlength="255"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newFechaEmisionEX">Fecha Emision</label>
+                                            <p:calendar id="newFechaEmisionEX" value="#{ArticulosController.exoneracion.fechaEmisionEX}"
+                                                        pattern="yyyy-MM-dd" style="width: 100%" mask="true"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newMontoExoneracion">Monto Exoneracion</label>
+                                            <p:inputText id="newMontoExoneracion" type="number" value="#{ArticulosController.exoneracion.montoExoneracion}"
+                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newTarifaExonerada">Tarifa Exonerada (%)</label>
+                                            <p:inputText id="newTarifaExonerada" type="number" value="#{ArticulosController.exoneracion.tarifaExonerada}"
+                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                        </div>
+
+                                        <div class="column is-half">
+                                            <label class="label has-text-link" for="newNombreInstitucionOtros">Nombre Institucion Otros</label>
+                                            <p:inputText id="newNombreInstitucionOtros" value="#{ArticulosController.exoneracion.nombreInstitucionOtros}"
+                                                         style="width: 100%" maxlength="255"/>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="column is-full mt-3">
                                     <div class="buttons is-centered">
-                                        <p:commandLink value="Crear Artículo" update="@form Articulos:ArticulosActivos" process="@form"
+                                        <p:commandLink value="Crear Articulo" update="@form Articulos:ArticulosActivos" process="@form"
                                                          action="#{ArticulosController.createArticuloByDialog()}" 
                                                          styleClass="button is-primary is-rounded is-fullwidth" />
                                     </div>
