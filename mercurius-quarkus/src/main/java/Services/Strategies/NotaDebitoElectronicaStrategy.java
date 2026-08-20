@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import java.util.Objects;
 
 /**
- * Strategy for Nota de Débito Electrónica (ND, code "03").
+ * Strategy for Nota de Débito Electrónica (ND, code "02").
  * Receptor is required with valid identification (no consumer fallback).
  */
 @ApplicationScoped
@@ -54,7 +54,7 @@ public class NotaDebitoElectronicaStrategy implements DocumentoStrategy {
 
     @Override
     public String getCodigoDocumento() {
-        return "03";
+        return "02";
     }
 
     @Override

@@ -245,7 +245,7 @@ public class CrearTiqueteController implements Serializable {
         carritoService.setColones(total);
         carritoService.setDolares(BigDecimal.ZERO);
         carritoService.setTotalPagado(total);
-        carritoService.calcularVuelto(BigDecimal.valueOf(tipoCambio.getTipoCambioActual().getValorCompra()));
+        carritoService.calcularVuelto(tipoCambio.getTipoCambioActual().getValorCompra());
     }
 
     @Nonnull

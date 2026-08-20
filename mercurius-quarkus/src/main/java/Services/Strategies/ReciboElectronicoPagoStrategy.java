@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 /**
- * Strategy for Recibo Electrónico de Pago (REP, code "07").
+ * Strategy for Recibo Electrónico de Pago (REP, code "10").
  * Per Hacienda v4.4 spec, REP is used for credit sales, government institution sales,
  * and electronic payment receipts. Receptor is required with valid identification.
  */
