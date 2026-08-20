@@ -15,6 +15,8 @@ import Services.FamiliaService;
 import Services.InventarioService;
 import Services.PrinterService;
 import Services.AlertasService;
+import Services.ProductoExoneracionService;
+import Models.ProductoExoneracion;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Meta;
@@ -82,6 +84,7 @@ public class ArticulosController implements Serializable {
     @Inject @Nonnull private PrinterService printer;
     @Inject @Nonnull private AlertasService alertasService;
     @Inject @Nonnull private ArticuloImagenService imagenService;
+    @Inject @Nonnull private ProductoExoneracionService productoExoneracionService;
     
     @Nullable
     private List<Articulos> articulosActivos;
@@ -112,6 +115,10 @@ public class ArticulosController implements Serializable {
     private String SelectedUnidadMedidaComercial;
     @Nonnull
     private ArticuloPrecio precioArticulo;
+    @Nullable
+    private ProductoExoneracion exoneracion;
+    @Nullable
+    private ProductoExoneracion selectedExoneracion;
 
 
     @PostConstruct
@@ -175,8 +182,20 @@ public class ArticulosController implements Serializable {
     
     public void openNewArticulo() {
         newArticulo = new Articulos();
+        exoneracion = new ProductoExoneracion();
         updateDepartamentoAndFamiliaOptions(); 
         PrimeFaces.current().executeScript("PF('CrearArticuloDialog').show();");
+    }
+    
+    @Nullable
+    public ProductoExoneracion getSelectedExoneracion() {
+        if (selectedExoneracion == null && selectedArticulo != null && selectedArticulo.getCodigo() != null) {
+            selectedExoneracion = productoExoneracionService.findByArticuloCodigo(String.valueOf(selectedArticulo.getCodigo()));
+            if (selectedExoneracion == null) {
+                selectedExoneracion = new ProductoExoneracion();
+            }
+        }
+        return selectedExoneracion;
     }
     
     public void updateArticuloByDialog() {
@@ -187,17 +206,20 @@ public class ArticulosController implements Serializable {
             selectedArticulo.setFamilia(familiaService.findById(FamiliaID));
             selectedArticulo.setUsuario(currentSession.getCurrentUser());
             selectedArticulo.setProcessed(true);
-            if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
-                if(selectedArticulo.getCodigoCabys() != null){
-                    selectedArticulo.setProcessed(true);
-                    articulosService.update(selectedArticulo);
-                    alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", antes, DiffUtils.snapshotEntity(selectedArticulo));
-                    clearCache();
-                    clearArticulo();
+                if(selectedArticulo.getDepartamento() != null && selectedArticulo.getFamilia() != null  && selectedArticulo.getUsuario() != null){
+                    if(selectedArticulo.getCodigoCabys() != null){
+                        selectedArticulo.setProcessed(true);
+                        articulosService.update(selectedArticulo);
+                        
+                        saveOrUpdateExoneracion(selectedArticulo, selectedExoneracion);
+                        
+                        alertasService.registrarAlerta("Artículo actualizado", "Se ha actualizado el artículo: " + selectedArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.updateArticulo", antes, DiffUtils.snapshotEntity(selectedArticulo));
+                        clearCache();
+                        clearArticulo();
 
-                    FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizó el artículo", null));
-                    PrimeFaces.current().executeScript("PF('EditArticuloDialog').hide();");
+                        FacesContext.getCurrentInstance().addMessage(null,
+                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se actualizó el artículo", null));
+                        PrimeFaces.current().executeScript("PF('EditArticuloDialog').hide();");
                 }else{
                     FacesContext.getCurrentInstance().addMessage(null,
                     new FacesMessage(FacesMessage.SEVERITY_WARN, "No se seleccionó un código del CABYS", null));
@@ -425,6 +447,12 @@ public class ArticulosController implements Serializable {
                     newArticulo.setPrecios(precios);
                 }
                 articulosService.create(newArticulo);
+                
+                if (newArticulo.isExento() && exoneracion != null) {
+                    exoneracion.setArticuloCodigo(String.valueOf(newArticulo.getCodigo()));
+                    productoExoneracionService.save(exoneracion);
+                }
+                
                 alertasService.registrarAlerta("Artículo creado", "Se ha creado el artículo: " + newArticulo.getNombre(), currentSession.getCurrentUser(), 0, "ArticulosController.createArticulo", null, newArticulo.toString());
                 clearCache();
                 clearArticulo();
@@ -463,7 +491,31 @@ public class ArticulosController implements Serializable {
     
     public void clearArticulo(){
         newArticulo = null;
+        exoneracion = null;
+        selectedExoneracion = null;
         articulosFilter = null;
+    }
+    
+    private void saveOrUpdateExoneracion(@Nonnull Articulos articulo, @Nullable ProductoExoneracion source) {
+        if (articulo.isExento() && source != null) {
+            ProductoExoneracion existing = productoExoneracionService.findByArticuloCodigo(String.valueOf(articulo.getCodigo()));
+            if (existing != null) {
+                existing.setTipoDocumentoEX1(source.getTipoDocumentoEX1());
+                existing.setNumeroDocumento(source.getNumeroDocumento());
+                existing.setNombreInstitucion(source.getNombreInstitucion());
+                existing.setFechaEmisionEX(source.getFechaEmisionEX());
+                existing.setMontoExoneracion(source.getMontoExoneracion());
+                existing.setTarifaExonerada(source.getTarifaExonerada());
+                existing.setTipoDocumentoOTRO(source.getTipoDocumentoOTRO());
+                existing.setArticulo(source.getArticulo());
+                existing.setInciso(source.getInciso());
+                existing.setNombreInstitucionOtros(source.getNombreInstitucionOtros());
+                productoExoneracionService.save(existing);
+            } else {
+                source.setArticuloCodigo(String.valueOf(articulo.getCodigo()));
+                productoExoneracionService.save(source);
+            }
+        }
     }
     
     public void clearFilter(){
@@ -574,8 +626,9 @@ public class ArticulosController implements Serializable {
             BigDecimal precio0 = BigDecimal.ZERO;
 
             // Verificar si el precioConUtilidad es distinto de cero
-            if (precioConUtilidad.compareTo(precio0) != 0) {
-                BigDecimal impuesto = new BigDecimal(newArticulo.getCodigoCabys().getImpuesto());
+                if (precioConUtilidad.compareTo(precio0) != 0 && newArticulo.getCodigoCabys().getImpuesto() != null
+                    && !newArticulo.getCodigoCabys().getImpuesto().isEmpty()) {
+                    BigDecimal impuesto = new BigDecimal(newArticulo.getCodigoCabys().getImpuesto());
                 BigDecimal precioSinIVA = articuloPrecio.getPrecioConUtilidad();
 
                 // Calcular el IVA como porcentaje del precio sin IVA
@@ -675,7 +728,9 @@ public class ArticulosController implements Serializable {
     public void calcularPrecioConIVAEdit(@Nullable ArticuloPrecio articuloPrecio) {
         if (articuloPrecio != null) {
             BigDecimal precioConUtilidad = articuloPrecio.getPrecioConUtilidad();
-            if (precioConUtilidad != null && precioConUtilidad.compareTo(BigDecimal.ZERO) != 0 && selectedArticulo.getCodigoCabys() != null) {
+            if (precioConUtilidad != null && precioConUtilidad.compareTo(BigDecimal.ZERO) != 0 && selectedArticulo.getCodigoCabys() != null
+                && selectedArticulo.getCodigoCabys().getImpuesto() != null
+                && !selectedArticulo.getCodigoCabys().getImpuesto().isEmpty()) {
                 BigDecimal impuesto = new BigDecimal(selectedArticulo.getCodigoCabys().getImpuesto());
                 BigDecimal precioSinIVA = articuloPrecio.getPrecioConUtilidad();
 
