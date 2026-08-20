@@ -27,7 +27,8 @@ public class Cabys {
     @Column(length = 3000)
     private String categorias;
 
-    private int impuesto;
+    @Column(length = 4)
+    private String impuesto;
 
     private String uri;
 
@@ -36,7 +37,7 @@ public class Cabys {
     public Cabys() {
     }
 
-    public Cabys(String codigo, String descripcion, String categorias, int impuesto, String uri, String estado) {
+    public Cabys(String codigo, String descripcion, String categorias, String impuesto, String uri, String estado) {
         this.codigo = codigo;
         this.descripcion = descripcion;
         this.categorias = categorias;

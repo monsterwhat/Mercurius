@@ -331,13 +331,14 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         }
     }
 
-    @Nullable
+    @Nonnull
     public List<ComprobantesRecibidos> listVencidas() {
         try {
+            // Query unpaid invoices only - avoid JOIN FETCH on collection (lineasDetalle) 
+            // as it causes duplicate rows and Hibernate DISTINCT issues
             TypedQuery<ComprobantesRecibidos> query = em.createQuery(
                 "SELECT DISTINCT f FROM ComprobantesRecibidos f " +
-                "LEFT JOIN FETCH f.detalles d " +
-                "LEFT JOIN FETCH d.lineasDetalle " +
+                "LEFT JOIN FETCH f.detalles " +
                 "LEFT JOIN FETCH f.encabezado " +
                 "LEFT JOIN FETCH f.resumen " +
                 "WHERE f.paid = false",
@@ -363,7 +364,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 .collect(java.util.stream.Collectors.toList());
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing vencidas: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listVencidas()", null, e.getMessage());
-            return null;
+            return java.util.Collections.emptyList();
         }
     }
 
