@@ -241,13 +241,23 @@ public class DevolucionesController implements Serializable {
         }
 
         try {
+            Clients notaCliente = null;
+            if (facturaSeleccionada.getEncabezado() != null
+                && facturaSeleccionada.getEncabezado().getReceptor() != null
+                && facturaSeleccionada.getEncabezado().getReceptor().getNombre() != null) {
+                List<Clients> found = clientService.searchByName(
+                    facturaSeleccionada.getEncabezado().getReceptor().getNombre());
+                if (found != null && !found.isEmpty()) {
+                    notaCliente = found.get(0);
+                }
+            }
+
             NotaCredito nota = new NotaCredito();
             nota.setComprobanteOriginal(facturaSeleccionada);
             nota.setFecha(new Date());
             nota.setMotivo(motivo);
             nota.setMontoTotal(totalDevolucion);
-            nota.setCliente(facturaSeleccionada.getEncabezado().getReceptor() != null
-                ? null : null);
+            nota.setCliente(notaCliente);
             nota.setUsuario(sessionController.getCurrentUser().getUsername());
             nota.setStatus(true);
             nota.setHaciendaEstado("PENDIENTE");
@@ -286,11 +296,11 @@ public class DevolucionesController implements Serializable {
                         }
                     }
 
-                    DocumentoStrategy ncStrategy = strategyFactory.forCode("02");
+                    DocumentoStrategy ncStrategy = strategyFactory.forCode("03");
                     String sucursal = appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001";
                     String terminal = appSettings.getCodigoTerminal() != null ? appSettings.getCodigoTerminal() : "001";
                     long consecutivo = consecutivoEmitidoService.getNextSequential(sucursal, terminal, ncStrategy.getCodigoDocumento());
-                    String numeroConsecutivo = String.format("%s%s%s%012d",
+                    String numeroConsecutivo = String.format("%s%s%s%010d",
                         sucursal, terminal,
                         ncStrategy.getCodigoDocumento(), consecutivo);
 
@@ -352,6 +362,22 @@ public class DevolucionesController implements Serializable {
                                         ? imp.getMonto().multiply(factor).setScale(5, RoundingMode.HALF_UP)
                                         : BigDecimal.ZERO);
                                     ni.setLineaDetalle(nl);
+                                    if (imp.getExoneracion() != null) {
+                                        Models.Detalles.Exoneracion origExo = imp.getExoneracion();
+                                        Models.Detalles.Exoneracion newExo = new Models.Detalles.Exoneracion();
+                                        newExo.setTipoDocumentoEX1(origExo.getTipoDocumentoEX1());
+                                        newExo.setTipoDocumentoOTRO(origExo.getTipoDocumentoOTRO());
+                                        newExo.setNumeroDocumento(origExo.getNumeroDocumento());
+                                        newExo.setArticulo(origExo.getArticulo());
+                                        newExo.setInciso(origExo.getInciso());
+                                        newExo.setNombreInstitucion(origExo.getNombreInstitucion());
+                                        newExo.setNombreInstitucionOtros(origExo.getNombreInstitucionOtros());
+                                        newExo.setFechaEmisionEX(origExo.getFechaEmisionEX());
+                                        newExo.setTarifaExonerada(origExo.getTarifaExonerada());
+                                        newExo.setMontoExoneracion(origExo.getMontoExoneracion());
+                                        newExo.setImpuesto(ni);
+                                        ni.setExoneracion(newExo);
+                                    }
                                     imps.add(ni);
                                 }
                                 nl.setImpuestos(imps);
@@ -381,42 +407,88 @@ public class DevolucionesController implements Serializable {
                     ncResumen.setCodigoMoneda(moneda);
                     BigDecimal totalGravado = BigDecimal.ZERO;
                     BigDecimal totalExento = BigDecimal.ZERO;
+                    BigDecimal totalExonerado = BigDecimal.ZERO;
+                    BigDecimal totalServGravados = BigDecimal.ZERO;
+                    BigDecimal totalMercGravadas = BigDecimal.ZERO;
+                    BigDecimal totalServExentos = BigDecimal.ZERO;
+                    BigDecimal totalMercExentas = BigDecimal.ZERO;
+                    BigDecimal totalServExonerado = BigDecimal.ZERO;
+                    BigDecimal totalMercExonerada = BigDecimal.ZERO;
                     BigDecimal totalVenta = BigDecimal.ZERO;
                     BigDecimal totalDescuento = BigDecimal.ZERO;
                     BigDecimal totalImpuesto = BigDecimal.ZERO;
+                    java.util.Map<BigDecimal, BigDecimal> taxByRate = new java.util.HashMap<>();
+                    BigDecimal totalIVADevuelto = BigDecimal.ZERO;
                     for (LineaDetalle linea : ncLineas) {
                         totalVenta = totalVenta.add(linea.getMontoTotal());
                         if (linea.getDescuentos() != null) {
                             totalDescuento = totalDescuento.add(linea.getDescuentos().stream()
                                 .map(Descuento::getMontoDescuento).reduce(BigDecimal.ZERO, BigDecimal::add));
                         }
-                        if (linea.getImpuestos() != null && !linea.getImpuestos().isEmpty()) {
+                        boolean hasTax = linea.getImpuestos() != null && !linea.getImpuestos().isEmpty();
+                        boolean hasExoneracion = hasTax && linea.getImpuestos().stream()
+                            .anyMatch(i -> i.getExoneracion() != null);
+                        if (hasExoneracion) {
+                            totalExonerado = totalExonerado.add(linea.getMontoTotal());
+                            totalServExonerado = totalServExonerado.add(linea.getMontoTotal());
+                            totalMercExonerada = totalMercExonerada.add(linea.getMontoTotal());
+                        } else if (hasTax) {
                             totalGravado = totalGravado.add(linea.getMontoTotal());
-                            totalImpuesto = totalImpuesto.add(linea.getImpuestos().stream()
-                                .map(i -> i.getMonto() != null ? i.getMonto() : BigDecimal.ZERO)
-                                .reduce(BigDecimal.ZERO, BigDecimal::add));
+                            totalMercGravadas = totalMercGravadas.add(linea.getMontoTotal());
+                            for (Impuesto i : linea.getImpuestos()) {
+                                if (i.getMonto() != null) {
+                                    totalImpuesto = totalImpuesto.add(i.getMonto());
+                                }
+                                if (i.getTarifa() != null) {
+                                    taxByRate.merge(i.getTarifa(), i.getMonto() != null ? i.getMonto() : BigDecimal.ZERO, BigDecimal::add);
+                                    if ("04".equals(i.getTarifa().toPlainString())) {
+                                        totalIVADevuelto = totalIVADevuelto.add(i.getMonto() != null ? i.getMonto() : BigDecimal.ZERO);
+                                    }
+                                }
+                            }
                         } else {
                             totalExento = totalExento.add(linea.getMontoTotal());
+                            totalServExentos = totalServExentos.add(linea.getMontoTotal());
+                            totalMercExentas = totalMercExentas.add(linea.getMontoTotal());
                         }
                     }
                     BigDecimal totalVentaNeta = totalVenta.subtract(totalDescuento);
-                    BigDecimal totalComprobante = totalVentaNeta.add(totalImpuesto);
-                    ncResumen.setTotalServGravados(BigDecimal.ZERO);
-                    ncResumen.setTotalServExentos(BigDecimal.ZERO);
-                    ncResumen.setTotalServExonerado(BigDecimal.ZERO);
-                    ncResumen.setTotalMercanciasGravadas(totalGravado);
-                    ncResumen.setTotalMercanciasExentas(totalExento);
-                    ncResumen.setTotalMercExonerada(BigDecimal.ZERO);
+                    BigDecimal totalOtrosCargos = Services.ComprobanteService.calcularTotalOtrosCargos(ncDetalles);
+                    BigDecimal totalComprobante = totalVentaNeta.add(totalImpuesto)
+                            .add(totalOtrosCargos).subtract(totalIVADevuelto);
+                    ncResumen.setTotalServGravados(totalServGravados);
+                    ncResumen.setTotalServExentos(totalServExentos);
+                    ncResumen.setTotalServExonerado(totalServExonerado);
+                    ncResumen.setTotalMercanciasGravadas(totalMercGravadas);
+                    ncResumen.setTotalMercanciasExentas(totalMercExentas);
+                    ncResumen.setTotalMercExonerada(totalMercExonerada);
                     ncResumen.setTotalGravado(totalGravado);
                     ncResumen.setTotalExento(totalExento);
-                    ncResumen.setTotalExonerado(BigDecimal.ZERO);
+                    ncResumen.setTotalExonerado(totalExonerado);
                     ncResumen.setTotalVenta(totalVenta);
                     ncResumen.setTotalDescuentos(totalDescuento);
                     ncResumen.setTotalVentaNeta(totalVentaNeta);
                     ncResumen.setTotalImpuesto(totalImpuesto);
-                    ncResumen.setTotalIVADevuelto(BigDecimal.ZERO);
-                    ncResumen.setTotalOtrosCargos(BigDecimal.ZERO);
+                    ncResumen.setTotalIVADevuelto(totalIVADevuelto);
+                    ncResumen.setTotalOtrosCargos(totalOtrosCargos);
                     ncResumen.setTotalComprobante(totalComprobante);
+
+                    if (!taxByRate.isEmpty()) {
+                        java.util.List<Models.Resumen.TotalDesgloseImpuesto> desgloseList = new java.util.ArrayList<>();
+                        for (java.util.Map.Entry<BigDecimal, BigDecimal> entry : taxByRate.entrySet()) {
+                            try {
+                                Models.Enums.Tipo_TarifaIVA tarifa = Models.Enums.Tipo_TarifaIVA.getTarifa(entry.getKey().toPlainString());
+                                Models.Resumen.TotalDesgloseImpuesto item = new Models.Resumen.TotalDesgloseImpuesto();
+                                item.setCodigo("01");
+                                item.setCodigoTarifaIVA(tarifa.getCodigo());
+                                item.setTotalMontoImpuesto(entry.getValue().setScale(5, java.math.RoundingMode.HALF_UP));
+                                item.setResumenFactura(ncResumen);
+                                desgloseList.add(item);
+                            } catch (IllegalArgumentException ignored) {
+                            }
+                        }
+                        ncResumen.setTotalDesgloseImpuestos(desgloseList);
+                    }
 
                     InformacionReferencia ref = InformacionReferencia.from(facturaSeleccionada, "01", motivo);
                     List<InformacionReferencia> referencias = new ArrayList<>();

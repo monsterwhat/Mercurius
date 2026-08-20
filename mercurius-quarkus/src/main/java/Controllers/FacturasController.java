@@ -21,10 +21,12 @@ import Services.ComprobantesRecibidosPrevalidationService;
 import Services.ComprobantesRecibidosService;
 import Services.AppSettingsService;
 import Services.ComprobanteService;
+import Services.Strategies.DocumentoStrategyFactory;
 import Services.Facturas.*;
 import Services.HaciendaApiService;
 import Services.HaciendaSigner;
 import Services.ConsecutivoReceptorService;
+import Services.MensajeReceptorService;
 import Utils.Parsers.Parser;
 import jakarta.annotation.PostConstruct;
 import jakarta.faces.application.FacesMessage;
@@ -91,6 +93,8 @@ public class FacturasController implements Serializable {
     @Inject @Nonnull
     ComprobanteService comprobanteService;
     @Inject @Nonnull
+    DocumentoStrategyFactory strategyFactory;
+    @Inject @Nonnull
     HaciendaApiService haciendaApiService;
     @Inject @Nonnull
     HaciendaSigner haciendaSigner;
@@ -98,6 +102,8 @@ public class FacturasController implements Serializable {
     ComprobantesRecibidosPrevalidationService prevalidationService;
     @Inject @Nonnull
     ConsecutivoReceptorService consecutivoReceptorService;
+    @Inject @Nonnull
+    MensajeReceptorService mensajeReceptorService;
 
     @Nullable
     private PrevalidationResult prevalidationResult;
@@ -138,6 +144,7 @@ public class FacturasController implements Serializable {
     private BigDecimal reportTotalImpuesto;
     @Nonnull
     private BigDecimal reportTotalBaseImponible;
+    private String selectedSummaryRange = "all";
 
     @PostConstruct
     public void init() {
@@ -163,8 +170,25 @@ public class FacturasController implements Serializable {
         if (facturas == null) {
             facturas = facturaService.listAll();
         }
+
+        java.time.LocalDate now = java.time.LocalDate.now();
+        java.time.LocalDate cutoff = switch (selectedSummaryRange) {
+            case "1m" -> now.minusMonths(1);
+            case "3m" -> now.minusMonths(3);
+            case "1y" -> now.minusYears(1);
+            default -> null;
+        };
         
         for (ComprobantesRecibidos factura : facturas) {
+            if (cutoff != null) {
+                if (factura.getEncabezado() == null || factura.getEncabezado().getFechaEmision() == null) {
+                    continue;
+                }
+                java.time.LocalDate fecha = factura.getEncabezado().getFechaEmision().toLocalDate();
+                if (fecha.isBefore(cutoff)) {
+                    continue;
+                }
+            }
             if (factura.getResumen() != null) {
                 if (factura.getResumen().getTotalComprobante() != null) {
                     reportTotalComprobantes = reportTotalComprobantes.add(factura.getResumen().getTotalComprobante());
@@ -210,7 +234,13 @@ public class FacturasController implements Serializable {
     public void limpiarFiltrosReport() {
         reportFechaInicio = new Date();
         reportFechaFin = new Date();
-        initReport();
+        selectedSummaryRange = "all";
+        loadReportData();
+    }
+
+    public void setSummaryRange(String range) {
+        selectedSummaryRange = range;
+        loadReportData();
     }
     
     public int getTotalFacturasReporte() {
@@ -252,11 +282,11 @@ public class FacturasController implements Serializable {
         return facturasPendientes;
     }
 
-    public @Nullable List<ComprobantesRecibidos> facturasVencidas() {
+    public List<ComprobantesRecibidos> facturasVencidas() {
         if (facturasVencidas == null) {
             facturasVencidas = facturaService.listVencidas();
         }
-        return facturasVencidas;
+        return facturasVencidas != null ? facturasVencidas : java.util.Collections.emptyList();
     }
 
     public long facturaCount() {
@@ -284,7 +314,8 @@ public class FacturasController implements Serializable {
     }
     
     public long facturasVencidasCount() {
-        return facturasVencidas().size();
+        List<ComprobantesRecibidos> vencidas = facturasVencidas();
+        return vencidas != null ? vencidas.size() : 0;
     }
 
     public void deleteFactura() {
@@ -659,7 +690,8 @@ public class FacturasController implements Serializable {
                 String unidadMedida = lineaDetalle.getUnidadMedida();
                 String unidadMedidaComercial = lineaDetalle.getUnidadMedidaComercial();
                 var montoTotalLinea = lineaDetalle.getMontoTotalLinea();
-                var totalUnitario = montoTotalLinea.divide(cantidad, 20, RoundingMode.HALF_UP);
+                var totalUnitario = cantidad != null && cantidad.compareTo(BigDecimal.ZERO) != 0
+                    ? montoTotalLinea.divide(cantidad, 20, RoundingMode.HALF_UP) : BigDecimal.ZERO;
                 var precioUnitario = totalUnitario;
                 var UnidadesParseadas = parser.parseUnidadMedida(unidadMedida, unidadMedidaComercial).multiply(cantidad);
 
@@ -839,7 +871,10 @@ public class FacturasController implements Serializable {
         BigDecimal totalImpuesto = selectedFactura.getResumen() != null
             ? selectedFactura.getResumen().getTotalImpuesto() : BigDecimal.ZERO;
         BigDecimal totalFactura = selectedFactura.getResumen() != null
-            ? selectedFactura.getResumen().getTotalVenta() : BigDecimal.ZERO;
+            ? selectedFactura.getResumen().getTotalComprobante() : BigDecimal.ZERO;
+        validarCondicionVentaFactura(
+            selectedFactura.getEncabezado() != null ? selectedFactura.getEncabezado().getCondicionVenta() : null,
+            selectedFactura.getEncabezado() != null ? selectedFactura.getEncabezado().getCodigoDocumento() : null);
         procesarMensajeReceptor(1, "Aceptado", totalImpuesto, totalFactura);
     }
 
@@ -852,7 +887,10 @@ public class FacturasController implements Serializable {
         BigDecimal totalImpuesto = selectedFactura.getResumen() != null
             ? selectedFactura.getResumen().getTotalImpuesto() : BigDecimal.ZERO;
         BigDecimal totalFactura = selectedFactura.getResumen() != null
-            ? selectedFactura.getResumen().getTotalVenta() : BigDecimal.ZERO;
+            ? selectedFactura.getResumen().getTotalComprobante() : BigDecimal.ZERO;
+        validarCondicionVentaFactura(
+            selectedFactura.getEncabezado() != null ? selectedFactura.getEncabezado().getCondicionVenta() : null,
+            selectedFactura.getEncabezado() != null ? selectedFactura.getEncabezado().getCodigoDocumento() : null);
         procesarMensajeReceptor(3, "Rechazado", totalImpuesto, totalFactura);
     }
 
@@ -928,6 +966,9 @@ public class FacturasController implements Serializable {
             }
         }
 
+        validarCondicionVentaFactura(
+            selectedFactura.getEncabezado() != null ? selectedFactura.getEncabezado().getCondicionVenta() : null,
+            selectedFactura.getEncabezado() != null ? selectedFactura.getEncabezado().getCodigoDocumento() : null);
         procesarMensajeReceptor(2, "Aceptado Parcial", totalImpuesto, totalFactura);
         lineasAceptadas = new HashSet<>();
     }
@@ -935,102 +976,37 @@ public class FacturasController implements Serializable {
     private void procesarMensajeReceptor(int codigoMensaje, String accion,
                                           BigDecimal montoTotalImpuesto, BigDecimal montoTotalFactura) {
         try {
-            if (selectedFactura.getEncabezado() == null) {
+            MensajeReceptorService.MRResult result = mensajeReceptorService.enviarMensajeReceptor(
+                selectedFactura, codigoMensaje, accion, montoTotalImpuesto, montoTotalFactura);
+
+            if (result.success) {
                 FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Factura sin encabezado"));
-                return;
-            }
-
-            AppSettings settings = appSettingsService.returnCurrent();
-            if (settings == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No hay configuración de Hacienda"));
-                return;
-            }
-
-            String clave = selectedFactura.getEncabezado().getClave();
-            if (clave == null || clave.isEmpty()) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Factura sin clave Hacienda"));
-                return;
-            }
-
-            // NumeroCedulaReceptor in MR = the original invoice receptor (buyer = system user)
-            String receptorId = settings.getIdentificacion() != null ? settings.getIdentificacion() : "0";
-            // NumeroCedulaEmisor in MR = the original invoice emitter (seller)
-            String emisorId = "0";
-            if (selectedFactura.getEncabezado().getEmisor() != null
-                && selectedFactura.getEncabezado().getEmisor().getIdentificacion() != null
-                && selectedFactura.getEncabezado().getEmisor().getIdentificacion().getNumero() != null) {
-                emisorId = selectedFactura.getEncabezado().getEmisor().getIdentificacion().getNumero();
-            }
-
-            LocalDateTime fechaEmision = selectedFactura.getEncabezado().getFechaEmision();
-
-            String codigoSucursal = settings.getCodigoSucursal() != null ? settings.getCodigoSucursal() : "001";
-            String codigoTerminal = settings.getCodigoTerminal() != null ? settings.getCodigoTerminal() : "001";
-            String mrType = codigoMensaje == 1 ? "05" : (codigoMensaje == 2 ? "06" : "07");
-            String sucursalFmt = String.format("%03d", Integer.parseInt(codigoSucursal));
-            String terminalFmt = String.format("%05d", Integer.parseInt(codigoTerminal));
-            String seq = consecutivoReceptorService.getNextSequential(sucursalFmt, terminalFmt, mrType);
-            String numeroConsecutivoReceptor = sucursalFmt + terminalFmt + mrType + seq;
-
-            String xmlMensaje = comprobanteService.generateMensajeReceptorXml(
-                settings, clave, emisorId, receptorId, fechaEmision, codigoMensaje,
-                accion, montoTotalImpuesto, montoTotalFactura, numeroConsecutivoReceptor
-            );
-
-            if (xmlMensaje == null) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo generar el XML del Mensaje Receptor"));
-                return;
-            }
-
-            HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlMensaje);
-            if (!signResult.success) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error firmando Mensaje Receptor: " + signResult.errorMessage));
-                return;
-            }
-
-            String emisorTipoId = settings.getTipoIdentificacion();
-            String emisorNumeroId = settings.getIdentificacion();
-            String receptorTipoId = "01";
-            String receptorNumeroId = "000000000";
-            if (selectedFactura.getEncabezado() != null 
-                && selectedFactura.getEncabezado().getEmisor() != null
-                && selectedFactura.getEncabezado().getEmisor().getIdentificacion() != null) {
-                receptorTipoId = selectedFactura.getEncabezado().getEmisor().getIdentificacion().getTipo();
-                receptorNumeroId = selectedFactura.getEncabezado().getEmisor().getIdentificacion().getNumero();
-            }
-
-            HaciendaApiService.ApiResponse response;
-            if (codigoMensaje == 1) {
-                response = haciendaApiService.acceptInvoice(clave, signResult.signedXml,
-                    emisorTipoId, emisorNumeroId, receptorTipoId, receptorNumeroId);
-            } else {
-                response = haciendaApiService.rejectInvoice(clave, signResult.signedXml,
-                    emisorTipoId, emisorNumeroId, receptorTipoId, receptorNumeroId);
-            }
-
-            if (response.isSuccess()) {
-                selectedFactura.setHaciendaMensajeReceptorEstado(accion.toUpperCase());
-                selectedFactura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
-                facturaService.update(selectedFactura);
-
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito",
-                        "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor enviado a Hacienda."));
-                alertas.registrarAlerta("Hacienda", "Mensaje Receptor " + accion + ": " + clave, currentSession.getCurrentUser(), 0, "FacturasController.procesarMensajeReceptor()", null, null);
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", result.message));
             } else {
                 FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Hacienda rechazó el Mensaje Receptor: " + response.errorMessage));
+                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", result.message));
             }
-
         } catch (RuntimeException e) {
-            alertas.registrarAlerta("Error", "Error en Mensaje Receptor: " + e.getMessage(), currentSession.getCurrentUser(), 0, "FacturasController.procesarMensajeReceptor()", null, e.getMessage());
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar Mensaje Receptor: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Validates CondicionVenta against the allowed values for the given document type.
+     * Uses DocumentoStrategyFactory to resolve the correct strategy and its permitted codes.
+     * Throws IllegalArgumentException if condicionVenta is not in the allowed list.
+     */
+    private void validarCondicionVentaFactura(String condicionVenta, String codigoDocumento) {
+        if (condicionVenta == null) {
+            return; // null CondicionVenta is handled by Strategy defaults
+        }
+        var strategy = strategyFactory.forCode(codigoDocumento);
+        java.util.Set<String> permitidas = strategy.getCondicionVentaPermitidas();
+        if (!permitidas.contains(condicionVenta)) {
+            throw new IllegalArgumentException(
+                "CondicionVenta código " + condicionVenta + " no permitido para tipo documento "
+                + codigoDocumento + ". Códigos permitidos: " + permitidas);
         }
     }
 
