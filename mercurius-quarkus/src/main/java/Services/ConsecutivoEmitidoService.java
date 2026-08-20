@@ -81,8 +81,7 @@ public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
             alertasService.registrarAlerta("Error",
                 "Error generating consecutive number: " + e.getMessage(),
                 null, 0, "ConsecutivoEmitidoService.getNextSequential()", null, e.getMessage());
-            // Fallback: generate a timestamp-based number to avoid blocking the flow
-            return System.currentTimeMillis() % 10000000000L;
+            throw new RuntimeException("Cannot generate consecutive number for " + sucursal + "-" + terminal + "-" + tipo + ": " + e.getMessage(), e);
         }
     }
 }

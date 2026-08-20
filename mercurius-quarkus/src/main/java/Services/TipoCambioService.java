@@ -4,6 +4,8 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import Models.TipoCambio;
 import com.fasterxml.jackson.core.JsonProcessingException; 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.client.Client;
@@ -70,8 +72,8 @@ public class TipoCambioService extends GService<TipoCambio> {
             JsonNode compraNode = rootNode.get("compra");
 
             LocalDateTime fechaVenta = parseFechaVenta(ventaNode);
-            double valorVenta = Math.floor(ventaNode.get("valor").asDouble());
-            double valorCompra = Math.floor(compraNode.get("valor").asDouble());
+            BigDecimal valorVenta = new BigDecimal(ventaNode.get("valor").asText()).setScale(5, RoundingMode.HALF_UP);
+            BigDecimal valorCompra = new BigDecimal(compraNode.get("valor").asText()).setScale(5, RoundingMode.HALF_UP);
 
             TipoCambio tipoCambio = new TipoCambio();
             tipoCambio.setFecha(fechaVenta);

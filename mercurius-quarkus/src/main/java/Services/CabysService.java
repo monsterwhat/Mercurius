@@ -154,7 +154,7 @@ public class CabysService extends GService<Cabys>{
                     categoriasBuilder.append(categoriaNode.asText()).append("; ");
                 }
                 String categorias = categoriasBuilder.toString();
-                int impuesto = cabysNode.get("impuesto").asInt();
+                String impuesto = cabysNode.get("impuesto").asText();
                 String uri = cabysNode.get("uri").asText();
                 String estado = cabysNode.get("estado").asText();
 

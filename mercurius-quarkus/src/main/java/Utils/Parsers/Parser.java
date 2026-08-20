@@ -591,7 +591,8 @@ public class Parser {
 
             return impuesto;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing impuestos: " + e.getLocalizedMessage(), null, 0, "Parser.parseImpuesto()", null, null);
+            String articleName = impuestoNode.path("Detalle").asText("unknown");
+            alertasService.registrarAlerta("Error", "Error parsing impuesto for '" + articleName + "': " + e.getLocalizedMessage(), null, 0, "Parser.parseImpuesto()", null, e.getLocalizedMessage());
             return null;
         }
     }
