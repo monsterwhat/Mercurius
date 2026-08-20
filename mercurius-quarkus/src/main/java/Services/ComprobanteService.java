@@ -7,9 +7,11 @@ import Models.Detalles.CodigoComercial;
 import Models.Detalles.Descuento;
 import Models.Detalles.DetalleServicio;
 import Models.Detalles.DetalleSurtido;
+import Models.Detalles.Exoneracion;
 import Models.Detalles.Impuesto;
 import Models.Detalles.LineaDetalle;
 import Models.Detalles.LineaDetalleSurtido;
+import Models.ProductoExoneracion;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.IdentificacionEmisor;
@@ -120,6 +122,9 @@ public class ComprobanteService implements Serializable {
     @Inject
     private @Nonnull ConsecutivoEmitidoService consecutivoEmitidoService;
 
+    @Inject
+    private @Nonnull ProductoExoneracionService productoExoneracionService;
+
     public static class CrearComprobanteResult {
         public ComprobantesEmitidos comprobante;
         public boolean haciendaEnviado;
@@ -187,8 +192,19 @@ public class ComprobanteService implements Serializable {
             detallesService.create(detalles);
             ResumenFactura resumen = resumenComprobante(carrito);
 
+            BigDecimal totalOtrosCargos = calcularTotalOtrosCargos(detalles);
+            resumen.setTotalOtrosCargos(totalOtrosCargos);
+
+            BigDecimal totalIVADevuelto = calcularTotalIVADevuelto(carrito, pagos);
+            resumen.setTotalIVADevuelto(totalIVADevuelto);
+
+            BigDecimal totalComprobante = resumen.getTotalVentaNeta()
+                    .add(resumen.getTotalImpuesto())
+                    .add(totalOtrosCargos)
+                    .subtract(totalIVADevuelto);
+            resumen.setTotalComprobante(totalComprobante);
+
             List<MedioPagoR> mediosPagoResumen = new ArrayList<>();
-            BigDecimal totalComprobante = resumen.getTotalComprobante();
             BigDecimal sumaPagos = BigDecimal.ZERO;
             int pagoCount = 0;
             for (PagoEntry entry : pagos) {
@@ -351,30 +367,64 @@ public class ComprobanteService implements Serializable {
             BigDecimal totalDescuentos = BigDecimal.ZERO;
             BigDecimal totalVentaNeta = BigDecimal.ZERO;
             BigDecimal totalImpuesto = BigDecimal.ZERO;
-            BigDecimal totalIVADevuelto = BigDecimal.ZERO;
-            BigDecimal totalOtrosCargos = BigDecimal.ZERO;
-            BigDecimal totalComprobante = BigDecimal.ZERO;
+            boolean esServicio = false;
             for (ArticuloCarrito articuloCarrito : carrito) {
                 var articulo = articuloCarrito;
-                var precioFinal = articuloCarrito.getTotalArticulos();
-                var impuesto = BigDecimal.valueOf(articulo.getArticulo().getCodigoCabys().getImpuesto()).divide(BigDecimal.valueOf(100));
-                var totalImpuestoArticulo = precioFinal.multiply(impuesto);
-                if (articulo.getArticulo().getCodigoCabys().getImpuesto() != 0) {
-                    totalServGravados = totalServGravados.add(precioFinal);
-                    totalImpuesto = totalImpuesto.add(totalImpuestoArticulo);
-                } else if (articulo.getArticulo().getCodigoCabys().getImpuesto() == 0) {
-                    totalServExentos = totalServExentos.add(precioFinal);
+                BigDecimal precioFinal;
+                if (articuloCarrito.isPromo()) {
+                    BigDecimal precioUnit = articuloCarrito.getPrecioEfectivo();
+                    BigDecimal desc = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
+                    if (desc.compareTo(BigDecimal.valueOf(100)) > 0) desc = BigDecimal.valueOf(100);
+                    precioFinal = precioUnit.multiply(BigDecimal.ONE.subtract(desc.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP)))
+                            .multiply(articuloCarrito.getCantidad());
+                } else {
+                    precioFinal = articuloCarrito.getTotalArticulos();
                 }
-                if (articulo.getArticulo().getCodigoCabys().getImpuesto() != 0) {
-                    totalMercanciasGravadas = totalMercanciasGravadas.add(precioFinal);
-                } else if (articulo.getArticulo().getCodigoCabys().getImpuesto() == 0) {
-                    totalMercanciasExentas = totalMercanciasExentas.add(precioFinal);
+
+                String impuestoStr = articulo.getArticulo().getCodigoCabys().getImpuesto();
+                BigDecimal impuestoPct = BigDecimal.ZERO;
+                if (impuestoStr != null && !impuestoStr.isEmpty()) {
+                    try {
+                        impuestoPct = new BigDecimal(impuestoStr);
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
+                var impuesto = impuestoPct.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
+                var totalImpuestoArticulo = precioFinal.multiply(impuesto);
+
+                ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
+                        articulo.getArticulo().getCodigo().toString());
+
+                boolean isExonerado = exoneracion != null;
+                if (impuestoPct.compareTo(BigDecimal.ZERO) != 0) {
+                    if (esServicio) {
+                        totalServGravados = totalServGravados.add(precioFinal);
+                    }
+                    if (!esServicio) {
+                        totalMercanciasGravadas = totalMercanciasGravadas.add(precioFinal);
+                    }
+                    totalImpuesto = totalImpuesto.add(totalImpuestoArticulo);
+                } else if (!isExonerado) {
+                    if (esServicio) {
+                        totalServExentos = totalServExentos.add(precioFinal);
+                    }
+                    if (!esServicio) {
+                        totalMercanciasExentas = totalMercanciasExentas.add(precioFinal);
+                    }
+                }
+                if (isExonerado) {
+                    if (esServicio) {
+                        totalServExonerado = totalServExonerado.add(precioFinal);
+                    }
+                    if (!esServicio) {
+                        totalMercExonerada = totalMercExonerada.add(precioFinal);
+                    }
                 }
                 totalVenta = totalVenta.add(precioFinal);
-                totalDescuentos = totalDescuentos.add(articuloCarrito.getTotalDescuento());
+                totalDescuentos = totalDescuentos.add(
+                    articuloCarrito.getTotalDescuento().multiply(articuloCarrito.getCantidad()));
             }
             totalVentaNeta = totalVenta.subtract(totalDescuentos);
-            totalComprobante = totalVentaNeta.add(totalImpuesto);
             ResumenFactura resumen = new ResumenFactura();
             CodigoTipoMoneda moneda = new CodigoTipoMoneda();
             moneda.setCodigoMoneda("CRC");
@@ -395,15 +445,13 @@ public class ComprobanteService implements Serializable {
             resumen.setTotalDescuentos(totalDescuentos);
             resumen.setTotalVentaNeta(totalVentaNeta);
             resumen.setTotalImpuesto(totalImpuesto);
-            resumen.setTotalIVADevuelto(totalIVADevuelto);
-            resumen.setTotalOtrosCargos(totalOtrosCargos);
-            resumen.setTotalComprobante(totalComprobante);
+            // TotalIVADevuelto, TotalOtrosCargos, TotalComprobante are set by crearComprobante()
             // Wire up TotalDesgloseImpuesto per tax rate (minOccurs="0" in XSD v4.4)
-            Map<Integer, BigDecimal> taxByRate = CarritoCalculations.calculateTotalTaxByRate(carrito);
+            Map<BigDecimal, BigDecimal> taxByRate = CarritoCalculations.calculateTotalTaxByRate(carrito);
             if (!taxByRate.isEmpty()) {
                 List<TotalDesgloseImpuesto> desgloseList = new ArrayList<>();
-                for (Map.Entry<Integer, BigDecimal> entry : taxByRate.entrySet()) {
-                    String rateStr = String.valueOf(entry.getKey());
+                for (Map.Entry<BigDecimal, BigDecimal> entry : taxByRate.entrySet()) {
+                    String rateStr = entry.getKey().toPlainString();
                     // Only include rates that map to a valid tariff
                     try {
                         Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(rateStr);
@@ -425,6 +473,61 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
             return null;
         }
 
+    }
+
+    /**
+     * Sums all OtroCargo.MontoCargo from a DetalleServicio.
+     * Returns ZERO when there are no OtrosCargos (the common case for retail).
+     * Used to populate TotalOtrosCargos in ResumenFactura.
+     */
+    public static BigDecimal calcularTotalOtrosCargos(@Nullable DetalleServicio detalles) {
+        if (detalles == null || detalles.getOtrosCargos() == null) return BigDecimal.ZERO;
+        return detalles.getOtrosCargos().stream()
+                .map(oc -> oc.getMontoCargo() != null ? oc.getMontoCargo() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Computes TotalIVADevuelto: the IVA amount that must be returned to the
+     * customer when the invoice contains items at the 4% reduced medical rate
+     * AND at least one payment method is a card (code "02").
+     *
+     * Per Hacienda v4.4 and Ley N.° 6826 Art. 11 inc. 1) subinc. b):
+     *   Private medical services are taxed at 4%. When the patient pays with
+     *   a credit/debit card, the provider must immediately refund that 4% IVA.
+     *   TotalIVADevuelto records this refund.
+     *
+     * Returns ZERO when: no 4% items exist, or no card payment, or both.
+     */
+    public static BigDecimal calcularTotalIVADevuelto(
+            @Nonnull List<ArticuloCarrito> carrito,
+            @Nonnull List<PagoEntry> pagos) {
+        boolean paidByCard = pagos.stream()
+                .anyMatch(p -> "02".equals(p.getMetodoPago()));
+        if (!paidByCard) return BigDecimal.ZERO;
+
+        BigDecimal totalIVADevuelto = BigDecimal.ZERO;
+        for (ArticuloCarrito articulo : carrito) {
+            String impuestoStr = articulo.getArticulo().getCodigoCabys().getImpuesto();
+            if (impuestoStr == null || impuestoStr.isEmpty()) continue;
+            if (!"4".equals(impuestoStr)) continue;
+
+            BigDecimal precioFinal;
+            if (articulo.isPromo()) {
+                BigDecimal precioUnit = articulo.getPrecioEfectivo();
+                BigDecimal desc = articulo.getDescuento() != null ? articulo.getDescuento() : BigDecimal.ZERO;
+                if (desc.compareTo(BigDecimal.valueOf(100)) > 0) desc = BigDecimal.valueOf(100);
+                precioFinal = precioUnit.multiply(BigDecimal.ONE.subtract(
+                        desc.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP)))
+                        .multiply(articulo.getCantidad());
+            } else {
+                precioFinal = articulo.getTotalArticulos();
+            }
+            BigDecimal iva = precioFinal.multiply(new BigDecimal("0.04"))
+                    .setScale(5, RoundingMode.HALF_UP);
+            totalIVADevuelto = totalIVADevuelto.add(iva);
+        }
+        return totalIVADevuelto;
     }
 
     public DetalleServicio detallesComprobante(List<ArticuloCarrito> carrito, String tipoDocumento) {
@@ -496,7 +599,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                     if (promociones != null && !promociones.isEmpty()) {
                         for (Promocion promocion : promociones) {
                             Descuento descuento = new Descuento();
-                            descuento.setMontoDescuento(articulo.getTotalDescuento());
+                            descuento.setMontoDescuento(articulo.getTotalDescuento().multiply(Cantidad));
                             // Use the promo's Nota 20 discount code, fall back to "06" if unset
                             String codigo = promocion.getCodigoDescuento();
                             if (codigo == null || codigo.isBlank()) {
@@ -555,12 +658,30 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                 List<Impuesto> impuestos = new ArrayList<>();
                 if (!articulo.getTotalImpuesto().equals(BigDecimal.ZERO)) {
                     Impuesto impuesto = new Impuesto();
-                    String codigoImpuesto = String.valueOf(articulo.getArticulo().getCodigoCabys().getImpuesto());
+                    String codigoImpuesto = articulo.getArticulo().getCodigoCabys().getImpuesto();
+                    if (codigoImpuesto == null || codigoImpuesto.isEmpty()) codigoImpuesto = "0";
                     impuesto.setCodigo("01");
                     Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(codigoImpuesto);
                     impuesto.setCodigoTarifaIVA(tarifa.getCodigo());
                     impuesto.setTarifa(new BigDecimal(codigoImpuesto));
-                    impuesto.setMonto(articulo.getTotalImpuesto());
+                    impuesto.setMonto(articulo.getTotalImpuesto().multiply(Cantidad));
+                    ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
+                            articulo.getArticulo().getCodigo().toString());
+                    if (exoneracion != null) {
+                        Exoneracion exoneracionEntity = new Exoneracion();
+                        exoneracionEntity.setTipoDocumentoEX1(exoneracion.getTipoDocumentoEX1());
+                        exoneracionEntity.setTipoDocumentoOTRO(exoneracion.getTipoDocumentoOTRO());
+                        exoneracionEntity.setNumeroDocumento(exoneracion.getNumeroDocumento());
+                        exoneracionEntity.setArticulo(exoneracion.getArticulo());
+                        exoneracionEntity.setInciso(exoneracion.getInciso());
+                        exoneracionEntity.setNombreInstitucion(exoneracion.getNombreInstitucion());
+                        exoneracionEntity.setNombreInstitucionOtros(exoneracion.getNombreInstitucionOtros());
+                        exoneracionEntity.setFechaEmisionEX(exoneracion.getFechaEmisionEX());
+                        exoneracionEntity.setTarifaExonerada(exoneracion.getTarifaExonerada());
+                        exoneracionEntity.setMontoExoneracion(exoneracion.getMontoExoneracion());
+                        exoneracionEntity.setImpuesto(impuesto);
+                        impuesto.setExoneracion(exoneracionEntity);
+                    }
                     impuestoService.create(impuesto);
                     impuestos.add(impuesto);
                 }
@@ -569,7 +690,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
 
                 // ImpuestoNeto mandatory in all XSDs except FEE
                 if (!"05".equals(tipoDocumento)) {
-                    linea.setImpuestoNeto(articulo.getTotalImpuesto());
+                    linea.setImpuestoNeto(articulo.getTotalImpuesto().multiply(Cantidad));
                 }
                 // BaseImponible mandatory for FE/TE/NC/ND/FEC — not in REP/FEE XSD
                 if (!isRep && !"05".equals(tipoDocumento)) {
