@@ -27,7 +27,7 @@ public class PrevalidationConfig {
     /** STRICT = missing CAByS codes are errors (reject invoice);
      *  LENIENT = missing CAByS codes are warnings (allow acceptance). */
     @Column(name = "cabys_strict_mode", nullable = false)
-    private boolean cabysStrictMode = true;
+    private boolean cabysStrictMode = false;
 
     /** Tolerance for tax calculation comparisons (e.g. 0.01 = ±1 colón). */
     @Column(name = "tax_tolerance", precision = 10, scale = 4, nullable = false)
