@@ -35,7 +35,7 @@ public class PrevalidationConfigService {
 
     // ─── Defaults ───────────────────────────────────────────────────
 
-    private static final boolean DEFAULT_CABYS_STRICT_MODE = true;
+    private static final boolean DEFAULT_CABYS_STRICT_MODE = false;
     private static final BigDecimal DEFAULT_TAX_TOLERANCE = new BigDecimal("0.01");
     private static final int DEFAULT_MAX_CORRECTION_ATTEMPTS = 3;
 
