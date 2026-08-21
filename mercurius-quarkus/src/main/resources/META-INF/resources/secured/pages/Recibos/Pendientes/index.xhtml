@@ -99,7 +99,7 @@
 
                                 <p:column headerText="Acciones" width="6%" exportable="false">
                                     <p:commandButton id="buttonSee" styleClass="rounded-button ui-button-info" process="@this"
-                                                     icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
+                                                     icon="pi pi-eye" actionListener="#{facturasController.showDetailsDialog()}" >
                                         <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                     </p:commandButton>
                                 </p:column>

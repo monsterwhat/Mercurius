@@ -87,7 +87,7 @@
                                      </p:commandButton>
                                      
                                      <p:commandButton id="buttonSee" styleClass="button is-1 is-rounded is-mobile" process="@this" update="lineasDetalleTable"
-                                                      icon="pi pi-eye" onclick="PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();" >
+                                                      icon="pi pi-eye" actionListener="#{facturasController.showDetailsDialog()}" >
                                                      <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}" />
                                      </p:commandButton>
                                      
