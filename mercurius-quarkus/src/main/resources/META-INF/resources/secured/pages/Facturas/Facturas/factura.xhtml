@@ -219,27 +219,6 @@
                             </div>
                         </div> 
                     </div>
-                    <div class="columns is-centered is-vcentered">
-                        <div class="column has-text-centered">
-                            <div class="block">
-                                <p class="title is-5">
-                                    Buscar Producto
-                                </p>
-                                <p:autoComplete id="buscarProducto" style="width: 100%"
-                                                placeholder="Nombre del producto..."
-                                                value="#{crearTiqueteController.selectedArticulo}"
-                                                completeMethod="#{crearTiqueteController.completeArticulo}"
-                                                var="art" itemLabel="#{art.nombre}" itemValue="#{art}"
-                                                converter="entityConverter"
-                                                forceSelection="false" dropdown="true"
-                                                maxResults="20">
-                                    <p:ajax event="itemSelect" process="@this"
-                                            listener="#{crearTiqueteController.onArticuloSelect}"
-                                            update="crearTiquete"/>
-                                </p:autoComplete>
-                            </div>
-                        </div>
-                    </div>
                     <div class="columns is-multiline is-centered is-vcentered"> 
                         <div class="column is-full">
                             <p:dataTable id="carrito" var="carrito"  value="#{crearTiqueteController.carrito}" reflow="true" 
