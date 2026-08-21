@@ -104,6 +104,15 @@ public final class EncabezadoBuilder {
             receptor.setCorreosElectronicos(correos);
         }
 
+        // Set Ubicacion from structured client location fields
+        if (selectedClient.getProvincia() != null || selectedClient.getCanton() != null || selectedClient.getDistrito() != null) {
+            Ubicacion receptorUbicacion = new Ubicacion();
+            receptorUbicacion.setProvincia(selectedClient.getProvincia());
+            receptorUbicacion.setCanton(selectedClient.getCanton());
+            receptorUbicacion.setDistrito(selectedClient.getDistrito());
+            receptor.setUbicacion(receptorUbicacion);
+        }
+
         return receptor;
     }
 
