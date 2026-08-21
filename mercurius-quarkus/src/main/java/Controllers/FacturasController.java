@@ -341,26 +341,28 @@ public class FacturasController implements Serializable {
     }
 
     public void showDetailsDialog() {
-        if (selectedFactura != null) {
-            // Re-fetch with all relationships to ensure lazy loading works
-            selectedFactura = comprobantesRecibidosService.findByIdWithDetails(selectedFactura.getId());
-            
-            // Additional null check after re-fetching
-            if (selectedFactura != null && selectedFactura.getDetalles() != null) {
-                List<LineaDetalle> lineasDetalle = selectedFactura.getDetalles().getLineasDetalle();
-                if (lineasDetalle == null || lineasDetalle.isEmpty()) {
-                    alertas.registrarAlerta("Info", "Fallback: lineasDetalle is empty, fetching manually", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
-                    lineasDetalle = lineaDetalleService.listAllWhereID(selectedFactura.getDetalles().getId());
-                    if (lineasDetalle != null && !lineasDetalle.isEmpty()) {
-                        selectedFactura.getDetalles().setLineasDetalle(lineasDetalle);
-                        alertas.registrarAlerta("Info", "Fallback successful: populated " + lineasDetalle.size() + " lineasDetalle records", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
-                    } else {
-                        alertas.registrarAlerta("Error", "Fallback failed: no lineasDetalle found with ID " + selectedFactura.getDetalles().getId(), currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
-                    }
+        if (selectedFactura == null || selectedFactura.getId() == null) {
+            alertas.registrarAlerta("Warning", "No hay factura seleccionada o la factura no tiene ID válido", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
+            return;
+        }
+        // Re-fetch with all relationships to ensure lazy loading works
+        selectedFactura = comprobantesRecibidosService.findByIdWithDetails(selectedFactura.getId());
+
+        // Additional null check after re-fetching
+        if (selectedFactura != null && selectedFactura.getDetalles() != null) {
+            List<LineaDetalle> lineasDetalle = selectedFactura.getDetalles().getLineasDetalle();
+            if (lineasDetalle == null || lineasDetalle.isEmpty()) {
+                alertas.registrarAlerta("Info", "Fallback: lineasDetalle is empty, fetching manually", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
+                lineasDetalle = lineaDetalleService.listAllWhereID(selectedFactura.getDetalles().getId());
+                if (lineasDetalle != null && !lineasDetalle.isEmpty()) {
+                    selectedFactura.getDetalles().setLineasDetalle(lineasDetalle);
+                    alertas.registrarAlerta("Info", "Fallback successful: populated " + lineasDetalle.size() + " lineasDetalle records", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
+                } else {
+                    alertas.registrarAlerta("Error", "Fallback failed: no lineasDetalle found with ID " + selectedFactura.getDetalles().getId(), currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
                 }
-            } else {
-                alertas.registrarAlerta("Error", "selectedFactura or its detalles became null after re-fetching", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
             }
+        } else {
+            alertas.registrarAlerta("Error", "selectedFactura or its detalles became null after re-fetching", currentSession.getCurrentUser(), 0, "FacturasController.showDetailsDialog()", null, null);
         }
         PrimeFaces.current().executeScript("PF('selectedFacturaDetallado').show(); PF('selectedFacturaDetallado').toggleMaximize();");
     }
