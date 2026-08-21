@@ -111,14 +111,20 @@
                                 <div class="column is-full">
                                     <p:messages showDetail="true" for="editFamilia" showSummary="false" closable="true" />
                                     <label class="label has-text-link" for="editFamilia">Familia:</label>
-                                    <p:selectOneMenu id="editFamiliaSelect" value="#{ArticulosController.familiaID}"
-                                                     required="true" requiredMessage="La Familia no puede estar vacía"
-                                                     widgetVar="editFamiliaSelect" 
-                                                     style="width: 100%">
-                                        <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
-                                        <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
-                                                       itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
-                                    </p:selectOneMenu>
+                                    <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                                        <p:selectOneMenu id="editFamiliaSelect" value="#{ArticulosController.familiaID}"
+                                                         required="true" requiredMessage="La Familia no puede estar vacía"
+                                                         widgetVar="editFamiliaSelect" 
+                                                         style="flex: 1;">
+                                            <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                            <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                           itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
+                                        </p:selectOneMenu>
+                                        <p:commandButton icon="pi pi-plus" 
+                                                         styleClass="button is-primary is-rounded"
+                                                         onclick="PF('CrearFamiliaFromEditDialog').show();"
+                                                         process="@this"/>
+                                    </div>
                                 </div>
                                 
                                 <div class="column is-full">
@@ -164,37 +170,45 @@
                                 <!-- Stock Alert Configuration Section -->
                                 <div class="column is-full">
                                     <hr/>
-                                    <p class="title is-6 has-text-link">Configuración de Alertas de Stock</p>
-                                </div>
-
-                                <div class="column is-full">
-                                    <p:messages showDetail="true" for="editStockOptimo" showSummary="false" closable="true" />
-                                    <label class="label has-text-link" for="editStockOptimo">Stock Óptimo:</label>
-                                    <p:inputText id="editStockOptimo" type="number" 
-                                                 value="#{ArticulosController.selectedArticulo.stockOptimo}"
-                                                 style="width: 100%"
-                                                 placeholder="Nivel de stock óptimo calculado automáticamente"/>
-                                    <p:tooltip for="editStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
-                                </div>
-
-                                <div class="column is-full">
-                                    <p:messages showDetail="true" for="editDiasStockSeguridad" showSummary="false" closable="true" />
-                                    <label class="label has-text-link" for="editDiasStockSeguridad">Días de Stock Seguridad:</label>
-                                    <p:inputText id="editDiasStockSeguridad" type="number" 
-                                                 value="#{ArticulosController.selectedArticulo.diasStockSeguridad}"
-                                                 style="width: 100%"
-                                                 placeholder="7 (por defecto)"/>
-                                    <p:tooltip for="editDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
-                                </div>
-
-                                <div class="column is-full">
                                     <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
-                                        <p:selectBooleanCheckbox id="editEstadoAlertas" 
-                                                                 value="#{ArticulosController.selectedArticulo.estadoAlertas}"/>
-                                        <label class="label has-text-link" for="editEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                                        <p:selectBooleanCheckbox id="editShowStockAlertConfig" 
+                                                                 value="#{ArticulosController.showStockAlertConfig}">
+                                            <p:ajax update="editStockAlertSection" process="@this"/>
+                                        </p:selectBooleanCheckbox>
+                                        <label class="label has-text-link" for="editShowStockAlertConfig" style="margin-bottom: 0;">Configuración de Alertas de Stock</label>
                                     </div>
-                                    <p:tooltip for="editEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
                                 </div>
+
+                                <p:outputPanel id="editStockAlertSection" styleClass="#{ArticulosController.showStockAlertConfig ? '' : 'is-hidden'}">
+                                    <div class="column is-full">
+                                        <p:messages showDetail="true" for="editStockOptimo" showSummary="false" closable="true" />
+                                        <label class="label has-text-link" for="editStockOptimo">Stock Óptimo:</label>
+                                        <p:inputText id="editStockOptimo" type="number" 
+                                                     value="#{ArticulosController.selectedArticulo.stockOptimo}"
+                                                     style="width: 100%"
+                                                     placeholder="Nivel de stock óptimo calculado automáticamente"/>
+                                        <p:tooltip for="editStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
+                                    </div>
+
+                                    <div class="column is-full">
+                                        <p:messages showDetail="true" for="editDiasStockSeguridad" showSummary="false" closable="true" />
+                                        <label class="label has-text-link" for="editDiasStockSeguridad">Días de Stock Seguridad:</label>
+                                        <p:inputText id="editDiasStockSeguridad" type="number" 
+                                                     value="#{ArticulosController.selectedArticulo.diasStockSeguridad}"
+                                                     style="width: 100%"
+                                                     placeholder="7 (por defecto)"/>
+                                        <p:tooltip for="editDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
+                                    </div>
+
+                                    <div class="column is-full">
+                                        <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                            <p:selectBooleanCheckbox id="editEstadoAlertas" 
+                                                                     value="#{ArticulosController.selectedArticulo.estadoAlertas}"/>
+                                            <label class="label has-text-link" for="editEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                                        </div>
+                                        <p:tooltip for="editEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
+                                    </div>
+                                </p:outputPanel>
 
                                 <div class="column is-full">
                                     <hr/>
@@ -204,67 +218,71 @@
                                 <div class="column is-full">
                                     <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
                                         <p:selectBooleanCheckbox id="editExento"
-                                                                 value="#{ArticulosController.selectedArticulo.exento}"/>
+                                                                 value="#{ArticulosController.selectedArticulo.exento}">
+                                            <p:ajax update="editExoneracionDataSection" process="@this"/>
+                                        </p:selectBooleanCheckbox>
                                         <label class="label has-text-link" for="editExento" style="margin-bottom: 0;">Producto Exento (Exonerado)</label>
                                     </div>
                                     <p:tooltip for="editExento" value="Marcar si el producto esta exento de IVA (requiere documentos de exoneracion)." position="top"/>
                                 </div>
 
-                                <div class="column is-full" rendered="#{ArticulosController.selectedArticulo.exento}">
-                                    <div class="columns is-multiline" style="border: 1px solid #dbdbdb; border-radius: 6px; padding: 1rem;">
-                                        <div class="column is-full">
-                                            <p class="subtitle is-6">Datos de Exoneracion</p>
-                                        </div>
+                                <p:outputPanel id="editExoneracionDataSection" styleClass="#{ArticulosController.selectedArticulo.exento ? '' : 'is-hidden'}">
+                                    <div class="column is-full">
+                                        <div class="columns is-multiline" style="border: 1px solid #dbdbdb; border-radius: 6px; padding: 1rem;">
+                                            <div class="column is-full">
+                                                <p class="subtitle is-6">Datos de Exoneracion</p>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editTipoDocEX1">Tipo Documento EX1</label>
-                                            <p:inputText id="editTipoDocEX1" value="#{ArticulosController.selectedExoneracion.tipoDocumentoEX1}"
-                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editTipoDocEX1">Tipo Documento EX1</label>
+                                                <p:inputText id="editTipoDocEX1" value="#{ArticulosController.selectedExoneracion.tipoDocumentoEX1}"
+                                                             style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editTipoDocOtro">Tipo Documento Otro</label>
-                                            <p:inputText id="editTipoDocOtro" value="#{ArticulosController.selectedExoneracion.tipoDocumentoOTRO}"
-                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editTipoDocOtro">Tipo Documento Otro</label>
+                                                <p:inputText id="editTipoDocOtro" value="#{ArticulosController.selectedExoneracion.tipoDocumentoOTRO}"
+                                                             style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editNumDocExoneracion">Numero Documento</label>
-                                            <p:inputText id="editNumDocExoneracion" value="#{ArticulosController.selectedExoneracion.numeroDocumento}"
-                                                         style="width: 100%" maxlength="20"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editNumDocExoneracion">Numero Documento</label>
+                                                <p:inputText id="editNumDocExoneracion" value="#{ArticulosController.selectedExoneracion.numeroDocumento}"
+                                                             style="width: 100%" maxlength="20"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editNombreInstitucion">Nombre Institucion</label>
-                                            <p:inputText id="editNombreInstitucion" value="#{ArticulosController.selectedExoneracion.nombreInstitucion}"
-                                                         style="width: 100%" maxlength="255"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editNombreInstitucion">Nombre Institucion</label>
+                                                <p:inputText id="editNombreInstitucion" value="#{ArticulosController.selectedExoneracion.nombreInstitucion}"
+                                                             style="width: 100%" maxlength="255"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editFechaEmisionEX">Fecha Emision</label>
-                                            <p:calendar id="editFechaEmisionEX" value="#{ArticulosController.selectedExoneracion.fechaEmisionEX}"
-                                                        pattern="yyyy-MM-dd" style="width: 100%" mask="true"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editFechaEmisionEX">Fecha Emision</label>
+                                                <p:calendar id="editFechaEmisionEX" value="#{ArticulosController.selectedExoneracion.fechaEmisionEX}"
+                                                            pattern="yyyy-MM-dd" style="width: 100%" mask="true"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editMontoExoneracion">Monto Exoneracion</label>
-                                            <p:inputText id="editMontoExoneracion" type="number" value="#{ArticulosController.selectedExoneracion.montoExoneracion}"
-                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editMontoExoneracion">Monto Exoneracion</label>
+                                                <p:inputText id="editMontoExoneracion" type="number" value="#{ArticulosController.selectedExoneracion.montoExoneracion}"
+                                                             style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editTarifaExonerada">Tarifa Exonerada (%)</label>
-                                            <p:inputText id="editTarifaExonerada" type="number" value="#{ArticulosController.selectedExoneracion.tarifaExonerada}"
-                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editTarifaExonerada">Tarifa Exonerada (%)</label>
+                                                <p:inputText id="editTarifaExonerada" type="number" value="#{ArticulosController.selectedExoneracion.tarifaExonerada}"
+                                                             style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="editNombreInstitucionOtros">Nombre Institucion Otros</label>
-                                            <p:inputText id="editNombreInstitucionOtros" value="#{ArticulosController.selectedExoneracion.nombreInstitucionOtros}"
-                                                         style="width: 100%" maxlength="255"/>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="editNombreInstitucionOtros">Nombre Institucion Otros</label>
+                                                <p:inputText id="editNombreInstitucionOtros" value="#{ArticulosController.selectedExoneracion.nombreInstitucionOtros}"
+                                                             style="width: 100%" maxlength="255"/>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </p:outputPanel>
 
                                 <div class="column is-full">
                                     <p:commandLink value="Actualizar datos" update="@form Articulos:ArticulosActivos" process="@form"
@@ -275,53 +293,34 @@
                             </div>
                         </section>
                     </p:tab>
-                    <p:tab title="Imágenes" id="imagenesTab">
-                        <section class="section">
-                            <div class="columns is-multiline">
-                                <div class="column is-full">
-                                    <p:growl showDetail="true" showSummary="false"/>
-                                    <p:fileUpload listener="#{ArticulosController.uploadImagen}"
-                                                  mode="advanced" auto="true"
-                                                  update="imagenesTab @form"
-                                                  allowTypes="/(\.|\/)(gif|jpe?g|png|webp)$/"
-                                                  invalidFileMessage="Solo imágenes (gif, jpg, png, webp)">
-                                    </p:fileUpload>
-                                </div>
-                                <div class="column is-full">
-                                    <p:dataTable id="imagenesTable" var="img"
-                                                 value="#{ArticulosController.selectedArticulo.imagenes}"
-                                                 emptyMessage="No hay imágenes"
-                                                 reflow="true" showGridlines="true">
-                                        <p:column headerText="Vista Previa" style="width:80px">
-                                            <p:graphicImage value="#{ArticulosController.getImagenStream(img.id)}"
-                                                            style="max-width:60px;max-height:60px"/>
-                                        </p:column>
-                                        <p:column headerText="Nombre">
-                                            <h:outputText value="#{img.nombreOriginal}"/>
-                                        </p:column>
-                                        <p:column headerText="Orden">
-                                            <h:outputText value="#{img.orden}"/>
-                                        </p:column>
-                                        <p:column headerText="Acciones" style="width:160px">
-                                            <p:commandButton icon="pi pi-chevron-up" styleClass="ui-button-rounded"
-                                                             actionListener="#{ArticulosController.subirOrdenImagen(img)}"
-                                                             update="imagenesTab">
-                                                <p:ajax update="imagenesTab"/>
-                                            </p:commandButton>
-                                            <p:commandButton icon="pi pi-chevron-down" styleClass="ui-button-rounded"
-                                                             actionListener="#{ArticulosController.bajarOrdenImagen(img)}"
-                                                             update="imagenesTab"/>
-                                            <p:commandButton icon="pi pi-trash" styleClass="ui-button-danger ui-button-rounded"
-                                                             actionListener="#{ArticulosController.eliminarImagen(img)}"
-                                                             update="imagenesTab"/>
-                                        </p:column>
-                                    </p:dataTable>
-                                </div>
-                            </div>
-                        </section>
-                    </p:tab>
                 </p:tabView>
             </h:form>
         </p:outputPanel>
-    </p:dialog> 
+    </p:dialog>
+    
+    <p:dialog header="Crear Familia" widgetVar="CrearFamiliaFromEditDialog" dynamic="true" cache="false" 
+              fitViewport="true" responsive="true" id="CrearFamiliaFromEditDialog" modal="true">
+        <p:outputPanel>
+            <h:form id="crearFamiliaFromEditForm">
+                <p:panelGrid columns="1">
+                    <p:panel header="Crear una nueva familia">
+                        <p:messages id="crearFamiliaMessages" showDetail="true" showSummary="false"/>
+                        
+                        <p:messages showDetail="true" for="newFamiliaNombre" showSummary="false" closable="true" />
+                        <label class="label" for="newFamiliaNombre" style="color: var(--primary-color);">Nombre:</label>
+                        <p:inputText id="newFamiliaNombre" value="#{ArticulosController.newFamiliaNombre}" style="width: 100%"
+                                     required="true" requiredMessage="El nombre no puede estar vacío"/>
+                        <p:spacer height="1em"/>
+                        <div class="buttons">
+                            <p:commandButton value="Crear Familia" process="@form" styleClass="button is-primary is-rounded is-fullwidth"
+                                             icon="pi pi-check"
+                                             update="@form editFamiliaSelect" 
+                                             action="#{ArticulosController.createFamiliaFromDialog()}"
+                                             oncomplete="if(!args.validationFailed) PF('CrearFamiliaFromEditDialog').hide();"/>
+                        </div>
+                    </p:panel>
+                </p:panelGrid>
+            </h:form>
+        </p:outputPanel>
+    </p:dialog>
 </ui:composition>
