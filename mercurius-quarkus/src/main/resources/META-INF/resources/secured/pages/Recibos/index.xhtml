@@ -293,9 +293,10 @@
                                         <p:column headerText="Acciones" exportable="false" style="width: 180px; text-align: center;">
                                             <div class="table-actions">
                                                  <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-wallet" 
+                                                                  rendered="#{factura.encabezado.codigoDocumento ne '02'}"
                                                                   disabled="#{factura.paid}" process="@this"
-actionListener="#{facturasController.paySelectedFactura()}" update="@this :recibosTodas :statsForm :resumen :growl"
-                                                                   title="Marcar como pagada">
+                                                                  actionListener="#{facturasController.paySelectedFactura()}" update="@this :recibosTodas :statsForm :resumen :growl"
+                                                                  title="Marcar como pagada">
                                                      <f:setPropertyActionListener value="#{factura}" target="#{facturasController.selectedFactura}"/>
                                                  </p:commandButton>
                                                  <p:commandButton styleClass="table-action-btn button is-success" icon="pi pi-sync" 
@@ -560,6 +561,7 @@ actionListener="#{facturasController.paySelectedFactura()}" update="@this :recib
                                         <p:column headerText="Acciones" exportable="false" style="width: 220px; text-align: center;">
                                             <div class="table-actions">
                                                 <p:commandButton styleClass="table-action-btn button is-warning" icon="pi pi-wallet" 
+                                                                 rendered="#{factura.encabezado.codigoDocumento ne '02'}"
                                                                  disabled="#{factura.paid}" process="@this"
                                                                    actionListener="#{facturasController.paySelectedFactura()}" update="@this :recibosVencidos :statsForm :resumen :growl"
                                                                    title="Marcar como pagada">
