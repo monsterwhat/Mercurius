@@ -93,7 +93,7 @@
                     <div class="column is-full">
                         <label class="label has-text-link">Códigos de Actividad Económica (CIIU4):</label>
                         <p:outputPanel id="actividadesCreatePanel">
-                            <p:repeat value="#{ClientsController.newClient.actividades}" var="actividad" varStatus="status">
+                            <ui:repeat value="#{ClientsController.newClient.actividades}" var="actividad" varStatus="status">
                                 <div class="field has-addons mb-2">
                                     <div class="control is-expanded">
                                         <p:inputText value="#{actividad.codigo}" style="width: 100%" 
@@ -105,7 +105,7 @@
                                                          update="actividadesCreatePanel"/>
                                     </div>
                                 </div>
-                            </p:repeat>
+                            </ui:repeat>
                             <p:commandButton action="#{ClientsController.addActividadNew()}" icon="pi pi-plus" 
                                              value="Agregar actividad" styleClass="button is-light is-small"
                                              update="actividadesCreatePanel"/>

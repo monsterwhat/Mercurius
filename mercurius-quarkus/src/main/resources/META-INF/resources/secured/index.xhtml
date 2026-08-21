@@ -58,6 +58,7 @@
             </div>
 
             <!-- ═══════════ Quick Actions (all roles, role-filtered buttons) ═══════════ -->
+            <h:form id="quickActions">
             <div class="mb-5">
                 <div class="dashboard-card">
                     <div class="card-content">
@@ -91,6 +92,7 @@
                     </div>
                 </div>
             </div>
+            </h:form>
 
             <!-- ═══════════════════════════════════════════════════
                  SALES COMPARISON KPIs (admin + facturacion)
@@ -211,6 +213,7 @@
                                            value="#{dashboardController.recentSales}"
                                            var="sale"
                                            rows="10"
+                                           lazy="false"
                                            paginator="false"
                                            scrollable="true"
                                            scrollHeight="350"
