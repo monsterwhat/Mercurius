@@ -99,13 +99,20 @@
                                 <div class="column is-full">
                                     <p:messages showDetail="true" for="newFamilia" showSummary="false" closable="true" />
                                     <label class="label has-text-link" for="newFamilia">Familia:</label>
-                                    <p:selectOneMenu id="newFamiliaSelect" value="#{ArticulosController.familiaID}"
-                                                     required="true" requiredMessage="La Familia no puede estar vacía"
-                                                     widgetVar="newFamiliaSelect" style="width: 100%">
-                                        <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
-                                        <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
-                                                       itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
-                                    </p:selectOneMenu>
+                                    <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+                                        <p:selectOneMenu id="newFamiliaSelect" value="#{ArticulosController.familiaID}"
+                                                         required="true" requiredMessage="La Familia no puede estar vacía"
+                                                         widgetVar="newFamiliaSelect" 
+                                                         style="flex: 1;">
+                                            <f:selectItem itemLabel="Seleccionar Familia" itemValue="" />
+                                            <f:selectItems value="#{ArticulosController.familiaOptions}" var="familia"
+                                                           itemLabel="#{familia.nombre}" itemValue="#{familia.id}" />
+                                        </p:selectOneMenu>
+                                        <p:commandButton icon="pi pi-plus" 
+                                                         styleClass="button is-primary is-rounded"
+                                                         onclick="PF('CrearFamiliaFromCreateDialog').show();"
+                                                         process="@this"/>
+                                    </div>
                                 </div>
 
 
@@ -149,37 +156,45 @@
                                 <!-- Stock Alert Configuration Section -->
                                 <div class="column is-full">
                                     <hr/>
-                                    <p class="title is-6 has-text-link">Configuración de Alertas de Stock</p>
-                                </div>
-
-                                <div class="column is-full">
-                                    <p:messages showDetail="true" for="newStockOptimo" showSummary="false" closable="true" />
-                                    <label class="label has-text-link" for="newStockOptimo">Stock Óptimo:</label>
-                                    <p:inputText id="newStockOptimo" type="number" 
-                                                 value="#{ArticulosController.newArticulo.stockOptimo}"
-                                                 style="width: 100%"
-                                                 placeholder="Nivel de stock óptimo calculado automáticamente"/>
-                                    <p:tooltip for="newStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
-                                </div>
-
-                                <div class="column is-full">
-                                    <p:messages showDetail="true" for="newDiasStockSeguridad" showSummary="false" closable="true" />
-                                    <label class="label has-text-link" for="newDiasStockSeguridad">Días de Stock Seguridad:</label>
-                                    <p:inputText id="newDiasStockSeguridad" type="number" 
-                                                 value="#{ArticulosController.newArticulo.diasStockSeguridad}"
-                                                 style="width: 100%"
-                                                 placeholder="7 (por defecto)"/>
-                                    <p:tooltip for="newDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
-                                </div>
-
-                                <div class="column is-full">
                                     <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
-                                        <p:selectBooleanCheckbox id="newEstadoAlertas" 
-                                                                 value="#{ArticulosController.newArticulo.estadoAlertas}"/>
-                                        <label class="label has-text-link" for="newEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                                        <p:selectBooleanCheckbox id="newShowStockAlertConfig" 
+                                                                 value="#{ArticulosController.showStockAlertConfig}">
+                                            <p:ajax update="newStockAlertSection" process="@this"/>
+                                        </p:selectBooleanCheckbox>
+                                        <label class="label has-text-link" for="newShowStockAlertConfig" style="margin-bottom: 0;">Configuración de Alertas de Stock</label>
                                     </div>
-                                    <p:tooltip for="newEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
                                 </div>
+
+                                <p:outputPanel id="newStockAlertSection" styleClass="#{ArticulosController.showStockAlertConfig ? '' : 'is-hidden'}">
+                                    <div class="column is-full">
+                                        <p:messages showDetail="true" for="newStockOptimo" showSummary="false" closable="true" />
+                                        <label class="label has-text-link" for="newStockOptimo">Stock Óptimo:</label>
+                                        <p:inputText id="newStockOptimo" type="number" 
+                                                     value="#{ArticulosController.newArticulo.stockOptimo}"
+                                                     style="width: 100%"
+                                                     placeholder="Nivel de stock óptimo calculado automáticamente"/>
+                                        <p:tooltip for="newStockOptimo" value="Nivel de stock ideal para este artículo. Se calcula automáticamente basado en velocidad de ventas." position="top"/>
+                                    </div>
+
+                                    <div class="column is-full">
+                                        <p:messages showDetail="true" for="newDiasStockSeguridad" showSummary="false" closable="true" />
+                                        <label class="label has-text-link" for="newDiasStockSeguridad">Días de Stock Seguridad:</label>
+                                        <p:inputText id="newDiasStockSeguridad" type="number" 
+                                                     value="#{ArticulosController.newArticulo.diasStockSeguridad}"
+                                                     style="width: 100%"
+                                                     placeholder="7 (por defecto)"/>
+                                        <p:tooltip for="newDiasStockSeguridad" value="Días de inventario de seguridad. Valor por defecto: 7 días." position="top"/>
+                                    </div>
+
+                                    <div class="column is-full">
+                                        <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
+                                            <p:selectBooleanCheckbox id="newEstadoAlertas" 
+                                                                     value="#{ArticulosController.newArticulo.estadoAlertas}"/>
+                                            <label class="label has-text-link" for="newEstadoAlertas" style="margin-bottom: 0;">Alertas Automáticas Activas</label>
+                                        </div>
+                                        <p:tooltip for="newEstadoAlertas" value="Activar/desactivar alertas automáticas de stock para este artículo." position="top"/>
+                                    </div>
+                                </p:outputPanel>
 
                                 <div class="column is-full">
                                     <hr/>
@@ -189,67 +204,71 @@
                                 <div class="column is-full">
                                     <div class="field-row" style="display: flex; align-items: center; gap: 1rem;">
                                         <p:selectBooleanCheckbox id="newExento"
-                                                                 value="#{ArticulosController.newArticulo.exento}"/>
+                                                                 value="#{ArticulosController.newArticulo.exento}">
+                                            <p:ajax update="newExoneracionDataSection" process="@this"/>
+                                        </p:selectBooleanCheckbox>
                                         <label class="label has-text-link" for="newExento" style="margin-bottom: 0;">Producto Exento (Exonerado)</label>
                                     </div>
                                     <p:tooltip for="newExento" value="Marcar si el producto esta exento de IVA (requiere documentos de exoneracion)." position="top"/>
                                 </div>
 
-                                <div class="column is-full" rendered="#{ArticulosController.newArticulo.exento}">
-                                    <div class="columns is-multiline" style="border: 1px solid #dbdbdb; border-radius: 6px; padding: 1rem;">
-                                        <div class="column is-full">
-                                            <p class="subtitle is-6">Datos de Exoneracion</p>
-                                        </div>
+                                <p:outputPanel id="newExoneracionDataSection" styleClass="#{ArticulosController.newArticulo.exento ? '' : 'is-hidden'}">
+                                    <div class="column is-full">
+                                        <div class="columns is-multiline" style="border: 1px solid #dbdbdb; border-radius: 6px; padding: 1rem;">
+                                            <div class="column is-full">
+                                                <p class="subtitle is-6">Datos de Exoneracion</p>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newTipoDocEX1">Tipo Documento EX1</label>
-                                            <p:inputText id="newTipoDocEX1" value="#{ArticulosController.exoneracion.tipoDocumentoEX1}"
-                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newTipoDocEX1">Tipo Documento EX1</label>
+                                                <p:inputText id="newTipoDocEX1" value="#{ArticulosController.exoneracion.tipoDocumentoEX1}"
+                                                             style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newTipoDocOtro">Tipo Documento Otro</label>
-                                            <p:inputText id="newTipoDocOtro" value="#{ArticulosController.exoneracion.tipoDocumentoOTRO}"
-                                                         style="width: 100%" maxlength="2" placeholder="01-07"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newTipoDocOtro">Tipo Documento Otro</label>
+                                                <p:inputText id="newTipoDocOtro" value="#{ArticulosController.exoneracion.tipoDocumentoOTRO}"
+                                                             style="width: 100%" maxlength="2" placeholder="01-07"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newNumDocExoneracion">Numero Documento</label>
-                                            <p:inputText id="newNumDocExoneracion" value="#{ArticulosController.exoneracion.numeroDocumento}"
-                                                         style="width: 100%" maxlength="20"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newNumDocExoneracion">Numero Documento</label>
+                                                <p:inputText id="newNumDocExoneracion" value="#{ArticulosController.exoneracion.numeroDocumento}"
+                                                             style="width: 100%" maxlength="20"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newNombreInstitucion">Nombre Institucion</label>
-                                            <p:inputText id="newNombreInstitucion" value="#{ArticulosController.exoneracion.nombreInstitucion}"
-                                                         style="width: 100%" maxlength="255"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newNombreInstitucion">Nombre Institucion</label>
+                                                <p:inputText id="newNombreInstitucion" value="#{ArticulosController.exoneracion.nombreInstitucion}"
+                                                             style="width: 100%" maxlength="255"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newFechaEmisionEX">Fecha Emision</label>
-                                            <p:calendar id="newFechaEmisionEX" value="#{ArticulosController.exoneracion.fechaEmisionEX}"
-                                                        pattern="yyyy-MM-dd" style="width: 100%" mask="true"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newFechaEmisionEX">Fecha Emision</label>
+                                                <p:calendar id="newFechaEmisionEX" value="#{ArticulosController.exoneracion.fechaEmisionEX}"
+                                                            pattern="yyyy-MM-dd" style="width: 100%" mask="true"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newMontoExoneracion">Monto Exoneracion</label>
-                                            <p:inputText id="newMontoExoneracion" type="number" value="#{ArticulosController.exoneracion.montoExoneracion}"
-                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newMontoExoneracion">Monto Exoneracion</label>
+                                                <p:inputText id="newMontoExoneracion" type="number" value="#{ArticulosController.exoneracion.montoExoneracion}"
+                                                             style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newTarifaExonerada">Tarifa Exonerada (%)</label>
-                                            <p:inputText id="newTarifaExonerada" type="number" value="#{ArticulosController.exoneracion.tarifaExonerada}"
-                                                         style="width: 100%" converter="jakarta.faces.BigDecimal"/>
-                                        </div>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newTarifaExonerada">Tarifa Exonerada (%)</label>
+                                                <p:inputText id="newTarifaExonerada" type="number" value="#{ArticulosController.exoneracion.tarifaExonerada}"
+                                                             style="width: 100%" converter="jakarta.faces.BigDecimal"/>
+                                            </div>
 
-                                        <div class="column is-half">
-                                            <label class="label has-text-link" for="newNombreInstitucionOtros">Nombre Institucion Otros</label>
-                                            <p:inputText id="newNombreInstitucionOtros" value="#{ArticulosController.exoneracion.nombreInstitucionOtros}"
-                                                         style="width: 100%" maxlength="255"/>
+                                            <div class="column is-half">
+                                                <label class="label has-text-link" for="newNombreInstitucionOtros">Nombre Institucion Otros</label>
+                                                <p:inputText id="newNombreInstitucionOtros" value="#{ArticulosController.exoneracion.nombreInstitucionOtros}"
+                                                             style="width: 100%" maxlength="255"/>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </p:outputPanel>
 
                                 <div class="column is-full mt-3">
                                     <div class="buttons is-centered">
@@ -274,5 +293,29 @@
                 </p:tabView>
             </h:form>
         </p:outputPanel>
+    </p:dialog>
+    
+    <p:dialog header="Crear Familia" modal="true" dynamic="true" cache="false" 
+              widgetVar="CrearFamiliaFromCreateDialog" fitViewport="true" responsive="true"
+              width="400px">
+        <h:form id="crearFamiliaFromCreateForm">
+            <div class="field">
+                <label class="label" for="newFamiliaNombreCreate">Nombre de la Familia:</label>
+                <p:inputText id="newFamiliaNombreCreate" value="#{ArticulosController.newFamiliaNombre}"
+                             required="true" requiredMessage="El nombre no puede estar vacío"
+                             style="width: 100%"/>
+            </div>
+            <div class="buttons" style="margin-top: 1rem;">
+                <p:commandButton value="Crear" 
+                                 action="#{ArticulosController.createFamiliaFromDialog()}"
+                                 update="crearFamiliaFromCreateForm newFamiliaSelect"
+                                 styleClass="button is-primary is-rounded"
+                                 oncomplete="if(!args.validationFailed) PF('CrearFamiliaFromCreateDialog').hide();"/>
+                <p:commandButton value="Cancelar" 
+                                 onclick="PF('CrearFamiliaFromCreateDialog').hide();"
+                                 styleClass="button is-light is-rounded"
+                                 process="@this"/>
+            </div>
+        </h:form>
     </p:dialog>
 </ui:composition>

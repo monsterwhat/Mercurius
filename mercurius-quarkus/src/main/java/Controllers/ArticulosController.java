@@ -51,6 +51,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
@@ -119,6 +120,9 @@ public class ArticulosController implements Serializable {
     private ProductoExoneracion exoneracion;
     @Nullable
     private ProductoExoneracion selectedExoneracion;
+    private boolean showStockAlertConfig = false;
+    @Nullable
+    private String newFamiliaNombre;
 
 
     @PostConstruct
@@ -540,13 +544,7 @@ public class ArticulosController implements Serializable {
         if(articulosActivos == null){
             articulosActivos = articulosService.ListAllEnabled();
         }
-        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
-            return articulosActivos().stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return articulosActivos;
-        }
+        return articulosActivos;
     }
     
     @Nonnull
@@ -554,13 +552,7 @@ public class ArticulosController implements Serializable {
         if(inactivos == null){
             inactivos = articulosService.listAllInactivos();
         }
-        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
-            return inactivos.stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return inactivos;
-        }
+        return inactivos;
     }
     
     @Nonnull
@@ -568,13 +560,7 @@ public class ArticulosController implements Serializable {
         if(activosYProcesados == null){
             activosYProcesados = articulosService.listAllActivosYProcesados();
         }
-        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
-            return activosYProcesados.stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return activosYProcesados;
-        }
+        return activosYProcesados;
     }
     
     @Nonnull
@@ -582,13 +568,7 @@ public class ArticulosController implements Serializable {
         if(sinProcesar == null){
             sinProcesar = articulosService.listAllSinProcesar();
         }
-        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
-            return sinProcesar.stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return sinProcesar;
-        }
+        return sinProcesar;
     }
     
     @Nonnull
@@ -596,13 +576,7 @@ public class ArticulosController implements Serializable {
         if(articulos == null){
             articulos = articulosService.listAll();
         }
-        if (articulosFilter != null && !articulosFilter.trim().isEmpty()) {
-            return articulos.stream()
-                    .filter(articulo -> globalFilterFunction(articulo, articulosFilter, FacesContext.getCurrentInstance().getViewRoot().getLocale()))
-                    .collect(Collectors.toList());
-        } else {
-            return articulos;
-        }
+        return articulos;
     }
       
     public boolean globalFilterFunction(@Nonnull Object value, @Nullable Object filter, @Nonnull Locale locale) {
@@ -760,6 +734,38 @@ public class ArticulosController implements Serializable {
     private void updateDepartamentoAndFamiliaOptions() {
         departamentoOptions = departamentoService.listAll();
         familiaOptions = familiaService.listAll();
+    }
+    
+    public void createFamiliaFromDialog() {
+        if (newFamiliaNombre != null && !newFamiliaNombre.trim().isEmpty()) {
+            Familia nuevaFamilia = new Familia();
+            nuevaFamilia.setNombre(newFamiliaNombre.trim());
+            nuevaFamilia.setStatus(true);
+            nuevaFamilia.setUsuario(currentSession.getCurrentUser());
+            nuevaFamilia.setFecha(new Date());
+            
+            boolean created = familiaService.createIfNotExists(nuevaFamilia);
+            if (created) {
+                updateDepartamentoAndFamiliaOptions();
+                Familia justCreated = familiaService.findByNombre(newFamiliaNombre.trim());
+                if (justCreated != null) {
+                    FamiliaID = justCreated.getId();
+                }
+                newFamiliaNombre = null;
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Familia creada exitosamente", null));
+                PrimeFaces.current().ajax().update("editFamiliaSelect");
+            } else {
+                Familia existing = familiaService.findByNombre(newFamiliaNombre.trim());
+                if (existing != null) {
+                    FamiliaID = existing.getId();
+                }
+                newFamiliaNombre = null;
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "La familia ya existe, se ha seleccionado", null));
+                PrimeFaces.current().ajax().update("editFamiliaSelect");
+            }
+        }
     }
     
     public double getStock(@Nonnull Articulos articulo){

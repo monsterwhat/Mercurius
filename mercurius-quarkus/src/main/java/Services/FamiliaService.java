@@ -131,6 +131,18 @@ public class FamiliaService extends GService<Familia> {
         }
     }
     
+    public @Nullable Familia findByNombre(@Nonnull String nombre) {
+        try {
+            TypedQuery<Familia> query = em.createQuery("SELECT f FROM Familia f WHERE f.nombre = :nombre", Familia.class);
+            query.setParameter("nombre", nombre);
+            List<Familia> results = query.getResultList();
+            return results.isEmpty() ? null : results.get(0);
+        } catch (PersistenceException e) {
+            alertasService.registrarAlerta("Error", "Error finding familia by nombre: " + e.getMessage(), null, 0, "FamiliaService.findByNombre()", null, e.getMessage());
+            return null;
+        }
+    }
+    
     @Transactional
     public void updateAndDisable(@Nonnull Familia entity) {
         try {
