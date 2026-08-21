@@ -36,6 +36,15 @@ public class Clients {
     
     @Column
     private String address; // DIreccion (String)
+
+    @Nullable @Column(length = 1)
+    private String provincia; // Provincia Hacienda code (e.g. "01" for San José)
+
+    @Nullable @Column(length = 2)
+    private String canton; // Cantón Hacienda code (e.g. "01" for San José)
+
+    @Nullable @Column(length = 2)
+    private String distrito; // Distrito Hacienda code (e.g. "01" for Carmen)
     
     @Column
     private String email; // Email (String)
