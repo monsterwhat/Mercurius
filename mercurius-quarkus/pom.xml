@@ -4,7 +4,7 @@
 
     <groupId>com.mercurius</groupId>
     <artifactId>mercurius-quarkus</artifactId>
-    <version>1.0.4-SNAPSHOT</version>
+    <version>1.0.5-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -334,6 +334,9 @@
                     <!-- @QuarkusTest classes run in their own execution -->
                     <execution>
                         <id>quarkus-tests</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
                         <configuration>
                             <groups>io.quarkus.test.junit.QuarkusTest</groups>
                         </configuration>
