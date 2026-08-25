@@ -10,7 +10,7 @@ Mercurius es un programa de inventarios diseñado para ayudar a las empresas a g
 
 - **Java 25+** - JDK versión 25 o superior
 - **Maven 3.8+** - Herramienta de construcción
-- **MySQL 8.0+** - Base de datos relacional
+- **PostgreSQL 14+** - Base de datos relacional (verificado con PostgreSQL 18)
 
 ## Instalación
 
@@ -20,9 +20,15 @@ Mercurius es un programa de inventarios diseñado para ayudar a las empresas a g
 CREATE DATABASE mercurius;
 
 -- Crear usuario (opcional, ajustar según configuración)
-CREATE USER 'mercurius'@'localhost' IDENTIFIED BY 'Mercurius@1!';
-GRANT ALL PRIVILEGES ON mercurius.* TO 'mercurius'@'localhost';
-FLUSH PRIVILEGES;
+CREATE USER mercurius WITH PASSWORD 'Mercurius@1!';
+
+-- Otorgar permisos sobre la base de datos
+GRANT ALL PRIVILEGES ON DATABASE mercurius TO mercurius;
+
+-- PostgreSQL 15+ restringe el esquema public al propietario;
+-- conceder acceso para que Hibernate pueda crear las tablas
+\c mercurius
+GRANT ALL ON SCHEMA public TO mercurius;
 ```
 
 ### 2. Configurar Aplicación
@@ -30,7 +36,7 @@ Editar `src/main/resources/application.properties` y ajustar la configuración d
 ```properties
 quarkus.datasource.username=tu_usuario
 quarkus.datasource.password=tu_contraseña
-quarkus.datasource.jdbc.url=jdbc:mysql://localhost:3306/mercurius?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Costa_Rica
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/mercurius
 ```
 
 ### 3. Compilar y Ejecutar
@@ -59,7 +65,7 @@ La aplicación estará disponible en: `http://localhost:8081/Mercurius`
 - **Quarkus 3.36.2** - Framework Java nativo en la nube para alto rendimiento y bajo consumo de memoria
 - **Apache MyFaces 4.1.3** - Implementación de Jakarta Faces para JSF
 - **PrimeFaces 4.15.16** - Framework UI component para aplicaciones web Java con tema Bootstrap
-- **MySQL** - Base de datos relacional para persistencia de datos
+- **PostgreSQL** - Base de datos relacional para persistencia de datos
 - **Hibernate ORM** - Mapeo objeto-relacional integrado con Quarkus
 - **Maven** - Herramienta de gestión de dependencias y construcción
 
