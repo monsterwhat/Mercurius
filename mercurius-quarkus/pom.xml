@@ -4,7 +4,7 @@
 
     <groupId>com.mercurius</groupId>
     <artifactId>mercurius-quarkus</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -206,12 +206,34 @@
         <!-- Test Dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-junit5</artifactId>
+            <artifactId>quarkus-junit</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-test-security</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit-mockito</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Version explicit: assertj-core is NOT managed by quarkus-bom 3.36.2 (verified in core BOM POM) -->
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>3.27.7</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-jacoco</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- Test: BouncyCastle for generating test P12 certificates -->
@@ -296,8 +318,43 @@
                 <version>3.5.4</version>
                 <configuration>
                     <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <java.util.logging.config.file>quarkus-test.properties</java.util.logging.config.file>
                         <maven.home>${maven.home}</maven.home>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <!-- Plain unit tests: everything EXCEPT @QuarkusTest classes -->
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludedGroups>io.quarkus.test.junit.QuarkusTest</excludedGroups>
+                        </configuration>
+                    </execution>
+                    <!-- @QuarkusTest classes run in their own execution -->
+                    <execution>
+                        <id>quarkus-tests</id>
+                        <configuration>
+                            <groups>io.quarkus.test.junit.QuarkusTest</groups>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.5.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
