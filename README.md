@@ -36,7 +36,7 @@ Editar `src/main/resources/application.properties` y ajustar la configuración d
 ```properties
 quarkus.datasource.username=tu_usuario
 quarkus.datasource.password=tu_contraseña
-quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5432/mercurius
+quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5433/mercurius
 ```
 
 ### 3. Compilar y Ejecutar
