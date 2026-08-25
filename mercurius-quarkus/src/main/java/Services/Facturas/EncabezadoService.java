@@ -97,11 +97,12 @@ public class EncabezadoService extends GService<Encabezado> {
     @Nullable
     public Encabezado findExistingEncabezado(@Nonnull String numeroConsecutivo) {
         try {
-            jakarta.persistence.Query query = em.createNativeQuery(
-                "SELECT e.* FROM Encabezado e WHERE e.numeroConsecutivo = ? ORDER BY e.id DESC LIMIT 1", 
+            TypedQuery<Encabezado> query = em.createQuery(
+                "SELECT e FROM Encabezado e WHERE e.numeroConsecutivo = :numeroConsecutivo ORDER BY e.id DESC",
                 Encabezado.class
             );
-            query.setParameter(1, numeroConsecutivo);
+            query.setParameter("numeroConsecutivo", numeroConsecutivo);
+            query.setMaxResults(1);
             List<Encabezado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
