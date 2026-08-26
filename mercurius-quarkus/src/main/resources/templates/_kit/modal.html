@@ -1,0 +1,100 @@
+{!
+  _kit/modal - reusable dialog shell: Alpine open/close + HTMX-loaded body (T16).
+
+  Replaces the legacy p:dialog. One include renders BOTH the trigger button
+  and the Bulma modal. Clicking the trigger opens the dialog AND issues an
+  hx-get whose response fills the modal body - the classic
+  "open dialog -> server renders fragment into it" flow that legacy pages
+  implemented with p:dialog + p:remoteCommand update targets.
+
+  PARAMS:
+    id           String - REQUIRED. Namespaced DOM ids: #{id} root,
+                       #{id}-title label, #{id}-body swap target.
+    title        String - header text (Spanish labels expected).
+    triggerLabel String - text of the default trigger button.
+    triggerClass String - OPTIONAL extra Bulma classes for the trigger
+                       (e.g. "is-small is-danger").
+    bodyUrl      String - REQUIRED context-path-relative URL whose response
+                       (an HTML fragment) fills the body. The
+                       {config:['quarkus.http.root-path']} prefix is added HERE,
+                       callers must NOT pre-prefix (navbar convention).
+                       CSRF headers are inherited automatically from the
+                       layout's <body hx-headers=...> (quarkus-rest-csrf).
+
+  SLOTS:
+    {#trigger} - replaces the default trigger button entirely (for icon
+                 buttons, row-action triggers, etc.). Keep the hx-get/
+                 hx-target/@click trio consistent if you override it.
+    {#footer}  - action buttons area; default is a plain "Cerrar" button.
+                 Page-supplied buttons typically carry their own hx-post +
+                 hx-confirm attributes.
+
+  ALPINE / QUTE INTERPLAY (house rule): every "{" inside an Alpine
+  expression is followed by whitespace ("{ open:false }", "{ 'is-active':
+  open }") so Qute's parser treats it as literal text - see docs/ui-kit.md.
+  Focus trap: minimal Tab-cycling helper (no @alpinejs/focus dependency;
+  only alpinejs core ships in the T10 bundle).
+!}
+{@java.lang.String id}
+{@java.lang.String title}
+{@java.lang.String triggerLabel}
+{@java.lang.String triggerClass}
+{@java.lang.String bodyUrl}
+<div class="kit-modal-root" style="display:inline-block" x-data="{ open:false }">
+
+    {#insert trigger}
+    <button type="button"
+            class="button {#if triggerClass??}{triggerClass}{#else}is-link{/if}"
+            aria-haspopup="dialog"
+            @click="open = true; $nextTick(() => $refs.card.focus())"
+            hx-get="{config:['quarkus.http.root-path']}{bodyUrl}"
+            hx-target="#{id}-body"
+            hx-swap="innerHTML">{#if triggerLabel??}{triggerLabel}{#else}Abrir{/if}</button>
+    {/insert}
+
+    <div class="modal" id="{id}" :class="{ 'is-active': open }"
+         @keydown.escape.window="open = false" role="dialog" aria-modal="true"
+         aria-labelledby="{id}-title" data-kit-modal>
+        <div class="modal-background" @click="open = false"></div>
+        <div class="modal-card" x-ref="card" tabindex="-1"
+             @keydown.tab="kitTrapTab($event, $el)">
+            <header class="modal-card-head">
+                <p class="modal-card-title" id="{id}-title">{#if title??}{title}{/if}</p>
+                <button class="delete" type="button" aria-label="Cerrar" @click="open = false"></button>
+            </header>
+            <section class="modal-card-body" id="{id}-body">
+                {! Body content arrives via hx-get swap from bodyUrl !}
+            </section>
+            <footer class="modal-card-foot">
+                {#insert footer}
+                <button type="button" class="button" @click="open = false">Cerrar</button>
+                {/insert}
+            </footer>
+        </div>
+    </div>
+
+</div>
+
+{!
+  Minimal focus trap shared by all kit dialogs (defined once, reused by
+  _kit/confirm.html). Braces after "{" keep whitespace for Qute.
+!}
+<script>
+    if (!window.kitTrapTab) {
+        window.kitTrapTab = function (event, container) {
+            var focusables = container.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusables.length === 0) {
+                return;
+            }
+            var first = focusables[0];
+            var last = focusables[focusables.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+    }
+</script>
