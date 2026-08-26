@@ -47,7 +47,7 @@ import Utils.CarritoCalculations;
 import Utils.PDFGenerator;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import jakarta.faces.view.ViewScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.xml.bind.JAXBContext;
@@ -74,7 +74,7 @@ import Models.Clients;
 import Models.Users;
 
 @Named("comprobanteService")
-@ViewScoped
+@ApplicationScoped
 public class ComprobanteService implements Serializable {
 
     @Inject
