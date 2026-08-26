@@ -4,7 +4,7 @@
 
     <groupId>com.mercurius</groupId>
     <artifactId>mercurius-quarkus</artifactId>
-    <version>1.0.17-SNAPSHOT</version>
+    <version>1.0.18-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -32,6 +32,15 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest</artifactId>
+        </dependency>
+        <!-- CSRF prevention (Double Submit Cookie) for the Qute/HTMX app surface.
+             BOM-managed (quarkus-bom), no version tag.
+             T11 adds the extension so templates/layout.html can reference
+             {inject:csrf.headerName}/{inject:csrf.token} at BUILD time; T14 owns
+             the activation config (create-token-path etc.). -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-csrf</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>

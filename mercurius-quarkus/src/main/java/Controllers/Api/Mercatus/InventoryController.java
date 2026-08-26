@@ -42,7 +42,7 @@ public class InventoryController {
     public Response getStockStatus(@PathParam("articleId") @Parameter(description = "Article ID") Long articleId) {
         try {
             // Find the article stock by article code (used as articleId)
-            ArticuloStock stock = findStockByArticleCode(articleId.intValue());
+            ArticuloStock stock = inventarioService.findStockByArticleCode(articleId.intValue());
             
             if (stock == null) {
                 return Response.status(Response.Status.NOT_FOUND)
@@ -62,18 +62,6 @@ public class InventoryController {
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting stock status"))
                     .build();
-        }
-    }
-
-    private ArticuloStock findStockByArticleCode(int articleCode) {
-        try {
-            return inventarioService.em.createQuery(
-                "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = (SELECT ar.codigoBarra FROM Articulos ar WHERE ar.codigo = :id)",
-                ArticuloStock.class)
-                .setParameter("id", (long) articleCode)
-                .getResultStream().findFirst().orElse(null);
-        } catch (Exception e) {
-            return null;
         }
     }
 
