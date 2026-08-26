@@ -1,0 +1,51 @@
+{!
+  fragments/toasts - Bulma notification stack rendered from the "toasts"
+  data model (T11).
+
+  Data contract: "toasts" is a list of items exposing:
+    severity : String - one of error | warn | info | success
+               (mirrors the legacy FacesMessage severities used across
+               SessionController.errorMessage/infoMessage/warnMessage plus
+               the ubiquitous "Exito" success case; anything else falls
+               back to info)
+    message  : String - auto-escaped by Qute for .html templates
+
+  The layout renders this fragment inside #toast-container only when the
+  page supplies a "toasts" key ({#if toasts??} safe expression), so pages
+  without notifications pay nothing.
+
+  Auto-dismiss: tiny vanilla JS snippet (no Alpine state needed) removes
+  each notification after 5 seconds; the Bulma "delete" button dismisses
+  immediately. Braces stay on their own lines so Qute never parses them
+  as expressions.
+!}
+{#for toast in toasts}
+    <div class="notification {#if toast.severity == 'error'}is-danger{#else if toast.severity == 'warn'}is-warning{#else if toast.severity == 'success'}is-success{#else}is-info{/if}"
+         role="alert" data-toast>
+        <button class="delete" aria-label="Cerrar notificacion"></button>
+        {toast.message}
+    </div>
+{/for}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var container = document.getElementById('toast-container');
+        if (!container) {
+            return;
+        }
+        var dismiss = function (el) {
+            el.remove();
+        };
+        container.querySelectorAll('.notification').forEach(function (el) {
+            var closeBtn = el.querySelector('.delete');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    dismiss(el);
+                });
+            }
+            setTimeout(function () {
+                dismiss(el);
+            }, 5000);
+        });
+    });
+</script>

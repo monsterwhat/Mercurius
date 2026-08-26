@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+{!
+  Mercurius - base Qute layout for the NEW app surface (plan task T11).
+
+  Structure contract for pages:
+    {#include layout}
+      {#title}...{/title}          optional, defaults to "Mercurius"
+      {#navbar}...{/navbar}        optional override; default renders fragments/navbar
+      {#body}...{/body}            REQUIRED page content
+    {/include}
+
+  Data-model contract:
+    "toasts" (optional): list of {severity, message}; when present the
+    fragments/toasts stack is rendered into #toast-container (see toasts.html
+    for accepted severity values).
+
+  CSRF (quarkus-rest-csrf, added in T11):
+    The hx-headers attribute below is the EXACT pattern documented in the
+    Quarkus "Cross-Site Request Forgery Prevention" guide (section
+    "CSRF Request Header"):
+        body hx-headers='{"{inject:csrf.headerName}":"{inject:csrf.token}"}'
+    It makes every HTMX request carry the CSRF header automatically.
+    DORMANT UNTIL T14: no quarkus.rest-csrf.* properties are set yet; the
+    header/token injection becomes meaningful once T14 lands the csrf config.
+    Do not reformat this attribute - the literal pattern is intentional.
+!}
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>{#insert title}Mercurius{/insert}</title>
+    {!
+      web-bundler Qute tag: injects the bundled app-*.js and app-*.css
+      (htmx + alpinejs + bulma + print.js) built from src/main/resources/web.
+    !}
+    {#bundle /}
+</head>
+<body hx-headers='{"{inject:csrf.headerName}":"{inject:csrf.token}"}'>
+
+    {!
+      Navbar slot: pages may override; default is the shared role-gated navbar.
+    !}
+    {#insert navbar}
+        {#include fragments/navbar /}
+    {/insert}
+
+    <main class="section">
+        <div class="container">
+            {#insert body}{/insert}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p><strong>Mercurius</strong> &mdash; Sistema de Inventarios</p>
+        </div>
+    </footer>
+
+    {!
+      Toast stack: rendered only when the page supplies a "toasts" data model.
+      aria-live so screen readers announce notifications appended here (also
+      used by HTMX swaps in later tasks). The ?? suffix is the documented Qute
+      "safe expression": it yields null when the key was not provided, so pages
+      that pass no toasts render an empty container instead of failing.
+    !}
+    <div id="toast-container" aria-live="polite" aria-atomic="false"
+         style="position: fixed; top: 1rem; right: 1rem; z-index: 1000; width: 22rem;">
+        {#if toasts??}
+            {#include fragments/toasts /}
+        {/if}
+    </div>
+
+</body>
+</html>
