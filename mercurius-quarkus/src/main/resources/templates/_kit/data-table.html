@@ -1,0 +1,114 @@
+{! _kit/data-table - shared server-paged/sorted table (T16).
+
+  Replaces the legacy p:dataTable (+ p:column). ALL state lives in the URL;
+  this fragment never holds state and embeds NO business logic.
+
+  SERVER-SIDE PAGING/SORTING CONTRACT
+  -----------------------------------
+  The table links back to the SAME endpoint that rendered the page:
+    GET {baseUrl}?page=N&size=S&sort=<key>&dir=asc|desc[&<preserved params>]
+  The resource must:
+    - read page/size/sort/dir from query params (sane defaults: page=1,
+      size=20, sort=null, dir="asc"),
+    - when the request carries the "HX-Request" header, render ONLY this
+      table include (fragment swap into the page's table container);
+      otherwise render the full page template,
+    - keep totalPages = ceil(total/size) server-side (Qute has no division),
+    - pass filters/sort/dir back down through the "params" map so pager and
+      sort links preserve them,
+    - treat "page", "size", "sort", "dir" as RESERVED query keys: they are
+      emitted by this fragment and must NOT appear in "params".
+
+  DATA CONTRACT (params of this include):
+    id          String - REQUIRED. DOM id of the wrapper div.
+    baseUrl     String - REQUIRED context-path-relative endpoint, e.g.
+                       "/app/articulos". Root-path prefix is added HERE.
+    headers     List   - REQUIRED. Column definitions as maps, each exposing
+                       "label" (always) and "key" (nullable -> column is
+                       NOT sortable when key is absent/null).
+                       Build them server-side e.g.
+                       Map.of("label","Nombre","key","nombre").
+    rows        List   - row data for rowFragment mode (see below).
+    rowFragment String - OPTIONAL root-relative template path, e.g.
+                       "_kit/rows/articulo". When set, tbody renders one
+                       include per item: {#include _id=rowFragment
+                       item=row rowIndex=row_index /}. When ABSENT, tbody
+                       renders the caller's {#rows}...{/rows} block instead
+                       (caller owns iteration AND its empty-state).
+    sortKey     String - OPTIONAL currently sorted column key.
+    sortDir     String - OPTIONAL current direction, "asc"|"desc".
+    page        Integer - OPTIONAL current 1-based page (footer/pager).
+    size        Integer - OPTIONAL page size, echoed into links.
+    total       Long    - OPTIONAL total row count, shown in the footer.
+    totalPages  Integer - OPTIONAL; when present (>1) the pager renders.
+    pages       List<Integer> - OPTIONAL window of page numbers for the
+                        pager (server-computed, see _kit/pagination).
+    params      Map<String,Object> - OPTIONAL preserved query params
+                       (URL-safe values; reserved keys excluded).
+
+  SORT LINKS: each sortable header emits ?sort=<key>&dir=<toggled> plus
+  preserved params, targeting the same endpoint. Clicking a sorted column
+  flips asc->desc; clicking another column starts at asc. aria-sort marks
+   the active column for screen readers.
+!}
+{@java.lang.String id}
+{@java.lang.String baseUrl}
+{@java.util.List<java.util.Map<String,Object>> headers}
+{@java.util.List<Object> rows}
+{@java.lang.String rowFragment}
+{@java.lang.String sortKey}
+{@java.lang.String sortDir}
+{@java.lang.Integer page}
+{@java.lang.Integer size}
+{@java.lang.Long total}
+{@java.lang.Integer totalPages}
+{@java.util.List<Integer> pages}
+{@java.util.Map<String,Object> params}
+<div class="table-container" id="{id}" data-kit-table data-base-url="{baseUrl}">
+    <table class="table is-striped is-hoverable is-fullwidth">
+        <thead>
+            <tr>
+                {#for col in headers}
+                    {#if col.key??}
+                    <th scope="col" {#if col.key == sortKey}{#if sortDir == 'desc'}aria-sort="descending"{#else}aria-sort="ascending"{/if}{/if}>
+                        <a href="{config:'quarkus.http.root-path'}{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+                           title="Ordenar por {col.label}" data-kit-sort="{col.key}">{col.label}</a>
+                        {#if col.key == sortKey}{#if sortDir == 'desc'}<span aria-hidden="true">▼</span>{#else}<span aria-hidden="true">▲</span>{/if}{/if}
+                    </th>
+                    {#else}
+                    <th scope="col">{col.label}</th>
+                    {/if}
+                {/for}
+            </tr>
+        </thead>
+        <tbody>
+            {#if rowFragment??}
+                {#for row in rows}
+                    {#include _id=rowFragment item=row rowIndex=row_index /}
+                {#else}
+                    <tr><td colspan="{headers.size()}" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                {/for}
+            {#else}
+                {#insert rows}{/insert}
+            {/if}
+        </tbody>
+        {#if totalPages??}
+        <tfoot>
+            <tr>
+                <td colspan="{headers.size()}">
+                    <div class="level">
+                        <div class="level-left">
+                            <span class="has-text-grey">
+                                {#if page??}Página {page} de {totalPages}{#if total??} · {total} registros{/if}{#else}{#if total??}{total} registros{/if}{/if}
+                            </span>
+                        </div>
+                        <div class="level-right">
+                            {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl params=params /}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </tfoot>
+        {/if}
+    </table>
+</div>

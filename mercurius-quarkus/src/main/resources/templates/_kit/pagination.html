@@ -1,0 +1,70 @@
+{!
+  _kit/pagination - Bulma pager for server-side paging (T16).
+
+  Renders a centered Bulma pagination bar (prev / page numbers / next).
+  Every link targets the SAME endpoint that rendered the current view,
+  differing only in query params, so both full-page navigation and HTMX
+  boosted navigation work. To boost it, wrap the include in an element
+  with hx-boost="true" or target the table container from the page.
+
+  DATA CONTRACT (all supplied by the calling resource/template):
+    page       Integer - current page, 1-based. REQUIRED.
+    totalPages Integer - total number of pages (server computes
+                       ceil(total/size); Qute has no division). REQUIRED.
+    pages      List<Integer> - OPTIONAL. The window of page numbers to
+                       render as numbered links (e.g. [1,2,3,4,5]); the
+                       SERVER decides the window so this template stays
+                       arithmetic-free. When absent only prev/next render.
+    baseUrl    String   - context-path-relative endpoint, e.g.
+                       "/app/articulos". The {config:['quarkus.http.root-path']}
+                       prefix is added HERE (same convention as
+                       fragments/navbar.html) - callers must NOT pre-prefix.
+    params     Map<String,Object> - OPTIONAL extra query params preserved
+                       on every emitted href (filters, sort, dir...).
+                       Values must already be URL-safe: no encoding is
+                       performed here. RESERVED KEYS that must NOT be in
+                       the map: "page" and "size" (emitted by this
+                       template itself).
+
+  LINK SHAPE produced: {root-path}{baseUrl}?page=N[&size=S][&k=v ...]
+  ("page" first, then every preserved param prefixed with "&", so no
+  separator logic is needed inside the template).
+!}
+{@java.lang.Integer page}
+{@java.lang.Integer totalPages}
+{@java.util.List<Integer> pages}
+{@java.lang.String baseUrl}
+{@java.util.Map<String,Object> params}
+<nav class="pagination is-centered is-small" role="navigation"
+     aria-label="paginacion" data-kit-pagination data-base-url="{baseUrl}">
+
+    {#if page > 1}
+    <a class="pagination-previous" rel="prev"
+       href="{config:['quarkus.http.root-path']}{baseUrl}?page={page - 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+       data-kit-page="{page - 1}">Anterior</a>
+    {#else}
+    <button class="pagination-previous" type="button" disabled>Anterior</button>
+    {/if}
+
+    {#if page < totalPages}
+    <a class="pagination-next" rel="next"
+       href="{config:['quarkus.http.root-path']}{baseUrl}?page={page + 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+       data-kit-page="{page + 1}">Siguiente</a>
+    {#else}
+    <button class="pagination-next" type="button" disabled>Siguiente</button>
+    {/if}
+
+    {#if pages??}
+    <ul class="pagination-list">
+        {#for num in pages}
+            {#if num == page}
+            <li><a class="pagination-link is-current" aria-current="page"
+                   href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
+            {#else}
+            <li><a class="pagination-link"
+                   href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
+            {/if}
+        {/for}
+    </ul>
+    {/if}
+</nav>

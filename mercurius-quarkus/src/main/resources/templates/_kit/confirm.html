@@ -1,0 +1,125 @@
+{!
+  _kit/confirm - styled confirmation dialog wired to htmx's hx-confirm (T16).
+
+  Replaces the legacy p:confirm behavior / onclick confirm popups. Instead
+  of the browser's native window.confirm (which htmx shows by default for
+  elements carrying hx-confirm), this fragment installs the DOCUMENTED htmx
+  customization hook: a listener on the "htmx:confirm" event that calls
+  evt.preventDefault() and later evt.detail.issueRequest(true) when the user
+  accepts. Any element with hx-confirm="¿texto?" therefore automatically
+  gets this styled dialog:
+
+      <button class="button is-danger"
+              hx-post="{config:['quarkus.http.root-path']}/app/articulos/123/desactivar"
+              hx-confirm="¿Desactivar el articulo?">Desactivar</button>
+
+  If a page does NOT include this fragment, htmx falls back to the native
+  confirm - graceful degradation, no coupling.
+
+  PARAMS (all optional):
+    id           String  - DOM id of the modal, default "kit-confirm".
+    title        String  - header text, default "Confirmar accion".
+    message      String  - fallback body text shown when the triggering
+                           element has no hx-confirm value; normally the
+                           question comes from evt.detail.question.
+    confirmLabel String  - default "Confirmar".
+    cancelLabel  String  - default "Cancelar".
+    danger       Boolean - true renders the accept button as is-danger.
+
+  Include ONCE per page (the script self-guards against double install).
+!}
+{@java.lang.String id}
+{@java.lang.String title}
+{@java.lang.String message}
+{@java.lang.String confirmLabel}
+{@java.lang.String cancelLabel}
+{@java.lang.Boolean danger}
+<div class="modal" id="{id ?: 'kit-confirm'}" data-kit-confirm-modal aria-hidden="true">
+    <div class="modal-background" data-kit-confirm-cancel></div>
+    <div class="modal-card" role="alertdialog" aria-modal="true"
+         aria-labelledby="{id ?: 'kit-confirm'}-title"
+         aria-describedby="{id ?: 'kit-confirm'}-message" data-kit-trap>
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="{id ?: 'kit-confirm'}-title">{title ?: 'Confirmar accion'}</p>
+            <button class="delete" type="button" aria-label="Cerrar" data-kit-confirm-cancel></button>
+        </header>
+        <section class="modal-card-body">
+            <p id="{id ?: 'kit-confirm'}-message" data-kit-confirm-message>{message ?: ''}</p>
+        </section>
+        <footer class="modal-card-foot">
+            {#if danger??}{#if danger}
+            <button class="button is-danger" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
+            {#else}
+            <button class="button is-primary" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
+            {/if}{#else}
+            <button class="button is-primary" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
+            {/if}
+            <button class="button" type="button" data-kit-confirm-cancel>{cancelLabel ?: 'Cancelar'}</button>
+        </footer>
+    </div>
+</div>
+
+{!
+  One-time global install: htmx:confirm interception + click/escape/focus
+  handling. Braces after "{" keep whitespace so Qute leaves them alone.
+!}
+<script>
+    if (!window.kitConfirmReady) {
+        window.kitConfirmReady = true;
+        var kitTrapTab = window.kitTrapTab || function (event, container) {
+            var focusables = container.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (focusables.length === 0) {
+                return;
+            }
+            var first = focusables[0];
+            var last = focusables[focusables.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        window.kitTrapTab = window.kitTrapTab || kitTrapTab;
+        var modal = document.getElementById('{id ?: 'kit-confirm'}');
+        var pending = null;
+        var closeModal = function () {
+            modal.classList.remove('is-active');
+            modal.setAttribute('aria-hidden', 'true');
+            pending = null;
+        };
+        document.body.addEventListener('htmx:confirm', function (evt) {
+            if (!evt.detail.question) {
+                return;
+            }
+            evt.preventDefault();
+            pending = evt;
+            modal.querySelector('[data-kit-confirm-message]').textContent = evt.detail.question;
+            modal.classList.add('is-active');
+            modal.removeAttribute('aria-hidden');
+            modal.querySelector('[data-kit-confirm-accept]').focus();
+        });
+        modal.addEventListener('click', function (evt) {
+            var target = evt.target.closest('[data-kit-confirm-accept],[data-kit-confirm-cancel]');
+            if (!target) {
+                return;
+            }
+            var request = pending;
+            closeModal();
+            if (target.hasAttribute('data-kit-confirm-accept') && request) {
+                request.detail.issueRequest(true);
+            }
+        });
+        document.addEventListener('keydown', function (evt) {
+            if (evt.key === 'Escape' && modal.classList.contains('is-active')) {
+                closeModal();
+            }
+        });
+        modal.querySelector('[data-kit-trap]').addEventListener('keydown', function (evt) {
+            if (evt.key === 'Tab') {
+                window.kitTrapTab(evt, evt.currentTarget);
+            }
+        });
+    }
+</script>

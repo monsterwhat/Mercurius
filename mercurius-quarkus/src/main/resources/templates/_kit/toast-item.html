@@ -1,0 +1,86 @@
+{!
+  _kit/toast-item - ONE notification, severity-mapped to Bulma colors (T16).
+
+  Replaces the legacy p:growl. Two usage modes:
+
+    1) Server-side render: a resource includes this fragment (directly or
+       via fragments/toasts-style loops) when rendering a page that must
+       show notifications immediately.
+
+    2) HTMX swap: the response fragment wraps this include in an
+       out-of-band swap so the toast lands in the layout's
+       #toast-container without touching the requested target:
+
+         <div hx-swap-oob="beforeend:#toast-container">
+             {#include _kit/toast-item severity="success" message=result.message /}
+         </div>
+
+       (htmx inserts the CONTENT of an hx-swap-oob element using the named
+       swap style; "beforeend" appends into the container.)
+
+  DATA CONTRACT:
+    severity String - accepted values, case-insensitive:
+                       error / ERROR            -> is-danger
+                       warn / warning / WARN... -> is-warning
+                       success / SUCCESS        -> is-success
+                       anything else            -> is-info (default)
+                      This covers both the T11 lowercase vocabulary
+                      (fragments/toasts.html) and raw FacesMessage-style
+                      uppercase severities coming from ported services.
+    message  String - auto-escaped by Qute (.html template).
+
+  BEHAVIOUR: the guarded script below registers ONCE (window flag) a
+  MutationObserver on #toast-container so dynamically swapped toasts get
+  the same dismiss button + 5s auto-dismiss as server-rendered ones.
+  Braces inside <script> always have whitespace/newline right after "{"
+  so Qute never parses them as expressions (house rule, see docs/ui-kit.md).
+!}
+{@java.lang.String severity}
+{@java.lang.String message}
+<div class="notification {#if severity == 'error' || severity == 'ERROR'}is-danger{#else if severity == 'warn' || severity == 'WARN' || severity == 'warning' || severity == 'WARNING'}is-warning{#else if severity == 'success' || severity == 'SUCCESS'}is-success{#else}is-info{/if}"
+     role="alert" data-toast data-toast-severity="{severity}">
+    <button class="delete" type="button" aria-label="Cerrar notificacion"></button>
+    {message}
+</div>
+
+<script>
+    if (!window.kitToastReady) {
+        window.kitToastReady = true;
+        var kitBindToast = function (el) {
+            if (el.dataset.toastBound) {
+                return;
+            }
+            el.dataset.toastBound = '1';
+            var closeBtn = el.querySelector('.delete');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    el.remove();
+                });
+            }
+            setTimeout(function () {
+                el.remove();
+            }, 5000);
+        };
+        var kitAttachToasts = function () {
+            var container = document.getElementById('toast-container');
+            if (!container) {
+                return;
+            }
+            container.querySelectorAll('.notification').forEach(kitBindToast);
+            new MutationObserver(function (mutations) {
+                mutations.forEach(function (m) {
+                    m.addedNodes.forEach(function (n) {
+                        if (n.nodeType === 1 && n.classList.contains('notification')) {
+                            kitBindToast(n);
+                        }
+                    });
+                });
+            }).observe(container, { childList: true });
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', kitAttachToasts);
+        } else {
+            kitAttachToasts();
+        }
+    }
+</script>
