@@ -21,14 +21,16 @@
 --                             zoneCode (int) are NOT NULL; nullable columns
 --                             are omitted
 --
--- Users.password is a cost-12 BCrypt hash ($2a$..., 60 chars) previously
--- generated and verified with at.favre.lib.crypto.bcrypt — the library and
--- cost used by Services/LoginService.verifyPassword(). Login correctness is
--- NOT asserted by this task; the value is a format-valid placeholder.
+-- Users.password is a REAL cost-12 BCrypt hash ($2a$..., 60 chars) of the
+-- password 'admin123', generated with at.favre.lib.crypto.bcrypt 0.10.2 via
+-- jshell (BCrypt.withDefaults().hashToString(12, ...)) — the same library and
+-- cost used by Services/LoginService.hashPassword()/verifyPassword().
+-- Provenance transcript: .omo/evidence/t14/bcrypt-jshell-transcript.txt
+-- Seed credentials for auth tests (T14/T15): admin / admin123
 -- ============================================================================
 
 INSERT INTO Users (username, password, groupName, status, email)
-VALUES ('admin', '$2a$12$s7GA1sT77FeT2nGddYD5TOdNDq11cA1fR1IsvqeddBtC.9VjC.G6a', 'admin', TRUE, 'admin@mercurius.local');
+VALUES ('admin', '$2a$12$eWh/rpjtFuusW6z3Z43gwOMFuu10/eXnnj9V4D05WqkarC86uGkuu', 'admin', TRUE, 'admin@mercurius.local');
 
 INSERT INTO Departamento (nombre, status, fecha)
 VALUES ('Departamento General', TRUE, CURRENT_TIMESTAMP);
