@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Departamento;
+import Models.Enums.Tipo_SoftDelete;
 import Services.AlertasService;
 import Services.DepartamentoService;
 import jakarta.annotation.PostConstruct;
@@ -136,7 +137,14 @@ public class DepartamentoController implements Serializable {
     public void deleteDepartamento() {
         if (selectedDepartamento != null) {
             String antes = DiffUtils.snapshotEntity(selectedDepartamento);
-            departamentoService.softDelete(selectedDepartamento);
+            Tipo_SoftDelete resultado = departamentoService.softDelete(selectedDepartamento);
+            if (resultado == Tipo_SoftDelete.DEACTIVATED) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se desactivo el departamento!", null));
+            } else if (resultado == Tipo_SoftDelete.ACTIVATED) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Se activo el departamento!", null));
+            }
             alertas.registrarAlerta("Departamento Eliminado", "Se eliminó el departamento: " + selectedDepartamento.getNombre(), currentSession.getCurrentUser(), 0, "deleteDepartamento()", antes, DiffUtils.snapshotEntity(selectedDepartamento));
             clearSelectedDepartamento();
         }

@@ -1,12 +1,11 @@
 package Services;
 
 import Models.Familia;
+import Models.Enums.Tipo_SoftDelete;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import jakarta.transaction.Transactional;
@@ -170,27 +169,30 @@ public class FamiliaService extends GService<Familia> {
     }
 
     @Transactional
-    public void softDelete(@Nonnull Familia entity) {
+    @Nullable
+    public Tipo_SoftDelete softDelete(@Nonnull Familia entity) {
         try {
             // Find the item by its ID
             Familia existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
+                Tipo_SoftDelete result;
                 if(existingItem.getStatus()){
                     existingItem.setStatus(false);
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_WARN, "Se desactivo la familia!", null));
+                    result = Tipo_SoftDelete.DEACTIVATED;
                 }else{
                     existingItem.setStatus(true);
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_WARN, "Se activo la familia!", null));
+                    result = Tipo_SoftDelete.ACTIVATED;
                 }
                 em.merge(existingItem);
+                return result;
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "FamiliaService.method()", null, null);
+                return null;
             }
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "FamiliaService.softDelete()", null, e.getMessage());
+            return null;
         }
     }
     
