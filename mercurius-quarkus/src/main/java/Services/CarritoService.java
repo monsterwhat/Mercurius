@@ -3,6 +3,8 @@ package Services;
 import Controllers.ArticulosController;
 import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
+import Models.Articulos.Carrito.CartOperationResult;
+import Models.Articulos.Carrito.CartSessionContext;
 import Models.Articulos.Promocion;
 import Models.Clients;
 import Models.Inventario;
@@ -11,9 +13,7 @@ import Models.Registros.Alertas;
 import Services.AlertasService;
 import Services.InventarioService; 
 import Utils.CarritoCalculations; 
-import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.FacesContext;
-import jakarta.faces.view.ViewScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import java.io.Serializable;
@@ -29,7 +29,6 @@ import java.util.stream.Stream;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import lombok.Data;
-import org.primefaces.PrimeFaces;
 
 /**
  *
@@ -37,7 +36,7 @@ import org.primefaces.PrimeFaces;
  */
 @Named("carritoService")
 @Data
-@ViewScoped
+@ApplicationScoped
 public class CarritoService implements Serializable {
 
     @Inject
@@ -46,20 +45,24 @@ public class CarritoService implements Serializable {
     private @Nonnull AlertasService alertasService;
     @Inject
     private @Nonnull InventarioService inventario;
-    private Clients selectedClient;
-    private BigDecimal cantidadArticulo = BigDecimal.ONE;
-    private String codigoBarra;
-    private boolean resetFlag;
 
-    private List<ArticuloCarrito> carrito = new ArrayList<>();
-    private BigDecimal totalCarrito, colones, dolares, vuelto, pago;
-    private BigDecimal totalPagado = BigDecimal.ZERO;
-    private BigDecimal descuentoPuntos = BigDecimal.ZERO;
+    /**
+     * Contexto puente SOLO para los llamadores legacy que aún no reciben un
+     * {@link CartSessionContext} propio (ConsultasController.clonarFacturaACarrito,
+     * fuera del alcance de archivos de T5). Justificación escrita: T5 prohíbe
+     * editar ConsultasController, pero el código debe seguir compilando y la
+     * función clonar-factura-a-carrito debe seguir operando; antes el estado
+     * vivía por vista, ahora este puente es único por aplicación, delta
+     * semántico documentado en .omo/evidence/t5/call-site-translation.md.
+     * Eliminar cuando ConsultasController migre (T30/T37) pasando su propio
+     * contexto.
+     */
+    private final CartSessionContext legacyShimContext = new CartSessionContext();
 
-    public void addArticulo(@Nonnull Articulos articulo, @Nonnull BigDecimal cantidad) {
+    public void addArticulo(@Nonnull CartSessionContext ctx, @Nonnull Articulos articulo, @Nonnull BigDecimal cantidad) {
         try {
             boolean found = false;
-            for (ArticuloCarrito item : carrito) {
+            for (ArticuloCarrito item : ctx.getCarrito()) {
                 if (Objects.equals(item.getArticulo().getCodigo(), articulo.getCodigo()) && !item.isPromo()) {
                     item.setCantidad(item.getCantidad().add(cantidad));
                     found = true;
@@ -70,34 +73,45 @@ public class CarritoService implements Serializable {
                 ArticuloCarrito ac = new ArticuloCarrito();
                 ac.setArticulo(articulo);
                 ac.setCantidad(cantidad);
-                carrito.add(ac);
+                ctx.getCarrito().add(ac);
             }
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
         }
     }
 
-    public void removeArticulo2(@Nonnull ArticuloCarrito articulo) {
-        carrito.removeIf(a -> a.equals(articulo));
+    /**
+     * @deprecated Puente legacy para ConsultasController (no puede recibir un
+     * CartSessionContext hasta su migración); usa el contexto puente interno.
+     * Use {@link #addArticulo(CartSessionContext, Articulos, BigDecimal)}.
+     */
+    @Deprecated
+    public void addArticulo(@Nonnull Articulos articulo, @Nonnull BigDecimal cantidad) {
+        addArticulo(legacyShimContext, articulo, cantidad);
     }
 
-    public void revisarCarrito() {
+    public void removeArticulo2(@Nonnull CartSessionContext ctx, @Nonnull ArticuloCarrito articulo) {
+        ctx.getCarrito().removeIf(a -> a.equals(articulo));
+    }
+
+    public @Nullable CartOperationResult revisarCarrito(@Nonnull CartSessionContext ctx) {
         try {
-            if (!carrito.isEmpty()) {
-                PrimeFaces.current().executeScript("PF('PagoDialog').show();");
+            if (!ctx.getCarrito().isEmpty()) {
+                return CartOperationResult.script(CartOperationResult.Status.PAGO_DIALOG_LISTO, "PF('PagoDialog').show();");
             } else {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Carrito vacío", "Agregue artículos al carrito antes de continuar"));
+                return CartOperationResult.message(CartOperationResult.Status.CARRITO_VACIO,
+                    CartOperationResult.Severity.WARN, "Carrito vacío", "Agregue artículos al carrito antes de continuar");
             }
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+            return CartOperationResult.silent(CartOperationResult.Status.FALLA_INTERNA);
         }
     }
 
-    public void removeArticulo(@Nonnull ArticuloCarrito articulo, @Nonnull Users currentUser) {
+    public void removeArticulo(@Nonnull CartSessionContext ctx, @Nonnull ArticuloCarrito articulo, @Nonnull Users currentUser) {
         try {
-            if (carrito != null) {
-                Iterator<ArticuloCarrito> iterator = carrito.iterator();
+            if (ctx.getCarrito() != null) {
+                Iterator<ArticuloCarrito> iterator = ctx.getCarrito().iterator();
                 boolean removed = false;
                 while (iterator.hasNext() && !removed) {
                     ArticuloCarrito articuloCarrito = iterator.next();
@@ -107,17 +121,17 @@ public class CarritoService implements Serializable {
                         removed = true;
                     }
                 }
-                procesarPromocionesCarrito();
+                procesarPromocionesCarrito(ctx);
             }
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
         }
     }
 
-    public @Nullable BigDecimal calcularTotal() {
+    public @Nullable BigDecimal calcularTotal(@Nonnull CartSessionContext ctx) {
         try {
             BigDecimal total = BigDecimal.ZERO;
-            for (ArticuloCarrito item : carrito) {
+            for (ArticuloCarrito item : ctx.getCarrito()) {
                 BigDecimal precio = item.isPromo() ? item.getArticuloConDescuento() : item.getPrecioEfectivo();
                 String impuestoStr = item.getArticulo().getCodigoCabys().getImpuesto();
                 BigDecimal impuestoPct = BigDecimal.ZERO;
@@ -137,17 +151,23 @@ public class CarritoService implements Serializable {
         }
     }
 
-    public List<ArticuloCarrito> getCarrito() {
-        return carrito;
+    public void clear(@Nonnull CartSessionContext ctx) {
+        ctx.getCarrito().clear();
     }
 
+    /**
+     * @deprecated Puente legacy para ConsultasController (no puede recibir un
+     * CartSessionContext hasta su migración); usa el contexto puente interno.
+     * Use {@link #clear(CartSessionContext)}.
+     */
+    @Deprecated
     public void clear() {
-        carrito.clear();
+        clear(legacyShimContext);
     }
 
-    private void procesarPromocionesCarrito() {
+    private void procesarPromocionesCarrito(@Nonnull CartSessionContext ctx) {
         try {
-            List<ArticuloCarrito> listaArticulos = new ArrayList<>(carrito); // Crear una copia para evitar ConcurrentModificationException
+            List<ArticuloCarrito> listaArticulos = new ArrayList<>(ctx.getCarrito()); // Crear una copia para evitar ConcurrentModificationException
             List<ArticuloCarrito> articulosPromocionales = new ArrayList<>(); // Lista para almacenar artículos promocionales
 
             // Paso 1: Verificar y aplicar promociones aplicables
@@ -159,13 +179,13 @@ public class CarritoService implements Serializable {
                 }
             }
 
-            carrito.addAll(articulosPromocionales);
+            ctx.getCarrito().addAll(articulosPromocionales);
 
             // Paso 2: Verificar si las promociones aplicadas siguen siendo válidas
-            verificarPromocionesCarrito();
+            verificarPromocionesCarrito(ctx);
 
             // Paso 3: Eliminar artículos con cantidad 0
-            carrito.removeIf(articulo -> articulo.getCantidad().compareTo(BigDecimal.ZERO) <= 0);
+            ctx.getCarrito().removeIf(articulo -> articulo.getCantidad().compareTo(BigDecimal.ZERO) <= 0);
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
         }
@@ -234,17 +254,17 @@ public class CarritoService implements Serializable {
         }
     }
 
-    public void verificarPromocionesCarrito() {
+    public void verificarPromocionesCarrito(@Nonnull CartSessionContext ctx) {
         try {
             // Paso 2: Verificar si las promociones aplicadas siguen siendo válidas
-            List<Promocion> promocionesAplicadas = obtenerPromocionesAplicadas(); // Método que retorna todas las promociones aplicadas
+            List<Promocion> promocionesAplicadas = obtenerPromocionesAplicadas(ctx); // Método que retorna todas las promociones aplicadas
 
             for (Promocion promocion : promocionesAplicadas) {
-                boolean promocionSigueValida = promocionSigueSiendoValida(promocion);
+                boolean promocionSigueValida = promocionSigueSiendoValida(ctx, promocion);
 
                 if (!promocionSigueValida) {
                     // Si la promoción ya no es válida, revertimos los descuentos aplicados
-                    revertirPromocion(promocion, carrito);
+                    revertirPromocion(promocion, ctx.getCarrito());
                     alertasService.registrarAlerta("Info", "Promocion revertida: " + promocion.getNombre(), null, 0, "CarritoService.verificarPromocionesCarrito()", null, null);
                 }
             }
@@ -253,11 +273,11 @@ public class CarritoService implements Serializable {
         }
     }
 
-    public boolean promocionSigueSiendoValida(@Nonnull Promocion promocion) {
+    public boolean promocionSigueSiendoValida(@Nonnull CartSessionContext ctx, @Nonnull Promocion promocion) {
         try {
             // Verificar si la promoción sigue siendo válida con la situación actual del carrito
             return promocion.getArticulosCarrito().stream()
-                    .allMatch(itemPromocion -> carrito.stream()
+                    .allMatch(itemPromocion -> ctx.getCarrito().stream()
                     .anyMatch(itemCarrito -> itemCarrito.equals(itemPromocion)
                     && itemCarrito.getCantidad().compareTo(itemPromocion.getCantidad()) >= 0
                     && itemCarrito.isPromo() // Aquí solo se verifican los artículos ya marcados como promociones
@@ -291,9 +311,9 @@ public class CarritoService implements Serializable {
     }
 
     // Método auxiliar para obtener todas las promociones aplicadas actualmente en el carrito
-    public @Nullable List<Promocion> obtenerPromocionesAplicadas() {
+    public @Nullable List<Promocion> obtenerPromocionesAplicadas(@Nonnull CartSessionContext ctx) {
         try {
-            return carrito.stream()
+            return ctx.getCarrito().stream()
                     .filter(ArticuloCarrito::isPromo)
                     .flatMap(articulo -> {
                         List<Promocion> promociones = articulo.getPromociones();
@@ -307,28 +327,28 @@ public class CarritoService implements Serializable {
         }
     }
 
-    public void calcularVuelto(@Nonnull BigDecimal tipoCambioValue) {
+    public void calcularVuelto(@Nonnull CartSessionContext ctx, @Nonnull BigDecimal tipoCambioValue) {
         try {
-            BigDecimal totalFactura = calculateTotalCarrito();
-            pago = totalPagado != null ? totalPagado : BigDecimal.ZERO;
+            BigDecimal totalFactura = calculateTotalCarrito(ctx);
+            ctx.setPago(ctx.getTotalPagado() != null ? ctx.getTotalPagado() : BigDecimal.ZERO);
             BigDecimal montoAPagar = totalFactura.subtract(
-                descuentoPuntos != null ? descuentoPuntos : BigDecimal.ZERO);
-            vuelto = pago.subtract(montoAPagar).setScale(0, RoundingMode.HALF_UP);
+                ctx.getDescuentoPuntos() != null ? ctx.getDescuentoPuntos() : BigDecimal.ZERO);
+            ctx.setVuelto(ctx.getPago().subtract(montoAPagar).setScale(0, RoundingMode.HALF_UP));
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
         } 
     }
 
-    public @Nonnull String getVueltoString() {
+    public @Nonnull String getVueltoString(@Nonnull CartSessionContext ctx) {
         try {
-            if (vuelto == null) {
+            if (ctx.getVuelto() == null) {
                 return "";
             }
 
-            if (vuelto.signum() > 0) {
-                return "Vuelto: " + vuelto + " colones";
-            } else if (vuelto.signum() < 0) {
-                return "Faltante: " + vuelto.abs() + " colones";
+            if (ctx.getVuelto().signum() > 0) {
+                return "Vuelto: " + ctx.getVuelto() + " colones";
+            } else if (ctx.getVuelto().signum() < 0) {
+                return "Faltante: " + ctx.getVuelto().abs() + " colones";
             } else {
                 return "Vuelto: 0 colones";
             }
@@ -338,21 +358,21 @@ public class CarritoService implements Serializable {
         }
     }
 
-    public @Nonnull BigDecimal calculateTotalCarrito() {
-        return CarritoCalculations.calculateTotalCarrito(carrito);
+    public @Nonnull BigDecimal calculateTotalCarrito(@Nonnull CartSessionContext ctx) {
+        return CarritoCalculations.calculateTotalCarrito(ctx.getCarrito());
     }
 
-    public @Nonnull BigDecimal calculateTotalCarritoDescuento() {
-        return CarritoCalculations.calculateTotalDescuento(carrito);
+    public @Nonnull BigDecimal calculateTotalCarritoDescuento(@Nonnull CartSessionContext ctx) {
+        return CarritoCalculations.calculateTotalDescuento(ctx.getCarrito());
     }
 
-    public @Nonnull BigDecimal calculateTotalCarritoImpuesto() {
-        return CarritoCalculations.calculateTotalImpuesto(carrito);
+    public @Nonnull BigDecimal calculateTotalCarritoImpuesto(@Nonnull CartSessionContext ctx) {
+        return CarritoCalculations.calculateTotalImpuesto(ctx.getCarrito());
     }
 
-    public void ajustarInventario(@Nonnull Users currentUser) {
+    public void ajustarInventario(@Nonnull CartSessionContext ctx, @Nonnull Users currentUser) {
         try {
-            for (ArticuloCarrito articulo : carrito) {
+            for (ArticuloCarrito articulo : ctx.getCarrito()) {
                 var Articulo = articulo;
                 var Cantidad = articulo.getCantidad();
 
@@ -388,17 +408,17 @@ public class CarritoService implements Serializable {
         }
     }
  
-    public void cancel(@Nonnull Users currentUser) {
+    public @Nullable CartOperationResult cancel(@Nonnull CartSessionContext ctx, @Nonnull Users currentUser) {
         try {
             String cajero = currentUser.getUsername();
             Alertas alerta = new Alertas();
             StringBuilder antesBuilder = new StringBuilder();
 
             antesBuilder.append("Items en Carrito: ");
-            if (carrito.isEmpty()) {
+            if (ctx.getCarrito().isEmpty()) {
                 antesBuilder.append("Carrito vacío");
             } else {
-                for (ArticuloCarrito articulo : carrito) {
+                for (ArticuloCarrito articulo : ctx.getCarrito()) {
                     antesBuilder.append("[Artículo: ")
                             .append(articulo.getArticulo().getNombre())
                             .append(", Cantidad: ")
@@ -426,9 +446,9 @@ public class CarritoService implements Serializable {
                 }
             }
 
-            antesBuilder.append("\nCliente: ").append(selectedClient != null ? selectedClient.getName() : "Ninguno");
-            antesBuilder.append("\nCantidad Articulo: ").append(cantidadArticulo);
-            antesBuilder.append("\nCódigo Barra: ").append(codigoBarra);
+            antesBuilder.append("\nCliente: ").append(ctx.getSelectedClient() != null ? ctx.getSelectedClient().getName() : "Ninguno");
+            antesBuilder.append("\nCantidad Articulo: ").append(ctx.getCantidadArticulo());
+            antesBuilder.append("\nCódigo Barra: ").append(ctx.getCodigoBarra());
 
             alerta.setMensaje("Eliminacion Articulo en Carrito - Cajero: " + cajero);
             alerta.setTipo("facturacion");
@@ -439,22 +459,23 @@ public class CarritoService implements Serializable {
             alertasService.create(alerta);
 
             // Reset state
-            resetFlag = !resetFlag;
-            codigoBarra = "";
-            cantidadArticulo = BigDecimal.ONE;
-            selectedClient = new Clients();
-            carrito = new ArrayList<>();
+            ctx.setResetFlag(!ctx.isResetFlag());
+            ctx.setCodigoBarra("");
+            ctx.setCantidadArticulo(BigDecimal.ONE);
+            ctx.setSelectedClient(new Clients());
+            ctx.setCarrito(new ArrayList<>());
 
-            PrimeFaces.current().executeScript("window.close();");
+            return CartOperationResult.script(CartOperationResult.Status.CANCELADO, "window.close();");
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+            return CartOperationResult.silent(CartOperationResult.Status.FALLA_INTERNA);
         }
     }
 
-    public void processCodigoBarra() {
+    public @Nullable CartOperationResult processCodigoBarra(@Nonnull CartSessionContext ctx) {
         try {
-            String codigo = this.codigoBarra;
-            BigDecimal cantidad = this.cantidadArticulo;
+            String codigo = ctx.getCodigoBarra();
+            BigDecimal cantidad = ctx.getCantidadArticulo();
 
             if (codigo != null && !codigo.isBlank()) {
                 Articulos articulo = articuloController.findArticuloByBarCode(codigo);
@@ -467,7 +488,7 @@ public class CarritoService implements Serializable {
                         boolean found = false;
 
                         // Recorremos el carrito para ver si ya existe el artículo Y No es una promo...
-                        for (ArticuloCarrito item : carrito) {
+                        for (ArticuloCarrito item : ctx.getCarrito()) {
                             if (item.getArticulo().getCodigo() == articulo.getCodigo() && !item.isPromo()) {
                                 item.setCantidad(item.getCantidad().add(cantidad)); // Sumamos la cantidad existente con la nueva
                                 found = true;
@@ -477,37 +498,38 @@ public class CarritoService implements Serializable {
 
                         // Si no lo encontró en el carrito, lo agrega con la cantidad especificada
                         if (!found) {
-                            carrito.add(articuloCarrito); // Add to carrito first
+                            ctx.getCarrito().add(articuloCarrito); // Add to carrito first
                         }
 
                         // Check for active promotions in the entire cart
-                        procesarPromocionesCarrito();
+                        procesarPromocionesCarrito(ctx);
 
                         // Limpiamos los campos
-                        codigoBarra = "";
-                        cantidadArticulo = BigDecimal.ONE;
-                        resetFlag = !resetFlag; // Toggle el reset flag
+                        ctx.setCodigoBarra("");
+                        ctx.setCantidadArticulo(BigDecimal.ONE);
+                        ctx.setResetFlag(!ctx.isResetFlag()); // Toggle el reset flag
 
-                        FacesContext.getCurrentInstance().addMessage(null,
-                                new FacesMessage(FacesMessage.SEVERITY_INFO, "Artículo agregado",
-                                        "El artículo fue agregado al carrito"));
+                        return CartOperationResult.message(CartOperationResult.Status.ARTICULO_AGREGADO,
+                                CartOperationResult.Severity.INFO, "Artículo agregado",
+                                "El artículo fue agregado al carrito");
                     } else {
-                        FacesContext.getCurrentInstance().addMessage(null,
-                                new FacesMessage(FacesMessage.SEVERITY_ERROR, "No hay cantidad",
-                                        "La cantidad es inválida"));
+                        return CartOperationResult.message(CartOperationResult.Status.CANTIDAD_INVALIDA,
+                                CartOperationResult.Severity.ERROR, "No hay cantidad",
+                                "La cantidad es inválida");
                     }
                 } else {
-                    FacesContext.getCurrentInstance().addMessage(null,
-                            new FacesMessage(FacesMessage.SEVERITY_ERROR, "Artículo no encontrado",
-                                    "El código de barra no corresponde a un artículo válido"));
+                    return CartOperationResult.message(CartOperationResult.Status.ARTICULO_NO_ENCONTRADO,
+                            CartOperationResult.Severity.ERROR, "Artículo no encontrado",
+                            "El código de barra no corresponde a un artículo válido");
                 }
             } else {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Código de barra vacío o nulo",
-                                "El código de barra no corresponde a un artículo válido"));
+                return CartOperationResult.message(CartOperationResult.Status.CODIGO_VACIO,
+                        CartOperationResult.Severity.ERROR, "Código de barra vacío o nulo",
+                        "El código de barra no corresponde a un artículo válido");
             }
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+            return CartOperationResult.silent(CartOperationResult.Status.FALLA_INTERNA);
         }
     }
 }
