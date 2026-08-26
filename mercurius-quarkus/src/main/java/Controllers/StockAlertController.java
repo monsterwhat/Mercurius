@@ -9,8 +9,8 @@ import Services.AlertasService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.StockAlertService;
-import Utils.ExcelExporter;
 import Utils.PDFGenerator;
+import Utils.ReportExporter;
 import Controllers.Settings.SettingsDirController;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -23,6 +23,8 @@ import jakarta.inject.Named;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -390,13 +392,15 @@ public class StockAlertController implements Serializable {
                 return;
             }
 
-            ExcelExporter exporter = new ExcelExporter();
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd_MM_yyyy_HH_mm");
             String timestamp = dateFormat.format(new Date());
             String fileName = "StockAlerts_" + timestamp + ".xlsx";
             String filePath = dirController.getPDFDirPath() + File.separator + fileName;
 
-            File excelFile = exporter.exportStockAlertsToExcel(activeAlerts, filePath);
+            // T17: bytes from ReportExporter must stay cell-identical to the old ExcelExporter output.
+            byte[] excelBytes = ReportExporter.exportStockAlertsExcel(activeAlerts);
+            Files.write(Path.of(filePath), excelBytes);
+            File excelFile = new File(filePath);
 
             FacesContext.getCurrentInstance().addMessage(null,
                 new FacesMessage(FacesMessage.SEVERITY_INFO, "Exportación Exitosa", 

@@ -17,12 +17,7 @@ import Services.PrinterService;
 import Services.AlertasService;
 import Services.ProductoExoneracionService;
 import Models.ProductoExoneracion;
-import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
-import com.lowagie.text.Meta;
-import com.lowagie.text.Paragraph;
-import com.lowagie.text.Rectangle;
-import com.lowagie.text.pdf.PdfWriter;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -68,6 +63,7 @@ import org.primefaces.model.StreamedContent;
 import org.primefaces.model.file.UploadedFile;
 import org.primefaces.util.LangUtils;
 import Utils.DiffUtils;
+import Utils.ReportExporter;
 
 @Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "ArticulosController")
@@ -889,63 +885,18 @@ public class ArticulosController implements Serializable {
         String fileName = "reporteAjustesActivos_" + timestamp + ".pdf";
         File tempFile = File.createTempFile("reporteAjustesActivos_" + timestamp, ".pdf");
 
+        // Add content to the PDF
+        DataTable dataTable = (DataTable) facesContext.getViewRoot().findComponent(table);
+        if (dataTable == null) {
+            throw new RuntimeException("DataTable component not found: " + table);
+        }
+        List<Articulos> articulos = (List<Articulos>) dataTable.getValue();
+
+        // T17: bytes from ReportExporter must stay byte-identical to the old inline OpenPDF block.
+        byte[] pdfBytes = ReportExporter.exportArticulosPdf(articulos);
+
         try (OutputStream os = new FileOutputStream(tempFile)) {
-            Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
-            PdfWriter.getInstance(document, os);
-            document.add(new Meta("charset", "UTF-8"));
-            document.open();
-
-            // Set font size
-            com.lowagie.text.Font font = new com.lowagie.text.Font();
-            font.setSize(8); // Set font size to 8 points
-
-            // Add fancy title
-            document.add(new Paragraph("Reporte de Articulos Activos", font));
-            document.add(new Paragraph("-------------------------------------", font));
-
-            // Add content to the PDF
-            DataTable dataTable = (DataTable) facesContext.getViewRoot().findComponent(table);
-            if (dataTable == null) {
-                throw new RuntimeException("DataTable component not found: " + table);
-            }
-            List<Articulos> articulos = (List<Articulos>) dataTable.getValue();
-            int totalItems = articulos.size();
-            int currentItem = 1;
-            for (Articulos articulo : articulos) {
-                String itemInfo = currentItem + "/" + totalItems;
-                document.add(new Paragraph(itemInfo, font));
-
-                document.add(new Paragraph("Art: " + articulo.getNombre(), font));
-                if (articulo.getFamilia() != null) {
-                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + " Fam: " + articulo.getFamilia().getNombre(), font));
-                } else {
-                    document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + " Familia sin definir", font));
-                }
-                if (articulo.getCodigoCabys() != null) {
-                    document.add(new Paragraph("%Imp: " + articulo.getCodigoCabys().getCodigo(), font));
-                } else {
-                    document.add(new Paragraph("Cabys sin definir", font));
-                }
-                document.add(new Paragraph("Und: " + articulo.getUnidadMedida() + " UndComercial: " + articulo.getUnidadMedidaComercial(), font));
-
-                // Show only the latest price, assuming it's the last in the list
-                if (articulo.getPrecios() != null && !articulo.getPrecios().isEmpty()) {
-                    ArticuloPrecio latestPrecio = articulo.getPrecios().get(articulo.getPrecios().size() - 1);
-
-                    document.add(new Paragraph("Costo: " + latestPrecio.getPrecioCostoSinIVA(), font));
-                    document.add(new Paragraph("%Util: " + latestPrecio.getPorcentajeUtilidad(), font));
-                    document.add(new Paragraph("C/Util: " + latestPrecio.getPrecioConUtilidad(), font));
-                    document.add(new Paragraph("Venta: " + latestPrecio.getPrecioFinal(), font));
-                } else {
-                    document.add(new Paragraph("No hay precios definidos", font));
-                }
-
-                document.add(new Paragraph("Creador: " + articulo.getUsuario().getUsername(), font));
-                document.add(new Paragraph("\n", font));
-
-                currentItem++;
-            }
-            document.close();
+            os.write(pdfBytes);
         }
 
         // Create the directory if it doesn't exist
