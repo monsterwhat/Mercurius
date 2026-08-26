@@ -1,12 +1,11 @@
 package Services;
 
 import Models.Departamento; 
+import Models.Enums.Tipo_SoftDelete;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.FacesContext;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
@@ -148,27 +147,30 @@ public class DepartamentoService extends GService<Departamento> {
     }
 
     @Transactional
-    public void softDelete(@Nonnull Departamento entity) {
+    @Nullable
+    public Tipo_SoftDelete softDelete(@Nonnull Departamento entity) {
         try {
             // Find the item by its ID
             Departamento existingItem = em.find(getEntityClass(), entity.getId());
 
             if (existingItem != null) {
+                Tipo_SoftDelete result;
                 if(existingItem.getStatus()){
                     existingItem.setStatus(false);
-                        FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se desactivo el departamento!", null));
+                    result = Tipo_SoftDelete.DEACTIVATED;
                 }else{
                     existingItem.setStatus(true);
-                        FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Se activo el departamento!", null));
+                    result = Tipo_SoftDelete.ACTIVATED;
                 }
                 em.merge(existingItem);
+                return result;
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.softDelete()", null, null);
+                return null;
             }
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "DepartamentoService.softDelete()", null, e.getMessage());
+            return null;
         }
     }
     

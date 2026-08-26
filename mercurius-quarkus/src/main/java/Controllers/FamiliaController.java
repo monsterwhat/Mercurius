@@ -1,6 +1,7 @@
 package Controllers;
 
 import Models.Familia;
+import Models.Enums.Tipo_SoftDelete;
 import Services.AlertasService;
 import Services.FamiliaService;
 import jakarta.annotation.PostConstruct;
@@ -135,7 +136,14 @@ public class FamiliaController implements Serializable {
     public void deleteFamilia() {
         if (selectedFamilia != null) {
             String antes = DiffUtils.snapshotEntity(selectedFamilia);
-            familiaService.softDelete(selectedFamilia);
+            Tipo_SoftDelete resultado = familiaService.softDelete(selectedFamilia);
+            if (resultado == Tipo_SoftDelete.DEACTIVATED) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Se desactivo la familia!", null));
+            } else if (resultado == Tipo_SoftDelete.ACTIVATED) {
+                FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(FacesMessage.SEVERITY_WARN, "Se activo la familia!", null));
+            }
             alertas.registrarAlerta("Familia eliminada", "Se ha eliminado la familia: " + selectedFamilia.getNombre(), currentSession.getCurrentUser(), 0, "FamiliaController.deleteFamilia", antes, DiffUtils.snapshotEntity(selectedFamilia));
             clearSelectedFamilia();
         }
