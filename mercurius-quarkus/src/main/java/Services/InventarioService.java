@@ -511,4 +511,17 @@ public class InventarioService extends GService<Inventario> {
         }
     }
 
+    @Transactional(Transactional.TxType.SUPPORTS)
+    public ArticuloStock findStockByArticleCode(int articleCode) {
+        try {
+            return em.createQuery(
+                "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = (SELECT ar.codigoBarra FROM Articulos ar WHERE ar.codigo = :id)",
+                ArticuloStock.class)
+                .setParameter("id", (long) articleCode)
+                .getResultStream().findFirst().orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
 }
