@@ -1,0 +1,859 @@
+// =============================================================================
+// Mercurius application stylesheet (new UI stack).
+// Processed by quarkus-web-bundler -> served as /static/bundle/app-*.css
+//
+// Order matters: Bulma first (framework + the --bulma-* CSS custom properties
+// the ported layers rely on), then the legacy theme layers ported verbatim
+// from META-INF/resources/resources/css/ (plain CSS, valid SCSS).
+//
+// NOTE: the legacy files under META-INF/resources/resources/css/ stay in place
+// until the JSF decommission wave; this module is their new-world copy.
+// =============================================================================
+
+// Framework: Bulma 1.0.4 (resolved from the org.mvnpm:bulma artifact)
+@import "bulma/css/bulma.css";
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: base-theme.css
+// -----------------------------------------------------------------------------
+body,
+.section,
+.ui-card {
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-commandlink,
+.ui-link {
+    color: var(--bulma-background) !important;
+    text-decoration: none !important;
+}
+
+.ui-commandlink:hover{
+    background: var(--bulma-link-dark-invert) !important;
+    color: var(--bulma-background) !important;
+    text-decoration: none !important;
+}
+hr {
+    border: 0;
+    height: 2px;
+    background: var(--bulma-border-l) !important;
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: button-stack.css
+// -----------------------------------------------------------------------------
+.button-stack {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+}
+
+.edit-btn:active {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+}
+
+.edit-text {
+    opacity: 0;
+    max-width: 0;
+    overflow: hidden;
+    display: inline-block;
+    transform: translateX(5px);
+    transition: opacity 0.3s ease, transform 0.3s ease, max-width 0.3s ease;
+    white-space: nowrap;
+}
+
+@media (min-width: 769px) {
+    .edit-btn:hover .edit-text {
+        opacity: 1;
+        transform: translateX(0);
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .edit-text {
+        opacity: 1;
+        transform: translateX(0);
+        max-width: 200px;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: datatable.css
+// -----------------------------------------------------------------------------
+.ui-datatable thead th,
+.ui-datatable .ui-datatable-data tr td {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-datatable .ui-datatable-header,
+.ui-paginator {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+    border: none !important;
+}
+
+.ui-datatable .ui-datatable-footer {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+    border: unset !important;
+}
+.ui-datatable .ui-datatable-data > tr {
+    background: var(--bulma-scheme-main-l) !important;
+    color: var(--bulma-text) !important;
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: dialog.css
+// -----------------------------------------------------------------------------
+.ui-dialog .ui-dialog-titlebar{
+    background: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-dialog .ui-dialog-content{
+    background: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text) !important;
+    padding: 1rem !important;
+}
+
+.ui-dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999; /* optional: make sure it's above other elements */
+}
+
+.ui-dialog{
+    background: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text) !important;
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: form-elements.css
+// -----------------------------------------------------------------------------
+.ui-radiobutton .ui-radiobutton-box {
+    background: var(--bulma-scheme-main) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-radiobutton .ui-radiobutton-box.ui-state-active .ui-icon-bullet {
+    background: var(--bulma-primary) !important;
+}
+
+select,
+.ui-selectonemenu,
+.ui-inputgroup .ui-inputgroup-addon,
+.ui-panelgrid .ui-panelgrid-cell,
+.ui-panel .ui-panel-titlebar,
+.ui-panel .ui-panel-content {
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-selectonemenu-panel .ui-selectonemenu-items{
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+    padding: .4em !important;
+}
+
+.ui-selectonemenu-item{
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-selectonemenu-panel .ui-selectonemenu-items .ui-selectonemenu-item.ui-state-highlight{
+    background: var(--bulma-warning-light) !important;
+    color: var(--bulma-warning) !important;
+}
+
+.ui-datepicker,
+.ui-datepicker .ui-datepicker-header {
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-datepicker .ui-inputtext,
+.ui-calendar .ui-inputtext {
+    background: var(--bulma-background-l) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-datepicker-panel,
+.ui-datepicker-dropdown {
+    background: var(--bulma-background) !important;
+    color: var(--bulma-text) !important;
+}
+
+.ui-datepicker-calendar td a,
+.ui-datepicker-calendar th {
+    color: var(--bulma-text) !important;
+}
+
+.p-datepicker .p-datepicker-input {
+    background: var(--bulma-background-l) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-datepicker {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 9999; /* optional: make sure it's above other elements */
+}
+
+
+.ui-inputfield,
+.ui-password-panel {
+    background: var(--bulma-background-l) !important;
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-outputlabel,
+.ui-outputlabel-label {
+    color: var(--bulma-text) !important;
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: headers.css
+// -----------------------------------------------------------------------------
+/* Estilos mejorados para las páginas de Artículos, Categorías e Inventario */
+
+/* Header con métricas - Artículos */
+.articulos-header {
+    background: linear-gradient(135deg, var(--bulma-primary) 0%, var(--bulma-primary-dark) 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+/* Header con métricas - Categorías */
+.categorias-header {
+    background: linear-gradient(135deg, var(--bulma-info) 0%, var(--bulma-info-dark) 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+/* Header con métricas - Inventario */
+.inventario-header {
+    background: linear-gradient(135deg, var(--bulma-success) 0%, var(--bulma-success-dark) 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+/* Header con métricas - Clientes */
+.clientes-header {
+    background: linear-gradient(135deg, #3298dc 0%, #1e3a52 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+/* Header con métricas - CAByS */
+.cabys-header {
+    background: linear-gradient(135deg, var(--bulma-warning) 0%, var(--bulma-warning-dark) 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+/* Header con métricas - Recibos */
+.recibos-header {
+    background: linear-gradient(135deg, var(--bulma-danger) 0%, #b71c1c 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.cabys-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+.clientes-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+.articulos-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+.recibos-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.stat-card.active {
+    border: 2px solid white;
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Pestañas mejoradas */
+.ui-tabs.ui-tabs-top {
+    border-radius: 1rem !important;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ui-tabs .ui-tabs-nav {
+    background: var(--bulma-scheme-main-bis) !important;
+    border-bottom: 2px solid var(--bulma-border) !important;
+    padding: 0.5rem 1rem 0 1rem;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header {
+    border-radius: 0.75rem 0.75rem 0 0 !important;
+    margin-right: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header a {
+    color: var(--bulma-text) !important;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active {
+    background: var(--bulma-primary) !important;
+    border-color: var(--bulma-primary) !important;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a {
+    color: white !important;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header:hover:not(.ui-state-active) a {
+    color: var(--bulma-primary) !important;
+    background: rgba(var(--bulma-primary-rgb), 0.1);
+}
+
+/* Contador en pestañas */
+.tab-counter {
+    background: var(--bulma-danger);
+    color: white;
+    border-radius: 50%;
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    font-weight: bold;
+    min-width: 1.5rem;
+    text-align: center;
+    display: inline-block;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active .tab-counter {
+    background: white;
+    color: var(--bulma-primary);
+}
+
+/* Tarjetas para contenido de pestañas */
+.tab-content-card {
+    background: var(--bulma-scheme-main);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    margin-top: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Barra de acciones mejorada */
+.actions-bar {
+    background: var(--bulma-scheme-main-bis);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.actions-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+/* Botones mejorados */
+.action-btn {
+    border-radius: 0.75rem !important;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+/* Filtros mejorados */
+.filters-section {
+    background: var(--bulma-background-l);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--bulma-border);
+}
+
+.filters-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: var(--bulma-text);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+/* Tablas mejoradas */
+.articulos-table {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.articulos-table .ui-datatable-header {
+    background: var(--bulma-scheme-main-bis);
+    border-bottom: 1px solid var(--bulma-border);
+    padding: 1rem;
+}
+
+.articulos-table .ui-datatable-data tr {
+    transition: background-color 0.2s ease;
+}
+
+.articulos-table .ui-datatable-data tr:hover {
+    background: var(--bulma-background-l) !important;
+}
+
+/* Chips de estado mejorados */
+.status-chip {
+    border-radius: 2rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    padding: 0.25rem 0.75rem !important;
+    border: none !important;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.status-processed {
+    background: var(--bulma-success) !important;
+    color: white !important;
+}
+
+.status-unprocessed {
+    background: var(--bulma-warning) !important;
+    color: white !important;
+}
+
+.status-active {
+    background: var(--bulma-info) !important;
+    color: white !important;
+}
+
+.status-inactive {
+    background: var(--bulma-danger) !important;
+    color: white !important;
+}
+
+/* Acciones en tabla */
+.table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.table-action-btn {
+    border-radius: 0.5rem !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s ease;
+}
+
+.table-action-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Vista de cuadrícula */
+.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+.articulo-card {
+    background: var(--bulma-scheme-main);
+    border: 1px solid var(--bulma-border);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+}
+
+.articulo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    border-color: var(--bulma-primary);
+}
+
+.articulo-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.articulo-card-title {
+    font-weight: 600;
+    color: var(--bulma-text);
+    font-size: 1.125rem;
+    margin-bottom: 0.5rem;
+}
+
+.articulo-card-code {
+    font-family: monospace;
+    background: var(--bulma-background-l);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--bulma-text-light);
+}
+
+.articulo-card-body {
+    color: var(--bulma-text-light);
+    margin-bottom: 1rem;
+}
+
+.articulo-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--bulma-border);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .articulos-header,
+    .clientes-header {
+        padding: 1.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .actions-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .actions-group {
+        justify-content: center;
+    }
+
+    .filters-row {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-view {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .articulos-header,
+    .clientes-header {
+        padding: 1rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ui-tabs .ui-tabs-nav {
+        padding: 0.25rem;
+    }
+
+    .ui-tabs .ui-tabs-nav li.ui-tabs-header {
+        margin-right: 0.25rem;
+    }
+
+    .ui-tabs .ui-tabs-nav li.ui-tabs-header a {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tab-content-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Tooltip mejorado */
+.ui-tooltip {
+    background: var(--bulma-text) !important;
+    color: white !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.875rem !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Loading state */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    z-index: 1000;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--bulma-text-light);
+}
+
+.empty-state .icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state .title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--bulma-text);
+}
+
+.empty-state .subtitle {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: style.css
+// -----------------------------------------------------------------------------
+.side-panel {
+    width: 200px !important;
+    overflow-y: auto !important;
+    display: none !important; /* Hidden in mobile by default */
+}
+
+@media screen and (min-width: 768px) {
+    .side-panel {
+        display: block !important; /* Visible on larger screens */
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: tabs.css
+// -----------------------------------------------------------------------------
+.ui-tabs .ui-tabs-nav,
+.ui-tabs .ui-tabs-nav li.ui-tabs-header,
+.ui-tabs .ui-tabs-top .ui-tabs-nav li.ui-tabs-header a {
+    background: var(--bulma-scheme-main) !important;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active a{
+    color: var(--bulma-warning) !important;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header a{
+    color: var(--bulma-text-title-l) !important;
+}
+
+.ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active {
+    border-color: var(--bulma-warning) !important;
+}
+
+
+.ui-tabs .ui-tabs-panels {
+    background: var(--bulma-scheme-main) !important;
+    border-bottom-left-radius: 1em !important;
+    border-bottom-right-radius: 1em !important;
+}
+
+.ui-tabs.ui-tabs-top .ui-tabs-nav {
+    border-radius: 1em !important;
+}
+
+.ui-tabs.ui-tabs-top .ui-tabs-nav li.ui-tabs-header {
+    border-top-left-radius: 1em !important;
+}
+
+// -----------------------------------------------------------------------------
+// Ported legacy layer: timeline.css
+// -----------------------------------------------------------------------------
+.timeline-frame {
+    border-color: var(--bulma-border) !important;
+    border-radius: 5px;
+}
+.timeline-axis {
+    background: linear-gradient(to bottom, #5D99C3, #3A6DA0), var(--bulma-primary);
+    border-color: #5D99C3;
+    opacity: 1;
+}
+
+.timeline-axis-text {
+    color: var(--bulma-text-title-l) !important;
+}
+
+.timeline-groups-axis {
+    border-color: var(--bulma-border) !important;
+}
+
+.timeline-groups-axis-onleft {
+    border-style: none solid none none;
+}
+
+.timeline-event {
+    color: var(--bulma-text-title-l) !important;
+    border-radius: 5px !important;
+}
+
+.timeline-event-content {
+    padding: 5px;
+    text-shadow: none;
+}
+
+.timeline-event-selected {
+    background: #E61FC0 !important;
+    border-color: #AA008A !important;
+}
+
+.timeline-event.Equipment {
+    background: #ffdd8f !important;
+    border-color: #C4A65B !important;
+}
+
+.timeline-event.Property {
+    background: #99e0ff !important;
+    border-color: #60A9C6 !important;
+}
+.vis-timeline .vis-item.vis-selected{
+    background: var(--bulma-warning-60) !important;
+    color: var(--bulma-text-invert) !important;
+}
+.vis-timeline .vis-item.vis-selected .vis-item-content{
+    background: var(--bulma-warning-60) !important;
+    color: var(--bulma-text-invert) !important;
+}
+.vis-timeline .vis-item .vis-item-content{
+    background: var(--bulma-success-60) !important;
+    color: var(--bulma-text-invert) !important;
+}
+.vis-timeline .vis-item{
+    background: var(--bulma-success-60) !important;
+    color: var(--bulma-text-invert) !important;
+}
+
+.vis-timeline {
+    background: var(--bulma-scheme-main) !important;
+}
+
+.vis-time-axis .vis-text {
+    color: var(--bulma-text-title-l) !important;
+}

@@ -4,7 +4,7 @@
 
     <groupId>com.mercurius</groupId>
     <artifactId>mercurius-quarkus</artifactId>
-    <version>1.0.13-SNAPSHOT</version>
+    <version>1.0.14-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -201,6 +201,43 @@
                     <artifactId>jaxb-api</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- Web bundler: build-time frontend asset pipeline (serves /static/bundle/app-*.js|css).
+             Version explicit: quarkiverse web-bundler is NOT managed by quarkus-bom 3.36.2. -->
+        <dependency>
+            <groupId>io.quarkiverse.web-bundler</groupId>
+            <artifactId>quarkus-web-bundler</artifactId>
+            <version>2.3.3</version>
+        </dependency>
+
+        <!-- Frontend libraries resolved from mvnpm at BUILD TIME by the web bundler.
+             scope=provided: needed only while bundling, not packaged into the runtime artifact. -->
+        <dependency>
+            <groupId>org.mvnpm</groupId>
+            <artifactId>htmx.org</artifactId>
+            <version>2.0.10</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mvnpm</groupId>
+            <artifactId>alpinejs</artifactId>
+            <version>3.16.1</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mvnpm</groupId>
+            <artifactId>bulma</artifactId>
+            <version>1.0.4</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Version explicit: chart.js is NOT managed by quarkus-bom; 4.4.8 = latest 4.4.x
+             confirmed via org.mvnpm:chart.js maven-metadata.xml on Maven Central -->
+        <dependency>
+            <groupId>org.mvnpm</groupId>
+            <artifactId>chart.js</artifactId>
+            <version>4.4.8</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Test Dependencies -->
