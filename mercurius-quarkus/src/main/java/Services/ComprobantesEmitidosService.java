@@ -17,6 +17,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.time.LocalDateTime;
@@ -252,8 +253,10 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "ORDER BY e.fechaEmision ASC",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("start", start);
-            query.setParameter("end", end);
+            LocalDateTime startLdt = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime endLdt = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            query.setParameter("start", startLdt);
+            query.setParameter("end", endLdt);
             return query.getResultList();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing by date range: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.listByDateRange()", null, e.getMessage());
