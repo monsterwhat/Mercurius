@@ -67,7 +67,7 @@ public class ComprobantesEmitidos {
     private Boolean status;
     
     @Nullable
-    @Column(length = 50)
+    @Column(name = "usuario", length = 50)
     private String user;
 
     @XmlTransient

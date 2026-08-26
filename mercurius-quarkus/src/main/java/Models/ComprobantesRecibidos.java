@@ -77,7 +77,7 @@ public class ComprobantesRecibidos {
     private String prevalidationErrors;
     
     @Nullable
-    @Column(length = 50)
+    @Column(name = "usuario", length = 50)
     private String user;
 
     @Nullable
