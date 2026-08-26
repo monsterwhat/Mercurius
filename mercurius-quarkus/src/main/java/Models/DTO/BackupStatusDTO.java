@@ -12,8 +12,10 @@ import java.time.LocalDateTime;
  *   (AppSettings.backupUltimoEjecutado, actualizado por BackupService.ejecutarBackup()).
  * - backupHabilitado: bandera de programación automática
  *   (AppSettings.backupHabilitado, consumida por ProgramadorTareas.ejecutarBackupProgramado()).
- * - mysqldumpResuelto: true si BackupService.resolveMysqldump() encontró una ruta
- *   concreta al ejecutable; false si cayó al fallback genérico "mysqldump".
+ * - mysqldumpResuelto: true si BackupService.resolvePgDump() encontró una ruta
+ *   concreta al ejecutable pg_dump; false si cayó al fallback por defecto.
+ *   El nombre del campo se conserva por estabilidad de la superficie JSON
+ *   (Jackson) aunque el motor de respaldos ahora es pg_dump.
  */
 public class BackupStatusDTO {
 
@@ -22,7 +24,7 @@ public class BackupStatusDTO {
 
     private boolean backupHabilitado; // Backup automatico programado habilitado
 
-    private boolean mysqldumpResuelto; // Ruta concreta de mysqldump resuelta (no fallback)
+    private boolean mysqldumpResuelto; // Ruta concreta de pg_dump resuelta (no fallback); nombre histórico conservado por compatibilidad JSON
 
     public BackupStatusDTO() {
     }

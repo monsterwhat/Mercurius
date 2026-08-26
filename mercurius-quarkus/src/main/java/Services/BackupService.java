@@ -51,7 +51,14 @@ public class BackupService implements Serializable {
     @ConfigProperty(name = "quarkus.datasource.password")
     @Nonnull String dbPass;
 
-    private String resolvedMysqldump;
+    /**
+     * Override de despliegue: además de la propiedad, MicroProfile Config
+     * mapea automáticamente la variable de entorno BACKUP_PGDUMP_PATH.
+     */
+    @ConfigProperty(name = "backup.pgdump.path", defaultValue = "C:/Program Files/PostgreSQL/18/bin/pg_dump.exe")
+    @Nonnull String pgDumpPath;
+
+    private String resolvedPgDump;
 
     public boolean ejecutarBackup() {
         try {
@@ -76,17 +83,13 @@ public class BackupService implements Serializable {
             String filename = BACKUP_PREFIX + timestamp + BACKUP_SUFFIX;
             Path outputFile = backupDir.resolve(filename);
 
-            ProcessBuilder pb = new ProcessBuilder(
-                resolveMysqldump(),
-                "-u" + dbUser,
-                "-p" + dbPass,
-                "-h" + dbInfo.host,
-                dbInfo.dbName,
-                "--routines",
-                "--triggers",
-                "--add-drop-database"
-            );
+            ProcessBuilder pb = new ProcessBuilder(buildDumpCommand(resolvePgDump(), dbInfo, dbUser));
             pb.redirectErrorStream(true);
+            // Seguridad: la contraseña NUNCA va en la línea de comandos (visible
+            // en la lista de procesos del SO, como ocurría con "-p<pass>" de
+            // mysqldump). Viaja solo en el entorno del proceso hijo y no se
+            // registra en alertas ni logs.
+            pb.environment().put("PGPASSWORD", dbPass);
 
             Process process = pb.start();
             int exitCode;
@@ -109,7 +112,7 @@ public class BackupService implements Serializable {
                 limpiarBackupsViejos();
                 return true;
             } else {
-                alertasService.registrarAlerta("Error", "mysqldump falló con código: " + exitCode, null, 0,
+                alertasService.registrarAlerta("Error", "pg_dump falló con código: " + exitCode, null, 0,
                     "BackupService.ejecutarBackup()", null, null);
                 try { Files.deleteIfExists(outputFile); } catch (IOException ignored) {}
                 return false;
@@ -283,7 +286,9 @@ public class BackupService implements Serializable {
 
             URI uri = new URI(jdbcPart);
             info.host = uri.getHost() != null ? uri.getHost() : "localhost";
-            info.port = uri.getPort() > 0 ? uri.getPort() : 3306;
+            // Fallback al puerto por defecto de PostgreSQL: el antiguo 3306 era
+            // ignorado por mysqldump, pero pg_dump sí conecta con este valor.
+            info.port = uri.getPort() > 0 ? uri.getPort() : 5432;
 
             String path = uri.getPath();
             if (path != null) {
@@ -304,28 +309,81 @@ public class BackupService implements Serializable {
         return info;
     }
 
-    private static class DbConnectionInfo {
+    // Package-private solo para las pruebas unitarias del mismo paquete;
+    // no relajar más allá de esto.
+    static class DbConnectionInfo {
         String host;
         int port;
         String dbName;
     }
 
-    private String resolveMysqldump() {
-        if (resolvedMysqldump != null) {
-            return resolvedMysqldump;
+    /**
+     * Construye el comando pg_dump (formato SQL plano) para un backup.
+     * Package-private y estático solo para poder probarse en unidad sin
+     * levantar Quarkus.
+     *
+     * Mapeo desde el comando mysqldump anterior:
+     * - "-u&lt;user&gt;"          → "-U &lt;user&gt;"
+     * - "-p&lt;pass&gt;"          → eliminado: la contraseña viaja por la variable
+     *                          de entorno PGPASSWORD (nunca en la línea de
+     *                          comandos)
+     * - "-h&lt;host&gt;"          → "-h &lt;host&gt;"
+     * - (puerto implícito)   → "-p &lt;port&gt;" (pg_dump sí lo necesita)
+     * - "&lt;dbname&gt;"           → "-d &lt;dbname&gt;"
+     * - "--routines"         → sin equivalente necesario: pg_dump incluye las
+     *                          rutinas por defecto (sección post-data)
+     * - "--triggers"         → sin equivalente necesario: pg_dump incluye los
+     *                          triggers por defecto
+     * - "--add-drop-database" → "--clean" (DROP antes de CREATE al restaurar)
+     *
+     * "-F p" fuerza SQL plano y "-f -" lo dirige a stdout, que ejecutarBackup()
+     * comprime en gzip hacia el archivo final manteniendo la convención
+     * mercurius_*.sql.gz que consumen BackupController y listarBackups().
+     */
+    static List<String> buildDumpCommand(@Nonnull String pgDumpPath,
+                                         @Nonnull DbConnectionInfo dbInfo,
+                                         @Nonnull String dbUser) {
+        return List.of(
+            pgDumpPath,
+            "-h", dbInfo.host,
+            "-p", String.valueOf(dbInfo.port),
+            "-U", dbUser,
+            "-d", dbInfo.dbName,
+            "-F", "p",
+            "-f", "-",
+            "--clean"
+        );
+    }
+
+    private String resolvePgDump() {
+        if (resolvedPgDump != null) {
+            return resolvedPgDump;
         }
 
+        // 1) Override explícito de despliegue (backup.pgdump.path /
+        //    BACKUP_PGDUMP_PATH). Solo se acepta si el binario existe en disco;
+        //    si no, se continúa con la búsqueda en PATH como hacía la
+        //    resolución de mysqldump.
+        if (pgDumpPath != null && !pgDumpPath.isBlank()
+                && Files.exists(Paths.get(pgDumpPath))) {
+            resolvedPgDump = pgDumpPath;
+            return resolvedPgDump;
+        }
+
+        // 2) Búsqueda en PATH (misma estrategia que resolveMysqldump()).
+        //    Ignorar el fallo aquí es intencional: solo significa que pg_dump
+        //    no está en PATH y hay que seguir con los candidatos conocidos.
         try {
-            ProcessBuilder test = new ProcessBuilder("mysqldump", "--version");
+            ProcessBuilder test = new ProcessBuilder("pg_dump", "--version");
             test.redirectErrorStream(true);
             Process p = test.start();
             int code = p.waitFor();
             p.getInputStream().close();
             if (code == 0) {
-                resolvedMysqldump = "mysqldump";
-                return resolvedMysqldump;
+                resolvedPgDump = "pg_dump";
+                return resolvedPgDump;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) { /* justificado arriba: sondeo de PATH */ }
 
         String os = System.getProperty("os.name", "").toLowerCase();
         List<String> candidates = new ArrayList<>();
@@ -336,27 +394,29 @@ public class BackupService implements Serializable {
             String[] roots = { progFiles, progFilesX86 };
             for (String root : roots) {
                 if (root == null) continue;
-                candidates.add(root + "\\MySQL\\MySQL Server 8.0\\bin\\mysqldump.exe");
-                candidates.add(root + "\\MySQL\\MySQL Server 8.4\\bin\\mysqldump.exe");
-                candidates.add(root + "\\MySQL\\MySQL Server 9.0\\bin\\mysqldump.exe");
-                candidates.add(root + "\\MySQL\\MySQL Workbench 8.0\\mysqldump.exe");
+                candidates.add(root + "\\PostgreSQL\\18\\bin\\pg_dump.exe");
+                candidates.add(root + "\\PostgreSQL\\17\\bin\\pg_dump.exe");
+                candidates.add(root + "\\PostgreSQL\\16\\bin\\pg_dump.exe");
+                candidates.add(root + "\\PostgreSQL\\15\\bin\\pg_dump.exe");
             }
-            candidates.add("C:\\mysql\\bin\\mysqldump.exe");
         } else {
-            candidates.add("/usr/bin/mysqldump");
-            candidates.add("/usr/local/bin/mysqldump");
-            candidates.add("/opt/homebrew/bin/mysqldump");
-            candidates.add("/usr/local/mysql/bin/mysqldump");
+            candidates.add("/usr/bin/pg_dump");
+            candidates.add("/usr/local/bin/pg_dump");
+            candidates.add("/opt/homebrew/bin/pg_dump");
+            candidates.add("/usr/lib/postgresql/18/bin/pg_dump");
+            candidates.add("/usr/lib/postgresql/16/bin/pg_dump");
         }
 
         for (String candidate : candidates) {
             if (Files.exists(Paths.get(candidate))) {
-                resolvedMysqldump = candidate;
-                return resolvedMysqldump;
+                resolvedPgDump = candidate;
+                return resolvedPgDump;
             }
         }
 
-        resolvedMysqldump = "mysqldump";
-        return resolvedMysqldump;
+        // 4) Fallback final: la ruta por defecto de PostgreSQL 18 configurada
+        //    en pgDumpPath (equivalente al fallback desnudo "mysqldump").
+        resolvedPgDump = pgDumpPath;
+        return resolvedPgDump;
     }
 }
