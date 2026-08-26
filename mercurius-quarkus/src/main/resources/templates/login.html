@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<!-- ============================================================================
+  login.html — T14 standalone Qute login page (NEW Qute/HTMX world).
+
+  Deliberately NOT using templates/layout.html: that layout serves SECURED
+  pages behind an authenticated session; this page is rendered pre-auth and
+  must stay self-contained (Quarkus form auth redirects unauthenticated users
+  here directly).
+
+  Path facts (quarkus.http.root-path=/Mercurius, Quarkus 3.36.2):
+  - Form POST endpoint registered by FormAuthenticationMechanism lives at
+    /Mercurius/j_security_check (app router mounted under the root path;
+    mechanism matches normalizedPath().endsWith("/j_security_check")).
+  - Static logo served from META-INF/resources at
+    /Mercurius/resources/imgs/logo/Mercurius.png.
+  Both absolute-from-site-root URLs are hardcoded for determinism; see
+  .omo/evidence/t14/implementation-notes.md for the full decision record.
+============================================================================ -->
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión · Mercurius</title>
+    <!-- Web-bundler Qute tag: emits the hashed app js+css (Bulma included). -->
+    {#bundle /}
+</head>
+<body>
+<section class="hero is-fullheight">
+    <div class="hero-body">
+        <div class="container">
+            <div class="columns is-centered is-mobile">
+                <div class="column is-11-mobile is-8-tablet is-5-desktop is-4-widescreen">
+
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="has-text-centered mb-5">
+                                <figure class="image is-inline-block mb-3"
+                                        style="width: auto; height: 96px;">
+                                    <img src="/Mercurius/resources/imgs/logo/Mercurius.png"
+                                         alt="Logotipo de Mercurius"
+                                         style="max-height: 96px; width: auto;">
+                                </figure>
+                                <p class="title is-4">Mercurius</p>
+                                <p class="subtitle is-6 has-text-grey">Sistema de Inventarios</p>
+                            </div>
+
+                            {! Rendered only when Quarkus form auth redirects back to
+                               /Mercurius/login?error after failed credentials. !}
+                            {#if error}
+                            <div class="notification is-danger is-light" role="alert">
+                                <strong>Usuario o contraseña incorrectos.</strong>
+                                Verifique sus datos e inténtelo de nuevo.
+                            </div>
+                            {/if}
+
+                            <!-- Container form-auth endpoint (j_security_check).
+                                 CSRF note: quarkus-rest-csrf is not yet a project
+                                 dependency; when it lands, add the hidden token
+                                 input here using the csrf bean's formFieldName /
+                                 token properties (do NOT write them verbatim in a
+                                 comment: Qute parses inject expressions even
+                                 inside HTML comments). -->
+                            <form method="POST" action="/Mercurius/j_security_check">
+                                <div class="field">
+                                    <label class="label" for="j_username">Usuario</label>
+                                    <div class="control">
+                                        <input class="input" type="text" id="j_username"
+                                               name="j_username" placeholder="Usuario"
+                                               autocomplete="username" required autofocus>
+                                    </div>
+                                </div>
+
+                                <div class="field">
+                                    <label class="label" for="j_password">Contraseña</label>
+                                    <div class="control">
+                                        <input class="input" type="password" id="j_password"
+                                               name="j_password" placeholder="••••••••"
+                                               autocomplete="current-password" required>
+                                    </div>
+                                </div>
+
+                                <div class="field mt-5">
+                                    <div class="control">
+                                        <button type="submit" class="button is-link is-fullwidth">
+                                            Entrar
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <p class="has-text-centered has-text-grey is-size-7 mt-4">
+                        Mercurius &mdash; acceso restringido a usuarios autorizados.
+                    </p>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+</body>
+</html>
