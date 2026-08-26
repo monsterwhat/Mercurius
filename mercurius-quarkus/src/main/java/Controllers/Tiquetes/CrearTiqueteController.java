@@ -11,6 +11,8 @@ import Controllers.SettingsController;
 import Controllers.TipoCambioController;
 import Models.AppSettings;
 import Models.Articulos.Carrito.ArticuloCarrito;
+import Models.Articulos.Carrito.CartOperationResult;
+import Models.Articulos.Carrito.CartSessionContext;
 import Models.Articulos.Articulos;
 import Models.Clients;
 import Models.ComprobantesEmitidos;
@@ -145,6 +147,10 @@ public class CrearTiqueteController implements Serializable {
     @Nonnull
     private BigDecimal descuentoPuntos = BigDecimal.ZERO;
 
+    // --- Estado del carrito POS (dueño: esta vista; el servicio es apátrida desde T5) ---
+    @Nonnull
+    private CartSessionContext cartCtx = new CartSessionContext();
+
     @PostConstruct
     public void init() {
         newFactura = new ComprobantesRecibidos();
@@ -162,11 +168,11 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public void initValores() {
-        carritoService.setTotalCarrito(new BigDecimal(0));
-        carritoService.setColones(new BigDecimal(0));
-        carritoService.setDolares(new BigDecimal(0));
-        carritoService.setVuelto(new BigDecimal(0));
-        carritoService.setTotalPagado(BigDecimal.ZERO);
+        cartCtx.setTotalCarrito(new BigDecimal(0));
+        cartCtx.setColones(new BigDecimal(0));
+        cartCtx.setDolares(new BigDecimal(0));
+        cartCtx.setVuelto(new BigDecimal(0));
+        cartCtx.setTotalPagado(BigDecimal.ZERO);
         pagos = new ArrayList<>();
         PagoEntry entry = new PagoEntry();
         entry.setMetodoPago("01");
@@ -184,7 +190,7 @@ public class CrearTiqueteController implements Serializable {
                 null, null);
 
             if ("remove".equals(authTargetAction) && pendingRemoveArticulo != null) {
-                carritoService.removeArticulo(pendingRemoveArticulo, currentSession.getCurrentUser());
+                carritoService.removeArticulo(cartCtx, pendingRemoveArticulo, currentSession.getCurrentUser());
                 pendingRemoveArticulo = null;
                 authTargetAction = null;
             } else if ("override".equals(authTargetAction)) {
@@ -207,7 +213,7 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public boolean hasOverridesInCarrito() {
-        for (ArticuloCarrito item : carritoService.getCarrito()) {
+        for (ArticuloCarrito item : cartCtx.getCarrito()) {
             if (item.getPrecioPersonalizado() != null) {
                 return true;
             }
@@ -227,11 +233,11 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public void revisarCarrito() {
-        carritoService.revisarCarrito();
+        applyCartOperationResult(carritoService.revisarCarrito(cartCtx));
     }
 
     public void processCodigoBarra() {
-        carritoService.processCodigoBarra();
+        applyCartOperationResult(carritoService.processCodigoBarra(cartCtx));
     }
 
     public void calcularVuelto() {
@@ -242,10 +248,31 @@ public class CrearTiqueteController implements Serializable {
             }
         }
         // Keep backward-compat colones/dolares for any remaining bindings
-        carritoService.setColones(total);
-        carritoService.setDolares(BigDecimal.ZERO);
-        carritoService.setTotalPagado(total);
-        carritoService.calcularVuelto(tipoCambio.getTipoCambioActual().getValorCompra());
+        cartCtx.setColones(total);
+        cartCtx.setDolares(BigDecimal.ZERO);
+        cartCtx.setTotalPagado(total);
+        carritoService.calcularVuelto(cartCtx, tipoCambio.getTipoCambioActual().getValorCompra());
+    }
+
+    /** Traducción 1:1 del resultado al efecto de UI que CarritoService tenía antes de T5. */
+    private void applyCartOperationResult(@Nullable CartOperationResult result) {
+        if (result == null) {
+            return;
+        }
+        if (result.severity != null) {
+            FacesMessage.Severity facesSeverity;
+            switch (result.severity) {
+                case INFO -> facesSeverity = FacesMessage.SEVERITY_INFO;
+                case WARN -> facesSeverity = FacesMessage.SEVERITY_WARN;
+                case ERROR -> facesSeverity = FacesMessage.SEVERITY_ERROR;
+                default -> facesSeverity = FacesMessage.SEVERITY_ERROR;
+            }
+            FacesContext.getCurrentInstance().addMessage(null,
+                    new FacesMessage(facesSeverity, result.summary, result.detail));
+        }
+        if (result.jsCommand != null) {
+            PrimeFaces.current().executeScript(result.jsCommand);
+        }
     }
 
     @Nonnull
@@ -277,8 +304,8 @@ public class CrearTiqueteController implements Serializable {
         if (articulo == null) {
             return;
         }
-        carritoService.setCodigoBarra(articulo.getCodigoBarra());
-        carritoService.processCodigoBarra();
+        cartCtx.setCodigoBarra(articulo.getCodigoBarra());
+        applyCartOperationResult(carritoService.processCodigoBarra(cartCtx));
     }
 
     public void selectCliente(@Nonnull Clients cliente) {
@@ -286,7 +313,7 @@ public class CrearTiqueteController implements Serializable {
         // Reset point discounts when client changes
         puntosARedimir = BigDecimal.ZERO;
         descuentoPuntos = BigDecimal.ZERO;
-        carritoService.setDescuentoPuntos(BigDecimal.ZERO);
+        cartCtx.setDescuentoPuntos(BigDecimal.ZERO);
     }
 
     @Nonnull
@@ -307,7 +334,7 @@ public class CrearTiqueteController implements Serializable {
         BigDecimal available = getPuntosBalance();
         if (puntosARedimir.compareTo(BigDecimal.ZERO) <= 0) {
             descuentoPuntos = BigDecimal.ZERO;
-            carritoService.setDescuentoPuntos(BigDecimal.ZERO);
+            cartCtx.setDescuentoPuntos(BigDecimal.ZERO);
             return;
         }
         if (puntosARedimir.compareTo(available) > 0) {
@@ -315,7 +342,7 @@ public class CrearTiqueteController implements Serializable {
         }
         // Rate: 1 point = ₡1 discount
         descuentoPuntos = puntosARedimir;
-        carritoService.setDescuentoPuntos(descuentoPuntos);
+        cartCtx.setDescuentoPuntos(descuentoPuntos);
         FacesContext.getCurrentInstance().addMessage(null,
             new FacesMessage(FacesMessage.SEVERITY_INFO, "Puntos",
                 "Descuento aplicado: " + descuentoPuntos + " colones"));
@@ -324,12 +351,12 @@ public class CrearTiqueteController implements Serializable {
     public void removeDescuentoPuntos() {
         puntosARedimir = BigDecimal.ZERO;
         descuentoPuntos = BigDecimal.ZERO;
-        carritoService.setDescuentoPuntos(BigDecimal.ZERO);
+        cartCtx.setDescuentoPuntos(BigDecimal.ZERO);
     }
 
     @Nonnull
     public BigDecimal getNetoAPagar() {
-        BigDecimal total = carritoService.calculateTotalCarrito();
+        BigDecimal total = carritoService.calculateTotalCarrito(cartCtx);
         if (descuentoPuntos.compareTo(BigDecimal.ZERO) > 0) {
             return total.subtract(descuentoPuntos);
         }
@@ -337,11 +364,11 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public void removeArticulo(@Nonnull ArticuloCarrito articulo) {
-        carritoService.removeArticulo(articulo, currentSession.getCurrentUser());
+        carritoService.removeArticulo(cartCtx, articulo, currentSession.getCurrentUser());
     }
 
     public void cancel() {
-        carritoService.cancel(currentSession.getCurrentUser());
+        applyCartOperationResult(carritoService.cancel(cartCtx, currentSession.getCurrentUser()));
     }
 
     @Nullable
@@ -386,10 +413,10 @@ public class CrearTiqueteController implements Serializable {
     }
 
     public void clearPago() {
-        carritoService.setVuelto(BigDecimal.ZERO);
-        carritoService.setDolares(BigDecimal.ZERO);
-        carritoService.setColones(BigDecimal.ZERO);
-        carritoService.setTotalPagado(BigDecimal.ZERO);
+        cartCtx.setVuelto(BigDecimal.ZERO);
+        cartCtx.setDolares(BigDecimal.ZERO);
+        cartCtx.setColones(BigDecimal.ZERO);
+        cartCtx.setTotalPagado(BigDecimal.ZERO);
         pagos.clear();
         PagoEntry entry = new PagoEntry();
         entry.setMetodoPago("01");
@@ -400,7 +427,7 @@ public class CrearTiqueteController implements Serializable {
 
     public void verificarPago() {
         calcularVuelto();
-        if (carritoService.getVuelto() != null && carritoService.getVuelto().doubleValue() >= 0) {
+        if (cartCtx.getVuelto() != null && cartCtx.getVuelto().doubleValue() >= 0) {
             facturar(); 
         } else {
             FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "FALTANTE DE PAGO", "NO SE HA CANCELADO EL TOTAL DE LA FACTURA"));
@@ -427,18 +454,18 @@ public class CrearTiqueteController implements Serializable {
             return;
         }
         // 1. Hacer ajustes en inventario
-        carritoService.ajustarInventario(currentSession.getCurrentUser());
+        carritoService.ajustarInventario(cartCtx, currentSession.getCurrentUser());
         // 2. Crear Comprobante y enviar a Hacienda
         List<PagoEntry> pagosParaFactura = pagos;
         if (pagosParaFactura == null || pagosParaFactura.isEmpty()) {
             PagoEntry entry = new PagoEntry();
             entry.setMetodoPago("01");
-            entry.setMonto(carritoService.getTotalCarrito());
+            entry.setMonto(cartCtx.getTotalCarrito());
             pagosParaFactura = List.of(entry);
         }
         CrearComprobanteResult result = comprobanteService.crearComprobante(
                 settings,
-                carritoService.getCarrito(),
+                cartCtx.getCarrito(),
                 selectedClient,
                 cliente,
                 currentSession.getCurrentUser(),
@@ -476,11 +503,11 @@ public class CrearTiqueteController implements Serializable {
                 pdfGenerator.generarPDFTiqueteElectronico(
                         tiqueteElectronico,
                         settings,
-                        carritoService.getCarrito(),
+                        cartCtx.getCarrito(),
                         cliente,
                         currentSession.getCurrentUser(),
-                        carritoService.getPago(),
-                        carritoService.getVuelto(),
+                        cartCtx.getPago(),
+                        cartCtx.getVuelto(),
                         pagosParaFactura
                 );
 
@@ -491,8 +518,8 @@ public class CrearTiqueteController implements Serializable {
                         tiqueteElectronico,
                         selectedClient,
                         currentSession.getCurrentUser(),
-                        carritoService.getPago(),
-                        carritoService.getVuelto(),
+                        cartCtx.getPago(),
+                        cartCtx.getVuelto(),
                         pagosParaFactura
                     );
                 }
@@ -511,7 +538,7 @@ public class CrearTiqueteController implements Serializable {
 
                 authorizedBy = null;
                 clearPago();
-                carritoService.clear();
+                carritoService.clear(cartCtx);
 
             } catch (RuntimeException e) {
                 String msg = "Error during PDF generation: " + e.getMessage();
@@ -531,79 +558,79 @@ public class CrearTiqueteController implements Serializable {
 
     @Nullable
     public List<ArticuloCarrito> getCarrito() {
-        return carritoService.getCarrito();
+        return cartCtx.getCarrito();
     }
 
     @Nullable
     public BigDecimal getCantidadArticulo() {
-        return carritoService.getCantidadArticulo();
+        return cartCtx.getCantidadArticulo();
     }
 
     public void setCantidadArticulo(@Nonnull BigDecimal cantidad) {
-        carritoService.setCantidadArticulo(cantidad);
+        cartCtx.setCantidadArticulo(cantidad);
     }
 
     @Nullable
     public String getCodigoBarra() {
-        return carritoService.getCodigoBarra();
+        return cartCtx.getCodigoBarra();
     }
 
     public void setCodigoBarra(@Nonnull String codigoBarra) {
-        carritoService.setCodigoBarra(codigoBarra);
+        cartCtx.setCodigoBarra(codigoBarra);
     }
 
     @Nullable
     public BigDecimal getColones() {
-        return carritoService.getColones();
+        return cartCtx.getColones();
     }
 
     public void setColones(@Nonnull BigDecimal colones) {
-        carritoService.setColones(colones);
+        cartCtx.setColones(colones);
     }
 
     @Nullable
     public BigDecimal getDolares() {
-        return carritoService.getDolares();
+        return cartCtx.getDolares();
     }
 
     public void setDolares(@Nonnull BigDecimal dolares) {
-        carritoService.setDolares(dolares);
+        cartCtx.setDolares(dolares);
     }
 
     @Nullable
     public BigDecimal getTotalCarrito() {
-        return carritoService.getTotalCarrito();
+        return cartCtx.getTotalCarrito();
     }
 
     public void setTotalCarrito(@Nonnull BigDecimal total) {
-        carritoService.setTotalCarrito(total);
+        cartCtx.setTotalCarrito(total);
     }
 
     public boolean isResetFlag() {
-        return carritoService.isResetFlag();
+        return cartCtx.isResetFlag();
     }
     
     @Nullable
     public String getvueltoString(){
-        return carritoService.getVueltoString();
+        return carritoService.getVueltoString(cartCtx);
     } 
 
     public void setResetFlag(boolean resetFlag) {
-        carritoService.setResetFlag(resetFlag);
+        cartCtx.setResetFlag(resetFlag);
     }
 
     @Nonnull
     public BigDecimal calculateTotalCarrito() {
-        return carritoService.calculateTotalCarrito();
+        return carritoService.calculateTotalCarrito(cartCtx);
     }
 
     @Nonnull
     public BigDecimal calculateTotalCarritoDescuento() {
-        return carritoService.calculateTotalCarritoDescuento();
+        return carritoService.calculateTotalCarritoDescuento(cartCtx);
     }
 
     @Nonnull
     public BigDecimal calculateTotalCarritoImpuesto() {
-        return carritoService.calculateTotalCarritoImpuesto();
+        return carritoService.calculateTotalCarritoImpuesto(cartCtx);
     }
 }
