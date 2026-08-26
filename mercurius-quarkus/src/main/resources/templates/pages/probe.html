@@ -1,0 +1,65 @@
+{!
+  pages/probe - scaffolding smoke page for plan task T11.
+
+  Exists only so GET /app/_probe can render the shared layout with real
+  content in the {#body} slot (the layout itself cannot fill slots
+  programmatically). DELETE this file together with
+  Controllers.Api.App.LayoutProbeResource in wave W4, when real migrated
+  pages replace it.
+!}
+{#include layout}
+    {#title}Sonda de Renderizado | Mercurius{/title}
+
+    {#body}
+        <h1 class="title">Sonda de Renderizado</h1>
+        <p class="subtitle">
+            Página temporal de la tarea T11: verifica que el layout base,
+            la barra de navegación por roles y las notificaciones funcionan
+            antes de migrar las pantallas reales.
+        </p>
+
+        <div class="box">
+            <p class="is-size-5">
+                Si puede leer esta página, el pipeline
+                <strong>Qute + web-bundler</strong> está operativo: los
+                recursos <code>app-*.js</code> y <code>app-*.css</code> se
+                sirven desde el bundle y Bulma aplica sus estilos.
+            </p>
+        </div>
+
+        <div class="buttons">
+            <button type="button" class="button is-primary">Primario</button>
+            <button type="button" class="button is-link">Enlace</button>
+            <button type="button" class="button is-info">Información</button>
+            <button type="button" class="button is-success">Éxito</button>
+            <button type="button" class="button is-warning">Advertencia</button>
+            <button type="button" class="button is-danger">Peligro</button>
+        </div>
+
+        <article class="message is-link">
+            <div class="message-body">
+                Los enlaces de la barra de navegación apuntan a rutas
+                planeadas mediante atributos <code>data-planned-route</code>
+                mientras llegan las páginas de las tareas W4; la excepción es
+                <em>Cerrar Session</em>, que ya envía un POST real a
+                <code>/api/app/auth/logout</code>.
+            </div>
+        </article>
+
+        <table class="table is-striped is-fullwidth">
+            <caption class="has-text-left">Elementos verificados por esta sonda</caption>
+            <thead>
+                <tr>
+                    <th>Elemento</th>
+                    <th>Origen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>Barra de navegación con roles</td><td>fragments/navbar.html</td></tr>
+                <tr><td>Notificaciones auto-descartables</td><td>fragments/toasts.html</td></tr>
+                <tr><td>Encabezado CSRF para HTMX</td><td>layout.html (patrón hx-headers)</td></tr>
+                <tr><td>Bundle JS/CSS</td><td>etiqueta del web-bundler en layout.html</td></tr>
+            </tbody>
+        </table>
+    {/body}
+{/include}
