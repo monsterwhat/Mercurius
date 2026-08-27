@@ -181,6 +181,7 @@ public class LoginService extends GService<Users> {
         }
     }
 
+    @Transactional
     public void softDelete(Users entity) {
         try {
             if (!em.contains(entity)) {
@@ -190,6 +191,7 @@ public class LoginService extends GService<Users> {
             if (entity != null) {
                 entity.setStatus(false);
                 em.merge(entity);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "LoginService.softDelete()", null, null);
             }

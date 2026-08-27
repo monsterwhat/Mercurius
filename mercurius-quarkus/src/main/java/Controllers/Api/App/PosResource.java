@@ -560,6 +560,23 @@ public class PosResource {
         BigDecimal vueltoFinal = ctx.getVuelto();
 
         // 8. THE creation pipeline (controller lines 456-474).
+        for (var ac : ctx.getCarrito()) {
+            if (ac != null && ac.getArticulo() != null && ac.getArticulo().getCodigoCabys() != null) {
+                String imp = ac.getArticulo().getCodigoCabys().getImpuesto();
+                if (imp != null) {
+                    String norm = imp.trim().replace("%", "").trim();
+                    try {
+                        BigDecimal bd = new BigDecimal(norm);
+                        bd = bd.stripTrailingZeros();
+                        norm = bd.toPlainString();
+                    } catch (NumberFormatException ignored) {
+                        norm = "0";
+                    }
+                    if (norm.isBlank()) norm = "0";
+                    ac.getArticulo().getCodigoCabys().setImpuesto(norm);
+                }
+            }
+        }
         carritoService.ajustarInventario(ctx, currentUser);
         ComprobanteService.CrearComprobanteResult result = comprobanteService.crearComprobante(
                 settings,
