@@ -4,13 +4,11 @@
 
     <groupId>com.mercurius</groupId>
     <artifactId>mercurius-quarkus</artifactId>
-    <version>1\.0\.19-SNAPSHOT</version>
+    <version>1.0.29-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <quarkus.version>3.36.2</quarkus.version>
-        <myfaces.version>4.1.3</myfaces.version>
-        <primefaces-quarkus.version>4.15.16</primefaces-quarkus.version>
         <lombok.version>1.18.46</lombok.version>
         <maven.compiler.release>25</maven.compiler.release>
     </properties>
@@ -32,6 +30,11 @@
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-rest</artifactId>
+        </dependency>
+        <!-- Servlet API for remaining legacy code (SessionController, etc.) -->
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-undertow</artifactId>
         </dependency>
         <!-- CSRF prevention (Double Submit Cookie) for the Qute/HTMX app surface.
              BOM-managed (quarkus-bom), no version tag.
@@ -60,15 +63,15 @@
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-elytron-security-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkus</groupId>
             <artifactId>quarkus-scheduler</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-fault-tolerance</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-security</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -93,18 +96,6 @@
             <artifactId>jakarta.mail</artifactId>
             <version>2.0.2</version>
         </dependency>
-
-        <!-- JSF/Faces Extensions -->
-        <dependency>
-            <groupId>org.apache.myfaces.core.extensions.quarkus</groupId>
-            <artifactId>myfaces-quarkus</artifactId>
-            <version>${myfaces.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.primefaces</groupId>
-            <artifactId>quarkus-primefaces</artifactId>
-            <version>${primefaces-quarkus.version}</version>
-        </dependency>
         <dependency>
             <groupId>uk.org.okapibarcode</groupId>
             <artifactId>okapibarcode</artifactId>
@@ -124,6 +115,42 @@
             <groupId>at.favre.lib</groupId>
             <artifactId>bcrypt</artifactId>
             <version>0.10.2</version>
+        </dependency>
+        
+        <!-- Jakarta Faces (MyFaces) for JSF support -->
+        <dependency>
+            <groupId>org.apache.myfaces.core</groupId>
+            <artifactId>myfaces-api</artifactId>
+            <version>4.1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.myfaces.core</groupId>
+            <artifactId>myfaces-impl</artifactId>
+            <version>4.1.3</version>
+        </dependency>
+        <!-- PrimeFaces for JSF component library (Quarkus extension) -->
+        <dependency>
+            <groupId>io.quarkiverse.primefaces</groupId>
+            <artifactId>quarkus-primefaces</artifactId>
+            <version>4.15.17</version>
+        </dependency>
+        <!-- Jakarta Servlet API -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+        </dependency>
+        <!-- Jakarta Faces API -->
+        <dependency>
+            <groupId>jakarta.faces</groupId>
+            <artifactId>jakarta.faces-api</artifactId>
+            <version>4.1.2</version>
+        </dependency>
+        <!-- Jakarta Validation API -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+            <version>3.0.2</version>
         </dependency>
         
         <!-- DataExporter (Excel XLS or XML) -->
@@ -369,25 +396,6 @@
                         <maven.home>${maven.home}</maven.home>
                     </systemPropertyVariables>
                 </configuration>
-                <executions>
-                    <!-- Plain unit tests: everything EXCEPT @QuarkusTest classes -->
-                    <execution>
-                        <id>default-test</id>
-                        <configuration>
-                            <excludedGroups>io.quarkus.test.junit.QuarkusTest</excludedGroups>
-                        </configuration>
-                    </execution>
-                    <!-- @QuarkusTest classes run in their own execution -->
-                    <execution>
-                        <id>quarkus-tests</id>
-                        <goals>
-                            <goal>test</goal>
-                        </goals>
-                        <configuration>
-                            <groups>io.quarkus.test.junit.QuarkusTest</groups>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
