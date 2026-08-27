@@ -195,6 +195,9 @@ public class RecibosResource {
             return false;
         }
         Encabezado enc = f == null ? null : f.getEncabezado();
+        if (enc != null && "RECHAZADO".equalsIgnoreCase(enc.getEstado())) {
+            return false;
+        }
         if (enc == null || enc.getFechaEmision() == null || enc.getPlazoCredito() == null) {
             return false;
         }

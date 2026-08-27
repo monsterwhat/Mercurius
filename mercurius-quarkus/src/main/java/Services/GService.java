@@ -100,6 +100,7 @@ public abstract class GService<T> implements Serializable{
     @Transactional(TxType.SUPPORTS)
     public @Nullable T find(@Nonnull Object id) {
         try {
+            em.clear();
             return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error finding " + getEntityClass().getSimpleName() + " with ID " + id + ": " + e.getLocalizedMessage(), null, 0, "GService.find()", null, e.getMessage());
