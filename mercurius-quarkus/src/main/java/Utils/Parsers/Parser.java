@@ -1031,7 +1031,7 @@ public class Parser {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = br.readLine()) != null) {
-                    xmlContent.append(line);
+                    xmlContent.append(line).append("\n");
                 }
 
                 alertasService.registrarAlerta("Debug", "XML Content length: " + xmlContent.length(), null, 0, "Parser.parseXML()", null, null);
