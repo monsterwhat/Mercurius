@@ -934,7 +934,7 @@ public class DevolucionesResource {
                 List<Models.Resumen.TotalDesgloseImpuesto> desgloseList = new ArrayList<>();
                 for (Map.Entry<BigDecimal, BigDecimal> entry : taxByRate.entrySet()) {
                     try {
-                        Models.Enums.Tipo_TarifaIVA tarifa = Models.Enums.Tipo_TarifaIVA.getTarifa(entry.getKey().toPlainString());
+                        Models.Enums.Tipo_TarifaIVA tarifa = Models.Enums.Tipo_TarifaIVA.getTarifa(entry.getKey().stripTrailingZeros().toPlainString());
                         Models.Resumen.TotalDesgloseImpuesto item = new Models.Resumen.TotalDesgloseImpuesto();
                         item.setCodigo("01");
                         item.setCodigoTarifaIVA(tarifa.getCodigo());

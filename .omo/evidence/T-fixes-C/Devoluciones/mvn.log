@@ -1,0 +1,106 @@
+﻿mvn : WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+At line:1 char:1
++ mvn -q -o test "-Dtest=Controllers.Api.App.DevolucionesResourceTest"  ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (WARNING: A term...has been called:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by lombok.permit.Permit
+WARNING: Please consider reporting this to the maintainers of class lombok.permit.Permit
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+2026-08-26 23:57:46,965 WARN  [io.smallrye.config] (main) SRCFG01007: Duplicate value found for name : net.bytebuddy.experimental, config source name : PropertiesConfigSource[source=file:/F:/Documents/GitHub/Mercurius/mercurius-quarkus/target/classes/application.properties], (old value : true)
+2026-08-26 23:57:49,405 WARN  [io.smallrye.config] (main) SRCFG01007: Duplicate value found for name : net.bytebuddy.experimental, config source name : PropertiesConfigSource[source=file:/F:/Documents/GitHub/Mercurius/mercurius-quarkus/target/classes/application.properties], (old value : true)
+2026-08-26 23:57:49,625 WARN  [io.smallrye.config] (main) SRCFG01007: Duplicate value found for name : net.bytebuddy.experimental, config source name : PropertiesConfigSource[source=file:/F:/Documents/GitHub/Mercurius/mercurius-quarkus/target/classes/application.properties], (old value : true)
+2026-08-26 23:57:56,155 WARN  [io.quarkus.arc.deployment.SplitPackageProcessor] (build-8) Detected a split package usage which is considered a bad practice and should be avoided. Following packages were detected in multiple archives: 
+- "jakarta.faces.component.visit" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.component.html" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.view" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.lifecycle" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.component.behavior" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.view.facelets" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.component" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.component.search" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.render" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.flow.builder" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.annotation" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.push" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.context" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.convert" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.application" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.model" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.webapp" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.validator" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.flow" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.event" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+- "jakarta.faces.el" found in [jakarta.faces:jakarta.faces-api:4.1.2, org.apache.myfaces.core:myfaces-api:4.1.3]
+2026-08-26 23:57:58,515 INFO  [io.quarkiverse.web.bundler.deployment.WebDependenciesProcessor] (build-4) All Web Dependencies are already installed in './node_modules'.
+2026-08-26 23:57:58,535 INFO  [io.quarkiverse.web.bundler.deployment.BundlePrepareProcessor] (build-19) Preparing Web Bundling for 'app' with 1 files
+2026-08-26 23:57:59,933 INFO  [io.quarkiverse.web.bundler.deployment.BundleProcessor] (build-4) Web Bundler generated 4 files in 1395ms
+2026-08-26 23:58:04,783 INFO  [io.quarkus.arc.processor.BeanProcessor] (build-13) Found unrecommended usage of private members (use package-private instead) in application beans:
+	- @PostConstruct callback Controllers.SettingsController#init(),
+	- @PostConstruct callback Controllers.Settings.SettingsDirController#init()
+2026-08-26 23:58:08,993 WARN  [io.smallrye.config] (main) SRCFG01007: Duplicate value found for name : net.bytebuddy.experimental, config source name : PropertiesConfigSource[source=file:/F:/Documents/GitHub/Mercurius/mercurius-quarkus/target/classes/application.properties], (old value : true)
+2026-08-26 23:58:10,060 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.ProfitMarginHistory.fecha.
+2026-08-26 23:58:10,061 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.ProfitMarginHistory.fechaCreacion.
+2026-08-26 23:58:10,174 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.PuntosTransaccion.fechaCreacion.
+2026-08-26 23:58:10,202 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Articulos.Articulos.fecha.
+2026-08-26 23:58:10,209 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Marketplace.MarketplaceCartItem.createdAt.
+2026-08-26 23:58:10,220 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.CierreCaja.fechaApertura.
+2026-08-26 23:58:10,220 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.CierreCaja.fechaCierre.
+2026-08-26 23:58:10,237 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.ReorderSuggestion.fechaCreacion.
+2026-08-26 23:58:10,237 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.ReorderSuggestion.fechaUltimoReabastecimiento.
+2026-08-26 23:58:10,243 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.OrdenCompra.fecha.
+2026-08-26 23:58:10,245 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.OrdenCompra.fechaEntregaEstimada.
+2026-08-26 23:58:10,245 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.OrdenCompra.fechaEntregaReal.
+2026-08-26 23:58:10,245 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.OrdenCompra.fechaOrden.
+2026-08-26 23:58:10,258 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.ApiClients.createdAt.
+2026-08-26 23:58:10,261 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.UserShortcut.createdAt.
+2026-08-26 23:58:10,263 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.UserShortcut.lastUsed.
+2026-08-26 23:58:10,272 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Articulos.ArticuloPrecio.fechaCompra.
+2026-08-26 23:58:10,284 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Articulos.ArticuloStock.lastUpdated.
+2026-08-26 23:58:10,286 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.ProfitMarginSnapshot.fechaCreacion.
+2026-08-26 23:58:10,287 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.ProfitMarginSnapshot.fechaSnapshot.
+2026-08-26 23:58:10,297 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Articulos.ArticuloImagen.fechaSubida.
+2026-08-26 23:58:10,336 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Lote.fechaIngreso.
+2026-08-26 23:58:10,337 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Lote.fechaVencimiento.
+2026-08-26 23:58:10,341 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Inventario.fechaMovimiento.
+2026-08-26 23:58:10,344 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.NotaCredito.fecha.
+2026-08-26 23:58:10,345 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.NotaCredito.fechaAnulacion.
+2026-08-26 23:58:10,349 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.StockAlert.fechaCreacion.
+2026-08-26 23:58:10,349 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.StockAlert.fechaResolucion.
+2026-08-26 23:58:10,359 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Familia.fecha.
+2026-08-26 23:58:10,363 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.DepartamentoMetrico.fechaCalculo.
+2026-08-26 23:58:10,367 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Marketplace.MarketplaceOrder.createdAt.
+2026-08-26 23:58:10,368 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Marketplace.MarketplaceOrder.updatedAt.
+2026-08-26 23:58:10,371 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Articulos.Promocion.fechaFin.
+2026-08-26 23:58:10,371 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Articulos.Promocion.fechaInicio.
+2026-08-26 23:58:10,374 WARN  [org.hibernate.orm.deprecation] (main) HHH90000033: Encountered use of deprecated annotation [interface jakarta.persistence.Temporal] at Models.Departamento.fecha.
+2026-08-26 23:58:10,851 INFO  [org.apache.myfaces.webapp.MyFacesContainerInitializer] (main) Using org.apache.myfaces.webapp.MyFacesContainerInitializer
+2026-08-26 23:58:11,659 INFO  [org.apache.myfaces.util.ExternalSpecifications] (main) MyFaces Core Bean Validation support disabled
+2026-08-26 23:58:11,725 INFO  [org.primefaces.webapp.PostConstructApplicationEventListener] (main) Running on PrimeFaces 15.0.17
+2026-08-26 23:58:11,730 WARNING [org.apache.myfaces.webapp.FacesInitializerImpl] (main) 
+
+********************************************************************
+*** WARNING: Apache MyFaces Core is running in SYSTEMTEST mode.  ***
+***                                            ^^^^^^^^^^        ***
+*** Do NOT deploy to your live server(s) without changing this.  ***
+*** See Application#getProjectStage() for more information.      ***
+********************************************************************
+
+
+2026-08-26 23:58:11,731 INFO  [org.apache.myfaces.webapp.FacesInitializerImpl] (main) MyFaces Core has started, it took [870] ms.
+2026-08-26 23:58:12,015 WARN  [io.smallrye.config] (main) SRCFG01007: Duplicate value found for name : net.bytebuddy.experimental, config source name : PropertiesConfigSource[source=file:/F:/Documents/GitHub/Mercurius/mercurius-quarkus/target/classes/application.properties], (old value : true)
+2026-08-26 23:58:12,136 WARN  [io.quarkus.config] (main) Unrecognized configuration key "quarkus.http.cors" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+2026-08-26 23:58:12,137 WARN  [io.quarkus.config] (main) Unrecognized configuration key "quarkus.jvm.args" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+2026-08-26 23:58:12,137 WARN  [io.quarkus.config] (main) Unrecognized configuration key "quarkus.dev-ui.enabled" was provided; it will be ignored; verify that the dependency extension for this configuration is set or that you did not make a typo
+2026-08-26 23:58:16,230 INFO  [io.quarkus.scheduler.runtime.SimpleScheduler] (main) Simple scheduler is disabled by config property and will not be started
+2026-08-26 23:58:16,514 INFO  [io.quarkus] (main) Mercurius 1.0-SNAPSHOT on JVM (powered by Quarkus 3.36.2) started in 28.006s. Listening on: http://localhost:55181
+2026-08-26 23:58:16,515 INFO  [io.quarkus] (main) Profile test activated. 
+2026-08-26 23:58:16,515 INFO  [io.quarkus] (main) Installed features: [agroal, awt, cache, cdi, compose, hibernate-orm, jacoco, jdbc-postgresql, mailer, myfaces, narayana-jta, okapi, openpdf, poi, primefaces, qute, rest, rest-client, rest-csrf, rest-jackson, rest-qute, scheduler, security, servlet, smallrye-context-propagation, smallrye-fault-tolerance, smallrye-openapi, swagger-ui, vertx, web-bundler, websockets, websockets-client, zxing]
+Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of 
+the JDK. Please add Mockito as an agent to your build what is described in Mockito's documentation: 
+https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html#0.3
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has 
+been appended
+2026-08-26 23:58:25,615 INFO  [io.quarkus] (main) Mercurius stopped in 0.037s
