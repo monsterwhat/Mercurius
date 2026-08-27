@@ -325,12 +325,19 @@ class AuthJourneyTest {
 
     @Test
     void anonymousLogoutIsHarmlessNoOpRedirect() {
-        // No session at all: AppAuthResource.logout() skips the credential
-        // teardown for anonymous identities and still See-Others to /login.
-        // Content-Type mirrors the navbar form submission.
-        given().redirects().follow(false)
-                .contentType(io.restassured.http.ContentType.URLENC)
-                .when().post(BASE + "/api/app/auth/logout")
+        Map<String, String> jar = new LinkedHashMap<>();
+        Response loginPage = given().redirects().follow(false)
+                .when().get(BASE + "/login");
+        loginPage.then().statusCode(200);
+        applySetCookies(jar, loginPage);
+        var req = given().redirects().follow(false)
+                .cookies(jar)
+                .contentType(io.restassured.http.ContentType.URLENC);
+        String csrf = jar.get(CSRF_COOKIE);
+        if (csrf != null) {
+            req.header(CSRF_HEADER, csrf);
+        }
+        req.when().post(BASE + "/api/app/auth/logout")
                 .then()
                 .statusCode(303)
                 .header("Location", containsString("/login"));
