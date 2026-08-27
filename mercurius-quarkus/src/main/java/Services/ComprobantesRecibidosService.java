@@ -215,10 +215,10 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         }
 }
     
+    @Transactional
     @Nullable
     public ComprobantesRecibidos findByIdWithDetails(@Nonnull Long id) {
         try {
-            // First fetch the main entity with basic relationships
             ComprobantesRecibidos entity = em.find(ComprobantesRecibidos.class, id);
             if (entity == null) {
                 return null;
