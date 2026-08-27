@@ -28,6 +28,7 @@ public class ClientService extends GService<Clients> {
     public void create(@Nonnull Clients entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ClientService.create()", null, e.getMessage());
         }
@@ -42,6 +43,7 @@ public class ClientService extends GService<Clients> {
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ClientService.delete()", null, null);
             }

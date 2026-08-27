@@ -159,6 +159,7 @@ public class LoginService extends GService<Users> {
             var unHashedPassword = entity.getPassword();
             entity.setPassword(hashPassword(unHashedPassword));
             em.persist(entity);
+            em.flush();
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error creating user: " + e.getMessage(), null, 0, "LoginService.create()", null, e.getMessage());
         }
@@ -173,6 +174,7 @@ public class LoginService extends GService<Users> {
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "LoginService.delete()", null, null);
             }

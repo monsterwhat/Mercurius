@@ -35,6 +35,7 @@ public class ArticuloImagenService extends GService<ArticuloImagen> {
             ArticuloImagen entity = em.find(getEntityClass(), id);
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             }
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error deleting image: " + e.getMessage(), null, 0, "ArticuloImagenService.deleteById()", null, e.getMessage());

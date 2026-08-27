@@ -55,6 +55,7 @@ public class FamiliaService extends GService<Familia> {
     public void create(@Nonnull Familia entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "FamiliaService.create()", null, e.getMessage());
         }
@@ -72,6 +73,7 @@ public class FamiliaService extends GService<Familia> {
                 return false;
             } else {
                 em.persist(entity);
+            em.flush();
                 return true;
             }
 
@@ -92,6 +94,7 @@ public class FamiliaService extends GService<Familia> {
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "FamiliaService.method()", null, null);
             }
@@ -105,6 +108,7 @@ public class FamiliaService extends GService<Familia> {
     public void update(@Nonnull Familia entity) {
         try {
             em.merge(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "FamiliaService.method()", null, e.getMessage());
         }
@@ -154,12 +158,14 @@ public class FamiliaService extends GService<Familia> {
                     existingItem.setStatus(false);
                 }
                 em.merge(existingItem);
+            em.flush();
                 
                 //If we are updating an existing disabled record we need to re-enable it...
                 if(!entity.getStatus()){
                     entity.setStatus(true);
                 }
                 em.persist(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "FamiliaService.method()", null, null);
             }
@@ -185,6 +191,7 @@ public class FamiliaService extends GService<Familia> {
                     result = Tipo_SoftDelete.ACTIVATED;
                 }
                 em.merge(existingItem);
+            em.flush();
                 return result;
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "FamiliaService.method()", null, null);

@@ -40,6 +40,7 @@ public abstract class GService<T> implements Serializable{
     public void update(@Nonnull T entity) {
         try {
             em.merge(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "No entity found!", null, 0, "GService.update()", null, e.getMessage());
         }
@@ -49,6 +50,7 @@ public abstract class GService<T> implements Serializable{
     public void create(@Nonnull T entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "GService.create()", null, e.getMessage());
         }
@@ -65,6 +67,7 @@ public abstract class GService<T> implements Serializable{
 
             if (entity != null) {
                 em.remove(entity);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "GService.delete()", null, null);
             }
@@ -100,6 +103,7 @@ public abstract class GService<T> implements Serializable{
     @Transactional(TxType.SUPPORTS)
     public @Nullable T find(@Nonnull Object id) {
         try {
+            try { em.flush(); } catch (Exception ignore) {}
             em.clear();
             return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {

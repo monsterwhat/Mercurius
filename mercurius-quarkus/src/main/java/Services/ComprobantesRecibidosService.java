@@ -103,6 +103,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ComprobantesRecibidosService.delete()", null, null);
             }
@@ -133,6 +134,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 // Soft delete the item by setting its status to false
                 existingItem.setStatus(false);
                 em.merge(existingItem);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "ComprobantesRecibidosService.softDelete()", null, null);
             }
@@ -155,6 +157,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                     existingItem.setStatus(true);
                 }
                 em.merge(existingItem);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for toggle", null, 0, "ComprobantesRecibidosService.toggle()", null, null);
             }

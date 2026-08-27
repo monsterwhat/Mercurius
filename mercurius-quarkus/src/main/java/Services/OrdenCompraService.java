@@ -224,6 +224,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
             if (existingItem != null) {
                 existingItem.setStatus(false);
                 em.merge(existingItem);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "OrdenCompraService.softDelete()", null, null);
             }

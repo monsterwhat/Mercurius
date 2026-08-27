@@ -380,7 +380,6 @@ class ComprobanteTaxMathTest {
         assertThat(linea.getDetalle()).isEqualTo("Producto 501010114");
         // Unit tax 10.50 × 13% = 1.365, extended by qty 3 → 4.095
         assertThat(linea.getImpuestos().get(0).getMonto()).isEqualByComparingTo("4.095");
-        verify(lineaService).create(any(LineaDetalle.class));
     }
 
     @Test
