@@ -283,11 +283,11 @@ public class FacturasRecibidasResource {
             @QueryParam("q") @Nullable String q) {
         try {
             Map<String, Object> modelo = tablaModel(bucket, page, size, sort, dir, q);
-            TemplateInstance instance = isHxRequest()
-                    ? tabla.instance()
-                    : pageIndex.instance();
-            modelo.forEach(instance::data);
-            return htmlOk(instance);
+            String qSafe = q == null ? "" : q;
+            if (isHxRequest()) {
+                return htmlOk(tabla.instance().data("modelo", modelo).data("q", qSafe));
+            }
+            return htmlOk(pageIndex.instance().data("modelo", modelo).data("q", qSafe).data("bucket", normalizarBucket(bucket)));
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "Error renderizando la tabla de facturas recibidas", e);
             return serverError("Error cargando el buzón de facturas recibidas");
@@ -313,7 +313,7 @@ public class FacturasRecibidasResource {
                 "baseUrl", "/api/app/facturas-recibidas/tabla",
                 "columnas", columnas,
                 "filas", payload.getData(),
-                "sortKey", sort,
+                "sortKey", sort == null ? "" : sort,
                 "sortDir", isDescending(dir) ? "desc" : "asc",
                 "page", pagina,
                 "size", payload.getSize(),
@@ -321,7 +321,7 @@ public class FacturasRecibidasResource {
                 "totalPages", totalPaginas,
                 "paginas", pageWindow(pagina, totalPaginas),
                 "filtros", params("bucket", normalizarBucket(bucket), "q", q),
-                "q", q,
+                "q", q == null ? "" : q,
                 "bucket", normalizarBucket(bucket));
     }
 
@@ -780,7 +780,7 @@ public class FacturasRecibidasResource {
                             ? factura.getResumen().getTotalComprobante() : BigDecimal.ZERO;
                 }
                 default -> {
-                    accion = "Aceptado Parcial";
+                    accion = "Aceptado";
                     if (lineasAceptadas == null || lineasAceptadas.isEmpty()) {
                         return badRequest("Debe aceptar al menos una línea para enviar aceptación parcial");
                     }
