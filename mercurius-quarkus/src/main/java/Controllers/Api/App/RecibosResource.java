@@ -386,7 +386,7 @@ public class RecibosResource {
             comprobantesEmitidosService.update(f);
             alertas.registrarAlerta("Factura Pagada",
                     "Se marco la factura #" + f.getId() + " como pagada",
-                    currentUser(), 0, "paySelectedFactura()", f.toString(), null);
+                    currentUser(), 0, "paySelectedFactura", f.toString(), null);
             return accionOk(id, "Se marco la factura como pagada!");
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "Error marcando el recibo " + id + " como pagada", e);
@@ -449,7 +449,7 @@ public class RecibosResource {
             comprobantesEmitidosService.update(f);
             alertas.registrarAlerta("Factura Aceptada",
                     "Se acepto la factura #" + f.getId() + " (Mensaje Receptor)",
-                    currentUser(), 0, "RecibosResource.accept()", antes, DiffUtils.snapshotEntity(f));
+                    currentUser(), 0, "RecibosResource.accept", antes, DiffUtils.snapshotEntity(f));
             return accionOk(id, "Factura aceptada");
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "Error aceptando el recibo " + id, e);
@@ -498,7 +498,7 @@ public class RecibosResource {
             alertas.registrarAlerta("Factura Rechazada",
                     "Se rechazo la factura #" + f.getId()
                             + (motivoLimpio != null ? " Motivo: " + motivoLimpio : ""),
-                    currentUser(), 0, "RecibosResource.reject()", antes, DiffUtils.snapshotEntity(f));
+                    currentUser(), 0, "RecibosResource.reject", antes, DiffUtils.snapshotEntity(f));
             return accionOk(id, "Factura rechazada");
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "Error rechazando el recibo " + id, e);

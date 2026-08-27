@@ -130,7 +130,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     public @Nonnull List<ComprobantesEmitidos> listAll() {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
-                "SELECT f FROM ComprobantesEmitidos f LEFT JOIN FETCH f.resumen",
+                "SELECT DISTINCT f FROM ComprobantesEmitidos f LEFT JOIN FETCH f.resumen LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.emisor",
                 ComprobantesEmitidos.class
             );
             return query.getResultList();

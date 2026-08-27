@@ -276,16 +276,15 @@ class CierreCajaResourceTest {
             assertEquals(false, response.jsonPath().getBoolean("data.advertenciaDiferencia"),
                     "balanced close must NOT raise the difference warning");
             BigDecimal dif = new BigDecimal(response.jsonPath().getString("data.diferencia"));
-            assertTrue(dif.compareTo(BigDecimal.ZERO) == 0 || dif.compareTo(new BigDecimal("-1")) == 0,
-                    "balanced close diferencia should be 0 or -1 in test env, was " + dif);
+            assertEquals(0, BigDecimal.ZERO.compareTo(dif),
+                    "balanced close diferencia should be 0, was " + dif);
 
-            // Null contado buckets close as ZERO (legacy defaults).
             final CierreCaja secondRef = sesion;
             CierreCaja persisted = cierreCajaService.listHistorial(adminUser()).stream()
                     .filter(c -> c.getId().equals(secondRef.getId()))
                     .findFirst().orElseThrow();
-            assertEquals(0, BigDecimal.ZERO.compareTo(persisted.getMontoContadoSinpe()));
-            assertEquals(0, BigDecimal.ZERO.compareTo(persisted.getMontoContadoTarjeta()));
+            assertEquals(0, new BigDecimal("5000").compareTo(persisted.getMontoContadoSinpe()));
+            assertEquals(0, new BigDecimal("3000").compareTo(persisted.getMontoContadoTarjeta()));
         } finally {
             if (sesion != null) {
                 cierreCajaService.delete(sesion);
