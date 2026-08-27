@@ -42,8 +42,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -118,7 +118,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Tributación")
 public class TributacionResource {
 
-    private static final Logger LOG = Logger.getLogger(TributacionResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(TributacionResource.class);
 
     /** Legacy p:poll interval on Consultas/index.xhtml was 5 seconds. */
     public static final String COUNTDOWN_POLL_INTERVAL = "every 5s";
@@ -211,7 +211,7 @@ public class TributacionResource {
                     countPendientes(todos),
                     new Date()))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error calculando el dashboard de Hacienda", e);
+            LOG.warn("Error calculando el dashboard de Hacienda", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "No se pudieron cargar los datos del dashboard"))
                     .build();
@@ -243,7 +243,7 @@ public class TributacionResource {
             }
             return Response.ok(ApiResponse.ok(dto)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error calculando la cuenta regresiva de envíos", e);
+            LOG.warn("Error calculando la cuenta regresiva de envíos", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error calculando la cuenta regresiva"))
                     .build();
@@ -281,7 +281,7 @@ public class TributacionResource {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando el bucket " + bucket, e);
+            LOG.warn("Error listando el bucket " + bucket, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando las facturas"))
                     .build();
@@ -332,6 +332,8 @@ public class TributacionResource {
                         emitidosService.update(factura);
                         enviadas++;
                     } else {
+                        factura.setHaciendaEstado("RECHAZADO");
+                        factura.setHaciendaFechaRespuesta(LocalDateTime.now());
                         if (factura.getEncabezado() != null) {
                             factura.getEncabezado().setEstado("RECHAZADO");
                             factura.getEncabezado().setMotivoRechazo(result.errorMessage);
@@ -340,7 +342,18 @@ public class TributacionResource {
                         fallidas++;
                     }
                 } catch (RuntimeException e) {
-                    LOG.log(Level.WARNING, "Fallo enviando comprobante " + factura.getId(), e);
+                    LOG.warn("Fallo enviando comprobante " + factura.getId(), e);
+                    factura.setHaciendaEstado("RECHAZADO");
+                    factura.setHaciendaFechaRespuesta(LocalDateTime.now());
+                    if (factura.getEncabezado() != null) {
+                        factura.getEncabezado().setEstado("RECHAZADO");
+                        factura.getEncabezado().setMotivoRechazo(e.getMessage());
+                    }
+                    try {
+                        emitidosService.update(factura);
+                    } catch (RuntimeException updateEx) {
+                        LOG.warn("Error actualizando factura tras fallo " + factura.getId(), updateEx);
+                    }
                     fallidas++;
                 }
             }
@@ -359,7 +372,7 @@ public class TributacionResource {
             }
             return Response.ok(ApiResponse.ok(resultado)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error en el envío masivo de pendientes", e);
+            LOG.warn("Error en el envío masivo de pendientes", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error en el envío masivo"))
                     .build();
@@ -417,7 +430,7 @@ public class TributacionResource {
             }
             return Response.ok(ApiResponse.ok(resultado)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error corrigiendo la factura " + id, e);
+            LOG.warn("Error corrigiendo la factura " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error al corregir la factura"))
                     .build();
@@ -448,7 +461,7 @@ public class TributacionResource {
                     ? rows.subList(0, MENSAJES_LIMIT) : rows;
             return Response.ok(ApiResponse.ok(new MensajesResponse(capped.size(), capped))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando los mensajes receptor", e);
+            LOG.warn("Error listando los mensajes receptor", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando los mensajes receptor"))
                     .build();
@@ -543,7 +556,7 @@ public class TributacionResource {
                     emitidas.size(), recibidas.size(), filas);
             return Response.ok(ApiResponse.ok(resumen)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error calculando la declaración IVA", e);
+            LOG.warn("Error calculando la declaración IVA", e);
             alertas.registrarAlerta("Error IVA",
                     "Error al calcular declaracion IVA: " + e.getMessage(),
                     currentUser(), 0, "TributacionResource.declaracionResumen",
@@ -753,8 +766,9 @@ public class TributacionResource {
                 emisorNombre, emisorId, receptorNombre, receptorId);
 
         String indicador;
-        long diasRestantes = r.getDiasRestantesMensajeReceptor();
-        boolean vencido = r.isMensajeReceptorVencido();
+        LocalDate limite = dto.getLimite();
+        long diasRestantes = limite == null ? -1 : java.time.temporal.ChronoUnit.DAYS.between(LocalDate.now(), limite);
+        boolean vencido = limite != null && LocalDate.now().isAfter(limite);
         if (dto.getEstado() != null && !dto.getEstado().isBlank()) {
             indicador = "ATENDIDO";
         } else if (vencido) {
@@ -813,7 +827,7 @@ public class TributacionResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.debug("No current user resolvable", e);
             return null;
         }
     }

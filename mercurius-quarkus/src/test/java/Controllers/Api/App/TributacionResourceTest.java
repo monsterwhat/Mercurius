@@ -17,6 +17,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -75,6 +77,9 @@ class TributacionResourceTest extends support.ContextPathIsolation {
 
     @Inject
     NotaCreditoService notaCreditoService;
+
+    @Inject
+    EntityManager em;
 
     @InjectMock
     HaciendaServiceFacade haciendaFacade;
@@ -393,24 +398,26 @@ class TributacionResourceTest extends support.ContextPathIsolation {
         try {
             atendido = seedRecibido(consecutivo("MRATN"), LocalDateTime.now().minusDays(20),
                     null, null);
-            atendido.setHaciendaMensajeReceptorEstado("ACEPTADO");
-            atendido.setMensajeReceptorLimite(LocalDate.now().minusDays(5));
-            recibidosService.update(atendido);
+            setLimiteTransactional(atendido.getId(), LocalDate.now().minusDays(5));
+            ComprobantesRecibidos tmpAt = recibidosService.find(atendido.getId());
+            tmpAt.setHaciendaMensajeReceptorEstado("ACEPTADO");
+            recibidosService.update(tmpAt);
+            atendido = tmpAt;
 
             vencido = seedRecibido(consecutivo("MRVNC"), LocalDateTime.now().minusDays(40),
                     null, null);
-            vencido.setMensajeReceptorLimite(LocalDate.now().minusDays(1));
-            recibidosService.update(vencido);
+            setLimiteTransactional(vencido.getId(), LocalDate.now().minusDays(1));
+            vencido = recibidosService.find(vencido.getId());
 
             porVencer = seedRecibido(consecutivo("MRPOR"), LocalDateTime.now().minusDays(30),
                     null, null);
-            porVencer.setMensajeReceptorLimite(LocalDate.now().plusDays(1));
-            recibidosService.update(porVencer);
+            setLimiteTransactional(porVencer.getId(), LocalDate.now().plusDays(1));
+            porVencer = recibidosService.find(porVencer.getId());
 
             enTiempo = seedRecibido(consecutivo("MRTMP"), LocalDateTime.now().minusDays(5),
                     null, null);
-            enTiempo.setMensajeReceptorLimite(LocalDate.now().plusDays(15));
-            recibidosService.update(enTiempo);
+            setLimiteTransactional(enTiempo.getId(), LocalDate.now().plusDays(15));
+            enTiempo = recibidosService.find(enTiempo.getId());
 
             Response respuesta = given()
                     .when().get(API + "/consultas/mensajes");
@@ -529,6 +536,16 @@ class TributacionResourceTest extends support.ContextPathIsolation {
         Map<String, String> jar = new LinkedHashMap<>(respuesta.getCookies());
         assertNotNull(jar.get(CSRF_COOKIE), "safe GET must mint the csrf-token cookie");
         return jar;
+    }
+
+    @Transactional
+    void setLimiteTransactional(Long id, LocalDate limite) {
+        em.createQuery("UPDATE ComprobantesRecibidos c SET c.mensajeReceptorLimite = :limite WHERE c.id = :id")
+          .setParameter("limite", limite)
+          .setParameter("id", id)
+          .executeUpdate();
+        em.flush();
+        em.clear();
     }
 
     /** CSRF-paired POST: cookie and header halves come from the SAME jar. */
