@@ -11,6 +11,7 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -74,6 +75,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Path("/api/app/logs")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@RolesAllowed({"admin", "registro", "usuario"})
 @Tag(name = "App - Logs")
 public class LogActividadResource {
 

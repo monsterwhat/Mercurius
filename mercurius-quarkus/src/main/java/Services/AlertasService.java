@@ -66,6 +66,7 @@ public class AlertasService extends GService<Alertas> {
             create(alerta);
     }  
     
+    @Transactional
     public void toggleVista(@Nonnull Alertas alerta) {
         try {
             alerta.setVista(!alerta.isVista());
@@ -75,6 +76,7 @@ public class AlertasService extends GService<Alertas> {
         }
     }
 
+    @Transactional
     @Nonnull
     public List<Alertas> findFiltered(@Nullable Date fechaDesde, @Nullable Date fechaHasta,
                                        @Nullable Users user, @Nullable String tipo,
@@ -115,6 +117,7 @@ public class AlertasService extends GService<Alertas> {
         }
     }
 
+    @Transactional
     @Nonnull
     public List<String> findDistinctTipos() {
         try {
@@ -127,6 +130,7 @@ public class AlertasService extends GService<Alertas> {
         }
     }
 
+    @Transactional
     @Nonnull
     public List<String> findDistinctSources() {
         try {
