@@ -20,7 +20,7 @@
      hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
     <div class="level mb-2">
         <div class="level-left">
-            <h3 class="title is-5 mb-0" style="text-transform:capitalize">{modelo.bucket}</h3>
+            <h3 class="title is-5 mb-0" style="text-transform:capitalize">{#if modelo.bucket == "vencidos"}Vencidos{#else if modelo.bucket == "pagadas"}Pagadas{#else if modelo.bucket == "procesadas"}Procesadas{#else if modelo.bucket == "todas"}Todas{#else}{modelo.bucket}{/if}</h3>
         </div>
         <div class="level-right">
             <div class="field mb-0" style="min-width:16rem">

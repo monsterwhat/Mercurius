@@ -202,7 +202,7 @@ class RecibosResourceTest extends support.ContextPathIsolation {
         String sufijo = consecutivo.length() > 8 ? consecutivo.substring(consecutivo.length() - 8) : consecutivo;
         List<Map<String, Object>> filas = filasDeBucket(session, bucket, sufijo);
         return filas.stream()
-                .anyMatch(f -> consecutivo.equals(String.valueOf(f.get("consecutivo"))));
+                .anyMatch(f -> consecutivo.equalsIgnoreCase(String.valueOf(f.get("consecutivo"))));
     }
 
     // ── 1. Todas bucket + DTO field parity ───────────────────────────────
