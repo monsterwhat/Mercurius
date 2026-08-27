@@ -131,6 +131,7 @@ public class ComprobanteService implements Serializable {
         public String haciendaMensaje;
     }
 
+    @jakarta.transaction.Transactional
     public @Nullable CrearComprobanteResult crearComprobante(@Nonnull AppSettings appSettings, @Nonnull List<ArticuloCarrito> carrito,
                                                     @Nullable Clients selectedClient, @Nullable Clients cliente, @Nonnull Users currentUser,
                                                     @Nonnull DocumentoStrategy strategy, @Nonnull List<PagoEntry> pagos) {
@@ -611,7 +612,6 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                                 descuento.setCodigoDescuentoOtro(promocion.getNombre());
                             }
                             descuento.setNaturalezaDescuento(promocion.getNombre());
-                            descuentoService.create(descuento);
                             descuentos.add(descuento);
                         }
                     }
@@ -656,10 +656,10 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                     linea.setDescuentos(descuentos);
                 }
                 List<Impuesto> impuestos = new ArrayList<>();
-                if (!articulo.getTotalImpuesto().equals(BigDecimal.ZERO)) {
+                if (articulo.getTotalImpuesto().compareTo(BigDecimal.ZERO) != 0) {
                     Impuesto impuesto = new Impuesto();
-                    String codigoImpuesto = articulo.getArticulo().getCodigoCabys().getImpuesto();
-                    if (codigoImpuesto == null || codigoImpuesto.isEmpty()) codigoImpuesto = "0";
+                    String codigoImpuestoRaw = articulo.getArticulo().getCodigoCabys().getImpuesto();
+                    String codigoImpuesto = normalizeImpuesto(codigoImpuestoRaw);
                     impuesto.setCodigo("01");
                     Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(codigoImpuesto);
                     impuesto.setCodigoTarifaIVA(tarifa.getCodigo());
@@ -682,7 +682,6 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                         exoneracionEntity.setImpuesto(impuesto);
                         impuesto.setExoneracion(exoneracionEntity);
                     }
-                    impuestoService.create(impuesto);
                     impuestos.add(impuesto);
                 }
                 linea.setMontoTotalLinea(montoTotal);
@@ -701,7 +700,6 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                     linea.setImpuestoAsumidoEmisorFabrica(BigDecimal.ZERO);
                 }
 
-                lineaService.create(linea);
                 linea.setDetalleServicio(detalles);
                 lineasDetalle.add(linea);
             }
@@ -871,6 +869,25 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                 + ") no coincide con TotalComprobante (" + totalComprobante
                 + ") para comprobante " + numeroConsecutivo
                 + ". Bitácora item 124/125: Total del Comprobante debe coincidir con sumatoria de montos por Medio de Pago.");
+        }
+    }
+
+    /**
+     * Normalizes raw impuesto strings from Cabys (e.g. "13", "13.00", "13%", " 13 ", "0.00", "13.0")
+     * to the canonical codes expected by {@link Tipo_TarifaIVA#getTarifa(String)}: "0", "0.5", "1", "2", "4", "8", "13".
+     * Returns "0" for null/blank/unparseable input.
+     */
+    static String normalizeImpuesto(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) return "0";
+        String trimmed = raw.trim().replace("%", "").trim();
+        try {
+            BigDecimal bd = new BigDecimal(trimmed);
+            bd = bd.stripTrailingZeros();
+            String plain = bd.toPlainString();
+            // Ensure canonical form: "0.0" -> "0", "13.00" -> "13"
+            return plain;
+        } catch (NumberFormatException e) {
+            return "0";
         }
     }
 }
