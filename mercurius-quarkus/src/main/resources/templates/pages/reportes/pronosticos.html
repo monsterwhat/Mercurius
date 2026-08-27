@@ -1,0 +1,135 @@
+{!
+  pages/reportes/pronosticos - Pronósticos de Inventario (T19 port of
+  secured/pages/Inventario/Reportes/Pronosticos/index.xhtml).
+
+  Backed by the REAL StockForecastService (the legacy UI bean rendered
+  hardcoded sample rows). The canvas pulls JSON from the EXISTING
+  /api/stock-forecast endpoint with credentials=same-origin.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <div class="inventario-header">
+            <p class="title is-3 has-text-centered">{titulo}</p>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">{totalProductos}</span>
+                    <span class="stat-label">Total Productos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{saludables}</span>
+                    <span class="stat-label">Saludable</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{stockBajo}</span>
+                    <span class="stat-label">Stock Bajo</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{sinStock}</span>
+                    <span class="stat-label">Sin Stock</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get"
+                  action="/Mercurius{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <input type="hidden" name="seccion" value="{seccion}"/>
+                <div class="column is-narrow field">
+                    <label class="label" for="dias">Días de Pronóstico</label>
+                    <div class="control select">
+                        <select name="dias" id="dias">
+                            <option value="7" {#if dias == 7}selected{/if}>7 días</option>
+                            <option value="14" {#if dias == 14}selected{/if}>14 días</option>
+                            <option value="30" {#if dias == 30}selected{/if}>30 días</option>
+                            <option value="60" {#if dias == 60}selected{/if}>60 días</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-info" type="submit">Generar Pronóstico</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="nav-cards">
+            <a class="nav-card button is-success {#if seccion == 'pronosticos'}is-outlined{/if}"
+               href="?seccion=pronosticos&dias={dias}">Pronósticos de Demanda</a>
+            <a class="nav-card button is-info {#if seccion == 'salud'}is-outlined{/if}"
+               href="?seccion=salud&dias={dias}">Salud del Inventario</a>
+            <a class="nav-card button is-warning {#if seccion == 'reorden'}is-outlined{/if}"
+               href="?seccion=reorden&dias={dias}">Sugerencias de Reorden</a>
+        </div>
+
+        {#include pages/reportes/_tablas/pronosticos /}
+
+        <div class="box mt-4">
+            <p class="title is-5">Demanda Pronosticada (primeros artículos)</p>
+            <canvas id="grafica-pronosticos" width="900" height="320"
+                    data-root="/Mercurius" data-dias="{dias}">
+                Su navegador no soporta canvas.
+            </canvas>
+        </div>
+
+        <script>
+        (function () {
+            var lienzo = document.getElementById('grafica-pronosticos');
+            if (!lienzo || !lienzo.getContext) {
+                return;
+            }
+            var url = lienzo.getAttribute('data-root') + '/api/stock-forecast/bulk-forecast?days='
+                    + encodeURIComponent(lienzo.getAttribute('data-dias'));
+            fetch(url, { credentials: 'same-origin' })
+                .then(function (respuesta) { return respuesta.json(); })
+                .then(function (datos) {
+                    var etiquetas = [];
+                    var valores = [];
+                    datos.slice(0, 12).forEach(function (pronostico) {
+                        etiquetas.push(pronostico.articuloNombre);
+                        valores.push(Number(pronostico.predictedSales));
+                    });
+                    dibujarBarras(lienzo, etiquetas, valores);
+                })
+                .catch(function () { /* sin datos: el canvas queda vacío */ });
+
+            function dibujarBarras(canvas, etiquetas, valores) {
+                var ctx = canvas.getContext('2d');
+                var ancho = canvas.width;
+                var alto = canvas.height;
+                ctx.clearRect(0, 0, ancho, alto);
+                if (valores.length === 0) {
+                    ctx.fillStyle = '#777';
+                    ctx.fillText('Sin pronósticos disponibles', 20, alto / 2);
+                    return;
+                }
+                var maximo = Math.max.apply(null, valores);
+                var margen = 40;
+                var paso = (ancho - margen * 2) / valores.length;
+                ctx.strokeStyle = '#ccc';
+                ctx.beginPath();
+                ctx.moveTo(margen, alto - margen);
+                ctx.lineTo(ancho - margen, alto - margen);
+                ctx.stroke();
+                for (var i = 0; i < valores.length; i++) {
+                    var alturaBarra = maximo > 0 ? (valores[i] / maximo) * (alto - margen * 2) : 0;
+                    var x = margen + i * paso + paso * 0.15;
+                    var y = alto - margen - alturaBarra;
+                    ctx.fillStyle = '#3e8ed0';
+                    ctx.fillRect(x, y, paso * 0.7, alturaBarra);
+                    ctx.fillStyle = '#333';
+                    ctx.save();
+                    ctx.translate(x + paso * 0.35, alto - margen + 12);
+                    ctx.rotate(Math.PI / 4);
+                    ctx.fillText(etiquetas[i].substring(0, 14), 0, 0);
+                    ctx.restore();
+                }
+            }
+        })();
+        </script>
+    {/body}
+{/include}

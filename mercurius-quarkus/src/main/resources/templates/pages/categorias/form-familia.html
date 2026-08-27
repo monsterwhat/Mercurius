@@ -1,0 +1,51 @@
+{!
+  pages/categorias/form-familia - modal-body form for crear|editar familia
+  (T18). Returned by GET /api/app/categorias/formularios/familia[/nueva|/{id}]
+  and re-rendered by the POST/PUT endpoints on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Model:
+    modo          String  - "crear" | "editar" (selects hx-post vs hx-put)
+    familia       Object  - Models.Familia when editar, null when crear
+    errorNombre   String  - field error (legacy requiredMessage parity)
+    toastSeverity String  - OOB toast severity (nullable)
+    toastMessage  String  - OOB toast text (nullable; legacy FacesMessages)
+
+  The submit posts urlencoded form fields; the resource's @Consumes(form)
+  variants bind them. Success answers with HX-Redirect (full page reload).
+!}
+<div id="forma-familia">
+    {#if modo == 'editar' && familia??}
+    <form hx-put="/Mercurius/api/app/categorias/familias/{familia.id}"
+          hx-target="#forma-familia" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/categorias/familias"
+          hx-target="#forma-familia" hx-swap="outerHTML">
+    {/if}
+        <div class="field">
+            <label class="label" for="familia-nombre">Nombre:</label>
+            <div class="control">
+                <input class="input {#if errorNombre??}is-danger{/if}" id="familia-nombre"
+                       name="nombre" required="required" autocomplete="off"
+                       value="{#if familia??}{familia.nombre}{/if}"/>
+            </div>
+            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+        </div>
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">
+                    {#if modo == 'editar'}Guardar cambios{#else}Crear Familia{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

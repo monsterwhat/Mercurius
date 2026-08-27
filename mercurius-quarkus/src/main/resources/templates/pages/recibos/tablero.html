@@ -1,0 +1,58 @@
+{!
+  pages/recibos/tablero - the four-bucket receipts board (T27). Rendered
+  standalone by RecibosResource action endpoints (primary swap target
+  #recibos-tablero) and included by pages/recibos/index.html.
+
+  Model keys:
+    stats         RecibosResource.StatsView (todas/pagadas/procesadas/vencidos)
+    modelos       Map bucket-key -> kit data-table model (tablaModel)
+    toastSeverity/toastMessage - optional OOB toast after an action
+
+  Bucket queries mirror the legacy pages/Recibos/index.xhtml tabs onto the
+  emitted-comprobante lifecycle (see RecibosResource javadoc): todas = all,
+  pagadas = Encabezado.estado ACEPTADO, procesadas = Hacienda exchange done,
+  vencidos = unsettled credit past due.
+!}
+<div id="recibos-tablero">
+    <div id="recibos-stats" class="columns is-mobile is-multiline mb-0">
+        <div class="column is-one-quarter-desktop is-half-mobile">
+            <a class="box is-shadowless has-text-centered" href="#recibos-tabla-todas"
+               style="display:block;border-left:4px solid #6f42c1">
+                <p class="title is-3 mb-0">{stats.todas}</p>
+                <p class="heading">Todas</p>
+            </a>
+        </div>
+        <div class="column is-one-quarter-desktop is-half-mobile">
+            <a class="box is-shadowless has-text-centered" href="#recibos-tabla-pagadas"
+               style="display:block;border-left:4px solid #48c774">
+                <p class="title is-3 mb-0">{stats.pagadas}</p>
+                <p class="heading">Pagadas</p>
+            </a>
+        </div>
+        <div class="column is-one-quarter-desktop is-half-mobile">
+            <a class="box is-shadowless has-text-centered" href="#recibos-tabla-procesadas"
+               style="display:block;border-left:4px solid #3298dc">
+                <p class="title is-3 mb-0">{stats.procesadas}</p>
+                <p class="heading">Procesadas</p>
+            </a>
+        </div>
+        <div class="column is-one-quarter-desktop is-half-mobile">
+            <a class="box is-shadowless has-text-centered" href="#recibos-tabla-vencidos"
+               style="display:block;border-left:4px solid #f14668">
+                <p class="title is-3 mb-0">{stats.vencidos}</p>
+                <p class="heading">Vencidos</p>
+            </a>
+        </div>
+    </div>
+
+    {#include pages/recibos/tabla modelo=modelos.todas /}
+    {#include pages/recibos/tabla modelo=modelos.pagadas /}
+    {#include pages/recibos/tabla modelo=modelos.procesadas /}
+    {#include pages/recibos/tabla modelo=modelos.vencidos /}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

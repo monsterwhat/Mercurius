@@ -1,0 +1,204 @@
+{!
+  pages/categorias/index - Gestión de Categorías (T18).
+
+  Qute/HTMX/Bulma port of secured/pages/Categorias/index.xhtml (Familias +
+  Departamentos tabs), Familias/Reportes and Departamentos/Reportes badges,
+  plus a compact Métricas de Proveedores section replacing
+  Departamentos/Reportes/Metricas/index.xhtml (charts omitted here — the
+  JSON feed lives at GET /api/app/categorias/metricas for the Chart.js wave).
+
+  Model keys supplied by Controllers.Api.App.CategoriaResource#renderFullPage:
+    familiasTabla / departamentosTabla  Map   - tabla-*.html models
+    familiaCount / departamentoCount    Long  - stat cards
+    familiasActivasCount ...            Long  - reportes badges parity
+    isAdmin                             Boolean - recalcular gate (legacy admin)
+    metricasTotalProveedores            int
+    metricasScorePromedio               double
+    metricasComprasTotales              BigDecimal
+    metricasFilas                       List<Map> - precomputed score chips/bars
+
+  Interactions:
+    - Create dialogs: _kit/modal default triggers (hx-get form fragments).
+    - Edit dialogs: shared _kit/modal instances with hidden triggers; row
+      buttons carry data-kit-open and the bridge script below flips the
+      Alpine state after htmx fills the body.
+    - State toggles: hx-delete + hx-confirm handled inside tabla-*.html.
+    - Export: normal browser POSTs to the T17 endpoint (NOT htmx) so
+      Content-Disposition downloads, mirroring the legacy p:dataExporter
+      buttons gated by SessionController.registros.
+!}
+{#include layout}
+    {#title}Gestión de Categorías | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Gestión de Categorías</p>
+
+        {! Stat cards — legacy clickable tabs became visible sections !}
+        <div class="columns">
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1" style="margin-bottom:0">{familiaCount}</p>
+                    <p class="subtitle is-6">Familias</p>
+                    <p class="has-text-success is-size-7">Activas: {#if familiasActivasCount??}{familiasActivasCount}{#else}0{/if}</p>
+                    <p class="has-text-danger is-size-7">Inactivas: {#if familiasInactivasCount??}{familiasInactivasCount}{#else}0{/if}</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1" style="margin-bottom:0">{departamentoCount}</p>
+                    <p class="subtitle is-6">Departamentos</p>
+                    <p class="has-text-success is-size-7">Activos: {#if departamentosActivosCount??}{departamentosActivosCount}{#else}0{/if}</p>
+                    <p class="has-text-danger is-size-7">Inactivos: {#if departamentosInactivosCount??}{departamentosInactivosCount}{#else}0{/if}</p>
+                </div>
+            </div>
+        </div>
+
+        {! ── Familias ─────────────────────────────────────────────── !}
+        <div class="level">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Familias</h2>
+            </div>
+            <div class="level-right">
+                <div class="buttons">
+                    {#include _kit/modal id="crear-familia" title="Crear Familia" triggerLabel="Crear Familia" triggerClass="is-success"
+                         bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
+                    {#if inject:securityIdentity.hasRole('registro')}
+                    <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="dataset" value="familias"/>
+                        <input type="hidden" name="type" value="xlsx"/>
+                        <button class="button is-info" type="submit">Exportar Excel</button>
+                    </form>
+                    {/if}
+                </div>
+            </div>
+        </div>
+        {#include pages/categorias/tabla-familias modelo=familiasTabla q=familiasTabla.q /}
+
+        {!$1!}
+        {#include _kit/modal id="editar-familia" title="Editar Familia" triggerClass="is-hidden"
+             bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
+
+        {! ── Departamentos ────────────────────────────────────────── !}
+        <div class="level mt-5">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Departamentos</h2>
+            </div>
+            <div class="level-right">
+                <div class="buttons">
+                    {#include _kit/modal id="crear-departamento" title="Crear Departamento" triggerLabel="Crear Departamento" triggerClass="is-success"
+                         bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
+                    {#if inject:securityIdentity.hasRole('registro')}
+                    <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="dataset" value="departamentos"/>
+                        <input type="hidden" name="type" value="xlsx"/>
+                        <button class="button is-info" type="submit">Exportar Excel</button>
+                    </form>
+                    {/if}
+                </div>
+            </div>
+        </div>
+        {#include pages/categorias/tabla-departamentos modelo=departamentosTabla q=departamentosTabla.q /}
+
+        {!$1!}
+        {#include _kit/modal id="editar-departamento" title="Editar Departamento" triggerClass="is-hidden"
+             bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
+
+        {! ── Métricas de Proveedores (legacy Metricas subpage) ────── !}
+        <div class="level mt-6">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Métricas de Proveedores</h2>
+            </div>
+            <div class="level-right">
+                {#if isAdmin}
+                <button type="button" class="button is-link"
+                        hx-post="/Mercurius/api/app/categorias/metricas/recalcular"
+                        hx-confirm="¿Recalcular las métricas de todos los proveedores?">
+                    Recalcular Métricas
+                </button>
+                {/if}
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-2" style="margin-bottom:0">{metricasTotalProveedores}</p>
+                    <p class="subtitle is-6">Proveedores</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-2" style="margin-bottom:0">{metricasScorePromedio}</p>
+                    <p class="subtitle is-6">Score Promedio</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-2" style="margin-bottom:0">&#8353; {metricasComprasTotales}</p>
+                    <p class="subtitle is-6">Compras Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="box is-shadowless" style="padding:0.75rem">
+            <p class="title is-5 has-text-centered">Ranking de Rendimiento de Proveedores</p>
+            <table class="table is-striped is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Proveedor</th>
+                        <th class="has-text-centered">Score</th>
+                        <th>Progreso</th>
+                        <th class="has-text-centered">Facturas</th>
+                        <th class="has-text-centered">Pagadas</th>
+                        <th class="has-text-right">Monto Total</th>
+                        <th class="has-text-centered">Entregas a Tiempo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for m in metricasFilas}
+                    <tr>
+                        <td>{m.id}</td>
+                        <td>{m.proveedor}</td>
+                        <td class="has-text-centered"><span class="tag is-{m.scoreSeverity}">{m.score}</span></td>
+                        <td><progress class="progress {m.barColor}" value="{m.score}" max="100">{m.score}%</progress></td>
+                        <td class="has-text-centered">{m.facturas}</td>
+                        <td class="has-text-centered">{m.pagadas}</td>
+                        <td class="has-text-right">&#8353; {m.montoTotal}</td>
+                        <td class="has-text-centered">{m.onTime}%</td>
+                    </tr>
+                    {#else}
+                    <tr><td colspan="8" class="has-text-centered has-text-grey">No hay métricas disponibles. Haga clic en 'Recalcular Métricas' para generar datos.</td></tr>
+                    {/for}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level edit buttons open the shared edit modals; the
+       swapped form's [data-kit-close] button closes them. Alpine state is
+       reached through the documented Alpine.$data API — the _kit modal root
+       owns the x-data scope, the id sits on its child .modal element. !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

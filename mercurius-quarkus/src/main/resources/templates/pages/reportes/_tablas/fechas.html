@@ -1,0 +1,23 @@
+{!
+  _tablas/fechas - table-only fragment for HX-Request swaps of the
+  Reporte de Movimientos de Inventario (T19).
+!}
+<div id="reporte-fechas-tabla">
+    {#include _kit/data-table id="reporte-fechas" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            <td>{f.fechaMovimiento}</td>
+            <td>{f.codigoBarra}</td>
+            <td>{f.articulo}</td>
+            <td>{f.cantidad}</td>
+            <td>{f.usuario}</td>
+            <td>{f.tipoMovimiento}</td>
+            <td>{f.notas}</td>
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

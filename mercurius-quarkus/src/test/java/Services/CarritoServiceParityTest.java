@@ -1,6 +1,6 @@
 package Services;
 
-import Controllers.ArticulosController;
+import Services.ArticulosService;
 import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Carrito.CartOperationResult;
@@ -81,7 +81,7 @@ import static org.mockito.Mockito.when;
 class CarritoServiceParityTest {
 
     @Mock
-    private ArticulosController articuloController;
+    private ArticulosService articulosService;
 
     @Mock
     private AlertasService alertasService;
@@ -201,7 +201,7 @@ class CarritoServiceParityTest {
         assertEquals("El código de barra no corresponde a un artículo válido", resultado.detail);
         assertNull(resultado.jsCommand, "un mensaje puro no ejecuta script");
         assertTrue(ctx.getCarrito().isEmpty(), "el carrito no debe tocarse");
-        verifyNoInteractions(articuloController, alertasService);
+        verifyNoInteractions(articulosService, alertasService);
     }
 
     @Test
@@ -220,7 +220,7 @@ class CarritoServiceParityTest {
     void processCodigoBarra_articuloNoEncontrado_error() {
         ctx.setCodigoBarra("9999999999999");
         ctx.setCantidadArticulo(BigDecimal.ONE);
-        when(articuloController.findArticuloByBarCode("9999999999999")).thenReturn(null);
+        when(articulosService.findByBarCode("9999999999999")).thenReturn(null);
 
         CartOperationResult resultado = carritoService.processCodigoBarra(ctx);
 
@@ -231,7 +231,7 @@ class CarritoServiceParityTest {
         assertEquals("El código de barra no corresponde a un artículo válido", resultado.detail);
         assertNull(resultado.jsCommand);
         assertTrue(ctx.getCarrito().isEmpty());
-        verify(articuloController).findArticuloByBarCode("9999999999999");
+        verify(articulosService).findByBarCode("9999999999999");
         verifyNoInteractions(alertasService);
     }
 
@@ -239,7 +239,7 @@ class CarritoServiceParityTest {
     void processCodigoBarra_cantidadInvalida_errorParaCeroYNegativos() {
         Articulos art1 = articulo(4L, "Sal");
         ctx.setCodigoBarra("4001234567895");
-        when(articuloController.findArticuloByBarCode("4001234567895")).thenReturn(art1);
+        when(articulosService.findByBarCode("4001234567895")).thenReturn(art1);
 
         for (String cantidadInvalida : new String[] {"0", "-1"}) {
             ctx.setCantidadArticulo(new BigDecimal(cantidadInvalida));
@@ -261,7 +261,7 @@ class CarritoServiceParityTest {
         ctx.setCodigoBarra("4001234567895");
         ctx.setCantidadArticulo(new BigDecimal("3"));
         ctx.setResetFlag(false);
-        when(articuloController.findArticuloByBarCode("4001234567895")).thenReturn(art1);
+        when(articulosService.findByBarCode("4001234567895")).thenReturn(art1);
 
         CartOperationResult resultado = carritoService.processCodigoBarra(ctx);
 
@@ -284,7 +284,7 @@ class CarritoServiceParityTest {
         Articulos art1 = articulo(6L, "Galletas");
         ctx.setCodigoBarra("4001234567895");
         ctx.setCantidadArticulo(new BigDecimal("2"));
-        when(articuloController.findArticuloByBarCode("4001234567895")).thenReturn(art1);
+        when(articulosService.findByBarCode("4001234567895")).thenReturn(art1);
 
         carritoService.processCodigoBarra(ctx);
         ctx.setCodigoBarra("4001234567895");

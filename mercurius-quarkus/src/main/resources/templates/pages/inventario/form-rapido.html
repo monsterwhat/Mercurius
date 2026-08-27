@@ -1,0 +1,80 @@
+{!
+  pages/inventario/form-rapido - quick-process wizard body (T35), port of
+  fragments/Inventario/PendientesRevision/DialogoProcesadoRapido.xhtml.
+  "Procesar y Siguiente" posts modo=rapido so the resource re-renders THIS
+  fragment with the next pending movement ("Se proceso el ajuste" toast,
+  "No hay más artículos para revisar" at the end); "Omitir" posts to the
+  skip endpoint (audit-only, no mutation) — both legacy behaviors.
+!}
+{#if ajuste??}
+<div class="box is-shadowless">
+    <h4 class="title is-5 has-text-warning-dark">{ajuste.articuloNombre}</h4>
+    <p class="subtitle is-7">Movimiento pendiente de procesar</p>
+
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label">Artículo:</label>
+                <p class="input is-static">{ajuste.articuloNombre}</p>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">Código de Barras:</label>
+                <p class="input is-static" style="font-family:monospace">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification is-warning is-light">
+        <div class="columns is-mobile has-text-centered">
+            <div class="column">
+                <p class="has-text-grey is-size-7">Factura</p>
+                <p class="title is-5">{ajuste.cantidad}</p>
+            </div>
+            <div class="column">
+                <p class="has-text-grey is-size-7">Recomendada</p>
+                <p class="title is-5">{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</p>
+            </div>
+        </div>
+    </div>
+
+    <form hx-post="/Mercurius/api/app/inventario/ajustes/{ajuste.codigo}/aprobar"
+          hx-target="#rapido-inventario-body" hx-swap="innerHTML">
+        <input type="hidden" name="modo" value="rapido"/>
+        <div class="field">
+            <label class="label" for="rapido-cantidad">Cantidad real *</label>
+            <div class="control">
+                <input class="input" type="number" step="any" id="rapido-cantidad"
+                       name="cantidad" value="{ajuste.cantidad}" required/>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="rapido-notas">Notas del movimiento</label>
+            <div class="control">
+                <textarea class="textarea" id="rapido-notas" name="notas" rows="3"
+                          maxlength="500"
+                          placeholder="Ingrese notas sobre este movimiento..."></textarea>
+            </div>
+        </div>
+        <div class="buttons is-centered mt-4">
+            <button class="button is-success is-medium" type="submit">Procesar y Siguiente</button>
+            <button class="button is-warning" type="button"
+                    hx-post="/Mercurius/api/app/inventario/ajustes/{ajuste.codigo}/omitir"
+                    hx-target="#rapido-inventario-body" hx-swap="innerHTML">Omitir</button>
+            <button class="button" type="button" data-kit-close>Cerrar</button>
+        </div>
+    </form>
+</div>
+{#else}
+<div class="has-text-centered p-5">
+    <p class="has-text-grey">No hay movimientos pendientes para procesar</p>
+    <button class="button is-primary is-rounded mt-3" type="button" data-kit-close>Cerrar</button>
+</div>
+{/if}
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

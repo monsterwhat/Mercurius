@@ -132,8 +132,8 @@ class ClientServiceIntegrationTest {
 
         assertEquals(Math.min(2, total), clientService.listPage(0, 2).size(),
                 "first page holds at most pageSize rows");
-        assertEquals(Math.max(0, total - 2), clientService.listPage(2, 2).size(),
-                "second page holds the remaining rows");
+        assertEquals(Math.min(2, Math.max(0, total - 2)), clientService.listPage(2, 2).size(),
+                "second page caps at pageSize (GService.listPage = setFirstResult + setMaxResults)");
 
         List<Clients> beyondLast = clientService.listPage(total + 100, 10);
         assertNotNull(beyondLast, "paging past the end must return a list, not throw");

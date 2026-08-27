@@ -1,0 +1,105 @@
+{!
+  pages/correos/form-plantilla - modal-body form for crear|editar a plantilla
+  de correo (W4B-CORREOS lane). Returned by
+  GET /api/app/email-templates/formularios/nueva and /formularios/{id}, and
+  re-rendered by the form-urlencoded POST/PUT twins on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Model:
+    modo           String  - "crear" | "editar" (selects hx-post vs hx-put)
+    plantilla      Object  - Models.Correos.EmailTemplate when editar, null when crear
+    tipoOptions    List<Map> - {value,label} pairs from Models.Correos.EmailTemplateTipo
+                             (legacy initTipoOptions parity)
+    errorNombre    String  - field error (REST VALIDATION_ERROR / legacy requiredMessage)
+    errorTipo      String  - field error (legacy "Debe seleccionar un tipo")
+    toastSeverity  String  - OOB toast severity (nullable)
+    toastMessage   String  - OOB toast text (nullable; legacy FacesMessages)
+
+  Server-side validation mirrors the REST contract exactly (nombre + tipo
+  required; asunto/cuerpoHtml optional per the nullable entity columns — the
+  textarea keeps the legacy client-side `required` for UX only). Success
+  answers with HX-Redirect so the page reloads fresh (T18 convention).
+
+  NOTE: the placeholder help block writes its braces as HTML entities because
+  a literal {{nombre}} would be parsed by Qute as an expression.
+!}
+<div id="forma-plantilla">
+    {#if modo == 'editar' && plantilla??}
+    <form hx-put="/Mercurius/api/app/email-templates/{plantilla.id}"
+          hx-target="#forma-plantilla" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/email-templates"
+          hx-target="#forma-plantilla" hx-swap="outerHTML">
+    {/if}
+        <div class="field">
+            <label class="label" for="tpl-nombre">Nombre:</label>
+            <div class="control">
+                <input class="input {#if errorNombre??}is-danger{/if}" id="tpl-nombre"
+                       name="nombre" required="required" autocomplete="off"
+                       value="{#if plantilla??}{plantilla.nombre}{/if}"/>
+            </div>
+            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+        </div>
+
+        <div class="field">
+            <label class="label" for="tpl-tipo">Tipo:</label>
+            <div class="control">
+                <div class="select {#if errorTipo??}is-danger{/if} is-fullwidth">
+                    <select id="tpl-tipo" name="tipo" required="required">
+                        <option value="">-- Seleccionar --</option>
+                        {#for opt in tipoOptions}
+                        <option value="{opt.value}"{#if plantilla?? && plantilla.tipo == opt.value} selected{/if}>{opt.label}</option>
+                        {/for}
+                    </select>
+                </div>
+            </div>
+            {#if errorTipo??}<p class="help is-danger">{errorTipo}</p>{/if}
+        </div>
+
+        <div class="field">
+            <label class="label" for="tpl-asunto">Asunto por defecto:</label>
+            <div class="control">
+                <input class="input" id="tpl-asunto" name="asunto" autocomplete="off"
+                       placeholder="Ej: Reporte Automatico - &#123;&#123;nombre&#125;&#125;"
+                       value="{#if plantilla?? && plantilla.asunto??}{plantilla.asunto}{/if}"/>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="tpl-cuerpo">Cuerpo HTML:</label>
+            <div class="control">
+                <textarea class="textarea" id="tpl-cuerpo" name="cuerpoHtml" rows="10" required="required"
+                          style="font-family: monospace;">{#if plantilla?? && plantilla.cuerpoHtml??}{plantilla.cuerpoHtml}{/if}</textarea>
+            </div>
+        </div>
+
+        <div class="notification is-info is-light">
+            <p><strong>Placeholders disponibles:</strong></p>
+            <p style="font-family: monospace; font-size: 0.9em;">
+                &#123;&#123;nombre&#125;&#125; - Nombre del reporte &#160;|&#160;
+                &#123;&#123;fecha&#125;&#125; - Fecha actual &#160;|&#160;
+                &#123;&#123;total&#125;&#125; - Total de registros &#160;|&#160;
+                &#123;&#123;tabla&#125;&#125; - Tabla de datos &#160;|&#160;
+                &#123;&#123;mensaje&#125;&#125; - Mensaje descriptivo &#160;|&#160;
+                &#123;&#123;_empresa&#125;&#125; - Nombre de la empresa
+            </p>
+        </div>
+
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">
+                    {#if modo == 'editar'}Actualizar Plantilla{#else}Crear Plantilla{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

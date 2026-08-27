@@ -23,7 +23,7 @@ import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.UsernamePasswordAuthenticationRequest;
 import io.smallrye.mutiny.Uni;
 import Models.Users;
-import Services.LoginService;
+import Services.auth.SessionAuthAdapter;
 
 /**
  * Plain-Mockito unit tests for {@link MercuriusIdentityProvider} (T12).
@@ -36,7 +36,7 @@ import Services.LoginService;
  *   <li>unknown user → {@link AuthenticationFailedException}</li>
  * </ul>
  *
- * <p>{@link LoginService} is mocked — no database, no Quarkus boot. The
+ * <p>{@link SessionAuthAdapter} is mocked — no database, no Quarkus boot. The
  * {@link AuthenticationRequestContext#runBlocking(Supplier)} stub executes the
  * supplier synchronously so the blocking path is exercised directly.
  */
@@ -46,7 +46,7 @@ class MercuriusIdentityProviderTest {
     private static final String BCRYPT_HASH = "$2a$10$abcdefghijklmnopqrstuvABCDEFGHIJKLMNOPQRSTUVWXYZ01234";
 
     @Mock
-    private LoginService loginService;
+    private SessionAuthAdapter loginService;
 
     @Mock
     private AuthenticationRequestContext context;

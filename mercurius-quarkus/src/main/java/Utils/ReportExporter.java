@@ -15,8 +15,10 @@ import com.lowagie.text.pdf.PdfWriter;
 import jakarta.annotation.Nonnull;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -158,6 +160,69 @@ public final class ReportExporter {
 
         document.close();
         return baos.toByteArray();
+    }
+
+    /**
+     * Price-label sheet ("Etiquetas de Precio") for the /api/app/etiquetas
+     * surface — one block per label unit, repeated {@code cantidades} times
+     * per article (missing entry = 1, non-positive = skipped).
+     *
+     * <p>Parity note: the legacy etiquetas print action was a client-side
+     * {@code window.print()} over the getFilteredArticulos() table — no
+     * server-side PDF ever existed — so there are no legacy bytes to mirror.
+     * This method is the canonical byte producer going forward and keeps the
+     * legacy table's field set (codigo, nombre, codigo de barra, precio
+     * final) in the house style of the two PDF ports above: same page
+     * geometry, 8pt font, numbered blocks and the shared separator line.</p>
+     */
+    @Nonnull
+    public static byte[] exportEtiquetasPdf(@Nonnull List<Articulos> articulos,
+                                            @Nonnull Map<Long, Integer> cantidades) throws DocumentException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Document document = new Document(PDF_PAGE, 5, 5, 5, 5);
+        PdfWriter.getInstance(document, baos);
+        document.add(new Meta("charset", "UTF-8"));
+        document.open();
+
+        Font font = new Font();
+        font.setSize(8);
+
+        int totalUnidades = 0;
+        for (Articulos articulo : articulos) {
+            totalUnidades += unidadesDe(articulo, cantidades);
+        }
+
+        int unidadActual = 1;
+        for (Articulos articulo : articulos) {
+            int unidades = unidadesDe(articulo, cantidades);
+            for (int i = 0; i < unidades; i++) {
+                document.add(new Paragraph(unidadActual + "/" + totalUnidades, font));
+                document.add(new Paragraph("Art: " + articulo.getNombre(), font));
+                document.add(new Paragraph("Cod: " + articulo.getCodigo()
+                        + "  CB: " + (articulo.getCodigoBarra() != null
+                                ? articulo.getCodigoBarra() : "-"), font));
+                // getLastPrecioArticulo() NPEs on price-less articles; guard it
+                // with the same "-" fallback the etiquetas table used.
+                BigDecimal precioFinal = articulo.getLastPrecio() != null
+                        ? articulo.getLastPrecio().getPrecioFinal() : null;
+                document.add(new Paragraph("Precio: "
+                        + (precioFinal != null ? precioFinal : "-"), font));
+                document.add(new Paragraph(SEPARADOR, font));
+                unidadActual++;
+            }
+        }
+
+        document.close();
+        return baos.toByteArray();
+    }
+
+    /** Label units for one article (missing = 1, non-positive = 0). */
+    private static int unidadesDe(@Nonnull Articulos articulo, @Nonnull Map<Long, Integer> cantidades) {
+        Integer cantidad = cantidades.get(articulo.getCodigo());
+        if (cantidad == null) {
+            return 1;
+        }
+        return Math.max(cantidad, 0);
     }
 
     // ─────────────────────────── Excel (POI XSSF) ───────────────────────────

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  T36 TAMPERED fixture: identical shape to factura-recibida-valida.xml but
+  with a MALFORMED CodigoCABYS ("999"). Used by
+  Controllers.Api.App.FacturasRecibidasResourceTest to assert that the
+  prevalidation panel flags the invalid code as an ERROR-level issue
+  (ValidationError code INVALID_FORMAT from validarCabys — deterministic
+  REGARDLESS of PrevalidationConfig.cabysStrictMode, unlike a well-formed
+  unknown code which only warns in lenient mode) and that the Mensaje
+  Receptor send is blocked with 409 PREVALIDATION_FAILED until the line is
+  corrected through PUT /{id}/lineas/{lineaId}.
+
+  Provenance: same element set as the valid fixture (see its header); only
+  CodigoCABYS, Detalle text, Clave tail and NumeroConsecutivo differ.
+  Consecutivo 00100001040000000037 is unique versus the T35 fixture (...035)
+  and the valid T36 fixture (...036).
+
+  NOTE: the parser persists the comprobante ANYWAY
+  (ComprobantesRecibidosService.createWithRelatedEntities records issues on
+  entity.prevalidationErrors without blocking) — that is exactly the legacy
+  behavior under test.
+-->
+<FacturaElectronica>
+    <Clave>50625082500000101000100000001010000000001123456788</Clave>
+    <NumeroConsecutivo>00100001040000000037</NumeroConsecutivo>
+    <CodigoActividad>561101</CodigoActividad>
+    <FechaEmision>2026-08-21T09:45:00</FechaEmision>
+    <Emisor>
+        <Nombre>Proveedora Industrial T36 S.A.</Nombre>
+        <Identificacion>
+            <Tipo>02</Tipo>
+            <Numero>310234567890</Numero>
+        </Identificacion>
+        <NombreComercial>Proveedora Industrial T36</NombreComercial>
+        <Ubicacion>
+            <Provincia>1</Provincia>
+            <Canton>01</Canton>
+            <Distrito>01</Distrito>
+            <Barrio>02</Barrio>
+            <OtrasSenas>Contiguo al poligon industrial</OtrasSenas>
+        </Ubicacion>
+        <Telefono>
+            <CodigoPais>506</CodigoPais>
+            <NumTelefono>88888888</NumTelefono>
+        </Telefono>
+        <CorreoElectronico>proveedor@t36.local</CorreoElectronico>
+    </Emisor>
+    <Receptor>
+        <Nombre>Mercurius Compras T36 S.A.</Nombre>
+        <Identificacion>
+            <Tipo>02</Tipo>
+            <Numero>310987654321</Numero>
+        </Identificacion>
+        <NombreComercial>Mercurius Compras T36</NombreComercial>
+        <Ubicacion>
+            <Provincia>2</Provincia>
+            <Canton>01</Canton>
+            <Distrito>02</Distrito>
+            <Barrio>03</Barrio>
+            <OtrasSenas>Dos cuadras al norte del banco</OtrasSenas>
+        </Ubicacion>
+        <Telefono>
+            <CodigoPais>506</CodigoPais>
+            <NumTelefono>77777777</NumTelefono>
+        </Telefono>
+        <CorreoElectronico>compras@mercurius.local</CorreoElectronico>
+    </Receptor>
+    <CondicionVenta>01</CondicionVenta>
+    <PlazoCredito>0</PlazoCredito>
+    <MedioPago>01</MedioPago>
+    <DetalleServicio>
+        <LineaDetalle>
+            <NumeroLinea>1</NumeroLinea>
+            <CodigoCABYS>999</CodigoCABYS>
+            <Cantidad>1</Cantidad>
+            <UnidadMedida>Unid</UnidadMedida>
+            <UnidadMedidaComercial>Unidad</UnidadMedidaComercial>
+            <Detalle>Repuesto industrial T36 cabys invalido</Detalle>
+            <PrecioUnitario>1000.00000</PrecioUnitario>
+            <MontoTotal>1000.00000</MontoTotal>
+            <SubTotal>1000.00000</SubTotal>
+            <BaseImponible>1000.00000</BaseImponible>
+            <Impuesto>
+                <Codigo>01</Codigo>
+                <CodigoTarifa>08</CodigoTarifa>
+                <Tarifa>13</Tarifa>
+                <FactorCalculoIVA>0.13</FactorCalculoIVA>
+                <Monto>130.00000</Monto>
+            </Impuesto>
+            <ImpuestoNeto>130.00000</ImpuestoNeto>
+            <MontoTotalLinea>1130.00000</MontoTotalLinea>
+        </LineaDetalle>
+    </DetalleServicio>
+    <ResumenFactura>
+        <CodigoTipoMoneda>
+            <CodigoMoneda>CRC</CodigoMoneda>
+            <TipoCambio>1.00000</TipoCambio>
+        </CodigoTipoMoneda>
+        <TotalServGravados>0</TotalServGravados>
+        <TotalServExentos>0</TotalServExentos>
+        <TotalMercanciasGravadas>1000</TotalMercanciasGravadas>
+        <TotalMercanciasExentas>0</TotalMercanciasExentas>
+        <TotalGravado>1000</TotalGravado>
+        <TotalExento>0</TotalExento>
+        <TotalVenta>1000</TotalVenta>
+        <TotalDescuentos>0</TotalDescuentos>
+        <TotalVentaNeta>1000</TotalVentaNeta>
+        <TotalImpuesto>130</TotalImpuesto>
+        <TotalComprobante>1130</TotalComprobante>
+    </ResumenFactura>
+</FacturaElectronica>

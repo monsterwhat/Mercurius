@@ -1,0 +1,65 @@
+{!
+  pages/facturas-recibidas/prevalidacion-panel - prevalidation flags for ONE
+  received invoice (T36), rendered as Bulma tags. Fills
+  #prevalidacion-panel inside the review drawer via GET
+  /api/app/facturas-recibidas/{id}/prevalidacion (HX-Request, revealed
+  trigger + manual refresh) and is also rendered directly by the 409
+  prevalidation-block path of POST .../mensaje-receptor.
+
+  Model keys supplied by FacturasRecibidasResource:
+    panel Map - comprobanteId, numeroConsecutivo, isValid, hasWarnings,
+                errorCount, warningCount, validatedAt,
+                issues[] {severity: error|warning, category, code, field,
+                          message}
+    toastSeverity/toastMessage - optional OOB toast (409 block path)
+
+  Severity vocabulary (ui-kit §2.6): error→is-danger, warning→is-warning;
+  a clean result renders one is-success tag.
+!}
+<div>
+    {#if panel.isValid && !panel.hasWarnings}
+    <div class="notification is-success is-light" style="padding:0.75rem">
+        <strong>Factura válida</strong> — sin errores ni advertencias de pre-validación.
+    </div>
+    {#else if panel.isValid}
+    <div class="notification is-warning is-light" style="padding:0.75rem">
+        <strong>Sin errores</strong> — {panel.warningCount} advertencia(s) de pre-validación.
+    </div>
+    {#else}
+    <div class="notification is-danger is-light" style="padding:0.75rem">
+        <strong>Pre-validación fallida</strong> — {panel.errorCount} error(es){#if panel.hasWarnings}, {panel.warningCount} advertencia(s){/if}.
+        Los errores bloquean el envío del Mensaje Receptor.
+    </div>
+    {/if}
+
+    {#if panel.issues??}
+    <table class="table is-fullwidth is-narrow is-striped">
+        <thead>
+            <tr><th>Severidad</th><th>Categoría</th><th>Código</th><th>Campo</th><th>Mensaje</th></tr>
+        </thead>
+        <tbody>
+            {#for issue in panel.issues}
+            <tr>
+                <td>
+                    {#if issue.severity eq 'error'}
+                    <span class="tag is-danger">ERROR</span>
+                    {#else}
+                    <span class="tag is-warning">ADVERTENCIA</span>
+                    {/if}
+                </td>
+                <td>{#if issue.category??}<span class="tag is-light">{issue.category}</span>{/if}</td>
+                <td style="font-family:monospace;font-size:0.8rem">{#if issue.code??}{issue.code}{#else}&mdash;{/if}</td>
+                <td style="font-family:monospace;font-size:0.8rem">{#if issue.field??}{issue.field}{#else}&mdash;{/if}</td>
+                <td>{#if issue.message??}{issue.message}{#else}&mdash;{/if}</td>
+            </tr>
+            {/for}
+        </tbody>
+    </table>
+    {/if}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

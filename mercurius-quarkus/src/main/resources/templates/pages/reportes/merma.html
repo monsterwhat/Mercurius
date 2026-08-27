@@ -1,0 +1,73 @@
+{!
+  pages/reportes/merma - Control de Mermas y Pérdidas (T19 port of
+  secured/pages/Inventario/Reportes/Merma/index.xhtml).
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <div class="inventario-header">
+            <p class="title is-3 has-text-centered">{titulo}</p>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">{totalMerma}</span>
+                    <span class="stat-label">Total Mermas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{porcentajeMerma}%</span>
+                    <span class="stat-label">% de Merma</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{movimientoTotal}</span>
+                    <span class="stat-label">Movimiento Total</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{registros}</span>
+                    <span class="stat-label">Registros</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get"
+                  action="/Mercurius{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <input type="hidden" name="seccion" value="{seccion}"/>
+                <div class="column is-narrow field">
+                    <label class="label" for="desde">Fecha Inicio</label>
+                    <div class="control">
+                        <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="hasta">Fecha Fin</label>
+                    <div class="control">
+                        <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-danger" type="submit">Actualizar</button>
+                    </div>
+                </div>
+            </form>
+            {#if !hayDatos}
+            <p class="has-text-grey">
+                No se encontraron movimientos de merma en el período seleccionado.
+            </p>
+            {/if}
+        </div>
+
+        <div class="nav-cards">
+            <a class="nav-card button is-danger {#if seccion == 'causas'}is-outlined{/if}"
+               href="?seccion=causas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Causa</a>
+            <a class="nav-card button is-info {#if seccion == 'departamentos'}is-outlined{/if}"
+               href="?seccion=departamentos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Departamento</a>
+            <a class="nav-card button is-link {#if seccion == 'detalle'}is-outlined{/if}"
+               href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Detalle de Movimientos</a>
+        </div>
+
+        {#include pages/reportes/_tablas/merma /}
+    {/body}
+{/include}

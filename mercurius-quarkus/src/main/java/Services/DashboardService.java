@@ -44,7 +44,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -70,7 +70,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 Long.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -89,15 +89,16 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         
         try {
             Long result = em.createQuery(
-                "SELECT COALESCE(SUM(d.cantidad), 0) " +
+                "SELECT COALESCE(SUM(ld.cantidad), 0) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.detalles d " +
+                "JOIN d.lineasDetalle ld " +
                 "JOIN f.encabezado e " +
                 "WHERE f.user = :user " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 Long.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -122,7 +123,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("user", user);
+            query.setParameter("user", user.getUsername());
             query.setMaxResults(1);
             return query.getSingleResult();
         } catch (NoResultException e) {
@@ -145,7 +146,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("user", user);
+            query.setParameter("user", user.getUsername());
             query.setMaxResults(limit);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {

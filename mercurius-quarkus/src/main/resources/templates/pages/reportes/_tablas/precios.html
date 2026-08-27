@@ -1,0 +1,23 @@
+{!
+  _tablas/precios - table-only fragment for HX-Request swaps of the
+  Histórico de Precios page (T19).
+!}
+<div id="reporte-precios-tabla">
+    {#include _kit/data-table id="reporte-precios" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            <td>{f.articulo}</td>
+            <td>{f.porcentajeUtilidad}</td>
+            <td>{f.precioCostoSinIVA}</td>
+            <td>{f.precioConUtilidad}</td>
+            <td>{f.precioFinal}</td>
+            <td>{f.fechaCompra}</td>
+            <td>{f.usuario}</td>
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

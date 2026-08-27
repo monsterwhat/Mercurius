@@ -1,0 +1,258 @@
+{!
+  pages/dashboard/index - Dashboard Cajero (T29 port of secured/index.xhtml,
+  which stays in place as the legacy landing until T39 decommission).
+
+  Charts: two <canvas> elements replace the legacy p:chart pair
+    bar  "Ventas por Hora"      <- GET {root}/app/dashboard/data/hourly (raw array x24)
+    line "Tendencia Semanal"    <- GET {root}/app/dashboard/data/weekly (raw array x7)
+  Chart.js comes FROM THE BUNDLE: web/index.js imports 'chart.js' (provided-scope
+  org.mvnpm dep) and exposes window.Chart; inline module scripts cannot resolve
+  bare specifiers at runtime. Feeds are fetched same-origin from THIS resource
+  (cookie-authenticated /app/* policy); if a fetch fails the script falls back to
+  the embedded <script type="application/json"> blocks below, which hold
+  Jackson-serialized arrays of fixed labels + service numbers only.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <p class="title is-3">¡Bienvenido, {usuario}!</p>
+                    <p class="subtitle is-5 has-text-grey">{fechaActual}</p>
+                </div>
+            </div>
+            <div class="level-right">
+                <span class="icon is-large has-text-link">
+                    <i class="fas fa-user-circle fa-2x" aria-hidden="true"></i>
+                </span>
+            </div>
+        </div>
+
+        {#if esKpi}
+        <div class="tile is-ancestor mb-5">
+            <div class="tile is-vertical">
+                <div class="tile">
+                    <div class="tile is-parent is-3">
+                        <article class="tile is-child box has-text-centered">
+                            <p class="heading">Ventas Hoy</p>
+                            <p class="title is-4 has-text-primary">{ventasHoy}</p>
+                            <p class="subtitle is-6 {crecimientoCss}">{crecimientoDiario} vs ayer</p>
+                        </article>
+                    </div>
+                    <div class="tile is-parent is-3">
+                        <article class="tile is-child box has-text-centered">
+                            <p class="heading">Ventas Ayer</p>
+                            <p class="title is-4 has-text-info">{ventasAyer}</p>
+                        </article>
+                    </div>
+                    <div class="tile is-parent is-3">
+                        <article class="tile is-child box has-text-centered">
+                            <p class="heading">Esta Semana</p>
+                            <p class="title is-4 has-text-link">{ventasSemana}</p>
+                        </article>
+                    </div>
+                    <div class="tile is-parent is-3">
+                        <article class="tile is-child box has-text-centered">
+                            <p class="heading">Últimos 30 Días</p>
+                            <p class="title is-4 has-text-warning">{ventasMes}</p>
+                        </article>
+                    </div>
+                </div>
+                <div class="tile mt-4">
+                    <div class="tile is-parent is-4">
+                        <article class="tile is-child box has-text-centered">
+                            <p class="heading">Ticket Promedio (30 días)</p>
+                            <p class="title is-3 has-text-success">{ticketPromedio}</p>
+                        </article>
+                    </div>
+                    <div class="tile is-parent is-4">
+                        <article class="tile is-child box has-text-centered">
+                            <p class="heading">Transacciones Hoy</p>
+                            <p class="title is-3 has-text-primary">{transaccionesHoy}</p>
+                        </article>
+                    </div>
+                    <div class="tile is-parent is-4">
+                        <article class="tile is-child box has-text-centered">
+                            <p class="heading">Artículos Vendidos Hoy</p>
+                            <p class="title is-3 has-text-success">{articulosVendidos}</p>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="panel-graficas" class="tile is-ancestor mb-5"
+             data-root="/Mercurius"
+             data-base="/Mercurius/app/dashboard/data">
+            <div class="tile">
+                <div class="tile is-parent is-6">
+                    <article class="tile is-child box">
+                        <p class="title is-5 has-text-centered">Ventas por Hora</p>
+                        <div style="height: 300px; width: 100%;">
+                            <canvas id="grafica-ventas-hora" aria-label="Ventas por hora" role="img">
+                                Su navegador no soporta canvas.
+                            </canvas>
+                        </div>
+                    </article>
+                </div>
+                <div class="tile is-parent is-6">
+                    <article class="tile is-child box">
+                        <p class="title is-5 has-text-centered">Tendencia Semanal</p>
+                        <div style="height: 300px; width: 100%;">
+                            <canvas id="grafica-tendencia-semanal" aria-label="Tendencia semanal de ventas" role="img">
+                                Su navegador no soporta canvas.
+                            </canvas>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </div>
+
+        {! Fallback datasets: Jackson-serialized arrays of fixed labels + numbers ONLY. !}
+        <script type="application/json" id="datos-respaldo-horas">{hourlyJson.raw}</script>
+        <script type="application/json" id="datos-respaldo-semana">{weeklyJson.raw}</script>
+
+        <script type="module">
+        (async function () {
+            const Chart = window.Chart;
+            const panel = document.getElementById('panel-graficas');
+            if (!Chart || !panel) {
+                return;
+            }
+            const base = panel.getAttribute('data-base');
+
+            async function cargar(clave, respaldoId) {
+                try {
+                    const respuesta = await fetch(base + '/' + clave, {
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!respuesta.ok) {
+                        throw new Error('HTTP ' + respuesta.status);
+                    }
+                    return await respuesta.json();
+                } catch (error) {
+                    const nodo = document.getElementById(respaldoId);
+                    return nodo ? JSON.parse(nodo.textContent || '[]') : [];
+                }
+            }
+
+            function importes(puntos) {
+                return puntos.map(function (p) { return Number(p.ventas); });
+            }
+
+            const porHora = await cargar('hourly', 'datos-respaldo-horas');
+            new Chart(document.getElementById('grafica-ventas-hora'), {
+                type: 'bar',
+                data: {
+                    labels: porHora.map(function (p) { return p.hora; }),
+                    datasets: [
+                        {
+                            label: 'Ventas (colones)',
+                            data: importes(porHora),
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Transacciones',
+                            data: porHora.map(function (p) { return p.transacciones; }),
+                            backgroundColor: 'rgba(255, 99, 132, 0.4)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: true, position: 'top' }, title: { display: false } }
+                }
+            });
+
+            const semanal = await cargar('weekly', 'datos-respaldo-semana');
+            new Chart(document.getElementById('grafica-tendencia-semanal'), {
+                type: 'line',
+                data: {
+                    labels: semanal.map(function (p) { return p.dia; }),
+                    datasets: [
+                        {
+                            label: 'Ventas diarias',
+                            data: importes(semanal),
+                            fill: false,
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: 'rgb(75, 192, 192)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false }, title: { display: false } }
+                }
+            });
+        })();
+        </script>
+        {/if}
+
+        {#if !esKpi}
+        <div class="columns mb-5">
+            <div class="column is-4">
+                <div class="box">
+                    <h3 class="title is-5 mb-4">Resumen de Hoy</h3>
+                    <div class="box has-background-primary-light">
+                        <p class="title is-3 has-text-primary">{transaccionesHoy}</p>
+                        <p class="subtitle is-6">Transacciones</p>
+                    </div>
+                    <div class="box has-background-success-light mt-4">
+                        <p class="title is-3 has-text-success">{articulosVendidos}</p>
+                        <p class="subtitle is-6">Artículos Vendidos</p>
+                    </div>
+                    <div class="box has-background-warning-light mt-4">
+                        <p class="title is-6 has-text-warning">{ultimaTransaccion}</p>
+                        <p class="subtitle is-6">Última Transacción</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {/if}
+
+        {#if esInventario}
+        <div class="tile is-ancestor">
+            <div class="tile is-parent is-12">
+                <article class="tile is-child box">
+                    <h3 class="title is-5 mb-4">Productos Más Vendidos (7 días)</h3>
+                    <table class="table is-fullwidth is-striped" data-kit-table>
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th class="has-text-centered">Unidades</th>
+                                <th class="has-text-right">Ingresos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#for prod in topProductos}
+                            <tr>
+                                <td>{prod.nombre}</td>
+                                <td class="has-text-centered"><span class="tag is-info is-light">{prod.unidades}</span></td>
+                                <td class="has-text-right">{prod.ingresos}</td>
+                            </tr>
+                            {/for}
+                            {#if topProductos.isEmpty()}
+                            <tr><td colspan="3" class="has-text-grey">No hay datos de ventas disponibles</td></tr>
+                            {/if}
+                        </tbody>
+                    </table>
+                </article>
+            </div>
+        </div>
+        {/if}
+    {/body}
+{/include}

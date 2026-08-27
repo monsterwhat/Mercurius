@@ -1,0 +1,28 @@
+{!
+  pages/compras/ordenes-articulos - article-picker typeahead suggestions
+  (T31). Returned by GET /api/app/ordenes/articulos?q= under HX-Request and
+  swapped into the requesting line row's .js-articulo-resultados box
+  (clientes-style search recipe, docs/ui-kit.md §8). Selection wiring lives
+  in the page-level script of ordenes.html: .js-articulo-opcion carries
+  data-codigo/data-nombre and fills its row's hidden articuloCodigo input.
+
+  Model:
+    opciones List - OrdenCompraResource.ArticuloOpcion(codigo, nombre,
+                    codigoBarra) from ArticulosService.findByNameContaining
+                    (the exact search behind the legacy completeArticulo)
+!}
+<ul class="busqueda-articulos" style="list-style:none;margin:0;padding:0">
+    {#for opcion in opciones}
+    <li style="margin:0">
+        <button type="button"
+                class="button is-small is-fullwidth is-justify-content-flex-start js-articulo-opcion"
+                data-codigo="{opcion.codigo}"
+                data-nombre="{#if opcion.nombre??}{opcion.nombre}{/if}">
+            {#if opcion.nombre??}{opcion.nombre}{#else}&mdash;{/if}
+            {#if opcion.codigoBarra??}<span class="has-text-grey is-size-7"> &middot; {opcion.codigoBarra}</span>{/if}
+        </button>
+    </li>
+    {#else}
+    <li class="has-text-grey p-2">Sin resultados</li>
+    {/for}
+</ul>

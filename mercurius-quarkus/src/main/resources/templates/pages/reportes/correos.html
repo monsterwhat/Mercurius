@@ -1,0 +1,52 @@
+{!
+  pages/reportes/correos - read-only listing of scheduled email reports (T20).
+
+  Replaces secured/pages/Correos/Reportes/index.xhtml (LISTING VIEW only).
+  The create/edit/send/toggle/delete actions are mutations owned by T24
+  (ReporteProgramadoResource) — NOT ported here.
+!}
+{#include layout}
+    {#title}Reportes Programados por Correo | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">Reportes Programados X Correo Electronico</h1>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="correos-filtros">
+                <div class="field">
+                    <label class="label" for="correos-q">Búsqueda general</label>
+                    <input class="input" type="text" id="correos-q" name="q"
+                           value="{#if filtros.q??}{filtros.q}{/if}"
+                           placeholder="Nombre, correos, frecuencia, reportes…"
+                           hx-get="/Mercurius{baseUrl}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="closest form"
+                           hx-target="#correos-tabla-container" hx-swap="innerHTML"/>
+                </div>
+            </form>
+        </div>
+
+        <div id="correos-tabla-container">
+            {#fragment id=tabla}
+                {#include _kit/data-table id="correos-tabla" baseUrl=baseUrl
+                     headers=columnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for r in rows}
+                    <tr data-row-key="{r.id}">
+                        <td>
+                            {#if r.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                        </td>
+                        <td>{r.perfil}</td>
+                        <td>{#if r.correos??}{r.correos}{/if}</td>
+                        <td>{#if r.frecuencia??}{r.frecuencia}{/if}</td>
+                        <td>{#if r.reportes??}{r.reportes}{/if}</td>
+                        <td>{#if r.lastRun??}{time:format(r.lastRun, 'dd/MM/yyyy HH:mm')}{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            {/fragment}
+        </div>
+    {/body}
+{/include}

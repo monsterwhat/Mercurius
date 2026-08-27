@@ -38,6 +38,14 @@ import org.primefaces.util.LangUtils;
 
 /**
  * Controller for managing stock alerts and reordering system
+ *
+ * <p>T33 note: the threshold-configuration surface of this module now lives in
+ * the NEW app surface ({@code Controllers.Api.App.StockAlertConfigResource} +
+ * {@code Models.DTO.StockAlertConfigDTO} +
+ * {@code templates/pages/inventario/stock-alert-config.html}). Post-T17 this
+ * controller holds no threshold-config methods to port or strip; it is retained
+ * because {@code secured/fragments/userBar.xhtml} still binds
+ * {@code #{stockAlertController.activeAlertsCount}} for the navbar badge.</p>
  */
 @Getter @Setter @ToString @EqualsAndHashCode
 @Named(value = "stockAlertController")

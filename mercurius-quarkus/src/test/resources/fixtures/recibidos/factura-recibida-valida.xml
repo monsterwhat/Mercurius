@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  T36 fixture: VALID received factura electronica (v4.4-shaped) used by
+  Controllers.Api.App.FacturasRecibidasResourceTest to drive
+  POST /api/app/facturas-recibidas/upload -> Utils.Parsers.Parser and then
+  assert a clean (PASS) prevalidation panel.
+
+  Provenance (mirrors .omo/evidence/t35/fixture-provenance.md, element-for-
+  element): root "FacturaElectronica" -> mapRootElementToDocumentCode("01");
+  Clave/NumeroConsecutivo via extractNumeroConsecutivo; FechaEmision
+  "yyyy-MM-dd'T'HH:mm:ss" (parseFechaEmision's first formatter); Emisor/
+  Receptor via parseEmisor/parseReceptor (Nombre + Identificacion/Tipo+
+  Numero); MedioPago "01"; ResumenFactura with CodigoTipoMoneda mandatory;
+  DetalleServicio/LineaDetalle numeric fields non-empty. No xmlns attributes
+  (Jackson XmlMapper reads local names; the parser performs no schema
+  validation).
+
+  Prevalidation expectations (Services.ComprobantesRecibidosPrevalidationService):
+    - CodigoCABYS 0111010010010 must be seeded ACTIVO in the local Cabys
+      table by the test -> no CABYS issue at all.
+    - Receptor: Identificacion 02 + 310987654321 matches "3\d{9,11}";
+      Ubicacion complete; correo present -> no RECEPTOR_INFO issues.
+    - Document type 01 needs no InformacionReferencia.
+    - Tax math: baseImponible 10000 x 13% = 1300 = ImpuestoNeto;
+      TotalMercanciasGravadas/TotalGravado = 10000; TotalImpuesto = 1300;
+      TotalComprobante = SubTotal(10000) + impuestos(1300) = 11300
+      -> zero LINE_TAX_MISMATCH / RESUMEN_MISMATCH warnings.
+  => expected panel: isValid=true, hasWarnings=false (PASS).
+
+  Consecutivo 00100001040000000036 is unique versus the T35 fixture
+  (...035) and the tampered T36 fixture (...037) so suites can share one
+  %test boot without tripping the parser's duplicate-consecutivo skip.
+-->
+<FacturaElectronica>
+    <Clave>50625082500000101000100000001010000000009987654321</Clave>
+    <NumeroConsecutivo>00100001040000000036</NumeroConsecutivo>
+    <CodigoActividad>561101</CodigoActividad>
+    <FechaEmision>2026-08-20T08:30:00</FechaEmision>
+    <Emisor>
+        <Nombre>Proveedora Industrial T36 S.A.</Nombre>
+        <Identificacion>
+            <Tipo>02</Tipo>
+            <Numero>310234567890</Numero>
+        </Identificacion>
+        <NombreComercial>Proveedora Industrial T36</NombreComercial>
+        <Ubicacion>
+            <Provincia>1</Provincia>
+            <Canton>01</Canton>
+            <Distrito>01</Distrito>
+            <Barrio>02</Barrio>
+            <OtrasSenas>Contiguo al poligon industrial</OtrasSenas>
+        </Ubicacion>
+        <Telefono>
+            <CodigoPais>506</CodigoPais>
+            <NumTelefono>88888888</NumTelefono>
+        </Telefono>
+        <CorreoElectronico>proveedor@t36.local</CorreoElectronico>
+    </Emisor>
+    <Receptor>
+        <Nombre>Mercurius Compras T36 S.A.</Nombre>
+        <Identificacion>
+            <Tipo>02</Tipo>
+            <Numero>310987654321</Numero>
+        </Identificacion>
+        <NombreComercial>Mercurius Compras T36</NombreComercial>
+        <Ubicacion>
+            <Provincia>2</Provincia>
+            <Canton>01</Canton>
+            <Distrito>02</Distrito>
+            <Barrio>03</Barrio>
+            <OtrasSenas>Dos cuadras al norte del banco</OtrasSenas>
+        </Ubicacion>
+        <Telefono>
+            <CodigoPais>506</CodigoPais>
+            <NumTelefono>77777777</NumTelefono>
+        </Telefono>
+        <CorreoElectronico>compras@mercurius.local</CorreoElectronico>
+    </Receptor>
+    <CondicionVenta>01</CondicionVenta>
+    <PlazoCredito>0</PlazoCredito>
+    <MedioPago>01</MedioPago>
+    <DetalleServicio>
+        <LineaDetalle>
+            <NumeroLinea>1</NumeroLinea>
+            <CodigoCABYS>0111010010010</CodigoCABYS>
+            <Cantidad>2</Cantidad>
+            <UnidadMedida>Unid</UnidadMedida>
+            <UnidadMedidaComercial>Unidad</UnidadMedidaComercial>
+            <Detalle>Repuesto industrial T36 valido</Detalle>
+            <PrecioUnitario>5000.00000</PrecioUnitario>
+            <MontoTotal>10000.00000</MontoTotal>
+            <SubTotal>10000.00000</SubTotal>
+            <BaseImponible>10000.00000</BaseImponible>
+            <Impuesto>
+                <Codigo>01</Codigo>
+                <CodigoTarifa>08</CodigoTarifa>
+                <Tarifa>13</Tarifa>
+                <FactorCalculoIVA>0.13</FactorCalculoIVA>
+                <Monto>1300.00000</Monto>
+            </Impuesto>
+            <ImpuestoNeto>1300.00000</ImpuestoNeto>
+            <MontoTotalLinea>11300.00000</MontoTotalLinea>
+        </LineaDetalle>
+    </DetalleServicio>
+    <ResumenFactura>
+        <CodigoTipoMoneda>
+            <CodigoMoneda>CRC</CodigoMoneda>
+            <TipoCambio>1.00000</TipoCambio>
+        </CodigoTipoMoneda>
+        <TotalServGravados>0</TotalServGravados>
+        <TotalServExentos>0</TotalServExentos>
+        <TotalMercanciasGravadas>10000</TotalMercanciasGravadas>
+        <TotalMercanciasExentas>0</TotalMercanciasExentas>
+        <TotalGravado>10000</TotalGravado>
+        <TotalExento>0</TotalExento>
+        <TotalVenta>10000</TotalVenta>
+        <TotalDescuentos>0</TotalDescuentos>
+        <TotalVentaNeta>10000</TotalVentaNeta>
+        <TotalImpuesto>1300</TotalImpuesto>
+        <TotalComprobante>11300</TotalComprobante>
+    </ResumenFactura>
+</FacturaElectronica>

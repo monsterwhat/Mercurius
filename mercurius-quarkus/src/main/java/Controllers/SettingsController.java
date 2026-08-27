@@ -36,6 +36,23 @@ import org.primefaces.model.StreamedContent;
 import org.primefaces.model.file.UploadedFile;
 
 /**
+ * ORPHAN NOTE (T26 settings VIEW half): scheduled for deletion with the
+ * legacy JSF settings surface, but still referenced by live code, so it
+ * STAYS until these referers migrate:
+ *
+ * <ul>
+ *   <li>Controllers.Tiquetes.CrearTiqueteController - imports and injects
+ *       this bean (field {@code settings});</li>
+ *   <li>secured/fragments/userBar.xhtml:112-113 - EL {@code #{SettingsController.logo}};</li>
+ *   <li>secured/pages/index.xhtml - the surviving wizard copy reads/writes
+ *       this bean via ~48 EL expressions;</li>
+ *   <li>META-INF/resources/index.xhtml (root landing) - EL on
+ *       {@code currentSettings} and {@code logo}.</li>
+ * </ul>
+ *
+ * <p>The NEW app surface consumes Controllers.Api.App.SettingsResource
+ * (/api/app/settings) plus templates/pages/settings/index.html instead of
+ * this bean; operational updates no longer route through here.</p>
  *
  * @author Al
  */

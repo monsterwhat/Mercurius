@@ -1,0 +1,159 @@
+{!
+  pages/reportes/margenes - read-only "Análisis de Márgenes de Utilidad" (T20).
+
+  Replaces secured/pages/Facturas/Reportes/Margenes/index.xhtml over
+  ProfitAnalysisService. Export goes through the T17 endpoint
+  (dataset=profit-margins). HTMX requests render only {#fragment id=tabla}.
+!}
+{#include layout}
+    {#title}Análisis de Márgenes de Utilidad | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3 has-text-centered">Análisis de Márgenes de Utilidad</h1>
+
+        <div class="columns is-multiline has-text-centered box">
+            <div class="column">
+                <p class="heading">Margen Promedio</p>
+                <p class="title is-4">{averageMargin}%</p>
+            </div>
+            <div class="column">
+                <p class="heading">Ingresos Totales</p>
+                <p class="title is-4">₡{totalRevenue}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Utilidad Total</p>
+                <p class="title is-4">₡{totalProfit}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Registros</p>
+                <p class="title is-4">{registros}</p>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="margenes-filtros">
+                <div class="field is-horizontal">
+                    <div class="field mr-3">
+                        <label class="label" for="margenes-inicio">Fecha Inicio</label>
+                        <input class="input" type="date" id="margenes-inicio" name="inicio" value="{filtroInicio}"
+                               hx-get="/Mercurius{baseUrl}"
+                               hx-trigger="change"
+                               hx-include="closest form"
+                               hx-target="#margenes-tabla-container" hx-swap="innerHTML"/>
+                    </div>
+                    <div class="field mr-3">
+                        <label class="label" for="margenes-fin">Fecha Fin</label>
+                        <input class="input" type="date" id="margenes-fin" name="fin" value="{filtroFin}"
+                               hx-get="/Mercurius{baseUrl}"
+                               hx-trigger="change"
+                               hx-include="closest form"
+                               hx-target="#margenes-tabla-container" hx-swap="innerHTML"/>
+                    </div>
+                    <div class="field mr-3">
+                        <label class="label" for="margenes-departamento">Departamento</label>
+                        <div class="control select-wrap">
+                            <select class="select" id="margenes-departamento" name="departamento"
+                                    hx-get="/Mercurius{baseUrl}"
+                                    hx-trigger="change"
+                                    hx-include="closest form"
+                                    hx-target="#margenes-tabla-container" hx-swap="innerHTML">
+                                <option value="">Todos</option>
+                                {#for d in departamentos}
+                                <option value="{d}" {#if d == filtroDepartamento}selected{/if}>{d}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field mr-3">
+                        <label class="label" for="margenes-familia">Familia</label>
+                        <div class="control select-wrap">
+                            <select class="select" id="margenes-familia" name="familia"
+                                    hx-get="/Mercurius{baseUrl}"
+                                    hx-trigger="change"
+                                    hx-include="closest form"
+                                    hx-target="#margenes-tabla-container" hx-swap="innerHTML">
+                                <option value="">Todos</option>
+                                {#for f in familias}
+                                <option value="{f}" {#if f == filtroFamilia}selected{/if}>{f}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <button class="button is-light" type="submit">Generar Análisis</button>
+                    </div>
+                </div>
+            </form>
+
+            <form method="post" action="/Mercurius/api/app/export" class="mt-3">
+                <input type="hidden" name="dataset" value="profit-margins"/>
+                <input type="hidden" name="type" value="xlsx"/>
+                <button class="button is-info" type="submit">Exportar Excel</button>
+            </form>
+        </div>
+
+        <div class="tabs is-boxed">
+            <ul>
+                <li {#if seccion == 'resumen'}class="is-active"{/if}><a href="?seccion=resumen{#for p in filtros.entrySet()}&{p.key}={p.value}{/for}">Resumen por Departamento</a></li>
+                <li {#if seccion == 'top'}class="is-active"{/if}><a href="?seccion=top{#for p in filtros.entrySet()}&{p.key}={p.value}{/for}">Top Artículos por Margen</a></li>
+                <li {#if seccion == 'bajo'}class="is-active"{/if}><a href="?seccion=bajo{#for p in filtros.entrySet()}&{p.key}={p.value}{/for}">Artículos con Bajo Margen</a></li>
+            </ul>
+        </div>
+
+        <div id="margenes-tabla-container">
+            {#fragment id=tabla}
+                {#if seccion == 'top'}
+                <div class="table-container" id="margenes-top-tabla">
+                    <table class="table is-striped is-hoverable is-fullwidth">
+                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th></tr></thead>
+                        <tbody>
+                            {#for a in topArticulos}
+                            <tr data-row-key="{a.codigo}">
+                                <td>{a.codigo}</td>
+                                <td>{a.nombre}</td>
+                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioFinal}{#else}0{/if}</td>
+                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioCostoSinIVA}{#else}0{/if}</td>
+                            </tr>
+                            {/for}
+                        </tbody>
+                    </table>
+                </div>
+                {#else if seccion == 'bajo'}
+                <div class="table-container" id="margenes-bajo-tabla">
+                    <table class="table is-striped is-hoverable is-fullwidth">
+                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th></tr></thead>
+                        <tbody>
+                            {#for a in peoresArticulos}
+                            <tr data-row-key="{a.codigo}">
+                                <td>{a.codigo}</td>
+                                <td>{a.nombre}</td>
+                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioFinal}{#else}0{/if}</td>
+                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioCostoSinIVA}{#else}0{/if}</td>
+                            </tr>
+                            {/for}
+                        </tbody>
+                    </table>
+                </div>
+                {#else}
+                {#include _kit/data-table id="margenes-tabla" baseUrl=baseUrl
+                     headers=margenesColumnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for fila in filas}
+                    <tr data-row-key="{fila.s.id}">
+                        <td>{fila.s.departamento}</td>
+                        <td>{fila.s.familia}</td>
+                        <td>₡{#if fila.s.totalVentas??}{fila.s.totalVentas}{#else}0{/if}</td>
+                        <td>₡{#if fila.s.totalUtilidad??}{fila.s.totalUtilidad}{#else}0{/if}</td>
+                        <td>{#if fila.s.margenPromedio??}{fila.s.margenPromedio}{#else}0{/if}%</td>
+                        <td><span class="tag {#if fila.etiqueta == 'Excelente'}is-success{#else if fila.etiqueta == 'Bueno'}is-link{#else if fila.etiqueta == 'Regular'}is-warning{#else}is-danger{/if}">{fila.etiqueta}</span></td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+                {/if}
+            {/fragment}
+        </div>
+    {/body}
+{/include}

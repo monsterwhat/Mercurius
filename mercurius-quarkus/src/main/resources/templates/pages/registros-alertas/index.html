@@ -1,0 +1,118 @@
+{!
+  pages/registros-alertas/index - Registro de Alertas (alert log/history).
+
+  Read-only page displaying a table of system alerts with columns:
+  Fecha, Tipo, Mensaje, Severidad, Origen. Includes HTMX pagination
+  and date-range filtering. Logs are not editable.
+
+  Model keys supplied by RegistrosAlertasResource#renderFullPage():
+    modelo            Map  - kit data-table contract (id, baseUrl, columnas,
+                             filas, sortKey, sortDir, page, size, total,
+                             totalPages, paginas, filtros)
+    fechaDesde        String - current date-from filter value
+    fechaHasta        String - current date-to filter value
+    tipoSeveridad     String - current severity filter value
+    tiposDisponibles  List<String> - available severity types for dropdown
+!}
+{#include layout}
+    {#title}Registro de Alertas | Mercurius{/title}
+
+    {#body}
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <p class="title is-3">Registro de Alertas</p>
+                    <p class="subtitle is-5 has-text-grey">Historial de alertas del sistema (solo lectura)</p>
+                </div>
+            </div>
+        </div>
+
+{#fragment tabla}
+        <div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+            <form id="filtros-alertas" class="box is-shadowless" method="get"
+                  action="/Mercurius{modelo.baseUrl}">
+                <div class="columns is-multiline">
+                    <div class="column is-3">
+                        <label class="label" for="alerta-fecha-desde">Fecha Desde</label>
+                        <div class="control">
+                            <input id="alerta-fecha-desde" class="input" type="date"
+                                   name="fechaDesde" value="{fechaDesde}"
+                                   hx-get="/Mercurius{modelo.baseUrl}"
+                                   hx-trigger="change" hx-include="#filtros-alertas"
+                                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                        </div>
+                    </div>
+                    <div class="column is-3">
+                        <label class="label" for="alerta-fecha-hasta">Fecha Hasta</label>
+                        <div class="control">
+                            <input id="alerta-fecha-hasta" class="input" type="date"
+                                   name="fechaHasta" value="{fechaHasta}"
+                                   hx-get="/Mercurius{modelo.baseUrl}"
+                                   hx-trigger="change" hx-include="#filtros-alertas"
+                                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                        </div>
+                    </div>
+                    <div class="column is-3">
+                        <label class="label" for="alerta-severidad">Severidad</label>
+                        <div class="select is-fullwidth">
+                            <select id="alerta-severidad" name="severidad"
+                                    hx-get="/Mercurius{modelo.baseUrl}"
+                                    hx-trigger="change" hx-include="#filtros-alertas"
+                                    hx-target="#{modelo.id}" hx-swap="outerHTML">
+                                <option value="">Todas</option>
+                                {#for opcion in tiposDisponibles}
+                                <option value="{opcion}" {#if tipoSeveridad?? && opcion == tipoSeveridad}selected{/if}>{opcion}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="column is-3">
+                        <label class="label" for="alerta-buscar">Buscar</label>
+                        <div class="control">
+                            <input id="alerta-buscar" class="input" type="text"
+                                   name="q" value="{modelo.filtros.q ?? ''}"
+                                   placeholder="Buscar mensaje..."
+                                   hx-get="/Mercurius{modelo.baseUrl}"
+                                   hx-trigger="keyup changed delay:300ms"
+                                   hx-include="#filtros-alertas"
+                                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="buttons">
+                    <button class="button is-primary" type="submit">Buscar</button>
+                    <a class="button is-light" href="/Mercurius{modelo.baseUrl}">Limpiar Filtros</a>
+                </div>
+            </form>
+
+            {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+              {#rows}
+                {#for fila in modelo.filas}
+                <tr>
+                    <td>{fila.fecha}</td>
+                    <td><span class="tag {fila.nivelColor}">{fila.tipo}</span></td>
+                    <td>{fila.mensaje}</td>
+                    <td class="has-text-centered">
+                        {#if fila.severidad == 'CRITICA'}
+                        <span class="tag is-danger is-light">Crítica</span>
+                        {#else if fila.severidad == 'ALTA'}
+                        <span class="tag is-warning is-light">Alta</span>
+                        {#else if fila.severidad == 'MEDIA'}
+                        <span class="tag is-info is-light">Media</span>
+                        {#else if fila.severidad == 'BAJA'}
+                        <span class="tag is-success is-light">Baja</span>
+                        {#else}
+                        <span class="tag">{fila.severidad}</span>
+                        {/if}
+                    </td>
+                    <td>{fila.origen}</td>
+                </tr>
+                {#else}
+                <tr><td colspan="5" class="has-text-centered has-text-grey">No se encontraron alertas con los filtros seleccionados</td></tr>
+                {/for}
+              {/rows}
+            {/include}
+        </div>
+{/fragment}
+    {/body}
+{/include}

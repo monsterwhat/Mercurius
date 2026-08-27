@@ -1,0 +1,95 @@
+{!
+  pages/articulos/selector-articulos - article picker for the promotion
+  editor (T34). Port of the ArticuloRevisionDialog inside
+  CreatePromocionDialog.xhtml (article search + quantity + Seleccionar).
+  Returned by GET /api/app/articulos/formularios/promociones/articulos.
+
+  Model:
+    resultados  List    - Models.Articulos (activos y procesados, cap 10)
+    q           String  - current filter text
+
+  Picking appends hidden itemCodigo/itemCantidad inputs to the editor form
+  (#forma-promocion) plus a visible row; totals refresh on submit.
+!}
+<div id="selector-articulos-fragmento">
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar artículo..."
+                   hx-get="/Mercurius/api/app/articulos/formularios/promociones/articulos"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#selector-articulos-fragmento" hx-swap="outerHTML"
+                   hx-include="this"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    <table class="table is-striped is-hoverable is-fullwidth is-narrow">
+        <thead>
+            <tr><th>Nombre</th><th class="has-text-right">Precio</th><th class="has-text-centered">Cantidad</th><th></th></tr>
+        </thead>
+        <tbody>
+            {#for articulo in resultados}
+            <tr data-codigo="{articulo.codigo}" data-nombre="{articulo.nombre}">
+                <td style="font-weight:500">{articulo.nombre}</td>
+                <td class="has-text-right">{#if articulo.precioFinal??}{articulo.precioFinal}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered" style="width:7rem">
+                    <input class="input is-small" type="number" min="1" step="1" value="1"
+                           data-cantidad="{articulo.codigo}"/>
+                </td>
+                <td class="has-text-centered">
+                    <button type="button" class="button is-small is-primary"
+                            data-kit-pick-articulo="{articulo.codigo}">Seleccionar</button>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="4" class="has-text-centered has-text-grey">No se encontraron artículos</td></tr>
+            {/for}
+        </tbody>
+    </table>
+
+    {! Picker bridge: appends the chosen line to #forma-promocion and closes
+       the shared selector modal. !}
+    <script>
+        document.querySelectorAll('#selector-articulos-fragmento [data-kit-pick-articulo]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var row = button.closest('tr');
+                var codigo = row.getAttribute('data-codigo');
+                var nombre = row.getAttribute('data-nombre');
+                var cantidadInput = row.querySelector('[data-cantidad]');
+                var cantidad = cantidadInput ? cantidadInput.value : '1';
+                var form = document.querySelector('#forma-promocion form');
+                if (form) {
+                    var codigoInput = document.createElement('input');
+                    codigoInput.type = 'hidden';
+                    codigoInput.name = 'itemCodigo';
+                    codigoInput.value = codigo;
+                    var cantidadHidden = document.createElement('input');
+                    cantidadHidden.type = 'hidden';
+                    cantidadHidden.name = 'itemCantidad';
+                    cantidadHidden.value = cantidad || '1';
+                    form.appendChild(codigoInput);
+                    form.appendChild(cantidadHidden);
+                    var emptyRow = form.querySelector('.promo-items-empty');
+                    if (emptyRow) { emptyRow.remove(); }
+                    var itemsBody = document.getElementById('promo-items-body');
+                    if (itemsBody) {
+                        var tr = document.createElement('tr');
+                        var tdNombre = document.createElement('td');
+                        tdNombre.textContent = nombre;
+                        var tdCantidad = document.createElement('td');
+                        tdCantidad.className = 'has-text-centered';
+                        tdCantidad.textContent = cantidad || '1';
+                        tr.appendChild(tdNombre);
+                        tr.appendChild(tdCantidad);
+                        itemsBody.appendChild(tr);
+                    }
+                }
+                var root = document.getElementById('selector-articulo-promo');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            });
+        });
+    </script>
+</div>

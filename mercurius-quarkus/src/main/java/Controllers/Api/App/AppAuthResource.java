@@ -150,6 +150,10 @@ public class AppAuthResource {
      */
     @POST
     @Path("/logout")
+    // The navbar form and the CSRF form-field channel both submit
+    // application/x-www-form-urlencoded; the class-level JSON @Consumes would
+    // otherwise answer 415 to the endpoint's primary caller.
+    @Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_FORM_URLENCODED})
     @Operation(summary = "Invalidate the form-auth session and redirect to the login page")
     @APIResponses({
         @APIResponse(responseCode = "303", description = "Session invalidated; redirect to /login"),

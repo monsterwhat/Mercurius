@@ -1,0 +1,159 @@
+{!
+  pages/reportes/etiquetas - Generar Etiquetas (T19 port of
+  secured/pages/Inventario/Reportes/Etiquetas/index.xhtml).
+
+  READ-ONLY: selection + preview are CLIENT-SIDE state (the legacy server
+  round-trips only mutated view state, never the DB); printing stays the
+  legacy window.print() hint. No mutation endpoints exist.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">{titulo}</h1>
+        <p class="subtitle">Seleccione los artículos para generar etiquetas</p>
+
+        <div class="box" id="etiquetas-panel">
+            <div class="columns is-multiline">
+                <div class="column is-3 field">
+                    <label class="label" for="cantidad">Cantidad por Artículo</label>
+                    <input class="input" type="number" id="cantidad" min="1" max="100" value="1"/>
+                </div>
+                <div class="column is-3 field">
+                    <label class="label" for="copias">Cantidad de Copias</label>
+                    <input class="input" type="number" id="copias" min="1" max="10" value="1"/>
+                </div>
+                <div class="column is-3 field">
+                    <label class="label">Total Etiquetas</label>
+                    <p class="tag is-medium is-info"><span id="total-etiquetas">0</span> etiquetas</p>
+                </div>
+                <div class="column is-3 field">
+                    <label class="label">Acciones</label>
+                    <div class="buttons">
+                        <button type="button" class="button is-success" id="btn-todos">Seleccionar Todos</button>
+                        <button type="button" class="button is-warning" id="btn-limpiar">Limpiar</button>
+                        <button type="button" class="button is-primary" id="btn-imprimir">Imprimir Etiquetas</button>
+                    </div>
+                </div>
+            </div>
+
+            {#include pages/reportes/_tablas/etiquetas /}
+
+            <div class="card mt-4">
+                <div class="card-header"><p class="card-header-title">Vista Previa de Etiquetas</p></div>
+                <div class="card-content">
+                    <div class="selection-info">
+                        <p><strong>Artículos seleccionados:</strong> <span id="conteo-seleccion">0</span></p>
+                        <p><strong>Etiquetas por artículo:</strong> <span id="eco-cantidad">1</span></p>
+                        <p><strong>Copias:</strong> <span id="eco-copias">1</span></p>
+                    </div>
+                    <div id="vista-previa" class="mt-2"></div>
+                    <p class="has-text-grey" id="sin-seleccion">
+                        Seleccione artículos de la tabla para ver la vista previa
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        (function () {
+            /* Client-side catalog read from the rendered table (no server calls,
+               mirroring the legacy view-state-only interactions). */
+            var catalogo = { };
+            var orden = [];
+            refrescarCatalogo();
+
+            function refrescarCatalogo() {
+                catalogo = { };
+                orden = [];
+                document.querySelectorAll('#reporte-etiquetas-tabla tbody tr').forEach(function (fila) {
+                    var celdas = fila.querySelectorAll('td');
+                    if (celdas.length >= 4) {
+                        var codigo = celdas[0].textContent.trim();
+                        if (!catalogo[codigo]) {
+                            orden.push(codigo);
+                        }
+                        catalogo[codigo] = {
+                            nombre: celdas[1].textContent.trim(),
+                            barra: celdas[2].textContent.trim(),
+                            precio: celdas[3].textContent.trim()
+                        };
+                    }
+                });
+            }
+
+            function seleccionados() {
+                return Array.prototype.slice.call(
+                        document.querySelectorAll('.js-etiqueta-check:checked'))
+                        .map(function (casilla) { return casilla.value; });
+            }
+
+            function enteroPositivo(id) {
+                var valor = parseInt(document.getElementById(id).value, 10);
+                return isNaN(valor) || valor < 1 ? 1 : valor;
+            }
+
+            function renderizar() {
+                var codigos = seleccionados();
+                var cantidad = enteroPositivo('cantidad');
+                var copias = enteroPositivo('copias');
+                document.getElementById('conteo-seleccion').textContent = String(codigos.length);
+                document.getElementById('eco-cantidad').textContent = String(cantidad);
+                document.getElementById('eco-copias').textContent = String(copias);
+                document.getElementById('total-etiquetas').textContent =
+                        String(codigos.length * cantidad * copias);
+                var previa = document.getElementById('vista-previa');
+                previa.innerHTML = '';
+                codigos.forEach(function (codigo) {
+                    var dato = catalogo[codigo] || { nombre: codigo, barra: codigo, precio: '-' };
+                    var tarjeta = document.createElement('div');
+                    tarjeta.className = 'label-preview box is-shadowless';
+                    var barra = document.createElement('div');
+                    barra.className = 'barcode-numbers';
+                    barra.textContent = dato.barra;
+                    var nombre = document.createElement('strong');
+                    nombre.textContent = dato.nombre;
+                    var precio = document.createElement('span');
+                    precio.textContent = dato.precio;
+                    tarjeta.appendChild(barra);
+                    tarjeta.appendChild(nombre);
+                    tarjeta.appendChild(precio);
+                    previa.appendChild(tarjeta);
+                });
+                document.getElementById('sin-seleccion').style.display =
+                        codigos.length === 0 ? 'block' : 'none';
+            }
+
+            function refrescarCasillas(codigos) {
+                document.querySelectorAll('.js-etiqueta-check').forEach(function (casilla) {
+                    casilla.checked = codigos.indexOf(casilla.value) >= 0;
+                });
+            }
+
+            document.getElementById('btn-todos').addEventListener('click', function () {
+                refrescarCatalogo();
+                refrescarCasillas(orden);
+                renderizar();
+            });
+            document.getElementById('btn-limpiar').addEventListener('click', function () {
+                refrescarCasillas([]);
+                renderizar();
+            });
+            document.getElementById('btn-imprimir').addEventListener('click', function () {
+                /* Legacy imprimirEtiquetas parity: print hint, no server call. */
+                window.print();
+            });
+            ['cantidad', 'copias'].forEach(function (id) {
+                document.getElementById(id).addEventListener('change', renderizar);
+            });
+            document.getElementById('reporte-etiquetas-tabla').addEventListener('change', function (evento) {
+                if (evento.target && evento.target.classList.contains('js-etiqueta-check')) {
+                    renderizar();
+                }
+            });
+
+            renderizar();
+        })();
+        </script>
+    {/body}
+{/include}

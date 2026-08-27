@@ -1,0 +1,42 @@
+{!
+  pages/recibos/index - Gestión de Recibos (T27). Qute/HTMX/Bulma port of
+  secured/pages/Recibos/index.xhtml: the four-bucket board (Todas / Pagadas /
+  Procesadas / Vencidos) with a server-computed stats header, per-bucket kit
+  data-tables and a row-select detail panel.
+
+  Model keys supplied by RecibosPagesResource:
+    stats   RecibosResource.StatsView (bucket counts)
+    modelos Map bucket-key -> kit data-table model
+    bucket  active bucket key (deep-linkable via ?bucket=)
+    q       current filter of the active bucket
+
+  Interactions: every table swaps independently through
+  GET /api/app/recibos/tabla?bucket=X; row actions swap #recibos-tablero;
+  the detail panel fills from GET /api/app/recibos/{id}. Reads/actions live
+  in Controllers.Api.App.RecibosResource.
+!}
+{#include layout}
+    {#title}Recibos | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Gestión de Recibos</p>
+
+        {#include pages/recibos/tablero /}
+
+        <div class="box is-shadowless mt-5">
+            <div class="level mb-2">
+                <div class="level-left">
+                    <h2 class="title is-4 mb-0">Detalle del recibo</h2>
+                </div>
+            </div>
+            <div id="recibo-detalle-cuerpo">
+                <p class="has-text-grey">Seleccione una fila de cualquier tabla para ver el detalle aqu&iacute;.</p>
+            </div>
+        </div>
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+    {/body}
+{/include}

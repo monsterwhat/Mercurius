@@ -22,9 +22,13 @@
   LINKS: planned /app/* routes are recorded in data-planned-route attributes;
   href stays "#" until each route lands (W4 pages). EXCEPTION: logout really
   POSTs to AppAuthResource (/api/app/auth/logout). The action URL is prefixed
-  with {config:'quarkus.http.root-path'} because this deployment runs under
+  with the literal context root /Mercurius because this deployment runs under
   quarkus.http.root-path=/Mercurius (legacy JSF resolved the context path
   automatically; raw Qute templates must do it explicitly).
+  NOTE: the prefix is a LITERAL, deliberately NOT a {config:...} expression:
+  the Qute config namespace reads RUNTIME configuration, where build-time-fixed
+  properties are absent, so that expression throws TemplateException (HTTP 500)
+  on every render outside dev mode.
 
   NOT PORTED: the theme toggle (ThemeController dies in T38 - plan mandates
   CSS variables only) and PrimeIcons (not in the allowed library set).
@@ -32,7 +36,7 @@
 <nav class="navbar is-black" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
         <a class="navbar-item" href="#" data-planned-route="/app">
-            <img src="{config:'quarkus.http.root-path'}/resources/imgs/logo/Mercurius.png"
+            <img src="/Mercurius/resources/imgs/logo/Mercurius.png"
                  alt="Mercurius" width="28" height="28"/>
             <span class="ml-2 has-text-weight-bold">Mercurius</span>
         </a>
@@ -120,7 +124,7 @@
               T13 endpoint; works without JavaScript unlike the JSF commandLink.
             !}
             <div class="navbar-item">
-                <form method="post" action="{config:'quarkus.http.root-path'}/api/app/auth/logout">
+                <form method="post" action="/Mercurius/api/app/auth/logout">
                     <button type="submit" class="button is-rounded is-danger">Cerrar Session</button>
                 </form>
             </div>

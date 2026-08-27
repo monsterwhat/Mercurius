@@ -1,0 +1,203 @@
+{!
+  pages/stockalert-config/index - Configuración de Alertas de Stock.
+
+  Standalone page for configuring stock alert thresholds. Allows setting
+  min/max stock thresholds per article or category. Includes a data table
+  showing current alert configurations with columns: Artículo/Categoría,
+  Mínimo, Máximo, Estado (Activo/Inactivo). HTMX form for creating/editing
+  configs.
+
+  Model keys supplied by StockAlertConfigResource#renderFullConfigPage():
+    modelo            Map  - kit data-table contract (id, baseUrl, columnas,
+                             filas, sortKey, sortDir, page, size, total,
+                             totalPages, paginas, filtros)
+    totalConfigs      Long - total alert configurations count
+    configsActivas    Long - active configurations count
+    configsInactivas  Long - inactive configurations count
+!}
+{#include layout}
+    {#title}Configuración de Alertas de Stock | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <div class="level">
+            <div class="level-left">
+                <div>
+                    <p class="title is-3">Configuración de Alertas de Stock</p>
+                    <p class="subtitle is-5 has-text-grey">Definir umbrales mínimo y máximo de stock por artículo o categoría</p>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="buttons">
+                    {#include _kit/modal id="nueva-config" title="Nueva Configuración de Alerta" triggerLabel="Nueva Configuración" triggerClass="is-success"
+                         bodyUrl="/api/app/stock-alert-config/formularios/nueva"}{/include}
+                </div>
+            </div>
+        </div>
+
+        {! ── Stat Cards ─────────────────────────────────────────── !}
+        <div class="columns mb-5">
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="title is-1" style="margin-bottom:0">{totalConfigs ?: 0}</p>
+                    <p class="subtitle is-6">Total Configuraciones</p>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered has-background-success-light">
+                    <p class="title is-1 has-text-success" style="margin-bottom:0">{configsActivas ?: 0}</p>
+                    <p class="subtitle is-6">Activas</p>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered has-background-danger-light">
+                    <p class="title is-1 has-text-danger" style="margin-bottom:0">{configsInactivas ?: 0}</p>
+                    <p class="subtitle is-6">Inactivas</p>
+                </div>
+            </div>
+        </div>
+
+        {! ── Filter + Data Table ──────────────────────────────────── !}
+{#fragment tabla}
+        <div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+            <form id="filtros-stock-alert-config" class="box is-shadowless" method="get"
+                  action="/Mercurius{modelo.baseUrl}">
+                <div class="columns">
+                    <div class="column is-4">
+                        <div class="field">
+                            <label class="label" for="filtro-buscar">Buscar</label>
+                            <div class="control has-icons-left">
+                                <input id="filtro-buscar" class="input" type="text"
+                                       name="q" value="{modelo.filtros.q ?? ''}"
+                                       placeholder="Nombre o código de artículo..."
+                                       hx-get="/Mercurius{modelo.baseUrl}"
+                                       hx-trigger="keyup changed delay:300ms"
+                                       hx-include="#filtros-stock-alert-config"
+                                       hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                                <span class="icon is-left">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label" for="filtro-estado">Estado</label>
+                            <div class="select is-fullwidth">
+                                <select id="filtro-estado" name="estado"
+                                        hx-get="/Mercurius{modelo.baseUrl}"
+                                        hx-trigger="change" hx-include="#filtros-stock-alert-config"
+                                        hx-target="#{modelo.id}" hx-swap="outerHTML">
+                                    <option value="">Todos</option>
+                                    <option value="activo" {#if modelo.filtros.estado == 'activo'}selected{/if}>Activo</option>
+                                    <option value="inactivo" {#if modelo.filtros.estado == 'inactivo'}selected{/if}>Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-3">
+                        <div class="field">
+                            <label class="label" for="filtro-tipo">Tipo</label>
+                            <div class="select is-fullwidth">
+                                <select id="filtro-tipo" name="tipo"
+                                        hx-get="/Mercurius{modelo.baseUrl}"
+                                        hx-trigger="change" hx-include="#filtros-stock-alert-config"
+                                        hx-target="#{modelo.id}" hx-swap="outerHTML">
+                                    <option value="">Todos</option>
+                                    <option value="articulo" {#if modelo.filtros.tipo == 'articulo'}selected{/if}>Artículo</option>
+                                    <option value="categoria" {#if modelo.filtros.tipo == 'categoria'}selected{/if}>Categoría</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-2 is-align-self-flex-end">
+                        <div class="field">
+                            <div class="buttons">
+                                <button class="button is-primary" type="submit">Buscar</button>
+                                <a class="button is-light" href="/Mercurius{modelo.baseUrl}">Limpiar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+
+            {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+              {#rows}
+                {#for fila in modelo.filas}
+                <tr>
+                    <td>
+                        <span class="tag is-link is-light">{fila.tipo}</span>
+                        {#if fila.tipo == 'Artículo'}
+                        <span class="has-text-weight-semibold ml-1">{fila.articuloNombre}</span>
+                        <br/><span class="is-size-7 has-text-grey">Cód: {fila.articuloCodigo}</span>
+                        {#else}
+                        <span class="has-text-weight-semibold ml-1">{fila.categoriaNombre}</span>
+                        {/if}
+                    </td>
+                    <td class="has-text-centered has-text-weight-semibold">{fila.stockMinimo}</td>
+                    <td class="has-text-centered has-text-weight-semibold">{fila.stockMaximo}</td>
+                    <td class="has-text-centered">
+                        {#if fila.activo}
+                        <span class="tag is-success">Activo</span>
+                        {#else}
+                        <span class="tag is-danger">Inactivo</span>
+                        {/if}
+                    </td>
+                    <td class="has-text-centered">
+                        <div class="buttons are-small is-centered">
+                            <button type="button" class="button is-info is-small"
+                                    data-kit-open="editar-config"
+                                    hx-get="/Mercurius/api/app/stock-alert-config/{fila.id}/editar"
+                                    hx-target="#editar-config-body" hx-swap="innerHTML"
+                                    title="Editar configuración">
+                                <span class="icon"><i class="fas fa-edit"></i></span>
+                            </button>
+                            <button type="button" class="button is-danger is-small"
+                                    hx-post="/Mercurius/api/app/stock-alert-config/{fila.id}/toggle"
+                                    hx-confirm="¿{#if fila.activo}Desactivar{#else}Activar{/if} la configuración de alerta para {fila.articuloNombre ?? fila.categoriaNombre}?"
+                                    hx-target="#{modelo.id}" hx-swap="outerHTML"
+                                    title="{#if fila.activo}Desactivar{#else}Activar{/if}">
+                                <span class="icon"><i class="fas fa-power-off"></i></span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {#else}
+                <tr><td colspan="5" class="has-text-centered has-text-grey">No se encontraron configuraciones de alertas de stock</td></tr>
+                {/for}
+              {/rows}
+            {/include}
+        </div>
+{/fragment}
+    </section>
+
+    {! Shared modals !}
+    {#include _kit/modal id="editar-config" title="Editar Configuración" triggerClass="is-hidden"
+         bodyUrl="/api/app/stock-alert-config/formularios/nueva"}{/include}
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level buttons open shared modals; the swapped form's
+       [data-kit-close] button closes them (same contract as T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

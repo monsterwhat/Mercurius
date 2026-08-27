@@ -1,0 +1,25 @@
+{!
+  _tablas/rendimiento - table-only fragment for HX-Request swaps of the
+  Rendimiento de Productos page (T19). Column set switches with "seccion".
+!}
+<div id="reporte-rendimiento-tabla">
+    {#include _kit/data-table id="reporte-rendimiento" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            {#if seccion == 'departamento'}
+            <td>{f.nombre}</td>
+            <td>{f.ventas}</td>
+            <td>{f.porcentaje}%</td>
+            {#else}
+            <td>{f.nombre}</td>
+            <td>{f.cantidad}</td>
+            <td>{f.ingresos}</td>
+            {/if}
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

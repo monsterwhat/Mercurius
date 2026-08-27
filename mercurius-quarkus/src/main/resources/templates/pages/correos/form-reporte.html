@@ -1,0 +1,125 @@
+{!
+  pages/correos/form-reporte - modal-body form for crear|editar a reporte
+  programado (W4B-CORREOS lane). Returned by
+  GET /api/app/reportes-programados/formularios/nueva and /formularios/{id},
+  and re-rendered by the form-urlencoded POST/PUT twins on validation
+  failure (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Model:
+    modo            String  - "crear" | "editar" (selects hx-post vs hx-put)
+    reporte         Object  - Models.Correos.ReporteProgramado when editar,
+                              null when crear (an echo shell on redisplay)
+    errorPerfil     String  - legacy requiredMessage parity
+    errorFrecuencia String  - schedule-field validation: every checked value
+                              must belong to the closed legacy picklist
+                              (Diario, Semanal, Quincenal, Mensual); anything
+                              else re-renders this form with the error
+    correosTexto    String  - recipients joined one-per-line for the textarea
+    toastSeverity   String  - OOB toast severity (nullable)
+    toastMessage    String  - OOB toast text (nullable; legacy FacesMessages)
+
+  The frecuencia picklist IS the legacy "cron field": the JSF UI constrained
+  it client-side to four closed values and the scheduler maps each to an
+  interval, so the form twin enforces that whitelist server-side while the
+  JSON contract stays untouched. Correos replaces the legacy p:chips widget
+  with one-address-per-line textarea semantics.
+!}
+<div id="forma-reporte">
+    {#if modo == 'editar' && reporte??}
+    <form hx-put="/Mercurius/api/app/reportes-programados/{reporte.id}"
+          hx-target="#forma-reporte" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/reportes-programados"
+          hx-target="#forma-reporte" hx-swap="outerHTML">
+    {/if}
+        <div class="field">
+            <label class="label" for="reporte-perfil">Nombre:</label>
+            <div class="control">
+                <input class="input {#if errorPerfil??}is-danger{/if}" id="reporte-perfil"
+                       name="perfil" required="required" autocomplete="off"
+                       value="{#if reporte?? && reporte.perfil??}{reporte.perfil}{/if}"/>
+            </div>
+            {#if errorPerfil??}<p class="help is-danger">{errorPerfil}</p>{/if}
+        </div>
+
+        <div class="field">
+            <label class="label">Frecuencia:</label>
+            <div class="control {#if errorFrecuencia??}has-text-danger{/if}">
+                <label class="checkbox">
+                    <input type="checkbox" name="frecuencia" value="Diario"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Diario')}checked{/if}/> Diario
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="frecuencia" value="Semanal"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Semanal')}checked{/if}/> Semanal
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="frecuencia" value="Quincenal"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Quincenal')}checked{/if}/> Quincenal
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="frecuencia" value="Mensual"
+                           {#if reporte?? && reporte.frecuencia?? && reporte.frecuencia.contains('Mensual')}checked{/if}/> Mensual
+                </label>
+            </div>
+            {#if errorFrecuencia??}<p class="help is-danger">{errorFrecuencia}</p>{/if}
+        </div>
+
+        <div class="field">
+            <label class="label">Reportes:</label>
+            <div class="control">
+                <label class="checkbox">
+                    <input type="checkbox" name="reportes" value="MOVIMIENTOS"
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('MOVIMIENTOS')}checked{/if}/> Movimientos
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="reportes" value="FACTURACION"
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FACTURACION')}checked{/if}/> Facturacion
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="reportes" value="ARTICULOS"
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('ARTICULOS')}checked{/if}/> Articulos
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="reportes" value="DEPARTAMENTOS"
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('DEPARTAMENTOS')}checked{/if}/> Departamentos
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="reportes" value="FAMILIAS"
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FAMILIAS')}checked{/if}/> Familias
+                </label>
+                <label class="checkbox">
+                    <input type="checkbox" name="reportes" value="INVENTARIOS"
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('INVENTARIOS')}checked{/if}/> Inventarios
+                </label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="reporte-correos">Correos:</label>
+            <div class="control">
+                <textarea class="textarea" id="reporte-correos" name="correos" rows="3"
+                          placeholder="un correo por línea"
+                          autocomplete="off">{#if correosTexto??}{correosTexto}{/if}</textarea>
+            </div>
+            <p class="help has-text-grey">Un destinatario por línea.</p>
+        </div>
+
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">
+                    {#if modo == 'editar'}Actualizar Reporte{#else}Crear Reporte Programado{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

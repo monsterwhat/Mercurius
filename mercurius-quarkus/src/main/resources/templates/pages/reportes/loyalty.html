@@ -1,0 +1,122 @@
+{!
+  pages/reportes/loyalty - read-only "Programa de Lealtad - Reportes" (T20).
+
+  Replaces secured/pages/Loyalty/Reportes/index.xhtml (top-customers +
+  all-clients tables + points-history dialog). The legacy "Procesar
+  Expiración" button is a mutation owned by T25 — NOT ported here.
+!}
+{#include layout}
+    {#title}Programa de Lealtad - Reportes | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3 has-text-centered">Programa de Lealtad - Reportes</h1>
+
+        <div class="columns is-multiline has-text-centered box">
+            <div class="column">
+                <p class="heading">Clientes con Puntos</p>
+                <p class="title is-4">{topClientes.size()}</p>
+            </div>
+            <div class="column">
+                <p class="heading">% Cashback</p>
+                <p class="title is-4">{cashbackPercentage}%</p>
+            </div>
+            <div class="column">
+                <p class="heading">Meses Inactividad</p>
+                <p class="title is-4">{puntosInactivityMonths}</p>
+            </div>
+        </div>
+
+        <h2 class="title is-5">Top Clientes por Puntos</h2>
+        <div class="table-container" id="loyalty-top-tabla">
+            <table class="table is-striped is-hoverable is-fullwidth">
+                <thead>
+                    <tr><th>Nombre</th><th>Correo</th><th>Cédula</th><th>Puntos Acumulados</th><th>Última Compra</th><th>Estado Puntos</th><th>Historial</th></tr>
+                </thead>
+                <tbody>
+                    {#for c in topClientes}
+                    <tr data-row-key="{c.code}">
+                        <td>{c.name}</td>
+                        <td>{#if c.email??}{c.email}{/if}</td>
+                        <td>{#if c.idNumber??}{c.idNumber}{/if}</td>
+                        <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                        <td>{#if c.lastPurchaseDate??}{{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}}{/if}</td>
+                        <td>
+                            {#if c.statusPuntos == 'active'}<span class="tag is-success">{c.statusPuntos}</span>
+                            {#else if c.statusPuntos == 'inactive'}<span class="tag is-warning">{c.statusPuntos}</span>
+                            {#else if c.statusPuntos??}<span class="tag is-danger">{c.statusPuntos}</span>
+                            {#else}<span class="tag is-light">Sin estado</span>{/if}
+                        </td>
+                        <td>
+                            <button type="button" class="button is-small is-info"
+                                    hx-get="/Mercurius{baseUrl}/{c.code}/historial"
+                                    hx-target="#loyalty-historial-body"
+                                    onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
+                        </td>
+                    </tr>
+                    {/for}
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="title is-5 mt-5">Todos los Clientes</h2>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="loyalty-filtros">
+                <div class="field">
+                    <label class="label" for="loyalty-q">Búsqueda general</label>
+                    <input class="input" type="text" id="loyalty-q" name="q"
+                           value="{#if filtros.q??}{filtros.q}{/if}"
+                           placeholder="Nombre, correo, cédula, puntos…"
+                           hx-get="/Mercurius{baseUrl}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="closest form"
+                           hx-target="#loyalty-tabla-container" hx-swap="innerHTML"/>
+                </div>
+            </form>
+        </div>
+
+        <div id="loyalty-tabla-container">
+            {#fragment id=tabla}
+                {#include _kit/data-table id="loyalty-tabla" baseUrl=baseUrl
+                     headers=columnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for c in rows}
+                    <tr data-row-key="{c.code}">
+                        <td>{c.name}</td>
+                        <td>{#if c.email??}{c.email}{/if}</td>
+                        <td>{#if c.phoneNumber??}{c.phoneNumber}{/if}</td>
+                        <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                        <td>{#if c.lastPurchaseDate??}{{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}}{/if}</td>
+                        <td>
+                            <button type="button" class="button is-small is-info"
+                                    hx-get="/Mercurius{baseUrl}/{c.code}/historial"
+                                    hx-target="#loyalty-historial-body"
+                                    onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
+                        </td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            {/fragment}
+        </div>
+
+        <div class="modal" id="loyalty-historial-modal" role="dialog" aria-modal="true" aria-labelledby="loyalty-historial-title">
+            <div class="modal-background" onclick="document.getElementById('loyalty-historial-modal').classList.remove('is-active')"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title" id="loyalty-historial-title">Historial de Puntos</p>
+                    <button class="delete" type="button" aria-label="Cerrar"
+                            onclick="document.getElementById('loyalty-historial-modal').classList.remove('is-active')"></button>
+                </header>
+                <section class="modal-card-body" id="loyalty-historial-body">
+                    {! Filled by hx-get .../{codigo}/historial !}
+                </section>
+                <footer class="modal-card-foot">
+                    <button type="button" class="button"
+                            onclick="document.getElementById('loyalty-historial-modal').classList.remove('is-active')">Cerrar</button>
+                </footer>
+            </div>
+        </div>
+    {/body}
+{/include}

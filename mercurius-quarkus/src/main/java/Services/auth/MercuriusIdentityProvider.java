@@ -13,13 +13,13 @@ import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import Models.Users;
-import Services.LoginService;
+import Services.auth.SessionAuthAdapter;
 
 /**
  * Quarkus {@link IdentityProvider} for username/password credentials that
  * delegates authentication to the existing, proven
- * {@link LoginService#findByUsername(String)} lookup and
- * {@link LoginService#verifyPassword(String, String)} BCrypt verification —
+ * {@link SessionAuthAdapter#findByUsername(String)} lookup and
+ * {@link SessionAuthAdapter#verifyPassword(String, String)} BCrypt verification —
  * no credential logic is reimplemented here.
  *
  * <p><b>Wiring (per the Quarkus "Security customization" guide,
@@ -31,7 +31,7 @@ import Services.LoginService;
  * {@code j_security_check} arrive here as
  * {@link UsernamePasswordAuthenticationRequest}.
  *
- * <p><b>Blocking model:</b> {@link LoginService} performs JPA queries, so the
+ * <p><b>Blocking model:</b> {@link SessionAuthAdapter} performs JPA queries (request context activated per call), so the
  * blocking work is wrapped in
  * {@link AuthenticationRequestContext#runBlocking(java.util.function.Supplier)}
  * as recommended by the same guide, keeping the IO/event-loop thread free.
@@ -52,7 +52,7 @@ import Services.LoginService;
 public class MercuriusIdentityProvider implements IdentityProvider<UsernamePasswordAuthenticationRequest> {
 
     @Inject
-    LoginService loginService;
+    SessionAuthAdapter loginService;
 
     @Override
     public Class<UsernamePasswordAuthenticationRequest> getRequestType() {

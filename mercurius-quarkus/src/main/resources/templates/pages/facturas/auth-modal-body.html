@@ -1,0 +1,54 @@
+{!
+  pages/facturas/auth-modal-body - supervisor authorization form for price
+  overrides (T37). Initial paint comes from pages/facturas/factura.html
+  (empty model); every POST /api/app/pos/override-authorize-form response
+  re-renders this fragment into #modal-autorizacion-body. On success a toast
+  plus an out-of-band #cart-panel refresh (authorization badge lives there);
+  on failure the error redisplay keeps the typed username.
+
+  Model ("auth" bound key, Map):
+    exito         bool
+    errorGeneral  String|null
+    panelHtml     String|null - rendered cart-panel carrying hx-swap-oob
+!}
+<div id="modal-autorizacion-body">
+    {#if auth.exito}
+    <div class="notification is-success" role="status" style="padding:0.5rem 0.75rem">
+        <strong>Autorización registrada.</strong> Ya puede facturar los precios personalizados.
+    </div>
+    {#else}
+    {#if auth.errorGeneral??}
+    <div class="notification is-danger" role="alert" style="padding:0.5rem 0.75rem">{auth.errorGeneral}</div>
+    {#else}
+    <p class="block">El carrito contiene precios personalizados. Un supervisor debe autorizar
+        la venta con sus credenciales.</p>
+    {/if}
+    <form id="forma-autorizacion">
+        <div class="field">
+            <label class="label is-small" for="auth-user">Supervisor</label>
+            <div class="control has-icons-left">
+                <input class="input" type="text" id="auth-user" name="username"
+                       value="" autocomplete="off" autofocus/>
+                <span class="icon is-small is-left">&#128100;</span>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label is-small" for="auth-pass">Contraseña</label>
+            <div class="control has-icons-left">
+                <input class="input" type="password" id="auth-pass" name="password" value=""/>
+                <span class="icon is-small is-left">&#128274;</span>
+            </div>
+        </div>
+        <div class="field">
+            <button type="button" class="button is-warning is-fullwidth"
+                    hx-post="/Mercurius/api/app/pos/override-authorize-form"
+                    hx-include="#forma-autorizacion"
+                    hx-target="#modal-autorizacion-body" hx-swap="outerHTML">Autorizar</button>
+        </div>
+    </form>
+    {/if}
+
+    {#if auth.panelHtml??}
+    {auth.panelHtml.raw}
+    {/if}
+</div>

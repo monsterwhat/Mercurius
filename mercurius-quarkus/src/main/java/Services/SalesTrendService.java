@@ -27,7 +27,7 @@ public class SalesTrendService {
     @Inject @Nonnull
     EntityManager entityManager;
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getDailySalesTimeSeries")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public @Nonnull List<TimeSeriesData> getDailySalesTimeSeries(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
@@ -50,7 +50,7 @@ public class SalesTrendService {
 
         return results.stream()
             .map(row -> new TimeSeriesData(
-                (LocalDate) row[0],
+                asLocalDate(row[0]),
                 (BigDecimal) row[1],
                 ((Number) row[2]).intValue(),
                 (BigDecimal) row[3],
@@ -59,7 +59,7 @@ public class SalesTrendService {
             .collect(Collectors.toList());
     }
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getWeeklySalesTimeSeries")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public @Nonnull List<TimeSeriesData> getWeeklySalesTimeSeries(@Nonnull Date startDate, @Nonnull Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
@@ -84,7 +84,7 @@ public class SalesTrendService {
         Map<String, TimeSeriesData> weeklyMap = new LinkedHashMap<>();
 
         for (Object[] row : results) {
-            LocalDate date = (LocalDate) row[0];
+            LocalDate date = asLocalDate(row[0]);
             BigDecimal totalSales = (BigDecimal) row[1];
             int transactionCount = ((Number) row[2]).intValue();
             BigDecimal taxableAmount = (BigDecimal) row[3];
@@ -114,7 +114,7 @@ public class SalesTrendService {
         return new ArrayList<>(weeklyMap.values());
     }
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getMonthlySalesTimeSeries")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public List<TimeSeriesData> getMonthlySalesTimeSeries(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
@@ -147,7 +147,7 @@ public class SalesTrendService {
             .collect(Collectors.toList());
     }
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getSeasonalPattern")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public SeasonalPattern getSeasonalPattern(int year) {
         LocalDateTime start = LocalDate.of(year, 1, 1).atStartOfDay();
@@ -202,7 +202,7 @@ public class SalesTrendService {
         return new SeasonalPattern(year, monthlyRevenue, monthlyTransactions, seasonalIndex);
     }
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getYearOverYearComparison")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public YearOverYearComparison getYearOverYearComparison(int currentYear, int yearsBack) {
         List<YearData> yearlyData = new ArrayList<>();
@@ -251,7 +251,7 @@ public class SalesTrendService {
         return new YearOverYearComparison(yearlyData, growthRates);
     }
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getTrendIndicators")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public TrendIndicators getTrendIndicators(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
@@ -288,25 +288,25 @@ public class SalesTrendService {
         .setParameter("end", end)
         .getSingleResult();
 
-        int firstHalfTransactions = entityManager.createQuery(
+        long firstHalfTransactions = entityManager.createQuery(
             "SELECT COUNT(f) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :midPoint",
-            Integer.class
+            Long.class
         )
         .setParameter("start", start)
         .setParameter("midPoint", midPoint)
         .getSingleResult();
 
-        int secondHalfTransactions = entityManager.createQuery(
+        long secondHalfTransactions = entityManager.createQuery(
             "SELECT COUNT(f) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.encabezado e " +
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :midPoint AND :end",
-            Integer.class
+            Long.class
         )
         .setParameter("midPoint", midPoint)
         .setParameter("end", end)
@@ -331,7 +331,7 @@ public class SalesTrendService {
             firstHalfRevenue, secondHalfRevenue);
     }
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getHourlyHeatmap")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public List<HourlyHeatmap> getHourlyHeatmap(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
@@ -358,7 +358,7 @@ public class SalesTrendService {
 
         for (Object[] row : results) {
             int hour = ((Number) row[0]).intValue();
-            LocalDate date = (LocalDate) row[1];
+            LocalDate date = asLocalDate(row[1]);
             BigDecimal totalSales = (BigDecimal) row[2];
             int transactionCount = ((Number) row[3]).intValue();
 
@@ -384,7 +384,7 @@ public class SalesTrendService {
         return result;
     }
 
-    @CacheResult(cacheName = "analytics-sales")
+@CacheResult(cacheName = "analytics-getGrowthMetrics")
     @Transactional(value = Transactional.TxType.SUPPORTS)
     public GrowthMetrics getGrowthMetrics(Date startDate, Date endDate) {
         LocalDateTime start = toLocalDateTime(startDate);
@@ -627,4 +627,14 @@ public class SalesTrendService {
         public BigDecimal getWeeklyAverage() { return weeklyAverage; }
         public BigDecimal getMonthlyAverage() { return monthlyAverage; }
     }
-}
+
+    /**
+     * PostgreSQL CAST(AS date) yields java.sql.Date; H2/other drivers may hand
+     * back LocalDate directly. Normalize both to LocalDate.
+     */
+    private static LocalDate asLocalDate(Object value) {
+        if (value instanceof java.sql.Date sqlDate) {
+            return sqlDate.toLocalDate();
+        }
+        return (LocalDate) value;
+    }}

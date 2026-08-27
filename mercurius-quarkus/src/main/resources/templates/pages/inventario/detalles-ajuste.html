@@ -1,0 +1,35 @@
+{!
+  pages/inventario/detalles-ajuste - read-only detail card (T35), port of
+  fragments/Inventario/Activos/verDetallesDeAjuste.xhtml. Filled by
+  GET /api/app/inventario/formularios/ajuste/{codigo}/detalles.
+
+  Model: ajuste = Controllers.Api.App.InventarioResource.InventarioDTO
+!}
+{#if ajuste??}
+<div class="box is-shadowless">
+    <table class="table is-fullwidth is-striped">
+        <tbody>
+            <tr><th>Código</th><td>{ajuste.codigo}</td></tr>
+            <tr><th>Artículo</th><td>{#if ajuste.articuloNombre??}{ajuste.articuloNombre}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Código de barra</th><td style="font-family:monospace">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Cantidad</th><td>{#if ajuste.cantidad??}{ajuste.cantidad}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Unidades recomendadas</th><td>{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Tipo de movimiento</th><td>{#if ajuste.tipoMovimiento??}{ajuste.tipoMovimiento}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Fecha de movimiento</th><td>{#if ajuste.fechaMovimiento??}{ajuste.fechaMovimiento}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Usuario</th><td>{#if ajuste.usuarioUsername??}{ajuste.usuarioUsername}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Estado</th><td>
+                {#if ajuste.processed}<span class="tag is-success">Procesada</span>{#else}<span class="tag is-warning">Sin Procesar</span>{/if}
+                {#if ajuste.status??}<span class="tag is-light">Activa</span>{#else}<span class="tag is-danger">Inactiva</span>{/if}
+            </td></tr>
+            <tr><th>Notas</th><td>{#if ajuste.notas??}{ajuste.notas}{#else}&mdash;{/if}</td></tr>
+        </tbody>
+    </table>
+    <div class="buttons is-centered">
+        <button class="button" type="button" data-kit-close>Cerrar</button>
+    </div>
+</div>
+{#else}
+<div class="has-text-centered p-4">
+    <p class="has-text-grey">No hay movimiento seleccionado</p>
+</div>
+{/if}

@@ -1,0 +1,61 @@
+{!
+  pages/loyalty/panel-ajustes - loyalty program settings card (W4B T25).
+  Included by index.html AND re-rendered standalone by
+  PUT /api/app/loyalty/settings/form — the HTMX twin of the JSON PUT /settings.
+  The twin DELEGATES to updateSettings(), so the guard chain (session →
+  at-least-one-field → cashback >= 0 → months > 0 → settings row exists) is
+  mirrored BY CONSTRUCTION; failures come back as this fragment redisplayed
+  with the exact JSON-guard message plus an out-of-band toast
+  (docs/ui-kit.md §5 Pattern A).
+
+  Model:
+    ajustes      Map  - cashbackPercentage (BigDecimal), puntosInactivityMonths (Integer)
+    errorGeneral String - optional guard/validation error text
+    toastSeverity / toastMessage - optional OOB toast after the PUT
+
+  Legacy parity: secured/pages/Loyalty/index.xhtml "Configuración del
+  Programa" card. HTML min attributes track the SERVER guards (>= 0 / >= 1);
+  the legacy widget's cosmetic 0.1–5.0 / 1–12 ranges were display hints the
+  legacy controller never enforced, so they are intentionally not reproduced
+  as hard input constraints.
+!}
+<div id="panel-ajustes" class="box">
+    <h5 class="title is-5">Configuraci&oacute;n del Programa</h5>
+
+    <form id="forma-ajustes"
+          hx-put="/Mercurius/api/app/loyalty/settings/form"
+          hx-target="#panel-ajustes" hx-swap="outerHTML">
+        <div class="columns">
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="ajustes-cashback">Porcentaje de Cashback (%)</label>
+                    <div class="control">
+                        <input class="input {#if errorGeneral??}is-danger{/if}" id="ajustes-cashback"
+                               type="number" name="cashbackPercentage" step="0.1" min="0"
+                               value="{#if ajustes.cashbackPercentage??}{ajustes.cashbackPercentage}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="ajustes-meses">Meses de Inactividad</label>
+                    <div class="control">
+                        <input class="input {#if errorGeneral??}is-danger{/if}" id="ajustes-meses"
+                               type="number" name="puntosInactivityMonths" step="1" min="1"
+                               value="{#if ajustes.puntosInactivityMonths??}{ajustes.puntosInactivityMonths}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        <div class="field">
+            <button class="button is-primary" type="submit">Guardar Configuraci&oacute;n</button>
+        </div>
+    </form>
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

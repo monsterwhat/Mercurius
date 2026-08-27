@@ -23,6 +23,8 @@ import jakarta.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @Named
 @ApplicationScoped
@@ -273,8 +275,8 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 "ORDER BY e.fechaEmision ASC",
                 ComprobantesRecibidos.class
             );
-            query.setParameter("start", start);
-            query.setParameter("end", end);
+            query.setParameter("start", start.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+            query.setParameter("end", end.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
             return query.getResultList();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing recibidos by date range: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listByDateRange()", null, e.getMessage());

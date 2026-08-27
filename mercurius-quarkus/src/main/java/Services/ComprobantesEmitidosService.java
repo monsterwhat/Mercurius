@@ -153,7 +153,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "WHERE f.user = :user",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("user", user);
+            query.setParameter("user", user.getUsername());
             List<ComprobantesEmitidos> result = query.getResultList();
             alertasService.registrarAlerta("Info", "Query returned " + result.size() + " invoices for user " + user.getUsername(), null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, null);
             return result;
@@ -177,9 +177,9 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "AND f.encabezado.fechaEmision BETWEEN :startDate AND :endDate",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("user", user);
-            query.setParameter("startDate", startDate);
-            query.setParameter("endDate", endDate);
+            query.setParameter("user", user.getUsername());
+            query.setParameter("startDate", startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
+            query.setParameter("endDate", endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
             List<ComprobantesEmitidos> result = query.getResultList();
             alertasService.registrarAlerta("Info", "Query returned " + result.size() + " invoices for user " + user.getUsername() + " between " + startDate + " and " + endDate, null, 0, "ComprobantesEmitidosService.listAllEmitidosBy()", null, null);
             return result;
@@ -219,7 +219,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
-            query.setParameter("user", user);
+            query.setParameter("user", user.getUsername());
             query.setMaxResults(1);
             return query.getSingleResult();
         } catch (NoResultException e) {

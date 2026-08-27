@@ -1,6 +1,6 @@
 package Services;
 
-import Controllers.ArticulosController;
+import Services.ArticulosService;
 import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Carrito.CartOperationResult;
@@ -40,7 +40,7 @@ import lombok.Data;
 public class CarritoService implements Serializable {
 
     @Inject
-    private @Nonnull ArticulosController articuloController;
+    private @Nonnull ArticulosService articulosService;
     @Inject
     private @Nonnull AlertasService alertasService;
     @Inject
@@ -478,7 +478,7 @@ public class CarritoService implements Serializable {
             BigDecimal cantidad = ctx.getCantidadArticulo();
 
             if (codigo != null && !codigo.isBlank()) {
-                Articulos articulo = articuloController.findArticuloByBarCode(codigo);
+                Articulos articulo = articulosService.findByBarCode(codigo);
 
                 if (articulo != null) {
                     if (cantidad.compareTo(BigDecimal.ZERO) == 1) {

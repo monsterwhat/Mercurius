@@ -1,0 +1,59 @@
+{!
+  pages/caja/estado-caja - state region of the caja page (T38).
+
+  Included by pages/caja/index.html AND re-rendered standalone by
+  POST /api/app/caja/open/form and POST /api/app/caja/close/form — the HTMX
+  twins delegate to the JSON guards, so failures come back as this fragment
+  redisplayed with the exact JSON-guard message plus an out-of-band toast
+  (docs/ui-kit.md §5 Pattern A).
+
+  Model (set by CierreCajaResource; optional keys ??-guarded):
+    sesion        Map|null - active-session card values (pre-formatted);
+                             null renders the open-session form, mirroring the
+                             legacy rendered="#{!cierreCajaController.sesionAbierta}"
+                             branch of secured/pages/Caja/index.xhtml
+    errorGeneral  String   - optional guard/validation error text
+    toastSeverity / toastMessage - optional OOB toast after a mutation; for
+                             closes the severity IS the difference warning
+                             (warning when diferencia != 0, success otherwise)
+
+  The close submit carries hx-confirm so _kit/confirm.html (included once by
+  index.html) intercepts it with the styled dialog showing the difference
+  warning before any request is issued.
+
+  NOTE: the OOB toast div is a TOP-LEVEL sibling of the content (htmx 2.x
+  processes out-of-band swaps only for top-level response elements).
+  Nested form fragments inherit this template's data model via Qute include
+  context propagation.
+!}
+{#if sesion}
+<div class="box" id="panel-sesion-activa">
+    <h5 class="title is-5">Sesion Activa
+        <span class="tag is-success" style="margin-left:0.5rem">Abierta</span>
+    </h5>
+    <div class="columns">
+        <div class="column">
+            <p class="heading">Monto Inicial</p>
+            <p class="subtitle is-5">{sesion.montoInicial}</p>
+        </div>
+        <div class="column">
+            <p class="heading">Fecha Apertura</p>
+            <p class="subtitle is-5">{sesion.fechaApertura}</p>
+        </div>
+        <div class="column">
+            <p class="heading">Usuario</p>
+            <p class="subtitle is-5">{sesion.usuarioUsername}</p>
+        </div>
+    </div>
+
+    {#include pages/caja/form-cerrar /}
+</div>
+{#else}
+{#include pages/caja/form-abrir /}
+{/if}
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

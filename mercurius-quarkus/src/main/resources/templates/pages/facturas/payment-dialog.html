@@ -1,0 +1,126 @@
+{!
+  pages/facturas/payment-dialog - POS split-payment modal body (T37).
+
+  Rendered standalone by GET /api/app/pos/payment-dialog (kit-modal bodyUrl)
+  AND re-rendered by POST /api/app/pos/payment-entries-form after staging —
+  single source of truth for the rows + totals markup.
+
+  Model ("dialog" bound key, Map):
+    filas          List  - staged {metodoPago,monto} rows (may be empty)
+    metodos        List  - {codigo,etiqueta} Hacienda payment methods
+    totalCarrito / descuentoPuntos / totalPagado / vuelto / vueltoString
+    mensaje        Map|null - {status,severity,summary,detail}
+
+  Split totals are computed SERVER-SIDE (CarritoService.calcularVuelto) when
+  the form posts; the row add/remove buttons are pure client-side DOM edits
+  over the urlencoded metodoPago[]/monto[] arrays.
+!}
+<div id="dialog-pago-body">
+    {#if dialog.mensaje??}
+    <div class="notification {#if dialog.mensaje.severity == 'error'}is-danger{#else}is-info{/if}"
+            style="padding:0.5rem 0.75rem" role="status">
+        {#if dialog.mensaje.summary??}<strong>{dialog.mensaje.summary}</strong>{/if}
+        {#if dialog.mensaje.detail??}<span> {dialog.mensaje.detail}</span>{/if}
+    </div>
+    {/if}
+
+    <form id="forma-pagos">
+        <table class="table is-narrow is-fullwidth" style="margin-bottom:0.5rem">
+            <thead>
+            <tr><th>Método de pago</th><th class="has-text-right">Monto ₡</th><th></th></tr>
+            </thead>
+            <tbody id="pagos-filas">
+            {#for fila in dialog.filas}
+            <tr class="pago-fila">
+                <td>
+                    <div class="select is-small is-fullwidth">
+                        <select name="metodoPago">
+                            {#for metodo in dialog.metodos}
+                            <option value="{metodo.codigo}"{#if metodo.codigo == fila.metodoPago} selected{/if}>{metodo.etiqueta}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </td>
+                <td class="has-text-right">
+                    <input class="input is-small has-text-right" type="number" name="monto"
+                           min="0" step="0.01" value="{fila.monto}" style="max-width:9rem"/>
+                </td>
+                <td class="has-text-centered">
+                    <button type="button" class="button is-small is-danger js-pago-remove"
+                            aria-label="Quitar método de pago">&times;</button>
+                </td>
+            </tr>
+            {#else}
+            <tr class="pago-fila">
+                <td>
+                    <div class="select is-small is-fullwidth">
+                        <select name="metodoPago">
+                            {#for metodo in dialog.metodos}
+                            <option value="{metodo.codigo}"{#if metodo.codigo == '01'} selected{/if}>{metodo.etiqueta}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </td>
+                <td class="has-text-right">
+                    <input class="input is-small has-text-right" type="number" name="monto"
+                           min="0" step="0.01" value="0" style="max-width:9rem"/>
+                </td>
+                <td class="has-text-centered">
+                    <button type="button" class="button is-small is-danger js-pago-remove"
+                            aria-label="Quitar método de pago">&times;</button>
+                </td>
+            </tr>
+            {/for}
+            </tbody>
+        </table>
+
+        <div class="buttons" style="margin-bottom:0.5rem">
+            <button type="button" id="js-add-pago" class="button is-small">+ Agregar método de pago</button>
+            <button type="button" class="button is-small is-link"
+                    hx-post="/Mercurius/api/app/pos/payment-entries-form"
+                    hx-include="#forma-pagos" hx-target="#dialog-pago-body" hx-swap="outerHTML">
+                Calcular vuelto</button>
+        </div>
+    </form>
+
+    <table class="table is-narrow is-fullwidth is-borderless">
+        <tbody>
+        <tr><td>Total carrito</td><td class="has-text-right">{dialog.totalCarrito}</td></tr>
+        {#if dialog.descuentoPuntos?? && dialog.descuentoPuntos > 0}
+        <tr><td>Puntos redimidos</td><td class="has-text-right">&minus;{dialog.descuentoPuntos}</td></tr>
+        {/if}
+        <tr><td>Total pagado</td><td class="has-text-right" id="dialog-total-pagado">{dialog.totalPagado}</td></tr>
+        <tr><td class="has-text-weight-semibold">Vuelto</td>
+            <td class="has-text-right has-text-weight-semibold" id="dialog-vuelto">{dialog.vueltoString}</td></tr>
+        </tbody>
+    </table>
+
+    {! Row add/remove: plain DOM over the urlencoded arrays; re-armed on every
+       swap because htmx evaluates scripts inside swapped fragments. !}
+    <script>
+        (function () {
+            var root = document.getElementById('dialog-pago-body');
+            if (!root || root.dataset.pagosArmed === '1') {
+                return;
+            }
+            root.dataset.pagosArmed = '1';
+            root.addEventListener('click', function (e) {
+                var remover = e.target.closest('.js-pago-remove');
+                if (remover) {
+                    var filas = root.querySelectorAll('.pago-fila');
+                    if (filas.length > 1) {
+                        remover.closest('.pago-fila').remove();
+                    }
+                    return;
+                }
+                if (e.target.closest('#js-add-pago')) {
+                    var plantilla = root.querySelector('.pago-fila');
+                    var clon = plantilla.cloneNode(true);
+                    clon.querySelector('select').selectedIndex = 0;
+                    clon.querySelector('input[name="monto"]').value = '0';
+                    root.querySelector('#pagos-filas').appendChild(clon);
+                }
+            });
+        })();
+    </script>
+</div>

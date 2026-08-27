@@ -16,7 +16,7 @@
                        (e.g. "is-small is-danger").
     bodyUrl      String - REQUIRED context-path-relative URL whose response
                        (an HTML fragment) fills the body. The
-                       {config:['quarkus.http.root-path']} prefix is added HERE,
+                       /Mercurius prefix is added HERE,
                        callers must NOT pre-prefix (navbar convention).
                        CSRF headers are inherited automatically from the
                        layout's <body hx-headers=...> (quarkus-rest-csrf).
@@ -47,7 +47,7 @@
             class="button {#if triggerClass??}{triggerClass}{#else}is-link{/if}"
             aria-haspopup="dialog"
             @click="open = true; $nextTick(() => $refs.card.focus())"
-            hx-get="{config:['quarkus.http.root-path']}{bodyUrl}"
+            hx-get="/Mercurius{bodyUrl}"
             hx-target="#{id}-body"
             hx-swap="innerHTML">{#if triggerLabel??}{triggerLabel}{#else}Abrir{/if}</button>
     {/insert}

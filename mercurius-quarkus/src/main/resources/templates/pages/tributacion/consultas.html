@@ -1,0 +1,167 @@
+{!
+  pages/tributacion/consultas - Consultas de Facturas (plan task T28).
+
+  Replaces secured/pages/Tributacion/Consultas/index.xhtml
+  (#{consultasController.*} Hacienda-consultas flows). Port map:
+    - p:poll interval=5 listener=actualizarCountdown
+        → span#consultas-countdown hx-trigger="every 5s" polling
+          GET /api/app/tributacion/consultas/countdown (the fragment re-emits
+          the same span so the poll never dies, plus an out-of-band refresh
+          of #consultas-contadores).
+    - p:tabView (Pendientes/Aceptadas/Rechazadas) → Alpine tab navigation.
+    - "Enviar Facturas Pendientes" → hx-post .../enviar-pendientes with
+      hx-confirm (HaciendaServiceFacade stubbed in tests; NO real network).
+    - "Corregir" per rejected row → hx-post .../{id}/corregir.
+!}
+{#include layout}
+    {#title}Consultas de Facturas | Mercurius{/title}
+
+    {#body}
+        {#include _kit/confirm /}
+
+        <h1 class="title is-3">Consultas de Facturas</h1>
+        <p class="subtitle is-6">Estado de facturas y envíos programados</p>
+
+        <div id="consultas-contadores" class="columns is-centered has-text-centered mb-4">
+            <div class="column is-3">
+                <div class="box has-background-warning-light">
+                    <p class="title is-3 mb-0" data-contador="pendientes">{contadorPendientes}</p>
+                    <p class="heading">Facturas Pendientes</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="box has-background-success-light">
+                    <p class="title is-3 mb-0" data-contador="aceptadas">{contadorAceptadas}</p>
+                    <p class="heading">Facturas Aceptadas</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="box has-background-danger-light">
+                    <p class="title is-3 mb-0" data-contador="rechazadas">{contadorRechazadas}</p>
+                    <p class="heading">Facturas Rechazadas</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="box has-text-centered mb-5">
+            <span id="consultas-countdown"
+                  class="is-family-monospace has-text-weight-bold is-size-4"
+                  title="{proximoEnvioDisplay}"
+                  hx-get="/Mercurius/api/app/tributacion/consultas/countdown"
+                  hx-trigger="every 5s"
+                  hx-swap="outerHTML">{proximoEnvioDisplay} — {countdownDisplay}</span>
+        </div>
+
+        <div class="buttons">
+            <button type="button" class="button is-info"
+                    hx-post="/Mercurius/api/app/tributacion/consultas/enviar-pendientes"
+                    hx-confirm="¿Enviar las facturas pendientes a Hacienda?"
+                    {#if contadorPendientes == 0}disabled{/if}>
+                Enviar Facturas Pendientes
+            </button>
+        </div>
+
+        <div id="consultas-tablas" x-data="{ tab: '{tabActiva}' }">
+            {#fragment id=tabla}
+            <div class="tabs is-boxed is-centered">
+                <ul>
+                    <li :class="{ 'is-active': tab === 'pendientes' }">
+                        <a href="#!" @click="tab = 'pendientes'">Pendientes ({contadorPendientes})</a>
+                    </li>
+                    <li :class="{ 'is-active': tab === 'aceptadas' }">
+                        <a href="#!" @click="tab = 'aceptadas'">Aceptadas ({contadorAceptadas})</a>
+                    </li>
+                    <li :class="{ 'is-active': tab === 'rechazadas' }">
+                        <a href="#!" @click="tab = 'rechazadas'">Rechazadas ({contadorRechazadas})</a>
+                    </li>
+                    <li :class="{ 'is-active': tab === 'mensajes' }">
+                        <a href="#!" @click="tab = 'mensajes'">Mensajes Receptor</a>
+                    </li>
+                </ul>
+            </div>
+
+            <div x-show="tab === 'pendientes'">
+                {#include _kit/data-table id="consultas-tabla-pendientes" baseUrl=baseUrlTabla
+                     headers=headersConsulta}
+                  {#rows}
+                    {#for f in filasPendientes}
+                    <tr data-row-key="{f.id}">
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td><span class="tag is-warning">Pendiente</span></td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            </div>
+
+            <div x-show="tab === 'aceptadas'" hidden>
+                {#include _kit/data-table id="consultas-tabla-aceptadas" baseUrl=baseUrlTabla
+                     headers=headersConsulta}
+                  {#rows}
+                    {#for f in filasAceptadas}
+                    <tr data-row-key="{f.id}">
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td><span class="tag is-success">Aceptada</span></td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            </div>
+
+            <div x-show="tab === 'rechazadas'" hidden>
+                {#include _kit/data-table id="consultas-tabla-rechazadas" baseUrl=baseUrlTabla
+                     headers=headersRechazadas}
+                  {#rows}
+                    {#for f in filasRechazadas}
+                    <tr data-row-key="{f.id}">
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
+                        <td class="has-text-centered">{f.intentos}</td>
+                        <td>{#if f.fechaRechazo??}{{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td><span class="tag is-danger">Rechazada</span></td>
+                        <td>
+                            <button type="button" class="button is-primary is-small"
+                                    hx-post="/Mercurius/api/app/tributacion/consultas/{f.id}/corregir"
+                                    hx-confirm="¿Crear nota de crédito y preparar la corrección de {f.consecutivo}?">
+                                Corregir
+                            </button>
+                        </td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            </div>
+
+            <div x-show="tab === 'mensajes'" hidden>
+                {#include _kit/data-table id="consultas-tabla-mensajes" baseUrl=baseUrlTabla
+                     headers=headersMensajes}
+                  {#rows}
+                    {#for m in filasMensajes}
+                    <tr data-row-key="{m.id}">
+                        <td class="is-family-monospace">{#if m.consecutivo??}{m.consecutivo}{#else}-{/if}</td>
+                        <td>{#if m.emisor??}{m.emisor}{#else}-{/if}</td>
+                        <td>{#if m.fechaEmision??}{{time:format(m.fechaEmision, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td>{#if m.estado??}{m.estado}{#else}Sin enviar{/if}</td>
+                        <td>{#if m.limite??}{{time:format(m.limite, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td class="has-text-centered">
+                            <span class="tag {m.chipClass}" title="Días restantes: {m.diasRestantes}">{m.indicador}</span>
+                        </td>
+                        <td class="has-text-right">₡{#if m.montoImpuesto??}{m.montoImpuesto}{#else}0{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            </div>
+            {/fragment}
+        </div>
+    {/body}
+{/include}

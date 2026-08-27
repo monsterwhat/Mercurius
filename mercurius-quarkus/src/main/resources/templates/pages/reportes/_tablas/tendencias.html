@@ -1,0 +1,24 @@
+{!
+  _tablas/tendencias - table-only fragment for HX-Request swaps of the
+  Tendencias de Ventas page (T19). Column set switches with "seccion".
+!}
+<div id="reporte-tendencias-tabla">
+    {#include _kit/data-table id="reporte-tendencias" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            {#if seccion == 'indicadores'}
+            <td>{f.concepto}</td>
+            <td>{f.valor}</td>
+            {#else}
+            <td>{f.periodo}</td>
+            <td>{f.ventas}</td>
+            <td>{f.transacciones}</td>
+            {/if}
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

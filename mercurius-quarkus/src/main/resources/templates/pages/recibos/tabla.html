@@ -1,0 +1,88 @@
+{!
+  pages/recibos/tabla - ONE bucket table of the Recibos board (T27).
+  Rendered standalone by GET /api/app/recibos/tabla (HX-Request swaps this
+  whole div via its stable id) and included four times by tablero.html.
+
+  Model keys mirror the _kit/data-table DATA CONTRACT: modelo.id
+  ("recibos-tabla-{bucket}"), modelo.baseUrl, modelo.columnas, modelo.filas
+  (RecibosResource.FilaRecibo rows), modelo.sortKey, modelo.sortDir,
+  modelo.page, modelo.size, modelo.total, modelo.totalPages, modelo.paginas,
+  modelo.filtros (bucket [+ q]); modelo.bucket = active bucket key; q =
+  current global filter of THIS table.
+
+  Row actions replicate the legacy buttons: Pagar (hidden for notas de
+  crédito — commit 20d3cde — and disabled when already settled), Procesar
+  (disabled once the Hacienda exchange ran), Aceptar/Rechazar (Mensaje
+  Receptor resolution) and Ver (row-select detail panel). All actions swap
+  #recibos-tablero so stats and the four tables stay consistent.
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    <div class="level mb-2">
+        <div class="level-left">
+            <h3 class="title is-5 mb-0" style="text-transform:capitalize">{modelo.bucket}</h3>
+        </div>
+        <div class="level-right">
+            <div class="field mb-0" style="min-width:16rem">
+                <div class="control has-icons-left">
+                    <input class="input is-small" type="text" name="q"
+                           value="{#if q??}{q}{/if}" autocomplete="off"
+                           placeholder="Buscar recibos..."
+                           hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                    <span class="icon is-small is-left">&#128269;</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for fila in modelo.filas}
+            <tr>
+                <td style="font-weight:500;font-family:monospace;font-size:0.875rem">{#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}&mdash;{/if}</td>
+                <td>{#if fila.dto.fechaEmision??}{fila.dto.fechaEmision}{#else}&mdash;{/if}</td>
+                <td>{#if fila.dto.emisorNombre??}{fila.dto.emisorNombre}{#else}&mdash;{/if}</td>
+                <td class="has-text-right" style="font-weight:600">{#if fila.dto.totalComprobante??}&#8362;{fila.dto.totalComprobante}{#else}&mdash;{/if}</td>
+                <td class="has-text-right">{#if fila.dto.totalImpuesto??}&#8362;{fila.dto.totalImpuesto}{#else}&mdash;{/if}</td>
+                <td>
+                    {#if fila.activa}<span class="tag is-success">Activa</span>{#else}<span class="tag is-danger">Inactiva</span>{/if}
+                    {#if fila.pagada}<span class="tag is-info">Pagada</span>{/if}
+                    {#if fila.procesada}<span class="tag is-link">Procesada</span>{/if}
+                    {#if fila.vencida}<span class="tag is-danger">Vencida</span>{/if}
+                    {#if fila.dto.haciendaEstado??}<span class="tag is-light">{fila.dto.haciendaEstado}</span>{/if}
+                </td>
+                <td class="has-text-centered" style="white-space:nowrap">
+                    <button type="button" class="button is-small is-info" title="Ver detalles"
+                            aria-haspopup="dialog"
+                            hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}"
+                            hx-target="#recibo-detalle-cuerpo" hx-swap="innerHTML">&#128065;</button>
+                    {#if !fila.notaCredito}
+                    <button type="button" class="button is-small is-warning" title="Marcar como pagada"
+                            {#if fila.pagada}disabled{/if}
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/pay"
+                            hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-confirm="&iquest;Marcar como pagada la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}?">&#128176;</button>
+                    {/if}
+                    <button type="button" class="button is-small is-success" title="Procesar (enviar a Hacienda)"
+                            {#if fila.procesada}disabled{/if}
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/process"
+                            hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-confirm="&iquest;Procesar la factura y enviarla a Hacienda?">&#8635;</button>
+                    <button type="button" class="button is-small is-link" title="Aceptar factura (Mensaje Receptor)"
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/accept"
+                            hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">&#10004;</button>
+                    <button type="button" class="button is-small is-danger" title="Rechazar factura (Mensaje Receptor)"
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/reject"
+                            hx-target="#recibos-tablero" hx-swap="outerHTML"
+                            hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">&#10008;</button>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron recibos con los criterios proporcionados</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+</div>

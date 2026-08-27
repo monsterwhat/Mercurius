@@ -1,0 +1,97 @@
+{!
+  pages/facturas-recibidas/index - Buzón de Facturas Recibidas (T36).
+
+  Qute/HTMX/Bulma port of the received-invoice-processing subset of
+  Controllers.FacturasController + Controllers.ComprobantesRecibidosController:
+  the upload card (legacy pages/Facturas/index.xhtml "Subir Factura" +
+  fragments/Inventario/Upload/subirFacturas.xhtml dialog) and the received
+  invoices inbox (legacy pages/Recibos/index.xhtml four-bucket tabView,
+  read-only here — pay/process receipt actions belong to the T27 lane).
+
+  Model keys supplied by Controllers.Api.App.FacturasRecibidasResource#tabla:
+    modelo Map - tabla.html model (_kit/data-table DATA CONTRACT)
+    q      String - current global filter
+
+  Interactions:
+    - Upload: hx-encoding="multipart/form-data" POST with progress bar;
+      result fragment surfaces parser errors as Bulma danger notifications.
+    - Inbox: bucket select + search-as-you-type + kit pager, all swapping
+      #facturas-recibidas.
+    - Review drawer: shared _kit/modal instance filled per-row via hx-get +
+      the data-kit-open bridge (same recipe as T18/T35); lines are editable
+      (CAByS PUT) and Mensaje Receptor actions live inside the drawer.
+    - No export here: dataset registration belongs to the T17 catalog owner.
+!}
+{#include layout}
+    {#title}Facturas Recibidas | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Facturas Recibidas</p>
+
+        {! ── Subir XML (parseXMLFromUploadedFile/processFacturas parity) ── !}
+        <div class="level">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Subir Facturas Electrónicas</h2>
+            </div>
+        </div>
+        <div class="box is-shadowless" style="padding:0.75rem">
+            <form id="recibidas-upload-forma"
+                  hx-post="/Mercurius/api/app/facturas-recibidas/upload"
+                  hx-encoding="multipart/form-data"
+                  hx-target="#upload-resultado" hx-swap="innerHTML">
+                <div class="field">
+                    <label class="label" for="recibidas-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
+                    <div class="control">
+                        <input class="input" type="file" id="recibidas-upload-archivos"
+                               name="files" accept=".xml" multiple required/>
+                    </div>
+                </div>
+                <progress id="upload-progreso" class="progress is-primary" value="0" max="100">0%</progress>
+                <div class="field">
+                    <button class="button is-primary" type="submit">Procesar Facturas</button>
+                </div>
+            </form>
+            <div id="upload-resultado"></div>
+        </div>
+
+        {! ── Buzón (buzón de facturas recibidas) ────────────────────────── !}
+        <div class="level mt-5">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Buzón de Facturas Recibidas</h2>
+            </div>
+        </div>
+        {#include pages/facturas-recibidas/tabla modelo=modelo q=q /}
+    </section>
+
+    {! Shared review drawer: body is filled per-row from the inbox table. !}
+    {#include _kit/modal id="detalle-factura" title="Detalle de Factura Recibida" triggerClass="is-hidden"
+         bodyUrl="/api/app/facturas-recibidas/0"}{/include}
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level buttons open the shared modal after htmx fills its
+       body (same documented recipe as T18/T35). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+            }
+        });
+    </script>
+    {! Upload progress bar driven by htmx's own xhr events (no extra libs). !}
+    <script>
+        document.addEventListener('htmx:xhr:progress', function (evt) {
+            var bar = document.getElementById('upload-progreso');
+            if (bar && evt.detail.lengthComputable) {
+                bar.value = (evt.detail.loaded / evt.detail.total) * 100;
+            }
+        });
+    </script>
+    {/body}
+{/include}

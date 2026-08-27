@@ -1,0 +1,24 @@
+{!
+  _tablas/resumen - table-only fragment for HX-Request swaps of the
+  Resumen de Inventario page (T19).
+!}
+<div id="reporte-resumen-tabla">
+    {#include _kit/data-table id="reporte-resumen" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            <td>{f.codigo}</td>
+            <td>{f.nombre}</td>
+            <td>{f.codigoBarra}</td>
+            <td>{f.familia}</td>
+            <td>{f.departamento}</td>
+            <td>{f.stockActual}</td>
+            <td>{f.stockOptimo}</td>
+            <td>{f.precio}</td>
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  T35 fixture: valid v4.4-shaped factura electronica used by
+  Controllers.Api.App.InventarioResourceTest to drive the upload endpoint
+  end-to-end (POST /api/app/inventario/upload -> Utils.Parsers.Parser).
+
+  Provenance (.omo/evidence/t35/fixture-provenance.md): every element below
+  maps to a node read by Parser.parseXML / its helpers — root element name
+  via mapRootElementToDocumentCode ("FacturaElectronica" -> "01"), Clave and
+  NumeroConsecutivo via extractNumeroConsecutivo, FechaEmision via
+  parseFechaEmision ("yyyy-MM-dd'T'HH:mm:ss" is its first formatter),
+  Emisor/Receptor via parseEmisor/parseReceptor (Nombre +
+  Identificacion/Tipo+Numero), MedioPago code "01" via
+  Tipo_MedioPago.fromCodigo, ResumenFactura via parseResumenFactura
+  (CodigoTipoMoneda/CodigoMoneda + TipoCambio are MANDATORY - empty values
+  abort with "error en resumen de factura"), and DetalleServicio/
+  LineaDetalle via parseLineaDetalle where Cantidad, PrecioUnitario,
+  MontoTotal, SubTotal and MontoTotalLinea MUST be numeric non-empty
+  strings. No xmlns attributes on purpose: Jackson XmlMapper reads local
+  names and the parser performs no schema validation; ComprobanteFactory.
+  detectVersion failures are tolerated upstream (warning only).
+-->
+<FacturaElectronica>
+    <Clave>50625082500000101000100000001010000000001123456789</Clave>
+    <NumeroConsecutivo>00100001040000000035</NumeroConsecutivo>
+    <CodigoActividad>561101</CodigoActividad>
+    <FechaEmision>2026-08-25T10:00:00</FechaEmision>
+    <Emisor>
+        <Nombre>Distribuidora Mercurius S.A.</Nombre>
+        <Identificacion>
+            <Tipo>02</Tipo>
+            <Numero>310123456789</Numero>
+        </Identificacion>
+        <NombreComercial>Distribuidora Mercurius</NombreComercial>
+        <Ubicacion>
+            <Provincia>1</Provincia>
+            <Canton>01</Canton>
+            <Distrito>01</Distrito>
+            <Barrio>01</Barrio>
+            <OtrasSenas>Frente al parque central</OtrasSenas>
+        </Ubicacion>
+        <Telefono>
+            <CodigoPais>506</CodigoPais>
+            <NumTelefono>88888888</NumTelefono>
+        </Telefono>
+        <CorreoElectronico>emisor@mercurius.local</CorreoElectronico>
+    </Emisor>
+    <Receptor>
+        <Nombre>Comprador Pruebas S.A.</Nombre>
+        <Identificacion>
+            <Tipo>02</Tipo>
+            <Numero>310987654321</Numero>
+        </Identificacion>
+        <NombreComercial>Comprador Pruebas</NombreComercial>
+        <Ubicacion>
+            <Provincia>2</Provincia>
+            <Canton>01</Canton>
+            <Distrito>02</Distrito>
+            <Barrio>03</Barrio>
+            <OtrasSenas>Dos cuadras al norte del banco</OtrasSenas>
+        </Ubicacion>
+        <Telefono>
+            <CodigoPais>506</CodigoPais>
+            <NumTelefono>77777777</NumTelefono>
+        </Telefono>
+        <CorreoElectronico>receptor@mercurius.local</CorreoElectronico>
+    </Receptor>
+    <CondicionVenta>01</CondicionVenta>
+    <PlazoCredito>0</PlazoCredito>
+    <MedioPago>01</MedioPago>
+    <DetalleServicio>
+        <LineaDetalle>
+            <NumeroLinea>1</NumeroLinea>
+            <CodigoCABYS>0111010010010</CodigoCABYS>
+            <Cantidad>10</Cantidad>
+            <UnidadMedida>Unid</UnidadMedida>
+            <UnidadMedidaComercial>Unidad</UnidadMedidaComercial>
+            <Detalle>Refresco litro 1.5 ajuste T35</Detalle>
+            <PrecioUnitario>1000.00000</PrecioUnitario>
+            <MontoTotal>10000.00000</MontoTotal>
+            <SubTotal>10000.00000</SubTotal>
+            <BaseImponible>10000.00000</BaseImponible>
+            <Impuesto>
+                <Codigo>01</Codigo>
+                <CodigoTarifa>08</CodigoTarifa>
+                <Tarifa>13</Tarifa>
+                <FactorCalculoIVA>0.13</FactorCalculoIVA>
+                <Monto>1300.00000</Monto>
+            </Impuesto>
+            <ImpuestoNeto>1300.00000</ImpuestoNeto>
+            <MontoTotalLinea>11300.00000</MontoTotalLinea>
+        </LineaDetalle>
+    </DetalleServicio>
+    <ResumenFactura>
+        <CodigoTipoMoneda>
+            <CodigoMoneda>CRC</CodigoMoneda>
+            <TipoCambio>1.00000</TipoCambio>
+        </CodigoTipoMoneda>
+        <TotalServGravados>0</TotalServGravados>
+        <TotalServExentos>0</TotalServExentos>
+        <TotalMercanciasGravadas>10000</TotalMercanciasGravadas>
+        <TotalMercanciasExentas>0</TotalMercanciasExentas>
+        <TotalGravado>10000</TotalGravado>
+        <TotalExento>0</TotalExento>
+        <TotalVenta>10000</TotalVenta>
+        <TotalDescuentos>0</TotalDescuentos>
+        <TotalVentaNeta>10000</TotalVentaNeta>
+        <TotalImpuesto>1300</TotalImpuesto>
+        <TotalComprobante>11300</TotalComprobante>
+    </ResumenFactura>
+</FacturaElectronica>

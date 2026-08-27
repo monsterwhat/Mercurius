@@ -1,0 +1,64 @@
+{!
+  pages/caja/index - Control de Caja (W4D strangler view-half, T38).
+
+  Qute/HTMX/Bulma port of secured/pages/Caja/index.xhtml, consuming the LIVE
+  contracts of Controllers.Api.App.CierreCajaResource:
+
+    GET  /api/app/caja/table?page&size&sort&dir   (dual-mode per docs/ui-kit.md:
+          HX-Request => only pages/caja/tabla-historial.html; otherwise this
+          full page through layout.html)
+    POST /api/app/caja/open/form                  (HTMX twin of POST /open;
+          swaps #caja-estado with pages/caja/estado-caja.html + OOB toast)
+    POST /api/app/caja/close/form                 (HTMX twin of POST /close;
+          confirm modal via _kit/confirm.html + hx-confirm; the difference
+          warning rides back as the toast severity/message)
+    GET  /api/app/caja | /history?page&size       (existing JSON contracts,
+          untouched)
+
+  Model keys supplied by CierreCajaResource#table:
+    sesion Map|null - active-session card values (montoInicial/fechaApertura/
+                      usuarioUsername pre-formatted); null renders the
+                      open-session form (legacy rendered="#{!sesionAbierta}")
+    modelo Map      - model of tabla-historial.html (kit data-table contract)
+
+  Legacy visual parity: the green gradient header is ported verbatim from the
+  xhtml <style> block (.caja-header); status/difference coloring uses Bulma
+  tag/text classes (tag is-success / has-text-success|danger).
+!}
+{#include layout}
+    {#title}Control de Caja | Mercurius{/title}
+
+    {#body}
+    <style>
+        {! Ported verbatim from secured/pages/Caja/index.xhtml (headers.css layer) !}
+        .caja-header {
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(135deg, #2d8a4e 0%, #1a5e32 100%);
+        }
+        .caja-header .title { color: white; margin-bottom: 1rem; }
+        .caja-header .subtitle { color: rgba(255,255,255,0.8); }
+    </style>
+
+    <section class="section" style="padding-top:1rem">
+        <div class="caja-header">
+            <p class="title is-3 has-text-centered">Control de Caja</p>
+            <p class="subtitle has-text-centered">Apertura y cierre de sesion de caja</p>
+        </div>
+
+        {! Open form OR active-session cards + close form; swapped by the
+           open/close form twins after each mutation. !}
+        <div id="caja-estado">
+            {#include pages/caja/estado-caja sesion=sesion /}
+        </div>
+
+        {! Historial de Cierres — legacy p:dataTable (rows=10 paginator). !}
+        {#include pages/caja/tabla-historial modelo=modelo /}
+
+        {! Styled confirm dialog for the close button (hx-confirm). Include
+           ONCE per page; self-guards against double install. !}
+        {#include _kit/confirm id="caja-confirmar" title="Cerrar Sesion de Caja" danger=true /}
+    </section>
+    {/body}
+{/include}

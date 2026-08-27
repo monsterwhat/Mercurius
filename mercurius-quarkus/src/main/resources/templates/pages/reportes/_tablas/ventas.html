@@ -1,0 +1,26 @@
+{!
+  _tablas/ventas - table-only fragment for HX-Request swaps of the
+  Reporte de Ventas por Cajero (T19). Shares the VentasResource data model.
+!}
+<div id="reporte-ventas-tabla">
+    {#include _kit/data-table id="reporte-ventas" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            <td>{f.detalle}</td>
+            <td>{f.cantidad}</td>
+            <td>{f.montoTotalLinea}</td>
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+    {#if consultaCompleta && totalGeneral??}
+    <div class="level">
+        <div class="level-left">
+            <span class="tag is-medium is-info">Total {totalGeneral}</span>
+        </div>
+    </div>
+    {/if}
+</div>

@@ -1,0 +1,85 @@
+{!
+  pages/compras/ordenes-tabla - ONE data-table include for the Órdenes module
+  (W4C lane, T31). Rendered standalone by GET /api/app/ordenes/table when the
+  HX-Request header is present (fragment swap) AND included by ordenes.html —
+  single source of truth for the markup (T18/T21 pattern).
+
+  Model (identical contract to pages/clientes/tabla.html):
+    modelo Map - id, baseUrl, columnas(label/key), filas(pre-computed row maps:
+                 id, numeroOrden, proveedorNombre, fecha, entrega, estado,
+                 estadoClass, total, puedeEditar, puedeCambiarEstado,
+                 puedeEliminar), sortKey, sortDir, page, size, total,
+                 totalPages, paginas, filtros(reserved keys excluded), q
+    q      String - current search text (round-tripped into the input)
+    toastSeverity / toastMessage - optional OOB toast after row actions
+
+  Columns mirror the legacy p:dataTable of Compras/Ordenes/index.xhtml:
+  N° Orden, Proveedor, Fecha, Entrega Est., Estado(tag), Total + Acciones.
+  Row actions keep the legacy visibility gates: Ver detalles (always),
+  Editar (BORRADOR only), Cambiar Estado (BORRADOR/ENVIADA/CONFIRMADA/
+  RECIBIDA), Eliminar (BORRADOR only, hx-confirm parity with the legacy
+  onclick confirm).
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{q}" autocomplete="off"
+                   placeholder="Buscar órdenes..."
+                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for fila in modelo.filas}
+            <tr>
+                <td style="font-weight:600">{fila.numeroOrden}</td>
+                <td>{#if fila.proveedorNombre??}{fila.proveedorNombre}{#else}&mdash;{/if}</td>
+                <td>{#if fila.fecha??}{fila.fecha}{#else}&mdash;{/if}</td>
+                <td>{#if fila.entrega??}{fila.entrega}{#else}<span style="color:#999">&ndash;</span>{/if}</td>
+                <td class="has-text-centered">
+                    <span class="tag {fila.estadoClass}">{fila.estado}</span>
+                </td>
+                <td class="has-text-right" style="font-weight:700">{fila.total}</td>
+                <td class="has-text-centered">
+                    <div class="buttons is-centered" style="margin:0">
+                        <button type="button" class="button is-small is-info" title="Ver detalles"
+                                aria-haspopup="dialog" data-kit-open="detalle-orden"
+                                hx-get="/Mercurius/api/app/ordenes/{fila.id}/detalle"
+                                hx-target="#detalle-orden-body" hx-swap="innerHTML">&#128065;</button>
+                        {#if fila.puedeEditar}
+                        <button type="button" class="button is-small is-success" title="Editar orden"
+                                aria-haspopup="dialog" data-kit-open="editar-orden"
+                                hx-get="/Mercurius/api/app/ordenes/formularios/{fila.id}"
+                                hx-target="#editar-orden-body" hx-swap="innerHTML">&#9998;</button>
+                        {/if}
+                        {#if fila.puedeCambiarEstado}
+                        <button type="button" class="button is-small is-warning" title="Cambiar estado"
+                                aria-haspopup="dialog" data-kit-open="estado-orden"
+                                hx-get="/Mercurius/api/app/ordenes/{fila.id}/estado"
+                                hx-target="#estado-orden-body" hx-swap="innerHTML">&#8594;</button>
+                        {/if}
+                        {#if fila.puedeEliminar}
+                        <button type="button" class="button is-small is-danger" title="Eliminar orden"
+                                hx-delete="/Mercurius/api/app/ordenes/{fila.id}"
+                                hx-confirm="¿Está seguro de eliminar esta orden?"
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#128465;</button>
+                        {/if}
+                    </div>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron órdenes de compra</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

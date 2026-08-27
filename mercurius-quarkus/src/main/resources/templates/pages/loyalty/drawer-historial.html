@@ -1,0 +1,111 @@
+{!
+  pages/loyalty/drawer-historial - history drawer body for ONE client
+  (W4B T25). Fills #historial-cliente-body via
+  GET /api/app/loyalty/{code}/view?page&size and re-renders itself on pager
+  clicks so pagination stays inside the open dialog (htmx swaps the whole
+  #drawer-historial root).
+
+  Model keys supplied by LoyaltyResource#view:
+    resumen  Models.DTO.LoyaltySummaryDTO - summary card w/ tier badge
+    filas    List<Models.DTO.PuntosTransaccionDTO> - current page, newest first
+    paginaActual / totalPages / total - pager state
+    paginaAnterior / paginaSiguiente Int      (-1 = boundary/disabled)
+    size Int                                  (echoed into pager links)
+
+  Page contract mirrors GET /api/app/loyalty/{code}/history: page is 0-based,
+  size clamped 1..100 server-side.
+
+  Legacy parity: pointsHistoryDialog of secured/pages/Loyalty/index.xhtml —
+  Fecha dd/MM/yyyy HH:mm, Tipo + descripción, Puntos (earn=green, else red),
+  Saldo; emptyMessage "No hay transacciones de puntos".
+!}
+<div id="drawer-historial">
+    {! ── Client summary card (LoyaltySummaryDTO + tier badge) ────────── !}
+    <div class="box is-shadowless has-background-light" style="margin-bottom:1rem">
+        <div class="level">
+            <div class="level-left">
+                <div>
+                    <p class="title is-5" style="margin-bottom:0">{resumen.clienteNombre}</p>
+                    <p class="subtitle is-6" style="margin-bottom:0">
+                        {#if resumen.lastPurchaseDate??}Última compra: {time:format(resumen.lastPurchaseDate, 'dd/MM/yyyy')}{#else}Sin compras registradas{/if}
+                    </p>
+                </div>
+            </div>
+            <div class="level-right">
+                <span class="tag is-medium" style="background-color:{resumen.tierColor};color:#ffffff">
+                    {#if resumen.tierColor == '#ffd700'}Oro{#else if resumen.tierColor == '#c0c0c0'}Plata{#else if resumen.tierColor == '#cd7f32'}Bronce{#else}B&aacute;sico{/if}
+                </span>
+            </div>
+        </div>
+        <div class="columns has-text-centered" style="margin-top:0.5rem;margin-bottom:0">
+            <div class="column">
+                <p class="heading">Puntos Acumulados</p>
+                <p class="title is-4" style="margin-bottom:0">{#if resumen.puntosAcumulados??}{resumen.puntosAcumulados}{#else}0{/if}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Estado de Puntos</p>
+                {#if resumen.statusPuntos == 'active'}<span class="tag is-success">Activo</span>
+                {#else if resumen.statusPuntos == 'inactive'}<span class="tag is-warning">Inactivo</span>
+                {#else if resumen.statusPuntos == 'expired'}<span class="tag is-danger">Expirado</span>
+                {#else}<span class="tag is-light">Sin estado</span>{/if}
+            </div>
+        </div>
+    </div>
+
+    {! ── Paginated points history (PuntosTransaccionDTO) ─────────────── !}
+    <table class="table is-striped is-hoverable is-fullwidth is-narrow">
+        <thead>
+            <tr>
+                <th scope="col">Fecha</th>
+                <th scope="col">Tipo</th>
+                <th scope="col" class="has-text-right">Puntos</th>
+                <th scope="col" class="has-text-right">Saldo</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#for t in filas}
+            <tr>
+                <td>{#if t.fechaCreacion??}{time:format(t.fechaCreacion, 'dd/MM/yyyy HH:mm')}{#else}&mdash;{/if}</td>
+                <td>
+                    <strong>{t.tipoTransaccion}</strong>
+                    {#if t.descripcion??}<br/><span class="is-size-7 has-text-grey">{t.descripcion}</span>{/if}
+                </td>
+                <td class="has-text-right has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
+                    {#if t.puntos??}{t.puntos}{#else}0{/if}
+                </td>
+                <td class="has-text-right has-text-weight-bold">{#if t.saldoPuntos??}{t.saldoPuntos}{#else}&mdash;{/if}</td>
+            </tr>
+            {#else}
+            <tr><td colspan="4" class="has-text-centered has-text-grey">No hay transacciones de puntos</td></tr>
+            {/for}
+        </tbody>
+    </table>
+
+    {! ── Drawer-local pager (hx swaps keep the dialog open) ──────────── !}
+    <div class="level">
+        <div class="level-left">
+            <span class="has-text-grey">P&aacute;gina {paginaActual} de {totalPages} &middot; {total} movimientos</span>
+        </div>
+        <div class="level-right buttons" style="margin-bottom:0">
+            {#if paginaAnterior >= 0}
+            <button type="button" class="button is-small"
+                    hx-get="/Mercurius/api/app/loyalty/{resumen.clienteCode}/view?page={paginaAnterior}&size={size}"
+                    hx-target="#drawer-historial" hx-swap="outerHTML">&larr; Anterior</button>
+            {#else}
+            <button type="button" class="button is-small" disabled>&larr; Anterior</button>
+            {/if}
+            {#if paginaSiguiente >= 0}
+            <button type="button" class="button is-small"
+                    hx-get="/Mercurius/api/app/loyalty/{resumen.clienteCode}/view?page={paginaSiguiente}&size={size}"
+                    hx-target="#drawer-historial" hx-swap="outerHTML">Siguiente &rarr;</button>
+            {#else}
+            <button type="button" class="button is-small" disabled>Siguiente &rarr;</button>
+            {/if}
+        </div>
+    </div>
+
+    {! Close affordance for the shared kit modal bridge (index.html). !}
+    <div class="has-text-right">
+        <button type="button" class="button is-small" data-kit-close>Cerrar</button>
+    </div>
+</div>

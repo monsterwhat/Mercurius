@@ -1,0 +1,75 @@
+{
+  "descripcion": "Golden STRUCTURAL fixture for T32 devoluciones NC generation (plan task T32). Asserts structure and computed values, NOT byte-equality of XML. Scenario: original factura with line 0 = 2 x 5000.00 gravado 13% (impuesto monto 1300.00000) and line 1 = 1 x 2000.00 exento; devolucion returns 1 unit of each line.",
+  "seleccion": [
+    { "indice": 0, "cantidad": 1 },
+    { "indice": 1, "cantidad": 1 }
+  ],
+  "totalDevolucion": 7000,
+  "nc": {
+    "codigoDocumento": "03",
+    "clave": {
+      "longitud": 50,
+      "soloDigitos": true,
+      "prefijoPais": "506",
+      "situacionEnPosicion41": "1"
+    },
+    "consecutivo": {
+      "longitud": 18,
+      "sucursalSlice": [0, 3],
+      "terminalSlice": [3, 6],
+      "tipoSlice": [6, 8],
+      "tipoEsperado": "03",
+      "secuencialSlice": [8, 18]
+    },
+    "medioPago": ["01"],
+    "moneda": "CRC",
+    "estadoHacienda": "PENDIENTE",
+    "encabezadoEstado": "PENDIENTE",
+    "referenciaCodigo": "01"
+  },
+  "lineasNC": [
+    {
+      "numeroLinea": 0,
+      "cantidad": 1,
+      "precioUnitario": 5000,
+      "montoTotal": 5000,
+      "subTotal": 5000,
+      "montoTotalLinea": 5000,
+      "impuestos": [ { "codigo": "01", "tarifa": 13, "monto": 650 } ]
+    },
+    {
+      "numeroLinea": 1,
+      "cantidad": 1,
+      "precioUnitario": 2000,
+      "montoTotal": 2000,
+      "subTotal": 2000,
+      "montoTotalLinea": 2000,
+      "impuestos": []
+    }
+  ],
+  "resumen": {
+    "totalVenta": 7000,
+    "totalGravado": 5000,
+    "totalExento": 2000,
+    "totalExonerado": 0,
+    "totalServGravados": 0,
+    "totalMercanciasGravadas": 5000,
+    "totalServExentos": 2000,
+    "totalMercanciasExentas": 2000,
+    "totalDescuentos": 0,
+    "totalVentaNeta": 7000,
+    "totalImpuesto": 650,
+    "totalIVADevuelto": 0,
+    "totalOtrosCargos": 0,
+    "totalComprobante": 7650
+  },
+  "desgloseImpuestos": [
+    { "codigo": "01", "tarifa": 13, "monto": 650 }
+  ],
+  "inventario": {
+    "tipoMovimiento": "Devolucion",
+    "processed": true,
+    "movimientosEsperados": 2,
+    "cantidadPorMovimiento": -1
+  }
+}

@@ -1,0 +1,51 @@
+{!
+  pages/inventario/form-ajuste - creation-dialog body (T35), port of
+  fragments/Inventario/Activos/CreateMovimientoDialog.xhtml. Filled by
+  GET /api/app/inventario/formularios/ajuste/nueva; the POST goes to
+  POST /api/app/inventario/ajustes (form-urlencoded twin) and on success
+  the resource answers HX-Redirect back to the page.
+!}
+<div class="box is-shadowless">
+    <form hx-post="/Mercurius/api/app/inventario/ajustes"
+          hx-target="#crear-ajuste-body" hx-swap="innerHTML">
+        <div class="field">
+            <label class="label" for="ajuste-articulo-id">Código del artículo *</label>
+            <div class="control">
+                <input class="input" type="number" id="ajuste-articulo-id" name="articuloId"
+                       min="1" placeholder="Ej.: 123" required/>
+            </div>
+            <p class="help">Identificador del artículo al que se aplica el ajuste.</p>
+        </div>
+        <div class="field">
+            <label class="label" for="ajuste-cantidad">Cantidad *</label>
+            <div class="control">
+                <input class="input" type="number" step="any" id="ajuste-cantidad"
+                       name="cantidad" required/>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="ajuste-tipo">Tipo de movimiento</label>
+            <div class="control">
+                <input class="input" type="text" id="ajuste-tipo" name="tipoMovimiento"
+                       placeholder="Ajuste manual"/>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="ajuste-notas">Notas</label>
+            <div class="control">
+                <textarea class="textarea" id="ajuste-notas" name="notas" rows="3"
+                          maxlength="500"></textarea>
+            </div>
+        </div>
+        <div class="buttons is-centered">
+            <button class="button is-primary" type="submit">Crear Ajuste</button>
+            <button class="button" type="button" data-kit-close>Cancelar</button>
+        </div>
+    </form>
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

@@ -1,0 +1,33 @@
+{!
+  _tablas/pronosticos - table-only fragment for HX-Request swaps of the
+  Pronósticos de Inventario page (T19). Column set switches with "seccion".
+!}
+<div id="reporte-pronosticos-tabla">
+    {#include _kit/data-table id="reporte-pronosticos" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            {#if seccion == 'salud'}
+            <td>{f.articulo}</td>
+            <td><span class="tag is-danger">{f.estado}</span></td>
+            {#else}
+            {#if seccion == 'reorden'}
+            <td>{f.articulo}</td>
+            <td>{f.stockActual}</td>
+            <td>{f.cantidadSugerida}</td>
+            <td><span class="tag {#if f.prioridad == 'Comprar'}is-danger{#else}{#if f.prioridad == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.prioridad}</span></td>
+            {#else}
+            <td>{f.articulo}</td>
+            <td>{f.stockActual}</td>
+            <td>{f.demandaEstimada}</td>
+            <td>{f.diasRestantes}</td>
+            <td><span class="tag {#if f.recomendacion == 'Comprar'}is-danger{#else}{#if f.recomendacion == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.recomendacion}</span></td>
+            {/if}
+            {/if}
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

@@ -1,0 +1,57 @@
+{!
+  pages/cabys/form - modal-body form for EDITING a CaByS catalog entry
+  (W4B lane). Returned by GET /api/app/cabys/formularios/{codigo} and
+  re-rendered by the form-urlencoded PUT twin on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  The REST API offers NO create/delete for the catalog (rows come from the
+  Hacienda sync), so this form is always modo=editar and only touches the
+  fields PUT /api/app/cabys/{codigo} accepts: descripcion + estado.
+
+  Model:
+    cabys         Models.Cabys - entity being edited (never null)
+    errorDescripcion String    - field error (nullable)
+    toastSeverity String        - OOB toast severity (nullable)
+    toastMessage  String        - OOB toast text (nullable)
+!}
+<div id="forma-cabys">
+    <form hx-put="/Mercurius/api/app/cabys/{cabys.codigo}"
+          hx-target="#forma-cabys" hx-swap="outerHTML">
+        <div class="field">
+            <label class="label" for="cabys-codigo">Código:</label>
+            <div class="control">
+                <input class="input" id="cabys-codigo" value="{cabys.codigo}" disabled="disabled"/>
+            </div>
+            <p class="help has-text-grey">El código es asignado por Hacienda y no es editable.</p>
+        </div>
+        <div class="field">
+            <label class="label" for="cabys-descripcion">Descripción:</label>
+            <div class="control">
+                <textarea class="textarea {#if errorDescripcion??}is-danger{/if}" id="cabys-descripcion"
+                          name="descripcion" rows="3">{#if cabys.descripcion??}{cabys.descripcion}{/if}</textarea>
+            </div>
+            {#if errorDescripcion??}<p class="help is-danger">{errorDescripcion}</p>{/if}
+        </div>
+        <div class="field">
+            <label class="label" for="cabys-estado">Estado:</label>
+            <div class="control">
+                <input class="input" id="cabys-estado" name="estado" autocomplete="off"
+                       value="{#if cabys.estado??}{cabys.estado}{/if}"/>
+            </div>
+        </div>
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">Guardar cambios</button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

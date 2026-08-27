@@ -1,0 +1,68 @@
+{!
+  pages/loyalty/index - Panel de Lealtad admin (W4B strangler view-half, T25).
+
+  Qute/HTMX/Bulma port of secured/pages/Loyalty/index.xhtml, consuming the
+  LIVE JSON contracts of Controllers.Api.App.LoyaltyResource additively:
+
+    GET /api/app/loyalty/table?page&size&sort&dir   (NEW - dual-mode per
+      docs/ui-kit.md §2.9: HX-Request ⇒ only pages/loyalty/tabla-top.html;
+      otherwise this full page through layout.html)
+    GET /api/app/loyalty/{code}/view?page&size      (NEW - history drawer body:
+      LoyaltySummaryDTO summary card + paginated PuntosTransaccionDTO table)
+    PUT /api/app/loyalty/settings/form              (NEW - form-urlencoded twin
+      of PUT /settings; identical guard chain by delegation)
+    GET /api/app/loyalty/top|summary|{code}/history (existing JSON contracts,
+      untouched)
+
+  Model keys supplied by LoyaltyResource#renderFullPage:
+    modelo  Map - model of tabla-top.html (kit data-table contract)
+    ajustes Map - cashbackPercentage / puntosInactivityMonths for the panel
+
+  Interactions: settings panel swaps itself on save (Pattern A redisplay +
+  OOB toast); top-table sort/pager links degrade to full navigation (kit
+  contract); "Ver Historial" row buttons open the shared hidden-trigger kit
+  modal via data-kit-open + hx-get (clientes edit-modal bridge, T18).
+  The legacy "Procesar Expiración" MUTATION is NOT ported here.
+!}
+{#include layout}
+    {#title}Programa de Lealtad | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Programa de Lealtad</p>
+
+        {! Settings card — legacy "Configuración del Programa" !}
+        {#include pages/loyalty/panel-ajustes ajustes=ajustes /}
+
+        {! Top-customers kit table — legacy loadTopCustomers() limit 10 !}
+        {#include pages/loyalty/tabla-top modelo=modelo /}
+
+        {! History drawer: hidden-trigger kit modal; row buttons open it via
+           data-kit-open + hx-get into #{id}-body (see _kit/modal.html). !}
+        {#include _kit/modal id="historial-cliente" title="Historial de Puntos" triggerClass="is-hidden"
+             bodyUrl="/api/app/loyalty/view"}{/include}
+    </section>
+
+    {! Bridge: row-level history buttons open the shared drawer modal; the
+       swapped fragment's [data-kit-close] button closes it (T18 contract). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

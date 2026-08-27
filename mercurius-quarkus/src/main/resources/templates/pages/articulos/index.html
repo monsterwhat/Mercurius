@@ -1,0 +1,239 @@
+{!
+  pages/articulos/index - Gestión de Artículos (T34).
+
+  Qute/HTMX/Bulma port of secured/pages/Articulos/index.xhtml: the five-tab
+  monster (Activos / Inactivos / Catálogo / Pendientes / Promociones). The
+  legacy p:tabView + clickable stat-cards became an Alpine tab shell; each
+  tab's table lives in its own include so GET /api/app/articulos/table?tab=…
+  can swap it independently (docs/ui-kit.md §2.9 dual-mode contract).
+
+  Model keys supplied by Controllers.Api.App.ArticuloResource#renderFullPage:
+    activosTabla / inactivosTabla / catalogoTabla / pendientesTabla /
+    promocionesTabla    Map   - tabla-*.html models
+    activosCount / inactivosCount / catalogoCount / pendientesCount /
+    promocionesCount    Long  - legacy stat-card numbers
+    canExport           Boolean - SessionController.registros parity
+
+  Interactions:
+    - Tab switching: Alpine x-show driven by the stat cards (legacy
+      switchTab parity); { followed by a space keeps Qute literal.
+    - Create/edit dialogs: _kit/modal default triggers + shared hidden modals
+      opened by row buttons via data-kit-open (bridge script below).
+    - Revision wizard: single-article modal per row + Procesado Rápido modal.
+    - CAByS picker: buscador-cabys modal feeding the article forms.
+    - Export: normal browser POSTs to the T17 endpoint (NOT htmx), gated by
+      the registro role like the legacy SessionController.registros buttons.
+!}
+{#include layout}
+    {#title}Gestión de Artículos | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem"
+             x-data="{ tab: 'activos' }">
+        <p class="title is-3">Gestión de Artículos</p>
+
+        {! Stat cards — legacy clickable tabs (switchTab parity) !}
+        <div class="columns">
+            <div class="column">
+                <button type="button" class="box has-text-centered"
+                        style="width:100%;cursor:pointer;border:2px solid transparent"
+                        :class="{ 'has-border-link': tab === 'activos' }"
+                        @click="tab = 'activos'">
+                    <p class="title is-1" style="margin-bottom:0">{activosCount}</p>
+                    <p class="subtitle is-6">Activos</p>
+                </button>
+            </div>
+            <div class="column">
+                <button type="button" class="box has-text-centered"
+                        style="width:100%;cursor:pointer;border:2px solid transparent"
+                        :class="{ 'has-border-link': tab === 'inactivos' }"
+                        @click="tab = 'inactivos'">
+                    <p class="title is-1" style="margin-bottom:0">{inactivosCount}</p>
+                    <p class="subtitle is-6">Inactivos</p>
+                </button>
+            </div>
+            <div class="column">
+                <button type="button" class="box has-text-centered"
+                        style="width:100%;cursor:pointer;border:2px solid transparent"
+                        :class="{ 'has-border-link': tab === 'catalogo' }"
+                        @click="tab = 'catalogo'">
+                    <p class="title is-1" style="margin-bottom:0">{catalogoCount}</p>
+                    <p class="subtitle is-6">Catálogo</p>
+                </button>
+            </div>
+            <div class="column">
+                <button type="button" class="box has-text-centered"
+                        style="width:100%;cursor:pointer;border:2px solid transparent"
+                        :class="{ 'has-border-link': tab === 'pendientes' }"
+                        @click="tab = 'pendientes'">
+                    <p class="title is-1" style="margin-bottom:0">{pendientesCount}</p>
+                    <p class="subtitle is-6">Pendientes</p>
+                </button>
+            </div>
+            <div class="column">
+                <button type="button" class="box has-text-centered"
+                        style="width:100%;cursor:pointer;border:2px solid transparent"
+                        :class="{ 'has-border-link': tab === 'promociones' }"
+                        @click="tab = 'promociones'">
+                    <p class="title is-1" style="margin-bottom:0">{promocionesCount}</p>
+                    <p class="subtitle is-6">Promociones</p>
+                </button>
+            </div>
+        </div>
+
+        {! ── Tab: Activos ────────────────────────────────────────── !}
+        <div x-show="tab === 'activos'">
+            <div class="level">
+                <div class="level-left">
+                    <h2 class="title is-4" style="margin-bottom:0">Artículos Activos</h2>
+                </div>
+                <div class="level-right">
+                    <div class="buttons">
+                        {#include _kit/modal id="crear-articulo" title="Crear Artículo" triggerLabel="Crear Artículo" triggerClass="is-primary"
+                             bodyUrl="/api/app/articulos/formularios/articulos/nueva"}{/include}
+                        {#if canExport}
+                        <form method="post" action="/Mercurius/api/app/export">
+                            <input type="hidden" name="dataset" value="articulos"/>
+                            <input type="hidden" name="type" value="xlsx"/>
+                            <input type="hidden" name="tab" value="activos"/>
+                            <button class="button is-success" type="submit">Exportar Excel</button>
+                        </form>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            {#include pages/articulos/tabla-articulos modelo=activosTabla q=activosTabla.q /}
+            {!$1!}
+            {#include _kit/modal id="editar-articulo" title="Editar Artículo" triggerClass="is-hidden"
+                 bodyUrl="/api/app/articulos/formularios/articulos/nueva"}{/include}
+        </div>
+
+        {! ── Tab: Inactivos ──────────────────────────────────────── !}
+        <div x-show="tab === 'inactivos'" style="display:none">
+            <div class="level">
+                <div class="level-left">
+                    <h2 class="title is-4" style="margin-bottom:0">Artículos Inactivos</h2>
+                </div>
+                <div class="level-right">
+                    {#if canExport}
+                    <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="dataset" value="articulos"/>
+                        <input type="hidden" name="type" value="xlsx"/>
+                        <input type="hidden" name="tab" value="inactivos"/>
+                        <button class="button is-success" type="submit">Exportar Excel</button>
+                    </form>
+                    {/if}
+                </div>
+            </div>
+            {#include pages/articulos/tabla-articulos modelo=inactivosTabla q=inactivosTabla.q /}
+        </div>
+
+        {! ── Tab: Catálogo (legacy Procesados) ───────────────────── !}
+        <div x-show="tab === 'catalogo'" style="display:none">
+            <div class="level">
+                <div class="level-left">
+                    <h2 class="title is-4" style="margin-bottom:0">Catálogo de Artículos</h2>
+                </div>
+                <div class="level-right">
+                    {#if canExport}
+                    <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="dataset" value="articulos"/>
+                        <input type="hidden" name="type" value="xlsx"/>
+                        <input type="hidden" name="tab" value="catalogo"/>
+                        <button class="button is-success" type="submit">Exportar Excel</button>
+                    </form>
+                    {/if}
+                </div>
+            </div>
+            {#include pages/articulos/tabla-articulos modelo=catalogoTabla q=catalogoTabla.q /}
+        </div>
+
+        {! ── Tab: Pendientes (revision workflow) ─────────────────── !}
+        <div x-show="tab === 'pendientes'" style="display:none">
+            <div class="level">
+                <div class="level-left">
+                    <h2 class="title is-4" style="margin-bottom:0">Artículos Pendientes</h2>
+                </div>
+                <div class="level-right">
+                    <div class="buttons">
+                        {#include _kit/modal id="revision-rapida" title="Procesado Rápido" triggerLabel="Procesado Rápido" triggerClass="is-warning"
+                             bodyUrl="/api/app/articulos/revision/siguiente"}{/include}
+                        {#if canExport}
+                        <form method="post" action="/Mercurius/api/app/export">
+                            <input type="hidden" name="dataset" value="articulos"/>
+                            <input type="hidden" name="type" value="xlsx"/>
+                            <input type="hidden" name="tab" value="pendientes"/>
+                            <button class="button is-success" type="submit">Exportar Excel</button>
+                        </form>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            {#include pages/articulos/tabla-articulos modelo=pendientesTabla q=pendientesTabla.q /}
+            {!$1!}
+            {#include _kit/modal id="revision-articulo" title="Revisión de Artículo" triggerClass="is-hidden"
+                 bodyUrl="/api/app/articulos/revision/siguiente"}{/include}
+        </div>
+
+        {! ── Tab: Promociones ────────────────────────────────────── !}
+        <div x-show="tab === 'promociones'" style="display:none">
+            <div class="level">
+                <div class="level-left">
+                    <h2 class="title is-4" style="margin-bottom:0">Promociones</h2>
+                </div>
+                <div class="level-right">
+                    <div class="buttons">
+                        {#include _kit/modal id="crear-promocion" title="Crear Promoción" triggerLabel="Crear Promoción" triggerClass="is-primary"
+                             bodyUrl="/api/app/articulos/formularios/promociones/nueva"}{/include}
+                        {#if canExport}
+                        <form method="post" action="/Mercurius/api/app/export">
+                            <input type="hidden" name="dataset" value="promociones"/>
+                            <input type="hidden" name="type" value="xlsx"/>
+                            <button class="button is-success" type="submit">Exportar Excel</button>
+                        </form>
+                        {/if}
+                    </div>
+                </div>
+            </div>
+            {#include pages/articulos/tabla-promociones modelo=promocionesTabla q=promocionesTabla.q /}
+            {!$1!}
+            {#include _kit/modal id="editar-promocion" title="Editar Promoción" triggerClass="is-hidden"
+                 bodyUrl="/api/app/articulos/formularios/promociones/nueva"}{/include}
+            {!$1!}
+            {#include _kit/modal id="selector-articulo-promo" title="Seleccionar Artículo" triggerClass="is-hidden"
+                 bodyUrl="/api/app/articulos/formularios/promociones/articulos"}{/include}
+        </div>
+
+        {! Shared read-only details dialog (verDetalles port) and CAByS picker !}
+        {#include _kit/modal id="detalles-articulo" title="Detalles del Artículo" triggerClass="is-hidden"
+             bodyUrl="/api/app/articulos/table?tab=activos"}{/include}
+        {#include _kit/modal id="buscador-cabys" title="Seleccionar Código CABYS" triggerClass="is-hidden"
+             bodyUrl="/api/app/articulos/cabys?q="}{/include}
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level buttons open the shared modals; the swapped form's
+       [data-kit-close] button closes them (same pattern as categorías T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}
