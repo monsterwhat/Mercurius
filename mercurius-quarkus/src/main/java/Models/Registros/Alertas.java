@@ -6,7 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
+
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.JoinColumn;
 import lombok.Data;
@@ -27,15 +27,15 @@ public class Alertas {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int codigo;
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String mensaje;
     
     private String tipo; // This will be used as logLevel
     
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String antes; //Usada para guardar alguna entidad que se modifico (vieja).
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     private String despues; //la entidad con el cambio (nueva).
 
     private boolean vista; //Si ya se reviso o no...

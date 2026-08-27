@@ -76,7 +76,7 @@
                         <button type="button" class="button is-small is-info"
                                 title="Marcar como leída"
                                 aria-label="Marcar la alerta como leída"
-                                hx-post="/Mercurius{fila.ackUrl}"
+                                hx-post="/Mercurius{fila.ackUrl.raw}"
                                 hx-vals='{"canal":"html"}'
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">Marcar leído</button>
                         {/if}
