@@ -254,6 +254,9 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             if (entity.getResumen() != null) {
                 em.refresh(entity.getResumen());
             }
+            if (entity.getInformacionReferencia() != null) {
+                entity.getInformacionReferencia().size();
+            }
             
             return entity;
         } catch (NoResultException e) {
