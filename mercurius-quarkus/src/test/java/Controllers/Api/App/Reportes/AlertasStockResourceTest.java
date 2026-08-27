@@ -61,7 +61,13 @@ class AlertasStockResourceTest {
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "inventario"})
     void exportacionStreamsBytesXlsx() {
+        io.restassured.response.Response mint = given()
+                .when().get(PAGE);
+        org.junit.jupiter.api.Assertions.assertNotNull(mint.getCookie("csrf-token"),
+                "safe GET must mint the csrf-token cookie");
         byte[] bytes = given()
+                .cookie("csrf-token", mint.getCookie("csrf-token"))
+                .header("X-CSRF-TOKEN", mint.getCookie("csrf-token"))
                 .contentType(io.restassured.http.ContentType.URLENC)
                 .formParam("dataset", "stock-alerts")
                 .formParam("type", "xlsx")

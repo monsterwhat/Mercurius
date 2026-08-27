@@ -57,8 +57,8 @@
 
         <div class="buttons mt-4">
             <form method="post" action="/Mercurius/api/app/export">
-                <input type="hidden" name="dataset" value="reportes-ventas-cajero"/>
-                <input type="hidden" name="type" value="xlsx"/>
+                <input type="hidden" name="dataset" value="articulos"/>
+                <input type="hidden" name="type" value="pdf"/>
                 {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
                 <button class="button is-success" type="submit">Exportar Excel</button>
             </form>
