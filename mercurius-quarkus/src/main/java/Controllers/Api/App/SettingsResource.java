@@ -240,6 +240,7 @@ public class SettingsResource {
      */
     @POST
     @Path("/backup-trigger")
+    @Consumes(MediaType.WILDCARD)
     @Operation(summary = "Trigger a database backup now (same path as legacy executeBackupNow)")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Backup completed; returns refreshed status"),

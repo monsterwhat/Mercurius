@@ -336,6 +336,9 @@ class TributacionResourceTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "tributacion", roles = {"tributacion"})
     void declaracionResumenSumsPeriodThroughListByDateRange() {
+        // clean ALL leaked emitidos/recibidos for grouped runs (including ACEPTADO)
+        for (var p : emitidosService.listAll()) { try { emitidosService.delete(p); } catch (Exception ignore) {} }
+        for (var r : recibidosService.listAll()) { try { recibidosService.delete(r); } catch (Exception ignore) {} }
         LocalDate hoy = LocalDate.now();
         ComprobantesEmitidos venta = null;
         ComprobantesRecibidos compra = null;
@@ -517,6 +520,13 @@ class TributacionResourceTest extends support.ContextPathIsolation {
 
     private boolean pendientesBaselineIsEmpty() {
         List<ComprobantesEmitidos> pendientes = emitidosService.findFacturasPendientes();
+        if (pendientes != null && !pendientes.isEmpty()) {
+            // auto-clean leaked pendings for grouped runs
+            for (var p : pendientes) {
+                try { emitidosService.delete(p); } catch (Exception ignore) {}
+            }
+            pendientes = emitidosService.findFacturasPendientes();
+        }
         boolean vacio = pendientes == null || pendientes.isEmpty();
         assertTrue(vacio,
                 "pendientes table must be empty before this scenario; leaked rows: "

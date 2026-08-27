@@ -25,7 +25,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.primefaces.model.file.UploadedFile;
+import jakarta.servlet.http.Part;
 
 /**
  * ORPHAN NOTE (T26 settings VIEW half): legacy JSF helper kept ALIVE because
@@ -63,7 +63,7 @@ public class SettingsDirController implements Serializable {
     @Nullable
     private Boolean hasValidProfile;
     @Nullable
-    private UploadedFile imagen;
+    private Part imagen;
 
     @Inject
     @Nonnull
@@ -273,7 +273,7 @@ public class SettingsDirController implements Serializable {
         return getProfileDirPath() + File.separator + "recibos";
     }
 
-    public void saveUploadedFile(@Nonnull UploadedFile uploadedFile, @Nonnull String directoryPath) {
+    public void saveUploadedFile(@Nonnull Part uploadedFile, @Nonnull String directoryPath) {
         try {
             // Make sure the directory exists
             Path directory = Path.of(directoryPath);
@@ -282,7 +282,7 @@ public class SettingsDirController implements Serializable {
             }
 
             // Resolve target file path
-            Path target = directory.resolve(uploadedFile.getFileName());
+            Path target = directory.resolve(uploadedFile.getSubmittedFileName());
 
             // Copy file contents
             try (InputStream input = uploadedFile.getInputStream()) {

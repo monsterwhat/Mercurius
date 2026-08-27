@@ -356,11 +356,11 @@
             <div class="columns is-multiline">
                 <div class="column is-half">
                     <p class="heading">Porcentaje de cashback</p>
-                    <p class="title is-4">{settings.cashbackPercentage ?: '—'}{#if settings.cashbackPercentage??}%{/if}</p>
+                    <p class="title is-4" data-field="cashbackPercentage">{settings.cashbackPercentage ?: '—'}{#if settings.cashbackPercentage??}%{/if}</p>
                 </div>
                 <div class="column is-half">
                     <p class="heading">Meses de inactividad antes de expirar puntos</p>
-                    <p class="title is-4">{settings.puntosInactivityMonths ?: '—'}</p>
+                    <p class="title is-4" data-field="puntosInactivityMonths">{settings.puntosInactivityMonths ?: '—'}</p>
                 </div>
             </div>
             <p class="help has-text-grey">
