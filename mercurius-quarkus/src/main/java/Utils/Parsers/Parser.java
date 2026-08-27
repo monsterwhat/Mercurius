@@ -1087,7 +1087,9 @@ public class Parser {
                 DetalleServicio detalles = new DetalleServicio();
 
                 alertasService.registrarAlerta("Debug", "Parsing emisor...", null, 0, "Parser.parseXML()", null, null);
-                Emisor emisor = parseEmisor(rootNode.path("Emisor"));
+                JsonNode emisorNode = rootNode.path(documentType).isMissingNode() ? rootNode.path("Emisor") : rootNode.path(documentType).path("Emisor");
+                if (emisorNode.isMissingNode() || emisorNode.isEmpty()) emisorNode = rootNode.path("Emisor");
+                Emisor emisor = parseEmisor(emisorNode);
                 if (emisor == null) {
                     String errorMsg = "XML inválido: error en datos del emisor";
                     alertasService.registrarAlerta("Error", "Error parsing emisor", null, 0, "Parser.parseXML()", null, null);
@@ -1096,7 +1098,9 @@ public class Parser {
                 }
 
                 alertasService.registrarAlerta("Debug", "Parsing receptor...", null, 0, "Parser.parseXML()", null, null);
-                Receptor receptor = parseReceptor(rootNode.path("Receptor"));
+                JsonNode receptorNode = rootNode.path(documentType).isMissingNode() ? rootNode.path("Receptor") : rootNode.path(documentType).path("Receptor");
+                if (receptorNode.isMissingNode() || receptorNode.isEmpty()) receptorNode = rootNode.path("Receptor");
+                Receptor receptor = parseReceptor(receptorNode);
                 if (receptor == null) {
                     String errorMsg = "XML inválido: error en datos del receptor";
                     alertasService.registrarAlerta("Error", "Error parsing receptor", null, 0, "Parser.parseXML()", null, null);
@@ -1104,8 +1108,10 @@ public class Parser {
                     return;
                 }
 
-                String codigoActividad = rootNode.path("CodigoActividad").asText();
-                String fechaEmisionStr = rootNode.path("FechaEmision").asText();
+                String codigoActividad = rootNode.path(documentType).path("CodigoActividad").asText();
+                if (codigoActividad.isEmpty()) codigoActividad = rootNode.path("CodigoActividad").asText();
+                String fechaEmisionStr = rootNode.path(documentType).path("FechaEmision").asText();
+                if (fechaEmisionStr.isEmpty()) fechaEmisionStr = rootNode.path("FechaEmision").asText();
                 alertasService.registrarAlerta("Debug", "FechaEmision: '" + fechaEmisionStr + "'", null, 0, "Parser.parseXML()", null, null);
 
                 LocalDateTime localDateTime = parseFechaEmision(fechaEmisionStr);
