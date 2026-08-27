@@ -115,7 +115,9 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
     @Transactional
     public void update(ComprobantesRecibidos entity) {
         try {
-            em.merge(entity);
+            ComprobantesRecibidos merged = em.merge(entity);
+            em.flush();
+            em.refresh(merged);
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.update()", null, e.getMessage());
         }
