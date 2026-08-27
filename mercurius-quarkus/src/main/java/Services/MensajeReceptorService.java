@@ -36,7 +36,9 @@ public class MensajeReceptorService {
                                            String accion, BigDecimal montoTotalImpuesto,
                                            BigDecimal montoTotalFactura) {
         try {
+            System.out.println("MR start id=" + (factura != null ? factura.getId() : "null") + " codigo=" + codigoMensaje + " accion=" + accion);
             if (factura.getEncabezado() == null) {
+                System.out.println("MR fail: sin encabezado");
                 return new MRResult(false, "Factura sin encabezado", null);
             }
 
