@@ -1,0 +1,44 @@
+{!
+  pages/caja/form-abrir - "Abrir Sesion de Caja" card (T38).
+
+  Port of the legacy rendered="#{!cierreCajaController.sesionAbierta}" branch
+  of secured/pages/Caja/index.xhtml (p:inputNumber montoApertura +
+  commandButton abrirSesion). Submits via HTMX to the form twin
+  POST /api/app/caja/open/form, which delegates to the JSON guard chain;
+  failures redisplay THIS fragment (through estado-caja.html) with
+  errorGeneral + an error toast.
+
+  Model (inherited from estado-caja.html context; optional ??-guarded):
+    errorGeneral  String - validation error text ("Debe ingresar un monto
+                           inicial valido")
+    toastSeverity / toastMessage - optional OOB toast
+
+  CSRF: inherited automatically from the layout <body hx-headers> pattern.
+!}
+<div class="box" id="panel-abrir-caja">
+    <h5 class="title is-5">Abrir Sesion de Caja</h5>
+
+    <form id="forma-abrir-caja"
+          hx-post="/Mercurius/api/app/caja/open/form"
+          hx-target="#caja-estado" hx-swap="innerHTML">
+        <div class="columns">
+            <div class="column is-one-third">
+                <div class="field">
+                    <label class="label" for="montoApertura">Monto Inicial (CRC)</label>
+                    <div class="control">
+                        <input class="input {#if errorGeneral??}is-danger{/if}" id="montoApertura"
+                               type="number" name="montoApertura" step="0.01" min="0"
+                               inputmode="decimal" required/>
+                    </div>
+                    {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <button class="button is-success" type="submit">&#128274; Abrir Sesion</button>
+        </div>
+    </form>
+
+    {! Server-rendered toasts land in the layout container via estado-caja's
+       OOB sibling; nothing extra needed here. !}
+</div>

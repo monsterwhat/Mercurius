@@ -1,0 +1,138 @@
+{!
+  pages/devoluciones/index - Devoluciones y Notas de Credito (plan task T32).
+
+  Replaces secured/pages/Devoluciones/index.xhtml
+  (#{devolucionesController.*}, deleted by this task).
+
+  Sections (legacy parity):
+    - Buscar Factura card: tipo radio (consecutivo|cliente) + criterio;
+      the Buscar button re-fetches THIS url with HX-Request and swaps ONLY
+      the {#fragment id=resultados} section below into #resultados
+      (ui-kit §2.9 dual-mode contract).
+    - Resultados table (_kit/data-table): Seleccionar buttons fetch
+      /api/app/devoluciones/{id}/lineas into #devolucion-panel.
+    - #devolucion-panel: filled by the API resource fragment (selection
+      form + live total + authorize modal wired to
+      /api/app/devoluciones/{id}/authform → authorize).
+    - Historial de Notas de Credito: server-rendered; the authorize success
+      response refreshes tbody#historial-tbody out-of-band.
+
+  Model keys supplied by DevolucionesPagesResource.model():
+    titulo, tipo, q, busquedaActiva, baseUrl, resultados[], total, page,
+    size, totalPages, pages[], headersResultados[], historialNotas[],
+    headersHistorial[]
+!}
+{#include layout}
+    {#title}Devoluciones y Notas de Credito | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">Devoluciones y Notas de Credito</h1>
+        <p class="subtitle is-6">Procese devoluciones de articulos y genere notas de credito</p>
+
+        {! ── Buscar Factura (legacy buscarFactura) ── !}
+        <div class="box">
+            <h3 class="title is-5">Buscar Factura</h3>
+            <form id="busqueda-form">
+                <div class="field">
+                    <label class="label">Tipo de Busqueda</label>
+                    <div class="control">
+                        <label class="radio">
+                            <input type="radio" name="tipo" value="consecutivo"
+                                   {#if tipo != 'cliente'}checked{/if} />
+                            Numero Consecutivo
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="tipo" value="cliente"
+                                   {#if tipo == 'cliente'}checked{/if} />
+                            Nombre Cliente
+                        </label>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="criterio-busqueda">Criterio de Busqueda</label>
+                    <div class="control">
+                        <input class="input" type="text" id="criterio-busqueda" name="q"
+                               value="{q}" placeholder="Consecutivo o nombre del cliente"/>
+                    </div>
+                </div>
+                <button type="button" class="button is-warning"
+                        hx-get="/Mercurius{baseUrl}"
+                        hx-include="#busqueda-form"
+                        hx-target="#resultados" hx-swap="innerHTML">
+                    Buscar
+                </button>
+            </form>
+        </div>
+
+        {! ── Resultados (fragment swapped by Buscar) ── !}
+        <div class="box" id="resultados-box">
+            <h3 class="title is-5">Resultados de Busqueda</h3>
+            <div id="resultados">
+                {#fragment id=resultados}
+                {#if !busquedaActiva}
+                    <p class="has-text-grey">Ingrese un criterio de busqueda y presione Buscar.</p>
+                {/if}
+                {#include _kit/data-table id="devoluciones-busqueda" baseUrl=baseUrl
+                     headers=headersResultados
+                     page=page size=size total=total totalPages=totalPages pages=pages}
+                  {#rows}
+                    {#for f in resultados}
+                    <tr>
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
+                        <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="has-text-centered">
+                            <button type="button" class="button is-warning is-small"
+                                    hx-get="/Mercurius/api/app/devoluciones/{f.id}/lineas"
+                                    hx-target="#devolucion-panel" hx-swap="innerHTML">
+                                Seleccionar
+                            </button>
+                        </td>
+                    </tr>
+                    {/for}
+                    {#if resultados.isEmpty()}
+                    <tr><td colspan="5" class="has-text-centered has-text-grey">
+                        {#if busquedaActiva}No se encontraron facturas{#else}Sin registros{/if}
+                    </td></tr>
+                    {/if}
+                  {/rows}
+                {/include}
+                {/fragment}
+            </div>
+        </div>
+
+        {! ── Panel de seleccion (llenado por /api/app/devoluciones/{id}/lineas) ── !}
+        <div id="devolucion-panel"></div>
+
+        {! ── Historial de Notas de Credito ── !}
+        <div class="box">
+            <h3 class="title is-5">Historial de Notas de Credito</h3>
+            <table class="table is-striped is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        {#for col in headersHistorial}
+                        <th scope="col">{col.label}</th>
+                        {/for}
+                    </tr>
+                </thead>
+                <tbody id="historial-tbody">
+                    {#for nota in historialNotas}
+                    <tr>
+                        <td>{#if nota.fecha??}{time:format(nota.fecha, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
+                        <td class="is-family-monospace">{#if nota.facturaOriginal??}{nota.facturaOriginal}{#else}-{/if}</td>
+                        <td>{#if nota.motivo??}{nota.motivo}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if nota.montoTotal??}{nota.montoTotal}{#else}0{/if}</td>
+                        <td class="has-text-centered">
+                            {#if nota.haciendaEstado??}<span class="tag is-info">{nota.haciendaEstado}</span>{#else}-{/if}
+                        </td>
+                    </tr>
+                    {/for}
+                    {#if historialNotas.isEmpty()}
+                    <tr><td colspan="5" class="has-text-centered has-text-grey">No hay notas de credito registradas</td></tr>
+                    {/if}
+                </tbody>
+            </table>
+        </div>
+    {/body}
+{/include}

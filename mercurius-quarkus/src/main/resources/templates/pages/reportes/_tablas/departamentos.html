@@ -1,0 +1,26 @@
+{!
+  _tablas/departamentos - table-only fragment for HX-Request swaps of the
+  Reporte de Ventas por Departamento (T19).
+!}
+<div id="reporte-departamentos-tabla">
+    {#include _kit/data-table id="reporte-departamentos" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            <td>{f.nombre}</td>
+            <td>{f.cantidad}</td>
+            <td>{f.porcentaje}</td>
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+    {#if consultaCompleta && totalGeneral??}
+    <div class="level">
+        <div class="level-left">
+            <span class="tag is-medium is-info">Total {totalGeneral}</span>
+        </div>
+    </div>
+    {/if}
+</div>

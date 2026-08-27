@@ -1,0 +1,255 @@
+{!
+  pages/compras/ordenes-form - staged crear|editar form for Ã“rdenes de Compra
+  (T31). Returned by GET /api/app/ordenes/formularios[/nueva|/{id}] and
+  re-rendered by the form-urlencoded POST/PUT twins on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Field labels and required semantics are verbatim ports of the legacy
+  CrearOrdenDialog/EditarOrdenDialog ("Proveedor *", "Fecha Entrega Estimada",
+  "Notas", "ArtÃ­culos de la Orden", "Cantidad", "Precio Unitario", "Subtotal",
+  "Total Estimado"). The proveedor guard message
+  ("Debe seleccionar un proveedor!") and the line guards live server-side in
+  OrdenCompraResource.validarPayload (saveOrden/updateOrden parity).
+
+  Model:
+    modo           String - "crear" | "editar"
+    orden          Object - Models.OrdenCompra when editar, null when crear
+    proveedores    List    - Models.Departamento options (legacy getProveedoresList)
+    lineas         List    - pre-computed row maps when editar (codigo, nombre,
+                             cantidad, precio, subtotal)
+    fechaEntregaIso String - orden.fechaEntregaEstimada as yyyy-MM-dd (server
+                             pre-formatted so the template stays dumb)
+    errorGeneral   String  - guard failures surfaced by the API
+    toastSeverity / toastMessage - OOB toast (nullable)
+
+  Article picker: clientes-style search-as-you-type (ui-kit Â§8) against
+  GET /api/app/ordenes/articulos?q=; selection is wired by the page-level
+  script in ordenes.html (.js-articulo-opcion fills the row).
+!}
+<div id="forma-orden">
+    {#if modo == 'editar' && orden??}
+    <form hx-put="/Mercurius/api/app/ordenes/{orden.id}"
+          hx-target="#forma-orden" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/ordenes"
+          hx-target="#forma-orden" hx-swap="outerHTML">
+    {/if}
+        {#if modo == 'editar' && orden??}
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="orden-numero">NÂ° Orden</label>
+                    <div class="control">
+                        <input class="input is-static" id="orden-numero" readonly="readonly"
+                               value="{orden.numeroOrden}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="orden-estado-actual">Estado</label>
+                    <div class="control">
+                        <input class="input is-static" id="orden-estado-actual" readonly="readonly"
+                               value="{orden.estado}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {/if}
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="orden-proveedor">Proveedor *</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="orden-proveedor" name="proveedorId" required="required">
+                                <option value="" {#if modo != 'editar'}selected{/if}>&ndash; Seleccionar proveedor &ndash;</option>
+                                {#for prov in proveedores}
+                                <option value="{prov.id}"
+                                    {#if modo == 'editar' && orden?? && orden.proveedor != null && orden.proveedor.id == prov.id}selected{/if}>{prov.nombre}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="orden-fecha-entrega">Fecha Entrega Estimada</label>
+                    <div class="control">
+                        <input class="input" type="date" id="orden-fecha-entrega"
+                               name="fechaEntregaEstimada" value="{#if fechaEntregaIso??}{fechaEntregaIso}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="orden-notas">Notas</label>
+            <div class="control">
+                <textarea class="textarea" id="orden-notas" name="notas" rows="2"
+                          placeholder="Notas adicionales...">{#if orden??}{#if orden.notas??}{orden.notas}{/if}{/if}</textarea>
+            </div>
+        </div>
+
+        <hr/>
+        <p class="title is-6">ArtÃ­culos de la Orden</p>
+
+        <div id="lineas-lista">
+            {#if modo == 'editar'}
+            {#for linea in lineas}
+            <div class="orden-linea field is-grouped mb-2" style="align-items:flex-end;flex-wrap:wrap">
+                <input type="hidden" name="articuloCodigo" value="{#if linea.codigo??}{linea.codigo}{/if}"/>
+                <div class="control is-expanded" style="position:relative;min-width:14rem">
+                    <input class="input js-articulo-nombre" type="text" autocomplete="off"
+                           placeholder="Buscar artÃ­culo..." value="{#if linea.nombre??}{linea.nombre}{/if}"
+                           hx-get="/Mercurius/api/app/ordenes/articulos"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
+                    <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30"></div>
+                </div>
+                <div class="control">
+                    <input class="input js-cantidad" type="number" name="cantidad" min="0.0001" step="0.0001"
+                           placeholder="0" style="width:7rem;text-align:center" value="{linea.cantidad}"/>
+                </div>
+                <div class="control">
+                    <input class="input js-precio" type="number" name="precioUnitario" min="0" step="0.0001"
+                           placeholder="0.00" style="width:8rem;text-align:center" value="{linea.precio}"/>
+                </div>
+                <div class="control">
+                    <span class="js-subtotal" style="font-weight:600">{linea.subtotal}</span>
+                </div>
+                <div class="control">
+                    <button class="button is-danger is-small" type="button" title="Eliminar artÃ­culo"
+                            data-quitar-linea>&times;</button>
+                </div>
+            </div>
+            {/for}
+            {/if}
+        </div>
+
+        <template id="linea-plantilla">
+            <div class="orden-linea field is-grouped mb-2" style="align-items:flex-end;flex-wrap:wrap">
+                <input type="hidden" name="articuloCodigo" value=""/>
+                <div class="control is-expanded" style="position:relative;min-width:14rem">
+                    <input class="input js-articulo-nombre" type="text" autocomplete="off"
+                           placeholder="Buscar artÃ­culo..."
+                           hx-get="/Mercurius/api/app/ordenes/articulos"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
+                    <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30"></div>
+                </div>
+                <div class="control">
+                    <input class="input js-cantidad" type="number" name="cantidad" min="0.0001" step="0.0001"
+                           placeholder="0" style="width:7rem;text-align:center"/>
+                </div>
+                <div class="control">
+                    <input class="input js-precio" type="number" name="precioUnitario" min="0" step="0.0001"
+                           placeholder="0.00" style="width:8rem;text-align:center"/>
+                </div>
+                <div class="control">
+                    <span class="js-subtotal" style="font-weight:600">â‚¡0.00</span>
+                </div>
+                <div class="control">
+                    <button class="button is-danger is-small" type="button" title="Eliminar artÃ­culo"
+                            data-quitar-linea>&times;</button>
+                </div>
+            </div>
+        </template>
+
+        <div class="buttons mt-3">
+            <button class="button is-light" type="button" id="agregar-linea">+ Agregar ArtÃ­culo</button>
+        </div>
+
+        <div class="columns is-vcentered mt-3">
+            <div class="column has-text-right">
+                <span class="title is-5">Total Estimado: </span>
+                <span class="title is-4 has-text-success" id="total-estimado">
+                    {#if modo == 'editar' && orden??}{#if orden.totalEstimado??}â‚¡{orden.totalEstimado}{#else}â‚¡0.00{/if}{#else}â‚¡0.00{/if}
+                </span>
+            </div>
+        </div>
+
+        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        <div class="field is-grouped is-grouped-centered mt-4">
+            <div class="control">
+                <button class="button is-success" type="submit">
+                    {#if modo == 'editar'}Guardar Cambios{#else}Guardar Orden{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cancelar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{!
+  Line editor: add-row clones the template, remove-row drops the row, and any
+  cantidad/precio edit recomputes row subtotal + grand total (display only â€”
+  the server recomputes authoritatively via calcularSubtotal/calcularTotal).
+  Kept brace-safe for Qute: every "{" is followed by whitespace/newline.
+!}
+<script>
+    (function () {
+        function filas() {
+            return document.querySelectorAll('#forma-orden .orden-linea');
+        }
+        function numero(valor) {
+            var n = parseFloat(valor);
+            if (isNaN(n)) {
+                return 0;
+            }
+            return n;
+        }
+        function recalcular(fila) {
+            var cantidad = fila.querySelector('.js-cantidad');
+            var precio = fila.querySelector('.js-precio');
+            var subtotal = fila.querySelector('.js-subtotal');
+            if (cantidad && precio && subtotal) {
+                var total = numero(cantidad.value) * numero(precio.value);
+                subtotal.textContent = 'â‚¡' + total.toFixed(2);
+            }
+            var granTotal = 0;
+            filas().forEach(function (actual) {
+                var s = actual.querySelector('.js-subtotal');
+                if (s) {
+                    granTotal += numero((s.textContent || '').replace('â‚¡', '').replace(/,/g, ''));
+                }
+            });
+            var salida = document.getElementById('total-estimado');
+            if (salida) {
+                salida.textContent = 'â‚¡' + granTotal.toFixed(2);
+            }
+        }
+        document.addEventListener('input', function (e) {
+            var fila = e.target.closest('.orden-linea');
+            if (fila && (e.target.classList.contains('js-cantidad') || e.target.classList.contains('js-precio'))) {
+                recalcular(fila);
+            }
+        });
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('[data-quitar-linea]')) {
+                var fila = e.target.closest('.orden-linea');
+                if (fila) {
+                    fila.remove();
+                    recalcular(document.createElement('div'));
+                }
+                return;
+            }
+            var agregar = e.target.closest('#agregar-linea');
+            if (agregar) {
+                var plantilla = document.getElementById('linea-plantilla');
+                var lista = document.getElementById('lineas-lista');
+                if (plantilla && lista) {
+                    lista.appendChild(plantilla.content.cloneNode(true));
+                }
+            }
+        });
+    })();
+</script>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

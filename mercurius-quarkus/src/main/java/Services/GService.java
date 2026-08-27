@@ -58,7 +58,9 @@ public abstract class GService<T> implements Serializable{
     public void delete(@Nonnull T entity) {
         try {
             if (!em.contains(entity)) {
-                entity = em.find(getEntityClass(), entity);
+                Object id = em.getEntityManagerFactory()
+                        .getPersistenceUnitUtil().getIdentifier(entity);
+                entity = em.find(getEntityClass(), id);
             }
 
             if (entity != null) {

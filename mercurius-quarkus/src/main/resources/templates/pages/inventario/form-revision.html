@@ -1,0 +1,61 @@
+{!
+  pages/inventario/form-revision - revision-dialog body for ONE pending
+  movement (T35), port of fragments/Inventario/PendientesRevision/
+  DialogoRevisionInventario.xhtml. The "Actualizar datos" button posts to
+  POST /api/app/inventario/ajustes/{codigo}/aprobar which stamps usuario /
+  fechaMovimiento / tipoMovimiento="Stock por Factura" and applies the
+  quantity through InventarioService.markAsProcessed (stock update parity).
+
+  Model: ajuste = Controllers.Api.App.InventarioResource.InventarioDTO
+!}
+{#if ajuste??}
+<div class="box is-shadowless">
+    <h4 class="title is-5">{ajuste.articuloNombre}</h4>
+
+    <div class="columns">
+        <div class="column">
+            <div class="field">
+                <label class="label">Artículo:</label>
+                <p class="input is-static has-text-weight-semibold">{ajuste.articuloNombre}</p>
+            </div>
+        </div>
+        <div class="column">
+            <div class="field">
+                <label class="label">Código de barras:</label>
+                <p class="input is-static" style="font-family:monospace">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification is-info is-light">
+        Cantidad recomendada por la factura:
+        <strong>{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</strong>
+    </div>
+
+    <form hx-post="/Mercurius/api/app/inventario/ajustes/{ajuste.codigo}/aprobar"
+          hx-target="#revision-ajuste-body" hx-swap="innerHTML">
+        <div class="field">
+            <label class="label" for="revision-cantidad">Cantidad *</label>
+            <div class="control">
+                <input class="input" type="number" step="any" id="revision-cantidad"
+                       name="cantidad" value="{ajuste.cantidad}" required/>
+            </div>
+            <p class="help">La cantidad no puede estar vacía</p>
+        </div>
+        <div class="buttons is-centered mt-4">
+            <button class="button is-primary is-medium" type="submit">Actualizar datos</button>
+            <button class="button" type="button" data-kit-close>Cerrar</button>
+        </div>
+    </form>
+</div>
+{#else}
+<div class="has-text-centered p-4">
+    <p class="has-text-grey">No hay movimiento seleccionado</p>
+</div>
+{/if}
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

@@ -1,0 +1,31 @@
+{!
+  pages/reportes/_historial-puntos - points-history dialog body fragment (T20).
+
+  Rendered standalone by LoyaltyReportesResource.historial() and swapped into
+  #loyalty-historial-body by the "Ver Historial" buttons of loyalty.html.
+  Mirrors the legacy pointsHistoryDialog table (loyaltyController.
+  selectedCustomerPointsHistory).
+!}
+<div id="loyalty-historial-contenido">
+    {#if cliente??}
+    <p class="has-text-weight-bold mb-2">{cliente.name}</p>
+    {/if}
+    <table class="table is-striped is-hoverable is-fullwidth" id="loyalty-historial-tabla">
+        <thead>
+            <tr><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Puntos</th><th>Saldo</th></tr>
+        </thead>
+        <tbody>
+            {#for t in historial}
+            <tr data-row-key="{t.id}">
+                <td>{#if t.fechaCreacion??}{t.fechaCreacion}{/if}</td>
+                <td class="has-text-weight-bold">{t.tipoTransaccion}</td>
+                <td>{#if t.descripcion??}{t.descripcion}{/if}</td>
+                <td class="has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
+                    {#if t.puntos??}{t.puntos}{#else}0{/if}
+                </td>
+                <td class="has-text-weight-bold">{#if t.saldoPuntos??}{t.saldoPuntos}{#else}0{/if}</td>
+            </tr>
+            {/for}
+        </tbody>
+    </table>
+</div>

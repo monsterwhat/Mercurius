@@ -1,0 +1,77 @@
+{!
+  pages/cabys/index - Catálogo CaByS (W4B strangler view-half lane).
+
+  Qute/HTMX/Bulma port of secured/pages/CaByS/index.xhtml, consuming the LIVE
+  JSON contracts of Controllers.Api.App.CabysResource additively:
+
+    GET /api/app/cabys/table?page&size&sort&dir&q   (NEW - dual-mode per
+      docs/ui-kit.md §2.9: HX-Request ⇒ only pages/cabys/tabla.html; otherwise
+      this full page through layout.html)
+    GET /api/app/cabys/formularios/{codigo}         (NEW - edit-form modal body)
+    PUT /api/app/cabys/{codigo}                     (existing JSON endpoint;
+      an additive form-urlencoded twin answers the HTMX dialog)
+
+  Model keys supplied by CabysResource#renderFullPage:
+    tablaCabys    Map  - model of tabla.html (kit data-table contract)
+    totalCodigos  Long - stat card (legacy #{CabysController.cabysCount()} parity)
+
+  NOT PORTED: the "Cargar Catálogo" Hacienda sync button — it lives on the
+  legacy controller action (CabysService.listAllAPI) and the REST resource
+  deliberately exposes no sync endpoint (see CabysResource javadoc).
+
+  Interactions:
+    - Search-as-you-type: keyup changed delay:300ms hx-get against the table
+      endpoint, swapping the table container (ui-kit §7 filter-input mapping).
+    - Edit dialog: shared hidden-trigger _kit/modal; row buttons carry
+      data-kit-open + their own hx-get into #{id}-body (T18 bridge pattern).
+!}
+{#include layout}
+    {#title}Catálogo CaByS | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <div class="level">
+            <div class="level-left">
+                <p class="title is-3" style="margin-bottom:0">Catálogo de Bienes y Servicios (CAByS)</p>
+            </div>
+            <div class="level-right">
+                <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
+                    <p class="title is-2" style="margin-bottom:0">{totalCodigos ?: 0}</p>
+                    <p class="subtitle is-6">Códigos CAByS</p>
+                </div>
+            </div>
+        </div>
+
+        {#include pages/cabys/tabla modelo=tablaCabys q=tablaCabys.q /}
+
+        {!$1!}
+        {#include _kit/modal id="editar-cabys" title="Editar Código CAByS" triggerClass="is-hidden"
+             bodyUrl="/api/app/cabys/table"}{/include}
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level edit buttons open the shared edit modal; the swapped
+       form's [data-kit-close] button closes it (same contract as T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

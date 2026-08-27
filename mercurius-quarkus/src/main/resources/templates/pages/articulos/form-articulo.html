@@ -1,0 +1,216 @@
+{!
+  pages/articulos/form-articulo - modal-body form for crear|editar artículo
+  (T34). Returned by GET /api/app/articulos/formularios/articulos[/nueva|/{codigo}]
+  and re-rendered by the POST/PUT endpoints on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Model:
+    modo           String  - "crear" | "editar"
+    articulo       Object  - Models.Articulos when editar, null when crear
+    precio         Object  - latest ArticuloPrecio (nullable)
+    departamentos  List    - DepartamentoService.listAll()
+    familias       List    - FamiliaService.listAll()
+    errorMensaje   String  - legacy FacesMessage parity (nullable)
+    toastSeverity  String  - OOB toast severity (nullable)
+    toastMessage   String  - OOB toast text (nullable)
+
+  The submit posts urlencoded form fields; the resource's @Consumes(form)
+  variants bind them. Success answers with HX-Redirect (full page reload).
+  CAByS selection uses the shared buscador-cabys modal: the picked code is
+  written into the hidden cabysCodigo input via a DOM event.
+!}
+<div id="forma-articulo">
+    {#if modo == 'editar' && articulo??}
+    <form hx-put="/Mercurius/api/app/articulos/{articulo.codigo}"
+          hx-target="#forma-articulo" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/articulos"
+          hx-target="#forma-articulo" hx-swap="outerHTML">
+    {/if}
+        <div class="field">
+            <label class="label" for="articulo-nombre">Nombre del Artículo:</label>
+            <div class="control">
+                <input class="input" id="articulo-nombre" name="nombre" required="required"
+                       autocomplete="off" placeholder="Ingrese el nombre del artículo"
+                       value="{#if articulo??}{articulo.nombre}{/if}"/>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="articulo-codigo-barra">Código de Barras:</label>
+            <div class="control">
+                <input class="input" id="articulo-codigo-barra" name="codigoBarra" required="required"
+                       autocomplete="off" placeholder="Ingrese el código de barras"
+                       value="{#if articulo??}{articulo.codigoBarra}{/if}"/>
+            </div>
+            {#if errorMensaje??}<p class="help is-danger">{errorMensaje}</p>{/if}
+        </div>
+
+        <div class="field">
+            <label class="label" for="articulo-descripcion">Descripción:</label>
+            <div class="control">
+                <textarea class="textarea" id="articulo-descripcion" name="descripcion"
+                          rows="3" maxlength="500"
+                          placeholder="Descripción del artículo (opcional)">{#if articulo??}{articulo.descripcion}{/if}</textarea>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-unidad">Unidad de Medida:</label>
+                    <div class="control">
+                        <div class="select" style="width:100%">
+                            <select id="articulo-unidad" name="unidadMedida" style="width:100%">
+                                <option value="">Seleccione...</option>
+                                <option value="Unid" {#if modo == 'editar' && articulo.unidadMedida == 'Unid'}selected{/if}>Unidad</option>
+                                <option value="Otros" {#if modo == 'editar' && articulo.unidadMedida == 'Otros'}selected{/if}>Otros</option>
+                                <option value="g" {#if modo == 'editar' && articulo.unidadMedida == 'g'}selected{/if}>Gramos</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-unidad-comercial">Unidad de Medida Comercial:</label>
+                    <div class="control">
+                        <div class="select" style="width:100%">
+                            <select id="articulo-unidad-comercial" name="unidadMedidaComercial" style="width:100%">
+                                <option value="">Genérico</option>
+                                <option value="BOT" {#if modo == 'editar' && articulo.unidadMedidaComercial == 'BOT'}selected{/if}>Botella</option>
+                                <option value="LT" {#if modo == 'editar' && articulo.unidadMedidaComercial == 'LT'}selected{/if}>Lata</option>
+                                <option value="ST" {#if modo == 'editar' && articulo.unidadMedidaComercial == 'ST'}selected{/if}>Six-Pack</option>
+                                <option value="Pieza" {#if modo == 'editar' && articulo.unidadMedidaComercial == 'Pieza'}selected{/if}>Pieza</option>
+                                <option value="Unid" {#if modo == 'editar' && articulo.unidadMedidaComercial == 'Unid'}selected{/if}>Unidad</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-departamento">Departamento:</label>
+                    <div class="control">
+                        <div class="select" style="width:100%">
+                            <select id="articulo-departamento" name="departamentoId" required="required" style="width:100%">
+                                <option value="">Seleccionar Departamento</option>
+                                {#for departamento in departamentos}
+                                <option value="{departamento.id}"
+                                    {#if modo == 'editar' && articulo.departamento?? && articulo.departamento.id == departamento.id}selected{/if}>{departamento.nombre}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-familia">Familia:</label>
+                    <div class="control">
+                        <div class="select" style="width:100%">
+                            <select id="articulo-familia" name="familiaId" required="required" style="width:100%">
+                                <option value="">Seleccionar Familia</option>
+                                {#for familia in familias}
+                                <option value="{familia.id}"
+                                    {#if modo == 'editar' && articulo.familia?? && articulo.familia.id == familia.id}selected{/if}>{familia.nombre}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {! CAByS picker: search modal fills the hidden input (legacy
+           assignCabysToSelectedArticulo parity). Edit mode shows the current
+           code; the picker button hx-loads the suggestion fragment. !}
+        <div class="field">
+            <label class="label" for="articulo-cabys">Código CABYS:</label>
+            <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
+                <input class="input" id="articulo-cabys" name="cabysCodigo" style="font-family:monospace"
+                       placeholder="Seleccione un código del CABYS"
+                       value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
+                <button type="button" class="button is-link"
+                        aria-haspopup="dialog" data-kit-open="buscador-cabys"
+                        hx-get="/Mercurius/api/app/articulos/cabys?q="
+                        hx-target="#buscador-cabys-body" hx-swap="innerHTML">Buscar</button>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-costo">Precio Costo sin IVA:</label>
+                    <div class="control">
+                        <input class="input" id="articulo-costo" type="number" step="0.01" min="0"
+                               name="precioCostoSinIVA" placeholder="0.00"
+                               value="{#if precio?? && precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-utilidad">Porcentaje de Utilidad:</label>
+                    <div class="control">
+                        <input class="input" id="articulo-utilidad" type="number" step="1" min="0"
+                               name="porcentajeUtilidad" placeholder="0"
+                               value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="checkbox">
+                        <input type="checkbox" name="exento"
+                               {#if modo == 'editar' && articulo.exento}checked{/if}/>
+                        Exento de impuestos
+                    </label>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-stock-optimo">Stock Óptimo:</label>
+                    <div class="control">
+                        <input class="input" id="articulo-stock-optimo" type="number" min="0"
+                               name="stockOptimo"
+                               value="{#if modo == 'editar' && articulo.stockOptimo??}{articulo.stockOptimo}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-stock-seguridad">Días Stock Seguridad:</label>
+                    <div class="control">
+                        <input class="input" id="articulo-stock-seguridad" type="number" min="0"
+                               name="diasStockSeguridad"
+                               value="{#if modo == 'editar' && articulo.diasStockSeguridad??}{articulo.diasStockSeguridad}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">
+                    {#if modo == 'editar'}Guardar cambios{#else}Crear Artículo{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

@@ -1,0 +1,36 @@
+{!
+  pages/reportes/precios - Histórico de Precios (T19 port of
+  secured/pages/Inventario/Precios/index.xhtml). Read-only listing.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">{titulo}</h1>
+        <p class="subtitle">Historial de precios de compra y venta por artículo</p>
+
+        <div class="box">
+            <form method="get"
+                  action="/Mercurius{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <div class="column is-narrow field">
+                    <label class="label" for="q">Búsqueda general</label>
+                    <div class="control">
+                        <input class="input" type="text" id="q" name="q"
+                               placeholder="Búsqueda general de todos los campos" value="{filtros.q}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-info" type="submit">Filtrar</button>
+                        <a class="button is-light"
+                           href="/Mercurius{baseUrl}">Limpiar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {#include pages/reportes/_tablas/precios /}
+    {/body}
+{/include}

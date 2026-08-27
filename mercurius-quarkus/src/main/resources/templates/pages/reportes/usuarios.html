@@ -1,0 +1,61 @@
+{!
+  pages/reportes/usuarios - read-only "Gestión de Usuarios" detail listing (T20).
+
+  Replaces secured/pages/Usuarios/Reportes/index.xhtml (admin-only per legacy
+  web.xml). The create/edit/toggle actions are mutations owned by T22
+  (UsersResource) — NOT ported here. Password hashes are never rendered.
+!}
+{#include layout}
+    {#title}Gestión de Usuarios | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3 has-text-centered">Gestión de Usuarios</h1>
+
+        <div class="columns is-multiline has-text-centered box">
+            <div class="column">
+                <p class="heading">Activos</p>
+                <p class="title is-4">{activos}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Inactivos</p>
+                <p class="title is-4">{inactivos}</p>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="usuarios-filtros">
+                <div class="field">
+                    <label class="label" for="usuarios-q">Búsqueda general</label>
+                    <input class="input" type="text" id="usuarios-q" name="q"
+                           value="{#if filtros.q??}{filtros.q}{/if}"
+                           placeholder="Nombre de usuario, permisos…"
+                           hx-get="/Mercurius{baseUrl}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="closest form"
+                           hx-target="#usuarios-tabla-container" hx-swap="innerHTML"/>
+                </div>
+            </form>
+        </div>
+
+        <div id="usuarios-tabla-container">
+            {#fragment id=tabla}
+                {#include _kit/data-table id="usuarios-tabla" baseUrl=baseUrl
+                     headers=columnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for u in rows}
+                    <tr data-row-key="{u.id}">
+                        <td>
+                            {#if u.status?? && u.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                        </td>
+                        <td>{u.username}</td>
+                        <td>{u.groupName}</td>
+                        <td>{#if u.status?? && u.status}Sí{#else}No{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            {/fragment}
+        </div>
+    {/body}
+{/include}

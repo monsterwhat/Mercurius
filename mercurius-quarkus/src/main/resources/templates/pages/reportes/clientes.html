@@ -1,0 +1,71 @@
+{!
+  pages/reportes/clientes - read-only "Reportes de Clientes" (T20).
+
+  Replaces secured/pages/Clientes/Reportes/index.xhtml over ClientService
+  aggregates. The legacy dataExporter buttons have no T17 dataset yet
+  (ExportResource only ships articulos/inventario/stock-alerts/profit-margins)
+  — export wiring TODO once a clientes dataset lands in T17/T21.
+!}
+{#include layout}
+    {#title}Reportes de Clientes | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3 has-text-centered">Reportes de Clientes</h1>
+
+        <div class="columns is-multiline has-text-centered box">
+            <div class="column">
+                <p class="heading">Clientes Activos</p>
+                <p class="title is-4">{activos}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Clientes Inactivos</p>
+                <p class="title is-4">{inactivos}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Total Clientes</p>
+                <p class="title is-4">{total}</p>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="clientes-filtros">
+                <div class="field">
+                    <label class="label" for="clientes-q">Buscar clientes…</label>
+                    <input class="input" type="text" id="clientes-q" name="q"
+                           value="{#if filtros.q??}{filtros.q}{/if}"
+                           placeholder="Nombre, correo, cédula…"
+                           hx-get="/Mercurius{baseUrl}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="closest form"
+                           hx-target="#clientes-tabla-container" hx-swap="innerHTML"/>
+                </div>
+            </form>
+        </div>
+
+        <div id="clientes-tabla-container">
+            {#fragment id=tabla}
+                {#include _kit/data-table id="clientes-tabla" baseUrl=baseUrl
+                     headers=columnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for c in rows}
+                    <tr data-row-key="{c.code}">
+                        <td>
+                            {#if c.status?? && c.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                        </td>
+                        <td>{c.name}</td>
+                        <td>{c.address}</td>
+                        <td>{#if c.email??}{c.email}{/if}</td>
+                        <td>{#if c.idNumber??}{c.idNumber}{/if}</td>
+                        <td>{#if c.phoneNumber??}{c.phoneNumber}{/if}</td>
+                        <td>{#if c.taxpayer}Sí{#else}No{/if}</td>
+                        <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
+                        <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            {/fragment}
+        </div>
+    {/body}
+{/include}

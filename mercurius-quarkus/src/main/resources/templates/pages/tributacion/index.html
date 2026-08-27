@@ -1,0 +1,154 @@
+{!
+  pages/tributacion/index - Gestión Tributaria landing page.
+
+  Main navigation hub for the Tributación module. Provides navigation
+  cards/links to the existing sub-pages (Dashboard, Consultas, Declaración)
+  plus the CaByS catalog management. Uses hx-get links for HTMX-powered
+  navigation or renders sub-pages inline.
+
+  Model keys supplied by TributacionPagesResource#indexModel():
+    totalFacturas    Long   - total electronic invoices count
+    totalEnviadas    Long   - invoices sent to Hacienda
+    totalAceptadas   Long   - invoices accepted by Hacienda
+    totalRechazadas  Long   - invoices rejected by Hacienda
+    baseUrl          String - base URL for this page
+!}
+{#include layout}
+    {#title}Gestión Tributaria | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <div class="level">
+            <div class="level-left">
+                <div>
+                    <p class="title is-3">Gestión Tributaria</p>
+                    <p class="subtitle is-5 has-text-grey">Administración de facturación electrónica, CAByS y declaraciones</p>
+                </div>
+            </div>
+        </div>
+
+        {! ── KPI Summary Cards ──────────────────────────────────── !}
+        <div class="columns is-multiline mb-5">
+            <div class="column is-3">
+                <div class="box has-text-centered">
+                    <p class="title is-1" style="margin-bottom:0">{totalFacturas ?: 0}</p>
+                    <p class="subtitle is-6">Total Facturas</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="box has-text-centered has-background-info-light">
+                    <p class="title is-1 has-text-info" style="margin-bottom:0">{totalEnviadas ?: 0}</p>
+                    <p class="subtitle is-6">Enviadas</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="box has-text-centered has-background-success-light">
+                    <p class="title is-1 has-text-success" style="margin-bottom:0">{totalAceptadas ?: 0}</p>
+                    <p class="subtitle is-6">Aceptadas</p>
+                </div>
+            </div>
+            <div class="column is-3">
+                <div class="box has-text-centered has-background-danger-light">
+                    <p class="title is-1 has-text-danger" style="margin-bottom:0">{totalRechazadas ?: 0}</p>
+                    <p class="subtitle is-6">Rechazadas</p>
+                </div>
+            </div>
+        </div>
+
+        {! ── Navigation Cards ───────────────────────────────────── !}
+        <div class="columns is-multiline">
+            <div class="column is-4">
+                <div class="box">
+                    <p class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon"><i class="fas fa-tachometer-alt"></i></span>
+                            <span>Dashboard</span>
+                        </span>
+                    </p>
+                    <p class="has-text-grey mb-4">
+                        Vista general del estado de facturación electrónica: KPIs, últimos 7 días,
+                        pendientes de envío y rechazados recientes.
+                    </p>
+                    <a class="button is-info is-fullwidth"
+                       href="/Mercurius/app/tributacion/dashboard"
+                       hx-get="/Mercurius/app/tributacion/dashboard"
+                       hx-push-url="true"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML">
+                        Ir al Dashboard
+                    </a>
+                </div>
+            </div>
+
+            <div class="column is-4">
+                <div class="box">
+                    <p class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon"><i class="fas fa-search"></i></span>
+                            <span>Consultas de Facturas</span>
+                        </span>
+                    </p>
+                    <p class="has-text-grey mb-4">
+                        Consulta el estado de facturas pendientes, aceptadas y rechazadas.
+                        Envío programado y corrección de facturas rechazadas por Hacienda.
+                    </p>
+                    <a class="button is-warning is-fullwidth"
+                       href="/Mercurius/app/tributacion/consultas"
+                       hx-get="/Mercurius/app/tributacion/consultas"
+                       hx-push-url="true"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML">
+                        Ir a Consultas
+                    </a>
+                </div>
+            </div>
+
+            <div class="column is-4">
+                <div class="box">
+                    <p class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon"><i class="fas fa-file-alt"></i></span>
+                            <span>Declaración IVA (D-104)</span>
+                        </span>
+                    </p>
+                    <p class="has-text-grey mb-4">
+                        Cálculo de la declaración mensual de IVA. Resumen de ventas y compras
+                        por período, débito y crédito fiscal.
+                    </p>
+                    <a class="button is-link is-fullwidth"
+                       href="/Mercurius/app/tributacion/declaracion"
+                       hx-get="/Mercurius/app/tributacion/declaracion"
+                       hx-push-url="true"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML">
+                        Ir a Declaración
+                    </a>
+                </div>
+            </div>
+
+            <div class="column is-4">
+                <div class="box">
+                    <p class="title is-5">
+                        <span class="icon-text">
+                            <span class="icon"><i class="fas fa-barcode"></i></span>
+                            <span>Catálogo CAByS</span>
+                        </span>
+                    </p>
+                    <p class="has-text-grey mb-4">
+                        Consulta y gestión del catálogo de Bienes y Servicios de Hacienda.
+                        Búsqueda por código o descripción.
+                    </p>
+                    <a class="button is-success is-fullwidth"
+                       href="/Mercurius/app/cabys"
+                       hx-get="/Mercurius/app/cabys"
+                       hx-push-url="true"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML">
+                        Ir a CAByS
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    {/body}
+{/include}

@@ -1,0 +1,94 @@
+{!
+  pages/clientes/index - Gestión de Clientes (W4B strangler view-half lane).
+
+  Qute/HTMX/Bulma port of secured/pages/Clientes/index.xhtml (+ its
+  Crear/EditClientesDialog fragments), consuming the LIVE JSON contracts of
+  Controllers.Api.App.ClientsResource additively:
+
+    GET /api/app/clientes/table?page&size&sort&dir&q   (NEW - dual-mode per
+      docs/ui-kit.md §2.9: HX-Request ⇒ only pages/clientes/tabla.html;
+      otherwise this full page through layout.html)
+    GET /api/app/clientes/formularios/nueva            (NEW - create modal body)
+    GET /api/app/clientes/formularios/{code}           (NEW - edit modal body)
+    POST /api/app/clientes, PUT/DELETE /api/app/clientes/{code}  (existing
+      JSON endpoints; additive form-urlencoded twins answer the HTMX dialogs
+      and the DELETE returns the refreshed table fragment under HX-Request)
+
+  Model keys supplied by ClientsResource#renderFullPage:
+    tablaClientes           Map  - model of tabla.html (kit data-table contract)
+    clientesTotal           Long - stat card (legacy Total parity)
+    clientesActivosCount    Long - stat card (legacy Activos tab counter)
+    clientesInactivosCount  Long - stat card (legacy Inactivos tab counter)
+
+  Interactions: search-as-you-type against the table endpoint; create dialog
+  via _kit/modal default trigger; edit dialog via shared hidden-trigger modal
+  + data-kit-open row buttons; archive via hx-delete + hx-confirm handled in
+  tabla.html. Export stays on the T17 endpoint (NOT ported here — the legacy
+  buttons were gated by SessionController.registros and p:dataExporter).
+!}
+{#include layout}
+    {#title}Gestión de Clientes | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Gestión de Clientes</p>
+
+        {! Stat cards — legacy Activos/Inactivos tabs became counters !}
+        <div class="columns">
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1" style="margin-bottom:0">{clientesTotal ?: 0}</p>
+                    <p class="subtitle is-6">Total</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1 has-text-success" style="margin-bottom:0">{clientesActivosCount ?: 0}</p>
+                    <p class="subtitle is-6">Activos</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1 has-text-danger" style="margin-bottom:0">{clientesInactivosCount ?: 0}</p>
+                    <p class="subtitle is-6">Inactivos</p>
+                </div>
+            </div>
+        </div>
+
+        {#include pages/clientes/tabla modelo=tablaClientes q=tablaClientes.q /}
+
+        {!$1!}
+        {#include _kit/modal id="editar-cliente" title="Editar Cliente" triggerClass="is-hidden"
+             bodyUrl="/api/app/clientes/formularios/nueva"}{/include}
+
+        {! Create dialog: default trigger hx-gets the empty form into the body !}
+        {#include _kit/modal id="crear-cliente" title="Crear Cliente" triggerLabel="Crear Cliente" triggerClass="is-success"
+             bodyUrl="/api/app/clientes/formularios/nueva"}{/include}
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level edit buttons open the shared edit modal; the swapped
+       form's [data-kit-close] button closes them (same contract as T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

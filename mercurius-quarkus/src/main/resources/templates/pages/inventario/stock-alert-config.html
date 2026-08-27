@@ -1,0 +1,166 @@
+{!
+  pages/inventario/stock-alert-config - Threshold configuration for the
+  stock-alert engine (plan task T33, StockAlert CONFIG portion).
+
+  Served by Controllers.Api.App.StockAlertConfigResource:
+    GET {root}/api/app/stock-alert-config/pagina            -> this full page
+    GET {root}/api/app/stock-alert-config/pagina?articulo=X -> same, form loaded
+    HX-Request header                                       -> ONLY the
+       {#fragment forma} section below (form + OOB toast) so the article
+       loader and the PUT save can swap #alerta-config-forma in place.
+
+  Sections:
+    1. Engine constants panel   - read-only facts from StockAlertService
+                                  (model key "global": StockAlertConfigDTO).
+    2. Per-article threshold form - hx-get loader + hx-put save with kit toast
+                                  (model keys "umbral"/"cargado"/"articuloCodigoInput").
+    3. Triggered alerts table   - read-only _kit/data-table snapshot fed by
+                                  StockAlertService.getActiveStockAlerts()
+                                  (the REPORT rendering belongs to T19).
+
+  CSRF is inherited from layout.html body hx-headers; root-path prefixing is
+  the kit's job (/Mercurius everywhere).
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <p class="title is-3">Configuración de Alertas de Stock</p>
+                    <p class="subtitle is-5 has-text-grey">Umbrales del motor de alertas y sugerencias de reorden</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="box mb-5">
+            <p class="title is-5">Parámetros del Motor</p>
+            <p class="subtitle is-6 has-text-grey">
+                Valores efectivos usados por el sistema para calcular el stock óptimo.
+                No son editables: se aplican a todos los artículos.
+            </p>
+            <div class="columns is-multiline">
+                <div class="column is-3">
+                    <p class="heading">Ventana de Velocidad de Venta</p>
+                    <p class="title is-4">{global.ventanaVelocidadDias} días</p>
+                </div>
+                <div class="column is-3">
+                    <p class="heading">Plazo de Entrega</p>
+                    <p class="title is-4">{global.plazoEntregaDias} días</p>
+                </div>
+                <div class="column is-3">
+                    <p class="heading">Stock de Seguridad por Defecto</p>
+                    <p class="title is-4">{global.diasStockSeguridadPorDefecto} días</p>
+                </div>
+                <div class="column is-3">
+                    <p class="heading">Respaldo de Stock Óptimo</p>
+                    <p class="title is-4">{global.stockOptimoRespaldoDias} días</p>
+                </div>
+                <div class="column is-3">
+                    <p class="heading">Buffer de Reorden</p>
+                    <p class="title is-4">{global.bufferReordenDias} días de ventas</p>
+                </div>
+            </div>
+        </div>
+
+{#fragment forma}
+        <div id="alerta-config-forma">
+            <div class="box mb-5">
+                <p class="title is-5">Umbrales por Artículo</p>
+
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input id="input-articulo" class="input" type="text"
+                               name="articulo" inputmode="numeric"
+                               placeholder="Código del artículo"
+                               value="{articuloCodigoInput}"
+                               hx-get="/Mercurius{baseUrl}"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#alerta-config-forma" hx-swap="outerHTML"/>
+                    </div>
+                    <div class="control">
+                        <button class="button is-info" type="button"
+                                hx-get="/Mercurius{baseUrl}"
+                                hx-include="#input-articulo"
+                                hx-target="#alerta-config-forma" hx-swap="outerHTML">Cargar</button>
+                    </div>
+                </div>
+
+                {#if cargado && umbral?? && umbral.articuloCodigo??}
+                <form hx-put="/Mercurius/api/app/stock-alert-config?articulo={umbral.articuloCodigo}"
+                      hx-target="#alerta-config-forma" hx-swap="outerHTML">
+                    <input type="hidden" name="estadoAlertasPresente" value="1"/>
+                    <div class="field">
+                        <label class="label" for="dias-stock-seguridad">Días de Stock de Seguridad</label>
+                        <div class="control">
+                            <input id="dias-stock-seguridad" class="input" type="number"
+                                   min="0" step="1" name="diasStockSeguridad"
+                                   value="{umbral.diasStockSeguridad}"/>
+                        </div>
+                        <p class="help has-text-grey">
+                            Vacío usa el valor por defecto del sistema
+                            ({global.diasStockSeguridadPorDefecto} días).
+                        </p>
+                    </div>
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="checkbox" name="estadoAlertas"
+                                   {#if umbral.estadoAlertas}checked{/if}/>
+                            Alertas habilitadas para este artículo
+                        </label>
+                        <p class="help has-text-grey">
+                            Desmarcado excluye el artículo de la generación automática de alertas.
+                        </p>
+                    </div>
+                    <div class="field">
+                        <label class="label">Stock Óptimo Actual</label>
+                        <p>{#if umbral.stockOptimoActual??}{umbral.stockOptimoActual}{#else}&mdash;{/if}
+                            <span class="has-text-grey">&nbsp;(lo recalcula el sistema al verificar alertas)</span></p>
+                    </div>
+                    <div class="field">
+                        <button class="button is-primary" type="submit">Guardar Umbrales</button>
+                    </div>
+                </form>
+                {#else}
+                <p class="has-text-grey">
+                    Escriba el código de un artículo y cárguelo para editar sus umbrales.
+                </p>
+                {/if}
+            </div>
+
+            {#if mensajeToast??}
+            <div hx-swap-oob="beforeend:#toast-container">
+                {#include _kit/toast-item severity=toastSeveridad message=mensajeToast /}
+            </div>
+            {/if}
+        </div>
+{/fragment}
+
+        <div class="box">
+            <p class="title is-5">Alertas Disparadas Actualmente</p>
+            <p class="subtitle is-6 has-text-grey">
+                Instantánea de solo lectura; la gestión y el reporte completo viven en
+                Reportes &rarr; Inventario &rarr; Alertas de Stock.
+            </p>
+            {#include _kit/data-table id="alertas-disparadas-tabla" baseUrl=baseUrl headers=columnas
+                 page=page size=size total=total totalPages=totalPages pages=paginas}
+              {#rows}
+                {#for fila in filas}
+                <tr>
+                    <td>{fila.tipo}</td>
+                    <td>{fila.articulo}</td>
+                    <td>{fila.cantidadActual}</td>
+                    <td>{fila.cantidadMinima}</td>
+                    <td>{fila.sugeridoReordenar}</td>
+                    <td>{fila.fechaCreacion}</td>
+                    <td>{fila.estado}</td>
+                </tr>
+                {#else}
+                <tr><td colspan="7" class="has-text-centered has-text-grey">Sin alertas activas</td></tr>
+                {/for}
+              {/rows}
+            {/include}
+        </div>
+    {/body}
+{/include}

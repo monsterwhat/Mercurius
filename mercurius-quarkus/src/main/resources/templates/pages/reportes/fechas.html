@@ -1,0 +1,64 @@
+{!
+  pages/reportes/fechas - Reporte de Movimientos de Inventario (T19 port of
+  secured/pages/Articulos/Reportes/Fechas/index.xhtml).
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">{titulo}</h1>
+        <p class="subtitle">Movimientos de artículos por rango de fechas</p>
+
+        <div class="box">
+            <form method="get"
+                  action="/Mercurius{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <div class="column is-narrow field">
+                    <label class="label" for="usuario">Usuario</label>
+                    <div class="control select">
+                        <select name="usuario" id="usuario">
+                            <option value="">Seleccione un usuario</option>
+                            {#for u in usuarios}
+                            <option value="{u.id}" {#if filtros.usuario == u.id.toString()}selected{/if}>{u.username}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="desde">Desde</label>
+                    <div class="control">
+                        <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="hasta">Hasta</label>
+                    <div class="control">
+                        <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-primary" type="submit">Cargar Reportes</button>
+                    </div>
+                </div>
+            </form>
+            {#if !consultaCompleta}
+            <p class="has-text-danger">
+                Seleccione el usuario y las fechas a consultar para cargar el reporte.
+            </p>
+            {/if}
+        </div>
+
+        {#include pages/reportes/_tablas/fechas /}
+
+        <div class="buttons mt-4">
+            <form method="post" action="/Mercurius/api/app/export">
+                <input type="hidden" name="dataset" value="reportes-movimientos"/>
+                <input type="hidden" name="type" value="xlsx"/>
+                {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
+                <button class="button is-success" type="submit">Exportar Excel</button>
+            </form>
+        </div>
+    {/body}
+{/include}

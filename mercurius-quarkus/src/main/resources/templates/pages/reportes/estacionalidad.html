@@ -1,0 +1,109 @@
+{!
+  pages/reportes/estacionalidad - read-only "Análisis de Estacionalidad" (T20).
+
+  Replaces secured/pages/Reportes/Estacionalidad/index.xhtml over
+  SeasonalityService. The four legacy p:chart visualizations are NOT ported:
+  Chart.js wiring is plan task T29 ("Estacionalidad charts if not done in
+  T20") — until then the same aggregates render as server-side tables.
+!}
+{#include layout}
+    {#title}Análisis de Estacionalidad | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3 has-text-centered">Análisis de Estacionalidad</h1>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="estacionalidad-filtros">
+                <div class="field is-horizontal">
+                    <div class="field mr-3">
+                        <label class="label" for="estacionalidad-inicio">Fecha Inicio</label>
+                        <input class="input" type="date" id="estacionalidad-inicio" name="inicio" value="{filtroInicio}"/>
+                    </div>
+                    <div class="field mr-3">
+                        <label class="label" for="estacionalidad-fin">Fecha Fin</label>
+                        <input class="input" type="date" id="estacionalidad-fin" name="fin" value="{filtroFin}"/>
+                    </div>
+                    <div class="field">
+                        <label class="label">&nbsp;</label>
+                        <button class="button is-primary" type="submit">Actualizar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {! TODO(T29): replace these tables with Chart.js line/bar charts consuming
+           SeasonalityService JSON (monthly trend, day-of-week, department,
+           family) once chart infrastructure lands. !}
+
+        <div id="estacionalidad-tabla-container">
+            {#fragment id=tabla}
+                <div class="columns is-multiline">
+                    <div class="column is-half">
+                        <div class="box">
+                            <h2 class="title is-5 has-text-centered">Tendencia Mensual de Ventas</h2>
+                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-mensual">
+                                <thead><tr><th>Mes</th><th>Total Ventas</th></tr></thead>
+                                <tbody>
+                                    {#for m in mensual}
+                                    <tr data-row-key="{m.mes}"><td>{m.mes}</td><td>₡{m.total}</td></tr>
+                                    {/for}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="box">
+                            <h2 class="title is-5 has-text-centered">Ventas por Día de la Semana</h2>
+                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-dias">
+                                <thead><tr><th>Día</th><th>Total Ventas</th></tr></thead>
+                                <tbody>
+                                    {#for d in dias}
+                                    <tr data-row-key="{d.dia}"><td>{d.dia}</td><td>₡{d.total}</td></tr>
+                                    {/for}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="box">
+                            <h2 class="title is-5 has-text-centered">Ventas por Departamento</h2>
+                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-departamentos">
+                                <thead><tr><th>Departamento</th><th>Total Ventas</th></tr></thead>
+                                <tbody>
+                                    {#for d in departamentos}
+                                    <tr data-row-key="{d.nombre}"><td>{d.nombre}</td><td>₡{d.total}</td></tr>
+                                    {/for}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="column is-half">
+                        <div class="box">
+                            <h2 class="title is-5 has-text-centered">Ventas por Familia</h2>
+                            <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-familias">
+                                <thead><tr><th>Familia</th><th>Total Ventas</th></tr></thead>
+                                <tbody>
+                                    {#for f in familias}
+                                    <tr data-row-key="{f.nombre}"><td>{f.nombre}</td><td>₡{f.total}</td></tr>
+                                    {/for}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="box">
+                    <h2 class="title is-5 has-text-centered">Datos Diarios</h2>
+                    <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-diarios">
+                        <thead><tr><th>Fecha</th><th>Total Ventas</th></tr></thead>
+                        <tbody>
+                            {#for row in diarios}
+                            <tr data-row-key="{row.fecha}"><td>{row.fecha}</td><td>₡{row.total}</td></tr>
+                            {/for}
+                        </tbody>
+                    </table>
+                </div>
+            {/fragment}
+        </div>
+    {/body}
+{/include}

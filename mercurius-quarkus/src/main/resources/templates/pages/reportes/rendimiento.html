@@ -1,0 +1,144 @@
+{!
+  pages/reportes/rendimiento - Rendimiento de Productos (T19 port of
+  secured/pages/Articulos/Reportes/Rendimiento/index.xhtml).
+
+  Backed by the REAL ProductPerformanceService (the legacy UI bean rendered
+  hardcoded sample rows). The four legacy tabs become the "seccion" query
+  param; the canvas pulls JSON from the EXISTING /api/product-performance
+  endpoint with credentials=same-origin.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <div class="inventario-header">
+            <p class="title is-3 has-text-centered">{titulo}</p>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">{totalProductos}</span>
+                    <span class="stat-label">Total Productos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{totalIngresos}</span>
+                    <span class="stat-label">Ingresos</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{precioPromedio}</span>
+                    <span class="stat-label">Precio Promedio</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{categoriaTop}</span>
+                    <span class="stat-label">Categoría Top</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get"
+                  action="/Mercurius{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <input type="hidden" name="seccion" value="{seccion}"/>
+                <div class="column is-narrow field">
+                    <label class="label" for="desde">Fecha Inicio</label>
+                    <div class="control">
+                        <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="hasta">Fecha Fin</label>
+                    <div class="control">
+                        <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-danger" type="submit">Cargar Datos</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="nav-cards">
+            <a class="nav-card button is-success {#if seccion == 'mas'}is-outlined{/if}"
+               href="?seccion=mas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Más Vendidos</a>
+            <a class="nav-card button is-danger {#if seccion == 'menos'}is-outlined{/if}"
+               href="?seccion=menos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Menos Vendidos</a>
+            <a class="nav-card button is-info {#if seccion == 'ingresos'}is-outlined{/if}"
+               href="?seccion=ingresos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Ingresos</a>
+            <a class="nav-card button is-link {#if seccion == 'departamento'}is-outlined{/if}"
+               href="?seccion=departamento{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Departamento</a>
+        </div>
+
+        {#include pages/reportes/_tablas/rendimiento /}
+
+        <div class="box mt-4">
+            <p class="title is-5">Ventas por Departamento</p>
+            <canvas id="grafica-rendimiento" width="900" height="320"
+                    data-root="/Mercurius"
+                    data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
+                Su navegador no soporta canvas.
+            </canvas>
+        </div>
+
+        <script>
+        (function () {
+            var lienzo = document.getElementById('grafica-rendimiento');
+            if (!lienzo || !lienzo.getContext) {
+                return;
+            }
+            var url = lienzo.getAttribute('data-root') + '/api/product-performance/department-performance';
+            var desde = lienzo.getAttribute('data-desde');
+            var hasta = lienzo.getAttribute('data-hasta');
+            if (desde && hasta) {
+                url = url + '?startDate=' + encodeURIComponent(desde) + '&endDate=' + encodeURIComponent(hasta);
+            }
+            fetch(url, { credentials: 'same-origin' })
+                .then(function (respuesta) { return respuesta.json(); })
+                .then(function (datos) {
+                    var etiquetas = [];
+                    var valores = [];
+                    Object.keys(datos).forEach(function (clave) {
+                        etiquetas.push(clave);
+                        valores.push(Number(datos[clave]));
+                    });
+                    dibujarBarras(lienzo, etiquetas, valores);
+                })
+                .catch(function () { /* sin datos: el canvas queda vacío */ });
+
+            function dibujarBarras(canvas, etiquetas, valores) {
+                var ctx = canvas.getContext('2d');
+                var ancho = canvas.width;
+                var alto = canvas.height;
+                ctx.clearRect(0, 0, ancho, alto);
+                if (valores.length === 0) {
+                    ctx.fillStyle = '#777';
+                    ctx.fillText('Sin datos para el período seleccionado', 20, alto / 2);
+                    return;
+                }
+                var maximo = Math.max.apply(null, valores);
+                var margen = 40;
+                var paso = (ancho - margen * 2) / valores.length;
+                ctx.strokeStyle = '#ccc';
+                ctx.beginPath();
+                ctx.moveTo(margen, alto - margen);
+                ctx.lineTo(ancho - margen, alto - margen);
+                ctx.stroke();
+                for (var i = 0; i < valores.length; i++) {
+                    var alturaBarra = maximo > 0 ? (valores[i] / maximo) * (alto - margen * 2) : 0;
+                    var x = margen + i * paso + paso * 0.15;
+                    var y = alto - margen - alturaBarra;
+                    ctx.fillStyle = '#48c78e';
+                    ctx.fillRect(x, y, paso * 0.7, alturaBarra);
+                    ctx.fillStyle = '#333';
+                    ctx.save();
+                    ctx.translate(x + paso * 0.35, alto - margen + 12);
+                    ctx.rotate(Math.PI / 4);
+                    ctx.fillText(etiquetas[i], 0, 0);
+                    ctx.restore();
+                }
+            }
+        })();
+        </script>
+    {/body}
+{/include}

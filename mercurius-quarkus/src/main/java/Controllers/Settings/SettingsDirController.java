@@ -28,6 +28,22 @@ import lombok.ToString;
 import org.primefaces.model.file.UploadedFile;
 
 /**
+ * ORPHAN NOTE (T26 settings VIEW half): legacy JSF helper kept ALIVE because
+ * many still-active controllers/services inject it. Referers at deletion
+ * review time:
+ *
+ * <ul>
+ *   <li>Controllers.StockAlertController</li>
+ *   <li>Controllers.ProfitAnalysisController</li>
+ *   <li>Controllers.Correos.CorreosHelper</li>
+ *   <li>Controllers.ArticulosController</li>
+ *   <li>Services.EmailService</li>
+ * </ul>
+ *
+ * <p>Its {@code updateSelectedSettings()} semantics live on verbatim in
+ * Controllers.Api.App.SettingsResource PUT /api/app/settings (DiffUtils
+ * snapshot -> update -> audit alert); new code must call the resource, not
+ * this bean.</p>
  *
  * @author Al
  */

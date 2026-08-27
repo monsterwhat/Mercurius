@@ -1,0 +1,65 @@
+{!
+  pages/categorias/tabla-departamentos - ONE data-table include for the
+  Departamentos tab (T18). Rendered standalone by
+  GET /api/app/categorias/table?tab=departamentos (HX-Request fragment swap)
+  AND included by index.html — single source of truth for the markup.
+
+  Model: identical contract to tabla-familias.html (see its header comment),
+  with rows of Models.Departamento and the wider Detalladas column set
+  (Contacto / Telefono / Email / Plazo Pago / Entrega) ported from
+  DepartamentosTableDetallada.xhtml.
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    <input type="hidden" id="tab-departamentos" name="tab" value="departamentos"/>
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar departamentos..."
+                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-include="#tab-departamentos"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for departamento in modelo.filas}
+            <tr>
+                <td class="has-text-centered">
+                    {#if departamento.status??}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                </td>
+                <td style="font-weight:500">{departamento.nombre}</td>
+                <td>{#if departamento.contactoNombre??}{departamento.contactoNombre}{#else}&mdash;{/if}</td>
+                <td>{#if departamento.contactoTelefono??}{departamento.contactoTelefono}{#else}&mdash;{/if}</td>
+                <td>{#if departamento.contactoEmail??}{departamento.contactoEmail}{#else}&mdash;{/if}</td>
+                <td class="has-text-right">{#if departamento.plazoPagoDias??}{departamento.plazoPagoDias}{#else}&mdash;{/if}</td>
+                <td class="has-text-right">{#if departamento.tiempoEntregaDias??}{departamento.tiempoEntregaDias}{#else}&mdash;{/if}</td>
+                <td>{#if departamento.usuario??}{departamento.usuario.username}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">
+                    <div class="buttons is-centered" style="margin:0">
+                        <button type="button" class="button is-small is-success" title="Editar departamento"
+                                aria-haspopup="dialog" data-kit-open="editar-departamento"
+                                hx-get="/Mercurius/api/app/categorias/formularios/departamento/{departamento.id}"
+                                hx-target="#editar-departamento-body" hx-swap="innerHTML">&#9998;</button>
+                        <button type="button" class="button is-small is-warning" title="Cambiar estado"
+                                hx-delete="/Mercurius/api/app/categorias/departamentos/{departamento.id}"
+                                hx-confirm="¿Cambiar el estado del departamento {departamento.nombre}?"
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
+                    </div>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron departamentos con los criterios proporcionados</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

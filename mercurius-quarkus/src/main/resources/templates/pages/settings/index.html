@@ -1,0 +1,510 @@
+{!
+  pages/settings - Consolidated application settings for the NEW app surface
+  (plan task T26, VIEW half). Replaces two legacy Facelets pages:
+
+    - secured/pages/Aplicacion/index.xhtml  (p:steps setup wizard)
+    - secured/pages/Ajustes/Backups/index.xhtml (backup admin)
+
+  Server contract (Controllers.Api.App.SettingsResource, live):
+    PUT  {root}/api/app/settings            -> JSON ApiResponse(AppSettingsDTO),
+                                               whitelist ONLY: notificarRechazos,
+                                               correoNotificaciones,
+                                               notificarRechazosResumen,
+                                               backupHabilitado, backupHora,
+                                               backupRetencionDias, backupRuta.
+    POST {root}/api/app/settings/backup-trigger -> JSON ApiResponse(BackupStatusDTO)
+    GET  {root}/api/app/settings/backup-status  -> JSON ApiResponse(BackupStatusDTO)
+
+  SAVE WIRING ("hx-post PUT payload"): the single form #ajustes-forma issues
+  hx-put against the whitelist endpoint; the wizard's final step re-issues the
+  SAME payload via hx-include="#ajustes-forma". The endpoint answers JSON, so
+  the page-level htmx:beforeSwap guard cancels DOM swapping of JSON bodies and
+  htmx:afterRequest renders kit-styled toasts (#toast-container markup parity
+  with _kit/toast-item.html: .notification.is-* + .delete, 5s auto-dismiss).
+  Checkbox tri-state follows the repo convention proven by
+  pages/inventario/stock-alert-config.html: a hidden "<name>Presente" marker
+  lets the server distinguish "absent" (leave unchanged) from "unchecked"
+  (set false) when a form-encoded sibling endpoint lands.
+
+  SECRET RULE: credential/key fields (correo password, certificado .p12,
+  Hacienda API key/encryption key, Fides auth password) are NEVER rendered nor
+  posted here - AppSettingsDTO omits them by design and this template must
+  never mention or approximate those field names.
+
+  DATA MODEL CONTRACT:
+    titulo   String           - page title
+    settings AppSettingsDTO   - current row (GET /api/app/settings shape)
+    backup   BackupStatusDTO  - {backupUltimoEjecutado, backupHabilitado,
+                                mysqldumpResuelto}
+    baseUrl  String           - context-relative "/api/app/settings"
+                               (reserved for future HX fragment swaps)
+
+  FIELD-GROUP MAP (data-group markers asserted by SettingsPageTest):
+    general-negocio  legacy wizard "Tributacion"+"CurrentSettings" panels
+                     (read-only here: writes still flow through the legacy
+                     entity-bound controllers until their migration lands)
+    correo           legacy wizard "Correo" step: address display + the three
+                     whitelisted notification toggles (editable)
+    loyalty          cashbackPercentage + puntosInactivityMonths (read-only;
+                     owned by the Loyalty module endpoints)
+    stock-umbrales   stock-alert engine constants (read-only snapshot) +
+                     link to the T33 per-article config page
+    prevalidacion    upload prevalidation mode (always-on today; informational
+                     select, no backing setting exists yet)
+    backups          status card + trigger button + whitelisted scheduling
+                     quartet (editable)
+
+  CSRF is inherited from layout.html body hx-headers. Root-path prefixing
+  uses the LITERAL /Mercurius prefix (repo-wide page-template convention;
+  same rationale as fragments/navbar.html: quarkus.http.root-path is
+  build-time-fixed and absent from the runtime config namespace outside dev
+  mode, so {config:} expressions risk TemplateException on packaged runs).
+  Alpine braces ALWAYS carry a space after "{" (Qute golden rule); script
+  braces open before whitespace.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+<div id="pagina-ajustes">
+{#fragment contenido}
+    <div class="level mb-5">
+        <div class="level-left">
+            <div>
+                <p class="title is-3">Ajustes de la Aplicación</p>
+                <p class="subtitle is-5 has-text-grey">
+                    Perfil, notificaciones, loyalty, umbrales de stock y respaldos
+                </p>
+            </div>
+        </div>
+    </div>
+
+    {! ── Legacy p:steps replacement: Alpine-driven wizard (client-side only) ── !}
+    <div id="asistente-aplicacion" class="box mb-5" x-data="{ paso: 0 }">
+        <p class="title is-5">Asistente Inicial</p>
+        <p class="subtitle is-6 has-text-grey">
+            Misma secuencia del asistente legacy: Perfil, Logo, Correo,
+            Tributacion y Confirmacion. La navegación es local; el guardado
+            final usa el mismo endpoint de ajustes.
+        </p>
+
+        <div class="buttons">
+            <button class="button" type="button" @click="paso = 0"
+                    :class="{ 'is-link': paso === 0 }">1. Perfil</button>
+            <button class="button" type="button" @click="paso = 1"
+                    :class="{ 'is-link': paso === 1 }">2. Logo</button>
+            <button class="button" type="button" @click="paso = 2"
+                    :class="{ 'is-link': paso === 2 }">3. Correo</button>
+            <button class="button" type="button" @click="paso = 3"
+                    :class="{ 'is-link': paso === 3 }">4. Tributacion</button>
+            <button class="button" type="button" @click="paso = 4"
+                    :class="{ 'is-link': paso === 4 }">5. Confirmacion</button>
+        </div>
+
+        <div x-show="paso === 0">
+            <p class="heading">Nombre del perfil</p>
+            <p class="title is-4">{settings.nombrePerfil ?: '—'}</p>
+            <p class="heading">Estado del perfil</p>
+            <span class="tag {#if settings.estatus}is-success{#else}is-danger{/if}">
+                {#if settings.estatus}Activo{#else}Inactivo{/if}</span>
+            <p class="heading">Progreso del asistente</p>
+            <p>Paso {settings.completedSteps} de 5</p>
+        </div>
+
+        <div x-show="paso === 1" style="display: none;">
+            <p class="heading">Logo configurado</p>
+            <span class="tag {#if settings.logoMimeType??}is-success{#else}is-warning{/if}">
+                {#if settings.logoMimeType??}Sí ({settings.logoMimeType}){#else}Sin logo{/if}</span>
+            <p class="help has-text-grey">
+                La carga del logo sigue viviendo en el flujo legacy hasta que su
+                migración aterrice; aquí solo se consulta.
+            </p>
+        </div>
+
+        <div x-show="paso === 2" style="display: none;">
+            <p class="heading">Correo electrónico principal</p>
+            <p>{settings.correoElectronico ?: '—'}</p>
+            <p class="heading">Notificaciones de rechazos</p>
+            <p>{#if settings.notificarRechazos}Activadas{#else}Desactivadas{/if}</p>
+            <p class="help has-text-grey">
+                Por seguridad, las credenciales del correo no se muestran ni se
+                editan desde esta pantalla.
+            </p>
+        </div>
+
+        <div x-show="paso === 3" style="display: none;">
+            <div class="columns is-multiline">
+                <div class="column is-half">
+                    <p class="heading">Identificación</p>
+                    <p>{settings.identificacion ?: '—'}
+                        {#if settings.tipoIdentificacion??}<small>({settings.tipoIdentificacion})</small>{/if}</p>
+                </div>
+                <div class="column is-half">
+                    <p class="heading">Nombre del negocio</p>
+                    <p>{settings.nombreNegocio ?: '—'}</p>
+                </div>
+                <div class="column is-half">
+                    <p class="heading">Provincia</p>
+                    <p>{settings.provincia ?: '—'}</p>
+                </div>
+                <div class="column is-half">
+                    <p class="heading">Teléfono</p>
+                    <p>{settings.telefono ?: '—'}</p>
+                </div>
+                <div class="column is-half">
+                    <p class="heading">Correo de tributación</p>
+                    <p>{settings.correoElectronicoTributacion ?: '—'}</p>
+                </div>
+                <div class="column is-half">
+                    <p class="heading">Entorno Hacienda</p>
+                    <p>{settings.haciendaEnvironment ?: '—'}</p>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="paso === 4" style="display: none;">
+            <p class="notification is-info is-light">
+                Revise el resumen y confirme. Esto envía los campos operativos
+                editables (notificaciones y respaldos) al mismo endpoint de
+                ajustes usado por las secciones de abajo.
+            </p>
+            <div class="buttons">
+                <button class="button is-primary is-rounded" type="button"
+                        data-json-save
+                        hx-put="/Mercurius{baseUrl}"
+                        hx-include="#ajustes-forma"
+                        hx-target="#ajustes-forma" hx-swap="outerHTML">
+                    Confirmar y Guardar</button>
+            </div>
+        </div>
+
+        <div class="level mt-4">
+            <button class="button" type="button" @click="paso = Math.max(0, paso - 1)"
+                    :disabled="paso === 0">&larr; Anterior</button>
+            <button class="button is-primary" type="button"
+                    @click="paso = Math.min(4, paso + 1)"
+                    :disabled="paso === 4">Siguiente &rarr;</button>
+        </div>
+    </div>
+
+    {! ── Single save form: every editable control lives inside ── !}
+    <form id="ajustes-forma" data-json-save
+          hx-put="/Mercurius{baseUrl}"
+          hx-target="#ajustes-forma" hx-swap="outerHTML">
+
+        {! ── Grupo: correo (legacy wizard Correo step + rejection notifications) ── !}
+        <div class="box mb-5" data-group="correo">
+            <p class="title is-5">Correo y Notificaciones</p>
+            <div class="columns is-multiline">
+                <div class="column is-full">
+                    <p class="heading">Correo electrónico principal (solo lectura)</p>
+                    <p>{settings.correoElectronico ?: '—'}</p>
+                    <p class="help has-text-grey">
+                        Por seguridad, las credenciales (correo, certificado .p12,
+                        llaves de Hacienda y Fides) no se muestran ni se editan aquí.
+                    </p>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="hidden" name="notificarRechazosPresente" value="1"/>
+                            <input type="checkbox" name="notificarRechazos"
+                                   {#if settings.notificarRechazos}checked{/if}/>
+                            Notificar rechazos de comprobantes por correo
+                        </label>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="hidden" name="notificarRechazosResumenPresente" value="1"/>
+                            <input type="checkbox" name="notificarRechazosResumen"
+                                   {#if settings.notificarRechazosResumen}checked{/if}/>
+                            Enviar resumen diario de rechazos
+                        </label>
+                    </div>
+                </div>
+                <div class="column is-full">
+                    <div class="field">
+                        <label class="label" for="correo-notificaciones">Correo de notificaciones</label>
+                        <div class="control">
+                            <input id="correo-notificaciones" class="input" type="email"
+                                   name="correoNotificaciones"
+                                   placeholder="destinatario@ejemplo.com"
+                                   value="{settings.correoNotificaciones}"/>
+                        </div>
+                        <p class="help has-text-grey">Destino de las notificaciones de rechazos.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {! ── Grupo: backups (legacy Ajustes/Backups page) ── !}
+        <div class="box mb-5" data-group="backups">
+            <p class="title is-5">Respaldos de Base de Datos</p>
+
+            <div class="columns is-multiline mb-4" id="backup-status-card">
+                <div class="column is-one-third">
+                    <p class="heading">Estado</p>
+                    <span class="tag {#if backup.backupHabilitado}is-success{#else}is-danger{/if}" id="backup-estado">
+                        {#if backup.backupHabilitado}Habilitado{#else}Deshabilitado{/if}</span>
+                </div>
+                <div class="column is-one-third">
+                    <p class="heading">Último backup</p>
+                    <p id="backup-ultimo-ejecutado">{#if backup.backupUltimoEjecutado??}{backup.backupUltimoEjecutado}{#else}Nunca{/if}</p>
+                </div>
+                <div class="column is-one-third">
+                    <p class="heading">Motor pg_dump</p>
+                    <span class="tag {#if backup.mysqldumpResuelto}is-success{#else}is-warning{/if}">
+                        {#if backup.mysqldumpResuelto}Ruta resuelta{#else}Fallback (sin ruta concreta){/if}</span>
+                </div>
+            </div>
+
+            <div class="field">
+                <button class="button is-success" type="button" data-json-save
+                        hx-post="/Mercurius{baseUrl}/backup-trigger">
+                    Ejecutar Backup Ahora</button>
+                <p class="help has-text-grey">
+                    Ejecuta el mismo flujo del botón legacy; el resultado llega
+                    como notificación y actualiza la tarjeta de estado.
+                </p>
+            </div>
+
+            <hr/>
+
+            <div class="columns is-multiline">
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="checkbox">
+                            <input type="hidden" name="backupHabilitadoPresente" value="1"/>
+                            <input type="checkbox" name="backupHabilitado"
+                                   {#if settings.backupHabilitado}checked{/if}/>
+                            Backup automático programado
+                        </label>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label" for="backup-hora">Hora del backup</label>
+                        <div class="control">
+                            <input id="backup-hora" class="input" type="time"
+                                   name="backupHora" value="{settings.backupHora}"/>
+                        </div>
+                        <p class="help has-text-grey">Formato HH:mm (por ejemplo 03:00).</p>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label" for="backup-retencion">Retención (días)</label>
+                        <div class="control">
+                            <input id="backup-retencion" class="input" type="number"
+                                   min="1" max="365" step="1" name="backupRetencionDias"
+                                   value="{settings.backupRetencionDias}"/>
+                        </div>
+                        <p class="help has-text-grey">Entre 1 y 365 días.</p>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label" for="backup-ruta">Ruta de backups</label>
+                        <div class="control">
+                            <input id="backup-ruta" class="input" type="text"
+                                   name="backupRuta" value="{settings.backupRuta}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {! ── Grupo: general / negocio (read-only parity) ── !}
+        <div class="box mb-5" data-group="general-negocio">
+            <p class="title is-5">General y Negocio</p>
+            <p class="subtitle is-6 has-text-grey">
+                Datos del perfil y de tributación; edición solo lectura aquí
+                mientras su migración de flujo completa aterrice.
+            </p>
+            <div class="columns is-multiline">
+                <div class="column is-one-third"><p class="heading">Nombre del perfil</p><p>{settings.nombrePerfil ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Nombre completo</p><p>{settings.nombre ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Nombre del negocio</p><p>{settings.nombreNegocio ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Tipo de identificación</p><p>{settings.tipoIdentificacion ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Identificación</p><p>{settings.identificacion ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Razón social</p><p>{settings.razonSocial ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Proveedor de sistemas</p><p>{settings.provedor ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Código de actividad</p><p>{settings.codigoActividad ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Teléfono</p><p>{settings.telefono ?: '—'} {#if settings.codigoPais??}(+{settings.codigoPais}){/if}</p></div>
+                <div class="column is-one-third"><p class="heading">Fax</p><p>{settings.telefonoFax ?: '—'} {#if settings.codigoPaisFax??}(+{settings.codigoPaisFax}){/if}</p></div>
+                <div class="column is-one-third"><p class="heading">Correo de tributación</p><p>{settings.correoElectronicoTributacion ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Provincia</p><p>{settings.provincia ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Cantón</p><p>{settings.canton ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Distrito</p><p>{settings.distrito ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Barrio</p><p>{settings.barrio ?: '—'}</p></div>
+                <div class="column is-two-thirds"><p class="heading">Dirección completa</p><p>{settings.direccionCompleta ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Código sucursal</p><p>{settings.codigoSucursal ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Código terminal</p><p>{settings.codigoTerminal ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Tipo de documento</p><p>{settings.tipoDocumento ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Último consecutivo</p><p>{settings.ultimoConsecutivo ?: '—'}</p></div>
+                <div class="column is-one-third"><p class="heading">Facturación vía Fides</p>
+                    <span class="tag {#if settings.useFides}is-success{#else}is-info{/if}">
+                        {#if settings.useFides}Activado{#else}Desactivado{/if}</span></div>
+            </div>
+        </div>
+
+        {! ── Grupo: loyalty (read-only; writes belong to the Loyalty module) ── !}
+        <div class="box mb-5" data-group="loyalty">
+            <p class="title is-5">Loyalty</p>
+            <div class="columns is-multiline">
+                <div class="column is-half">
+                    <p class="heading">Porcentaje de cashback</p>
+                    <p class="title is-4">{settings.cashbackPercentage ?: '—'}{#if settings.cashbackPercentage??}%{/if}</p>
+                </div>
+                <div class="column is-half">
+                    <p class="heading">Meses de inactividad antes de expirar puntos</p>
+                    <p class="title is-4">{settings.puntosInactivityMonths ?: '—'}</p>
+                </div>
+            </div>
+            <p class="help has-text-grey">
+                Estos valores se administran desde el módulo Loyalty; aquí son
+                solo lectura.
+            </p>
+        </div>
+
+        {! ── Grupo: umbrales de stock (snapshot informativo del motor T33) ── !}
+        <div class="box mb-5" data-group="stock-umbrales">
+            <p class="title is-5">Umbrales de Stock</p>
+            <p class="subtitle is-6 has-text-grey">
+                Constantes del motor de alertas (solo lectura); la configuración
+                por artículo vive en su propia pantalla.
+            </p>
+            <div class="columns is-multiline">
+                <div class="column is-one-fifth"><p class="heading">Ventana de velocidad</p><p>30 días</p></div>
+                <div class="column is-one-fifth"><p class="heading">Plazo de entrega</p><p>3 días</p></div>
+                <div class="column is-one-fifth"><p class="heading">Stock de seguridad por defecto</p><p>7 días</p></div>
+                <div class="column is-one-fifth"><p class="heading">Respaldo de stock óptimo</p><p>14 días</p></div>
+                <div class="column is-one-fifth"><p class="heading">Buffer de reorden</p><p>30 días</p></div>
+            </div>
+            <a class="button is-link is-light"
+               href="/Mercurius/api/app/stock-alert-config/pagina">
+                Configurar umbrales por artículo</a>
+        </div>
+
+        {! ── Grupo: modo de prevalidación (informativo; sin setting respaldo aún) ── !}
+        <div class="box mb-5" data-group="prevalidacion">
+            <p class="title is-5">Prevalidación de Cargas</p>
+            <div class="field">
+                <label class="label" for="modo-prevalidacion">Modo de prevalidación</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="modo-prevalidacion" disabled>
+                            <option value="siempre" selected>Siempre activa (comportamiento actual)</option>
+                            <option value="solo-errores" disabled>Solo reportar errores (no disponible)</option>
+                            <option value="apagada" disabled>Apagada (no disponible)</option>
+                        </select>
+                    </div>
+                </div>
+                <p class="help has-text-grey">
+                    Toda carga de facturas recibidas e inventarios ejecuta la
+                    prevalidación XML antes de procesarse. Un modo configurable
+                    requeriría un nuevo parámetro del sistema y llega en otra
+                    tarea; el control es informativo.
+                </p>
+            </div>
+        </div>
+
+        <div class="field">
+            <button class="button is-primary is-rounded" type="submit">Guardar Ajustes</button>
+        </div>
+    </form>
+
+    <script>
+        document.addEventListener('htmx:beforeSwap', function (evt) {
+            var elt = evt.detail.requestConfig.elt;
+            var xhr = evt.detail.xhr;
+            if (elt && xhr && elt.hasAttribute && elt.hasAttribute('data-json-save')) {
+                var tipo = xhr.getResponseHeader('Content-Type') || '';
+                if (tipo.indexOf('application/json') !== -1) {
+                    evt.detail.shouldSwap = false;
+                    evt.detail.serverResponse = '';
+                }
+            }
+        });
+
+        document.addEventListener('htmx:afterRequest', function (evt) {
+            var elt = evt.detail.requestConfig.elt;
+            var xhr = evt.detail.xhr;
+            if (!elt || !xhr || !elt.hasAttribute || !elt.hasAttribute('data-json-save')) {
+                return;
+            }
+            var datos = null;
+            try {
+                datos = JSON.parse(xhr.responseText);
+            } catch (e) {
+                datos = null;
+            }
+            var url = elt.getAttribute('hx-post') || elt.getAttribute('hx-put') || '';
+            var esTrigger = url.indexOf('backup-trigger') !== -1;
+            var severidad = 'is-danger';
+            var mensaje = 'No se pudo contactar al servidor';
+            if (evt.detail.successful && datos && datos.data) {
+                severidad = 'is-success';
+                if (esTrigger) {
+                    mensaje = 'Backup completado correctamente';
+                } else {
+                    mensaje = 'Configuración guardada';
+                }
+                var ultimo = datos.data.backupUltimoEjecutado;
+                if (ultimo) {
+                    var nodo = document.getElementById('backup-ultimo-ejecutado');
+                    if (nodo) {
+                        nodo.textContent = String(ultimo).replace('T', ' ').slice(0, 16);
+                    }
+                }
+                if (esTrigger) {
+                    var estado = document.getElementById('backup-estado');
+                    if (estado) {
+                        estado.textContent = 'Habilitado';
+                        estado.className = 'tag is-success';
+                    }
+                }
+            } else if (datos && datos.error && datos.error.message) {
+                mensaje = datos.error.message;
+            } else if (evt.detail.successful) {
+                mensaje = 'Respuesta inesperada del servidor';
+            }
+            var contenedor = document.getElementById('toast-container');
+            if (!contenedor) {
+                return;
+            }
+            var toast = document.createElement('div');
+            toast.className = 'notification ' + severidad;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('data-toast', '');
+            var cierre = document.createElement('button');
+            cierre.className = 'delete';
+            cierre.type = 'button';
+            cierre.setAttribute('aria-label', 'Cerrar notificacion');
+            cierre.addEventListener('click', function () {
+                toast.remove();
+            });
+            toast.appendChild(cierre);
+            toast.appendChild(document.createTextNode(mensaje));
+            contenedor.appendChild(toast);
+            setTimeout(function () {
+                toast.remove();
+            }, 5000);
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var nodo = document.getElementById('backup-ultimo-ejecutado');
+            if (nodo) {
+                var texto = nodo.textContent.trim();
+                if (texto.indexOf('T') !== -1) {
+                    nodo.textContent = texto.replace('T', ' ').slice(0, 16);
+                }
+            }
+        });
+    </script>
+{/fragment}
+</div>
+    {/body}
+{/include}

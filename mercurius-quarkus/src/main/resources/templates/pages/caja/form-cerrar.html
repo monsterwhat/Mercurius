@@ -1,0 +1,72 @@
+{!
+  pages/caja/form-cerrar - "Cerrar Sesion" card (T38).
+
+  Port of the legacy rendered="#{cierreCajaController.sesionAbierta}" close
+  branch of secured/pages/Caja/index.xhtml: contado amounts for
+  Efectivo/SINPE/Tarjeta + notas, submitted to the form twin
+  POST /api/app/caja/close/form (which delegates to the JSON POST /close
+  guard chain and legacy difference math).
+
+  The submit button carries hx-confirm so the shared _kit/confirm dialog
+  (included once by index.html) shows the difference warning BEFORE the
+  request is issued; AFTER it, the response's OOB toast severity IS the
+  open-difference warning (warning when diferencia != 0, success when
+  balanced) with the legacy message "Sesion de caja cerrada. Diferencia: X".
+
+  Model (inherited from estado-caja.html context; optional ??-guarded):
+    errorGeneral  String - guard error text ("No hay una sesion de caja abierta")
+    toastSeverity / toastMessage - optional OOB toast
+
+  CSRF: inherited automatically from the layout <body hx-headers> pattern.
+!}
+<div id="panel-cerrar-caja">
+    <h5 class="title is-5">Cerrar Sesion</h5>
+
+    <form id="forma-cerrar-caja"
+          hx-post="/Mercurius/api/app/caja/close/form"
+          hx-target="#caja-estado" hx-swap="innerHTML">
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="montoContadoEfectivo">Efectivo Contado (CRC)</label>
+                    <div class="control">
+                        <input class="input" id="montoContadoEfectivo"
+                               type="number" name="montoContadoEfectivo" step="0.01" min="0"
+                               inputmode="decimal"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="montoContadoSinpe">SINPE Contado (CRC)</label>
+                    <div class="control">
+                        <input class="input" id="montoContadoSinpe"
+                               type="number" name="montoContadoSinpe" step="0.01" min="0"
+                               inputmode="decimal"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="montoContadoTarjeta">Tarjeta Contado (CRC)</label>
+                    <div class="control">
+                        <input class="input" id="montoContadoTarjeta"
+                               type="number" name="montoContadoTarjeta" step="0.01" min="0"
+                               inputmode="decimal"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="notasCierre">Notas</label>
+            <div class="control">
+                <textarea class="textarea" id="notasCierre" name="notas" rows="2"></textarea>
+            </div>
+        </div>
+        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        <div class="field">
+            <button class="button is-danger" type="submit"
+                    hx-confirm="&iquest;Cerrar la sesi&oacute;n de caja? La diferencia calculada entre lo contado y lo esperado quedar&aacute; registrada en el historial.">&#128274; Cerrar Sesion</button>
+        </div>
+    </form>
+</div>

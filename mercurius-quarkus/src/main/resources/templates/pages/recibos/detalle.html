@@ -1,0 +1,87 @@
+{!
+  pages/recibos/detalle - row-select detail panel body for ONE recibo (T27).
+  Fills #recibo-detalle-cuerpo via GET /api/app/recibos/{id} (HX-Request),
+  replicating the legacy verDetallesFactura dialog: header grid, resumen
+  totals and the action buttons (same endpoints as the table rows; they swap
+  #recibos-tablero so the board refreshes around the open panel).
+
+  Model keys supplied by RecibosResource#detalle:
+    vista RecibosResource.DetalleView (detalle = ComprobantesEmitidosDetailDTO
+          + pagada/procesada/vencida/notaCredito/activa flags)
+!}
+<div id="recibo-detalle-cuerpo">
+    <div class="level mb-2">
+        <div class="level-left">
+            <h3 class="title is-5 mb-0" style="font-family:monospace">
+                {#if vista.detalle.consecutivo??}{vista.detalle.consecutivo}{#else}Recibo #{vista.detalle.id}{/if}
+            </h3>
+        </div>
+        <div class="level-right">
+            <button type="button" class="button is-small is-link"
+                    hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}"
+                    hx-target="#recibo-detalle-cuerpo" hx-swap="innerHTML">Refrescar</button>
+        </div>
+    </div>
+
+    <div class="columns is-multiline is-mobile">
+        <div class="column is-half"><p class="heading">Clave Hacienda</p><p class="subtitle is-6" style="font-family:monospace;font-size:0.75rem">{#if vista.detalle.haciendaClave??}{vista.detalle.haciendaClave}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Estado Hacienda</p><p>{#if vista.detalle.haciendaEstado??}<span class="tag is-light">{vista.detalle.haciendaEstado}</span>{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Emisor</p><p class="subtitle is-6">{#if vista.detalle.emisorNombre??}{vista.detalle.emisorNombre}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Receptor</p><p class="subtitle is-6">{#if vista.detalle.receptorNombre??}{vista.detalle.receptorNombre}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Fecha de emisión</p><p class="subtitle is-6">{#if vista.detalle.fechaEmision??}{vista.detalle.fechaEmision}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Condición de venta / Plazo</p><p class="subtitle is-6">{#if vista.detalle.condicionVenta??}{vista.detalle.condicionVenta}{#else}&mdash;{/if} / {#if vista.detalle.plazoCredito??}{vista.detalle.plazoCredito}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Medios de pago</p><p>{#for medio in vista.detalle.mediosPago}<span class="tag is-info">{medio}</span>{#else}&mdash;{/for}</p></div>
+        <div class="column is-half">
+            <p class="heading">Estado</p>
+            {#if vista.activa}<span class="tag is-success">Activa</span>{#else}<span class="tag is-danger">Inactiva</span>{/if}
+            {#if vista.pagada}<span class="tag is-info">Pagada</span>{/if}
+            {#if vista.procesada}<span class="tag is-link">Procesada</span>{/if}
+            {#if vista.vencida}<span class="tag is-danger">Vencida</span>{/if}
+            {#if vista.detalle.motivoRechazo??}<span class="tag is-warning">Motivo: {vista.detalle.motivoRechazo}</span>{/if}
+        </div>
+    </div>
+
+    <hr/>
+    <div class="columns is-multiline is-mobile mt-2">
+        <div class="column is-one-third"><p class="heading">Total Gravado</p><p>&#8362;{#if vista.detalle.totalGravado??}{vista.detalle.totalGravado}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Exento</p><p>&#8362;{#if vista.detalle.totalExento??}{vista.detalle.totalExento}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Venta</p><p>&#8362;{#if vista.detalle.totalVenta??}{vista.detalle.totalVenta}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Impuesto</p><p>&#8362;{#if vista.detalle.totalImpuesto??}{vista.detalle.totalImpuesto}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Venta Neta</p><p>&#8362;{#if vista.detalle.totalVentaNeta??}{vista.detalle.totalVentaNeta}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Comprobante</p><p style="font-weight:700">&#8362;{#if vista.detalle.totalComprobante??}{vista.detalle.totalComprobante}{#else}0.00{/if}</p></div>
+    </div>
+
+    <hr/>
+    <div class="buttons mt-2">
+        {#if !vista.notaCredito}
+        <button type="button" class="button is-warning"
+                {#if vista.pagada}disabled{/if}
+                hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/pay"
+                hx-target="#recibos-tablero" hx-swap="outerHTML"
+                hx-confirm="&iquest;Marcar como pagada la factura?">Marcar como pagada</button>
+        {/if}
+        <button type="button" class="button is-success"
+                {#if vista.procesada}disabled{/if}
+                hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/process"
+                hx-target="#recibos-tablero" hx-swap="outerHTML"
+                hx-confirm="&iquest;Procesar la factura y enviarla a Hacienda?">Procesar</button>
+        <button type="button" class="button is-link"
+                hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/accept"
+                hx-target="#recibos-tablero" hx-swap="outerHTML"
+                hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">Aceptar factura</button>
+    </div>
+
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}/reject"
+          hx-target="#recibos-tablero" hx-swap="outerHTML" class="mt-2">
+        <div class="field has-addons mb-0">
+            <div class="control is-expanded">
+                <input class="input" type="text" name="motivo" maxlength="500"
+                       placeholder="Motivo del rechazo (opcional, m&aacute;x. 500 caracteres)"/>
+            </div>
+            <div class="control">
+                <button class="button is-danger" type="submit"
+                        hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">Rechazar factura</button>
+            </div>
+        </div>
+    </form>
+</div>

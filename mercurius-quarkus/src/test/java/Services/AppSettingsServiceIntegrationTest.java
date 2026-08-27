@@ -62,6 +62,16 @@ class AppSettingsServiceIntegrationTest {
     EntityManager em;
 
     /**
+     * Removes rows committed by other suites in the same JVM (e.g.
+     * DevolucionesResourceTest seeds an active profile for its NC pipeline).
+     * Runs INSIDE the test's rolled-back transaction, so the deletion itself
+     * never escapes: later classes still see their committed rows.
+     */
+    private void clearSettingsTable() {
+        em.createQuery("DELETE FROM AppSettings").executeUpdate();
+    }
+
+    /**
      * Escenario 1 — ciclo completo crear→buscar→actualizar→eliminar de un
      * perfil de configuración.
      */
@@ -100,6 +110,7 @@ class AppSettingsServiceIntegrationTest {
      */
     @Test
     void returnCurrentTracksActiveSettingsOnly() {
+        clearSettingsTable();
         assertNull(appSettingsService.returnCurrent(),
                 "table starts empty inside this rolled-back transaction");
 
@@ -141,6 +152,7 @@ class AppSettingsServiceIntegrationTest {
      */
     @Test
     void findOrCreateCurrentCreatesOnceWhenTableEmpty() {
+        clearSettingsTable();
         assertTrue(appSettingsService.listAll().isEmpty(),
                 "precondition: empty table inside this transaction");
 
@@ -161,6 +173,7 @@ class AppSettingsServiceIntegrationTest {
      */
     @Test
     void listPagePagingEdgesAndCountConsistency() {
+        clearSettingsTable();
         appSettingsService.create(buildSettings("IT Perfil Pagina A"));
         appSettingsService.create(buildSettings("IT Perfil Pagina B"));
         appSettingsService.create(buildSettings("IT Perfil Pagina C"));

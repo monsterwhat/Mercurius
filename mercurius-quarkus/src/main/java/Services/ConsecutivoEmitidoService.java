@@ -9,6 +9,7 @@ import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 
 /**
  * Thread-safe sequential number generator for emitted electronic documents.
@@ -47,6 +48,7 @@ public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
      * Starts at 1 per (sucursal, terminal, tipo). Auto-creates the counter row
      * on first invocation for a new combination.
      */
+    @Transactional
     public synchronized long getNextSequential(@Nonnull String sucursal, @Nonnull String terminal, @Nonnull String tipo) {
         try {
             TypedQuery<ConsecutivoEmitido> query = em.createQuery(

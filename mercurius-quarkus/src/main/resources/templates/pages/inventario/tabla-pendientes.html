@@ -1,0 +1,55 @@
+{!
+  pages/inventario/tabla-pendientes - data-table include for the Movimientos
+  Pendientes tab (T35). Same contract as tabla-activos.html; the legacy tab's
+  per-row "Procesar" button opens DialogoRevisionInventario, ported here as
+  the shared #revision-ajuste modal filled via hx-get + data-kit-open.
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    <input type="hidden" name="tab" value="pendientes"/>
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar movimientos pendientes..."
+                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for movimiento in modelo.filas}
+            <tr>
+                <td class="has-text-centered"><span class="tag is-warning">Sin Procesar</span></td>
+                <td style="font-weight:600">{#if movimiento.articulo??}{movimiento.articulo.nombre}{#else}&mdash;{/if}</td>
+                <td style="font-family:monospace;font-size:0.875rem">{#if movimiento.articulo??}{movimiento.articulo.codigoBarra}{#else}&mdash;{/if}</td>
+                <td class="has-text-right" style="font-weight:600">{movimiento.cantidad}</td>
+                <td>{movimiento.fechaMovimiento}</td>
+                <td>{#if movimiento.usuario??}{movimiento.usuario.username}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">
+                    <div class="buttons is-centered" style="margin:0">
+                        <button type="button" class="button is-small is-warning" title="Procesar movimiento"
+                                aria-haspopup="dialog" data-kit-open="revision-ajuste"
+                                hx-get="/Mercurius/api/app/inventario/formularios/revision/{movimiento.codigo}"
+                                hx-target="#revision-ajuste-body" hx-swap="innerHTML">Procesar</button>
+                        <button type="button" class="button is-small is-danger" title="Rechazar movimiento"
+                                hx-post="/Mercurius/api/app/inventario/ajustes/{movimiento.codigo}/rechazar"
+                                hx-confirm="¿Rechazar el movimiento {movimiento.codigo}? Quedará inactivo."
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#10007;</button>
+                    </div>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron movimientos pendientes de procesar</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

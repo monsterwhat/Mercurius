@@ -1,0 +1,117 @@
+{!
+  pages/compras/ordenes-detalle - read-only detail panel (stage 4, T31).
+  Returned by GET /api/app/ordenes/{id}/detalle and swapped into the shared
+  #detalle-orden modal body. Verbatim port of the legacy DetallesOrdenDialog
+  (detallesForm): info grid + artículos table + totals, with the same gated
+  actions — "Marcar como Recibida" only on CONFIRMADA orders and
+  "Cancelar Orden" when puedeCambiarEstado && estado != CONFIRMADA
+  (BORRADOR/ENVIADA/RECIBIDA), exactly like the legacy xhtml.
+
+  Model (pre-computed by OrdenCompraResource#detalleViewModel):
+    orden Map - id, numeroOrden, proveedorNombre, estado, estadoClass,
+                fechaOrden, entregaEstimada, entregaReal, usuarioUsername,
+                totalEstimado, totalReal, mostrarTotalReal, notas,
+                lineas(nombre/codigo/codigoBarra/cantidad/precio/subtotal),
+                puedeRecibir, puedeCancelar
+!}
+<div id="panel-detalle">
+    <div class="columns is-multiline mb-4">
+        <div class="column is-4">
+            <p class="heading">N° Orden</p>
+            <p class="title is-5">{orden.numeroOrden}</p>
+        </div>
+        <div class="column is-4">
+            <p class="heading">Proveedor</p>
+            <p class="title is-5">{#if orden.proveedorNombre??}{orden.proveedorNombre}{#else}&mdash;{/if}</p>
+        </div>
+        <div class="column is-4">
+            <p class="heading">Estado</p>
+            <p class="title is-5"><span class="tag {orden.estadoClass}">{orden.estado}</span></p>
+        </div>
+        <div class="column is-4">
+            <p class="heading">Fecha de Orden</p>
+            <p class="title is-6">{#if orden.fechaOrden??}{orden.fechaOrden}{#else}&mdash;{/if}</p>
+        </div>
+        <div class="column is-4">
+            <p class="heading">Entrega Estimada</p>
+            <p class="title is-6">
+                {#if orden.entregaEstimada??}{orden.entregaEstimada}{#else}<span style="color:#999">No definida</span>{/if}
+            </p>
+        </div>
+        <div class="column is-4">
+            <p class="heading">Entrega Real</p>
+            <p class="title is-6">
+                {#if orden.entregaReal??}{orden.entregaReal}{#else}<span style="color:#999">&ndash;</span>{/if}
+            </p>
+        </div>
+        <div class="column is-6">
+            <p class="heading">Creado por</p>
+            <p class="title is-6">{#if orden.usuarioUsername??}{orden.usuarioUsername}{#else}&mdash;{/if}</p>
+        </div>
+        <div class="column is-6">
+            <p class="heading">Total Estimado</p>
+            <p class="title is-4 has-text-success">{orden.totalEstimado}</p>
+        </div>
+        {#if orden.notas??}
+        <div class="column is-12">
+            <p class="heading">Notas</p>
+            <p class="subtitle is-6">{orden.notas}</p>
+        </div>
+        {/if}
+    </div>
+
+    <hr/>
+    <p class="title is-6">Artículos</p>
+
+    <table class="table is-striped is-fullwidth">
+        <thead>
+            <tr>
+                <th>Artículo</th>
+                <th style="text-align:center;width:100px">Cantidad</th>
+                <th style="text-align:right;width:120px">Precio Unit.</th>
+                <th style="text-align:right;width:120px">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#for linea in orden.lineas}
+            <tr>
+                <td>
+                    <span style="font-weight:500">{#if linea.nombre??}{linea.nombre}{#else}&mdash;{/if}</span><br/>
+                    <span class="has-text-grey is-size-7">
+                        Código: {#if linea.codigo??}{linea.codigo}{#else}&mdash;{/if}
+                        {#if linea.codigoBarra??} | {linea.codigoBarra}{/if}
+                    </span>
+                </td>
+                <td style="text-align:center">{linea.cantidad}</td>
+                <td style="text-align:right">{linea.precio}</td>
+                <td style="text-align:right;font-weight:600">{linea.subtotal}</td>
+            </tr>
+            {#else}
+            <tr><td colspan="4" class="has-text-centered has-text-grey">No hay artículos en esta orden.</td></tr>
+            {/for}
+        </tbody>
+    </table>
+
+    {#if orden.mostrarTotalReal}
+    <div class="columns is-vcentered mt-3">
+        <div class="column has-text-right">
+            <span class="title is-5">Total Real: </span>
+            <span class="title is-4 has-text-danger">{orden.totalReal}</span>
+        </div>
+    </div>
+    {/if}
+
+    <div class="buttons is-centered mt-4">
+        {#if orden.puedeRecibir}
+        <button class="button is-success" type="button"
+                hx-put="/Mercurius/api/app/ordenes/{orden.id}/recibir"
+                hx-swap="none">&#10003; Marcar como Recibida</button>
+        {/if}
+        {#if orden.puedeCancelar}
+        <button class="button is-danger" type="button" aria-haspopup="dialog" data-kit-open="cancelar-orden"
+                hx-get="/Mercurius/api/app/ordenes/{orden.id}/cancelar"
+                hx-target="#cancelar-orden-body" hx-swap="innerHTML">&times; Cancelar Orden</button>
+        {/if}
+        <button class="button" type="button" data-kit-close>Cerrar</button>
+    </div>
+</div>

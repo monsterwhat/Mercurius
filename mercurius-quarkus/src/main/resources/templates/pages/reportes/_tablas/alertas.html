@@ -1,0 +1,34 @@
+{!
+  _tablas/alertas - table-only fragment for HX-Request swaps of the
+  Alertas de Stock page (T19). Column set switches with "seccion".
+!}
+<div id="reporte-alertas-tabla">
+    {#include _kit/data-table id="reporte-alertas" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            {#if seccion == 'sugerencias'}
+            <td>{f.articulo}</td>
+            <td>{f.codigoBarra}</td>
+            <td>{f.cantidadSugerida}</td>
+            <td><span class="tag {#if f.prioridad == 'Urgente'}is-danger{#else}{#if f.prioridad == 'Alta'}is-warning{#else}is-info{/if}{/if}">{f.prioridad}</span></td>
+            <td>{f.costoTotalEstimado}</td>
+            <td>{f.promedioVentasMensual}</td>
+            <td>{f.fechaCreacion}</td>
+            {#else}
+            <td><span class="tag {#if f.tipo == 'Sin Stock'}is-danger{#else}{#if f.tipo == 'Stock Bajo'}is-warning{#else}is-info{/if}{/if}">{f.tipo}</span></td>
+            <td>{f.articulo}</td>
+            <td>{f.codigoBarra}</td>
+            <td>{f.cantidadActual}</td>
+            <td>{f.cantidadMinima}</td>
+            <td>{f.stockOptimo}</td>
+            <td>{f.fechaCreacion}</td>
+            <td><span class="tag {#if f.estado == 'Activa'}is-warning{#else}{#if f.estado == 'Reconocida'}is-info{#else}is-success{/if}{/if}">{f.estado}</span></td>
+            {/if}
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

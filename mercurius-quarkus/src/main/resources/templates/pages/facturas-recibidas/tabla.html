@@ -1,0 +1,93 @@
+{!
+  pages/facturas-recibidas/tabla - ONE data-table include for the Facturas
+  Recibidas inbox (T36). Rendered standalone by GET
+  /api/app/facturas-recibidas/tabla (HX-Request fragment swap) AND included
+  by index.html.
+
+  Model keys mirror the _kit/data-table DATA CONTRACT: modelo.id,
+  modelo.baseUrl, modelo.columnas, modelo.filas
+  (Models.DTO.ComprobantesRecibidosListDTO rows), modelo.sortKey,
+  modelo.sortDir, modelo.page, modelo.size, modelo.total, modelo.totalPages,
+  modelo.paginas, modelo.filtros (bucket [+ q]); q = current global filter;
+  modelo.bucket = active bucket key.
+
+  Buckets reproduce the legacy source queries: todas/activas =
+  ListAllEnabled(), pagadas/procesadas = filtered activas, pendientes =
+  listPendientes(), vencidas = listVencidas().
+
+  Row action: Revisar opens the shared detail drawer (editable lines,
+  prevalidation panel, Mensaje Receptor actions).
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    <div class="field is-horizontal" style="gap:0.75rem">
+        <div class="field-body">
+            <div class="field">
+                <label class="label is-small" for="recibidas-cubeta">Bandeja</label>
+                <div class="control">
+                    <div class="select">
+                        <select id="recibidas-cubeta" name="bucket"
+                                hx-get="/Mercurius{modelo.baseUrl}"
+                                hx-trigger="change" hx-target="#{modelo.id}" hx-swap="outerHTML">
+                            <option value="todas" {#if modelo.bucket eq 'todas'}selected{/if}>Todas</option>
+                            <option value="activas" {#if modelo.bucket eq 'activas'}selected{/if}>Activas</option>
+                            <option value="pagadas" {#if modelo.bucket eq 'pagadas'}selected{/if}>Pagadas</option>
+                            <option value="procesadas" {#if modelo.bucket eq 'procesadas'}selected{/if}>Procesadas</option>
+                            <option value="pendientes" {#if modelo.bucket eq 'pendientes'}selected{/if}>Pendientes</option>
+                            <option value="vencidas" {#if modelo.bucket eq 'vencidas'}selected{/if}>Vencidas</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="field is-expanded">
+                <label class="label is-small" for="recibidas-busqueda">Buscar</label>
+                <div class="control has-icons-left">
+                    <input class="input" type="text" id="recibidas-busqueda" name="q"
+                           value="{#if q??}{q}{/if}" autocomplete="off"
+                           placeholder="Buscar por emisor, consecutivo, actividad..."
+                           hx-get="/Mercurius{modelo.baseUrl}?bucket={modelo.bucket}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                    <span class="icon is-small is-left">&#128269;</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for factura in modelo.filas}
+            <tr>
+                <td style="font-weight:500;font-family:monospace;font-size:0.875rem">{#if factura.consecutivo??}{factura.consecutivo}{#else}&mdash;{/if}</td>
+                <td>{#if factura.fechaEmision??}{factura.fechaEmision}{#else}&mdash;{/if}</td>
+                <td>{#if factura.emisorNombre??}{factura.emisorNombre}{#else}&mdash;{/if}</td>
+                <td>
+                    {#if factura.haciendaMensajeReceptorEstado??}
+                    <span class="tag {factura.haciendaMensajeReceptorEstado eq 'ACEPTADO' ? 'is-success' : 'is-danger'}">{factura.haciendaMensajeReceptorEstado}</span>
+                    {#else}
+                    <span class="tag is-light">Sin MR</span>
+                    {/if}
+                    {#if factura.paid}<span class="tag is-info">Pagada</span>{/if}
+                    {#if factura.processed}<span class="tag is-success">Procesada</span>{/if}
+                </td>
+                <td class="has-text-right" style="font-weight:600">{#if factura.totalComprobante??}&#8362;{factura.totalComprobante}{#else}&mdash;{/if}</td>
+                <td class="has-text-right">{#if factura.totalImpuesto??}&#8362;{factura.totalImpuesto}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">
+                    <button type="button" class="button is-small is-info" title="Revisar detalle"
+                            aria-haspopup="dialog" data-kit-open="detalle-factura"
+                            hx-get="/Mercurius/api/app/facturas-recibidas/{factura.id}"
+                            hx-target="#detalle-factura-body" hx-swap="innerHTML">&#128065;</button>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron facturas recibidas con los criterios proporcionados</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

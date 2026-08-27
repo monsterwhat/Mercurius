@@ -1,0 +1,81 @@
+{!
+  pages/correos-admin/index - Administración de Plantillas de Correo admin.
+  Qute/HTMX/Bulma page consuming the LIVE JSON contract of
+  Controllers.Api.App.EmailTemplateResource additively:
+
+    GET /api/app/email-templates/table?page&size&sort&dir&q   (dual-mode per
+      docs/ui-kit.md §2.9: HX-Request ⇒ only tabla-plantillas.html fragment;
+      otherwise this full page through layout.html)
+    GET /api/app/email-templates/formularios/nueva            (create modal body)
+    GET /api/app/email-templates/formularios/{id}             (edit modal body)
+    POST|PUT /api/app/email-templates[/{id}]                  (existing endpoints;
+      additive form-urlencoded twins answer the HTMX dialog forms)
+    DELETE /api/app/email-templates/{id}                      (existing endpoint;
+      HX-Request callers get the refreshed table fragment + OOB toast)
+
+  Model keys supplied by EmailTemplateResource#renderFullPage:
+    tablaPlantillas    Map   - model of tabla-plantillas.html (kit data-table contract)
+    totalPlantillas    Long  - stat card (legacy templatesCount() parity)
+
+  Interactions:
+    - Search-as-you-type: keyup changed delay:300ms hx-get against the table
+      endpoint, swapping the table container (ui-kit §7 filter-input mapping).
+    - Create dialog: _kit/modal default trigger (hx-get form fragment).
+    - Edit dialogs: shared hidden-trigger _kit/modal; row buttons carry
+      data-kit-open and their own hx-get into #{id}-body (T18 bridge pattern).
+    - Delete: hx-delete + hx-confirm handled inside tabla-plantillas.html.
+!}
+{#include layout}
+    {#title}Administración de Correos | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <div class="level">
+            <div class="level-left">
+                <p class="title is-3" style="margin-bottom:0">Administración de Plantillas de Correo</p>
+            </div>
+            <div class="level-right">
+                <div class="buttons" style="align-items:center">
+                    <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
+                        <p class="title is-2" style="margin-bottom:0">{#if totalPlantillas??}{totalPlantillas}{#else}0{/if}</p>
+                        <p class="subtitle is-6">Plantillas</p>
+                    </div>
+                    {#include _kit/modal id="crear-plantilla" title="Nueva Plantilla de Correo" triggerLabel="Nueva Plantilla" triggerClass="is-success"
+                         bodyUrl="/api/app/email-templates/formularios/nueva"}{/include}
+                </div>
+            </div>
+        </div>
+
+        {#include pages/correos/tabla-plantillas modelo=tablaPlantillas q=tablaPlantillas.q /}
+
+        {!$1!}
+        {#include _kit/modal id="editar-plantilla" title="Editar Plantilla de Correo" triggerClass="is-hidden"
+             bodyUrl="/api/app/email-templates/formularios/nueva"}{/include}
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level edit buttons open the shared edit modal; the swapped
+       form's [data-kit-close] button closes it (same contract as T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

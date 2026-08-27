@@ -1,0 +1,167 @@
+{!
+  pages/facturas/cart-panel - the POS sale panel fragment (T37).
+
+  Rendered standalone by GET /api/app/pos/cart-panel AND included by
+  pages/facturas/factura.html — single source of truth for the markup (T18
+  pattern). It is the hx-target of every POS mutation twin:
+
+    POST /api/app/pos/scan-form                     (codigoBarra, cantidad)
+    POST /api/app/pos/item/{codigo}/qty-form        (delta)
+    POST /api/app/pos/item/{codigo}/remove-form
+    POST /api/app/pos/client-select-form            (clientCode)
+    POST /api/app/pos/puntos-form                   (puntosARedimir)
+    POST /api/app/pos/facturar-form                 (OOB refresh from resultado)
+    POST /api/app/pos/override-authorize-form       (OOB refresh on success)
+    POST /api/app/pos/cancel-form
+
+  Model ("panel" bound key, Map):
+    items            List  - {codigo,nombre,cantidad,precioEfectivo,totalLinea,promo,precioPersonalizado}
+    vacio            bool
+    totalCarrito / totalDescuento / totalImpuesto / descuentoPuntos
+    totalPagado / vuelto / vueltoString
+    hasOverrides     bool  - any row carries precioPersonalizado
+    authorizedBy     String|null - supervisor on the session
+    clienteCode / clienteName / clientePuntos
+    mensaje          Map|null - {status,severity,summary,detail}
+
+  Every number comes from CarritoService (server-computed); this template
+  performs no math. Quantity +/- and remove are per-row micro-forms so HTMX
+  posts stay plain urlencoded (no hx-vals JSON, keeping Qute braces out).
+!}
+<div id="cart-panel" class="box" data-pos-cart-panel{#if panel.oob} hx-swap-oob="true"{/if}>
+    {#if panel.mensaje??}
+    <div class="notification {#if panel.mensaje.severity == 'error'}is-danger{#else if panel.mensaje.severity == 'warn'}is-warning{#else if panel.mensaje.severity == 'success'}is-success{#else}is-info{/if}"
+            style="padding:0.5rem 0.75rem" role="status">
+        {#if panel.mensaje.summary??}<strong>{panel.mensaje.summary}</strong>{/if}
+        {#if panel.mensaje.detail??}<span> {panel.mensaje.detail}</span>{/if}
+    </div>
+    {/if}
+
+    <div class="level is-mobile" style="margin-bottom:0.5rem">
+        <div class="level-left">
+            <div>
+                <p class="heading" style="margin-bottom:0">Venta de</p>
+                {#if panel.clienteCode??}
+                <p class="has-text-weight-semibold">{panel.clienteName}
+                    <span class="tag is-light">{panel.clientePuntos} pts</span></p>
+                {#else}
+                <p class="has-text-grey">Cliente ocasional</p>
+                {/if}
+            </div>
+        </div>
+        <div class="level-right">
+            {#if panel.hasOverrides}
+            {#if panel.authorizedBy}
+            <span class="tag is-success">Autoriza: {panel.authorizedBy}</span>
+            {#else}
+            <button type="button" class="button is-small is-warning" aria-haspopup="dialog"
+                    data-kit-open="modal-autorizacion">Autorizar precios</button>
+            {/if}
+            {/if}
+        </div>
+    </div>
+
+    {#if panel.vacio}
+    <p class="has-text-centered has-text-grey" style="padding:2rem 0">
+        El carrito está vacío &mdash; escanee un código de barras para comenzar.
+    </p>
+    {#else}
+    <table class="table is-striped is-narrow is-fullwidth" style="margin-bottom:0.5rem">
+        <thead>
+        <tr><th>Artículo</th><th class="has-text-centered">Cant.</th>
+            <th class="has-text-right">Precio</th><th class="has-text-right">Total</th><th></th></tr>
+        </thead>
+        <tbody>
+        {#for item in panel.items}
+        <tr data-codigo="{item.codigo}">
+            <td>
+                {item.nombre}
+                {#if item.promo}<span class="tag is-success is-light">Promo</span>{/if}
+                {#if item.precioPersonalizado}<span class="tag is-warning is-light">Precio autorizado</span>{/if}
+            </td>
+            <td class="has-text-centered" style="white-space:nowrap">
+                <form class="is-inline" style="display:inline">
+                    <input type="hidden" name="delta" value="-1"/>
+                    <button type="button" class="button is-small" aria-label="Restar uno"
+                            hx-post="/Mercurius/api/app/pos/item/{item.codigo}/qty-form"
+                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">&minus;</button>
+                </form>
+                <span class="has-text-weight-semibold" style="display:inline-block;min-width:2rem">{item.cantidad}</span>
+                <form class="is-inline" style="display:inline">
+                    <input type="hidden" name="delta" value="1"/>
+                    <button type="button" class="button is-small" aria-label="Sumar uno"
+                            hx-post="/Mercurius/api/app/pos/item/{item.codigo}/qty-form"
+                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">+</button>
+                </form>
+            </td>
+            <td class="has-text-right">{item.precioEfectivo}</td>
+            <td class="has-text-right has-text-weight-semibold">{item.totalLinea}</td>
+            <td class="has-text-centered">
+                <button type="button" class="button is-small is-danger" aria-label="Quitar artículo"
+                        title="Quitar del carrito"
+                        hx-post="/Mercurius/api/app/pos/item/{item.codigo}/remove-form"
+                        hx-target="#cart-panel" hx-swap="outerHTML">&times;</button>
+            </td>
+        </tr>
+        {/for}
+        </tbody>
+    </table>
+
+    <table class="table is-narrow is-fullwidth is-borderless">
+        <tbody>
+        <tr><td>Subtotal</td><td class="has-text-right">{panel.totalCarrito}</td></tr>
+        <tr><td>Descuentos</td><td class="has-text-right">{panel.totalDescuento}</td></tr>
+        <tr><td>Impuesto</td><td class="has-text-right">{panel.totalImpuesto}</td></tr>
+        {#if panel.descuentoPuntos?? && panel.descuentoPuntos > 0}
+        <tr><td>Puntos redimidos</td><td class="has-text-right">&minus;{panel.descuentoPuntos}</td></tr>
+        {/if}
+        </tbody>
+    </table>
+    {/if}
+
+    {#if panel.clienteCode??}
+    <form id="forma-puntos" class="field has-addons" style="margin-bottom:0.5rem">
+        <div class="control">
+            <input class="input is-small" type="number" min="0" step="1" name="puntosARedimir"
+                   id="puntos-input" placeholder="Puntos a redimir" autocomplete="off"/>
+        </div>
+        <div class="control">
+            <button type="button" class="button is-small is-link"
+                    hx-post="/Mercurius/api/app/pos/puntos-form" hx-include="#forma-puntos"
+                    hx-target="#cart-panel" hx-swap="outerHTML">Aplicar puntos</button>
+        </div>
+        <div class="control">
+            <form style="display:inline">
+                <input type="hidden" name="puntosARedimir" value="0"/>
+                <button type="button" class="button is-small"
+                        hx-post="/Mercurius/api/app/pos/puntos-form" hx-include="closest form"
+                        hx-target="#cart-panel" hx-swap="outerHTML">Quitar</button>
+            </form>
+        </div>
+    </form>
+    <p class="help" id="puntos-preview" data-puntos-preview>&nbsp;</p>
+    {/if}
+
+    <div class="field is-grouped" style="margin-bottom:0.25rem">
+        <p class="control is-expanded">
+            <button type="button" id="btn-abrir-pagos" class="button is-light is-fullwidth"
+                    aria-haspopup="dialog" data-kit-open="modal-pago">Pagos / Vuelto</button>
+        </p>
+    </div>
+    <div class="level is-mobile" style="margin-bottom:0.5rem">
+        <div class="level-left"><p class="heading" style="margin-bottom:0">TOTAL</p></div>
+        <div class="level-right"><p class="title is-3" style="margin-bottom:0"
+                id="pos-total-carrito">{panel.totalCarrito}</p></div>
+    </div>
+
+    <div class="buttons" style="margin-bottom:0">
+        <button type="button" id="btn-facturar" class="button is-success"
+                hx-post="/Mercurius/api/app/pos/facturar-form"
+                hx-include="#forma-tipo-documento"
+                hx-target="#facturar-resultado" hx-swap="innerHTML">&#128196; Facturar</button>
+        <button type="button" id="btn-cancelar" class="button is-danger is-light"
+                hx-post="/Mercurius/api/app/pos/cancel-form"
+                hx-confirm="¿Cancelar la venta actual?"
+                hx-target="#cart-panel" hx-swap="outerHTML">Cancelar venta</button>
+    </div>
+</div>

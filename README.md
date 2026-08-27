@@ -58,6 +58,24 @@ java -jar target\mercurius-quarkus-runner.jar
 ### 4. Acceder a la Aplicación
 La aplicación estará disponible en: `http://localhost:8081/Mercurius`
 
+## Pruebas (Testing)
+
+Ejecutar `mvn test` requiere una instancia local de PostgreSQL (Dev Services está deshabilitado, no se usa Docker):
+
+- **Instancia**: PostgreSQL local en el puerto `5433`
+- **Bases de datos**: `mercurius` (aplicación) y `mercurius_test` (pruebas)
+- **Usuario**: `mercurius` / contraseña `Mercurius@1!`
+
+Las pruebas de autenticación usan form-cookie auth (login real vía `/Mercurius/j_security_check`) contra la base `mercurius_test`, con las credenciales sembradas por `src/test/resources/import-test.sql`: usuario `admin` / contraseña `admin123`.
+
+## Seguridad
+
+Variables de entorno sensibles (ver `src/main/resources/application.properties`):
+
+- **`AUTH_SESSION_KEY`** - Clave de cifrado de la cookie de sesión (mínimo 32 bytes). Establecer por entorno; el valor por defecto es desechable y solo para `%dev`/`%test`.
+- **`HACIENDA_ENCRYPTION_KEY`** - Clave para derivar la clave AES-256-GCM que cifra en reposo `HaciendaApiKey` y `certificadoPassword` en la base de datos. Generar con `openssl rand -hex 32`.
+- **`DB_PASSWORD`** / **`DB_URL`** - Sobrescrituras por entorno de la contraseña y URL JDBC de la base de datos, sin editar `application.properties`.
+
 ## Tecnologías Utilizadas
 
 ### Backend
@@ -68,6 +86,12 @@ La aplicación estará disponible en: `http://localhost:8081/Mercurius`
 - **PostgreSQL** - Base de datos relacional para persistencia de datos
 - **Hibernate ORM** - Mapeo objeto-relacional integrado con Quarkus
 - **Maven** - Herramienta de gestión de dependencias y construcción
+
+### Frontend
+- **HTMX 2.0.10** - Interactividad AJAX declarativa directamente en HTML
+- **Alpine.js 3.16.1** - Reactividad ligera del lado del cliente
+- **Bulma.io 1.0.4** - Framework CSS moderno basado en Flexbox
+- **Qute** - Motor de plantillas nativo de Quarkus para el renderizado del lado del servidor
 
 ### Librerías Adicionales
 - **Lombok 1.18.46** - Reducción de código boilerplate mediante anotaciones
@@ -80,7 +104,7 @@ La aplicación estará disponible en: `http://localhost:8081/Mercurius`
 
 ### Plataforma
 - **Quarkus Scheduler** - Tareas programadas automatizadas
-- **Quarkus Security** - Autenticación y autorización seguras 
+- **Quarkus Security (quarkus-security)** - Autenticación y autorización seguras (reemplaza a elytron-security-jdbc) 
 
 ## Características
 

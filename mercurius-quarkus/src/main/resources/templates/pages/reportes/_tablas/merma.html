@@ -1,0 +1,34 @@
+{!
+  _tablas/merma - table-only fragment for HX-Request swaps of the
+  Control de Mermas page (T19). Column set switches with "seccion".
+!}
+<div id="reporte-merma-tabla">
+    {#include _kit/data-table id="reporte-merma" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            {#if seccion == 'causas'}
+            <td>{f.causa}</td>
+            <td>{f.total}</td>
+            <td>{f.porcentaje}%</td>
+            {#else}
+            {#if seccion == 'departamentos'}
+            <td>{f.departamento}</td>
+            <td>{f.total}</td>
+            <td>{f.porcentaje}%</td>
+            {#else}
+            <td>{f.tipo}</td>
+            <td>{f.articulo}</td>
+            <td>{f.cantidad}</td>
+            <td>{f.fechaMovimiento}</td>
+            <td>{f.notas}</td>
+            <td>{f.usuario}</td>
+            {/if}
+            {/if}
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

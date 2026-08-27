@@ -1,0 +1,34 @@
+{!
+  pages/inventario/upload-resultado - per-file upload result fragment (T35).
+  Rendered by POST /api/app/inventario/upload when HX-Request; parser errors
+  surface as Bulma danger notifications (ui-kit severity vocabulary §2.6)
+  plus an out-of-band toast into the layout's #toast-container.
+
+  Model (Controllers.Api.App.InventarioResource):
+    resultados   List<UploadFileResult(fileName, exito, mensaje)>
+    procesados   long
+    fallidos     long
+    toastSeverity / toastMessage (optional OOB toast)
+!}
+<div class="content">
+    <p class="has-text-weight-semibold">
+        Resultado de la carga: {procesados} procesado(s), {fallidos} con error
+    </p>
+    {#for resultado in resultados}
+    {#if resultado.exito}
+    <div class="notification is-success is-light" style="padding:0.75rem;margin-bottom:0.5rem">
+        <strong>{resultado.fileName}</strong> &mdash; {resultado.mensaje}
+    </div>
+    {#else}
+    <div class="notification is-danger" style="padding:0.75rem;margin-bottom:0.5rem">
+        <strong>{resultado.fileName}</strong> &mdash; {resultado.mensaje}
+    </div>
+    {/if}
+    {/for}
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

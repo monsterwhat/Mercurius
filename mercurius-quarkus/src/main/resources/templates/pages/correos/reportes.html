@@ -1,0 +1,83 @@
+{!
+  pages/correos/reportes - Reportes Programados admin (W4B-CORREOS
+  strangler view-half lane). Qute/HTMX/Bulma port of
+  secured/pages/Correos/Reportes/index.xhtml (deleted from the working tree
+  by a parallel lane; HEAD content used as the parity reference), consuming
+  the LIVE JSON contract of Controllers.Api.App.ReporteProgramadoResource
+  additively:
+
+    GET /api/app/reportes-programados/table?page&size&sort&dir&q  (NEW -
+      dual-mode per docs/ui-kit.md §2.9: HX-Request ⇒ only
+      tabla-reportes.html; otherwise this full page through layout.html)
+    GET /api/app/reportes-programados/formularios/nueva           (NEW - create modal body)
+    GET /api/app/reportes-programados/formularios/{id}            (NEW - edit modal body)
+    POST|PUT /api/app/reportes-programados[/{id}]                 (existing endpoints;
+      additive form-urlencoded twins answer the HTMX dialog forms)
+    PUT /api/app/reportes-programados/{id}/toggle                 (existing endpoint;
+      HX-Request callers get the refreshed table fragment + OOB toast)
+    DELETE /api/app/reportes-programados/{id}                     (existing endpoint;
+      same dual-mode behavior)
+
+  Model keys supplied by ReporteProgramadoResource#renderFullPage:
+    tablaReportes   Map     - model of tabla-reportes.html (kit data-table contract)
+    totalReportes   Long    - stat card (legacy reportesCount() parity)
+    isAdmin         Boolean - legacy delete-button gate
+
+  NOT PORTED (documented strangler gap): the "send now" envelope button
+  (helper.checkChanges) — it drives CorreosScheduler's helper directly and no
+  REST endpoint exposes that trigger.
+!}
+{#include layout}
+    {#title}Reportes Programados | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <div class="level">
+            <div class="level-left">
+                <p class="title is-3" style="margin-bottom:0">Reportes Programados X Correo Electronico</p>
+            </div>
+            <div class="level-right">
+                <div class="buttons" style="align-items:center">
+                    <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
+                        <p class="title is-2" style="margin-bottom:0">{#if totalReportes??}{totalReportes}{#else}0{/if}</p>
+                        <p class="subtitle is-6">Reportes Programados</p>
+                    </div>
+                    {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-success"
+                         bodyUrl="/api/app/reportes-programados/formularios/nueva"}{/include}
+                </div>
+            </div>
+        </div>
+
+        {#include pages/correos/tabla-reportes modelo=tablaReportes q=tablaReportes.q isAdmin=isAdmin /}
+
+        {!$1!}
+        {#include _kit/modal id="editar-reporte" title="Editar Reporte Programado" triggerClass="is-hidden"
+             bodyUrl="/api/app/reportes-programados/formularios/nueva"}{/include}
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level edit buttons open the shared edit modal; the swapped
+       form's [data-kit-close] button closes it (same contract as T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

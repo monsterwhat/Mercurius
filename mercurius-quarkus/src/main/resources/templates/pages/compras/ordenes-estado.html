@@ -1,0 +1,62 @@
+{!
+  pages/compras/ordenes-estado - state-change stage (stage 5, T31).
+  Returned by GET /api/app/ordenes/{id}/estado and re-rendered (422/409) by
+  the form twin on failure. Replaces the legacy CambiarEstadoDialog, whose
+  Confirm button was a dead-end in practice (disabled unless
+  seleccionarSiguienteEstado() had run — nothing in the legacy page ever
+  called it). The select here enumerates ONLY the legal targets, computed
+  server-side from OrdenCompraService.esTransicionValida itself; the
+  authoritative validation stays in the service-backed 409 INVALID_STATE path.
+
+  Model:
+    orden         Models.OrdenCompra - the order (numeroOrden/estado read)
+    objetivos     List<String>       - legal target states for orden.estado
+    estadoClass   String             - Bulma class of the current estado tag
+    errorGeneral  String             - guard/transition failures
+    toastSeverity / toastMessage    - OOB toast (nullable)
+!}
+<div id="forma-estado">
+    <form hx-put="/Mercurius/api/app/ordenes/{orden.id}/estado"
+          hx-target="#forma-estado" hx-swap="outerHTML">
+        <div class="columns is-multiline">
+            <div class="column is-12">
+                <p class="heading">Orden</p>
+                <p class="title is-5">{orden.numeroOrden}</p>
+            </div>
+            <div class="column is-6">
+                <p class="heading">Estado Actual</p>
+                <p class="title is-5"><span class="tag {estadoClass}">{orden.estado}</span></p>
+            </div>
+            <div class="column is-6">
+                <div class="field">
+                    <label class="label" for="orden-nuevo-estado">Nuevo Estado</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="orden-nuevo-estado" name="nuevoEstado" required="required">
+                                <option value="" selected>&ndash; Seleccionar estado &ndash;</option>
+                                {#for objetivo in objetivos}
+                                <option value="{objetivo}">{objetivo}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    {#if objetivos.size() == 0}
+                    <p class="help is-warning">Esta orden no admite más transiciones de estado.</p>
+                    {/if}
+                </div>
+            </div>
+        </div>
+
+        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        <div class="buttons is-centered mt-4">
+            <button class="button is-warning" type="submit">&#10003; Confirmar Cambio</button>
+            <button class="button" type="button" data-kit-close>Cancelar</button>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

@@ -143,7 +143,9 @@ class ComprobantesEmitidosServiceIntegrationTest {
      */
     @Test
     void listByDateRangeOrdersAscendingWithinWindow() {
-        LocalDateTime baseTime = LocalDateTime.now();
+        // Historical window far from other suites' now-based fixtures, so the
+        // committed-row pollution inherent to the shared test DB cannot reach it.
+        LocalDateTime baseTime = LocalDateTime.of(2020, 1, 15, 12, 0);
         comprobantesService.createAndReturn(buildComprobante(
                 "ITCONSEC-D001", "IT-CLAVE-D001", null, true, baseTime.minusHours(2)));
         comprobantesService.createAndReturn(buildComprobante(
@@ -218,7 +220,8 @@ class ComprobantesEmitidosServiceIntegrationTest {
         int total = comprobantesService.listAll().size();
 
         assertEquals(Math.min(2, total), comprobantesService.listPage(0, 2).size());
-        assertEquals(Math.max(0, total - 2), comprobantesService.listPage(2, 2).size());
+        assertEquals(Math.min(2, Math.max(0, total - 2)), comprobantesService.listPage(2, 2).size(),
+                "listPage caps the page at pageSize (offset 2, size 2 -> at most 2 rows)");
 
         List<ComprobantesEmitidos> beyondLast = comprobantesService.listPage(total + 100, 10);
         assertNotNull(beyondLast, "paging past the end must return a list, not throw");

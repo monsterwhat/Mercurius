@@ -1,0 +1,99 @@
+{!
+  pages/categorias/form-departamento - modal-body form for crear|editar
+  departamento (T18). Returned by
+  GET /api/app/categorias/formularios/departamento[/nueva|/{id}] and
+  re-rendered by the POST/PUT endpoints on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Model:
+    modo          String  - "crear" | "editar"
+    departamento  Object  - Models.Departamento when editar, null when crear
+    errorNombre   String  - field error (legacy requiredMessage parity)
+    toastSeverity String  - OOB toast severity (nullable)
+    toastMessage  String  - OOB toast text (nullable)
+
+  Field labels are verbatim ports of CrearDepartamentoDialog.xhtml /
+  EditDepartamentoDialog.xhtml ("Nombre Contacto:", "Plazo Pago (dias):", ...).
+!}
+<div id="forma-departamento">
+    {#if modo == 'editar' && departamento??}
+    <form hx-put="/Mercurius/api/app/categorias/departamentos/{departamento.id}"
+          hx-target="#forma-departamento" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/categorias/departamentos"
+          hx-target="#forma-departamento" hx-swap="outerHTML">
+    {/if}
+        <div class="field">
+            <label class="label" for="departamento-nombre">Nombre:</label>
+            <div class="control">
+                <input class="input {#if errorNombre??}is-danger{/if}" id="departamento-nombre"
+                       name="nombre" required="required" autocomplete="off"
+                       value="{#if departamento??}{departamento.nombre}{/if}"/>
+            </div>
+            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+        </div>
+        <div class="field">
+            <label class="label" for="departamento-contactoNombre">Nombre Contacto:</label>
+            <div class="control">
+                <input class="input" id="departamento-contactoNombre" name="contactoNombre" autocomplete="off"
+                       value="{#if departamento??}{departamento.contactoNombre}{/if}"/>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="departamento-contactoTelefono">Telefono Contacto:</label>
+            <div class="control">
+                <input class="input" id="departamento-contactoTelefono" name="contactoTelefono" autocomplete="off"
+                       value="{#if departamento??}{departamento.contactoTelefono}{/if}"/>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="departamento-contactoEmail">Email Contacto:</label>
+            <div class="control">
+                <input class="input" type="email" id="departamento-contactoEmail" name="contactoEmail" autocomplete="off"
+                       value="{#if departamento??}{departamento.contactoEmail}{/if}"/>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="departamento-plazoPagoDias">Plazo Pago (dias):</label>
+                    <div class="control">
+                        <input class="input" type="number" min="0" step="1" id="departamento-plazoPagoDias"
+                               name="plazoPagoDias" value="{#if departamento??}{departamento.plazoPagoDias}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="departamento-tiempoEntregaDias">Tiempo Entrega (dias):</label>
+                    <div class="control">
+                        <input class="input" type="number" min="0" step="1" id="departamento-tiempoEntregaDias"
+                               name="tiempoEntregaDias" value="{#if departamento??}{departamento.tiempoEntregaDias}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="departamento-notas">Notas:</label>
+            <div class="control">
+                <textarea class="textarea" id="departamento-notas" name="notas" rows="3">{#if departamento??}{departamento.notas}{/if}</textarea>
+            </div>
+        </div>
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">
+                    {#if modo == 'editar'}Guardar cambios{#else}Crear Departamento{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

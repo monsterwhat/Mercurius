@@ -1,0 +1,142 @@
+{!
+  pages/tributacion/dashboard - Dashboard Hacienda (plan task T28).
+
+  Replaces secured/pages/Tributacion/Dashboard/index.xhtml
+  (#{haciendaDashboardController.*}). KPI grid + Últimos 7 días +
+  Pendientes de envío + Rechazados recientes; all numbers computed
+  server-side by TributacionPagesResource.dashboardModel() (1:1 port of
+  HaciendaDashboardController.cargarDashboard()).
+
+  HTMX: the "Actualizar Dashboard" button re-fetches this same URL with the
+  HX-Request header; the resource then renders ONLY the {#fragment id=kpis}
+  section below into #tributacion-kpis (ui-kit §2.9 dual-mode contract).
+!}
+{#include layout}
+    {#title}Dashboard Hacienda | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">Dashboard Hacienda</h1>
+        <p class="subtitle is-6">Estado actual de las facturas enviadas a Hacienda</p>
+
+        <div id="tributacion-kpis">
+            {#fragment id=kpis}
+            <div class="columns is-multiline is-centered has-text-centered mb-5">
+                <div class="column is-2">
+                    <div class="box">
+                        <p class="title is-3 mb-0">{totalEmitidos}</p>
+                        <p class="heading">Total Emitidos</p>
+                        <p class="is-size-7 has-text-grey">Tasa de éxito: {tasaExito}%</p>
+                    </div>
+                </div>
+                <div class="column is-2">
+                    <div class="box has-background-success-light">
+                        <p class="title is-3 mb-0">{totalAceptados}</p>
+                        <p class="heading">Aceptados</p>
+                        <p class="is-size-7 has-text-grey">{montoAceptados}</p>
+                    </div>
+                </div>
+                <div class="column is-2">
+                    <div class="box has-background-danger-light">
+                        <p class="title is-3 mb-0">{totalRechazados}</p>
+                        <p class="heading">Rechazados</p>
+                    </div>
+                </div>
+                <div class="column is-2">
+                    <div class="box has-background-warning-light">
+                        <p class="title is-3 mb-0">{totalPendientes}</p>
+                        <p class="heading">Pendientes</p>
+                        <p class="is-size-7 has-text-grey">{montoPendientes}</p>
+                    </div>
+                </div>
+                <div class="column is-2">
+                    <div class="box has-background-info-light">
+                        <p class="title is-3 mb-0">{totalEnviadosSinRespuesta}</p>
+                        <p class="heading">Enviados s/Respuesta</p>
+                    </div>
+                </div>
+                <div class="column is-2">
+                    <div class="box">
+                        <p class="title is-3 mb-0">{emitidosHoy}</p>
+                        <p class="heading">Emitidos Hoy</p>
+                        <p class="is-size-7 has-text-grey">✓ {aceptadosHoy} · ✗ {rechazadosHoy}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="buttons is-centered">
+                <button type="button" class="button is-info"
+                        hx-get="/Mercurius{baseUrl}"
+                        hx-target="#tributacion-kpis" hx-swap="innerHTML">
+                    Actualizar Dashboard
+                </button>
+            </div>
+
+            <div class="box">
+                <h2 class="title is-5">Últimos 7 días</h2>
+                <table class="table is-striped is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Día</th>
+                            <th class="has-text-centered">Emitidos</th>
+                            <th class="has-text-centered">Aceptados</th>
+                            <th class="has-text-centered">Tasa Aceptación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#for day in dailyStats}
+                        <tr>
+                            <td class="has-text-weight-semibold">{day.dia}</td>
+                            <td class="has-text-centered">{day.emitidos}</td>
+                            <td class="has-text-centered has-text-success has-text-weight-semibold">{day.aceptados}</td>
+                            <td class="has-text-centered">{day.tasa}%</td>
+                        </tr>
+                        {/for}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="box">
+                <h2 class="title is-5">
+                    Pendientes de envío
+                    <span class="tag is-warning ml-2">{totalPendientes}</span>
+                </h2>
+                {#include _kit/data-table id="tributacion-pendientes-envio" baseUrl=baseUrl
+                     headers=pendingHeaders}
+                  {#rows}
+                    {#for f in pendientesEnvio}
+                    <tr>
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
+                        <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td><span class="tag is-warning">Pendiente</span></td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            </div>
+
+            <div class="box">
+                <h2 class="title is-5">
+                    Rechazados recientes
+                    <span class="tag is-danger ml-2">{totalRechazados}</span>
+                </h2>
+                {#include _kit/data-table id="tributacion-rechazados-recientes" baseUrl=baseUrl
+                     headers=rejectedHeaders}
+                  {#rows}
+                    {#for f in rechazadosRecientes}
+                    <tr>
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
+                        <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
+                        <td class="has-text-centered">{f.intentos}</td>
+                        <td><span class="tag is-danger">Rechazado</span></td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            </div>
+            {/fragment}
+        </div>
+    {/body}
+{/include}

@@ -27,7 +27,7 @@ public class SeasonalityService {
     InventarioService inventarioService;
 
     @Transactional(TxType.SUPPORTS)
-    @CacheResult(cacheName = "analytics-seasonality")
+@CacheResult(cacheName = "analytics-getMonthlySales")
     @Nonnull
     public Map<YearMonth, BigDecimal> getMonthlySales(@Nonnull Date start, @Nonnull Date end) {
         LocalDateTime startLdt = toLocalDateTime(start);
@@ -59,7 +59,7 @@ public class SeasonalityService {
         return monthlySales;
     }
 
-    @CacheResult(cacheName = "analytics-seasonality")
+@CacheResult(cacheName = "analytics-getSalesByDayOfWeek")
     @Transactional(TxType.SUPPORTS)
     @Nonnull
     public Map<Integer, BigDecimal> getSalesByDayOfWeek(@Nonnull Date start, @Nonnull Date end) {

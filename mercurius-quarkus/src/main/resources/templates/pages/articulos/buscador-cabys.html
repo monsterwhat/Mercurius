@@ -1,0 +1,64 @@
+{!
+  pages/articulos/buscador-cabys - CAByS search-as-you-type fragment (T34).
+  Port of secured/fragments/CaByS/CabysDialogEdit.xhtml usage inside the
+  article dialogs. Returned by GET /api/app/articulos/cabys when HX-Request;
+  the search input re-requests this same endpoint with ?q= (300ms debounce).
+
+  Model:
+    resultados  List    - Models.Cabys rows (CabysService.searchByName, cap 10)
+    pickerId    String  - optional DOM id of the target code input; when set,
+                          picking a row writes the codigo there (data-picker-id)
+!}
+<div id="buscador-cabys-fragmento">
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" autocomplete="off"
+                   placeholder="Buscar por descripción..."
+                   hx-get="/Mercurius/api/app/articulos/cabys"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#buscador-cabys-fragmento" hx-swap="outerHTML"
+                   hx-include="this"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    <table class="table is-striped is-hoverable is-fullwidth is-narrow">
+        <thead>
+            <tr><th>Código</th><th>Descripción</th><th class="has-text-centered">Impuesto</th><th></th></tr>
+        </thead>
+        <tbody>
+            {#for cabys in resultados}
+            <tr>
+                <td style="font-family:monospace">{cabys.codigo}</td>
+                <td>{#if cabys.descripcion??}{cabys.descripcion}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">{#if cabys.impuesto??}{cabys.impuesto}%{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">
+                    <button type="button" class="button is-small is-success"
+                            data-kit-pick="{cabys.codigo}"
+                            {#if pickerId??}data-picker-id="{pickerId}"{/if}>Seleccionar</button>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="4" class="has-text-centered has-text-grey">No se encontraron códigos con los criterios proporcionados</td></tr>
+            {/for}
+        </tbody>
+    </table>
+
+    {! Picker bridge: writes the chosen code into the requesting form's input
+       and closes the shared buscador-cabys modal. !}
+    <script>
+        document.querySelectorAll('#buscador-cabys-fragmento [data-kit-pick]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var codigo = button.getAttribute('data-kit-pick');
+                var inputs = document.querySelectorAll('#articulo-cabys, #revision-cabys');
+                if (inputs.length > 0) {
+                    inputs[inputs.length - 1].value = codigo;
+                }
+                var root = document.getElementById('buscador-cabys');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            });
+        });
+    </script>
+</div>

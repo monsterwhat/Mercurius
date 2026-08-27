@@ -1,0 +1,70 @@
+{!
+  pages/articulos/tabla-promociones - data-table include for the Promociones
+  tab of T34. Rendered standalone by GET /api/app/articulos/table?tab=promociones
+  (HX-Request fragment swap) AND included by index.html.
+
+  Model: same _kit/data-table DATA CONTRACT as tabla-articulos.html, with
+  Models.Articulos.Promocion rows.
+
+  Interactions:
+    - filter input: hx-get ?q=&tab=promociones with 300ms debounce
+    - edit button: hx-get editor fragment into #editar-promocion-body and
+      opens the shared modal via data-kit-open (bridge script in index)
+    - delete button: hx-delete + hx-confirm → refreshed fragment + OOB toast
+      (legacy deletePromocion hard-delete parity)
+    - items count: links to the promotion detail JSON for API clients; the
+      editor shows the full item table.
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    <input type="hidden" id="tab-{modelo.id}" name="tab" value="promociones"/>
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar promociones..."
+                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-include="#tab-{modelo.id}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for promocion in modelo.filas}
+            <tr>
+                <td style="font-weight:500">{#if promocion.nombre??}{promocion.nombre}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">{promocion.articulosCarrito.size()}</td>
+                <td>{#if promocion.fechaInicio??}{{time:format(promocion.fechaInicio, 'dd/MM/yyyy')}}{#else}&mdash;{/if}</td>
+                <td>{#if promocion.fechaFin??}{{time:format(promocion.fechaFin, 'dd/MM/yyyy')}}{#else}&mdash;{/if}</td>
+                <td class="has-text-right">{#if promocion.descuento??}{promocion.descuento}%{#else}N/A{/if}</td>
+                <td class="has-text-centered">
+                    {#if promocion.activa}<span class="tag is-success">Activa</span>
+                    {#else}<span class="tag is-danger">Inactiva</span>{/if}
+                </td>
+                <td class="has-text-centered">
+                    <div class="buttons is-centered" style="margin:0">
+                        <button type="button" class="button is-small is-success" title="Editar promoción"
+                                aria-haspopup="dialog" data-kit-open="editar-promocion"
+                                hx-get="/Mercurius/api/app/articulos/formularios/promociones/{promocion.id}"
+                                hx-target="#editar-promocion-body" hx-swap="innerHTML">&#9998;</button>
+                        <button type="button" class="button is-small is-warning" title="Eliminar promoción"
+                                hx-delete="/Mercurius/api/app/articulos/promociones/{promocion.id}"
+                                hx-confirm="¿Eliminar la promoción {promocion.nombre}?"
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
+                    </div>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron promociones con los criterios proporcionados</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

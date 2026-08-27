@@ -1,0 +1,172 @@
+{!
+  pages/articulos/form-revision - revision wizard body (T34). Port of
+  secured/fragments/Articulos/PendientesRevision/DialogoRevisionArticulo(s).xhtml.
+  Returned by GET /api/app/articulos/formularios/revision/{codigo} (single
+  mode), GET /api/app/articulos/revision/siguiente (rapid wizard), and
+  re-rendered by POST /{codigo}/revision[/saltar] on success AND failure.
+
+  Model:
+    articulo       Object  - Models.Articulos under revision (nullable)
+    sinPendientes  Boolean - true when the queue is empty ("No hay artículos
+                             pendientes para procesar" legacy empty state)
+    departamentos  List    - DepartamentoService.listAll()
+    familias       List    - FamiliaService.listAll()
+    precio         Object  - latest ArticuloPrecio (nullable)
+    toastSeverity  String  - OOB toast severity (nullable)
+    toastMessage   String  - OOB toast text (legacy FacesMessages: "Se proceso
+                             el articulo" / "Se omitió el artículo" / warnings)
+
+  Semantics parity:
+    - Guardar y Siguiente (modo=rapido): processes the article and loads the
+      NEXT pending one inside the same dialog (updateArticulosRevision).
+    - Procesar (single mode): processes and closes via HX-Redirect to the
+      Catálogo tab (updateArticuloRevision).
+    - Saltar: audit alerta + next pending article without processing
+      (skipCurrentArticle).
+!}
+<div id="forma-revision">
+    {#if sinPendientes}
+    <div class="has-text-centered p-5">
+        <p class="has-text-grey">No hay artículos pendientes para procesar</p>
+        <button class="button mt-3" type="button" data-kit-close>Cerrar</button>
+    </div>
+    {#else if articulo??}
+    <div class="box is-shadowless" style="border-left:4px solid #ff9800">
+        <h3 class="title is-5">{articulo.nombre}</h3>
+        <p class="subtitle is-7">Artículo pendiente de procesamiento</p>
+    </div>
+
+    <form hx-post="/Mercurius/api/app/articulos/{articulo.codigo}/revision"
+          hx-target="#forma-revision" hx-swap="outerHTML">
+        <input type="hidden" name="modo" value="{modoRapido}"/>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="revision-nombre">Nombre del Artículo:</label>
+                    <div class="control">
+                        <input class="input" id="revision-nombre" name="nombre"
+                               required="required" value="{articulo.nombre}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="revision-codigo-barra">Código de Barras:</label>
+                    <div class="control">
+                        <input class="input" id="revision-codigo-barra" name="codigoBarra"
+                               required="required" value="{#if articulo.codigoBarra??}{articulo.codigoBarra}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {! Legacy recomendacionCabys card with click-to-copy !}
+        <div class="field">
+            <label class="label">Recomendación CABYS:</label>
+            <div class="control">
+                <p class="box is-shadowless" style="cursor:pointer;background:var(--bulma-scheme-main);margin-bottom:0"
+                   onclick="navigator.clipboard.writeText('{#if articulo.recomendacionCabys??}{articulo.recomendacionCabys}{/if}')">
+                    {#if articulo.recomendacionCabys??}{articulo.recomendacionCabys}{#else}&mdash;{/if}
+                </p>
+                <p class="help">Click para copiar al portapapeles</p>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label" for="revision-cabys">Código CABYS:</label>
+            <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
+                <input class="input" id="revision-cabys" name="cabysCodigo" required="required"
+                       style="font-family:monospace" placeholder="Seleccione un código del CABYS"
+                       value="{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
+                <button type="button" class="button is-link"
+                        aria-haspopup="dialog" data-kit-open="buscador-cabys"
+                        hx-get="/Mercurius/api/app/articulos/cabys?q="
+                        hx-target="#buscador-cabys-body" hx-swap="innerHTML">Seleccionar Código CABYS</button>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="revision-departamento">Departamento:</label>
+                    <div class="control">
+                        <div class="select" style="width:100%">
+                            <select id="revision-departamento" name="departamentoId" required="required" style="width:100%">
+                                <option value="">Seleccionar Departamento</option>
+                                {#for departamento in departamentos}
+                                <option value="{departamento.id}"
+                                    {#if articulo.departamento?? && articulo.departamento.id == departamento.id}selected{/if}>{departamento.nombre}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="revision-familia">Familia:</label>
+                    <div class="control">
+                        <div class="select" style="width:100%">
+                            <select id="revision-familia" name="familiaId" required="required" style="width:100%">
+                                <option value="">Seleccionar Familia</option>
+                                {#for familia in familias}
+                                <option value="{familia.id}"
+                                    {#if articulo.familia?? && articulo.familia.id == familia.id}selected{/if}>{familia.nombre}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box is-shadowless" style="background:var(--bulma-info-00);border:1px solid var(--bulma-info)">
+            <div class="columns">
+                <div class="column">
+                    <div class="field">
+                        <label class="label" for="revision-costo">Precio Costo sin IVA:</label>
+                        <div class="control">
+                            <input class="input" id="revision-costo" type="number" step="0.01" min="0"
+                                   name="precioCostoSinIVA" placeholder="0.00" required="required"
+                                   value="{#if precio?? && precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="field">
+                        <label class="label" for="revision-utilidad">Porcentaje de Utilidad:</label>
+                        <div class="control">
+                            <input class="input" id="revision-utilidad" type="number" step="1" min="0"
+                                   name="porcentajeUtilidad" placeholder="0" required="required"
+                                   value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}{/if}"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <p class="help has-text-grey">
+                El precio con utilidad y el precio final con IVA se recalculan en el servidor
+                con la misma fórmula del diálogo legado (utilidad 4 decimales, redondeo hacia arriba).
+            </p>
+        </div>
+
+        <div class="buttons is-centered mt-4">
+            <button class="button is-warning is-rounded" type="button"
+                    hx-post="/Mercurius/api/app/articulos/{articulo.codigo}/revision/saltar"
+                    hx-target="#forma-revision" hx-swap="outerHTML">
+                Saltar
+            </button>
+            <button class="button is-success is-medium is-rounded" type="submit">
+                {#if modoRapido}Guardar y Siguiente{#else}Procesar Artículo{/if}
+            </button>
+            <button class="button is-light" type="button" data-kit-close>Cerrar</button>
+        </div>
+    </form>
+    {/if}
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

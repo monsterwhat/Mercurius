@@ -1,0 +1,89 @@
+{!
+  pages/reportes/resumen - Resumen de Inventario (T19 port of
+  secured/pages/Inventario/Resumen/index.xhtml).
+
+  The legacy p:tabView becomes the "vista" query param (todos|cero|negativos);
+  the stat-cards are links that switch it server-side.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <div class="inventario-header">
+            <p class="title is-3">{titulo}</p>
+            <div class="stats-grid">
+                <a class="stat-card button {#if vista == 'todos'}is-primary{/if}"
+                   href="?vista=todos{#if filtros.q??}&q={filtros.q}{/if}{#if filtros.familia??}&familia={filtros.familia}{/if}{#if filtros.departamento??}&departamento={filtros.departamento}{/if}">
+                    <span class="stat-number">{todosCount}</span>
+                    <span class="stat-label">Todos</span>
+                </a>
+                <a class="stat-card button is-danger {#if vista == 'cero'}is-outlined{/if}"
+                   href="?vista=cero{#if filtros.q??}&q={filtros.q}{/if}{#if filtros.familia??}&familia={filtros.familia}{/if}{#if filtros.departamento??}&departamento={filtros.departamento}{/if}">
+                    <span class="stat-number">{ceroCount}</span>
+                    <span class="stat-label">Cero</span>
+                </a>
+                <a class="stat-card button is-dark {#if vista == 'negativos'}is-outlined{/if}"
+                   href="?vista=negativos{#if filtros.q??}&q={filtros.q}{/if}{#if filtros.familia??}&familia={filtros.familia}{/if}{#if filtros.departamento??}&departamento={filtros.departamento}{/if}">
+                    <span class="stat-number">{negativoCount}</span>
+                    <span class="stat-label">Negativos</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get"
+                  action="/Mercurius{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <input type="hidden" name="vista" value="{vista}"/>
+                <div class="column is-narrow field">
+                    <label class="label" for="q">Buscar</label>
+                    <div class="control">
+                        <input class="input" type="text" id="q" name="q"
+                               placeholder="Búsqueda general..." value="{filtros.q}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="familia">Familia</label>
+                    <div class="control select">
+                        <select name="familia" id="familia">
+                            <option value="">Todas las Familias</option>
+                            {#for f in familias}
+                            <option value="{f.id}" {#if filtros.familia == f.id.toString()}selected{/if}>{f.nombre}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="departamento">Departamento</label>
+                    <div class="control select">
+                        <select name="departamento" id="departamento">
+                            <option value="">Todos los Departamentos</option>
+                            {#for d in departamentos}
+                            <option value="{d.id}" {#if filtros.departamento == d.id.toString()}selected{/if}>{d.nombre}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-warning" type="submit">Filtrar</button>
+                        <a class="button is-light"
+                           href="/Mercurius{baseUrl}?vista={vista}">Limpiar Filtros</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        {#include pages/reportes/_tablas/resumen /}
+
+        <div class="buttons mt-4">
+            <form method="post" action="/Mercurius/api/app/export">
+                <input type="hidden" name="dataset" value="inventario-resumen"/>
+                <input type="hidden" name="type" value="xlsx"/>
+                {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
+                <button class="button is-success" type="submit">Exportar Excel</button>
+            </form>
+        </div>
+    {/body}
+{/include}

@@ -1,0 +1,109 @@
+{!
+  pages/articulos/tabla-articulos - ONE data-table include shared by the
+  four article tabs (activos | inactivos | catalogo | pendientes) of T34.
+  Rendered standalone by GET /api/app/articulos/table (HX-Request fragment
+  swap) AND included by index.html, so this file is the single source of
+  truth for the article table markup.
+
+  Model (keys mirror the _kit/data-table DATA CONTRACT):
+    modelo.id          String  - DOM id of the wrapper div ("tabla-<tab>")
+    modelo.baseUrl     String  - "/api/app/articulos/table" (context-relative)
+    modelo.tab         String  - activos|inactivos|catalogo|pendientes
+    modelo.columnas    List    - header maps with label/key (key null ⇒ not sortable)
+    modelo.filas       List    - Models.Articulos rows (caller-owned iteration)
+    modelo.sortKey     String  - current sort column key (nullable)
+    modelo.sortDir     String  - "asc"|"desc"
+    modelo.page        Integer - 1-based page
+    modelo.size        Integer - page size
+    modelo.total       Long    - total rows after filter
+    modelo.totalPages  Integer - ceil(total/size), computed server-side
+    modelo.paginas     List    - pager window
+    modelo.filtros     Map     - preserved params (tab [+ q]); reserved keys excluded
+    q                  String  - current global filter text
+
+  Interactions (all URLs root-prefixed HERE per ui-kit golden rule #1):
+    - filter input: hx-get ?q=&tab= with 300ms debounce → swaps this container
+    - edit button (activos): hx-get form fragment into #editar-articulo-body,
+      opens the shared modal via data-kit-open (bridge script in index)
+    - deactivate button (activos): hx-delete + hx-confirm → refreshed fragment
+      + OOB toast (legacy deleteArticulo soft-delete parity)
+    - details button (inactivos/catalogo): hx-get detail fragment into
+      #detalles-articulo-body and opens the shared modal
+    - revision button (pendientes): hx-get revision wizard into
+      #revision-articulo-body and opens the shared modal
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    <input type="hidden" id="tab-{modelo.id}" name="tab" value="{modelo.tab}"/>
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar en todos los campos..."
+                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-include="#tab-{modelo.id}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for articulo in modelo.filas}
+            <tr>
+                <td class="has-text-centered">
+                    {#if modelo.tab == 'pendientes'}
+                        <span class="tag is-warning">Pendiente</span>
+                    {#else if modelo.tab == 'inactivos'}
+                        <span class="tag is-danger">Inactivo</span>
+                    {#else}
+                        {#if articulo.processed}<span class="tag is-success">Procesado</span>
+                        {#else}<span class="tag is-warning">Sin procesar</span>{/if}
+                    {/if}
+                </td>
+                <td style="font-family:monospace">{#if articulo.codigoBarra??}{articulo.codigoBarra}{#else}&mdash;{/if}</td>
+                {#if modelo.tab == 'activos'}
+                <td style="font-family:monospace">{#if articulo.cabysCodigo??}{articulo.cabysCodigo}{#else}&mdash;{/if}</td>
+                {/if}
+                <td style="font-weight:500">{articulo.nombre}</td>
+                {#if modelo.tab == 'catalogo'}
+                <td class="has-text-right">&mdash;</td>
+                <td class="has-text-right">{#if articulo.precioFinal??}{articulo.precioFinal}{#else}&mdash;{/if}</td>
+                {/if}
+                <td class="has-text-centered">
+                    <div class="buttons is-centered" style="margin:0">
+                        {#if modelo.tab == 'activos'}
+                        <button type="button" class="button is-small is-success" title="Editar artículo"
+                                aria-haspopup="dialog" data-kit-open="editar-articulo"
+                                hx-get="/Mercurius/api/app/articulos/formularios/articulos/{articulo.codigo}"
+                                hx-target="#editar-articulo-body" hx-swap="innerHTML">&#9998;</button>
+                        <button type="button" class="button is-small is-warning" title="Desactivar artículo"
+                                hx-delete="/Mercurius/api/app/articulos/{articulo.codigo}"
+                                hx-confirm="¿Desactivar el artículo {articulo.nombre}?"
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
+                        {#else if modelo.tab == 'pendientes'}
+                        <button type="button" class="button is-small is-warning" title="Procesar artículo"
+                                aria-haspopup="dialog" data-kit-open="revision-articulo"
+                                hx-get="/Mercurius/api/app/articulos/formularios/revision/{articulo.codigo}"
+                                hx-target="#revision-articulo-body" hx-swap="innerHTML">&#8635;</button>
+                        {#else}
+                        <button type="button" class="button is-small is-info" title="Ver detalles"
+                                aria-haspopup="dialog" data-kit-open="detalles-articulo"
+                                hx-get="/Mercurius/api/app/articulos/{articulo.codigo}"
+                                hx-target="#detalles-articulo-body" hx-swap="innerHTML">&#128065;</button>
+                        {/if}
+                    </div>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron artículos con los criterios proporcionados</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

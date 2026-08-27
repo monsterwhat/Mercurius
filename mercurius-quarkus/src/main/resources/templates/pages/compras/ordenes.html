@@ -1,0 +1,141 @@
+{!
+  pages/compras/ordenes - Órdenes de Compra (W4C strangler view-half lane, T31).
+
+  Qute/HTMX/Bulma port of secured/pages/Compras/Ordenes/index.xhtml — the six
+  legacy forms become STAGED views served by Controllers.Api.App.OrdenCompraResource:
+
+    ordenesForm      (list + filters + stat cards)  -> GET /api/app/ordenes/table
+                                                        (dual-mode per ui-kit §2.9)
+    CrearOrdenDialog   crearForm   -> GET /formularios/nueva  + POST /api/app/ordenes (form twin)
+    EditarOrdenDialog  editarForm  -> GET /formularios/{id}   + PUT /api/app/ordenes/{id} (form twin)
+    DetallesOrdenDialog detallesForm -> GET /{id}/detalle (+ PUT /{id}/recibir, POST /{id}/cancelar)
+    CambiarEstadoDialog estadoForm  -> GET /{id}/estado   + PUT /{id}/estado (form twin)
+    CancelarOrdenDialog cancelarForm -> GET /{id}/cancelar + POST /{id}/cancelar (form twin)
+
+  Model keys supplied by OrdenCompraResource#renderFullPage:
+    tablaOrdenes     Map  - model of ordenes-tabla.html (kit data-table contract)
+    ordenesTotal     Long - stat card "Todas" (legacy ordenCount parity)
+    countBorrador/Enviada/Confirmada/Recibida/Facturada Long - stat cards
+                     (legacy ordenCountByEstado parity; NO Cancelled card,
+                      exactly like the legacy page)
+    estadoActivo     String - currently filtered estado (active card highlight)
+
+  The article picker inside the create/edit forms consumes the clientes-style
+  search-as-you-type recipe (docs/ui-kit.md §8) against
+  GET /api/app/ordenes/articulos?q= (legacy completeArticulo search reused).
+!}
+{#include layout}
+    {#title}Órdenes de Compra | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3 has-text-centered">Órdenes de Compra</p>
+
+        {! Stat cards — legacy filterByEstado cards became plain links (no-JS safe) !}
+        <div class="stats-grid" style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem">
+            <a class="box has-text-centered stat-card {#if estadoActivo == null}active{/if}"
+               style="min-width:7rem;text-decoration:none;color:inherit"
+               href="/Mercurius/api/app/ordenes/table">
+                <span class="title is-4" style="display:block">{ordenesTotal ?: 0}</span>
+                <span class="subtitle is-6">Todas</span>
+            </a>
+            <a class="box has-text-centered stat-card {#if estadoActivo == 'BORRADOR'}active{/if}"
+               style="min-width:7rem;text-decoration:none;color:inherit"
+               href="/Mercurius/api/app/ordenes/table?estado=BORRADOR">
+                <span class="title is-4" style="display:block">{countBorrador ?: 0}</span>
+                <span class="subtitle is-6">Borrador</span>
+            </a>
+            <a class="box has-text-centered stat-card {#if estadoActivo == 'ENVIADA'}active{/if}"
+               style="min-width:7rem;text-decoration:none;color:inherit"
+               href="/Mercurius/api/app/ordenes/table?estado=ENVIADA">
+                <span class="title is-4" style="display:block">{countEnviada ?: 0}</span>
+                <span class="subtitle is-6">Enviadas</span>
+            </a>
+            <a class="box has-text-centered stat-card {#if estadoActivo == 'CONFIRMADA'}active{/if}"
+               style="min-width:7rem;text-decoration:none;color:inherit"
+               href="/Mercurius/api/app/ordenes/table?estado=CONFIRMADA">
+                <span class="title is-4" style="display:block">{countConfirmada ?: 0}</span>
+                <span class="subtitle is-6">Confirmadas</span>
+            </a>
+            <a class="box has-text-centered stat-card {#if estadoActivo == 'RECIBIDA'}active{/if}"
+               style="min-width:7rem;text-decoration:none;color:inherit"
+               href="/Mercurius/api/app/ordenes/table?estado=RECIBIDA">
+                <span class="title is-4" style="display:block">{countRecibida ?: 0}</span>
+                <span class="subtitle is-6">Recibidas</span>
+            </a>
+            <a class="box has-text-centered stat-card {#if estadoActivo == 'FACTURADA'}active{/if}"
+               style="min-width:7rem;text-decoration:none;color:inherit"
+               href="/Mercurius/api/app/ordenes/table?estado=FACTURADA">
+                <span class="title is-4" style="display:block">{countFacturada ?: 0}</span>
+                <span class="subtitle is-6">Facturadas</span>
+            </a>
+        </div>
+
+        {#include pages/compras/ordenes-tabla modelo=tablaOrdenes q=tablaOrdenes.q /}
+
+        {! Shared stage dialogs (bodies filled per-row via hx-get) !}
+        {#include _kit/modal id="editar-orden" title="Editar Orden de Compra" triggerClass="is-hidden"
+             bodyUrl="/api/app/ordenes/formularios/nueva"}{/include}
+        {#include _kit/modal id="detalle-orden" title="Detalles de Orden de Compra" triggerClass="is-hidden"
+             bodyUrl="/api/app/ordenes/table"}{/include}
+        {#include _kit/modal id="estado-orden" title="Cambiar Estado de Orden" triggerClass="is-hidden"
+             bodyUrl="/api/app/ordenes/table"}{/include}
+        {#include _kit/modal id="cancelar-orden" title="Cancelar Orden de Compra" triggerClass="is-hidden"
+             bodyUrl="/api/app/ordenes/table"}{/include}
+
+        {! Create dialog: default trigger hx-gets the empty staged form !}
+        {#include _kit/modal id="crear-orden" title="Nueva Orden de Compra" triggerLabel="+ Nueva Orden" triggerClass="is-success"
+             bodyUrl="/api/app/ordenes/formularios/nueva"}{/include}
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level buttons open the shared stage modals; swapped
+       fragments' [data-kit-close] buttons close them (same contract as T18/T21). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+
+        {! Article picker selection: a suggestion fills its line row
+           (clientes-style search recipe, ui-kit §8). !}
+        document.addEventListener('click', function (e) {
+            var opcion = e.target.closest('.js-articulo-opcion');
+            if (!opcion) {
+                return;
+            }
+            var fila = opcion.closest('.orden-linea');
+            if (!fila) {
+                return;
+            }
+            var codigo = fila.querySelector('[name="articuloCodigo"]');
+            var nombre = fila.querySelector('.js-articulo-nombre');
+            if (codigo) {
+                codigo.value = opcion.getAttribute('data-codigo');
+            }
+            if (nombre) {
+                nombre.value = opcion.getAttribute('data-nombre');
+            }
+            var resultados = fila.querySelector('.js-articulo-resultados');
+            if (resultados) {
+                resultados.innerHTML = '';
+            }
+        });
+    </script>
+    {/body}
+{/include}

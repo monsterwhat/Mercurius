@@ -1,0 +1,41 @@
+{!
+  pages/facturas-recibidas/upload-resultado - per-file upload outcome for the
+  Facturas Recibidas upload card (T36). Fills #upload-resultado after POST
+  /api/app/facturas-recibidas/upload (HX-Request); parser errors surface as
+  Bulma danger notifications (T35 parity).
+
+  Model keys supplied by FacturasRecibidasResource#upload:
+    resultados   List<UploadFileResult> {fileName, exito, mensaje}
+    procesados   long
+    fallidos     long
+    toastSeverity/toastMessage - OOB toast into #toast-container
+!}
+<div>
+    {#if resultados?? && !resultados.isEmpty()}
+    <div class="content mt-2">
+        <ul style="margin:0">
+            {#for resultado in resultados}
+            <li>
+                {#if resultado.exito}
+                <span class="tag is-success">Procesado</span>
+                {#else}
+                <span class="tag is-danger">Error</span>
+                {/if}
+                <strong>{resultado.fileName}</strong>
+                {#if resultado.mensaje??}— {resultado.mensaje}{/if}
+            </li>
+            {/for}
+        </ul>
+    </div>
+    {#else}
+    <div class="notification is-danger is-light" style="margin-bottom:0">
+        No se recibió ningún archivo para procesar.
+    </div>
+    {/if}
+
+    {#if toastSeverity??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

@@ -24,7 +24,7 @@ public class DashboardMetricsService {
     @Inject @Nonnull
     EntityManager entityManager;
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getTodaySales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public BigDecimal getTodaySales(@Nonnull Users user) {
@@ -42,7 +42,7 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -53,7 +53,7 @@ public class DashboardMetricsService {
         }
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getYesterdaySales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public BigDecimal getYesterdaySales(@Nonnull Users user) {
@@ -71,7 +71,7 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -82,7 +82,7 @@ public class DashboardMetricsService {
         }
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getWeekSales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public BigDecimal getWeekSales(@Nonnull Users user) {
@@ -101,7 +101,7 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 BigDecimal.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -112,7 +112,7 @@ public class DashboardMetricsService {
         }
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getMonthSales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public BigDecimal getMonthSales(@Nonnull Users user) {
@@ -131,7 +131,7 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 BigDecimal.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -142,7 +142,7 @@ public class DashboardMetricsService {
         }
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getTodayTransactions")
     @Transactional(Transactional.TxType.SUPPORTS)
     public int getTodayTransactions(@Nonnull Users user) {
         LocalDate today = LocalDate.now();
@@ -158,7 +158,7 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 Long.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
               .setParameter("startOfDay", startOfDay)
               .setParameter("endOfDay", endOfDay)
               .getSingleResult();
@@ -169,7 +169,7 @@ public class DashboardMetricsService {
         }
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getAverageTicket")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public BigDecimal getAverageTicket(@Nonnull Users user, int days) {
@@ -188,7 +188,7 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 BigDecimal.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -201,7 +201,7 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfPeriod AND :endOfPeriod",
                 Long.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfPeriod", startOfPeriod)
              .setParameter("endOfPeriod", endOfPeriod)
              .getSingleResult();
@@ -215,7 +215,7 @@ public class DashboardMetricsService {
         }
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getTopSellingProducts")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public List<TopProduct> getTopSellingProducts(@Nonnull Users user, int limit) {
@@ -236,7 +236,7 @@ public class DashboardMetricsService {
             "GROUP BY ld.detalle " +
             "ORDER BY SUM(ld.cantidad) DESC"
         )
-        .setParameter("user", user)
+        .setParameter("user", user.getUsername())
         .setParameter("startOfPeriod", startOfPeriod)
         .setParameter("endOfPeriod", endOfPeriod)
         .setMaxResults(limit)
@@ -251,7 +251,7 @@ public class DashboardMetricsService {
             .collect(Collectors.toList());
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getHourlySalesDistribution")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public List<HourlySales> getHourlySalesDistribution(@Nonnull Users user, @Nonnull LocalDate date) {
@@ -269,7 +269,7 @@ public class DashboardMetricsService {
             "GROUP BY HOUR(e.fechaEmision) " +
             "ORDER BY HOUR(e.fechaEmision)"
         )
-        .setParameter("user", user)
+        .setParameter("user", user.getUsername())
         .setParameter("startOfDay", startOfDay)
         .setParameter("endOfDay", endOfDay)
         .getResultList();
@@ -287,7 +287,7 @@ public class DashboardMetricsService {
         return new ArrayList<>(hourlyMap.values());
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getWeeklySalesBreakdown")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
     public List<DailySales> getWeeklySalesBreakdown(@Nonnull Users user) {
@@ -308,20 +308,20 @@ public class DashboardMetricsService {
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
                 BigDecimal.class
-            ).setParameter("user", user)
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
 
-            Integer count = entityManager.createQuery(
+            Long count = entityManager.createQuery(
                 "SELECT COUNT(f) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.encabezado e " +
                 "WHERE f.user = :user " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
-                Integer.class
-            ).setParameter("user", user)
+                Long.class
+            ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
@@ -329,14 +329,14 @@ public class DashboardMetricsService {
             dailySalesList.add(new DailySales(
                 date,
                 total != null ? total : BigDecimal.ZERO,
-                count != null ? count : 0
+                count != null ? count.intValue() : 0
             ));
         }
 
         return dailySalesList;
     }
 
-    @CacheResult(cacheName = "analytics-dashboard")
+@CacheResult(cacheName = "analytics-getKPIs")
     @Nonnull
     public DashboardKPI getKPIs(@Nonnull Users user) {
         BigDecimal todaySales = getTodaySales(user);

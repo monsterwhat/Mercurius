@@ -1,0 +1,49 @@
+{!
+  pages/reportes/facturas - read-only "Facturas Emitidas" report (T20).
+
+  Replaces secured/pages/Facturas/Reportes/index.xhtml. The legacy
+  toggle/reenviar/selection actions are mutations owned by T27 and are NOT
+  ported. HTMX requests render only the {#fragment id=tabla} section.
+!}
+{#include layout}
+    {#title}Facturas Emitidas | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">Facturas Emitidas</h1>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="facturas-filtros">
+                <div class="field">
+                    <label class="label" for="facturas-q">Búsqueda general</label>
+                    <input class="input" type="text" id="facturas-q" name="q" value="{#if filtros.q??}{filtros.q}{/if}"
+                           placeholder="Consecutivo, emisor, condición, fecha…"
+                           hx-get="/Mercurius{baseUrl}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="closest form"
+                           hx-target="#facturas-tabla-container" hx-swap="innerHTML"/>
+                </div>
+            </form>
+        </div>
+
+        <div id="facturas-tabla-container">
+            {#fragment id=tabla}
+                {#include _kit/data-table id="facturas-tabla" baseUrl=baseUrl
+                     headers=columnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for f in rows}
+                    <tr data-row-key="{f.id}">
+                        <td>{#if f.encabezado??}{f.encabezado.numeroConsecutivo}{/if}</td>
+                        <td>{#if f.encabezado?? && f.encabezado.fechaEmision??}{time:format(f.encabezado.fechaEmision, 'dd/MM/yyyy HH:mm')}{/if}</td>
+                        <td>{f.user}</td>
+                        <td>{#if f.encabezado??}{f.encabezado.condicionVenta}{/if}</td>
+                        <td>{#if f.haciendaEstado??}{f.haciendaEstado}{#else}PENDIENTE{/if}</td>
+                        <td>₡{#if f.resumen?? && f.resumen.totalComprobante??}{f.resumen.totalComprobante}{#else}0{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            {/fragment}
+        </div>
+    {/body}
+{/include}

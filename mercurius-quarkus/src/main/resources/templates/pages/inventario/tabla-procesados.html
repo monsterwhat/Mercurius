@@ -1,0 +1,54 @@
+{!
+  pages/inventario/tabla-procesados - data-table include for the Movimientos
+  Procesados tab (T35). Same contract as tabla-activos.html; row actions are
+  the legacy pair: ver detalles + "Deshacer procesamiento" (unprocess).
+!}
+<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+    <input type="hidden" name="tab" value="procesados"/>
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar artículos procesados..."
+                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    {#include _kit/data-table id=(modelo.id + '-tabla') baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+        {#rows}
+            {#for movimiento in modelo.filas}
+            <tr>
+                <td class="has-text-centered"><span class="tag is-success">Procesada</span></td>
+                <td style="font-weight:500">{#if movimiento.articulo??}{movimiento.articulo.nombre}{#else}&mdash;{/if}</td>
+                <td style="font-family:monospace;font-size:0.875rem">{#if movimiento.articulo??}{movimiento.articulo.codigoBarra}{#else}&mdash;{/if}</td>
+                <td class="has-text-right" style="font-weight:600">{movimiento.cantidad}</td>
+                <td>{movimiento.fechaMovimiento}</td>
+                <td>{#if movimiento.usuario??}{movimiento.usuario.username}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">
+                    <div class="buttons is-centered" style="margin:0">
+                        <button type="button" class="button is-small is-info" title="Ver detalles"
+                                aria-haspopup="dialog" data-kit-open="detalles-ajuste"
+                                hx-get="/Mercurius/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
+                                hx-target="#detalles-ajuste-body" hx-swap="innerHTML">&#128065;</button>
+                        <button type="button" class="button is-small is-danger" title="Deshacer procesamiento"
+                                hx-post="/Mercurius/api/app/inventario/ajustes/{movimiento.codigo}/reabrir"
+                                hx-confirm="¿Deshacer el procesamiento del movimiento {movimiento.codigo}?"
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#8634;</button>
+                    </div>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron artículos procesados con los criterios proporcionados</td></tr>
+            {/for}
+        {/rows}
+    {/include}
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

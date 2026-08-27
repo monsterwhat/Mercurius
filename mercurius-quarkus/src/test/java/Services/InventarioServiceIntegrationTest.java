@@ -184,7 +184,8 @@ class InventarioServiceIntegrationTest {
         int total = inventarioService.listAll().size();
 
         assertEquals(Math.min(2, total), inventarioService.listPage(0, 2).size());
-        assertEquals(Math.max(0, total - 2), inventarioService.listPage(2, 2).size());
+        assertEquals(Math.min(2, Math.max(0, total - 2)), inventarioService.listPage(2, 2).size(),
+                "listPage caps the page at pageSize (offset 2, size 2 -> at most 2 rows)");
 
         List<Inventario> beyondLast = inventarioService.listPage(total + 100, 10);
         assertNotNull(beyondLast, "paging past the end must return a list, not throw");

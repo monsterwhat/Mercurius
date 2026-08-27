@@ -1,0 +1,92 @@
+{!
+  pages/reportes/alertas - Alertas de Stock (T19 port of
+  secured/pages/Inventario/Reportes/Alertas/index.xhtml).
+
+  READ-ONLY port: the legacy acknowledge/resolve/check mutations stay with the
+  legacy controller until T33. Export posts the T17-registered "stock-alerts"
+  dataset to POST /api/app/export.
+!}
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <div class="inventario-header">
+            <p class="title is-3 has-text-centered">{titulo}</p>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">{sinStock}</span>
+                    <span class="stat-label">Sin Stock</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{stockBajo}</span>
+                    <span class="stat-label">Stock Bajo</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{sugerencias}</span>
+                    <span class="stat-label">Sugerencias</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">{totalAlertas}</span>
+                    <span class="stat-label">Total Alertas</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get"
+                  action="/Mercurius{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <input type="hidden" name="seccion" value="{seccion}"/>
+                <div class="column is-narrow field">
+                    <label class="label" for="departamento">Departamento</label>
+                    <div class="control select">
+                        <select name="departamento" id="departamento">
+                            <option value="">Todos</option>
+                            {#for d in departamentos}
+                            <option value="{d}" {#if filtros.departamento == d}selected{/if}>{d}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="prioridad">Prioridad</label>
+                    <div class="control select">
+                        <select name="prioridad" id="prioridad">
+                            <option value="">Todas</option>
+                            <option value="urgent" {#if filtros.prioridad == 'urgent'}selected{/if}>Urgente</option>
+                            <option value="high" {#if filtros.prioridad == 'high'}selected{/if}>Alta</option>
+                            <option value="medium" {#if filtros.prioridad == 'medium'}selected{/if}>Media</option>
+                            <option value="low" {#if filtros.prioridad == 'low'}selected{/if}>Baja</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-danger" type="submit">Filtrar</button>
+                        <a class="button is-light"
+                           href="/Mercurius{baseUrl}?seccion={seccion}">Limpiar</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="nav-cards">
+            <a class="nav-card button is-danger {#if seccion == 'alertas'}is-outlined{/if}"
+               href="?seccion=alertas{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">Alertas Activas</a>
+            <a class="nav-card button is-warning {#if seccion == 'sugerencias'}is-outlined{/if}"
+               href="?seccion=sugerencias{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">Sugerencias de Reorden</a>
+        </div>
+
+        {#include pages/reportes/_tablas/alertas /}
+
+        <div class="buttons mt-4">
+            <form method="post" action="/Mercurius/api/app/export">
+                <input type="hidden" name="dataset" value="stock-alerts"/>
+                <input type="hidden" name="type" value="xlsx"/>
+                {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
+                <button class="button is-success" type="submit">Exportar Excel</button>
+            </form>
+        </div>
+    {/body}
+{/include}

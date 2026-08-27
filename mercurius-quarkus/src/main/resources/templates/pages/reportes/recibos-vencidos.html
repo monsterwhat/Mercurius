@@ -1,0 +1,57 @@
+{!
+  pages/reportes/recibos-vencidos - read-only "Recibos Vencidos" (T20).
+
+  Replaces secured/pages/Recibos/Vencidos/index.xhtml. Data comes from
+  ComprobantesRecibidosService.listVencidas() (unpaid received invoices whose
+  plazoCredito due date is today or past — the vencido rule). The legacy
+  detail dialog and pay/process actions are mutations owned by T27 — NOT
+  ported.
+!}
+{#include layout}
+    {#title}Recibos Vencidos | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">Recibos Vencidos</h1>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="recibos-vencidos-filtros">
+                <div class="field">
+                    <label class="label" for="recibos-vencidos-q">Búsqueda general</label>
+                    <input class="input" type="text" id="recibos-vencidos-q" name="q"
+                           value="{#if filtros.q??}{filtros.q}{/if}"
+                           placeholder="Consecutivo, emisor, condición, fecha…"
+                           hx-get="/Mercurius{baseUrl}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="closest form"
+                           hx-target="#recibos-vencidos-tabla-container" hx-swap="innerHTML"/>
+                </div>
+            </form>
+        </div>
+
+        <div id="recibos-vencidos-tabla-container">
+            {#fragment id=tabla}
+                {#include _kit/data-table id="recibos-vencidos-tabla" baseUrl=baseUrl
+                     headers=columnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for f in rows}
+                    <tr data-row-key="{f.id}">
+                        <td>
+                            {#if f.status??}<span class="tag is-success" title="Activa">Activa</span>{/if}
+                            {#if f.processed?? && f.processed}<span class="tag is-info" title="Procesada">Procesada</span>{#else}<span class="tag is-warning" title="Sin procesar">Sin procesar</span>{/if}
+                            {#if f.paid?? && f.paid}<span class="tag is-success" title="Pagada">Pagada</span>{#else}<span class="tag is-danger" title="Sin pagar">Sin pagar</span>{/if}
+                        </td>
+                        <td>{#if f.encabezado??}{f.encabezado.numeroConsecutivo}{/if}</td>
+                        <td>{#if f.encabezado?? && f.encabezado.fechaEmision??}{time:format(f.encabezado.fechaEmision, 'dd/MM/yyyy')}{/if}</td>
+                        <td>{#if f.encabezado?? && f.encabezado.emisor??}{f.encabezado.emisor.nombre}{/if}</td>
+                        <td>{#if f.encabezado??}{f.encabezado.condicionVenta}{/if}</td>
+                        <td>{#if f.encabezado??}{f.encabezado.plazoCredito}{/if}</td>
+                        <td>₡{#if f.resumen?? && f.resumen.totalComprobante??}{f.resumen.totalComprobante}{#else}0{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            {/fragment}
+        </div>
+    {/body}
+{/include}

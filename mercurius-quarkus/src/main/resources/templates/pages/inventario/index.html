@@ -1,0 +1,151 @@
+{!
+  pages/inventario/index - Gestión de Inventario (T35).
+
+  Qute/HTMX/Bulma port of secured/pages/Inventario/index.xhtml (Activos /
+  Inactivos / Procesados / Pendientes tabs became visible sections; the
+  legacy clickable stat-cards are now a polled badges fragment) plus the
+  upload card of fragments/Inventario/Upload/subirFacturas.xhtml and the
+  PendientesRevision dialogs (revision, quick-process wizard, details,
+  create adjustment).
+
+  Model keys supplied by Controllers.Api.App.InventarioResource#renderFullPage:
+    tablaActivos / tablaInactivos / tablaProcesados / tablaPendientes  Map
+        - tabla-*.html models (_kit/data-table DATA CONTRACT)
+    badges          Map   - activos/pendientes/inactivos/procesados counts
+    isAdmin         Boolean - reserved for admin-only affordances
+
+  Interactions:
+    - Badges: hx-get every 30s into #inventario-badges (stock badges).
+    - Upload: hx-encoding="multipart/form-data" POST with progress bar;
+      result fragment surfaces parser errors as Bulma danger notifications.
+    - Revision dialogs: shared _kit/modal instances filled per-row via
+      hx-get + the data-kit-open bridge (same recipe as T18).
+    - State changes: hx-post with hx-confirm handled inside tabla-*.html.
+    - Export: normal browser POST to the T17 endpoint (NOT htmx) so
+      Content-Disposition downloads; gated to the 'registro' role like the
+      legacy SessionController.registros rendered checks.
+!}
+{#include layout}
+    {#title}Gestión de Inventario | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Gestión de Inventario</p>
+
+        {! Stat cards — polled so approvals made elsewhere stay fresh !}
+        <div id="inventario-badges"
+             hx-get="/Mercurius/api/app/inventario/badges"
+             hx-trigger="every 30s" hx-swap="innerHTML">
+            {#include pages/inventario/badges badges=badges /}
+        </div>
+
+        {! ── Ajustes Activos ──────────────────────────────────────── !}
+        <div class="level mt-5">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Ajustes Activos</h2>
+            </div>
+            <div class="level-right">
+                <div class="buttons">
+                    {#include _kit/modal id="crear-ajuste" title="Crear Ajuste" triggerLabel="Crear Ajuste" triggerClass="is-success"
+                         bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
+                    {#if inject:securityIdentity.hasRole('registro')}
+                    <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="dataset" value="inventario"/>
+                        <input type="hidden" name="type" value="pdf"/>
+                        <button class="button is-info" type="submit">Exportar PDF</button>
+                    </form>
+                    {/if}
+                </div>
+            </div>
+        </div>
+        {#include pages/inventario/tabla-activos modelo=tablaActivos q=tablaActivos.q /}
+
+        {! ── Ajustes Inactivos ────────────────────────────────────── !}
+        <div class="level mt-5">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Ajustes Inactivos</h2>
+            </div>
+        </div>
+        {#include pages/inventario/tabla-inactivos modelo=tablaInactivos q=tablaInactivos.q /}
+
+        {! ── Movimientos Procesados ───────────────────────────────── !}
+        <div class="level mt-5">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Movimientos Procesados</h2>
+            </div>
+        </div>
+        {#include pages/inventario/tabla-procesados modelo=tablaProcesados q=tablaProcesados.q /}
+
+        {! ── Movimientos Pendientes (revisión) ────────────────────── !}
+        <div class="level mt-5">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Movimientos Pendientes</h2>
+            </div>
+            <div class="level-right">
+                {#include _kit/modal id="rapido-inventario" title="Procesado Rápido de Inventario" triggerLabel="Procesado Rápido" triggerClass="is-warning"
+                     bodyUrl="/api/app/inventario/formularios/rapido"}{/include}
+            </div>
+        </div>
+        {#include pages/inventario/tabla-pendientes modelo=tablaPendientes q=tablaPendientes.q /}
+
+        {! ── Subir Facturas XML (uploadController parity) ─────────── !}
+        <div class="level mt-6">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Subir Facturas XML</h2>
+            </div>
+        </div>
+        <div class="box is-shadowless" style="padding:0.75rem">
+            <form id="inventario-upload-forma"
+                  hx-post="/Mercurius/api/app/inventario/upload"
+                  hx-encoding="multipart/form-data"
+                  hx-target="#upload-resultado" hx-swap="innerHTML">
+                <div class="field">
+                    <label class="label" for="inventario-upload-archivos">Archivos XML de facturas electrónicas</label>
+                    <div class="control">
+                        <input class="input" type="file" id="inventario-upload-archivos"
+                               name="files" accept=".xml" multiple required/>
+                    </div>
+                </div>
+                <progress id="upload-progreso" class="progress is-primary" value="0" max="100">0%</progress>
+                <div class="field">
+                    <button class="button is-primary" type="submit">Procesar Facturas</button>
+                </div>
+            </form>
+            <div id="upload-resultado"></div>
+        </div>
+    </section>
+
+    {! Shared dialogs: revision body is filled per-row from the pendientes
+       table; details body from any row's eye button. !}
+    {#include _kit/modal id="revision-ajuste" title="Revision de Movimiento" triggerClass="is-hidden"
+         bodyUrl="/api/app/inventario/formularios/rapido"}{/include}
+    {#include _kit/modal id="detalles-ajuste" title="Detalles del Ajuste" triggerClass="is-hidden"
+         bodyUrl="/api/app/inventario/formularios/rapido"}{/include}
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level buttons open the shared modals after htmx fills
+       their bodies (same documented recipe as T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+            }
+        });
+    </script>
+    {! Upload progress bar driven by htmx's own xhr events (no extra libs). !}
+    <script>
+        document.addEventListener('htmx:xhr:progress', function (evt) {
+            var bar = document.getElementById('upload-progreso');
+            if (bar && evt.detail.lengthComputable) {
+                bar.value = (evt.detail.loaded / evt.detail.total) * 100;
+            }
+        });
+    </script>
+    {/body}
+{/include}

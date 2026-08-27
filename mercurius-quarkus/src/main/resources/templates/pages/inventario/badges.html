@@ -1,0 +1,37 @@
+{!
+  pages/inventario/badges - stat-card counts fragment (T35). Rendered by
+  GET /api/app/inventario/badges and polled by index.html with
+  hx-trigger="every 30s"; ALSO included server-side on first paint.
+
+  Model (Controllers.Api.App.InventarioResource#badgeModel):
+    badges.activos     Long - countActivos()
+    badges.pendientes  Long - countPendientes()
+    badges.inactivos   Long - countInactivos()
+    badges.procesados  Long - legacy tab-counter arithmetic activos - pendientes
+!}
+<div class="columns">
+    <div class="column">
+        <div class="box has-text-centered">
+            <p class="title is-1" style="margin-bottom:0">{badges.activos}</p>
+            <p class="subtitle is-6">Activos</p>
+        </div>
+    </div>
+    <div class="column">
+        <div class="box has-text-centered">
+            <p class="title is-1 has-text-warning" style="margin-bottom:0">{badges.pendientes}</p>
+            <p class="subtitle is-6">Pendientes</p>
+        </div>
+    </div>
+    <div class="column">
+        <div class="box has-text-centered">
+            <p class="title is-1 has-text-success" style="margin-bottom:0">{badges.procesados}</p>
+            <p class="subtitle is-6">Procesados</p>
+        </div>
+    </div>
+    <div class="column">
+        <div class="box has-text-centered">
+            <p class="title is-1 has-text-danger" style="margin-bottom:0">{badges.inactivos}</p>
+            <p class="subtitle is-6">Inactivos</p>
+        </div>
+    </div>
+</div>

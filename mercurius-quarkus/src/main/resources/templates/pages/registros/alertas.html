@@ -1,0 +1,99 @@
+{!
+  pages/registros/alertas - Registros Internos (plan task T30, W4 view-half
+  lane). Qute/HTMX/Bulma port of secured/pages/Registros/Internos/index.xhtml,
+  consuming Controllers.Api.App.AlertasResource additively:
+
+    GET  {root}/api/app/alertas/pagina            -> this full page through
+                                                     layout.html; with the
+                                                     HX-Request header ONLY the
+                                                     {#fragment tabla} section
+                                                     below (docs/ui-kit.md §2.9)
+    POST {root}/api/app/alertas/{id}/ack          -> existing JSON contract;
+                                                     the urlencoded twin answers
+                                                     the row button and returns
+                                                     the refreshed table
+                                                     fragment (legacy parity:
+                                                     the p:commandLink updated
+                                                     the whole dataTable)
+
+  Model keys supplied by AlertasResource#pagina/ackFormulario:
+    modelo         Map  - kit data-table contract (id, baseUrl, columnas,
+                          filas, sortKey, sortDir, page, size, total,
+                          totalPages, paginas, filtros)
+    unreadOnly     Boolean - current "solo no leídas" facet (round-trips
+                          through filtros so pager/sort links preserve it)
+    toastSeveridad / toastMessage - optional OOB toast after the ack swap
+
+  Legacy parity notes: columns Fecha/Hora, Tipo, Mensaje, Usuario, Origen and
+  Estado mirror the p:column set (default order timestamp DESC comes from
+  AlertasService.findFiltered); the Tipo badge reuses the _kit/toast-item
+  severity→color vocabulary computed server-side ("nivelColor"); unread rows
+  carry the "Marcar leído" button (hx-post ack) while read rows show the
+  Leído tag. The admin-only diff dialog is NOT ported in this lane.
+
+  CSRF is inherited from layout.html body hx-headers; root-path prefixing is
+  the kit's job (/Mercurius everywhere).
+!}
+{#include layout}
+    {#title}Registros Internos | Mercurius{/title}
+
+    {#body}
+        <div class="level mb-5">
+            <div class="level-left">
+                <div>
+                    <p class="title is-3">Registros Internos</p>
+                    <p class="subtitle is-5 has-text-grey">Alertas y notificaciones internas del sistema</p>
+                </div>
+            </div>
+        </div>
+
+{#fragment tabla}
+        <div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+            <div class="field">
+                <label class="checkbox">
+                    <input type="checkbox" name="unreadOnly"
+                           {#if unreadOnly}checked{/if}
+                           hx-get="/Mercurius{modelo.baseUrl}"
+                           hx-trigger="change"
+                           hx-target="#{modelo.id}" hx-swap="outerHTML"/>
+                    Mostrar solo no leídas
+                </label>
+            </div>
+
+            {#include _kit/data-table id=modelo.id baseUrl=modelo.baseUrl headers=modelo.columnas sortKey=modelo.sortKey sortDir=modelo.sortDir page=modelo.page size=modelo.size total=modelo.total totalPages=modelo.totalPages pages=modelo.paginas params=modelo.filtros}
+              {#rows}
+                {#for fila in modelo.filas}
+                <tr>
+                    <td>{fila.fecha}</td>
+                    <td><span class="tag {fila.nivelColor}">{fila.tipo}</span></td>
+                    <td>{fila.mensaje}</td>
+                    <td>{fila.usuario}</td>
+                    <td>{fila.origen}</td>
+                    <td class="has-text-centered">
+                        {#if fila.vista}
+                        <span class="tag is-success">Leído</span>
+                        {#else}
+                        <button type="button" class="button is-small is-info"
+                                title="Marcar como leída"
+                                aria-label="Marcar la alerta como leída"
+                                hx-post="/Mercurius{fila.ackUrl}"
+                                hx-vals='{"canal":"html"}'
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">Marcar leído</button>
+                        {/if}
+                    </td>
+                </tr>
+                {#else}
+                <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron registros</td></tr>
+                {/for}
+              {/rows}
+            {/include}
+
+            {#if toastMessage??}
+            <div hx-swap-oob="beforeend:#toast-container">
+                {#include _kit/toast-item severity=toastSeveridad message=toastMessage /}
+            </div>
+            {/if}
+        </div>
+{/fragment}
+    {/body}
+{/include}

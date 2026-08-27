@@ -1,0 +1,182 @@
+{!
+  pages/clientes/form - modal-body form for crear|editar cliente (W4B lane).
+  Returned by GET /api/app/clientes/formularios[/nueva|/{code}] and
+  re-rendered by the form-urlencoded POST/PUT twins on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Field labels and required semantics are verbatim ports of
+  CrearClientesDialog.xhtml / EditClientesDialog.xhtml ("Nombre:", "Correo:",
+  "Dirección:", "Teléfono:", "Código de Zona:", "Tipo de Cédula:",
+  "Número de Cédula:", "Fecha de Nacimiento:", "Contribuyente:",
+  "Códigos de Actividad Económica (CIIU4):").
+
+  Model:
+    modo          String - "crear" | "editar"
+    cliente       Object - Models.Clients when editar, null when crear
+    birthDateIso  String - cliente.birthDate as yyyy-MM-dd (null when crear;
+                    pre-formatted server-side so the template stays dumb)
+    errorNombre   String - blank-name error (legacy requiredMessage parity)
+    errorGeneral  String - guard failures surfaced by the API (duplicate
+                    nombre / cédula taken) shown under the form + as toast
+    toastSeverity String - OOB toast severity (nullable)
+    toastMessage  String - OOB toast text (nullable)
+!}
+<div id="forma-cliente">
+    {#if modo == 'editar' && cliente??}
+    <form hx-put="/Mercurius/api/app/clientes/{cliente.code}"
+          hx-target="#forma-cliente" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/clientes"
+          hx-target="#forma-cliente" hx-swap="outerHTML">
+    {/if}
+        <div class="field">
+            <label class="label" for="cliente-nombre">Nombre:</label>
+            <div class="control">
+                <input class="input {#if errorNombre??}is-danger{/if}" id="cliente-nombre"
+                       name="name" required="required" autocomplete="off"
+                       value="{#if cliente??}{cliente.name}{/if}"/>
+            </div>
+            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+        </div>
+        <div class="field">
+            <label class="label" for="cliente-email">Correo:</label>
+            <div class="control">
+                <input class="input" type="email" id="cliente-email" name="email" required="required"
+                       autocomplete="off" value="{#if cliente??}{#if cliente.email??}{cliente.email}{/if}{/if}"/>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="cliente-address">Dirección:</label>
+            <div class="control">
+                <input class="input" id="cliente-address" name="address" required="required"
+                       autocomplete="off" value="{#if cliente??}{#if cliente.address??}{cliente.address}{/if}{/if}"/>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-phone">Teléfono:</label>
+                    <div class="control">
+                        <input class="input" id="cliente-phone" name="phoneNumber" required="required"
+                               autocomplete="off" value="{#if cliente??}{#if cliente.phoneNumber??}{cliente.phoneNumber}{/if}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-zone">Código de Zona:</label>
+                    <div class="control">
+                        <input class="input" type="number" min="0" step="1" id="cliente-zone"
+                               name="zoneCode" required="required" value="{#if cliente??}{cliente.zoneCode}{#else}0{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-idType">Tipo de Cédula:</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="cliente-idType" name="idType" required="required">
+                                <option value="Cédula Física" {#if cliente?? && cliente.idType == 'Cédula Física'}selected{/if}>Cédula Física</option>
+                                <option value="Cédula Jurídica" {#if cliente?? && cliente.idType == 'Cédula Jurídica'}selected{/if}>Cédula Jurídica</option>
+                                <option value="DIMEX" {#if cliente?? && cliente.idType == 'DIMEX'}selected{/if}>DIMEX</option>
+                                <option value="NITE" {#if cliente?? && cliente.idType == 'NITE'}selected{/if}>NITE</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-idNumber">Número de Cédula:</label>
+                    <div class="control">
+                        <input class="input" id="cliente-idNumber" name="idNumber" required="required"
+                               autocomplete="off" value="{#if cliente??}{#if cliente.idNumber??}{cliente.idNumber}{/if}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-birthDate">Fecha de Nacimiento:</label>
+                    <div class="control">
+                        <input class="input" type="date" id="cliente-birthDate" name="birthDate"
+                               required="required" value="{#if birthDateIso??}{birthDateIso}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-taxpayer">Contribuyente:</label>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" id="cliente-taxpayer" name="taxpayer" value="true"
+                                   {#if cliente?? && cliente.taxpayer}checked{/if}/>
+                            Es contribuyente
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Códigos de Actividad Económica (CIIU4):</label>
+            <div id="actividades-lista">
+                {#if modo == 'editar' && cliente??}
+                {#for actividad in cliente.actividades}
+                <div class="field has-addons mb-2">
+                    <div class="control is-expanded">
+                        <input class="input" name="actividad" placeholder="Ej: 561110" value="{actividad.codigo}"/>
+                    </div>
+                </div>
+                {/for}
+                {/if}
+                <div class="field has-addons mb-2">
+                    <div class="control is-expanded">
+                        <input class="input" name="actividad" placeholder="Ej: 561110"/>
+                    </div>
+                </div>
+            </div>
+            <button class="button is-light is-small" type="button" id="agregar-actividad">+ Agregar actividad</button>
+        </div>
+        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">
+                    {#if modo == 'editar'}Guardar cambios{#else}Crear Cliente{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{!
+  Adds another actividad input row (kept trivial on purpose — no Alpine state,
+  survives htmx re-swap because htmx executes scripts inside swapped content).
+!}
+<script>
+    (function () {
+        var boton = document.getElementById('agregar-actividad');
+        var lista = document.getElementById('actividades-lista');
+        if (boton && lista) {
+            boton.addEventListener('click', function () {
+                var fila = document.createElement('div');
+                fila.className = 'field has-addons mb-2';
+                fila.innerHTML = '<div class="control is-expanded">' +
+                    '<input class="input" name="actividad" placeholder="Ej: 561110"/></div>';
+                lista.appendChild(fila);
+            });
+        }
+    })();
+</script>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

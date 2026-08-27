@@ -1,0 +1,96 @@
+{!
+  pages/usuarios/index - Administración de Usuarios del Sistema (W4B lane).
+
+  Qute/HTMX/Bulma port of secured/pages/Usuarios/{index,menu}.xhtml + the
+  Users fragments, consuming the LIVE JSON contracts of
+  Controllers.Api.App.UsersResource additively:
+
+    GET /api/app/users/table?page&size&sort&dir&q   (NEW - dual-mode per
+      docs/ui-kit.md §2.9: HX-Request ⇒ only pages/usuarios/tabla.html;
+      otherwise this full page through layout.html)
+    GET /api/app/users/formularios/nuevo            (NEW - create modal body,
+      admin-only mirroring POST /api/app/users)
+    GET /api/app/users/formularios/{id}             (NEW - edit modal body)
+    POST /api/app/users, PUT/DELETE /api/app/users/{id}  (existing JSON
+      endpoints; additive form-urlencoded twins answer the HTMX dialogs and
+      the DELETE returns the refreshed table fragment under HX-Request)
+
+  Model keys supplied by UsersResource#renderFullPage:
+    tablaUsuarios           Map  - model of tabla.html (kit data-table contract)
+    usuariosTotal           Long - stat card
+    usuariosActivosCount    Long - stat card
+    usuariosInactivosCount  Long - stat card
+
+  PARITY GAP (documented): the legacy EditUsersDialog also edited "Permisos"
+  (groupName), but PUT /api/app/users/{id} only accepts username/email/status.
+  Editing permisos needs a REST contract extension and is therefore NOT
+  offered here; creation DOES carry permisos (CreateUserRequest.groupName).
+!}
+{#include layout}
+    {#title}Usuarios del Sistema | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Usuarios del Sistema</p>
+
+        {! Stat cards — legacy tab counters became visible counters !}
+        <div class="columns">
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1" style="margin-bottom:0">{usuariosTotal ?: 0}</p>
+                    <p class="subtitle is-6">Total</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1 has-text-success" style="margin-bottom:0">{usuariosActivosCount ?: 0}</p>
+                    <p class="subtitle is-6">Activos</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="box has-text-centered">
+                    <p class="title is-1 has-text-danger" style="margin-bottom:0">{usuariosInactivosCount ?: 0}</p>
+                    <p class="subtitle is-6">Inactivos</p>
+                </div>
+            </div>
+        </div>
+
+        {#include pages/usuarios/tabla modelo=tablaUsuarios q=tablaUsuarios.q /}
+
+        {!$1!}
+        {#include _kit/modal id="editar-usuario" title="Editar Usuario" triggerClass="is-hidden"
+             bodyUrl="/api/app/users/formularios/nuevo"}{/include}
+
+        {#if inject:securityIdentity.hasRole('admin')}
+        {!$1!}
+        {#include _kit/modal id="crear-usuario" title="Crear Usuario" triggerLabel="Crear Usuario" triggerClass="is-success"
+             bodyUrl="/api/app/users/formularios/nuevo"}{/include}
+        {/if}
+    </section>
+
+    {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
+    {#include _kit/confirm /}
+
+    {! Bridge: row-level edit buttons open the shared edit modal; the swapped
+       form's [data-kit-close] button closes them (same contract as T18). !}
+    <script>
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    </script>
+    {/body}
+{/include}

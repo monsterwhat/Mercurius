@@ -1,0 +1,23 @@
+{!
+  _tablas/etiquetas - table-only fragment for HX-Request swaps of the
+  Generar Etiquetas page (T19). First column is the client-side selector.
+!}
+<div id="reporte-etiquetas-tabla">
+    {#include _kit/data-table id="reporte-etiquetas" baseUrl=baseUrl
+         headers=columnas sortKey=sortKey sortDir=sortDir
+         page=page size=size total=total totalPages=totalPages pages=pages params=params}
+      {#rows}
+        {#for f in filas}
+        <tr>
+            <td><input type="checkbox" class="js-etiqueta-check" value="{f.codigo}" aria-label="Seleccionar {f.nombre}"/></td>
+            <td>{f.codigo}</td>
+            <td>{f.nombre}</td>
+            <td>{f.codigoBarra}</td>
+            <td>{f.precio}</td>
+            <td>{f.familia}</td>
+            <td>{f.departamento}</td>
+        </tr>
+        {/for}
+      {/rows}
+    {/include}
+</div>

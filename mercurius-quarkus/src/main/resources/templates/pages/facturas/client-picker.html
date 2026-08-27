@@ -1,0 +1,68 @@
+{!
+  pages/facturas/client-picker - reusable POS client picker fragment (T37).
+
+  Port of the legacy ClienteDialog global filter as a keyboard-first typeahead,
+  following the T34 selector-articulos pattern (search-as-you-type hx-get +
+  Seleccionar rows). Rendered standalone by GET /api/app/pos/client-picker?q=
+  into the kit modal body; the include is reusable by any future page.
+
+  Model ("picker" bound key, Map):
+    q           String - current filter text (round-tripped)
+    resultados  List   - {code,name,idNumber,puntosAcumulados} capped at 10
+
+  Selecting posts /client-select-form (hidden input per row, no hx-vals JSON)
+  which swaps #cart-panel; the bridge script then closes the host kit modal.
+!}
+<div id="client-picker-fragmento">
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{picker.q}" autocomplete="off"
+                   placeholder="Buscar cliente por nombre..."
+                   hx-get="/Mercurius/api/app/pos/client-picker"
+                   hx-trigger="keyup changed delay:250ms"
+                   hx-target="#client-picker-fragmento" hx-swap="outerHTML"
+                   hx-include="this"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    <table class="table is-striped is-hoverable is-narrow is-fullwidth">
+        <thead>
+        <tr><th>Nombre</th><th>Cédula</th><th class="has-text-centered">Puntos</th><th></th></tr>
+        </thead>
+        <tbody>
+        {#for hit in picker.resultados}
+        <tr data-cliente-code="{hit.code}">
+            <td style="font-weight:500">{hit.name}</td>
+            <td>{#if hit.idNumber??}{hit.idNumber}{#else}&mdash;{/if}</td>
+            <td class="has-text-centered">{#if hit.puntosAcumulados??}{hit.puntosAcumulados}{#else}0{/if}</td>
+            <td class="has-text-centered">
+                <form style="display:inline">
+                    <input type="hidden" name="clientCode" value="{hit.code}"/>
+                    <button type="button" class="button is-small is-primary js-pick-cliente"
+                            hx-post="/Mercurius/api/app/pos/client-select-form"
+                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">
+                        Seleccionar</button>
+                </form>
+            </td>
+        </tr>
+        {#else}
+        <tr><td colspan="4" class="has-text-centered has-text-grey">
+            Sin coincidencias &mdash; escriba para buscar clientes</td></tr>
+        {/for}
+        </tbody>
+    </table>
+
+    {! Bridge: after the panel swap request leaves, close the hosting kit modal
+       (same Alpine contract as pages/clientes/index.html data-kit-close). !}
+    <script>
+        document.querySelectorAll('#client-picker-fragmento .js-pick-cliente').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var root = button.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            });
+        });
+    </script>
+</div>

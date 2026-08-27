@@ -1,0 +1,45 @@
+{!
+  pages/compras/ordenes-cancelar - cancel-confirm stage (stage 6, T31).
+  Returned by GET /api/app/ordenes/{id}/cancelar and swapped into the shared
+  #cancelar-orden modal body (opened from the detail panel, like the legacy
+  DetallesOrdenDialog → CancelarOrdenDialog chain). Verbatim port of the
+  legacy CancelarOrdenDialog: the "¿Está seguro de cancelar la orden?"
+  question, the optional motivo textarea and the legacy WARNING semantics —
+  a successful cancellation surfaces severidad=warn "Orden cancelada!".
+
+  Model:
+    orden         Models.OrdenCompra - order being cancelled (numeroOrden read)
+    motivo        String             - round-tripped reason text
+    toastSeverity / toastMessage    - OOB toast (nullable)
+!}
+<div id="forma-cancelar">
+    <form hx-post="/Mercurius/api/app/ordenes/{orden.id}/cancelar"
+          hx-target="#forma-cancelar" hx-swap="outerHTML">
+        <div class="columns is-multiline">
+            <div class="column is-12">
+                <p class="heading">¿Está seguro de cancelar la orden?</p>
+                <p class="title is-5">{orden.numeroOrden}</p>
+            </div>
+            <div class="column is-12">
+                <div class="field">
+                    <label class="label" for="orden-motivo">Motivo de cancelación</label>
+                    <div class="control">
+                        <textarea class="textarea" id="orden-motivo" name="motivo" rows="3"
+                                  placeholder="Ingrese el motivo de la cancelación...">{motivo}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="buttons is-centered mt-4">
+            <button class="button is-danger" type="submit">&#10003; Confirmar Cancelación</button>
+            <button class="button" type="button" data-kit-close>Volver</button>
+        </div>
+    </form>
+</div>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}

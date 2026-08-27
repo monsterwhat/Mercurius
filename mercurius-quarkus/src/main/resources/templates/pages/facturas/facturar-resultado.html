@@ -1,0 +1,51 @@
+{!
+  pages/facturas/facturar-resultado - outcome fragment of POST
+  /api/app/pos/facturar-form (T37). Swaps into #facturar-resultado on the POS
+  page. On success it shows the PDF link (the legacy auto-print replacement)
+  and out-of-band clears #cart-panel (the session entry was dropped via
+  CartSessionStore.remove). On any guard failure it renders the error envelope
+  with the sale intact, plus an OOB staleness-heal of the panel.
+
+  Model ("resultado" bound key, Map):
+    exito           bool
+    pdfUrl          String  - success only (GET streams application/octet-stream)
+    consecutivo / comprobanteId / haciendaEstado / haciendaMensaje
+    totalPagado / vuelto     - success only
+    errorCode / errorMessage - failure only
+    panelHtml       String  - rendered cart-panel carrying hx-swap-oob
+!}
+<div id="facturar-resultado">
+    {#if resultado.exito}
+    <div class="notification is-success" role="status">
+        <p class="is-size-5"><strong>&#9989; Venta facturada</strong></p>
+        {#if resultado.consecutivo??}
+        <p>Consecutivo: <span class="has-text-weight-semibold">{resultado.consecutivo}</span></p>
+        {/if}
+        {#if resultado.haciendaEstado??}
+        <p>Hacienda: <span class="tag is-light">{resultado.haciendaEstado}</span>
+            {#if resultado.haciendaMensaje??}{resultado.haciendaMensaje}{/if}</p>
+        {/if}
+        {#if resultado.vuelto?? && resultado.vuelto > 0}
+        <p>Vuelto entregado: <span class="has-text-weight-semibold">{resultado.vuelto}</span></p>
+        {/if}
+        {#if resultado.pdfUrl??}
+        <p style="margin-top:0.5rem">
+            <a id="pdf-link" class="button is-dark" href="{resultado.pdfUrl}">&#11015; Descargar PDF</a>
+        </p>
+        {/if}
+    </div>
+    {#else}
+    <div class="notification is-danger" role="alert">
+        <p><strong>No se pudo facturar</strong></p>
+        <p><span class="tag is-dark">{resultado.errorCode}</span> {resultado.errorMessage}</p>
+        {#if resultado.errorCode == 'SUPERVISOR_REQUIRED'}
+        <p class="help">Use el botón &laquo;Autorizar precios&raquo; del carrito e intente de nuevo.</p>
+        {/if}
+    </div>
+    {/if}
+
+    {! Out-of-band refresh of the sale panel in BOTH branches. !}
+    {#if resultado.panelHtml??}
+    {resultado.panelHtml.raw}
+    {/if}
+</div>

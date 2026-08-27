@@ -1,0 +1,140 @@
+{!
+  pages/facturas-recibidas/detalle-drawer - review drawer body for ONE
+  received invoice (T36). Fills the shared #detalle-factura modal body via
+  GET /api/app/facturas-recibidas/{id} (HX-Request) and is re-rendered after
+  every mutation (CAByS PUT, Mensaje Receptor send) so state stays fresh.
+
+  Model keys supplied by FacturasRecibidasResource#drawerFragment:
+    d      Models.DTO.ComprobantesRecibidosDetailDTO
+    lineas List<LineaView> (id, numeroLinea, detalle, codigoCabys,
+           cantidad, unidadMedida, baseImponible, impuestoNeto, montoTotal,
+           montoTotalLinea)
+    toastSeverity/toastMessage - optional OOB toast
+
+  Legacy parity: showDetailsDialog detail grid + resumen tables
+  (verDetallesFactura.xhtml), line accept/reject checkboxes +
+  enviarAceptacionParcial, aceptar/rechazar Mensaje Receptor buttons with
+  hx-confirm, and the prevalidation panel section.
+!}
+<div id="detalle-factura-body">
+    {! ── Encabezado ──────────────────────────────────────────────────── !}
+    <div class="columns is-multiline is-mobile">
+        <div class="column is-half"><p class="heading">Consecutivo</p><p class="subtitle is-6" style="font-family:monospace">{#if d.consecutivo??}{d.consecutivo}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Clave Hacienda</p><p class="subtitle is-6" style="font-family:monospace;font-size:0.75rem">{#if d.clave??}{d.clave}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Emisor</p><p class="subtitle is-6">{#if d.emisorNombre??}{d.emisorNombre}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Receptor</p><p class="subtitle is-6">{#if d.receptorNombre??}{d.receptorNombre}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Fecha de emisión</p><p class="subtitle is-6">{#if d.fechaEmision??}{d.fechaEmision}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Condición de venta</p><p class="subtitle is-6">{#if d.condicionVenta??}{d.condicionVenta}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half">
+            <p class="heading">Mensaje Receptor</p>
+            {#if d.haciendaMensajeReceptorEstado??}
+            <span class="tag {d.haciendaMensajeReceptorEstado eq 'ACEPTADO' ? 'is-success' : 'is-danger'}">{d.haciendaMensajeReceptorEstado}</span>
+            {#else}
+            <span class="tag is-light">Sin enviar</span>
+            {/if}
+            {#if d.mensajeReceptorLimite??}<span class="tag is-info">Límite: {d.mensajeReceptorLimite}</span>{/if}
+        </div>
+        <div class="column is-half">
+            <p class="heading">Estado</p>
+            {#if d.status?? && d.status}<span class="tag is-success">Activa</span>{#else}<span class="tag is-danger">Inactiva</span>{/if}
+            {#if d.processed?? && d.processed}<span class="tag is-success">Procesada</span>{/if}
+            {#if d.paid?? && d.paid}<span class="tag is-info">Pagada</span>{/if}
+        </div>
+    </div>
+
+    {! ── Resumen (verDetallesFactura.xhtml parity) ───────────────────── !}
+    <div class="columns is-multiline is-mobile mt-2">
+        <div class="column is-one-third"><p class="heading">Total Gravado</p><p>&#8362;{#if d.totalGravado??}{d.totalGravado}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Exento</p><p>&#8362;{#if d.totalExento??}{d.totalExento}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Venta</p><p>&#8362;{#if d.totalVenta??}{d.totalVenta}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Impuesto</p><p>&#8362;{#if d.totalImpuesto??}{d.totalImpuesto}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Venta Neta</p><p>&#8362;{#if d.totalVentaNeta??}{d.totalVentaNeta}{#else}0.00{/if}</p></div>
+        <div class="column is-one-third"><p class="heading">Total Comprobante</p><p style="font-weight:700">&#8362;{#if d.totalComprobante??}{d.totalComprobante}{#else}0.00{/if}</p></div>
+    </div>
+
+    {! ── Pre-validación (panel refrescable) ──────────────────────────── !}
+    <hr/>
+    <div class="level">
+        <div class="level-left">
+            <h3 class="title is-5" style="margin-bottom:0">Pre-validación</h3>
+        </div>
+        <div class="level-right">
+            <button type="button" class="button is-small is-link"
+                    hx-get="/Mercurius/api/app/facturas-recibidas/{d.id}/prevalidacion"
+                    hx-target="#prevalidacion-panel" hx-swap="innerHTML">Refrescar</button>
+        </div>
+    </div>
+    <div id="prevalidacion-panel"
+         hx-get="/Mercurius/api/app/facturas-recibidas/{d.id}/prevalidacion"
+         hx-trigger="revealed" hx-swap="innerHTML"></div>
+
+    {! ── Líneas (revisión + corrección CAByS + aceptación parcial) ───── !}
+    <hr/>
+    <form id="recibidas-lineas-forma"
+          hx-post="/Mercurius/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+          hx-target="#detalle-factura-body" hx-swap="innerHTML">
+        <input type="hidden" name="codigoMensaje" value="2"/>
+        <table class="table is-fullwidth is-striped is-narrow">
+            <thead>
+                <tr>
+                    <th>Aceptar</th>
+                    <th>#</th>
+                    <th>Detalle</th>
+                    <th>Código CAByS</th>
+                    <th>Cantidad</th>
+                    <th>Impuesto</th>
+                    <th>Total línea</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#for linea in lineas}
+                <tr>
+                    <td class="has-text-centered">
+                        <input type="checkbox" name="lineasAceptadas" value="{linea.id}"/>
+                    </td>
+                    <td>{#if linea.numeroLinea??}{linea.numeroLinea}{#else}&mdash;{/if}</td>
+                    <td>{#if linea.detalle??}{linea.detalle}{#else}&mdash;{/if}</td>
+                    <td>
+                        <input class="input is-small" type="text" style="min-width:9rem"
+                               name="codigoCabys-{linea.id}" value="{#if linea.codigoCabys??}{linea.codigoCabys}{/if}"
+                               title="Corregir código CAByS (13 dígitos)"
+                               hx-put="/Mercurius/api/app/facturas-recibidas/{d.id}/lineas/{linea.id}"
+                               hx-trigger="change" hx-target="#detalle-factura-body" hx-swap="innerHTML"/>
+                    </td>
+                    <td class="has-text-right">{#if linea.cantidad??}{linea.cantidad}{#else}&mdash;{/if}</td>
+                    <td class="has-text-right">{#if linea.impuestoNeto??}&#8362;{linea.impuestoNeto}{#else}&mdash;{/if}</td>
+                    <td class="has-text-right">{#if linea.montoTotalLinea??}&#8362;{linea.montoTotalLinea}{#else}&mdash;{/if}</td>
+                </tr>
+                {#else}
+                <tr><td colspan="7" class="has-text-centered has-text-grey">La factura no tiene líneas de detalle</td></tr>
+                {/for}
+            </tbody>
+        </table>
+        <div class="field">
+            <button class="button is-warning" type="submit"
+                    hx-confirm="¿Enviar aceptación parcial con las líneas marcadas?">Enviar Aceptación Parcial</button>
+        </div>
+    </form>
+
+    {! ── Mensaje Receptor: aceptar / rechazar (legacy parity) ────────── !}
+    <div class="buttons mt-2">
+        <form hx-post="/Mercurius/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+              hx-target="#detalle-factura-body" hx-swap="innerHTML">
+            <input type="hidden" name="codigoMensaje" value="1"/>
+            <button class="button is-success" type="submit"
+                    hx-confirm="¿Aceptar la factura y enviar el Mensaje Receptor a Hacienda?">Aceptar Factura</button>
+        </form>
+        <form hx-post="/Mercurius/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+              hx-target="#detalle-factura-body" hx-swap="innerHTML">
+            <input type="hidden" name="codigoMensaje" value="3"/>
+            <button class="button is-danger" type="submit"
+                    hx-confirm="¿Rechazar la factura y enviar el Mensaje Receptor a Hacienda?">Rechazar Factura</button>
+        </form>
+    </div>
+
+    {#if toastMessage??}
+    <div hx-swap-oob="beforeend:#toast-container">
+        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+    </div>
+    {/if}
+</div>

@@ -54,16 +54,9 @@
 {@java.lang.String id}
 {@java.lang.String baseUrl}
 {@java.util.List<java.util.Map<String,Object>> headers}
-{@java.util.List<Object> rows}
-{@java.lang.String rowFragment}
-{@java.lang.String sortKey}
-{@java.lang.String sortDir}
-{@java.lang.Integer page}
-{@java.lang.Integer size}
-{@java.lang.Long total}
-{@java.lang.Integer totalPages}
-{@java.util.List<Integer> pages}
-{@java.util.Map<String,Object> params}
+{! Only id/baseUrl/headers are declared: the remaining parameters are
+   OPTIONAL per the data contract above, and {@...} declarations make Qute
+   fail rendering when a caller omits them. Optional usages are ??-guarded. !}
 <div class="table-container" id="{id}" data-kit-table data-base-url="{baseUrl}">
     <table class="table is-striped is-hoverable is-fullwidth">
         <thead>
@@ -71,7 +64,8 @@
                 {#for col in headers}
                     {#if col.key??}
                     <th scope="col" {#if col.key == sortKey}{#if sortDir == 'desc'}aria-sort="descending"{#else}aria-sort="ascending"{/if}{/if}>
-                        <a href="{config:'quarkus.http.root-path'}{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+                        <!-- literal /Mercurius: the quarkus.http.root-path config key is absent from runtime config and 500s on render -->
+                        <a href="/Mercurius{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
                            title="Ordenar por {col.label}" data-kit-sort="{col.key}">{col.label}</a>
                         {#if col.key == sortKey}{#if sortDir == 'desc'}<span aria-hidden="true">▼</span>{#else}<span aria-hidden="true">▲</span>{/if}{/if}
                     </th>
@@ -103,7 +97,7 @@
                             </span>
                         </div>
                         <div class="level-right">
-                            {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl params=params /}
+                            {#include _kit/pagination page=page totalPages=totalPages pages=pages baseUrl=baseUrl /}
                         </div>
                     </div>
                 </td>

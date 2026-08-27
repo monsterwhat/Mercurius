@@ -9,6 +9,10 @@ import Models.DTO.PagedResponse;
 import Services.AlertasService;
 import Services.ClientService;
 import Utils.DiffUtils;
+import io.quarkus.qute.Location;
+import io.quarkus.qute.Template;
+import io.quarkus.qute.TemplateInstance;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
@@ -17,6 +21,7 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -26,8 +31,15 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -74,6 +86,28 @@ public class ClientsResource {
     @Inject
     @Nonnull
     AlertasService alertas;
+
+    /** Request context (quarkus-rest injectable) — source of HX-Request. */
+    @Inject
+    @Nonnull
+    RoutingContext routing;
+
+    // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
+    // on this stack — same approach as CategoriaResource, T18).
+    @Inject
+    @Nonnull
+    @Location("pages/clientes/index.html")
+    Template pageIndex;
+
+    @Inject
+    @Nonnull
+    @Location("pages/clientes/tabla.html")
+    Template tablaPage;
+
+    @Inject
+    @Nonnull
+    @Location("pages/clientes/form.html")
+    Template formCliente;
 
     @GET
     @Operation(summary = "List clients with pagination and optional name search")
@@ -293,6 +327,14 @@ public class ClientsResource {
                     null, 0, "ClientsResource.delete()",
                     antes, DiffUtils.snapshotEntity(client));
 
+            // HTMX callers get the refreshed table fragment + OOB toast
+            // (ui-kit §7 update="table region"); JSON callers keep the exact
+            // envelope below.
+            if (isHxRequest()) {
+                return htmlOk(tableInstance(1, 20, null, "asc", null, "warn",
+                        "El cliente " + client.getName() + " fue archivado"));
+            }
+
             return Response.ok(ApiResponse.ok(toDetailDTO(client))).build();
         } catch (Exception e) {
             LOG.log(Level.WARNING, "Error deleting client " + code, e);
@@ -300,6 +342,153 @@ public class ClientsResource {
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error eliminando el cliente"))
                     .build();
         }
+    }
+
+    // ── W4B view-half: dual-mode table endpoint + dialog fragments ─────────
+
+    /**
+     * GET /table?page&size&sort&dir&q — with the {@code HX-Request} header
+     * returns ONLY the data-table include (fragment swap into the page's
+     * table container); without it renders the FULL clientes page. This
+     * mirrors the SERVER-SIDE CONTRACT comment of
+     * {@code templates/_kit/data-table.html} exactly: the same endpoint
+     * renders page and fragments, all paging/sorting state lives in the URL,
+     * and {@code page} is 1-based here (the JSON list endpoint above keeps
+     * its own 0-based contract untouched). {@code q} keeps the list
+     * endpoint's searchByName parity.
+     */
+    @GET
+    @Path("/table")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Data-table fragment (HX-Request) or full clientes page")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "HTML fragment or full page"),
+        @APIResponse(responseCode = "500", description = "Template rendering failure")
+    })
+    public Response table(
+            @QueryParam("page") @DefaultValue("1") int page,
+            @QueryParam("size") @DefaultValue("20") int size,
+            @QueryParam("sort") @Nullable String sort,
+            @QueryParam("dir") @DefaultValue("asc") String dir,
+            @QueryParam("q") @Nullable String q) {
+        try {
+            if (isHxRequest()) {
+                return htmlOk(tableInstance(page, size, sort, dir, q, null, null));
+            }
+            return htmlOk(renderFullPage());
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, "Error renderizando la página de clientes", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
+                    .build();
+        }
+    }
+
+    /** Empty client creation form (modal body). */
+    @GET
+    @Path("/formularios/nueva")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "New-client form fragment (modal body)")
+    public Response formNueva() {
+        return htmlOk(formInstance("crear", null, null, null, null, null));
+    }
+
+    /** Prefilled client edit form (modal body). */
+    @GET
+    @Path("/formularios/{code}")
+    @Transactional
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Edit-client form fragment (modal body)")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Form HTML"),
+        @APIResponse(responseCode = "404", description = "Unknown code")
+    })
+    public Response formEditar(@PathParam("code") int code) {
+        Clients client = clientService.find(code);
+        if (client == null) {
+            return notFound(code);
+        }
+        return htmlOk(formInstance("editar", client, null, null, null, null));
+    }
+
+    /**
+     * Form-urlencoded twin of {@link #create} for the HTMX dialog (JAX-RS
+     * selects by Content-Type; the JSON contract above is untouched). Field
+     * labels/requireds port CrearClientesDialog.xhtml; guard failures from
+     * {@link #create} (duplicate cédula/nombre) are surfaced as a form
+     * redisplay + out-of-band toast (ui-kit.md Pattern A).
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Transactional
+    @Operation(summary = "Create a client from an HTMX form", hidden = true)
+    public Response createForm(
+            @FormParam("name") @Nullable String name,
+            @FormParam("email") @Nullable String email,
+            @FormParam("address") @Nullable String address,
+            @FormParam("phoneNumber") @Nullable String phoneNumber,
+            @FormParam("zoneCode") @Nullable String zoneCode,
+            @FormParam("idType") @Nullable String idType,
+            @FormParam("idNumber") @Nullable String idNumber,
+            @FormParam("birthDate") @Nullable String birthDate,
+            @FormParam("taxpayer") @Nullable String taxpayer,
+            @FormParam("actividad") @Nullable List<String> actividad) {
+        String nombre = trimToEmpty(name);
+        if (nombre.isEmpty()) {
+            return redisplayForm("crear", null, "El nombre no puede estar vacío", null,
+                    "error", "El nombre no puede estar vacío");
+        }
+        Date fechaNacimiento = parseIsoDate(birthDate);
+        if (birthDate != null && !birthDate.isBlank() && fechaNacimiento == null) {
+            return redisplayForm("crear", null, null, "La fecha de nacimiento no es válida",
+                    "error", "La fecha de nacimiento no es válida");
+        }
+
+        Response result = create(buildDetailDTO(nombre, email, address, phoneNumber,
+                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, actividad));
+        return handleFormMutationResult(result, "crear", null,
+                "/api/app/clientes/table");
+    }
+
+    /**
+     * Form-urlencoded twin of {@link #update} for the HTMX edit dialog.
+     * Sparse-field semantics match {@link #update}: only provided fields are
+     * applied; blank names are rejected with the legacy message.
+     */
+    @PUT
+    @Path("/{code}")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Transactional
+    @Operation(summary = "Update a client from an HTMX form", hidden = true)
+    public Response updateForm(
+            @PathParam("code") int code,
+            @FormParam("name") @Nullable String name,
+            @FormParam("email") @Nullable String email,
+            @FormParam("address") @Nullable String address,
+            @FormParam("phoneNumber") @Nullable String phoneNumber,
+            @FormParam("zoneCode") @Nullable String zoneCode,
+            @FormParam("idType") @Nullable String idType,
+            @FormParam("idNumber") @Nullable String idNumber,
+            @FormParam("birthDate") @Nullable String birthDate,
+            @FormParam("taxpayer") @Nullable String taxpayer,
+            @FormParam("actividad") @Nullable List<String> actividad) {
+        String nombre = trimToEmpty(name);
+        if (nombre.isEmpty()) {
+            return redisplayForm("editar", clientService.find(code),
+                    "El nombre del cliente no puede estar vacío.", null,
+                    "error", "El nombre del cliente no puede estar vacío.");
+        }
+        Date fechaNacimiento = parseIsoDate(birthDate);
+        if (birthDate != null && !birthDate.isBlank() && fechaNacimiento == null) {
+            return redisplayForm("editar", clientService.find(code), null,
+                    "La fecha de nacimiento no es válida",
+                    "error", "La fecha de nacimiento no es válida");
+        }
+
+        Response result = update(code, buildDetailDTO(nombre, email, address, phoneNumber,
+                zoneCode, idType, idNumber, fechaNacimiento, taxpayer, actividad));
+        return handleFormMutationResult(result, "editar", clientService.find(code),
+                "/api/app/clientes/table");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -443,5 +632,294 @@ public class ClientsResource {
                 usuario != null ? usuario.getId() : null,
                 usuario != null ? usuario.getUsername() : null,
                 actividades);
+    }
+
+    // ── W4B template-model helpers (CategoriaResource/T18 conventions) ──────
+
+    /** True when the call comes from HTMX (layout hx-headers carries it). */
+    private boolean isHxRequest() {
+        String header = routing.request().getHeader("HX-Request");
+        return header != null && !"false".equalsIgnoreCase(header);
+    }
+
+    private static Response htmlOk(@Nonnull TemplateInstance template) {
+        return Response.ok(template.render())
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+    }
+
+    private static Response hxRedirect(@Nonnull String url) {
+        return Response.status(Response.Status.OK)
+                .header("HX-Redirect", url)
+                .build();
+    }
+
+    private static String trimToEmpty(@Nullable String raw) {
+        return raw == null ? "" : raw.trim();
+    }
+
+    @Nullable
+    private static String emptyToNull(@Nullable String raw) {
+        return raw == null || raw.isBlank() ? null : raw;
+    }
+
+    private static int parseIntOrDefault(@Nullable String raw, int fallback) {
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    /** ISO yyyy-MM-dd (native date input) → java.util.Date; null when blank/unparseable. */
+    @Nullable
+    private static Date parseIsoDate(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Date.from(LocalDate.parse(raw.trim())
+                    .atStartOfDay(ZoneId.systemDefault()).toInstant());
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private static ClientsDetailDTO buildDetailDTO(@Nonnull String nombre,
+                                                   @Nullable String email,
+                                                   @Nullable String address,
+                                                   @Nullable String phoneNumber,
+                                                   @Nullable String zoneCode,
+                                                   @Nullable String idType,
+                                                   @Nullable String idNumber,
+                                                   @Nullable Date birthDate,
+                                                   @Nullable String taxpayer,
+                                                   @Nullable List<String> actividad) {
+        ClientsDetailDTO dto = new ClientsDetailDTO();
+        dto.setName(nombre);
+        dto.setEmail(emptyToNull(email));
+        dto.setAddress(emptyToNull(address));
+        dto.setPhoneNumber(emptyToNull(phoneNumber));
+        dto.setZoneCode(parseIntOrDefault(zoneCode, 0));
+        dto.setIdType(emptyToNull(idType));
+        dto.setIdNumber(emptyToNull(idNumber));
+        dto.setBirthDate(birthDate);
+        dto.setTaxpayer(taxpayer != null);
+        List<ClientsDetailDTO.ActividadInfo> actividades = new ArrayList<>();
+        if (actividad != null) {
+            for (String codigo : actividad) {
+                if (codigo != null && !codigo.isBlank()) {
+                    actividades.add(new ClientsDetailDTO.ActividadInfo(null, codigo.trim(), null));
+                }
+            }
+        }
+        dto.setActividades(actividades);
+        return dto;
+    }
+
+    /**
+     * Shared tail of the HTMX form twins: success answers HX-Redirect so the
+     * page reloads fresh (ui-kit §5); structured failures from the JSON
+     * methods are converted into a 422 form redisplay + OOB toast
+     * (ui-kit Pattern A); non-HTMX callers receive the original response.
+     */
+    private Response handleFormMutationResult(@Nonnull Response result,
+                                              @Nonnull String modo,
+                                              @Nullable Clients cliente,
+                                              @Nonnull String redirectUrl) {
+        if (!isHxRequest()) {
+            return result;
+        }
+        int status = result.getStatus();
+        if (status == Response.Status.CREATED.getStatusCode()
+                || status == Response.Status.OK.getStatusCode()) {
+            return hxRedirect(redirectUrl);
+        }
+        String mensaje = "No se pudo guardar el cliente";
+        String severity = "error";
+        if (result.getEntity() instanceof ApiResponse<?> api && api.getError() != null) {
+            mensaje = api.getError().getMessage();
+            String code = api.getError().getCode();
+            if ("ID_TAKEN".equals(code) || "NAME_TAKEN".equals(code)) {
+                severity = "warn";
+            }
+        }
+        return redisplayForm(modo, cliente, null, mensaje, severity, mensaje);
+    }
+
+    private Response redisplayForm(@Nonnull String modo, @Nullable Clients cliente,
+                                   @Nullable String errorNombre, @Nullable String errorGeneral,
+                                   @Nullable String toastSeverity, @Nullable String toastMessage) {
+        return Response.status(Response.Status.BAD_REQUEST)
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
+                .entity(formInstance(modo, cliente, errorNombre, errorGeneral,
+                        toastSeverity, toastMessage).render())
+                .build();
+    }
+
+    private TemplateInstance formInstance(@Nonnull String modo, @Nullable Clients cliente,
+                                          @Nullable String errorNombre, @Nullable String errorGeneral,
+                                          @Nullable String toastSeverity, @Nullable String toastMessage) {
+        String birthDateIso = null;
+        if (cliente != null && cliente.getBirthDate() != null) {
+            birthDateIso = cliente.getBirthDate().toInstant()
+                    .atZone(ZoneId.systemDefault()).toLocalDate().toString();
+        }
+        return formCliente
+                .data("modo", modo)
+                .data("cliente", cliente)
+                .data("birthDateIso", birthDateIso)
+                .data("errorNombre", errorNombre)
+                .data("errorGeneral", errorGeneral)
+                .data("toastSeverity", toastSeverity)
+                .data("toastMessage", toastMessage);
+    }
+
+    private TemplateInstance renderFullPage() {
+        TableModel model = buildTableModel(1, 20, null, "asc", null);
+        List<Clients> todos = orEmpty(clientService.listAll());
+        long activos = todos.stream().filter(c -> c.getStatus() != null && c.getStatus()).count();
+        return pageIndex
+                .data("tablaClientes", model.asMap())
+                .data("clientesTotal", model.total())
+                .data("clientesActivosCount", activos)
+                .data("clientesInactivosCount", todos.size() - activos);
+    }
+
+    private TemplateInstance tableInstance(int page, int size, @Nullable String sort,
+                                           @Nullable String dir, @Nullable String q,
+                                           @Nullable String toastSeverity,
+                                           @Nullable String toastMessage) {
+        TableModel model = buildTableModel(page, size, sort, dir, q);
+        return tablaPage
+                .data("modelo", model.asMap())
+                .data("q", model.q())
+                .data("toastSeverity", toastSeverity)
+                .data("toastMessage", toastMessage);
+    }
+
+    private TableModel buildTableModel(int page, int size, @Nullable String sort,
+                                       @Nullable String dir, @Nullable String q) {
+        List<Clients> filas;
+        if (q != null && !q.isBlank()) {
+            List<Clients> matches = clientService.searchByName(q.trim());
+            filas = new ArrayList<>(matches != null ? matches : List.of());
+        } else {
+            filas = new ArrayList<>(orEmpty(clientService.listAll()));
+        }
+        sortClients(filas, sort, dir);
+
+        long total = filas.size();
+        Window w = windowOf(total, page, size);
+        filas = filas.subList(w.from(), w.to());
+
+        List<Map<String, Object>> columnas = new ArrayList<>();
+        columnas.add(col("Estado", null));
+        columnas.add(col("Código", "code"));
+        columnas.add(col("Nombre", "name"));
+        columnas.add(col("Dirección", "address"));
+        columnas.add(col("Correo", "email"));
+        columnas.add(col("Cédula", "idNumber"));
+        columnas.add(col("Teléfono", "phoneNumber"));
+        columnas.add(col("Tributario", null));
+        columnas.add(col("Acciones", null));
+
+        Map<String, Object> filtros = new LinkedHashMap<>();
+        if (q != null && !q.isBlank()) {
+            filtros.put("q", q.trim());
+        }
+
+        return new TableModel("tabla-clientes", "/api/app/clientes/table", columnas, filas,
+                sort, "desc".equalsIgnoreCase(dir) ? "desc" : "asc",
+                w.page(), w.size(), total, w.totalPages(), pageWindow(w.page(), w.totalPages()),
+                filtros, q);
+    }
+
+    private static <T> List<T> orEmpty(@Nullable List<T> list) {
+        return list == null ? List.of() : list;
+    }
+
+    private static void sortClients(@Nonnull List<Clients> rows, @Nullable String sort,
+                                    @Nullable String dir) {
+        if (rows.isEmpty() || sort == null || sort.isBlank()) {
+            return;
+        }
+        Comparator<Clients> cmp = switch (sort) {
+            case "code" -> Comparator.comparingInt(Clients::getCode);
+            case "name" -> Comparator.comparing(Clients::getName,
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "address" -> Comparator.comparing(Clients::getAddress,
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "email" -> Comparator.comparing(Clients::getEmail,
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "idNumber" -> Comparator.comparing(Clients::getIdNumber,
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "phoneNumber" -> Comparator.comparing(Clients::getPhoneNumber,
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case "status" -> Comparator.comparing(Clients::getStatus,
+                    Comparator.nullsLast(Comparator.naturalOrder()));
+            default -> null;
+        };
+        if (cmp != null) {
+            rows.sort("desc".equalsIgnoreCase(dir) ? cmp.reversed() : cmp);
+        }
+    }
+
+    private static Map<String, Object> col(@Nonnull String label, @Nullable String key) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("label", label);
+        map.put("key", key);
+        return map;
+    }
+
+    private static List<Integer> pageWindow(int page, int totalPages) {
+        if (totalPages <= 1) {
+            return List.of(1);
+        }
+        List<Integer> pages = new ArrayList<>();
+        int from = Math.max(1, page - 2);
+        int to = Math.min(totalPages, page + 2);
+        for (int i = from; i <= to; i++) {
+            pages.add(i);
+        }
+        return pages;
+    }
+
+    private record Window(int page, int size, int from, int to, int totalPages) {}
+
+    private static Window windowOf(long total, int page, int size) {
+        int s = Math.min(Math.max(size, 1), 100);
+        int totalPages = (int) Math.max(1L, (total + s - 1) / s);
+        int p = Math.min(Math.max(page, 1), totalPages);
+        int from = Math.min((p - 1) * s, (int) total);
+        int to = Math.min(from + s, (int) total);
+        return new Window(p, s, from, to, totalPages);
+    }
+
+    /** Immutable view of everything pages/clientes/tabla.html needs. */
+    public record TableModel(String id, String baseUrl, List<Map<String, Object>> columnas,
+                             List<?> filas, String sortKey, String sortDir, int page, int size,
+                             long total, int totalPages, List<Integer> paginas,
+                             Map<String, Object> filtros, String q) {
+
+        public Map<String, Object> asMap() {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", id);
+            map.put("baseUrl", baseUrl);
+            map.put("columnas", columnas);
+            map.put("filas", filas);
+            map.put("sortKey", sortKey);
+            map.put("sortDir", sortDir);
+            map.put("page", page);
+            map.put("size", size);
+            map.put("total", total);
+            map.put("totalPages", totalPages);
+            map.put("paginas", paginas);
+            map.put("filtros", filtros);
+            map.put("q", q);
+            return map;
+        }
     }
 }

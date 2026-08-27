@@ -1,0 +1,138 @@
+{!
+  pages/tributacion/declaracion - Declaración IVA (D-104) (plan task T28).
+
+  Replaces secured/pages/Tributacion/DeclaracionIVA/index.xhtml
+  (#{declaracionIVAController.*}). Period selector (plain GET form, ui-kit
+  §5 Pattern B), summary cards, monthly filas and capped detail tables;
+  sums computed server-side by TributacionPagesResource.declaracionModel()
+  through ComprobantesEmitidosService.listByDateRange (fixed
+  Date→LocalDateTime binding) + the recibidos twin.
+!}
+{#include layout}
+    {#title}Declaración IVA (D-104) | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">Declaración IVA (D-104)</h1>
+        <p class="subtitle is-6">Período: {periodo}</p>
+
+        <div class="box">
+            <h2 class="title is-5">Seleccionar Período</h2>
+            <form method="get"
+                  action="/Mercurius/app/tributacion/declaracion">
+                <div class="field is-grouped">
+                    <div class="control">
+                        <label class="label" for="declaracion-mes">Mes</label>
+                        <div class="select">
+                            <select id="declaracion-mes" name="mes">
+                                {#for nombre in meses}
+                                <option value="{nombre_index + 1}"
+                                        {#if nombre_index + 1 == mesSeleccionado}selected{/if}>{nombre}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control">
+                        <label class="label" for="declaracion-anio">Año</label>
+                        <div class="select">
+                            <select id="declaracion-anio" name="anio">
+                                {#for anio in anios}
+                                <option value="{anio}"
+                                        {#if anio == anioSeleccionado}selected{/if}>{anio}</option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="control is-align-self-flex-end">
+                        <button class="button is-info" type="submit">Calcular</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div id="declaracion-resumen">
+            {#fragment id=resumen}
+            <div class="box">
+                <h2 class="title is-5">Resumen del Período</h2>
+                <div class="columns is-multiline has-text-centered">
+                    <div class="column is-3">
+                        <p class="heading">Total Ventas (Netas)</p>
+                        <p class="title is-4 has-text-link">{totalVentas}</p>
+                        <p class="is-size-7 has-text-grey">{totalFacturasEmitidas} facturas</p>
+                    </div>
+                    <div class="column is-3">
+                        <p class="heading">Total Compras (Netas)</p>
+                        <p class="title is-4 has-text-success">{totalCompras}</p>
+                        <p class="is-size-7 has-text-grey">{totalFacturasRecibidas} facturas</p>
+                    </div>
+                    <div class="column is-2">
+                        <p class="heading">IVA Débito (Ventas)</p>
+                        <p class="title is-4 has-text-link">{ivaDebito}</p>
+                    </div>
+                    <div class="column is-2">
+                        <p class="heading">IVA Crédito (Compras)</p>
+                        <p class="title is-4 has-text-success">{ivaCredito}</p>
+                    </div>
+                    <div class="column is-2">
+                        <p class="heading">IVA Neto a Pagar</p>
+                        <p class="title is-4 {#if ivaNetoPositivo}has-text-link{#else}has-text-success{/if}">{ivaNeto}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box">
+                <h2 class="title is-5">Resumen Mensual del Año</h2>
+                {#include _kit/data-table id="declaracion-tabla-mensual" baseUrl=baseUrl
+                     headers=headersMensuales}
+                  {#rows}
+                    {#for fila in filasMensuales}
+                    <tr data-row-key="{fila.periodo}">
+                        <td class="has-text-weight-semibold">{fila.periodo}</td>
+                        <td class="has-text-right">₡{fila.totalVentas}</td>
+                        <td class="has-text-right">₡{fila.totalImpuesto}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            </div>
+
+            <div class="box">
+                <h2 class="title is-5">Facturas Emitidas en el Período</h2>
+                {#include _kit/data-table id="declaracion-tabla-emitidas" baseUrl=baseUrl
+                     headers=headersDetalle}
+                  {#rows}
+                    {#for f in filasEmitidas}
+                    <tr data-row-key="{f.id}">
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="has-text-right">₡{#if f.impuesto??}{f.impuesto}{#else}0{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+                <p class="help has-text-grey">Primeras 10 facturas del período (orden por fecha de emisión).</p>
+            </div>
+
+            <div class="box">
+                <h2 class="title is-5">Facturas Recibidas en el Período</h2>
+                {#include _kit/data-table id="declaracion-tabla-recibidas" baseUrl=baseUrl
+                     headers=headersRecibidas}
+                  {#rows}
+                    {#for f in filasRecibidas}
+                    <tr data-row-key="{f.id}">
+                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td>{#if f.proveedor??}{f.proveedor}{#else}-{/if}</td>
+                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="has-text-right">₡{#if f.impuesto??}{f.impuesto}{#else}0{/if}</td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+                <p class="help has-text-grey">Primeras 10 facturas del período (orden por fecha de emisión).</p>
+            </div>
+            {/fragment}
+        </div>
+    {/body}
+{/include}

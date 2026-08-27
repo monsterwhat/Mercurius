@@ -1,0 +1,40 @@
+{!
+  pages/articulos/detalles - read-only article detail fragment (T34). Port of
+  secured/fragments/Articulos/{Inactivos,ActivosYProcesados}/verDetalles.xhtml.
+  Returned by GET /api/app/articulos/{codigo} when HX-Request.
+
+  Model:
+    articulo  Object  - Models.Articulos
+    stock     double  - InventarioService.getStock(codigoBarra)
+    precios   List    - ArticuloPrecio history (newest last)
+!}
+<div id="detalles-articulo-fragmento">
+    <table class="table is-fullwidth is-narrow">
+        <tbody>
+            <tr><th style="width:35%">Código</th><td>{articulo.codigo}</td></tr>
+            <tr><th>Código Barra</th><td style="font-family:monospace">{#if articulo.codigoBarra??}{articulo.codigoBarra}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Nombre</th><td style="font-weight:500">{articulo.nombre}</td></tr>
+            <tr><th>Descripción</th><td>{#if articulo.descripcion??}{articulo.descripcion}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Unidad de Medida</th><td>{#if articulo.unidadMedida??}{articulo.unidadMedida}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Unidad de Medida Comercial</th><td>{#if articulo.unidadMedidaComercial??}{articulo.unidadMedidaComercial}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Departamento</th><td>{#if articulo.departamento??}{articulo.departamento.nombre}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Familia</th><td>{#if articulo.familia??}{articulo.familia.nombre}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Código CABYS</th><td style="font-family:monospace">{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo} - {articulo.codigoCabys.descripcion}{#else}&mdash;{/if}</td></tr>
+            {#for precio in precios}
+            <tr>
+                <th>Precio {precio_index + 1} (Costo / Utilidad / Final)</th>
+                <td>{#if precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if} /
+                    {#if precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}%{/if} /
+                    <strong>{#if precio.precioFinal??}{precio.precioFinal}{/if}</strong></td>
+            </tr>
+            {/for}
+            <tr><th>Stock</th><td style="font-weight:600">{stock}</td></tr>
+            <tr><th>Creado por</th><td>{#if articulo.usuario??}{articulo.usuario.username}{#else}&mdash;{/if}</td></tr>
+        </tbody>
+    </table>
+    <div class="field is-grouped is-grouped-right">
+        <div class="control">
+            <button class="button" type="button" data-kit-close>Cerrar</button>
+        </div>
+    </div>
+</div>
