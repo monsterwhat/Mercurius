@@ -91,9 +91,12 @@ public final class ReportExporter {
 
             document.add(new Paragraph("Art: " + articulo.getNombre(), font));
             if (articulo.getFamilia() != null) {
-                document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + " Fam: " + articulo.getFamilia().getNombre(), font));
+                String deptNombre2 = articulo.getDepartamento() != null ? articulo.getDepartamento().getNombre() : "-";
+                String famNombre = articulo.getFamilia() != null ? articulo.getFamilia().getNombre() : "-";
+                document.add(new Paragraph("Dept: " + deptNombre2 + " Fam: " + famNombre, font));
             } else {
-                document.add(new Paragraph("Dept: " + articulo.getDepartamento().getNombre() + " Familia sin definir", font));
+                String deptNombre = articulo.getDepartamento() != null ? articulo.getDepartamento().getNombre() : "-";
+                document.add(new Paragraph("Dept: " + deptNombre + " Familia sin definir", font));
             }
             if (articulo.getCodigoCabys() != null) {
                 document.add(new Paragraph("%Imp: " + articulo.getCodigoCabys().getCodigo(), font));
@@ -114,7 +117,8 @@ public final class ReportExporter {
                 document.add(new Paragraph("No hay precios definidos", font));
             }
 
-            document.add(new Paragraph("Creador: " + articulo.getUsuario().getUsername(), font));
+            String creadorNombre = articulo.getUsuario() != null ? articulo.getUsuario().getUsername() : "-";
+                document.add(new Paragraph("Creador: " + creadorNombre, font));
             document.add(new Paragraph("\n", font));
 
             currentItem++;

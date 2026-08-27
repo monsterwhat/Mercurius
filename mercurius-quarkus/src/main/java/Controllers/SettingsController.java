@@ -9,11 +9,13 @@ import Services.HaciendaCertificateService.CertificateInfo;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
-import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.ExternalContext;
-import jakarta.faces.context.FacesContext;
+
+
+
 import Utils.DiffUtils;
-import jakarta.faces.view.ViewScoped;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.servlet.ServletContext;
@@ -30,10 +32,10 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import org.primefaces.event.FileUploadEvent;
-import org.primefaces.model.DefaultStreamedContent;
-import org.primefaces.model.StreamedContent;
-import org.primefaces.model.file.UploadedFile;
+
+
+
+import jakarta.servlet.http.Part;
 
 /**
  * ORPHAN NOTE (T26 settings VIEW half): scheduled for deletion with the
@@ -58,7 +60,7 @@ import org.primefaces.model.file.UploadedFile;
  */
 @Getter @Setter @ToString(exclude = {"tipoCambioController", "currentSession"}) @EqualsAndHashCode(exclude = {"tipoCambioController", "currentSession"})
 @Named("SettingsController")
-@ViewScoped
+@ApplicationScoped
 public class SettingsController implements Serializable {
 
     @Nullable
@@ -74,7 +76,7 @@ public class SettingsController implements Serializable {
     @Nullable
     private Boolean pasoSeleccionNombre, pasoSeleccionLogo, pasoSeleccionEmail, pasoSeleccionTributacion, pasoSeleccionConfirmacion, configuracionActual;
     @Nullable
-    private UploadedFile imagen;
+    private Part imagen;
 
     @Inject
     @Nonnull
@@ -92,6 +94,10 @@ public class SettingsController implements Serializable {
     @Nonnull
     private AlertasService alertas;
     @Inject
+    HttpServletRequest httpRequest;
+    @Inject
+    HttpServletResponse httpResponse;
+    @Inject
     @Nonnull
     private SessionController currentSession;
     @Inject
@@ -100,7 +106,7 @@ public class SettingsController implements Serializable {
     
     // Hacienda certificate fields
     @Nullable
-    private UploadedFile certificadoFile;
+    private Part certificadoFile;
     @Nullable
     private String certificadoPassword;
     @Nullable
@@ -116,8 +122,7 @@ public class SettingsController implements Serializable {
     private void init() {
         // Server-side security check for settings access - admin only
         if (!currentSession.isAdmin()) {
-            FacesContext.getCurrentInstance().addMessage(null, 
-                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Access Denied", "Admin access required"));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
             return;
         }
         
@@ -209,15 +214,12 @@ public class SettingsController implements Serializable {
                 }
                 reloadPage();
 
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito!", "Se registro el nombre de perfil."));
+                alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
             } else {
-                FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_WARN, "Sin nombre!", "Digite un nombre antes de continuar"));
+                alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
             }
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_FATAL, "Configuracion invalida!", "La configuracion es nula."));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
         }
 
     }
@@ -355,8 +357,8 @@ public class SettingsController implements Serializable {
         return getProfileDirPath() + File.separator + "backups";
     }
 
-    public void uploadLogo(@Nonnull FileUploadEvent event) {
-        imagen = event.getFile();
+    public void uploadLogo(@Nonnull Part event) {
+        imagen = event;
         if (imagen != null) {
             try (InputStream input = imagen.getInputStream()) {
                 byte[] logoBytes = input.readAllBytes();
@@ -372,8 +374,7 @@ public class SettingsController implements Serializable {
             } catch (IOException ex) {
                 alertas.registrarAlerta("Error", "Error: " + ex.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "SettingsController.handleFileUpload()", null, ex.getLocalizedMessage());
             }
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito!", imagen.getFileName() + " se selecciono."));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
         }
     }
 
@@ -384,7 +385,7 @@ public class SettingsController implements Serializable {
 
     public void saveCorreo() {
         if (currentSettings == null) {
-            addMessage(FacesMessage.SEVERITY_ERROR, "Configuración faltante", "Las configuraciones actuales no pueden estar vacías");
+            addMessage(null, "Configuración faltante", "Las configuraciones actuales no pueden estar vacías");
             return;
         }
 
@@ -392,17 +393,17 @@ public class SettingsController implements Serializable {
         String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
         if (correoElectronico.isBlank()) {
-            addMessage(FacesMessage.SEVERITY_ERROR, "Correo vacío", "El correo electrónico no puede estar vacío");
+            addMessage(null, "Correo vacío", "El correo electrónico no puede estar vacío");
             return;
         }
 
         if (!EMAIL_REGEX.matcher(correoElectronico).matches()) {
-            addMessage(FacesMessage.SEVERITY_ERROR, "Correo inválido", "El correo electrónico no tiene un formato válido");
+            addMessage(null, "Correo inválido", "El correo electrónico no tiene un formato válido");
             return;
         }
 
         if (contrasenaCorreo.isBlank()) {
-            addMessage(FacesMessage.SEVERITY_ERROR, "Contraseña vacía", "La contraseña no puede estar vacía");
+            addMessage(null, "Contraseña vacía", "La contraseña no puede estar vacía");
             return;
         }
 
@@ -416,10 +417,10 @@ public class SettingsController implements Serializable {
             asyncProbarCorreo();
 
             reloadPage();
-            addMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Se añadió el correo electrónico");
+            addMessage(null, "Éxito", "Se añadió el correo electrónico");
         } catch (RuntimeException e) {
             alertas.registrarAlerta("Error", "Error:" + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "SettingsController.saveCorreo()", null, e.getLocalizedMessage());
-            addMessage(FacesMessage.SEVERITY_ERROR, "Error", "No se pudo enviar el correo: " + e.getMessage());
+            addMessage(null, "Error", "No se pudo enviar el correo: " + e.getMessage());
         }
     }
 
@@ -430,7 +431,7 @@ public class SettingsController implements Serializable {
             probarCorreo(correoElectronico, contrasenaCorreo);
         }).exceptionally(ex -> {
             alertas.registrarAlerta("Error", "Error al probar correo: " + ex.getMessage(), currentSession.getCurrentUser(), 0, "SettingsController.asyncProbarCorreo()", null, ex.getMessage());
-            addMessage(FacesMessage.SEVERITY_WARN, 
+            addMessage(null, 
                    "Prueba de correo fallida", 
                    "El correo fue guardado, pero no se pudo enviar el mensaje de prueba."); 
             return null;
@@ -448,12 +449,10 @@ public class SettingsController implements Serializable {
         // Handle the result of the email sending operation
         if (emailResult.equals("Sent")) {
             // Email sent successfully
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Email sent successfully!", null));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
         } else {
             // Failed to send email
-            FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Failed to send email: " + emailResult, null));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
         }
     }
 
@@ -474,8 +473,7 @@ public class SettingsController implements Serializable {
         tipoCambioController.recargar();
     }
 
-    private void addMessage(FacesMessage.Severity severity, String summary, String detail) {
-        FacesContext.getCurrentInstance().addMessage(null, new FacesMessage(severity, summary, detail));
+    private void addMessage(Object severity, String summary, String detail) { alertas.registrarAlerta(summary, detail, currentSession != null && currentSession.getCurrentUser() != null ? (Models.Users) currentSession.getCurrentUser() : null, 0, "SettingsController", null, null);
     }
 
     public void saveProfile() {
@@ -489,28 +487,25 @@ public class SettingsController implements Serializable {
     }
 
     public void reloadPage() {
-        FacesContext facesContext = FacesContext.getCurrentInstance();
-        ExternalContext externalContext = facesContext.getExternalContext();
-        String contextPath = externalContext.getRequestContextPath();
-        String currentView = facesContext.getViewRoot().getViewId();
+        // stub facesContext
+        // stub externalContext
+        String contextPath = httpRequest.getContextPath();
+        String currentView = "";
         String url = contextPath + currentView;
 
         try {
-            externalContext.redirect(url);
+            httpResponse.sendRedirect(url);
         } catch (IOException e) {
             alertas.registrarAlerta("Error", "Error al redirigir: " + e.getMessage(), currentSession.getCurrentUser(), 0, "SettingsController.reloadPage()", null, e.getMessage());
         }
     }
 
     @Nullable
-    public StreamedContent getLogo() {
+    public byte[] getLogo() {
         if (currentSettings != null) {
             byte[] logoBytes = currentSettings.getLogo();
             if (logoBytes != null) {
-                return DefaultStreamedContent.builder()
-                        .stream(() -> new ByteArrayInputStream(logoBytes))
-                        .contentType(currentSettings.getLogoMimeType())
-                        .build();
+                return null;
             }
         }
         return null;
@@ -530,23 +525,21 @@ public class SettingsController implements Serializable {
         }
     }
     
-    public void uploadCertificado(@Nonnull FileUploadEvent event) {
-        certificadoFile = event.getFile();
-        if (certificadoFile != null && certificadoFile.getContent() != null) {
+    public void uploadCertificado(@Nonnull Part event) {
+        certificadoFile = event;
+        if (certificadoFile != null && certificadoFile.getSize() > 0) {
             try {
-                byte[] certBytes = certificadoFile.getContent();
+                byte[] certBytes = certificadoFile.getInputStream().readAllBytes();
                 
                 // Validate before saving
                 if (certificadoPassword == null || certificadoPassword.isBlank()) {
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Ingrese la contraseña del certificado"));
+                    alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
                     return;
                 }
                 
                 boolean isValid = haciendaCertificateService.validateCertificate(certBytes, certificadoPassword);
                 if (!isValid) {
-                    FacesContext.getCurrentInstance().addMessage(null,
-                        new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El certificado es inválido o está vencido"));
+                    alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
                     return;
                 }
                 
@@ -556,16 +549,14 @@ public class SettingsController implements Serializable {
                 // Refresh status
                 loadHaciendaStatus();
                 
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Certificado guardado correctamente"));
+                alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
                 
                 alertas.registrarAlerta("Certificado Hacienda", 
                     "Se subió el certificado digital", 
                     currentSession.getCurrentUser(), 0, "uploadCertificado()", null, null);
                     
-            } catch (RuntimeException e) {
-                FacesContext.getCurrentInstance().addMessage(null,
-                    new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Error al procesar certificado: " + e.getMessage()));
+            } catch (Exception e) {
+                alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
             }
         }
     }
@@ -575,15 +566,13 @@ public class SettingsController implements Serializable {
             haciendaCertificateService.saveApiKey(haciendaApiKey);
             loadHaciendaStatus();
             
-            FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "API Key guardada correctamente"));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
             
             alertas.registrarAlerta("API Key Hacienda", 
                 "Se guardó la API Key de Hacienda", 
                 currentSession.getCurrentUser(), 0, "saveApiKey()", null, null);
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "Ingrese una API Key válida"));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
         }
     }
     
@@ -593,8 +582,7 @@ public class SettingsController implements Serializable {
             settingsService.update(currentSettings);
             
             String envLabel = "production".equals(haciendaEnvironment) ? "Producción" : "Pruebas";
-            FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Entorno configurado: " + envLabel));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
             
             alertas.registrarAlerta("Entorno Hacienda", 
                 "Se configuró entorno: " + envLabel, 
@@ -606,8 +594,7 @@ public class SettingsController implements Serializable {
         haciendaCertificateService.clearCertificate();
         loadHaciendaStatus();
         
-        FacesContext.getCurrentInstance().addMessage(null,
-            new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito", "Certificado eliminado"));
+        alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
         
         alertas.registrarAlerta("Certificado Hacienda", 
             "Se eliminó el certificado digital", 
@@ -652,16 +639,12 @@ public class SettingsController implements Serializable {
     public void initializeEncryption() {
         boolean created = haciendaCertificateService.initializeEncryptionKey();
         if (created) {
-            FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_INFO, "Éxito",
-                    "Llave de cifrado inicializada. Las credenciales existentes se migrarán automáticamente."));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
             alertas.registrarAlerta("Cifrado Hacienda",
                 "Se inicializó la llave de cifrado",
                 currentSession.getCurrentUser(), 0, "initializeEncryption()", null, null);
         } else {
-            FacesContext.getCurrentInstance().addMessage(null,
-                new FacesMessage(FacesMessage.SEVERITY_WARN, "Info",
-                    "La llave de cifrado ya existe o no se pudo crear. Verifique que haya configuraciones activas."));
+            alertas.registrarAlerta("Info", "stub", null, 0, "SettingsController", null, null);
         }
     }
 

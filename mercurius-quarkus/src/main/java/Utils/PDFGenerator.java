@@ -28,8 +28,6 @@ import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import com.google.zxing.WriterException;
 import jakarta.enterprise.context.RequestScoped;
-import jakarta.faces.context.ExternalContext;
-import jakarta.faces.context.FacesContext;
 import jakarta.inject.Inject;
 import Services.AlertasService;
 import java.io.ByteArrayOutputStream;
@@ -432,12 +430,7 @@ public class PDFGenerator {
         }
 
         // Get the application's base URL
-        FacesContext facesContext = FacesContext.getCurrentInstance();
-        ExternalContext externalContext = facesContext.getExternalContext();
-        String baseUrl = externalContext.getRequestScheme() + "://"
-                + externalContext.getRequestServerName() + ":"
-                + externalContext.getRequestServerPort()
-                + externalContext.getRequestContextPath();
+        String baseUrl = "/Mercurius";
 
         // Store local path (for direct file access, avoids URL round-trip)
         this.pdfLocalPath = filePath;

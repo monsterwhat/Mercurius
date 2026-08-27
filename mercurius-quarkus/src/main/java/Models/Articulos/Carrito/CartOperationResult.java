@@ -20,7 +20,7 @@ import jakarta.annotation.Nullable;
  */
 public class CartOperationResult {
 
-    /** Espejo fiel de las severidades de jakarta.faces.application.FacesMessage. */
+    /** Espejo fiel de las severidades de FacesMessage severity. */
     public enum Severity {
         INFO, WARN, ERROR
     }

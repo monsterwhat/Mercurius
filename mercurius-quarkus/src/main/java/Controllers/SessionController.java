@@ -7,9 +7,9 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
-import jakarta.faces.application.FacesMessage;
-import jakarta.faces.context.ExternalContext;
-import jakarta.faces.context.FacesContext;
+
+
+
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.validation.constraints.NotEmpty;
@@ -49,7 +49,8 @@ public class SessionController implements Serializable{
     
     @Inject @Nonnull private LoginService loginService;
     
-    @Inject @Nonnull FacesContext facesContext;
+    @Inject HttpServletRequest httpRequest;
+    @Inject HttpServletResponse httpResponse;
     @Inject @Nonnull SecurityIdentity securityIdentity;
     @Inject @Nonnull private AlertasService alertas;
 
@@ -67,32 +68,31 @@ public class SessionController implements Serializable{
                 }
             } else {
                 alertas.registrarAlerta("Intento de Login Fallido", "Usuario: " + username + " - Credenciales incorrectas", null, 0, "executeLogin()", username, null);
-                facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El nombre de usuario o contrasena son incorrectos."));
+                alertas.registrarAlerta("Error", "Credenciales invalidas", null, 0, "SessionController.login", null, null);
             }
             
         } catch (IOException e) { 
             alertas.registrarAlerta("Error al iniciar sesion " + username, e.getLocalizedMessage(), null, 0, "sessionController.executelogin()", e.getLocalizedMessage(), null);
-            FacesMessage message = new FacesMessage("Error", "Error al iniciar sesion");
-            FacesContext.getCurrentInstance().addMessage(null, message);
+            alertas.registrarAlerta("Error", "Error al iniciar sesion", null, 0, "SessionController.login", null, null);
             alertas.registrarAlerta("Error", "Error logging in " + e.getLocalizedMessage(), null, 0, "SessionController.login()", null, e.getLocalizedMessage());
         }
     }
     
     private void redirectToSecuredArea() throws IOException {
-        ExternalContext ec = facesContext.getExternalContext();
-        ec.redirect(ec.getRequestContextPath() + "/app/dashboard");
+        HttpServletRequest ec = httpRequest;
+        httpResponse.sendRedirect(httpRequest.getContextPath() + "/app/dashboard");
     }
     
     public synchronized void logOut() {
-        ExternalContext ec = null;
+        HttpServletRequest ec = null;
         try {
-            ec = FacesContext.getCurrentInstance().getExternalContext();
+            ec = httpRequest;
             
             // Register logout alert before destroying session
             Users userToLog = getCurrentUser();
             
             // Invalidate session FIRST to prevent session fixation
-            ec.invalidateSession();
+            httpRequest.getSession().invalidate();
             
             // Clear user data after session invalidation
             this.currentUser = null;
@@ -103,7 +103,7 @@ public class SessionController implements Serializable{
             }
             
             // Redirect after session is properly invalidated
-            ec.redirect(ec.getRequestContextPath() + "/login");
+            httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
             
         } catch (IOException e) { 
             alertas.registrarAlerta("Error al cerrar sesion", e.getLocalizedMessage(), null, 0, "sessionController.logout()", null, null);
@@ -112,7 +112,7 @@ public class SessionController implements Serializable{
             // Fallback redirect if primary fails
             try {
                 if (ec != null) {
-                    ec.redirect(ec.getRequestContextPath() + "/login");
+                    httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
                 }
             } catch (IOException fallbackEx) {
                 alertas.registrarAlerta("Error", "Fallback redirect failed: " + fallbackEx.getLocalizedMessage(), null, 0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage());
@@ -122,7 +122,7 @@ public class SessionController implements Serializable{
             alertas.registrarAlerta("Error", "Session already invalidated: " + e.getLocalizedMessage(), null, 0, "SessionController.logout()", null, e.getLocalizedMessage());
             try {
                 if (ec != null) {
-                    ec.redirect(ec.getRequestContextPath() + "/login");
+                    httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
                 }
             } catch (IOException fallbackEx) {
                 alertas.registrarAlerta("Error", "Redirect after invalid session failed: " + fallbackEx.getLocalizedMessage(), null, 0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage());
@@ -205,23 +205,23 @@ public class SessionController implements Serializable{
     }
     
     private HttpServletRequest getRequest() {
-        return (HttpServletRequest) facesContext.getExternalContext().getRequest();
+        return httpRequest;
     }
     
-    private ExternalContext getExternalContext(){
-     return facesContext.getExternalContext();
+    private HttpServletRequest getHttpServletRequest(){
+     return httpRequest;
     }
     
     public void errorMessage(@Nonnull String message){
-        facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", message));
+        alertas.registrarAlerta("Error", message, null, 0, "SessionController", null, null);
     }
     
     public void infoMessage(@Nonnull String message){
-        facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_INFO, "Exito", message));
+        alertas.registrarAlerta("Info", message, null, 0, "SessionController", null, null);
     }
         
     public void warnMessage(@Nonnull String message){
-        facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_WARN, "Advertencia", message));
+        alertas.registrarAlerta("Advertencia", message, null, 0, "SessionController", null, null);
     }
     
     @Nullable
@@ -277,7 +277,7 @@ public class SessionController implements Serializable{
                     warnMessage("El nuevo correo no puede ser igual");
                 }
             }else{
-                facesContext.addMessage(null, new FacesMessage(FacesMessage.SEVERITY_ERROR, "Error", "El nuevo correo no puede estar vacio."));
+                alertas.registrarAlerta("Error", "El nuevo correo no puede estar vacio.", null, 0, "SessionController", null, null);
             }
         }
     }
