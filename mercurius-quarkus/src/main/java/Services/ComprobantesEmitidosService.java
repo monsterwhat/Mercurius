@@ -40,6 +40,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     public void create(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.create()", null, e.getMessage());
         }
@@ -68,6 +69,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
 
             if (entity != null) {
                 em.remove(entity);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ComprobantesEmitidosService.delete()", null, null);
             }
@@ -81,6 +83,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
     public void update(@Nonnull ComprobantesEmitidos entity) {
         try {
             em.merge(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ComprobantesEmitidosService.update()", null, e.getMessage());
         }
@@ -96,6 +99,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 // Soft delete the item by setting its status to false
                 existingItem.setStatus(false);
                 em.merge(existingItem);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "ComprobantesEmitidosService.softDelete()", null, null);
             }
@@ -118,6 +122,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                     existingItem.setStatus(true);
                 }
                 em.merge(existingItem);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for toggle", null, 0, "ComprobantesEmitidosService.toggle()", null, null);
             }

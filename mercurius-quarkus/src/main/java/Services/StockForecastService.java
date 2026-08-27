@@ -291,7 +291,20 @@ public class StockForecastService {
         .getResultList();
 
         return results.stream()
-            .map(row -> new SalesData((LocalDate) row[0], ((Number) row[1]).longValue()))
+            .map(row -> {
+                Object dateObj = row[0];
+                LocalDate date;
+                if (dateObj instanceof LocalDate) {
+                    date = (LocalDate) dateObj;
+                } else if (dateObj instanceof java.sql.Date) {
+                    date = ((java.sql.Date) dateObj).toLocalDate();
+                } else if (dateObj instanceof java.util.Date) {
+                    date = ((java.util.Date) dateObj).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                } else {
+                    date = LocalDate.parse(dateObj.toString());
+                }
+                return new SalesData(date, ((Number) row[1]).longValue());
+            })
             .collect(Collectors.toList());
     }
 

@@ -34,6 +34,7 @@ public class ArticulosService extends GService<Articulos> {
     public void create(@Nonnull Articulos entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ArticulosService.create()", null, e.getMessage());
         }
@@ -48,6 +49,7 @@ public class ArticulosService extends GService<Articulos> {
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ArticulosService.method()", null, null);
             }
@@ -60,6 +62,7 @@ public class ArticulosService extends GService<Articulos> {
     public void update(@Nonnull Articulos entity) {
         try {
             em.merge(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ArticulosService.method()", null, e.getMessage());
         }
@@ -86,9 +89,11 @@ public class ArticulosService extends GService<Articulos> {
                 existingItem.setStatus(false);
                 existingItem.setProcessed(true);
                 em.merge(existingItem);
+            em.flush();
 
                 // Create a new item with the updated information
                 em.persist(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ArticulosService.method()", null, null);
             }
@@ -116,6 +121,7 @@ public class ArticulosService extends GService<Articulos> {
                 // Soft delete the item by setting its status to false
                 existingItem.setStatus(false);
                 em.merge(existingItem);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ArticulosService.method()", null, null);
             }

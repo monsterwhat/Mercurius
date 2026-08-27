@@ -46,6 +46,7 @@ public class InventarioService extends GService<Inventario> {
     public void create(@Nonnull Inventario entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.create()", null, e.getMessage());
         }
@@ -54,7 +55,9 @@ public class InventarioService extends GService<Inventario> {
     public void createWithStock(@Nonnull Inventario entity) {
         try {
             em.persist(entity);
+            em.flush();
             updateStock(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.createWithStock()", null, e.getMessage());
         }
@@ -69,6 +72,7 @@ public class InventarioService extends GService<Inventario> {
 
             if (entity != null) {
                 em.remove(entity);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for deletion", null, 0, "InventarioService.delete()", null, null);
             }
@@ -81,7 +85,9 @@ public class InventarioService extends GService<Inventario> {
     public void update(@Nonnull Inventario entity) {
         try {
             em.merge(entity);
+            em.flush();
             updateStock(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.update()", null, e.getMessage());
         }
@@ -100,7 +106,9 @@ public class InventarioService extends GService<Inventario> {
                 existingItem.setFechaMovimiento(entity.getFechaMovimiento());
                 existingItem.setNotas(entity.getNotas());
                 em.merge(existingItem);
+                em.flush();
                 updateStock(existingItem);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for markAsProcessed", null, 0, "InventarioService.markAsProcessed()", null, null);
             }
@@ -139,6 +147,7 @@ public class InventarioService extends GService<Inventario> {
                 // Soft delete the item by setting its status to false
                 existingItem.setStatus(false);
                 em.merge(existingItem);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "InventarioService.softDelete()", null, null);
             }
@@ -339,12 +348,14 @@ public class InventarioService extends GService<Inventario> {
                 // Update the existing stock record
                 existingStock.setStock(existingStock.getStock().add(entity.getCantidad()));
                 em.merge(existingStock);
+            em.flush();
             } else {
                 // Create a new stock record
                 ArticuloStock newStock = new ArticuloStock();
                 newStock.setCodigoBarra(codigoBarra);
                 newStock.setStock(entity.getCantidad()); // Set initial stock
                 em.persist(newStock);
+            em.flush();
             }
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating stock: " + e.getMessage(), entity.getUsuario(), 0, "InventarioService.updateStock()", null, e.getMessage());

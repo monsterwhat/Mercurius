@@ -899,13 +899,32 @@ public class OrdenCompraResource {
      * {@code calcularSubtotal()} and the recomputed total.
      */
     private void reemplazarDetalles(@Nonnull OrdenCompra orden,
-                                    @Nonnull List<OrdenCompraLineaDTO> lineas) {
+                                     @Nonnull List<OrdenCompraLineaDTO> lineas) {
         List<OrdenCompraDetalle> actuales = orden.getDetalles();
         if (actuales == null) {
             actuales = new ArrayList<>();
             orden.setDetalles(actuales);
         }
-        actuales.clear();
+        try {
+            // Ensure LAZY collection is initialized within the current session before clear
+            actuales.size();
+        } catch (Exception ignore) {
+            // If detached, re-fetch via service within same Tx
+            OrdenCompra fresh = ordenCompraService.find(orden.getId());
+            if (fresh != null && fresh.getDetalles() != null) {
+                try { fresh.getDetalles().size(); } catch (Exception ex) {}
+                actuales = fresh.getDetalles();
+                orden.setDetalles(actuales);
+            }
+        }
+        try {
+            actuales.clear();
+        } catch (org.hibernate.LazyInitializationException e) {
+            // Fallback: replace collection instance entirely (works with orphanRemoval)
+            List<OrdenCompraDetalle> replacement = new ArrayList<>();
+            orden.setDetalles(replacement);
+            actuales = replacement;
+        }
         for (OrdenCompraDetalle detalle : construirDetalles(orden, lineas)) {
             detalle.calcularSubtotal();
             actuales.add(detalle);

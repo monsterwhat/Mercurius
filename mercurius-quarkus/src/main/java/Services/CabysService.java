@@ -48,6 +48,7 @@ public class CabysService extends GService<Cabys>{
     public void create(@Nonnull Cabys entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (jakarta.persistence.PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "CabysService.create()", null, e.getMessage());
         }
@@ -77,6 +78,7 @@ public class CabysService extends GService<Cabys>{
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "CabysService.delete()", null, null);
             }

@@ -37,6 +37,7 @@ public class UserService extends GService<Users> {
                 entity.setPassword(hashPassword(entity.getPassword()));
             }
             em.persist(entity);
+            em.flush();
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error creating user: " + e.getMessage(), null, 0, "UserService.create()", null, e.getMessage());
         }
@@ -66,6 +67,7 @@ public class UserService extends GService<Users> {
                 }
             }
             em.merge(entity);
+            em.flush();
         } catch (RuntimeException e) {
             alertasService.registrarAlerta("Error", "Error updating user: " + e.getMessage(), null, 0, "UserService.update()", null, e.getMessage());
         }
@@ -80,6 +82,7 @@ public class UserService extends GService<Users> {
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "UserService.delete()", null, null);
             }

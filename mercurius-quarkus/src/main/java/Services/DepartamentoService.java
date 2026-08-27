@@ -77,6 +77,7 @@ public class DepartamentoService extends GService<Departamento> {
     public void create(@Nonnull Departamento entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "DepartamentoService.create()", null, e.getMessage());
         }
@@ -92,6 +93,7 @@ public class DepartamentoService extends GService<Departamento> {
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.delete()", null, null);
             }
@@ -108,6 +110,7 @@ public class DepartamentoService extends GService<Departamento> {
                 entity.setStatus(true);
             }
             em.merge(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "DepartamentoService.update()", null, e.getMessage());
         }
@@ -163,6 +166,7 @@ public class DepartamentoService extends GService<Departamento> {
                     result = Tipo_SoftDelete.ACTIVATED;
                 }
                 em.merge(existingItem);
+            em.flush();
                 return result;
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.softDelete()", null, null);

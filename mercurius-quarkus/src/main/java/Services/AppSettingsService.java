@@ -25,12 +25,14 @@ public class AppSettingsService extends GService<AppSettings> {
     public void disable(@Nonnull AppSettings entity) {
         try {
             if (!em.contains(entity)) {
-                entity = em.find(getEntityClass(), entity);
+                Object id = em.getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entity);
+                entity = em.find(getEntityClass(), id);
             }
 
             if (entity != null) {
                 entity.setEstatus(false);
                 em.merge(entity);
+                em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "AppSettingsService.disable()", null, null);
             }

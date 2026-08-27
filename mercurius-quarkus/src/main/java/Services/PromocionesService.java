@@ -55,6 +55,7 @@ public class PromocionesService extends GService<Promocion> {
     public void create(Promocion entity) {
         try {
             em.persist(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "PromocionesService.create()", null, e.getMessage());
         }
@@ -69,6 +70,7 @@ public class PromocionesService extends GService<Promocion> {
 
             if (entity != null) {
                 em.remove(entity);
+            em.flush();
             } else {
                 alertasService.registrarAlerta("Info", "Entity not found", null, 0, "PromocionesService.delete()", null, null);
             }
@@ -84,6 +86,7 @@ public class PromocionesService extends GService<Promocion> {
                 entity.setActiva(true);
             }
             em.merge(entity);
+            em.flush();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "PromocionesService.update()", null, e.getMessage());
         }
