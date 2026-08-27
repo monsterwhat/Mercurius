@@ -16,6 +16,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
@@ -60,6 +61,7 @@ public class ComprobantesRecibidosPrevalidationService {
 
     // ─── Orchestrator ─────────────────────────────────────────────────
 
+    @Transactional
     /**
      * Main orchestrator: runs all three validators and returns aggregated results.
      * Accepts a comprobante ID (Long).
