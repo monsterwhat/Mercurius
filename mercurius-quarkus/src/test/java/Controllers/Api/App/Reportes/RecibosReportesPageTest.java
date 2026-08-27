@@ -92,8 +92,8 @@ class RecibosReportesPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "facturacion"})
     void vencidoFilterSeparatesBucketsAndCountsMatchService() {
-        String vencidoConsecutivo = "IT-T20-V-" + UUID.randomUUID();
-        String pendienteConsecutivo = "IT-T20-P-" + UUID.randomUUID();
+        String vencidoConsecutivo = "IT-V-" + UUID.randomUUID().toString().substring(0, 8);
+        String pendienteConsecutivo = "IT-P-" + UUID.randomUUID().toString().substring(0, 8);
         ComprobantesRecibidos vencida = null;
         ComprobantesRecibidos pendiente = null;
         try {
