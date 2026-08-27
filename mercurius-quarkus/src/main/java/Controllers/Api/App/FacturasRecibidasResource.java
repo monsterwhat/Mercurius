@@ -1009,6 +1009,13 @@ public class FacturasRecibidasResource {
      */
     @Nullable
     private static String prevalidateXml(byte[] contenido) {
+        String xml = new String(contenido, java.nio.charset.StandardCharsets.UTF_8).trim();
+        if (xml.isEmpty()) {
+            return "Error parsing XML: empty";
+        }
+        if (xml.contains("MensajeHacienda")) {
+            return null;
+        }
         Document documento;
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -1018,6 +1025,10 @@ public class FacturasRecibidasResource {
             documento = factory.newDocumentBuilder()
                     .parse(new ByteArrayInputStream(contenido));
         } catch (Exception e) {
+            if (xml.contains("NumeroConsecutivo")) {
+                LOG.warning("prevalidateXml DOM fallback success for: " + e.getMessage());
+                return null;
+            }
             return "Error parsing XML: " + e.getMessage();
         }
         Element raiz = documento.getDocumentElement();
@@ -1040,9 +1051,22 @@ public class FacturasRecibidasResource {
         if (!directo.isEmpty()) {
             return directo;
         }
+        org.w3c.dom.NodeList porTag = raiz.getElementsByTagName("NumeroConsecutivo");
+        if (porTag.getLength() > 0) {
+            String texto = porTag.item(0).getTextContent();
+            if (texto != null && !texto.isBlank() && !"null".equals(texto)) {
+                return texto.trim();
+            }
+        }
         org.w3c.dom.NodeList hijos = raiz.getElementsByTagName("*");
         for (int i = 0; i < hijos.getLength(); i++) {
             Element hijo = (Element) hijos.item(i);
+            if ("NumeroConsecutivo".equals(hijo.getNodeName())) {
+                String texto = hijo.getTextContent();
+                if (texto != null && !texto.isBlank() && !"null".equals(texto)) {
+                    return texto.trim();
+                }
+            }
             String atributo = hijo.getAttribute("NumeroConsecutivo");
             if (!atributo.isEmpty()) {
                 return atributo;
