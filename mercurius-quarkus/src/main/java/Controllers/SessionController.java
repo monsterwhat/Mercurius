@@ -80,7 +80,7 @@ public class SessionController implements Serializable{
     
     private void redirectToSecuredArea() throws IOException {
         ExternalContext ec = facesContext.getExternalContext();
-        ec.redirect(ec.getRequestContextPath() + "/secured/index.xhtml");
+        ec.redirect(ec.getRequestContextPath() + "/app/dashboard");
     }
     
     public synchronized void logOut() {
@@ -103,7 +103,7 @@ public class SessionController implements Serializable{
             }
             
             // Redirect after session is properly invalidated
-            ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
+            ec.redirect(ec.getRequestContextPath() + "/login");
             
         } catch (IOException e) { 
             alertas.registrarAlerta("Error al cerrar sesion", e.getLocalizedMessage(), null, 0, "sessionController.logout()", null, null);
@@ -112,7 +112,7 @@ public class SessionController implements Serializable{
             // Fallback redirect if primary fails
             try {
                 if (ec != null) {
-                    ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
+                    ec.redirect(ec.getRequestContextPath() + "/login");
                 }
             } catch (IOException fallbackEx) {
                 alertas.registrarAlerta("Error", "Fallback redirect failed: " + fallbackEx.getLocalizedMessage(), null, 0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage());
@@ -122,7 +122,7 @@ public class SessionController implements Serializable{
             alertas.registrarAlerta("Error", "Session already invalidated: " + e.getLocalizedMessage(), null, 0, "SessionController.logout()", null, e.getLocalizedMessage());
             try {
                 if (ec != null) {
-                    ec.redirect(ec.getRequestContextPath() + "/index.xhtml");
+                    ec.redirect(ec.getRequestContextPath() + "/login");
                 }
             } catch (IOException fallbackEx) {
                 alertas.registrarAlerta("Error", "Redirect after invalid session failed: " + fallbackEx.getLocalizedMessage(), null, 0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage());

@@ -114,14 +114,14 @@ public class DepartamentoService extends GService<Departamento> {
     }
 
     @Override
-    @Nullable
+    @Nonnull
     public List<Departamento> listAll() {
         try {
             TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d", Departamento.class);
             return query.getResultList();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "DepartamentoService.listAll()", null, e.getMessage());
-            return null;
+            return List.of();
         }
     }
     
@@ -135,14 +135,14 @@ public class DepartamentoService extends GService<Departamento> {
         }
     }
     
-    @Nullable
+    @Nonnull
     public List<Departamento> listAllActive() {
         try {
             TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d WHERE d.status = true", Departamento.class);
             return query.getResultList();
         } catch (PersistenceException e) {
             alertasService.registrarAlerta("Error", "Error listing active departamentos: " + e.getMessage(), null, 0, "DepartamentoService.listAllActive()", null, e.getMessage());
-            return null;
+            return List.of();
         }
     }
 
