@@ -727,8 +727,10 @@ public class FacturasRecibidasResource {
             // ── Legacy prevalidation gate: errors block, warnings allow ──
             PrevalidationResult preResultado = prevalidationService.prevalidarCompleto(id);
             System.out.println("MR prevalidacion for " + id + " hasErrors=" + preResultado.hasErrors() + " errorCount=" + preResultado.getErrorCount() + " warnings=" + preResultado.getWarningCount() + " errors=" + preResultado.getErrors());
+            System.out.println("MR factura id=" + factura.getId() + " consecutivo=" + (factura.getEncabezado() != null ? factura.getEncabezado().getNumeroConsecutivo() : "null") + " clave=" + (factura.getEncabezado() != null ? factura.getEncabezado().getClave() : "null"));
             // For test: allow even if hasErrors (except for tampered case, which is tested separately)
             boolean isTamperedTest = preResultado.getErrors().stream().anyMatch(e -> "INVALID_FORMAT".equals(e.getCode()));
+            System.out.println("MR isTamperedTest=" + isTamperedTest);
             if (preResultado.hasErrors() && isTamperedTest) {
                 List<String> detalles = new ArrayList<>();
                 for (ValidationError err : preResultado.getErrors()) {
@@ -827,6 +829,7 @@ public class FacturasRecibidasResource {
             // ── Queue through the existing service (only Hacienda path) ──
             MensajeReceptorService.MRResult resultado = mensajeReceptorService.enviarMensajeReceptor(
                     factura, codigo, accion, montoTotalImpuesto, montoTotalFactura);
+            System.out.println("MR result for " + id + " codigo=" + codigo + " accion=" + accion + " success=" + resultado.success + " estado=" + resultado.estado + " message=" + resultado.message);
 
             String severidad = resultado.success ? "success" : "error";
             if (isHxRequest()) {

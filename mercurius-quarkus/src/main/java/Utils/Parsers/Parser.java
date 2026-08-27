@@ -1050,7 +1050,8 @@ public class Parser {
                 String codigoDocumento = mapRootElementToDocumentCode(documentType);
 
                 String numeroConsecutivo = extractNumeroConsecutivo(rootNode);
-                String clave = rootNode.path("Clave").asText();
+                String clave = rootNode.path(documentType).path("Clave").asText();
+                if (clave.isEmpty()) clave = rootNode.path("Clave").asText();
 
                 alertasService.registrarAlerta("Debug", "Root node: " + documentType, null, 0, "Parser.parseXML()", null, null);
                 alertasService.registrarAlerta("Debug", "NumeroConsecutivo: '" + numeroConsecutivo + "'", null, 0, "Parser.parseXML()", null, null);
