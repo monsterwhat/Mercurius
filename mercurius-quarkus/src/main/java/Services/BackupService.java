@@ -64,7 +64,7 @@ public class BackupService implements Serializable {
         try {
             AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) {
-                                LOG.log(java.util.logging.Level.WARNING, "No se encontró configuración activa para ejecutar backup" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.log(java.util.logging.Level.WARNING, "No se encontró configuración activa para ejecutar backup" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return false;
             }
 
@@ -106,22 +106,22 @@ public class BackupService implements Serializable {
                 appSettingsService.update(settings);
 
                                 LOG.info("Backup completado: " + filename
-                    + " (" + getTamanioBackup(outputFile.toFile()) + ")" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                    + " (" + getTamanioBackup(outputFile.toFile()) + ")" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
                 limpiarBackupsViejos();
                 return true;
             } else {
-                                LOG.log(java.util.logging.Level.WARNING, "pg_dump falló con código: " + exitCode + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.log(java.util.logging.Level.WARNING, "pg_dump falló con código: " + exitCode + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 try { Files.deleteIfExists(outputFile); } catch (IOException ignored) {}
                 return false;
             }
 
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error de E/S en backup: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error de E/S en backup: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-                        LOG.log(java.util.logging.Level.WARNING, "Backup interrumpido: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Backup interrumpido: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -155,12 +155,12 @@ public class BackupService implements Serializable {
                 long ageDays = age / (24L * 60 * 60 * 1000);
                 if (ageDays >= retencionDias) {
                     Files.delete(file);
-                                        LOG.info("Backup viejo eliminado: " + file.getFileName() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                        LOG.info("Backup viejo eliminado: " + file.getFileName() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 }
             }
 
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error limpiando backups viejos: " + e.getMessage() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error limpiando backups viejos: " + e.getMessage() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -193,7 +193,7 @@ public class BackupService implements Serializable {
             }
 
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listando backups: " + e.getMessage() + " | source=" + "BackupService.listarBackups()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listando backups: " + e.getMessage() + " | source=" + "BackupService.listarBackups()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
         return result;
     }
@@ -295,7 +295,7 @@ public class BackupService implements Serializable {
             }
 
         } catch (URISyntaxException e) {
-                        LOG.info("No se pudo parsear JDBC URL: " + e.getMessage() + " | source=" + "BackupService.parseJdbcUrl()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("No se pudo parsear JDBC URL: " + e.getMessage() + " | source=" + "BackupService.parseJdbcUrl()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         }
 
         return info;

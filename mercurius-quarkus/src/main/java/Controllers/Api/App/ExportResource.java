@@ -67,15 +67,19 @@ public class ExportResource {
             DateTimeFormatter.ofPattern("yyyyMMdd HH:mm").withLocale(Locale.ROOT);
 
     @Nonnull
+    @Inject
     ArticulosService articulosService;
 
     @Nonnull
+    @Inject
     InventarioService inventarioService;
 
     @Nonnull
+    @Inject
     StockAlertService stockAlertService;
 
     @Nonnull
+    @Inject
     ProfitAnalysisService profitAnalysisService;
 
     /**

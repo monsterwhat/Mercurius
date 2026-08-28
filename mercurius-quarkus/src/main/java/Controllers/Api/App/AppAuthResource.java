@@ -64,8 +64,10 @@ public class AppAuthResource {
             List.of("admin", "facturacion", "inventario", "usuario", "tributacion", "registro");
 
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
@@ -157,7 +159,7 @@ public class AppAuthResource {
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response logout(@Context UriInfo uriInfo) {
-        if (!securityIdentity.isAnonymous()) {
+        if (securityIdentity != null && !securityIdentity.isAnonymous()) {
             FormAuthenticationMechanism.logout(securityIdentity);
         }
         URI loginUri = uriInfo.getBaseUriBuilder().path("login").build();

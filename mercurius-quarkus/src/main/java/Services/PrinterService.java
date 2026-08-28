@@ -28,39 +28,39 @@ public class PrinterService implements Serializable{
 
 
     public void printPDFFile(@Nonnull File fileToPrint) {
-                LOG.info("Attempting to print PDF: " + fileToPrint.getAbsolutePath() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                LOG.info("Attempting to print PDF: " + fileToPrint.getAbsolutePath() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         
         try {
             PDDocument document = Loader.loadPDF(fileToPrint);
             
             PrintService printService = PrintServiceLookup.lookupDefaultPrintService();
-                        LOG.info("Default print service: " + (printService != null ? printService.getName() : "null") + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Default print service: " + (printService != null ? printService.getName() : "null") + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
            
             if (printService != null) {
                 try {
                     PrinterJob job = PrinterJob.getPrinterJob();
-                                        LOG.info("Created printer job, attempting to print..." + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                        LOG.info("Created printer job, attempting to print..." + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
            
                     job.setPageable(new PDFPageable(document));
                     job.setPrintService(printService);
                     job.print();
-                                        LOG.info("Print job submitted successfully to printer: " + printService.getName() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                        LOG.info("Print job submitted successfully to printer: " + printService.getName() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 } catch (PrinterException e) {
-                                        LOG.log(java.util.logging.Level.WARNING, "Printer error: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                                        LOG.log(java.util.logging.Level.WARNING, "Printer error: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
                 } catch (NullPointerException e) {
-                                        LOG.log(java.util.logging.Level.WARNING, "Null pointer error during printing: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                                        LOG.log(java.util.logging.Level.WARNING, "Null pointer error during printing: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
                 }
             } else {
-                                LOG.log(java.util.logging.Level.WARNING, "No default print service found." + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.log(java.util.logging.Level.WARNING, "No default print service found." + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
                 for (PrintService service : services) {
-                                        LOG.info("  - " + service.getName() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                        LOG.info("  - " + service.getName() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 }
             }
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "IO Error loading PDF: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "IO Error loading PDF: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Unexpected error: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Unexpected error: " + e.getMessage() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 }

@@ -45,10 +45,10 @@ public class ApiClientsService extends GService<ApiClients> {
                 defaultClient.setCreatedAt(new Date());
                 defaultClient.setName("Default Dev Client");
                 create(defaultClient);
-                                LOG.info("Default API client 'mercurius-frontend' created" + " | source=" + "ApiClientsService.init()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Default API client 'mercurius-frontend' created" + " | source=" + "ApiClientsService.init()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error seeding default API client: " + e.getMessage() + " | source=" + "ApiClientsService.init()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error seeding default API client: " + e.getMessage() + " | source=" + "ApiClientsService.init()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -64,7 +64,7 @@ public class ApiClientsService extends GService<ApiClients> {
             List<ApiClients> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding ApiClient by clientId: " + e.getMessage() + " | source=" + "ApiClientsService.findByClientId()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding ApiClient by clientId: " + e.getMessage() + " | source=" + "ApiClientsService.findByClientId()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -79,7 +79,7 @@ public class ApiClientsService extends GService<ApiClients> {
                 ApiClients.class);
             return query.getResultList();
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing active ApiClients: " + e.getMessage() + " | source=" + "ApiClientsService.findActive()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing active ApiClients: " + e.getMessage() + " | source=" + "ApiClientsService.findActive()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -92,7 +92,7 @@ public class ApiClientsService extends GService<ApiClients> {
             BCrypt.Result result = BCrypt.verifyer().verify(plainSecret.toCharArray(), hashedSecret);
             return result.verified;
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Client secret verification error: " + e.getMessage() + " | source=" + "ApiClientsService.verifySecret()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Client secret verification error: " + e.getMessage() + " | source=" + "ApiClientsService.verifySecret()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }

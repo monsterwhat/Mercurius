@@ -100,7 +100,7 @@ public class MarketplaceOrderService {
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating order: " + e.getMessage() + " | source=" + "MarketplaceOrderService.createOrderFromCart()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating order: " + e.getMessage() + " | source=" + "MarketplaceOrderService.createOrderFromCart()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Error al crear la orden", e);
         }
     }
@@ -119,7 +119,7 @@ public class MarketplaceOrderService {
             if (orders == null || orders.isEmpty()) return Collections.emptyList();
             return orders.stream().map(this::toOrderDTO).collect(Collectors.toList());
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing client orders: " + e.getMessage() + " | source=" + "MarketplaceOrderService.listClientOrders()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing client orders: " + e.getMessage() + " | source=" + "MarketplaceOrderService.listClientOrders()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -134,7 +134,7 @@ public class MarketplaceOrderService {
             if (order == null || order.getClientCode() != clientCode) return null;
             return toOrderDTO(order);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error getting order: " + e.getMessage() + " | source=" + "MarketplaceOrderService.getOrder()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting order: " + e.getMessage() + " | source=" + "MarketplaceOrderService.getOrder()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -153,7 +153,7 @@ public class MarketplaceOrderService {
             em.merge(order);
             return true;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error cancelling order: " + e.getMessage() + " | source=" + "MarketplaceOrderService.cancelOrder()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error cancelling order: " + e.getMessage() + " | source=" + "MarketplaceOrderService.cancelOrder()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }

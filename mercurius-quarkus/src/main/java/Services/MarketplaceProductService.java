@@ -80,7 +80,7 @@ public class MarketplaceProductService {
             }
             return dtos;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.listActiveProducts()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.listActiveProducts()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -121,7 +121,7 @@ public class MarketplaceProductService {
             }
             return dtos;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error searching marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.searchProducts()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error searching marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.searchProducts()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -168,7 +168,7 @@ public class MarketplaceProductService {
 
             return dto;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error getting product detail: " + e.getMessage() + " | source=" + "MarketplaceProductService.getProductDetail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting product detail: " + e.getMessage() + " | source=" + "MarketplaceProductService.getProductDetail()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

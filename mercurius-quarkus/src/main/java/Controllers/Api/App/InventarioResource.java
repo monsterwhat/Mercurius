@@ -166,68 +166,84 @@ public class InventarioResource {
     private static final String MSG_FALTA_CONSECUTIVO = "XML inválido: falta el número consecutivo";
 
     @Nonnull
+    @Inject
     InventarioService inventarioService;
 
     @Nonnull
+    @Inject
     ArticulosService articulosService;
 
     @Nonnull
+    @Inject
     LoginService loginService;
 
     @Nonnull
     Parser parser;
 
+    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as LoginPageResource/CategoriaResource).
     @Nonnull
     @Location("pages/inventario/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/inventario/tabla-activos.html")
+    @Inject
     Template tablaActivos;
 
     @Nonnull
     @Location("pages/inventario/tabla-inactivos.html")
+    @Inject
     Template tablaInactivos;
 
     @Nonnull
     @Location("pages/inventario/tabla-procesados.html")
+    @Inject
     Template tablaProcesados;
 
     @Nonnull
     @Location("pages/inventario/tabla-pendientes.html")
+    @Inject
     Template tablaPendientes;
 
     @Nonnull
     @Location("pages/inventario/badges.html")
+    @Inject
     Template badges;
 
     @Nonnull
     @Location("pages/inventario/form-ajuste.html")
+    @Inject
     Template formAjuste;
 
     @Nonnull
     @Location("pages/inventario/form-revision.html")
+    @Inject
     Template formRevision;
 
     @Nonnull
     @Location("pages/inventario/form-rapido.html")
+    @Inject
     Template formRapido;
 
     @Nonnull
     @Location("pages/inventario/detalles-ajuste.html")
+    @Inject
     Template detallesAjuste;
 
     @Nonnull
     @Location("pages/inventario/upload-resultado.html")
+    @Inject
     Template uploadResultado;
 
     // ════════════════════════════════════════════════════════════════════
@@ -709,12 +725,12 @@ public class InventarioResource {
             return new UploadFileResult(fileName, false, "No se pudo leer el archivo: " + e.getMessage());
         }
         if (contenido.length == 0) {
-                        LOG.log(java.util.logging.Level.WARNING, "File is null or empty: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
+                        LOG.log(java.util.logging.Level.WARNING, "File is null or empty: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, "El archivo está vacío");
         }
         String errorPrevalidacion = prevalidateXml(contenido);
         if (errorPrevalidacion != null) {
-                        LOG.log(java.util.logging.Level.WARNING, errorPrevalidacion + " (" + fileName + ")" + " | source=" + "InventarioResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
+                        LOG.log(java.util.logging.Level.WARNING, errorPrevalidacion + " (" + fileName + ")" + " | source=" + "InventarioResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, errorPrevalidacion);
         }
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(contenido)) {
@@ -723,7 +739,7 @@ public class InventarioResource {
             // the authenticated principal instead of the JSF session.
             AsyncUserContext.setCurrentUser(username);
             parser.parseXML(inputStream);
-                        LOG.info("Successfully processed file: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
+                        LOG.info("Successfully processed file: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
                         LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));

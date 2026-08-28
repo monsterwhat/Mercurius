@@ -55,18 +55,23 @@ public class AlertasStockResource {
     private static final String BASE_URL = "/app/reportes/inventario/alertas";
 
     @Nonnull
+    @Inject
     StockAlertService stockAlertService;
 
     @Nonnull
+    @Inject
     DepartamentoService departamentoService;
 
     @Nonnull
+    @Inject
     FamiliaService familiaService;
 
     @Location("pages/reportes/alertas")
+    @Inject
     Template pagina;
 
     @Location("pages/reportes/_tablas/alertas")
+    @Inject
     Template tabla;
 
     @GET

@@ -79,25 +79,30 @@ public class ClientsResource {
     private static final Logger LOG = Logger.getLogger(ClientsResource.class.getName());
 
     @Nonnull
+    @Inject
     ClientService clientService;
 
     
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
     @Nonnull
     @Location("pages/clientes/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/clientes/tabla.html")
+    @Inject
     Template tablaPage;
 
     @Nonnull
     @Location("pages/clientes/form.html")
+    @Inject
     Template formCliente;
 
     @GET
@@ -219,7 +224,7 @@ public class ClientsResource {
             // form auth lands (nullable FK).
             clientService.create(client);
 
-                        LOG.info("Se creo el cliente: " + client.getName() + " | source=" + "ClientsResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(client)));
+                        LOG.info("Se creo el cliente: " + client.getName() + " | source=" + "ClientsResource.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(client)));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDetailDTO(client)))

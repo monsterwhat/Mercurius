@@ -67,24 +67,29 @@ public class CabysResource {
     private static final Logger LOG = Logger.getLogger(CabysResource.class.getName());
 
     @Nonnull
+    @Inject
     CabysService cabysService;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
     @Nonnull
     @Location("pages/cabys/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/cabys/tabla.html")
+    @Inject
     Template tablaPage;
 
     @Nonnull
     @Location("pages/cabys/form.html")
+    @Inject
     Template formCabys;
 
     @GET

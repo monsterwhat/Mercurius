@@ -37,7 +37,7 @@ public class EncabezadoService extends GService<Encabezado> {
         try {
             em.merge(encabezado);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "EncabezadoService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "EncabezadoService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     
@@ -47,16 +47,16 @@ public class EncabezadoService extends GService<Encabezado> {
         try {
             // Check if encabezado with same numeroConsecutivo exists using count query
             if (existsByNumeroConsecutivo(encabezado.getNumeroConsecutivo())) {
-                                LOG.info("Using existing encabezado for: " + encabezado.getNumeroConsecutivo() + " | source=" + "EncabezadoService.createIfNotExists()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Using existing encabezado for: " + encabezado.getNumeroConsecutivo() + " | source=" + "EncabezadoService.createIfNotExists()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return null;
             }
             
             // Create new encabezado if not exists
             em.merge(encabezado);
-                        LOG.info("Successfully created encabezado for: " + encabezado.getNumeroConsecutivo() + " | source=" + "EncabezadoService.createIfNotExists()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Successfully created encabezado for: " + encabezado.getNumeroConsecutivo() + " | source=" + "EncabezadoService.createIfNotExists()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return encabezado;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating or finding encabezado: " + e.getMessage() + " | source=" + "EncabezadoService.createIfNotExists()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating or finding encabezado: " + e.getMessage() + " | source=" + "EncabezadoService.createIfNotExists()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -72,7 +72,7 @@ public class EncabezadoService extends GService<Encabezado> {
             Long count = query.getSingleResult();
             return count != null && count > 0;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error checking encabezado existence: " + e.getMessage() + " | source=" + "EncabezadoService.existsByNumeroConsecutivo()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error checking encabezado existence: " + e.getMessage() + " | source=" + "EncabezadoService.existsByNumeroConsecutivo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -90,7 +90,7 @@ public class EncabezadoService extends GService<Encabezado> {
             Long count = query.getSingleResult();
             return count != null && count > 0;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error checking valid comprobante existence: " + e.getMessage() + " | source=" + "EncabezadoService.existsByNumeroConsecutivoWithValidComprobante()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error checking valid comprobante existence: " + e.getMessage() + " | source=" + "EncabezadoService.existsByNumeroConsecutivoWithValidComprobante()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -108,7 +108,7 @@ public class EncabezadoService extends GService<Encabezado> {
             List<Encabezado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding existing encabezado: " + e.getMessage() + " | source=" + "EncabezadoService.findExistingEncabezado()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding existing encabezado: " + e.getMessage() + " | source=" + "EncabezadoService.findExistingEncabezado()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -119,7 +119,7 @@ public Encabezado getByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
             // Find existing record, handle duplicates gracefully
             return findExistingEncabezado(numeroConsecutivo);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error getting encabezado by numeroConsecutivo: " + e.getMessage() + " | source=" + "EncabezadoService.getByNumeroConsecutivo()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting encabezado by numeroConsecutivo: " + e.getMessage() + " | source=" + "EncabezadoService.getByNumeroConsecutivo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -146,7 +146,7 @@ public Encabezado getByNumeroConsecutivo(@Nonnull String numeroConsecutivo) {
             }
             return 0;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error cleaning duplicate encabezados: " + e.getMessage() + " | source=" + "EncabezadoService.cleanDuplicateEncabezados()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error cleaning duplicate encabezados: " + e.getMessage() + " | source=" + "EncabezadoService.cleanDuplicateEncabezados()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return 0;
         }
     }

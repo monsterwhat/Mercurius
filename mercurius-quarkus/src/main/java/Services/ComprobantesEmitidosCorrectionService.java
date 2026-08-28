@@ -90,14 +90,14 @@ public class ComprobantesEmitidosCorrectionService {
     public void corregirFactura(@Nonnull ComprobantesEmitidos factura) {
         String clave = factura.getHaciendaClave();
         try {
-                        LOG.info("Iniciando auto-corrección para factura: " + clave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Iniciando auto-corrección para factura: " + clave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             String motivoRechazo = factura.getEncabezado() != null
                 ? factura.getEncabezado().getMotivoRechazo() : null;
 
             Estrategia estrategia = determinarEstrategia(motivoRechazo);
             if (estrategia == Estrategia.NO_AUTOMATIZABLE) {
-                                LOG.info("Auto-corrección no posible para: " + clave + " - motivo: " + motivoRechazo + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Auto-corrección no posible para: " + clave + " - motivo: " + motivoRechazo + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 incrementarAttempts(factura);
                 return;
             }
@@ -111,7 +111,7 @@ public class ComprobantesEmitidosCorrectionService {
             // Verify clave is set on the clone
             String nuevaClave = nuevaFactura.getHaciendaClave();
             if (nuevaClave == null || nuevaClave.isEmpty()) {
-                                LOG.log(java.util.logging.Level.WARNING, "No se pudo generar clave para factura corregida" + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.log(java.util.logging.Level.WARNING, "No se pudo generar clave para factura corregida" + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 incrementarAttempts(factura);
                 return;
             }
@@ -126,15 +126,15 @@ public class ComprobantesEmitidosCorrectionService {
                 }
                 comprobantesEmitidosService.create(nuevaFactura);
 
-                                LOG.info("Auto-corrección exitosa: " + clave + " -> nueva clave: " + nuevaClave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Auto-corrección exitosa: " + clave + " -> nueva clave: " + nuevaClave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             } else {
-                                LOG.log(java.util.logging.Level.WARNING, "Hacienda rechazó factura corregida: " + result.errorMessage + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(result.errorMessage));
+                                LOG.log(java.util.logging.Level.WARNING, "Hacienda rechazó factura corregida: " + result.errorMessage + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(result.errorMessage));
             }
 
             incrementarAttempts(factura);
 
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error en auto-corrección de " + clave + ": " + e.getMessage() + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error en auto-corrección de " + clave + ": " + e.getMessage() + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             incrementarAttempts(factura);
         }
     }

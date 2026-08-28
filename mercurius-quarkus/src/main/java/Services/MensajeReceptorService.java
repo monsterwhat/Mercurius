@@ -129,7 +129,7 @@ public class MensajeReceptorService {
                 factura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
                 comprobantesRecibidosService.update(factura);
 
-                                LOG.info("Mensaje Receptor " + accion + ": " + clave + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Mensaje Receptor " + accion + ": " + clave + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
                 return new MRResult(true,
                     "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor enviado a Hacienda.",
@@ -144,7 +144,7 @@ public class MensajeReceptorService {
             }
 
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error en Mensaje Receptor: " + e.getMessage() + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error en Mensaje Receptor: " + e.getMessage() + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
 
             return new MRResult(false, "Error al procesar Mensaje Receptor: " + e.getMessage(), null);
         }

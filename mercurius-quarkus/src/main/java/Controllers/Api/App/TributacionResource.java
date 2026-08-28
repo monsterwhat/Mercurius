@@ -26,6 +26,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -135,31 +136,40 @@ public class TributacionResource {
     };
 
     @Nonnull
+    @Inject
     ComprobantesEmitidosService emitidosService;
 
     @Nonnull
+    @Inject
     ComprobantesRecibidosService recibidosService;
 
     @Nonnull
+    @Inject
     NotaCreditoService notaCreditoService;
 
     @Nonnull
+    @Inject
     Services.Correos.ReportesProgramadosService reportesProgramadosService;
 
     @Nonnull
+    @Inject
     HaciendaServiceFacade haciendaFacade;
 
     
     @Nonnull
+    @Inject
     LoginService loginService;
 
     @Nonnull
+    @Inject
     ClientService clientService;
 
+    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request headers (quarkus-rest injectable) — source of HX-Request. */
+    @Context
     @Nonnull
     HttpHeaders httpHeaders;
 
@@ -345,7 +355,7 @@ public class TributacionResource {
             }
 
                         LOG.info("Envio masivo de facturas: " + enviadas + " enviadas, " + fallidas
-                            + " fallidas de " + pendientes.size() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.enviarPendientes" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                            + " fallidas de " + pendientes.size() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.enviarPendientes" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             BulkSendResult resultado = new BulkSendResult(pendientes.size(), enviadas, fallidas,
                     "Envio completado: Enviadas: " + enviadas + ", Fallidas: " + fallidas
@@ -396,7 +406,7 @@ public class TributacionResource {
             }
 
             String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
-                        LOG.info("Se inició la corrección de la factura rechazada: " + consecutivo + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.corregirRechazada" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Se inició la corrección de la factura rechazada: " + consecutivo + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.corregirRechazada" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             boolean notaCreada = crearNotaCreditoAutomatica(factura);
 
@@ -686,7 +696,7 @@ public class TributacionResource {
         }
         List<NotaCredito> existentes = notaCreditoService.listPorComprobante(facturaRechazada.getId());
         if (existentes != null && !existentes.isEmpty()) {
-                        LOG.info("Nota de crédito ya existe para factura: " + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Nota de crédito ya existe para factura: " + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return false;
         }
 
@@ -714,7 +724,7 @@ public class TributacionResource {
         notaCreditoService.create(notaCredito);
 
                 LOG.info("Nota de crédito creada automáticamente para factura rechazada: "
-                        + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         return true;
     }
 

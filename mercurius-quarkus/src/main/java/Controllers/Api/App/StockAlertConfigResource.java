@@ -96,15 +96,19 @@ public class StockAlertConfigResource {
     private static final int BUFFER_REORDEN_DIAS = 30;
 
     @Nonnull
+    @Inject
     StockAlertService stockAlertService;
 
     @Nonnull
+    @Inject
     ArticulosService articulosService;
 
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
     @Location("pages/inventario/stock-alert-config")
+    @Inject
     Template pagina;
 
     // ══════════════════════════════════════════════════════════════════

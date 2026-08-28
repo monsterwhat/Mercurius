@@ -79,25 +79,30 @@ public class UsersResource {
     private static final Logger LOG = Logger.getLogger(UsersResource.class.getName());
 
     @Nonnull
+    @Inject
     LoginService loginService;
 
     
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
     @Nonnull
     @Location("pages/usuarios/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/usuarios/tabla.html")
+    @Inject
     Template tablaPage;
 
     @Nonnull
     @Location("pages/usuarios/form.html")
+    @Inject
     Template formUsuario;
 
     @GET
@@ -171,7 +176,7 @@ public class UsersResource {
             user.setStatus(true); // parity: createUser() always enables new users
             loginService.create(user);
 
-                        LOG.info("Se creo el usuario: " + user.getUsername() + " | source=" + "UsersResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(user.getUsername()));
+                        LOG.info("Se creo el usuario: " + user.getUsername() + " | source=" + "UsersResource.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(user.getUsername()));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(user)))
@@ -337,7 +342,7 @@ public class UsersResource {
 
             loginService.updatePassword(user, request.newPassword);
 
-                        LOG.info("Se cambiÃ³ la contraseÃ±a" + " | source=" + "UsersResource.changePassword()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Se cambiÃ³ la contraseÃ±a" + " | source=" + "UsersResource.changePassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             return Response.ok(ApiResponse.ok(toDTO(user))).build();
         } catch (Exception e) {

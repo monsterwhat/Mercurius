@@ -105,28 +105,35 @@ public class CierreCajaResource {
     private static final String MONEY_SYMBOL = "\u20A1"; // colón
 
     @Nonnull
+    @Inject
     CierreCajaService cierreCajaService;
 
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     @Nonnull
     @Location("pages/caja/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/caja/estado-caja.html")
+    @Inject
     Template estadoCaja;
 
     @Nonnull
     @Location("pages/caja/tabla-historial.html")
+    @Inject
     Template tablaHistorial;
 
     // ── JSON surface ─────────────────────────────────────────────────────────
