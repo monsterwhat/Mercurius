@@ -105,6 +105,7 @@
              bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
 
         {! ── Métricas de Proveedores (legacy Metricas subpage) ────── !}
+        <div id="metricas-panel">
         <div class="level mt-6">
             <div class="level-left">
                 <h2 class="title is-4" style="margin-bottom:0">Métricas de Proveedores</h2>
@@ -113,6 +114,8 @@
                 {#if isAdmin}
                 <button type="button" class="button is-link"
                         hx-post="/Mercurius/api/app/categorias/metricas/recalcular"
+                        hx-target="#metricas-panel"
+                        hx-swap="outerHTML"
                         hx-confirm="¿Recalcular las métricas de todos los proveedores?">
                     Recalcular Métricas
                 </button>
@@ -171,6 +174,7 @@
                     {/for}
                 </tbody>
             </table>
+        </div>
         </div>
     </section>
 

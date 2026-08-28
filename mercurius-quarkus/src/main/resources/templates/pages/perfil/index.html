@@ -1,0 +1,110 @@
+{!
+  pages/perfil/index - Mi Perfil (T22).
+
+  Qute/HTMX/Bulma port of the legacy perfil.xhtml (SessionController
+  changeName/changeEmail/changePassword). Rendered by
+  Controllers.Api.App.PerfilPagesResource with the logged-in user's data.
+
+  Model keys:
+    usuario  UsersDTO - id/username/email/groupName/status of the current user
+
+  Interactions:
+    - Each form hx-put's (form-urlencoded) to /api/app/perfil/*. On success
+      the API answers HX-Redirect: /app/perfil (full page reload with fresh
+      data); on guard failure it answers 400 with an OOB toast that lands in
+      the layout's #toast-container without touching #perfil-resultado.
+!}
+{#include layout}
+    {#title}Mi Perfil | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <p class="title is-3">Mi Perfil</p>
+
+        {! ── Datos del usuario ───────────────────────────────────── !}
+        <div class="box">
+            <div class="columns is-multiline">
+                <div class="column is-3">
+                    <p class="heading">Nombre de usuario</p>
+                    <p class="title is-5" id="perfil-username">{usuario.username}</p>
+                </div>
+                <div class="column is-3">
+                    <p class="heading">Correo electronico</p>
+                    <p class="title is-5" id="perfil-email">{#if usuario.email??}{usuario.email}{#else}&mdash;{/if}</p>
+                </div>
+                <div class="column is-3">
+                    <p class="heading">Grupo</p>
+                    <p class="title is-5">{usuario.groupName}</p>
+                </div>
+                <div class="column is-3">
+                    <p class="heading">Estado</p>
+                    <p class="title is-5">{#if usuario.status?? && usuario.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}</p>
+                </div>
+            </div>
+        </div>
+
+        {! ── Cambiar nombre de usuario ───────────────────────────── !}
+        <div class="box">
+            <h2 class="title is-5">Cambiar nombre de usuario</h2>
+            <form hx-put="/Mercurius/api/app/perfil/nombre"
+                  hx-target="#perfil-resultado"
+                  hx-swap="innerHTML">
+                <div class="field">
+                    <label class="label" for="nuevoNombre">Nuevo nombre de usuario</label>
+                    <div class="control">
+                        <input class="input" type="text" id="nuevoNombre" name="nuevoNombre" required/>
+                    </div>
+                </div>
+                <button class="button is-link" type="submit">Actualizar nombre</button>
+            </form>
+        </div>
+
+        {! ── Cambiar correo electronico ──────────────────────────── !}
+        <div class="box">
+            <h2 class="title is-5">Cambiar correo electronico</h2>
+            <form hx-put="/Mercurius/api/app/perfil/email"
+                  hx-target="#perfil-resultado"
+                  hx-swap="innerHTML">
+                <div class="field">
+                    <label class="label" for="nuevoEmail">Nuevo correo electronico</label>
+                    <div class="control">
+                        <input class="input" type="email" id="nuevoEmail" name="nuevoEmail" required/>
+                    </div>
+                </div>
+                <button class="button is-link" type="submit">Actualizar correo</button>
+            </form>
+        </div>
+
+        {! ── Cambiar contrasena ──────────────────────────────────── !}
+        <div class="box">
+            <h2 class="title is-5">Cambiar contrasena</h2>
+            <form hx-put="/Mercurius/api/app/perfil/password"
+                  hx-target="#perfil-resultado"
+                  hx-swap="innerHTML">
+                <div class="field">
+                    <label class="label" for="currentPassword">Contrasena actual</label>
+                    <div class="control">
+                        <input class="input" type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password"/>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="newPassword">Nueva contrasena</label>
+                    <div class="control">
+                        <input class="input" type="password" id="newPassword" name="newPassword" required autocomplete="new-password"/>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="confirmPassword">Confirmar nueva contrasena</label>
+                    <div class="control">
+                        <input class="input" type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password"/>
+                    </div>
+                </div>
+                <button class="button is-link" type="submit">Actualizar contrasena</button>
+            </form>
+        </div>
+
+        {! HTMX swap target for non-OOB responses (kept empty; guard failures are OOB toasts) !}
+        <div id="perfil-resultado"></div>
+    </section>
+    {/body}
+{/include}
