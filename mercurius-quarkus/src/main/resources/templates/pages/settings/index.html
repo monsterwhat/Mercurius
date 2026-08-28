@@ -326,6 +326,7 @@
                 Archivos de respaldo generados en la ruta configurada.
             </p>
             {#if backupLog?? && backupLog.size() > 0}
+            <div class="table-container">
             <table class="table is-striped is-fullwidth">
                 <thead>
                     <tr>
@@ -342,6 +343,7 @@
                     {/for}
                 </tbody>
             </table>
+            </div>
             {#else}
             <div class="notification is-light">
                 No hay respaldos registrados todavia.

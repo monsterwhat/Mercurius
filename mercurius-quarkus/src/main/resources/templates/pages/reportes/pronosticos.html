@@ -70,10 +70,12 @@
 
         <div class="box mt-4">
             <p class="title is-5">Demanda Pronosticada (primeros artículos)</p>
-            <canvas id="grafica-pronosticos" width="900" height="320"
+            <div style="width:100%; overflow-x:auto;">
+            <canvas id="grafica-pronosticos" width="900" height="320" style="max-width:100%; height:auto; display:block;"
                     data-root="/Mercurius" data-dias="{dias}">
                 Su navegador no soporta canvas.
             </canvas>
+            </div>
         </div>
 
         <script>
