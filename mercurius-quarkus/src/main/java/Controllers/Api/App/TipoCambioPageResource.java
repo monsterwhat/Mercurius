@@ -23,24 +23,26 @@ import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * HTML page for the Tipo de Cambio module on the NEW Qute/HTMX app surface:
- * {@code GET /app/tipo-cambio} renders the full page (shared layout) showing
- * the current BCCR dollar compra/venta rates, plus two HTMX fragment
- * endpoints:
+ * Tipo de Cambio module on the NEW Qute/HTMX app surface — DIALOG-ONLY.
+ * There is no standalone page: the shared navbar (fragments/navbar.html) opens
+ * a kit modal ({@code modal-tipo-cambio}) whose body is hx-gotten from these
+ * fragment endpoints:
  *
  * <ul>
+ *   <li>{@code GET /app/tipo-cambio} (and {@code /app/tipo-cambio/fragment}) —
+ *       renders {@code pages/tipo-cambio/fragment.html}, the rate card that
+ *       fills the modal body.</li>
  *   <li>{@code POST /app/tipo-cambio/actualizar} — re-fetches the rate from
  *       BCCR via {@link TipoCambioService#getNewestTipoCambio()} (guarded to
- *       once per day by the service) and returns the updated
- *       {@code #tc-contenido} fragment for an in-place swap.</li>
+ *       once per day by the service) and returns the same fragment for an
+ *       in-place swap inside the open modal.</li>
  *   <li>{@code GET /app/tipo-cambio/historial} — returns a small table of the
- *       most recent rates for the historial modal body.</li>
+ *       most recent rates for the nested historial modal body.</li>
  * </ul>
  *
- * <p>Replaces the placeholder shell that {@link MiscPagesResource} previously
- * served at this route. The rate view model mirrors the POS badge contract
+ * <p>The rate view model mirrors the POS badge contract
  * ({@code PosResource#tipoCambioBadge()}: {@code disponible/venta/compra/fecha})
- * so the page and the POS badge stay consistent.</p>
+ * so the modal and the POS badge stay consistent.</p>
  *
  * <p><b>Role gate</b> mirrors the legacy "Tributacion Area"
  * ({@code admin} + {@code tributacion}).</p>
@@ -61,19 +63,19 @@ public class TipoCambioPageResource {
     TipoCambioService tipoCambioService;
 
     @Nonnull
-    @Location("pages/tipo-cambio/index")
+    @Location("pages/tipo-cambio/fragment")
     @Inject
     Template tipoCambioPage;
 
     /**
-     * Renders the full Tipo de Cambio page with the current BCCR rate.
+     * Renders the dialog-only fragment with the current BCCR rate (also the
+     * body served for {@code POST /actualizar}).
      */
     @GET
-    @Operation(summary = "Render the Tipo de Cambio page")
+    @Operation(summary = "Render the Tipo de Cambio dialog fragment")
     public Response page() {
         Map<String, Object> model = new LinkedHashMap<>();
         model.putAll(tipoCambioModel());
-        model.put("baseUrl", "/api/app/tipo-cambio");
         String html = tipoCambioPage.data(model).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
@@ -81,8 +83,19 @@ public class TipoCambioPageResource {
     }
 
     /**
+     * Explicit fragment-alias route so the navbar modal's bodyUrl stays
+     * self-documenting even after the standalone page is gone.
+     */
+    @GET
+    @Path("/fragment")
+    @Operation(summary = "Render the Tipo de Cambio dialog fragment (alias)")
+    public Response fragment() {
+        return page();
+    }
+
+    /**
      * Re-fetches the current rate from BCCR and returns the updated
-     * {@code #tc-contenido} fragment for an in-place HTMX swap.
+     * fragment for an in-place HTMX swap inside the open modal.
      */
     @POST
     @Path("/actualizar")
@@ -90,7 +103,6 @@ public class TipoCambioPageResource {
     public Response actualizar() {
         Map<String, Object> model = new LinkedHashMap<>();
         model.putAll(tipoCambioModel());
-        model.put("baseUrl", "/api/app/tipo-cambio");
         String html = tipoCambioPage.data(model).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))

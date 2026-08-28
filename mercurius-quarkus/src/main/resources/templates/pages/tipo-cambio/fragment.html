@@ -1,0 +1,145 @@
+{!
+  pages/tipo-cambio/fragment - dialog-only surface for the Tipo de Cambio
+  module. Rendered by TipoCambioPageResource (GET /app/tipo-cambio and
+  POST /app/tipo-cambio/actualizar) as the BODY of the shared navbar kit modal
+  (fragments/navbar.html, id modal-tipo-cambio). There is no standalone page:
+  the navbar item opens the modal and hx-gets this fragment into it.
+
+  DATA MODEL CONTRACT (mirrors the POS badge keys):
+    disponible boolean    - true when a rate is available
+    venta     BigDecimal  - tipo de cambio de venta (dólar -> colones)
+    compra    BigDecimal  - tipo de cambio de compra (dólar -> colones)
+    fecha     String      - ISO fecha del tipo de cambio vigente
+
+  INTERACTION:
+    - "Actualizar" hx-posts to POST /app/tipo-cambio/actualizar (corrected
+      route; the legacy baseUrl "/api/..." was a 404) and swaps this whole
+      fragment back into #{modal-tipo-cambio}-body so the opened modal updates
+      in place. A toast confirms via htmx:afterRequest.
+    - "Historial" opens a nested kit modal whose body is hx-gotten from
+      GET /app/tipo-cambio/historial.
+
+  The nested historial modal declares its own Alpine x-data scope, so it works
+  even though the parent modal owns the outer scope. CSRF headers are inherited
+  from layout.html body hx-headers (swapped fragments stay inside the body).
+  Alpine braces ALWAYS carry a space after "{" (Qute golden rule).
+!}
+<div id="tc-contenido">
+    <div class="columns is-multiline">
+        <div class="column is-half">
+            <div class="box has-text-centered">
+                <p class="heading">Compra</p>
+                <p class="title is-2 has-text-success">
+                    {#if disponible}&#8353;{compra}{#else}&mdash;{/if}
+                </p>
+                <p class="subtitle is-6 has-text-grey">El banco compra dólares</p>
+            </div>
+        </div>
+        <div class="column is-half">
+            <div class="box has-text-centered">
+                <p class="heading">Venta</p>
+                <p class="title is-2 has-text-danger">
+                    {#if disponible}&#8353;{venta}{#else}&mdash;{/if}
+                </p>
+                <p class="subtitle is-6 has-text-grey">El banco vende dólares</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <div class="level">
+            <div class="level-left">
+                <div>
+                    <p class="heading">Fecha del tipo de cambio</p>
+                    <p class="title is-5">
+                        {#if disponible}{fecha}{#else}No disponible{/if}
+                    </p>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="buttons">
+                    <button class="button is-primary is-rounded" type="button"
+                            data-tc-actualizar
+                            hx-post="/Mercurius/app/tipo-cambio/actualizar"
+                            hx-target="#modal-tipo-cambio-body"
+                            hx-swap="innerHTML">
+                        <span class="icon"><i class="fas fa-sync-alt"></i></span>
+                        <span>Actualizar</span>
+                    </button>
+                    <button class="button is-light is-rounded is-inline" type="button"
+                            @click="tcHistorialOpen = true">
+                        Historial
+                    </button>
+                </div>
+            </div>
+        </div>
+        <p class="help has-text-grey">
+            La actualización consulta la API de Hacienda/BCCR. El sistema
+            registra un único tipo de cambio por día; si ya existe el de hoy,
+            se conserva el vigente.
+        </p>
+    </div>
+
+    {! ── Nested Historial modal (loaded via hx-get into its own body) ── !}
+    <div class="kit-modal-root" style="display:inline-block"
+         x-data="{ tcHistorialOpen:false }">
+        <div class="modal" id="modal-tc-historial"
+             :class="{ 'is-active': tcHistorialOpen }"
+             @keydown.escape.window="tcHistorialOpen = false"
+             role="dialog" aria-modal="true"
+             aria-labelledby="modal-tc-historial-title" data-kit-modal>
+            <div class="modal-background" @click="tcHistorialOpen = false"></div>
+            <div class="modal-card" tabindex="-1">
+                <header class="modal-card-head">
+                    <p class="modal-card-title" id="modal-tc-historial-title">Historial de Tipo de Cambio</p>
+                    <button class="delete" type="button" aria-label="Cerrar"
+                            @click="tcHistorialOpen = false"></button>
+                </header>
+                <section class="modal-card-body" id="tc-historial-body"
+                         hx-get="/Mercurius/app/tipo-cambio/historial"
+                         hx-trigger="load"
+                         hx-swap="innerHTML">
+                    <p class="has-text-grey">Cargando historial&hellip;</p>
+                </section>
+                <footer class="modal-card-foot">
+                    <button type="button" class="button" @click="tcHistorialOpen = false">Cerrar</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('htmx:afterRequest', function (evt) {
+            var elt = evt.detail.requestConfig.elt;
+            if (!elt || !elt.hasAttribute || !elt.hasAttribute('data-tc-actualizar')) {
+                return;
+            }
+            var xhr = evt.detail.xhr;
+            var contenedor = document.getElementById('toast-container');
+            if (!contenedor) {
+                return;
+            }
+            var severidad = evt.detail.successful ? 'is-success' : 'is-danger';
+            var mensaje = evt.detail.successful
+                ? 'Tipo de cambio actualizado correctamente'
+                : 'No se pudo actualizar el tipo de cambio';
+            var toast = document.createElement('div');
+            toast.className = 'notification ' + severidad;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('data-toast', '');
+            var cierre = document.createElement('button');
+            cierre.className = 'delete';
+            cierre.type = 'button';
+            cierre.setAttribute('aria-label', 'Cerrar notificacion');
+            cierre.addEventListener('click', function () {
+                toast.remove();
+            });
+            toast.appendChild(cierre);
+            toast.appendChild(document.createTextNode(mensaje));
+            contenedor.appendChild(toast);
+            setTimeout(function () {
+                toast.remove();
+            }, 5000);
+        });
+    </script>
+</div>

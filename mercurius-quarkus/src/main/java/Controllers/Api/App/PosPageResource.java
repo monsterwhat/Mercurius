@@ -41,6 +41,11 @@ public class PosPageResource {
 
     @Inject
     @Nonnull
+    @Location("pages/facturas/factura-standalone")
+    Template facturaStandalonePage;
+
+    @Inject
+    @Nonnull
     PosResource posResource;
 
     @Inject
@@ -48,13 +53,33 @@ public class PosPageResource {
     SecurityIdentity securityIdentity;
 
     /**
-     * Renders the full POS page: barcode capture, live cart panel, client
-     * picker, payment dialog, puntos redemption and facturar/cancel actions.
+     * Renders the full POS page in the shared app layout: barcode capture,
+     * live cart panel, client picker, payment dialog, puntos redemption and
+     * facturar/cancel actions.
      */
     @GET
     @Produces(MediaType.TEXT_HTML)
     @Operation(summary = "Render the POS (factura) page")
     public Response page() {
+        return html(facturaPage);
+    }
+
+    /**
+     * Renders the POS page WITHOUT the shared app layout (no navbar/footer),
+     * opened in a new window by the navbar "Nueva Factura" button. Uses the
+     * same cart-panel model so the same session cart is editable either way.
+     */
+    @GET
+    @Path("/standalone")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Render the POS (factura) page standalone, without the app layout")
+    public Response standalone() {
+        return html(facturaStandalonePage);
+    }
+
+    /** Shared view model + render for the two POS templates. */
+    /** Shared view model + render for the two POS templates. */
+    private Response html(@Nonnull Template template) {
         String username = currentUsername();
         Map<String, Object> authInicial = new LinkedHashMap<>();
         authInicial.put("exito", false);
@@ -66,7 +91,7 @@ public class PosPageResource {
         page.put("badge", posResource.tipoCambioBadge());
         page.put("usuario", username);
         page.put("authInicial", authInicial);
-        String html = facturaPage.data(page).render();
+        String html = template.data(page).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .build();
