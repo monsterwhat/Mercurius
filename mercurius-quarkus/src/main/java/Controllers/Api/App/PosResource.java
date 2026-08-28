@@ -51,6 +51,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -184,6 +185,11 @@ public class PosResource {
     @Location("pages/facturas/client-picker")
     @Inject
     Template clientPickerTemplate;
+
+    @Nonnull
+    @Location("pages/facturas/articulos-picker")
+    @Inject
+    Template articulosPickerTemplate;
 
     @Nonnull
     @Location("pages/facturas/facturar-resultado")
@@ -906,6 +912,47 @@ public class PosResource {
     }
 
     /**
+     * Direct decimal quantity entry for a cart line. An absolute {@code cantidad}
+     * is parsed (accepts fractional "double" values like 0.5) and set in place;
+     * a value reaching zero or below removes the line, and promotions are
+     * re-processed over the mutated cart (same orchestration as qtyForm).
+     */
+    @POST
+    @Path("/item/{codigo}/qty-set-form")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Set a cart line quantity directly (decimal) and return the refreshed cart panel")
+    public Response qtySetForm(@PathParam("codigo") long codigo,
+            @FormParam("cantidad") @Nullable String cantidad) {
+        String username = currentUsername();
+        if (username == null) {
+            return unauthenticated();
+        }
+        Users currentUser = loginService.findByUsername(username);
+        if (currentUser == null) {
+            return userNotProvisioned(username);
+        }
+        BigDecimal qty = parseDecimal(cantidad);
+        if (qty.compareTo(BigDecimal.ZERO) <= 0) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("VALIDATION_ERROR", "error",
+                            "La cantidad debe ser mayor a cero", null))).render());
+        }
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        ArticuloCarrito target = findLineByArticuloCodigo(ctx, codigo);
+        if (target == null) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("LINEA_NO_ENCONTRADA", "error",
+                            "El artículo no está en el carrito", null))).render());
+        }
+        target.setCantidad(qty);
+        carritoService.verificarPromocionesCarrito(ctx);
+        return htmlOk(cartPanelTemplate
+                .data("panel", panelModel(username,
+                        message("CANTIDAD_ACTUALIZADA", "info", "Cantidad actualizada", null))).render());
+    }
+
+    /**
      * Form twin of {@link #removeItem}: identical delegation to
      * {@link CarritoService#removeArticulo}, answered with the refreshed panel.
      */
@@ -1024,6 +1071,65 @@ public class PosResource {
         return htmlOk(cartPanelTemplate.data("panel",
                 panelModel(username, message("CLIENTE_SELECCIONADO", "info",
                         "Cliente asignado", cliente.getName()))).render());
+    }
+
+    /**
+     * Article picker fragment (reusable include
+     * {@code pages/facturas/articulos-picker.html}) following the same
+     * client-picker pattern: search-as-you-type hx-get plus Agregar rows that
+     * post {@code /articulo-add-form}. Search matches codigo / nombre /
+     * codigoBarra / departamento / familia against the enabled articles,
+     * capped at {@link #TYPEAHEAD_LIMIT} hits.
+     */
+    @GET
+    @Path("/articulos-picker")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "POS article picker HTML fragment (search + add rows)")
+    public Response articulosPicker(@QueryParam("q") @Nullable String q) {
+        String username = currentUsername();
+        if (username == null) {
+            return unauthenticated();
+        }
+        Map<String, Object> picker = new LinkedHashMap<>();
+        picker.put("q", q == null ? "" : q);
+        picker.put("resultados", articuloPickerHits(q));
+        return htmlOk(articulosPickerTemplate.data("picker", picker).render());
+    }
+
+    /**
+     * Form twin of {@link #add}: adds an article by primary key + quantity
+     * (with per-row merge in {@link CarritoService#addArticulo}) and answers
+     * with the refreshed cart panel — same contract as {@code scan-form}.
+     */
+    @POST
+    @Path("/articulo-add-form")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Add an article to the cart (form twin) and return the refreshed cart panel")
+    public Response articuloAddForm(
+            @FormParam("articuloId") @Nullable Long articuloId,
+            @FormParam("cantidad") @Nullable String cantidad) {
+        String username = currentUsername();
+        if (username == null) {
+            return unauthenticated();
+        }
+        if (articuloId == null) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("VALIDATION_ERROR", "error",
+                            "articuloId es requerido", null))).render());
+        }
+        Articulos articulo = articulosService.find(articuloId);
+        if (articulo == null) {
+            return htmlOk(cartPanelTemplate.data("panel",
+                    panelModel(username, message("ARTICULO_NO_ENCONTRADO", "error",
+                            "No existe un artículo con ese código", null))).render());
+        }
+        BigDecimal qty = parsePositiveOrDefault(cantidad);
+        CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
+        carritoService.addArticulo(ctx, articulo, qty);
+        return htmlOk(cartPanelTemplate.data("panel",
+                panelModel(username, message("ARTICULO_AGREGADO", "info",
+                        "Artículo agregado", articulo.getNombre()))).render());
     }
 
     /**
@@ -1423,6 +1529,61 @@ public class PosResource {
             hits.add(hit);
         }
         return hits;
+    }
+
+    /** Article picker hits for the POS search-as-you-type fragment. */
+    @Nonnull
+    private List<Map<String, Object>> articuloPickerHits(@Nullable String q) {
+        List<Articulos> source = articulosService.ListAllEnabled();
+        List<Map<String, Object>> hits = new ArrayList<>();
+        if (source == null) {
+            return hits;
+        }
+        for (Articulos articulo : source) {
+            if (!matchesArticulo(articulo, q)) {
+                continue;
+            }
+            Map<String, Object> hit = new LinkedHashMap<>();
+            hit.put("codigo", articulo.getCodigo());
+            hit.put("nombre", articulo.getNombre());
+            hit.put("codigoBarra", articulo.getCodigoBarra());
+            hit.put("precio", precioFinalDe(articulo));
+            hit.put("departamento", departamentoDe(articulo));
+            hit.put("familia", familiaDe(articulo));
+            hits.add(hit);
+            if (hits.size() >= TYPEAHEAD_LIMIT) {
+                break;
+            }
+        }
+        return hits;
+    }
+
+    private static boolean matchesArticulo(@Nonnull Articulos articulo, @Nullable String q) {
+        if (q == null || q.isBlank()) {
+            return true;
+        }
+        String needle = q.trim().toLowerCase(Locale.ROOT);
+        return String.valueOf(articulo.getCodigo()).contains(needle)
+                || matchesText(articulo.getNombre(), needle)
+                || matchesText(articulo.getCodigoBarra(), needle)
+                || matchesText(departamentoDe(articulo), needle)
+                || matchesText(familiaDe(articulo), needle);
+    }
+
+    private static boolean matchesText(@Nullable String value, @Nonnull String needle) {
+        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
+    }
+
+    private static @Nullable String departamentoDe(@Nonnull Articulos articulo) {
+        return articulo.getDepartamento() != null ? articulo.getDepartamento().getNombre() : null;
+    }
+
+    private static @Nullable String familiaDe(@Nonnull Articulos articulo) {
+        return articulo.getFamilia() != null ? articulo.getFamilia().getNombre() : null;
+    }
+
+    private static @Nullable BigDecimal precioFinalDe(@Nonnull Articulos articulo) {
+        return articulo.getLastPrecio() != null ? articulo.getLastPrecio().getPrecioFinal() : null;
     }
 
     /** Shared staging of payment entries (JSON + form twins). */
