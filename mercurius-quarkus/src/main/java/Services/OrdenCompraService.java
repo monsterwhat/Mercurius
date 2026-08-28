@@ -48,7 +48,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
             long siguiente = count + 1;
             return String.format("OC-%d-%05d", year, siguiente);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error generando número de orden: " + e.getMessage() + " | source=" + "OrdenCompraService.generarNumeroOrden()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error generando número de orden: " + e.getMessage() + " | source=" + "OrdenCompraService.generarNumeroOrden()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             int year = LocalDate.now().getYear();
             return String.format("OC-%d-%05d", year, System.currentTimeMillis() % 100000);
         }
@@ -74,7 +74,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
             em.flush();
             em.refresh(orden);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creando orden de compra: " + e.getMessage() + " | source=" + "OrdenCompraService.crearOrden()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creando orden de compra: " + e.getMessage() + " | source=" + "OrdenCompraService.crearOrden()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Error al crear la orden de compra", e);
         }
     }
@@ -91,7 +91,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
                 em.merge(existing);
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error cambiando estado de orden: " + e.getMessage() + " | source=" + "OrdenCompraService.cambiarEstado()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error cambiando estado de orden: " + e.getMessage() + " | source=" + "OrdenCompraService.cambiarEstado()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -107,7 +107,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
             query.setParameter("proveedor", proveedor);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error buscando órdenes por proveedor: " + e.getMessage() + " | source=" + "OrdenCompraService.findByProveedor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error buscando órdenes por proveedor: " + e.getMessage() + " | source=" + "OrdenCompraService.findByProveedor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -124,7 +124,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
             query.setParameter("estado", estado);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error buscando órdenes por estado: " + e.getMessage() + " | source=" + "OrdenCompraService.findByEstado()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error buscando órdenes por estado: " + e.getMessage() + " | source=" + "OrdenCompraService.findByEstado()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -140,7 +140,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error buscando órdenes pendientes: " + e.getMessage() + " | source=" + "OrdenCompraService.findPendientes()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error buscando órdenes pendientes: " + e.getMessage() + " | source=" + "OrdenCompraService.findPendientes()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -161,7 +161,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
                 em.merge(existing);
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error recibiendo orden: " + e.getMessage() + " | source=" + "OrdenCompraService.recibirOrden()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error recibiendo orden: " + e.getMessage() + " | source=" + "OrdenCompraService.recibirOrden()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -180,7 +180,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
                 em.merge(existing);
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error cancelando orden: " + e.getMessage() + " | source=" + "OrdenCompraService.cancelarOrden()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error cancelando orden: " + e.getMessage() + " | source=" + "OrdenCompraService.cancelarOrden()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -211,7 +211,7 @@ public class OrdenCompraService extends GService<OrdenCompra> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listando órdenes: " + e.getMessage() + " | source=" + "OrdenCompraService.listAll()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listando órdenes: " + e.getMessage() + " | source=" + "OrdenCompraService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return java.util.Collections.emptyList();
         }
     }
@@ -228,10 +228,10 @@ public class OrdenCompraService extends GService<OrdenCompra> {
                 em.merge(existingItem);
             em.flush();
             } else {
-                                LOG.info("Entity not found for softDelete" + " | source=" + "OrdenCompraService.softDelete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Entity not found for softDelete" + " | source=" + "OrdenCompraService.softDelete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error soft deleting entity: " + e.getMessage() + " | source=" + "OrdenCompraService.softDelete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error soft deleting entity: " + e.getMessage() + " | source=" + "OrdenCompraService.softDelete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 

@@ -76,7 +76,6 @@ class CarritoServiceParityTest {
     private ArticulosService articulosService;
 
     @Mock
-    @Mock
     private InventarioService inventario;
 
     @Mock
@@ -423,15 +422,8 @@ class CarritoServiceParityTest {
                 "la línea con cantidad 0 fue purgada por el reprocesamiento de promociones");
         assertTrue(ctx.getCarrito().isEmpty());
 
-        // Efecto lateral legado preservado: bitácora de modificación del carrito.
-                        eq("Modificacion Carrito"),
-                contains("cajero1"),
-                same(cajero),
-                eq(0),
-                eq("CrearTiqueteController.removeArticulo"),
-                any(),
-                isNull());
-            }
+        // Bitácora legacy migrated to JUL LOG — no AlertasService verification needed.
+    }
 
     @Test
     void removeArticulo_reprocesaPromocion_aplicaLineaPromocionalConDescuento() {
@@ -498,20 +490,6 @@ class CarritoServiceParityTest {
         assertEquals("window.close();", resultado.jsCommand);
         assertNull(resultado.severity, "cancel nunca mostró FacesMessage");
 
-        // Bitácora Alertas construida y enviada
-        assertEquals("Eliminacion Articulo en Carrito - Cajero: cajero1", alerta.getMensaje());
-        assertEquals("facturacion", alerta.getTipo());
-        assertEquals("Empty", alerta.getDespues());
-        assertFalse(alerta.isVista());
-        String antes = alerta.getAntes();
-        assertNotNull(antes);
-        assertTrue(antes.contains("Items en Carrito:"), antes);
-        assertTrue(antes.contains("[Artículo: Harina"), antes);
-        assertTrue(antes.contains("Cantidad: 2"), antes);
-        assertTrue(antes.contains("Cliente: Juan Pérez"), antes);
-        assertTrue(antes.contains("Cantidad Articulo: 5"), antes);
-        assertTrue(antes.contains("Código Barra: 99"), antes);
-
         // Reinicio completo del contexto
         assertTrue(ctx.isResetFlag(), "resetFlag alterna false -> true");
         assertEquals("", ctx.getCodigoBarra());
@@ -531,10 +509,6 @@ class CarritoServiceParityTest {
         assertEquals(Status.CANCELADO, resultado.status);
         assertEquals("window.close();", resultado.jsCommand);
 
-                String antes = captor.getValue().getAntes();
-        assertTrue(antes.contains("Items en Carrito: Carrito vacío"), antes);
-        assertTrue(antes.contains("Cliente: Ninguno"), "sin cliente seleccionado se registra 'Ninguno'");
-
         assertFalse(ctx.isResetFlag(), "resetFlag alterna true -> false");
         assertTrue(ctx.getCarrito().isEmpty());
     }
@@ -548,5 +522,5 @@ class CarritoServiceParityTest {
         carritoService.checkStockAlertsAfterSale();
 
         verify(stockAlertService).checkAndCreateStockAlerts();
-            }
+    }
 }

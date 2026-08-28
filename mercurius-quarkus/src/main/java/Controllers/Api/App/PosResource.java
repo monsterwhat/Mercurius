@@ -107,40 +107,52 @@ public class PosResource {
     }
 
     @Nonnull
+    @Inject
     CarritoService carritoService;
 
     @Nonnull
+    @Inject
     CartSessionStore cartSessionStore;
 
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
     @Nonnull
+    @Inject
     LoginService loginService;
 
     @Nonnull
+    @Inject
     ArticulosService articulosService;
 
     @Nonnull
+    @Inject
     ClientService clientService;
 
     @Nonnull
+    @Inject
     AppSettingsService appSettingsService;
 
     @Nonnull
+    @Inject
     ComprobanteService comprobanteService;
 
     @Nonnull
+    @Inject
     DocumentoStrategyFactory strategyFactory;
 
     @Nonnull
+    @Inject
     PDFGenerator pdfGenerator;
 
     @Nonnull
+    @Inject
     LoyaltyService loyaltyService;
 
     
     @Nonnull
+    @Inject
     DirectoryService dirService;
 
     // ── T37 template-phase additions ────────────────────────────────────
@@ -150,6 +162,7 @@ public class PosResource {
      * {@link TipoCambioService#getNewestTipoCambio()} (service NOT modified).
      */
     @Nonnull
+    @Inject
     TipoCambioService tipoCambioService;
 
     /**
@@ -159,22 +172,27 @@ public class PosResource {
      */
     @Nonnull
     @Location("pages/facturas/cart-panel")
+    @Inject
     Template cartPanelTemplate;
 
     @Nonnull
     @Location("pages/facturas/payment-dialog")
+    @Inject
     Template paymentDialogTemplate;
 
     @Nonnull
     @Location("pages/facturas/client-picker")
+    @Inject
     Template clientPickerTemplate;
 
     @Nonnull
     @Location("pages/facturas/facturar-resultado")
+    @Inject
     Template facturarResultadoTemplate;
 
     @Nonnull
     @Location("pages/facturas/auth-modal-body")
+    @Inject
     Template authModalBodyTemplate;
 
     @Context
@@ -580,7 +598,7 @@ public class PosResource {
             try {
                 loyaltyService.redeemPoints(cliente, puntosARedimir);
             } catch (RuntimeException e) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error al canjear puntos: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                                LOG.log(java.util.logging.Level.WARNING, "Error al canjear puntos: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         }
 
@@ -600,7 +618,7 @@ public class PosResource {
                     pagos
             );
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error during PDF generation: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error during PDF generation: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.log(Level.WARNING, "PDF generation warning for comprobante "
                     + comprobante.getId(), e);
         }
@@ -625,7 +643,7 @@ public class PosResource {
                         pagos
                 );
             } catch (RuntimeException e) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error enviando factura al cliente: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                                LOG.log(java.util.logging.Level.WARNING, "Error enviando factura al cliente: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         }
 
@@ -728,15 +746,15 @@ public class PosResource {
             // disabled-user contract obvious and null-safe.
             Users authUser = loginService.findByUsername(supervisor);
             if (authUser == null) {
-                                LOG.info("Intento con usuario inexistente: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Intento con usuario inexistente: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return invalidCredentials();
             }
             if (!Boolean.TRUE.equals(authUser.getStatus())) {
-                                LOG.info("Intento con usuario deshabilitado: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Intento con usuario deshabilitado: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return invalidCredentials();
             }
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                                LOG.info("Contraseña incorrecta de: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Contraseña incorrecta de: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return invalidCredentials();
             }
 
@@ -745,7 +763,7 @@ public class PosResource {
                     new AppAuthResource.SupervisorAuthorizationDTO(
                             authUser.getUsername(), deriveRoles(authUser)))).build();
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorize: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorize: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.log(Level.WARNING, "Error during POS supervisor authorization", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error durante la autorización"))
@@ -1168,14 +1186,14 @@ public class PosResource {
                 Users authUser = loginService.findByUsername(supervisor);
                 if (authUser == null || !Boolean.TRUE.equals(authUser.getStatus())
                         || !loginService.verifyPassword(password, authUser.getPassword())) {
-                                        LOG.info("Intento fallido de autorización de: " + supervisor + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                        LOG.info("Intento fallido de autorización de: " + supervisor + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                     errorGeneral = "Usuario o contraseña incorrectos";
                 } else {
                     cartSessionStore.getOrCreate(username).setAuthorizedBy(authUser.getUsername());
                     exito = true;
                 }
             } catch (RuntimeException e) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorizeForm: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                                LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorizeForm: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
                 LOG.log(Level.WARNING, "Error during POS supervisor authorization", e);
                 errorGeneral = "Error durante la autorización";
             }

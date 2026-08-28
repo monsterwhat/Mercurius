@@ -174,79 +174,100 @@ public class ArticuloResource {
             "La fecha de fin debe ser posterior o igual a la fecha de inicio";
 
     @Nonnull
+    @Inject
     ArticulosService articulosService;
 
     @Nonnull
+    @Inject
     ArticuloPrecioService precioService;
 
     @Nonnull
+    @Inject
     DepartamentoService departamentoService;
 
     @Nonnull
+    @Inject
     FamiliaService familiaService;
 
     @Nonnull
+    @Inject
     InventarioService inventarioService;
 
     @Nonnull
+    @Inject
     PromocionesService promoService;
 
     @Nonnull
+    @Inject
     ArticuloCarritoService articuloCarritoService;
 
     @Nonnull
+    @Inject
     ProductoExoneracionService productoExoneracionService;
 
     @Nonnull
+    @Inject
     CabysService cabysService;
 
     
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
     @Nonnull
     @Location("pages/articulos/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/articulos/tabla-articulos.html")
+    @Inject
     Template tablaArticulos;
 
     @Nonnull
     @Location("pages/articulos/tabla-promociones.html")
+    @Inject
     Template tablaPromociones;
 
     @Nonnull
     @Location("pages/articulos/form-articulo.html")
+    @Inject
     Template formArticulo;
 
     @Nonnull
     @Location("pages/articulos/form-revision.html")
+    @Inject
     Template formRevision;
 
     @Nonnull
     @Location("pages/articulos/form-promocion.html")
+    @Inject
     Template formPromocion;
 
     @Nonnull
     @Location("pages/articulos/detalles.html")
+    @Inject
     Template detallesArticulo;
 
     @Nonnull
     @Location("pages/articulos/buscador-cabys.html")
+    @Inject
     Template buscadorCabys;
 
     @Nonnull
     @Location("pages/articulos/selector-articulos.html")
+    @Inject
     Template selectorArticulos;
 
     // ════════════════════════════════════════════════════════════════════
@@ -487,7 +508,7 @@ public class ArticuloResource {
                 productoExoneracionService.save(exoneracion);
             }
 
-                        LOG.info("Se ha creado el artículo: " + nuevo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createArticulo" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(String.valueOf(nuevo.getCodigo())));
+                        LOG.info("Se ha creado el artículo: " + nuevo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createArticulo" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(String.valueOf(nuevo.getCodigo())));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/articulos/table?tab=" + TAB_ACTIVOS);
@@ -919,15 +940,15 @@ public class ArticuloResource {
         }
         Users authUser = loginService.findByUsername(username.trim());
         if (authUser == null) {
-                        LOG.info("Intento con usuario inexistente: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Intento con usuario inexistente: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return false;
         }
         if (!Boolean.TRUE.equals(authUser.getStatus())) {
-                        LOG.info("Intento con usuario deshabilitado: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Intento con usuario deshabilitado: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return false;
         }
         if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                        LOG.info("Contraseña incorrecta de: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Contraseña incorrecta de: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return false;
         }
         return true;
@@ -1097,7 +1118,7 @@ public class ArticuloResource {
             }
             String antes = DiffUtils.snapshotEntity(promo);
             promoService.delete(promo);
-                        LOG.info("Se elimino la promocion: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.deletePromocion()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(null));
+                        LOG.info("Se elimino la promocion: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.deletePromocion()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf((Object) null));
             if (isHxRequest()) {
                 return tableFragment(TAB_PROMOCIONES, 1, 20, null, "asc", null,
                         "warn", "Se elimino la promocion");
@@ -1164,7 +1185,7 @@ public class ArticuloResource {
 
             if (id == null) {
                 promoService.create(promo);
-                                LOG.info("Se creó la promoción: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createPromocionByDialog()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(String.valueOf(promo.getId())));
+                                LOG.info("Se creó la promoción: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createPromocionByDialog()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(String.valueOf(promo.getId())));
             } else {
                 promoService.update(promo);
                                 LOG.info("Se actualizó la promoción: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updatePromocionByDialog()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(promo)));

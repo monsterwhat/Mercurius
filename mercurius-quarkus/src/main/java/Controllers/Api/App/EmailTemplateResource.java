@@ -105,17 +105,21 @@ public class EmailTemplateResource {
     private static final Logger LOG = Logger.getLogger(EmailTemplateResource.class.getName());
 
     @Nonnull
+    @Inject
     EmailTemplateService emailTemplateService;
 
     @Nonnull
+    @Inject
     LoginService loginService;
 
     
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // View-half templates (W4B-CORREOS). Rendered to String: no
@@ -123,14 +127,17 @@ public class EmailTemplateResource {
     // CategoriaResource/T18 and LoginPageResource/T14.
     @Nonnull
     @Location("pages/correos/templates.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/correos/tabla-plantillas.html")
+    @Inject
     Template tablaPlantillas;
 
     @Nonnull
     @Location("pages/correos/form-plantilla.html")
+    @Inject
     Template formPlantilla;
 
     /**
@@ -266,7 +273,7 @@ public class EmailTemplateResource {
 
             emailTemplateService.create(template);
 
-                        LOG.info("Se ha creado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
+                        LOG.info("Se ha creado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(template)))
@@ -371,7 +378,7 @@ public class EmailTemplateResource {
             String antes = DiffUtils.snapshotEntity(template);
             emailTemplateService.delete(template);
 
-                        LOG.info("Se ha eliminado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(null));
+                        LOG.info("Se ha eliminado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf((Object) null));
 
             // View-half branch (docs/ui-kit.md §2.9 dual-mode contract): HTMX
             // callers get the refreshed table fragment plus an out-of-band
@@ -517,7 +524,7 @@ public class EmailTemplateResource {
 
             emailTemplateService.create(template);
 
-                        LOG.info("Se ha creado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.createPlantillaForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
+                        LOG.info("Se ha creado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.createPlantillaForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/email-templates/table");

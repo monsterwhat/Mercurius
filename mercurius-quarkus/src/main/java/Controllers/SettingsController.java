@@ -110,7 +110,7 @@ public class SettingsController implements Serializable {
     private void init() {
         // Server-side security check for settings access - admin only
         if (!currentSession.isAdmin()) {
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return;
         }
         
@@ -145,7 +145,7 @@ public class SettingsController implements Serializable {
                 configuracionActual = true;
                 break;
             default:
-                                LOG.info("No hay pasos?!" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.seleccionar()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("No hay pasos?!" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.seleccionar()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 break;
         }
     }
@@ -172,7 +172,7 @@ public class SettingsController implements Serializable {
                 configuracionActual = true;
                 break;
             default:
-                                LOG.info("No hay pasos?!" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.seleccionar()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("No hay pasos?!" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.seleccionar()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 break;
         }
     }
@@ -198,16 +198,16 @@ public class SettingsController implements Serializable {
                     settingsService.create(currentSettings);
                 } else {
                     settingsService.update(currentSettings);
-                                        LOG.info("Se actualizó el nombre de usuario a: " + currentSettings.getNombrePerfil() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "saveUsername()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(currentSettings.getNombrePerfil()));
+                                        LOG.info("Se actualizó el nombre de usuario a: " + currentSettings.getNombrePerfil() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "saveUsername()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(currentSettings.getNombrePerfil()));
                 }
                 reloadPage();
 
-                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             } else {
-                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } else {
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         }
 
     }
@@ -360,9 +360,9 @@ public class SettingsController implements Serializable {
                 reloadPage();
 
             } catch (IOException ex) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error: " + ex.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.handleFileUpload()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(ex.getLocalizedMessage()));
+                                LOG.log(java.util.logging.Level.WARNING, "Error: " + ex.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.handleFileUpload()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(ex.getLocalizedMessage()));
             }
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         }
     }
 
@@ -407,7 +407,7 @@ public class SettingsController implements Serializable {
             reloadPage();
             addMessage(null, "Éxito", "Se añadió el correo electrónico");
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error:" + e.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.saveCorreo()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getLocalizedMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error:" + e.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.saveCorreo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getLocalizedMessage()));
             addMessage(null, "Error", "No se pudo enviar el correo: " + e.getMessage());
         }
     }
@@ -418,7 +418,7 @@ public class SettingsController implements Serializable {
         CompletableFuture.runAsync(() -> {
             probarCorreo(correoElectronico, contrasenaCorreo);
         }).exceptionally(ex -> {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al probar correo: " + ex.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.asyncProbarCorreo()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(ex.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error al probar correo: " + ex.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.asyncProbarCorreo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(ex.getMessage()));
             addMessage(null, 
                    "Prueba de correo fallida", 
                    "El correo fue guardado, pero no se pudo enviar el mensaje de prueba."); 
@@ -437,10 +437,10 @@ public class SettingsController implements Serializable {
         // Handle the result of the email sending operation
         if (emailResult.equals("Sent")) {
             // Email sent successfully
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         } else {
             // Failed to send email
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         }
     }
 
@@ -461,7 +461,7 @@ public class SettingsController implements Serializable {
         tipoCambioController.recargar();
     }
 
-    private void addMessage(Object severity, String summary, String detail) {              LOG.log("Error".equalsIgnoreCase(String.valueOf(summary)) ? java.util.logging.Level.WARNING : java.util.logging.Level.INFO, detail + " | user=" + String.valueOf(currentSession != null && currentSession.getCurrentUser() != null ? (Models.Users) currentSession.getCurrentUser() : null) + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+    private void addMessage(Object severity, String summary, String detail) {              LOG.log("Error".equalsIgnoreCase(String.valueOf(summary)) ? java.util.logging.Level.WARNING : java.util.logging.Level.INFO, detail + " | user=" + String.valueOf(currentSession != null && currentSession.getCurrentUser() != null ? (Models.Users) currentSession.getCurrentUser() : null) + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
     }
 
     public void saveProfile() {
@@ -484,7 +484,7 @@ public class SettingsController implements Serializable {
         try {
             httpResponse.sendRedirect(url);
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al redirigir: " + e.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.reloadPage()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error al redirigir: " + e.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.reloadPage()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -521,13 +521,13 @@ public class SettingsController implements Serializable {
                 
                 // Validate before saving
                 if (certificadoPassword == null || certificadoPassword.isBlank()) {
-                                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                     return;
                 }
                 
                 boolean isValid = haciendaCertificateService.validateCertificate(certBytes, certificadoPassword);
                 if (!isValid) {
-                                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                     return;
                 }
                 
@@ -537,12 +537,12 @@ public class SettingsController implements Serializable {
                 // Refresh status
                 loadHaciendaStatus();
                 
-                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 
-                                LOG.info("Se subió el certificado digital" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "uploadCertificado()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Se subió el certificado digital" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "uploadCertificado()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                     
             } catch (Exception e) {
-                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         }
     }
@@ -552,11 +552,11 @@ public class SettingsController implements Serializable {
             haciendaCertificateService.saveApiKey(haciendaApiKey);
             loadHaciendaStatus();
             
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             
-                        LOG.info("Se guardó la API Key de Hacienda" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "saveApiKey()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("Se guardó la API Key de Hacienda" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "saveApiKey()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         } else {
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         }
     }
     
@@ -566,9 +566,9 @@ public class SettingsController implements Serializable {
             settingsService.update(currentSettings);
             
             String envLabel = "production".equals(haciendaEnvironment) ? "Producción" : "Pruebas";
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             
-                        LOG.info("Se configuró entorno: " + envLabel + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "saveEnvironment()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(haciendaEnvironment));
+                        LOG.info("Se configuró entorno: " + envLabel + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "saveEnvironment()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(haciendaEnvironment));
         }
     }
     
@@ -576,9 +576,9 @@ public class SettingsController implements Serializable {
         haciendaCertificateService.clearCertificate();
         loadHaciendaStatus();
         
-                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         
-                LOG.info("Se eliminó el certificado digital" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "clearCertificate()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                LOG.info("Se eliminó el certificado digital" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "clearCertificate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
     }
     
     @Nonnull
@@ -619,10 +619,10 @@ public class SettingsController implements Serializable {
     public void initializeEncryption() {
         boolean created = haciendaCertificateService.initializeEncryptionKey();
         if (created) {
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
-                        LOG.info("Se inicializó la llave de cifrado" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "initializeEncryption()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Se inicializó la llave de cifrado" + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "initializeEncryption()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         } else {
-                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                        LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         }
     }
 

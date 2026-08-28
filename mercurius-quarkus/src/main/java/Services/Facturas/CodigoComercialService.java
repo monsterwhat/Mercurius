@@ -29,7 +29,7 @@ public class CodigoComercialService extends GService<CodigoComercial>{
         try {
             this.em.persist(codigoComercial);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "CodigoComercialService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "CodigoComercialService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     

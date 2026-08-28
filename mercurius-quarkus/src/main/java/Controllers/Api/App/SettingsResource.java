@@ -70,15 +70,19 @@ public class SettingsResource {
     private static final Logger LOG = Logger.getLogger(SettingsResource.class.getName());
 
     @Nonnull
+    @Inject
     AppSettingsService settingsService;
 
     @Nonnull
+    @Inject
     BackupService backupService;
 
     
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 

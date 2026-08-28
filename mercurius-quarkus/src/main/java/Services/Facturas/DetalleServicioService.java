@@ -38,7 +38,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -53,10 +53,10 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                                LOG.info("Entity not found for delete" + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Entity not found for delete" + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -66,7 +66,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.update()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     
@@ -84,7 +84,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "DetalleServicioService.listAll()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "DetalleServicioService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -103,7 +103,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "DetalleServicioService.ListAllEnabled()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "DetalleServicioService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

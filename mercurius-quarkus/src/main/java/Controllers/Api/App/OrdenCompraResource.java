@@ -129,24 +129,30 @@ public class OrdenCompraResource {
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     @Nonnull
+    @Inject
     OrdenCompraService ordenCompraService;
 
     @Nonnull
+    @Inject
     DepartamentoService departamentoService;
 
     @Nonnull
+    @Inject
     ArticulosService articulosService;
 
     
     /** Current-user resolution (same pattern as LoyaltyResource/SettingsResource). */
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     /** Root path for HX-Redirect targets (fixed /Mercurius in this app). */
@@ -157,30 +163,37 @@ public class OrdenCompraResource {
     // on this stack — same approach as CategoriaResource, T18).
     @Nonnull
     @Location("pages/compras/ordenes.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/compras/ordenes-tabla.html")
+    @Inject
     Template tablaPage;
 
     @Nonnull
     @Location("pages/compras/ordenes-form.html")
+    @Inject
     Template formPage;
 
     @Nonnull
     @Location("pages/compras/ordenes-detalle.html")
+    @Inject
     Template detallePage;
 
     @Nonnull
     @Location("pages/compras/ordenes-estado.html")
+    @Inject
     Template estadoPage;
 
     @Nonnull
     @Location("pages/compras/ordenes-cancelar.html")
+    @Inject
     Template cancelarPage;
 
     @Nonnull
     @Location("pages/compras/ordenes-articulos.html")
+    @Inject
     Template articulosPage;
 
     // ── JSON API (kit list/detail/mutation contract) ────────────────────────

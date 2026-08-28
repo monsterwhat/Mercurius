@@ -85,18 +85,23 @@ public class LoyaltyResource {
     private static final Logger LOG = Logger.getLogger(LoyaltyResource.class.getName());
 
     @Nonnull
+    @Inject
     LoyaltyService loyaltyService;
 
     @Nonnull
+    @Inject
     ClientService clientService;
 
     @Nonnull
+    @Inject
     AppSettingsService appSettingsService;
 
     
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
@@ -108,22 +113,27 @@ public class LoyaltyResource {
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     @Nonnull
     @Location("pages/loyalty/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/loyalty/tabla-top.html")
+    @Inject
     Template tablaTop;
 
     @Nonnull
     @Location("pages/loyalty/panel-ajustes.html")
+    @Inject
     Template panelAjustes;
 
     @Nonnull
     @Location("pages/loyalty/drawer-historial.html")
+    @Inject
     Template drawerHistorial;
 
     /**
@@ -302,7 +312,7 @@ public class LoyaltyResource {
             // Deliberate deviation: legacy recorded settings.toString(); the
             // DiffUtils JSON snapshot matches SettingsDirController's
             // antes/despues convention and stays diffable.
-                        LOG.info("Se han actualizado las configuraciones del programa de lealtad" + " | user=" + String.valueOf(currentUserOrNull()) + " | source=" + "LoyaltyResource.updateSettings()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(settings)));
+                        LOG.info("Se han actualizado las configuraciones del programa de lealtad" + " | user=" + String.valueOf(currentUserOrNull()) + " | source=" + "LoyaltyResource.updateSettings()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(settings)));
 
             return Response.ok(ApiResponse.ok(new LoyaltySettingsResponse(
                     settings.getCashbackPercentage(),

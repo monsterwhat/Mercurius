@@ -36,10 +36,10 @@ public class AppSettingsService extends GService<AppSettings> {
                 em.merge(entity);
                 em.flush();
             } else {
-                                LOG.info("Entity not found" + " | source=" + "AppSettingsService.disable()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Entity not found" + " | source=" + "AppSettingsService.disable()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=" + "AppSettingsService.disable()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=" + "AppSettingsService.disable()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
      
@@ -51,7 +51,7 @@ public class AppSettingsService extends GService<AppSettings> {
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "AppSettingsService.returnCurrent()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "AppSettingsService.returnCurrent()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -78,7 +78,7 @@ public class AppSettingsService extends GService<AppSettings> {
         } catch (NoResultException e) {
             // table empty — fall through to create
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error fallback: " + e.getMessage() + " | source=" + "AppSettingsService.findOrCreateCurrent()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error fallback: " + e.getMessage() + " | source=" + "AppSettingsService.findOrCreateCurrent()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
 
         current = new AppSettings();

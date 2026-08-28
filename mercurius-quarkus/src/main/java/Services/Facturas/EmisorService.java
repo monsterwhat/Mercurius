@@ -39,7 +39,7 @@ public class EmisorService extends GService<Emisor> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "EmisorService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "EmisorService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -54,10 +54,10 @@ public class EmisorService extends GService<Emisor> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                                LOG.info("Entity not found for delete" + " | source=" + "EmisorService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Entity not found for delete" + " | source=" + "EmisorService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "EmisorService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "EmisorService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -67,7 +67,7 @@ public class EmisorService extends GService<Emisor> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "EmisorService.update()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "EmisorService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -78,7 +78,7 @@ public class EmisorService extends GService<Emisor> {
             TypedQuery<Emisor> query = em.createQuery("SELECT d FROM Emisor d", Emisor.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "EmisorService.listAll()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "EmisorService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -88,7 +88,7 @@ public class EmisorService extends GService<Emisor> {
     try {
         return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=" + "EmisorService.findById()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=" + "EmisorService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -99,7 +99,7 @@ public class EmisorService extends GService<Emisor> {
             TypedQuery<Emisor> query = em.createQuery("SELECT a FROM Emisor", Emisor.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "EmisorService.ListAllEnabled()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "EmisorService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -126,7 +126,7 @@ public class EmisorService extends GService<Emisor> {
             }
         } catch (PersistenceException e) {
             // Catch the database constraint violation exception
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating or retrieving Emisor: " + e.getMessage() + " | source=" + "EmisorService.createIfNotExist()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating or retrieving Emisor: " + e.getMessage() + " | source=" + "EmisorService.createIfNotExist()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             // Handle the error gracefully, maybe log it or notify the user
             return null;
         }

@@ -33,7 +33,7 @@ public class NotaCreditoService extends GService<NotaCredito> {
             query.setParameter("comprobanteId", comprobanteId);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listPorComprobante()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listPorComprobante()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -46,7 +46,7 @@ public class NotaCreditoService extends GService<NotaCredito> {
             );
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listAll()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

@@ -127,45 +127,56 @@ public class CategoriaResource {
     private static final String MSG_FAMILIA_DUPLICADA = "Ya existe una familia con ese nombre!";
 
     @Nonnull
+    @Inject
     DepartamentoService departamentoService;
 
     @Nonnull
+    @Inject
     FamiliaService familiaService;
 
     @Nonnull
+    @Inject
     DepartamentoMetricoService departamentoMetricoService;
 
     
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as LoginPageResource, T14).
     @Nonnull
     @Location("pages/categorias/index.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/categorias/tabla-familias.html")
+    @Inject
     Template tablaFamilias;
 
     @Nonnull
     @Location("pages/categorias/tabla-departamentos.html")
+    @Inject
     Template tablaDepartamentos;
 
     @Nonnull
     @Location("pages/categorias/form-familia.html")
+    @Inject
     Template formFamilia;
 
     @Nonnull
     @Location("pages/categorias/form-departamento.html")
+    @Inject
     Template formDepartamento;
 
     // ════════════════════════════════════════════════════════════════════
@@ -290,7 +301,7 @@ public class CategoriaResource {
             if (!created) {
                 return formFailure(TAB_FAMILIAS, "crear", "warn", MSG_FAMILIA_DUPLICADA);
             }
-                        LOG.info("Se ha creado la familia: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.createFamilia" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(familia.toString()));
+                        LOG.info("Se ha creado la familia: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.createFamilia" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(familia.toString()));
             if (isHxRequest()) {
                 // Success in the dialog flow: send the client back to the
                 // page so table, counters and modal state reset (ui-kit §5).

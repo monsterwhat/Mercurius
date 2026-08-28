@@ -104,14 +104,17 @@ public class ReporteProgramadoResource {
     private static final Logger LOG = Logger.getLogger(ReporteProgramadoResource.class.getName());
 
     @Nonnull
+    @Inject
     ReportesProgramadosService reportesProgramadosService;
 
     
+    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
+    @Inject
     RoutingContext routing;
 
     // View-half templates (W4B-CORREOS). Rendered to String: no
@@ -119,14 +122,17 @@ public class ReporteProgramadoResource {
     // CategoriaResource/T18 and LoginPageResource/T14.
     @Nonnull
     @Location("pages/correos/reportes.html")
+    @Inject
     Template pageIndex;
 
     @Nonnull
     @Location("pages/correos/tabla-reportes.html")
+    @Inject
     Template tablaReportes;
 
     @Nonnull
     @Location("pages/correos/form-reporte.html")
+    @Inject
     Template formReporte;
 
     /** Paginated scheduled-report listing. */
@@ -236,7 +242,7 @@ public class ReporteProgramadoResource {
 
             reportesProgramadosService.create(reporte);
 
-                        LOG.info("Se ha creado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(reporte.toString()));
+                        LOG.info("Se ha creado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(reporte.toString()));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(reporte)))
@@ -389,7 +395,7 @@ public class ReporteProgramadoResource {
             String antes = DiffUtils.snapshotEntity(reporte);
             reportesProgramadosService.delete(reporte);
 
-                        LOG.info("Se ha eliminado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(null));
+                        LOG.info("Se ha eliminado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf((Object) null));
 
             // View-half branch — same dual-mode contract as toggle().
             if (isHxRequest()) {
@@ -537,7 +543,7 @@ public class ReporteProgramadoResource {
 
             reportesProgramadosService.create(reporte);
 
-                        LOG.info("Se ha creado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.createReporteForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(reporte.toString()));
+                        LOG.info("Se ha creado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.createReporteForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(reporte.toString()));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/reportes-programados/table");

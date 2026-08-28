@@ -39,7 +39,7 @@ public class CierreCajaService extends GService<CierreCaja> {
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding open session: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.findSesionAbierta()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding open session: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.findSesionAbierta()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -53,7 +53,7 @@ public class CierreCajaService extends GService<CierreCaja> {
             query.setParameter("usuario", usuario);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorial()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorial()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -69,7 +69,7 @@ public class CierreCajaService extends GService<CierreCaja> {
             query.setParameter("hasta", hasta);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history by date: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorialPorFecha()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history by date: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorialPorFecha()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

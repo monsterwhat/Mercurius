@@ -37,7 +37,7 @@ public class PromocionesService extends GService<Promocion> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.activa = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=" + "PromocionesService.countActivos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=" + "PromocionesService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -47,7 +47,7 @@ public class PromocionesService extends GService<Promocion> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.activa = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=" + "PromocionesService.countActivos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=" + "PromocionesService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -59,7 +59,7 @@ public class PromocionesService extends GService<Promocion> {
             em.persist(entity);
             em.flush();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "PromocionesService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "PromocionesService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -74,10 +74,10 @@ public class PromocionesService extends GService<Promocion> {
                 em.remove(entity);
             em.flush();
             } else {
-                                LOG.info("Entity not found" + " | source=" + "PromocionesService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
+                                LOG.info("Entity not found" + " | source=" + "PromocionesService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "PromocionesService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "PromocionesService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -90,7 +90,7 @@ public class PromocionesService extends GService<Promocion> {
             em.merge(entity);
             em.flush();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "PromocionesService.update()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "PromocionesService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -100,7 +100,7 @@ public class PromocionesService extends GService<Promocion> {
             TypedQuery<Promocion> query = em.createQuery("SELECT d FROM Promocion d", Promocion.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "PromocionesService.listAll()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "PromocionesService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -109,7 +109,7 @@ public class PromocionesService extends GService<Promocion> {
     try {
         return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=" + "PromocionesService.findById()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=" + "PromocionesService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

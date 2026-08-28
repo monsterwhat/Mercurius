@@ -45,6 +45,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -129,32 +130,40 @@ public class RecibosResource {
     private static final String CODIGO_NOTA_CREDITO = "02";
 
     @Nonnull
+    @Inject
     ComprobantesEmitidosService comprobantesEmitidosService;
 
     @Nonnull
+    @Inject
     ComprobanteService comprobanteService;
 
     
     @Nonnull
+    @Inject
     LoginService loginService;
 
+    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request headers — source of HX-Request. */
+    @Context
     @Nonnull
     HttpHeaders httpHeaders;
 
     @Nonnull
     @Location("pages/recibos/tablero")
+    @Inject
     Template tablero;
 
     @Nonnull
     @Location("pages/recibos/tabla")
+    @Inject
     Template tabla;
 
     @Nonnull
     @Location("pages/recibos/detalle")
+    @Inject
     Template detalle;
 
     // ════════════════════════════════════════════════════════════════════
@@ -375,7 +384,7 @@ public class RecibosResource {
             }
             enc.setEstado("ACEPTADO");
             comprobantesEmitidosService.update(f);
-                        LOG.info("Se marco la factura #" + f.getId() + " como pagada" + " | user=" + String.valueOf(currentUser()) + " | source=" + "paySelectedFactura" + " | antes=" + String.valueOf(f.toString()) + " | despues=" + String.valueOf(null));
+                        LOG.info("Se marco la factura #" + f.getId() + " como pagada" + " | user=" + String.valueOf(currentUser()) + " | source=" + "paySelectedFactura" + " | antes=" + String.valueOf(f.toString()) + " | despues=" + String.valueOf((Object) null));
             return accionOk(id, "Se marco la factura como pagada!");
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "Error marcando el recibo " + id + " como pagada", e);
