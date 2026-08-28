@@ -30,13 +30,15 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <p class="title is-3">Gestión de Inventario</p>
+        <div class="inventario-header">
+            <p class="title is-3 has-text-centered">Gestión de Inventario</p>
 
-        {! Stat cards — polled so approvals made elsewhere stay fresh !}
-        <div id="inventario-badges"
-             hx-get="/Mercurius/api/app/inventario/badges"
-             hx-trigger="every 30s" hx-swap="innerHTML">
-            {#include pages/inventario/badges badges=badges /}
+            {! Stat cards — polled so approvals made elsewhere stay fresh !}
+            <div id="inventario-badges"
+                 hx-get="/Mercurius/api/app/inventario/badges"
+                 hx-trigger="every 30s" hx-swap="innerHTML">
+                {#include pages/inventario/badges badges=badges /}
+            </div>
         </div>
 
         {! ── Ajustes Activos ──────────────────────────────────────── !}
@@ -50,6 +52,7 @@
                          bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
                     <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="inventario"/>
                         <input type="hidden" name="type" value="pdf"/>
                         <button class="button is-info" type="submit">Exportar PDF</button>

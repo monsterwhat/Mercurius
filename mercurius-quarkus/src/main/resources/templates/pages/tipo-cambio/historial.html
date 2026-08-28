@@ -1,0 +1,33 @@
+{!
+  pages/tipo-cambio/historial - modal body fragment listing recent rates.
+  Served by TipoCambioPageResource at GET /app/tipo-cambio/historial.
+
+  DATA MODEL CONTRACT:
+    filas List<Map> - {fecha, compra, venta} most-recent-first, capped.
+!}
+{#if filas.size() > 0}
+<div class="table-container">
+    <table class="table is-striped is-fullwidth is-hoverable">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th class="has-text-right">Compra</th>
+                <th class="has-text-right">Venta</th>
+            </tr>
+        </thead>
+        <tbody>
+            {#for fila in filas}
+            <tr>
+                <td>{fila.fecha}</td>
+                <td class="has-text-right">&#8353;{fila.compra}</td>
+                <td class="has-text-right">&#8353;{fila.venta}</td>
+            </tr>
+            {/for}
+        </tbody>
+    </table>
+</div>
+{#else}
+<div class="notification is-light">
+    No hay registros de tipo de cambio todavia.
+</div>
+{/if}

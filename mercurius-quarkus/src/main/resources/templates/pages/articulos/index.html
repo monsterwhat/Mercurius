@@ -30,53 +30,40 @@
     {#body}
     <section class="section" style="padding-top:1rem"
              x-data="{ tab: 'activos' }">
-        <p class="title is-3">Gestión de Artículos</p>
+        <div class="articulos-header">
+            <p class="title is-3 has-text-centered">Gestión de Artículos</p>
 
-        {! Stat cards — legacy clickable tabs (switchTab parity) !}
-        <div class="columns">
-            <div class="column">
-                <button type="button" class="box has-text-centered"
-                        style="width:100%;cursor:pointer;border:2px solid transparent"
-                        :class="{ 'has-border-link': tab === 'activos' }"
+            {! Stat cards — legacy clickable tabs (switchTab parity) !}
+            <div class="stats-grid">
+                <button type="button" class="stat-card" style="cursor:pointer"
+                        :class="{ 'active': tab === 'activos' }"
                         @click="tab = 'activos'">
-                    <p class="title is-1" style="margin-bottom:0">{activosCount}</p>
-                    <p class="subtitle is-6">Activos</p>
+                    <span class="stat-number">{activosCount}</span>
+                    <span class="stat-label">Activos</span>
                 </button>
-            </div>
-            <div class="column">
-                <button type="button" class="box has-text-centered"
-                        style="width:100%;cursor:pointer;border:2px solid transparent"
-                        :class="{ 'has-border-link': tab === 'inactivos' }"
+                <button type="button" class="stat-card" style="cursor:pointer"
+                        :class="{ 'active': tab === 'inactivos' }"
                         @click="tab = 'inactivos'">
-                    <p class="title is-1" style="margin-bottom:0">{inactivosCount}</p>
-                    <p class="subtitle is-6">Inactivos</p>
+                    <span class="stat-number">{inactivosCount}</span>
+                    <span class="stat-label">Inactivos</span>
                 </button>
-            </div>
-            <div class="column">
-                <button type="button" class="box has-text-centered"
-                        style="width:100%;cursor:pointer;border:2px solid transparent"
-                        :class="{ 'has-border-link': tab === 'catalogo' }"
+                <button type="button" class="stat-card" style="cursor:pointer"
+                        :class="{ 'active': tab === 'catalogo' }"
                         @click="tab = 'catalogo'">
-                    <p class="title is-1" style="margin-bottom:0">{catalogoCount}</p>
-                    <p class="subtitle is-6">Catálogo</p>
+                    <span class="stat-number">{catalogoCount}</span>
+                    <span class="stat-label">Catálogo</span>
                 </button>
-            </div>
-            <div class="column">
-                <button type="button" class="box has-text-centered"
-                        style="width:100%;cursor:pointer;border:2px solid transparent"
-                        :class="{ 'has-border-link': tab === 'pendientes' }"
+                <button type="button" class="stat-card" style="cursor:pointer"
+                        :class="{ 'active': tab === 'pendientes' }"
                         @click="tab = 'pendientes'">
-                    <p class="title is-1" style="margin-bottom:0">{pendientesCount}</p>
-                    <p class="subtitle is-6">Pendientes</p>
+                    <span class="stat-number">{pendientesCount}</span>
+                    <span class="stat-label">Pendientes</span>
                 </button>
-            </div>
-            <div class="column">
-                <button type="button" class="box has-text-centered"
-                        style="width:100%;cursor:pointer;border:2px solid transparent"
-                        :class="{ 'has-border-link': tab === 'promociones' }"
+                <button type="button" class="stat-card" style="cursor:pointer"
+                        :class="{ 'active': tab === 'promociones' }"
                         @click="tab = 'promociones'">
-                    <p class="title is-1" style="margin-bottom:0">{promocionesCount}</p>
-                    <p class="subtitle is-6">Promociones</p>
+                    <span class="stat-number">{promocionesCount}</span>
+                    <span class="stat-label">Promociones</span>
                 </button>
             </div>
         </div>
@@ -93,6 +80,7 @@
                              bodyUrl="/api/app/articulos/formularios/articulos/nueva"}{/include}
                         {#if canExport}
                         <form method="post" action="/Mercurius/api/app/export">
+                            <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="activos"/>
@@ -117,6 +105,7 @@
                 <div class="level-right">
                     {#if canExport}
                     <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="inactivos"/>
@@ -137,6 +126,7 @@
                 <div class="level-right">
                     {#if canExport}
                     <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="catalogo"/>
@@ -160,6 +150,7 @@
                              bodyUrl="/api/app/articulos/revision/siguiente"}{/include}
                         {#if canExport}
                         <form method="post" action="/Mercurius/api/app/export">
+                            <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="pendientes"/>
@@ -187,6 +178,7 @@
                              bodyUrl="/api/app/articulos/formularios/promociones/nueva"}{/include}
                         {#if canExport}
                         <form method="post" action="/Mercurius/api/app/export">
+                            <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="promociones"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <button class="button is-success" type="submit">Exportar Excel</button>

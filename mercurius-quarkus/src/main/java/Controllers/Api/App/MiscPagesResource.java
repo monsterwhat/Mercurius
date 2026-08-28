@@ -90,7 +90,4 @@ public class MiscPagesResource {
 
     @GET @Path("/registros/log") @RolesAllowed({"admin","registro"})
     public Response registrosLog() { return placeholder("Log de Actividades","Registro de actividades (placeholder)","/Mercurius/app"); }
-
-    @GET @Path("/tipo-cambio") @RolesAllowed({"admin","tributacion"})
-    public Response tipoCambio() { return placeholder("Tipo de Cambio","Consulta de tipo de cambio BCCR - use el widget en el POS","/Mercurius/app/pos"); }
 }

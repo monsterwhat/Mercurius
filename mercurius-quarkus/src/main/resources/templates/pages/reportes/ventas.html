@@ -57,6 +57,7 @@
 
         <div class="buttons mt-4">
             <form method="post" action="/Mercurius/api/app/export">
+                <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="articulos"/>
                 <input type="hidden" name="type" value="pdf"/>
                 {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}

@@ -9,29 +9,21 @@
     badges.inactivos   Long - countInactivos()
     badges.procesados  Long - legacy tab-counter arithmetic activos - pendientes
 !}
-<div class="columns">
-    <div class="column">
-        <div class="box has-text-centered">
-            <p class="title is-1" style="margin-bottom:0">{badges.activos}</p>
-            <p class="subtitle is-6">Activos</p>
-        </div>
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-number">{badges.activos}</span>
+        <span class="stat-label">Activos</span>
     </div>
-    <div class="column">
-        <div class="box has-text-centered">
-            <p class="title is-1 has-text-warning" style="margin-bottom:0">{badges.pendientes}</p>
-            <p class="subtitle is-6">Pendientes</p>
-        </div>
+    <div class="stat-card">
+        <span class="stat-number">{badges.pendientes}</span>
+        <span class="stat-label">Pendientes</span>
     </div>
-    <div class="column">
-        <div class="box has-text-centered">
-            <p class="title is-1 has-text-success" style="margin-bottom:0">{badges.procesados}</p>
-            <p class="subtitle is-6">Procesados</p>
-        </div>
+    <div class="stat-card">
+        <span class="stat-number">{badges.procesados}</span>
+        <span class="stat-label">Procesados</span>
     </div>
-    <div class="column">
-        <div class="box has-text-centered">
-            <p class="title is-1 has-text-danger" style="margin-bottom:0">{badges.inactivos}</p>
-            <p class="subtitle is-6">Inactivos</p>
-        </div>
+    <div class="stat-card">
+        <span class="stat-number">{badges.inactivos}</span>
+        <span class="stat-label">Inactivos</span>
     </div>
 </div>

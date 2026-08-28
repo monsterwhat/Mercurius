@@ -36,6 +36,22 @@
             </div>
         </div>
 
+        {! CAByS picker: search modal fills the hidden input (legacy
+           assignCabysToSelectedArticulo parity). Edit mode shows the current
+           code; the picker button hx-loads the suggestion fragment. !}
+        <div class="field">
+            <label class="label" for="articulo-cabys">Código CABYS:</label>
+            <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
+                <input class="input" id="articulo-cabys" name="cabysCodigo" style="font-family:monospace"
+                       placeholder="Seleccione un código del CABYS"
+                       value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
+                <button type="button" class="button is-link"
+                        aria-haspopup="dialog" data-kit-open="buscador-cabys"
+                        hx-get="/Mercurius/api/app/articulos/cabys?q="
+                        hx-target="#buscador-cabys-body" hx-swap="innerHTML">Buscar</button>
+            </div>
+        </div>
+
         <div class="field">
             <label class="label" for="articulo-codigo-barra">Código de Barras:</label>
             <div class="control">
@@ -94,7 +110,7 @@
             <div class="column">
                 <div class="field">
                     <label class="label" for="articulo-departamento">Departamento:</label>
-                    <div class="control">
+                    <div class="control" style="display:flex; gap:0.5rem; align-items:center">
                         <div class="select" style="width:100%">
                             <select id="articulo-departamento" name="departamentoId" required="required" style="width:100%">
                                 <option value="">Seleccionar Departamento</option>
@@ -104,13 +120,15 @@
                                 {/for}
                             </select>
                         </div>
+                        <button type="button" class="button is-small is-success"
+                                data-action="create-departamento" title="Crear departamento">+</button>
                     </div>
                 </div>
             </div>
             <div class="column">
                 <div class="field">
                     <label class="label" for="articulo-familia">Familia:</label>
-                    <div class="control">
+                    <div class="control" style="display:flex; gap:0.5rem; align-items:center">
                         <div class="select" style="width:100%">
                             <select id="articulo-familia" name="familiaId" required="required" style="width:100%">
                                 <option value="">Seleccionar Familia</option>
@@ -120,24 +138,10 @@
                                 {/for}
                             </select>
                         </div>
+                        <button type="button" class="button is-small is-success"
+                                data-action="create-familia" title="Crear familia">+</button>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        {! CAByS picker: search modal fills the hidden input (legacy
-           assignCabysToSelectedArticulo parity). Edit mode shows the current
-           code; the picker button hx-loads the suggestion fragment. !}
-        <div class="field">
-            <label class="label" for="articulo-cabys">Código CABYS:</label>
-            <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
-                <input class="input" id="articulo-cabys" name="cabysCodigo" style="font-family:monospace"
-                       placeholder="Seleccione un código del CABYS"
-                       value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
-                <button type="button" class="button is-link"
-                        aria-haspopup="dialog" data-kit-open="buscador-cabys"
-                        hx-get="/Mercurius/api/app/articulos/cabys?q="
-                        hx-target="#buscador-cabys-body" hx-swap="innerHTML">Buscar</button>
             </div>
         </div>
 
@@ -159,6 +163,32 @@
                         <input class="input" id="articulo-utilidad" type="number" step="1" min="0"
                                name="porcentajeUtilidad" placeholder="0"
                                value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}{/if}"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {! Read-only derived prices: Precio con Utilidad (costo * (1+utilidad/100),
+           CEILING) and Precio Final (precioConUtilidad * (1+impuesto/100), CEILING).
+           Updated live by the inline script on costo/utilidad/cabys change. !}
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-precio-utilidad">Precio con Utilidad:</label>
+                    <div class="control">
+                        <input class="input" id="articulo-precio-utilidad" type="text" readonly
+                               placeholder="0"
+                               value="{#if precio?? && precio.precioConUtilidad??}{precio.precioConUtilidad}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="articulo-precio-final">Precio Final (con IVA):</label>
+                    <div class="control">
+                        <input class="input" id="articulo-precio-final" type="text" readonly
+                               placeholder="0"
+                               value="{#if precio?? && precio.precioFinal??}{precio.precioFinal}{/if}"/>
                     </div>
                 </div>
             </div>
@@ -202,11 +232,127 @@
                     {#if modo == 'editar'}Guardar cambios{#else}Crear Artículo{/if}
                 </button>
             </div>
-            <div class="control">
-                <button class="button" type="button" data-kit-close>Cerrar</button>
-            </div>
         </div>
     </form>
+
+    {! Inline behaviour: live derived-price preview (costo/utilidad/cabys) and
+       on-the-fly departamento/familia creation via the categorías API. !}
+    <script>
+        (function () {
+            var cabysInput = document.getElementById('articulo-cabys');
+            var costoInput = document.getElementById('articulo-costo');
+            var utilidadInput = document.getElementById('articulo-utilidad');
+            var precioUtilidadOutput = document.getElementById('articulo-precio-utilidad');
+            var precioFinalOutput = document.getElementById('articulo-precio-final');
+
+            function csrfHeaders() {
+                var headers = { };
+                var raw = document.body.getAttribute('hx-headers');
+                if (raw) {
+                    try {
+                        headers = JSON.parse(raw);
+                    } catch (e) { /* ignore */ }
+                }
+                return headers;
+            }
+
+            function recalcularPrecios() {
+                if (!costoInput || !utilidadInput || !precioUtilidadOutput || !precioFinalOutput) {
+                    return;
+                }
+                var costo = parseFloat(costoInput.value);
+                var utilidad = parseFloat(utilidadInput.value);
+                if (isNaN(costo) || isNaN(utilidad) || costo < 0 || utilidad < 0) {
+                    return;
+                }
+                var precioConUtilidad = Math.ceil(costo * (1 + utilidad / 100));
+                precioUtilidadOutput.value = precioConUtilidad;
+
+                var impuesto = parseFloat(cabysInput ? cabysInput.getAttribute('data-impuesto') : null);
+                if (isNaN(impuesto)) {
+                    precioFinalOutput.value = '';
+                    return;
+                }
+                var precioFinal = Math.ceil(precioConUtilidad * (1 + impuesto / 100));
+                precioFinalOutput.value = precioFinal;
+            }
+
+            function cargarImpuesto(codigo) {
+                if (!cabysInput) {
+                    return;
+                }
+                if (!codigo) {
+                    cabysInput.removeAttribute('data-impuesto');
+                    recalcularPrecios();
+                    return;
+                }
+                fetch('/Mercurius/api/app/cabys/' + encodeURIComponent(codigo), {
+                    headers: csrfHeaders()
+                }).then(function (r) { return r.json(); }).then(function (json) {
+                    var imp = json && json.data ? json.data.impuesto : null;
+                    if (imp != null) {
+                        cabysInput.setAttribute('data-impuesto', imp);
+                    } else {
+                        cabysInput.removeAttribute('data-impuesto');
+                    }
+                    recalcularPrecios();
+                }).catch(function () {
+                    cabysInput.removeAttribute('data-impuesto');
+                    recalcularPrecios();
+                });
+            }
+
+            if (costoInput) { costoInput.addEventListener('input', recalcularPrecios); }
+            if (utilidadInput) { utilidadInput.addEventListener('input', recalcularPrecios); }
+            if (cabysInput) {
+                cabysInput.addEventListener('change', function () { cargarImpuesto(cabysInput.value.trim()); });
+                cabysInput.addEventListener('input', function () { cargarImpuesto(cabysInput.value.trim()); });
+            }
+
+            document.querySelectorAll('[data-action="create-departamento"], [data-action="create-familia"]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var esDepartamento = btn.getAttribute('data-action') === 'create-departamento';
+                    var tipo = esDepartamento ? 'departamento' : 'familia';
+                    var nombre = prompt('Nombre del nuevo ' + (esDepartamento ? 'departamento' : 'familia') + ':');
+                    if (!nombre || !nombre.trim()) {
+                        return;
+                    }
+                    var url = '/Mercurius/api/app/categorias/' + (esDepartamento ? 'departamentos' : 'familias');
+                    var body = new URLSearchParams();
+                    body.append('nombre', nombre.trim());
+                    fetch(url, {
+                        method: 'POST',
+                        headers: Object.assign({ 'Content-Type': 'application/x-www-form-urlencoded' }, csrfHeaders()),
+                        body: body.toString()
+                    }).then(function (r) {
+                        return r.json().then(function (json) { return { ok: r.ok, json: json }; });
+                    }).then(function (res) {
+                        if (!res.ok) {
+                            var msg = res.json && res.json.error && res.json.error.message ? res.json.error.message : 'No se pudo crear el ' + tipo;
+                            alert(msg);
+                            return;
+                        }
+                        var data = res.json && res.json.data ? res.json.data : null;
+                        if (!data || data.id == null) {
+                            alert('No se pudo crear el ' + tipo);
+                            return;
+                        }
+                        var selectId = esDepartamento ? 'articulo-departamento' : 'articulo-familia';
+                        var select = document.getElementById(selectId);
+                        if (select) {
+                            var opt = document.createElement('option');
+                            opt.value = data.id;
+                            opt.textContent = data.nombre;
+                            select.appendChild(opt);
+                            select.value = data.id;
+                        }
+                    }).catch(function () {
+                        alert('Error al crear el ' + tipo);
+                    });
+                });
+            });
+        })();
+    </script>
 </div>
 
 {#if toastMessage??}

@@ -9,6 +9,7 @@ import Utils.DiffUtils;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.security.identity.SecurityIdentity;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -74,6 +76,10 @@ public class CabysResource {
     @Nonnull
     @Inject
     RoutingContext routing;
+
+    @Nonnull
+    @Inject
+    SecurityIdentity identity;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
@@ -328,6 +334,40 @@ public class CabysResource {
         return result;
     }
 
+    /**
+     * POST /import — downloads the full CABYS catalog from the Hacienda
+     * webservice ({@link CabysService#listAllAPI()}) and persists it
+     * ({@link CabysService#saveAllDB(List)}), restoring the legacy
+     * {@code CabysController.cabysListApi()} orchestration that was dropped
+     * during the JSF decommission. Restricted to admin/tributacion.
+     */
+    @POST
+    @Path("/import")
+    @RolesAllowed({"admin", "tributacion"})
+    @Operation(summary = "Import/refresh the CABYS catalog from Hacienda")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Import triggered"),
+        @APIResponse(responseCode = "401", description = "Not authenticated"),
+        @APIResponse(responseCode = "403", description = "Missing admin/tributacion role"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response importar() {
+        try {
+            List<Cabys> catalogo = cabysService.listAllAPI();
+            cabysService.saveAllDB(catalogo);
+            LOG.log(Level.INFO, "Catálogo CABYS importado desde Hacienda: {0} códigos", catalogo.size());
+            if (isHxRequest()) {
+                return hxRedirect("/api/app/cabys/table");
+            }
+            return Response.ok(ApiResponse.ok(Map.of("importados", catalogo.size()))).build();
+        } catch (Exception e) {
+            LOG.log(Level.WARNING, "Error importando el catálogo CABYS", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error importando el catálogo CABYS"))
+                    .build();
+        }
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /**
@@ -376,7 +416,13 @@ public class CabysResource {
         TableModel model = buildTableModel(1, 20, null, "asc", null);
         return pageIndex
                 .data("tablaCabys", model.asMap())
-                .data("totalCodigos", cabysService.count());
+                .data("totalCodigos", cabysService.count())
+                .data("canImport", canImport());
+    }
+
+    private boolean canImport() {
+        return !identity.isAnonymous()
+                && (identity.hasRole("admin") || identity.hasRole("tributacion"));
     }
 
     private TemplateInstance tableInstance(int page, int size, @Nullable String sort,

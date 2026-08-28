@@ -91,7 +91,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
         
         try {
-            Long result = em.createQuery(
+            Number result = em.createQuery(
                 "SELECT COALESCE(SUM(ld.cantidad), 0) " +
                 "FROM ComprobantesEmitidos f " +
                 "JOIN f.detalles d " +
@@ -100,13 +100,13 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
                 "WHERE f.user = :user " +
                 "AND f.status = true " +
                 "AND e.fechaEmision BETWEEN :startOfDay AND :endOfDay",
-                Long.class
+                Number.class
             ).setParameter("user", user.getUsername())
              .setParameter("startOfDay", startOfDay)
              .setParameter("endOfDay", endOfDay)
              .getSingleResult();
             
-            return result.intValue();
+            return result == null ? 0 : result.intValue();
         } catch (jakarta.persistence.PersistenceException e) {
             LOG.log(java.util.logging.Level.WARNING, "Error getting items sold: " + e.getMessage() + " | source=DashboardService.getItemsSold() | despues=" + e.getMessage());
             return 0;

@@ -4,17 +4,26 @@
   GET /api/app/inventario/formularios/ajuste/nueva; the POST goes to
   POST /api/app/inventario/ajustes (form-urlencoded twin) and on success
   the resource answers HX-Redirect back to the page.
+
+  The article is chosen via a searchable picker (selector-articulos-ajuste)
+  that fills the hidden articuloId input; tipoMovimiento is a select with a
+  "Personalizado..." option that reveals a free-text input (Alpine toggle).
 !}
 <div class="box is-shadowless">
     <form hx-post="/Mercurius/api/app/inventario/ajustes"
           hx-target="#crear-ajuste-body" hx-swap="innerHTML">
         <div class="field">
-            <label class="label" for="ajuste-articulo-id">Código del artículo *</label>
-            <div class="control">
-                <input class="input" type="number" id="ajuste-articulo-id" name="articuloId"
-                       min="1" placeholder="Ej.: 123" required/>
+            <label class="label" for="ajuste-articulo-display">Artículo *</label>
+            <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
+                <input class="input" id="ajuste-articulo-display" type="text" readonly
+                       placeholder="Busque y seleccione un artículo"/>
+                <button type="button" class="button is-link"
+                        aria-haspopup="dialog" data-kit-open="selector-articulo-ajuste"
+                        hx-get="/Mercurius/api/app/articulos/formularios/ajuste/articulos"
+                        hx-target="#selector-articulo-ajuste-body" hx-swap="innerHTML">Buscar</button>
             </div>
-            <p class="help">Identificador del artículo al que se aplica el ajuste.</p>
+            <input type="hidden" id="ajuste-articulo-id" name="articuloId"/>
+            <p class="help">Busque por nombre o código y seleccione el artículo del ajuste.</p>
         </div>
         <div class="field">
             <label class="label" for="ajuste-cantidad">Cantidad *</label>
@@ -23,12 +32,28 @@
                        name="cantidad" required/>
             </div>
         </div>
-        <div class="field">
+        <div class="field" x-data="{ tipo: '', customTipo: '', get custom() { return this.tipo === '__custom__'; } }">
             <label class="label" for="ajuste-tipo">Tipo de movimiento</label>
             <div class="control">
-                <input class="input" type="text" id="ajuste-tipo" name="tipoMovimiento"
-                       placeholder="Ajuste manual"/>
+                <div class="select" style="width:100%">
+                    <select id="ajuste-tipo" style="width:100%" x-model="tipo">
+                        <option value="">Seleccione...</option>
+                        <option value="Ajuste manual">Ajuste manual</option>
+                        <option value="Entrada">Entrada</option>
+                        <option value="Salida">Salida</option>
+                        <option value="Devolución">Devolución</option>
+                        <option value="Merma">Merma</option>
+                        <option value="Corrección">Corrección</option>
+                        <option value="__custom__">Personalizado...</option>
+                    </select>
+                </div>
             </div>
+            <div class="control" style="margin-top:0.5rem" x-show="custom">
+                <input class="input" type="text" x-model="customTipo"
+                       placeholder="Escriba el tipo de movimiento personalizado"/>
+            </div>
+            <input type="hidden" name="tipoMovimiento"
+                   :value="tipo === '__custom__' ? customTipo : tipo"/>
         </div>
         <div class="field">
             <label class="label" for="ajuste-notas">Notas</label>
@@ -42,6 +67,11 @@
             <button class="button" type="button" data-kit-close>Cancelar</button>
         </div>
     </form>
+
+    {! Article picker modal: search-as-you-type fragment fills the hidden
+       articuloId input and the read-only display. !}
+    {#include _kit/modal id="selector-articulo-ajuste" title="Seleccionar Artículo" triggerClass="is-hidden"
+         bodyUrl="/api/app/articulos/formularios/ajuste/articulos"}{/include}
 
     {#if toastMessage??}
     <div hx-swap-oob="beforeend:#toast-container">
