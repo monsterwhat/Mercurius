@@ -88,26 +88,8 @@ public class MiscPagesResource {
         return Response.ok(html).type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
-    @GET @Path("/impresoras") @RolesAllowed({"admin"})
-    public Response impresoras() { return placeholder("Menu de Impresoras","Gestion de impresoras (placeholder)","/Mercurius/app"); }
-
-    @GET @Path("/aplicacion") @RolesAllowed({"admin"})
-    public Response aplicacion() { return placeholder("Menu de Aplicacion","Configuracion de aplicacion (placeholder)","/Mercurius/app"); }
-
-    @GET @Path("/backups") @RolesAllowed({"admin"})
-    public Response backups() { return placeholder("Backups","Copias de seguridad (placeholder)","/Mercurius/app"); }
-
-    @GET @Path("/correos/reportes") @RolesAllowed({"admin"})
-    public Response correosReportes() { return placeholder("Menu de Correos - Reportes","Reportes programados por correo (placeholder)","/Mercurius/app"); }
-
-    @GET @Path("/correos/plantillas") @RolesAllowed({"admin"})
-    public Response correosPlantillas() { return placeholder("Plantillas de Correo","Plantillas (placeholder)","/Mercurius/app"); }
-
     @GET @Path("/registros/log") @RolesAllowed({"admin","registro"})
     public Response registrosLog() { return placeholder("Log de Actividades","Registro de actividades (placeholder)","/Mercurius/app"); }
-
-    @GET @Path("/perfil") @RolesAllowed({"admin","inventario","facturacion","tributacion","usuario","registro"})
-    public Response perfil() { return placeholder("Perfil"," Perfil de usuario (placeholder - T22)","/Mercurius/app"); }
 
     @GET @Path("/tipo-cambio") @RolesAllowed({"admin","tributacion"})
     public Response tipoCambio() { return placeholder("Tipo de Cambio","Consulta de tipo de cambio BCCR - use el widget en el POS","/Mercurius/app/pos"); }

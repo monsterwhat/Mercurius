@@ -678,10 +678,21 @@ public class EmailTemplateResource {
 
     /** Full-page model for pages/correos/templates.html. */
     private TemplateInstance renderFullPage() {
+        return pageIndex.data(fullPageModel());
+    }
+
+    /**
+     * Flat full-page model for pages/correos/templates.html, exposed so the
+     * HTML page twin {@link CorreosPagesResource} can render the same model
+     * without duplicating the table-building logic (ArticuloResource#fullPageModel
+     * pattern — page and fragments can never disagree).
+     */
+    public Map<String, Object> fullPageModel() {
         TableModel tp = buildTableModel(1, 20, null, "asc", null);
-        return pageIndex
-                .data("tablaPlantillas", tp.asMap())
-                .data("totalPlantillas", emailTemplateService.count());
+        Map<String, Object> model = new LinkedHashMap<>();
+        model.put("tablaPlantillas", tp.asMap());
+        model.put("totalPlantillas", emailTemplateService.count());
+        return model;
     }
 
     /** Immutable view of everything tabla-plantillas.html needs. */

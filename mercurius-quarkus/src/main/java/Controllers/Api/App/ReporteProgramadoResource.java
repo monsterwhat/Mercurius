@@ -770,11 +770,22 @@ public class ReporteProgramadoResource {
 
     /** Full-page model for pages/correos/reportes.html. */
     private TemplateInstance renderFullPage() {
+        return pageIndex.data(fullPageModel());
+    }
+
+    /**
+     * Flat full-page model for pages/correos/reportes.html, exposed so the
+     * HTML page twin {@link CorreosPagesResource} can render the same model
+     * without duplicating the table-building logic (ArticuloResource#fullPageModel
+     * pattern — page and fragments can never disagree).
+     */
+    public Map<String, Object> fullPageModel() {
         TableModel tr = buildTableModel(1, 20, null, "asc", null);
-        return pageIndex
-                .data("tablaReportes", tr.asMap())
-                .data("totalReportes", reportesProgramadosService.count())
-                .data("isAdmin", isAdmin());
+        Map<String, Object> model = new LinkedHashMap<>();
+        model.put("tablaReportes", tr.asMap());
+        model.put("totalReportes", reportesProgramadosService.count());
+        model.put("isAdmin", isAdmin());
+        return model;
     }
 
     /** Immutable view of everything tabla-reportes.html needs. */

@@ -1,0 +1,68 @@
+{!
+  pages/impresoras - Menu de Impresoras admin. Qute/HTMX/Bulma page for the
+  navbar route /app/impresoras. Lists the print services (printers) the JVM
+  can see via Services.PrinterService#listarImpresoras, marking the system
+  default. There is no legacy Facelets page nor a JSON twin for this module;
+  the page is read-only and renders the printer list directly.
+
+  Model keys supplied by ImpresorasPagesResource:
+    impresoras   List<String> - names of every available print service
+    defaultImpresora String   - name of the system default printer (nullable)
+    totalImpresoras Integer   - count of available printers
+!}
+{#include layout}
+    {#title}Menu de Impresoras | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <div class="level">
+            <div class="level-left">
+                <p class="title is-3" style="margin-bottom:0">Menu de Impresoras</p>
+            </div>
+            <div class="level-right">
+                <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
+                    <p class="title is-2" style="margin-bottom:0">{totalImpresoras}</p>
+                    <p class="subtitle is-6">Impresoras disponibles</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <p class="subtitle is-6 has-text-grey">
+                Impresoras detectadas por el sistema. La impresora por defecto
+                se usa para la impresion de documentos (facturas, recibos, etc.).
+            </p>
+
+            {#if impresoras?? && impresoras.size() > 0}
+            <table class="table is-striped is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Impresora</th>
+                        <th class="has-text-centered">Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for impresora in impresoras}
+                    <tr>
+                        <td style="font-weight:500">{impresora}</td>
+                        <td class="has-text-centered">
+                            {#if defaultImpresora?? && impresora == defaultImpresora}
+                            <span class="tag is-success">Por defecto</span>
+                            {#else}
+                            <span class="tag is-light">Disponible</span>
+                            {/if}
+                        </td>
+                    </tr>
+                    {/for}
+                </tbody>
+            </table>
+            {#else}
+            <div class="notification is-warning is-light">
+                No se detectaron impresoras en este equipo. Verifique que haya
+                una impresora instalada y configurada como predeterminada.
+            </div>
+            {/if}
+        </div>
+    </section>
+    {/body}
+{/include}

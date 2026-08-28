@@ -79,6 +79,8 @@
         </div>
     </div>
 
+    {! ── Aplicacion mode: wizard + AppSettings field groups (hidden on /backups) ── !}
+    {#if modo != 'backups'}
     {! ── Legacy p:steps replacement: Alpine-driven wizard (client-side only) ── !}
     <div id="asistente-aplicacion" class="box mb-5" x-data="{ paso: 0 }">
         <p class="title is-5">Asistente Inicial</p>
@@ -239,6 +241,8 @@
             </div>
         </div>
 
+        {! ── Backups mode: status card + trigger + scheduling + log (hidden on /aplicacion) ── !}
+        {#if modo != 'aplicacion'}
         {! ── Grupo: backups (legacy Ajustes/Backups page) ── !}
         <div class="box mb-5" data-group="backups">
             <p class="title is-5">Respaldos de Base de Datos</p>
@@ -314,7 +318,37 @@
                     </div>
                 </div>
             </div>
+
+            <hr/>
+
+            <p class="title is-5">Historial de Respaldos</p>
+            <p class="subtitle is-6 has-text-grey">
+                Archivos de respaldo generados en la ruta configurada.
+            </p>
+            {#if backupLog?? && backupLog.size() > 0}
+            <table class="table is-striped is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Archivo</th>
+                        <th class="has-text-right">Tamaño</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for entrada in backupLog}
+                    <tr>
+                        <td>{entrada.archivo}</td>
+                        <td class="has-text-right">{#if entrada.tamano??}{entrada.tamano}{#else}&mdash;{/if}</td>
+                    </tr>
+                    {/for}
+                </tbody>
+            </table>
+            {#else}
+            <div class="notification is-light">
+                No hay respaldos registrados todavia.
+            </div>
+            {/if}
         </div>
+        {/if}
 
         {! ── Grupo: general / negocio (read-only parity) ── !}
         <div class="box mb-5" data-group="general-negocio">
@@ -415,6 +449,7 @@
             <button class="button is-primary is-rounded" type="submit">Guardar Ajustes</button>
         </div>
     </form>
+    {/if}
 
     <script>
         document.addEventListener('htmx:beforeSwap', function (evt) {

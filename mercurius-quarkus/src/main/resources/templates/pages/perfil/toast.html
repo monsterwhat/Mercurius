@@ -1,0 +1,13 @@
+{!
+  pages/perfil/toast - OOB toast wrapper for ProfileResource guard failures.
+
+  Rendered ONLY as an HTMX error response (400): the OOB swap lands the
+  notification in the layout's #toast-container while the form's own
+  hx-target (#perfil-resultado) receives nothing (htmx strips OOB elements
+  from the main swap payload).
+!}
+{@java.lang.String severity}
+{@java.lang.String message}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=severity message=message /}
+</div>

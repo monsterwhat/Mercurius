@@ -27,6 +27,27 @@ public class PrinterService implements Serializable{
     private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(PrinterService.class.getName());
 
 
+    /**
+     * Lists the names of every print service (printer) the JVM can see, plus
+     * which one is the system default. Used by the /app/impresoras page.
+     */
+    public @Nonnull java.util.List<String> listarImpresoras() {
+        java.util.List<String> names = new java.util.ArrayList<>();
+        PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+        if (services != null) {
+            for (PrintService service : services) {
+                names.add(service.getName());
+            }
+        }
+        return names;
+    }
+
+    /** Name of the system default print service, or null if none is set. */
+    public @jakarta.annotation.Nullable String defaultImpresora() {
+        PrintService printService = PrintServiceLookup.lookupDefaultPrintService();
+        return printService != null ? printService.getName() : null;
+    }
+
     public void printPDFFile(@Nonnull File fileToPrint) {
                 LOG.info("Attempting to print PDF: " + fileToPrint.getAbsolutePath() + " | source=" + "PrinterService.printPDFFile()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         
