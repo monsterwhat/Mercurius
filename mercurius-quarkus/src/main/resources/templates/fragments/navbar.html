@@ -19,23 +19,13 @@
   admin identity ALL six roles, so securityIdentity.hasRole(token) answers
   identically to the legacy isAdmin()-augmented checks.
 
-  LINKS: planned /app/* routes are recorded in data-planned-route attributes;
-  href stays "#" until each route lands (W4 pages). EXCEPTION: logout really
-  POSTs to AppAuthResource (/api/app/auth/logout). The action URL is prefixed
-  with the literal context root /Mercurius because this deployment runs under
-  quarkus.http.root-path=/Mercurius (legacy JSF resolved the context path
-  automatically; raw Qute templates must do it explicitly).
-  NOTE: the prefix is a LITERAL, deliberately NOT a {config:...} expression:
-  the Qute config namespace reads RUNTIME configuration, where build-time-fixed
-  properties are absent, so that expression throws TemplateException (HTTP 500)
-  on every render outside dev mode.
-
-  NOT PORTED: the theme toggle (ThemeController dies in T38 - plan mandates
-  CSS variables only) and PrimeIcons (not in the allowed library set).
+  LINKS: now point to real /app/* routes (W4 pages landed). href is the live
+  navigation; data-planned-route kept for reference. The prefix /Mercurius is
+  the literal context root (quarkus.http.root-path=/Mercurius).
 !}
 <nav class="navbar is-black" role="navigation" aria-label="main navigation">
     <div class="navbar-brand">
-        <a class="navbar-item" href="#" data-planned-route="/app">
+        <a class="navbar-item" href="/Mercurius/app" data-planned-route="/app">
             <img src="/Mercurius/resources/imgs/logo/Mercurius.png"
                  alt="Mercurius" width="28" height="28"/>
             <span class="ml-2 has-text-weight-bold">Mercurius</span>
@@ -50,7 +40,7 @@
 
     <div id="navbarMenu" class="navbar-menu">
         <div class="navbar-start">
-            <a class="navbar-item" href="#" data-planned-route="/app">Inicio</a>
+            <a class="navbar-item" href="/Mercurius/app" data-planned-route="/app">Inicio</a>
         </div>
 
         <div class="navbar-end">
@@ -58,7 +48,7 @@
             {! token: facturacion - legacy: commandLink openNewFactura (icon-only receipt button) !}
             {#if inject:securityIdentity.hasRole('facturacion')}
             <div class="navbar-item">
-                <a class="button is-dark" href="#" data-planned-route="/app/facturas/nueva">Nueva Factura</a>
+                <a class="button is-dark" href="/Mercurius/app/pos" data-planned-route="/app/facturas/nueva">Nueva Factura</a>
             </div>
             {/if}
 
@@ -67,19 +57,19 @@
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link">Articulos</a>
                 <div class="navbar-dropdown">
-                    <a class="navbar-item" href="#" data-planned-route="/app/articulos">Articulos</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/categorias">Categorias</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/inventarios">Inventarios</a>
+                    <a class="navbar-item" href="/Mercurius/app/articulos" data-planned-route="/app/articulos">Articulos</a>
+                    <a class="navbar-item" href="/Mercurius/app/categorias" data-planned-route="/app/categorias">Categorias</a>
+                    <a class="navbar-item" href="/Mercurius/app/inventarios" data-planned-route="/app/inventarios">Inventarios</a>
                     <hr class="navbar-divider"/>
-                    <a class="navbar-item" href="#" data-planned-route="/app/inventarios/alertas">Alertas de Stock</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/inventarios/mermas">Mermas y Perdidas</a>
+                    <a class="navbar-item" href="/Mercurius/app/reportes/inventario/alertas" data-planned-route="/app/inventarios/alertas">Alertas de Stock</a>
+                    <a class="navbar-item" href="/Mercurius/app/reportes/inventario/merma" data-planned-route="/app/inventarios/mermas">Mermas y Perdidas</a>
                 </div>
             </div>
             {/if}
 
             {! token: usuario - legacy: plain "Usuarios" item (gated here per T11 six-token mandate) !}
             {#if inject:securityIdentity.hasRole('usuario')}
-            <a class="navbar-item" href="#" data-planned-route="/app/usuarios">Usuarios</a>
+            <a class="navbar-item" href="/Mercurius/app/usuarios" data-planned-route="/app/usuarios">Usuarios</a>
             {/if}
 
             {! token: tributacion - legacy: "Tributacion" dropdown !}
@@ -87,17 +77,17 @@
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link">Tributacion</a>
                 <div class="navbar-dropdown">
-                    <a class="navbar-item" href="#" data-planned-route="/app/tributacion/dashboard">Dashboard Hacienda</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/tributacion/consultas">Consultas</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/cabys">CaByS</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/tipo-cambio">Tipo de cambio</a>
+                    <a class="navbar-item" href="/Mercurius/app/tributacion" data-planned-route="/app/tributacion/dashboard">Dashboard Hacienda</a>
+                    <a class="navbar-item" href="/Mercurius/app/tributacion" data-planned-route="/app/tributacion/consultas">Consultas</a>
+                    <a class="navbar-item" href="/Mercurius/app/cabys" data-planned-route="/app/cabys">CaByS</a>
+                    <a class="navbar-item" href="/Mercurius/app/reportes/articulos/ventas" data-planned-route="/app/tipo-cambio">Tipo de cambio</a>
                 </div>
             </div>
             {/if}
 
             {! token: registro - legacy: "Reportes" item over pages/Registros !}
             {#if inject:securityIdentity.hasRole('registro')}
-            <a class="navbar-item" href="#" data-planned-route="/app/reportes">Reportes</a>
+            <a class="navbar-item" href="/Mercurius/app/reportes" data-planned-route="/app/reportes">Reportes</a>
             {/if}
 
             {! token: admin - legacy: "Ajustes" dropdown !}
@@ -105,19 +95,19 @@
             <div class="navbar-item has-dropdown is-hoverable">
                 <a class="navbar-link">Ajustes</a>
                 <div class="navbar-dropdown">
-                    <a class="navbar-item" href="#" data-planned-route="/app/impresoras">Menu de Impresoras</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/correos/reportes">Menu de Correos</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/correos/plantillas">Plantillas</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/aplicacion">Menu de Aplicacion</a>
-                    <a class="navbar-item" href="#" data-planned-route="/app/backups">Backups</a>
+                    <a class="navbar-item" href="/Mercurius/app/impresoras" data-planned-route="/app/impresoras">Menu de Impresoras</a>
+                    <a class="navbar-item" href="/Mercurius/app/correos/reportes" data-planned-route="/app/correos/reportes">Menu de Correos</a>
+                    <a class="navbar-item" href="/Mercurius/app/correos/plantillas" data-planned-route="/app/correos/plantillas">Plantillas</a>
+                    <a class="navbar-item" href="/Mercurius/app/aplicacion" data-planned-route="/app/aplicacion">Menu de Aplicacion</a>
+                    <a class="navbar-item" href="/Mercurius/app/backups" data-planned-route="/app/backups">Backups</a>
                     <hr class="navbar-divider"/>
-                    <a class="navbar-item" href="#" data-planned-route="/app/registros/log">Log de Actividades</a>
+                    <a class="navbar-item" href="/Mercurius/app/registros/log" data-planned-route="/app/registros/log">Log de Actividades</a>
                 </div>
             </div>
             {/if}
 
             {! legacy: "Perfil" button opening userSettingsDialog; real profile page lands in T22 !}
-            <a class="navbar-item" href="#" data-planned-route="/app/perfil">Perfil</a>
+            <a class="navbar-item" href="/Mercurius/app/perfil" data-planned-route="/app/perfil">Perfil</a>
 
             {!
               legacy: "Cerrar Session" inside the profile dialog. Real POST to the

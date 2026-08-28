@@ -2,7 +2,7 @@
 // Manual index: importing index.scss here is what makes the bundler emit app-*.css
 import 'htmx.org';
 import 'alpinejs';
-import { Chart } from 'chart.js';
+import { Chart, registerables } from 'chart.js';
 import './print.js';
 import './index.scss';
 
@@ -10,4 +10,5 @@ import './index.scss';
 // build time inside bundle entries, so Qute pages cannot import it directly.
 // Exposing it on window lets inline <script type="module"> blocks on pages
 // (templates/pages/dashboard/index.html) initialize charts from the bundle.
+Chart.register(...registerables);
 window.Chart = Chart;
