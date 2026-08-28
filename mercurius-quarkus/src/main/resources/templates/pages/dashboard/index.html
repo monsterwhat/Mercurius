@@ -31,54 +31,48 @@
         </div>
 
         {#if esKpi}
-        <div class="tile is-ancestor mb-5">
-            <div class="tile is-vertical">
-                <div class="tile">
-                    <div class="tile is-parent is-3">
-                        <article class="tile is-child box has-text-centered">
-                            <p class="heading">Ventas Hoy</p>
-                            <p class="title is-4 has-text-primary">{ventasHoy}</p>
-                            <p class="subtitle is-6 {crecimientoCss}">{crecimientoDiario} vs ayer</p>
-                        </article>
-                    </div>
-                    <div class="tile is-parent is-3">
-                        <article class="tile is-child box has-text-centered">
-                            <p class="heading">Ventas Ayer</p>
-                            <p class="title is-4 has-text-info">{ventasAyer}</p>
-                        </article>
-                    </div>
-                    <div class="tile is-parent is-3">
-                        <article class="tile is-child box has-text-centered">
-                            <p class="heading">Esta Semana</p>
-                            <p class="title is-4 has-text-link">{ventasSemana}</p>
-                        </article>
-                    </div>
-                    <div class="tile is-parent is-3">
-                        <article class="tile is-child box has-text-centered">
-                            <p class="heading">Últimos 30 Días</p>
-                            <p class="title is-4 has-text-warning">{ventasMes}</p>
-                        </article>
-                    </div>
+        <div class="columns is-multiline mb-5">
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="heading">Ventas Hoy</p>
+                    <p class="title is-4 has-text-primary">{ventasHoy}</p>
+                    <p class="subtitle is-6 {crecimientoCss}">{crecimientoDiario} vs ayer</p>
                 </div>
-                <div class="tile mt-4">
-                    <div class="tile is-parent is-4">
-                        <article class="tile is-child box has-text-centered">
-                            <p class="heading">Ticket Promedio (30 días)</p>
-                            <p class="title is-3 has-text-success">{ticketPromedio}</p>
-                        </article>
-                    </div>
-                    <div class="tile is-parent is-4">
-                        <article class="tile is-child box has-text-centered">
-                            <p class="heading">Transacciones Hoy</p>
-                            <p class="title is-3 has-text-primary">{transaccionesHoy}</p>
-                        </article>
-                    </div>
-                    <div class="tile is-parent is-4">
-                        <article class="tile is-child box has-text-centered">
-                            <p class="heading">Artículos Vendidos Hoy</p>
-                            <p class="title is-3 has-text-success">{articulosVendidos}</p>
-                        </article>
-                    </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="heading">Ventas Ayer</p>
+                    <p class="title is-4 has-text-info">{ventasAyer}</p>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="heading">Esta Semana</p>
+                    <p class="title is-4 has-text-link">{ventasSemana}</p>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="heading">Últimos 30 Días</p>
+                    <p class="title is-4 has-text-warning">{ventasMes}</p>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="heading">Ticket Promedio (30 días)</p>
+                    <p class="title is-3 has-text-success">{ticketPromedio}</p>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="heading">Transacciones Hoy</p>
+                    <p class="title is-3 has-text-primary">{transaccionesHoy}</p>
+                </div>
+            </div>
+            <div class="column is-4">
+                <div class="box has-text-centered">
+                    <p class="heading">Artículos Vendidos Hoy</p>
+                    <p class="title is-3 has-text-success">{articulosVendidos}</p>
                 </div>
             </div>
         </div>
