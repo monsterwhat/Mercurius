@@ -48,7 +48,8 @@
             {! token: facturacion - legacy: commandLink openNewFactura (icon-only receipt button) !}
             {#if inject:securityIdentity.hasRole('facturacion')}
             <div class="navbar-item">
-                <a class="button is-dark" href="/Mercurius/app/pos" data-planned-route="/app/facturas/nueva">Nueva Factura</a>
+                <a class="button is-dark" href="/Mercurius/app/pos/standalone"
+                   target="_blank" rel="noopener" data-planned-route="/app/facturas/nueva">Nueva Factura</a>
             </div>
             {/if}
 
@@ -80,7 +81,12 @@
                     <a class="navbar-item" href="/Mercurius/app/tributacion/dashboard" data-planned-route="/app/tributacion/dashboard">Dashboard Hacienda</a>
                     <a class="navbar-item" href="/Mercurius/app/tributacion/consultas" data-planned-route="/app/tributacion/consultas">Consultas</a>
                     <a class="navbar-item" href="/Mercurius/app/cabys" data-planned-route="/app/cabys">CaByS</a>
-                    <a class="navbar-item" href="/Mercurius/app/tipo-cambio" data-planned-route="/app/tipo-cambio">Tipo de cambio</a>
+                    <a class="navbar-item" role="button" tabindex="0"
+                       aria-haspopup="dialog"
+                       data-kit-open="modal-tipo-cambio"
+                       hx-get="/Mercurius/app/tipo-cambio/fragment"
+                       hx-target="#modal-tipo-cambio-body"
+                       hx-swap="innerHTML">Tipo de cambio</a>
                 </div>
             </div>
             {/if}
@@ -122,6 +128,43 @@
         </div>
     </div>
 </nav>
+
+{!
+  Dialog-only surface for Tipo de Cambio: the shared modal lives here (not on a
+  page) so the navbar dropdown item can open it on every page. The trigger is
+  the dropdown item above (data-kit-open + hx-get); _kit/modal renders the
+  hidden trigger shell + Alpine/HTMX wiring for id modal-tipo-cambio.
+!}
+{#include _kit/modal id="modal-tipo-cambio" title="Tipo de Cambio" triggerClass="is-hidden"
+     bodyUrl="/app/tipo-cambio/fragment"}{/include}
+
+{!
+  data-kit-open bridge (mirrors the page-local script used on categorias/articulos
+  etc.): flips the modal's Alpine state open/close and fires the hx-get that loads
+  the body. Defined once here because the modal it drives is global; the listener
+  only acts on [data-kit-open]/[data-kit-close] so page-level copies stay harmless.
+!}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('click', function (e) {
+            var opener = e.target.closest('[data-kit-open]');
+            if (opener) {
+                var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                if (modal && window.Alpine) {
+                    Alpine.$data(modal).open = true;
+                }
+                return;
+            }
+            var closer = e.target.closest('[data-kit-close]');
+            if (closer) {
+                var root = closer.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            }
+        });
+    });
+</script>
 
 {!
   Burger toggle (vanilla JS, mirrors the legacy userBar.xhtml snippet).

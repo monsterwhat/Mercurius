@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+{!
+  pages/facturas/factura-standalone - POS page WITHOUT the shared app layout
+  (no navbar / footer), opened in a NEW browser window by the navbar's
+  "Nueva Factura" button. Served by PosPageResource at GET /app/pos/standalone.
+
+  Like login.html, it is self-contained: it emits its own <!DOCTYPE> and pulls
+  the web bundle ({#bundle /} -> htmx + alpine + bulma) directly. Because it
+  does NOT include layout.html, it must re-declare the CSRF hx-headers on
+  <body> — every HTMX call inside the POS needs that header (quarkus-rest-csrf).
+
+  Body content is the shared factura-body fragment so this page and the
+  in-layout /app/pos page can never drift apart.
+!}
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Facturación POS | Mercurius</title>
+    {#bundle /}
+</head>
+<body hx-headers='{"{inject:csrf.headerName}":"{inject:csrf.token}"}'>
+
+    <div id="toast-container" aria-live="polite" aria-atomic="false"
+         style="position: fixed; top: 1rem; right: 1rem; z-index: 1000; width: min(22rem, calc(100vw - 2rem)); max-width: 22rem;"></div>
+
+    <main class="section">
+        <div class="container">
+            {#include pages/facturas/factura-body /}
+        </div>
+    </main>
+
+</body>
+</html>
