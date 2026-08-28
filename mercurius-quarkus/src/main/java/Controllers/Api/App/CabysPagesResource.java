@@ -5,6 +5,7 @@ import Services.CabysService;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
@@ -50,6 +51,10 @@ public class CabysPagesResource {
 
     @Inject
     @Nonnull
+    SecurityIdentity identity;
+
+    @Inject
+    @Nonnull
     @Location("pages/cabys/index")
     Template page;
 
@@ -77,7 +82,13 @@ public class CabysPagesResource {
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("tablaCabys", tableModel());
         model.put("totalCodigos", cabysService.count());
+        model.put("canImport", canImport());
         return model;
+    }
+
+    private boolean canImport() {
+        return !identity.isAnonymous()
+                && (identity.hasRole("admin") || identity.hasRole("tributacion"));
     }
 
     /**
