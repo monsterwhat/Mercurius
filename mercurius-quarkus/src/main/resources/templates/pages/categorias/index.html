@@ -63,7 +63,7 @@
                          bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
                     <form method="post" action="/Mercurius/api/app/export">
-                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                        <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="familias"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <button class="button is-info" type="submit">Exportar Excel</button>
@@ -89,7 +89,7 @@
                          bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
                     <form method="post" action="/Mercurius/api/app/export">
-                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                        <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="departamentos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <button class="button is-info" type="submit">Exportar Excel</button>
