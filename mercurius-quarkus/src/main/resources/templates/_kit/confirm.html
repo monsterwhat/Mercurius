@@ -47,6 +47,7 @@
             <p id="{id ?: 'kit-confirm'}-message" data-kit-confirm-message>{message ?: ''}</p>
         </section>
         <footer class="modal-card-foot">
+            <div class="buttons">
             {#if danger??}{#if danger}
             <button class="button is-danger" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
             {#else}
@@ -55,9 +56,27 @@
             <button class="button is-primary" type="button" data-kit-confirm-accept>{confirmLabel ?: 'Confirmar'}</button>
             {/if}
             <button class="button" type="button" data-kit-confirm-cancel>{cancelLabel ?: 'Cancelar'}</button>
+            </div>
         </footer>
     </div>
 </div>
+
+{!
+  Scoped theme hardening: guarantee the dialog text stays legible in BOTH
+  Bulma schemes (light / prefers-color-scheme: dark). The modal card's own
+  background is var(--bulma-scheme-main); pinning text to the adaptive
+  --bulma-text family (instead of the page-level --bulma-text-title-l that
+  body inherits) prevents black-on-dark when the card bg goes dark.
+!}
+<style>
+    [data-kit-confirm-modal] .modal-card,
+    [data-kit-confirm-modal] .modal-card-body p[data-kit-confirm-message] {
+        color: var(--bulma-text);
+    }
+    [data-kit-confirm-modal] .modal-card-foot .buttons {
+        gap: 0.5rem;
+    }
+</style>
 
 {!
   One-time global install: htmx:confirm interception + click/escape/focus
