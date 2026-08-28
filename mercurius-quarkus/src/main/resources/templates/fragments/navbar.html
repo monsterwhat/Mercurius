@@ -51,7 +51,7 @@
                 <a class="button is-dark"
                    href="/Mercurius/app/pos/standalone"
                    rel="noopener" data-planned-route="/app/facturas/nueva"
-                   @click.prevent="window.open('/Mercurius/app/pos/standalone', 'nuevaFactura', 'popup=yes,width=1280,height=800,left=120,top=80');">Nueva Factura</a>
+                   onclick="window.open('/Mercurius/app/pos/standalone', 'nuevaFactura', 'popup=yes,width=1280,height=800,left=120,top=80'); return false;">Nueva Factura</a>
             </div>
             {/if}
 
