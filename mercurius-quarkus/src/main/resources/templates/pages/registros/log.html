@@ -1,0 +1,19 @@
+{!
+  pages/registros/log - Log de Actividades (placeholder shell).
+
+  Rendered by GET /app/registros/log (MiscPagesResource). Awaiting its real
+  module; uses the shared layout so it gets the role-gated navbar, bundle tags
+  and CSRF headers like every other /app page.
+!}
+{#include layout}
+    {#title}Log de Actividades | Mercurius{/title}
+
+    {#body}
+        <div class="box has-text-centered">
+            <h1 class="title is-4">Log de Actividades</h1>
+            <p class="subtitle is-6 has-text-grey">Registro de actividades (placeholder)</p>
+            <a class="button is-link mt-4" href="/Mercurius/app">Volver al inicio</a>
+            <a class="button is-light mt-4 ml-2" href="/Mercurius/app/dashboard">Ir al dashboard</a>
+        </div>
+    {/body}
+{/include}
