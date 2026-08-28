@@ -40,10 +40,4 @@ public class RootRedirectResource {
     public Response securedIndex() {
         return redirectToApp();
     }
-
-    @GET
-    @Path("/app")
-    public Response app() {
-        return redirectToApp();
-    }
 }
