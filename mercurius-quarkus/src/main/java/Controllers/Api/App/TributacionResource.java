@@ -8,7 +8,6 @@ import Models.DTO.HaciendaDashboardDTO;
 import Models.DTO.MensajeReceptorDTO;
 import Models.Encabezado.Encabezado;
 import Models.NotaCredito;
-import Services.AlertasService;
 import Services.ClientService;
 import Services.ComprobantesEmitidosService;
 import Services.ComprobantesRecibidosService;
@@ -135,44 +134,32 @@ public class TributacionResource {
         "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"
     };
 
-    @Inject
     @Nonnull
     ComprobantesEmitidosService emitidosService;
 
-    @Inject
     @Nonnull
     ComprobantesRecibidosService recibidosService;
 
-    @Inject
     @Nonnull
     NotaCreditoService notaCreditoService;
 
-    @Inject
     @Nonnull
     Services.Correos.ReportesProgramadosService reportesProgramadosService;
 
-    @Inject
     @Nonnull
     HaciendaServiceFacade haciendaFacade;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
+    
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     ClientService clientService;
 
-    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request headers (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     HttpHeaders httpHeaders;
 
@@ -181,7 +168,6 @@ public class TributacionResource {
      * {config:['quarkus.http.root-path']} in Qute; needed here because the
      * countdown fragment is built in Java, where Qute expressions do not run.
      */
-    @Inject
     @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/")
     String rootPath;
 
@@ -358,10 +344,8 @@ public class TributacionResource {
                 }
             }
 
-            alertas.registrarAlerta("Envio de facturas completado",
-                    "Envio masivo de facturas: " + enviadas + " enviadas, " + fallidas
-                            + " fallidas de " + pendientes.size(),
-                    currentUser(), 0, "TributacionResource.enviarPendientes", null, null);
+                        LOG.info("Envio masivo de facturas: " + enviadas + " enviadas, " + fallidas
+                            + " fallidas de " + pendientes.size() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.enviarPendientes" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
             BulkSendResult resultado = new BulkSendResult(pendientes.size(), enviadas, fallidas,
                     "Envio completado: Enviadas: " + enviadas + ", Fallidas: " + fallidas
@@ -412,9 +396,7 @@ public class TributacionResource {
             }
 
             String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
-            alertas.registrarAlerta("Corrección de factura iniciada",
-                    "Se inició la corrección de la factura rechazada: " + consecutivo,
-                    currentUser(), 0, "TributacionResource.corregirRechazada", null, null);
+                        LOG.info("Se inició la corrección de la factura rechazada: " + consecutivo + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.corregirRechazada" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
             boolean notaCreada = crearNotaCreditoAutomatica(factura);
 
@@ -556,11 +538,7 @@ public class TributacionResource {
                     emitidas.size(), recibidas.size(), filas);
             return Response.ok(ApiResponse.ok(resumen)).build();
         } catch (RuntimeException e) {
-            LOG.warn("Error calculando la declaración IVA", e);
-            alertas.registrarAlerta("Error IVA",
-                    "Error al calcular declaracion IVA: " + e.getMessage(),
-                    currentUser(), 0, "TributacionResource.declaracionResumen",
-                    null, e.getMessage());
+            LOG.warn("Error al calcular declaracion IVA: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=TributacionResource.declaracionResumen | antes=null | despues=" + e.getMessage(), e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error al calcular la declaración IVA"))
                     .build();
@@ -708,9 +686,7 @@ public class TributacionResource {
         }
         List<NotaCredito> existentes = notaCreditoService.listPorComprobante(facturaRechazada.getId());
         if (existentes != null && !existentes.isEmpty()) {
-            alertas.registrarAlerta("Info",
-                    "Nota de crédito ya existe para factura: " + facturaRechazada.getId(),
-                    currentUser(), 0, "TributacionResource.crearNotaCreditoAutomatica()", null, null);
+                        LOG.info("Nota de crédito ya existe para factura: " + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             return false;
         }
 
@@ -737,10 +713,8 @@ public class TributacionResource {
         notaCredito.setHaciendaEstado("PENDIENTE");
         notaCreditoService.create(notaCredito);
 
-        alertas.registrarAlerta("Hacienda",
-                "Nota de crédito creada automáticamente para factura rechazada: "
-                        + facturaRechazada.getId(),
-                currentUser(), 0, "TributacionResource.crearNotaCreditoAutomatica()", null, null);
+                LOG.info("Nota de crédito creada automáticamente para factura rechazada: "
+                        + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         return true;
     }
 

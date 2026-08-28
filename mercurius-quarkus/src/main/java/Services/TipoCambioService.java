@@ -28,7 +28,8 @@ import java.time.temporal.ChronoUnit;
 @ApplicationScoped
 public class TipoCambioService extends GService<TipoCambio> {
 
-    @Inject @Nonnull AlertasService alertasService;
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(TipoCambioService.class.getName());
+
 
     @Override
     protected Class<TipoCambio> getEntityClass() {
@@ -55,10 +56,10 @@ public class TipoCambioService extends GService<TipoCambio> {
                     saveTipoCambio(tipoCambio);
                 }
             } else {
-                alertasService.registrarAlerta("Error", "Failed to retrieve TipoCambio data from API. Response code: " + response.getStatus(), null, 0, "TipoCambioService.getTipoCambioFromApi()", null, null);
+                                LOG.log(java.util.logging.Level.WARNING, "Failed to retrieve TipoCambio data from API. Response code: " + response.getStatus() + " | source=" + "TipoCambioService.getTipoCambioFromApi()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error fetching TipoCambio from API: " + e.getMessage(), null, 0, "TipoCambioService.getTipoCambioFromApi()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error fetching TipoCambio from API: " + e.getMessage() + " | source=" + "TipoCambioService.getTipoCambioFromApi()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -81,7 +82,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             
             return tipoCambio;
         } catch (JsonProcessingException e) {
-            alertasService.registrarAlerta("Error", "Error parsing JSON response: " + e.getMessage(), null, 0, "TipoCambioService.parseTipoCambio()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error parsing JSON response: " + e.getMessage() + " | source=" + "TipoCambioService.parseTipoCambio()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -110,7 +111,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             query.setParameter("date", java.sql.Date.valueOf(date.toLocalDate()));
             return query.getSingleResult() > 0;
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error checking TipoCambio existence for date: " + e.getMessage(), null, 0, "TipoCambioService.tipoCambioExistsForDate()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error checking TipoCambio existence for date: " + e.getMessage() + " | source=" + "TipoCambioService.tipoCambioExistsForDate()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -124,7 +125,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             getTipoCambioFromApi();
             return getNewestTipoCambioFromDb();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error retrieving newest TipoCambio: " + e.getMessage(), null, 0, "TipoCambioService.getNewestTipoCambio()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error retrieving newest TipoCambio: " + e.getMessage() + " | source=" + "TipoCambioService.getNewestTipoCambio()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             throw e;
         }
     }
@@ -137,7 +138,7 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
     
     public TipoCambio getNewestTipoCambioFallback() {
-        alertasService.registrarAlerta("Error", "FALLBACK: Returning cached TipoCambio data due to API failure", null, 0, "TipoCambioService.getNewestTipoCambioFallback()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: Returning cached TipoCambio data due to API failure" + " | source=" + "TipoCambioService.getNewestTipoCambioFallback()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         return getNewestTipoCambioFromDb();
     }
     

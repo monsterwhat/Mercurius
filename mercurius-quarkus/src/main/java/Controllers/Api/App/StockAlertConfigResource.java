@@ -95,19 +95,15 @@ public class StockAlertConfigResource {
     /** calculateReorderQuantity(): "optimal stock + 30 days buffer". */
     private static final int BUFFER_REORDEN_DIAS = 30;
 
-    @Inject
     @Nonnull
     StockAlertService stockAlertService;
 
-    @Inject
     @Nonnull
     ArticulosService articulosService;
 
-    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
-    @Inject
     @Location("pages/inventario/stock-alert-config")
     Template pagina;
 

@@ -66,19 +66,15 @@ public class ExportResource {
     private static final DateTimeFormatter FILE_STAMP =
             DateTimeFormatter.ofPattern("yyyyMMdd HH:mm").withLocale(Locale.ROOT);
 
-    @Inject
     @Nonnull
     ArticulosService articulosService;
 
-    @Inject
     @Nonnull
     InventarioService inventarioService;
 
-    @Inject
     @Nonnull
     StockAlertService stockAlertService;
 
-    @Inject
     @Nonnull
     ProfitAnalysisService profitAnalysisService;
 

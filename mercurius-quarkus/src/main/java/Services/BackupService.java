@@ -31,6 +31,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class BackupService implements Serializable {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(BackupService.class.getName());
+
     private static final long serialVersionUID = 1L;
     private static final String BACKUP_PREFIX = "mercurius_";
     private static final String BACKUP_SUFFIX = ".sql.gz";
@@ -39,9 +41,7 @@ public class BackupService implements Serializable {
     @Inject
     private @Nonnull AppSettingsService appSettingsService;
 
-    @Inject
-    private @Nonnull AlertasService alertasService;
-
+    
     @ConfigProperty(name = "quarkus.datasource.jdbc.url")
     @Nonnull String jdbcUrl;
 
@@ -64,7 +64,7 @@ public class BackupService implements Serializable {
         try {
             AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) {
-                alertasService.registrarAlerta("Error", "No se encontró configuración activa para ejecutar backup", null, 0, "BackupService.ejecutarBackup()", null, null);
+                                LOG.log(java.util.logging.Level.WARNING, "No se encontró configuración activa para ejecutar backup" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 return false;
             }
 
@@ -105,27 +105,23 @@ public class BackupService implements Serializable {
                 settings.setBackupUltimoEjecutado(LocalDateTime.now());
                 appSettingsService.update(settings);
 
-                alertasService.registrarAlerta("Backup", "Backup completado: " + filename
-                    + " (" + getTamanioBackup(outputFile.toFile()) + ")", null, 0,
-                    "BackupService.ejecutarBackup()", null, null);
+                                LOG.info("Backup completado: " + filename
+                    + " (" + getTamanioBackup(outputFile.toFile()) + ")" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
                 limpiarBackupsViejos();
                 return true;
             } else {
-                alertasService.registrarAlerta("Error", "pg_dump falló con código: " + exitCode, null, 0,
-                    "BackupService.ejecutarBackup()", null, null);
+                                LOG.log(java.util.logging.Level.WARNING, "pg_dump falló con código: " + exitCode + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 try { Files.deleteIfExists(outputFile); } catch (IOException ignored) {}
                 return false;
             }
 
         } catch (IOException e) {
-            alertasService.registrarAlerta("Error", "Error de E/S en backup: " + e.getMessage(), null, 0,
-                "BackupService.ejecutarBackup()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error de E/S en backup: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            alertasService.registrarAlerta("Error", "Backup interrumpido: " + e.getMessage(), null, 0,
-                "BackupService.ejecutarBackup()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Backup interrumpido: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -159,14 +155,12 @@ public class BackupService implements Serializable {
                 long ageDays = age / (24L * 60 * 60 * 1000);
                 if (ageDays >= retencionDias) {
                     Files.delete(file);
-                    alertasService.registrarAlerta("Backup", "Backup viejo eliminado: " + file.getFileName(), null, 0,
-                        "BackupService.limpiarBackupsViejos()", null, null);
+                                        LOG.info("Backup viejo eliminado: " + file.getFileName() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 }
             }
 
         } catch (IOException e) {
-            alertasService.registrarAlerta("Error", "Error limpiando backups viejos: " + e.getMessage(), null, 0,
-                "BackupService.limpiarBackupsViejos()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error limpiando backups viejos: " + e.getMessage() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -199,8 +193,7 @@ public class BackupService implements Serializable {
             }
 
         } catch (IOException e) {
-            alertasService.registrarAlerta("Error", "Error listando backups: " + e.getMessage(), null, 0,
-                "BackupService.listarBackups()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listando backups: " + e.getMessage() + " | source=" + "BackupService.listarBackups()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
         return result;
     }
@@ -302,8 +295,7 @@ public class BackupService implements Serializable {
             }
 
         } catch (URISyntaxException e) {
-            alertasService.registrarAlerta("Advertencia", "No se pudo parsear JDBC URL: " + e.getMessage(), null, 0,
-                "BackupService.parseJdbcUrl()", null, null);
+                        LOG.info("No se pudo parsear JDBC URL: " + e.getMessage() + " | source=" + "BackupService.parseJdbcUrl()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         }
 
         return info;

@@ -1,7 +1,6 @@
 package Controllers;
 
 import Models.TipoCambio;
-import Services.AlertasService;
 import Services.TipoCambioService;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -21,9 +20,10 @@ import lombok.ToString;
 @ApplicationScoped
 public class TipoCambioController implements Serializable {
     
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(TipoCambioController.class.getName());
+    
     @Inject @Nonnull private TipoCambioService tipoCambioService;
     @Inject @Nonnull private SettingsController settings;
-    @Inject @Nonnull private AlertasService alertasService;
     @Inject @Nonnull private SessionController currentSession;
 
     @Nullable
@@ -43,7 +43,10 @@ public class TipoCambioController implements Serializable {
             tipoCambios = tipoCambioService.listAll();
             if (tipoCambios == null || tipoCambios.isEmpty()) {
                 fetchTipoCambioFromApi();
-                alertasService.registrarAlerta("Tipo de Cambio Cargado", "Se cargó el tipo de cambio desde la API", currentSession.getCurrentUser(), 0, "loadTipoCambios()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Tipo de Cambio Cargado", "Se cargó el tipo de cambio desde la API",
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "loadTipoCambios()", null, null));
             }
         }
         return tipoCambios;
@@ -52,7 +55,10 @@ public class TipoCambioController implements Serializable {
     public void recargar(){
         cambioActual = getTipoCambioActual();
         String cambioString = cambioActual != null ? cambioActual.toString() : "null";
-        alertasService.registrarAlerta("Tipo de Cambio Recargado", "Se recargo el tipo de cambio", currentSession.getCurrentUser(), 0, "recargar()", null, cambioString);
+        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                "Tipo de Cambio Recargado", "Se recargo el tipo de cambio",
+                currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                0, "recargar()", null, cambioString));
     }
     
     private void fetchTipoCambioFromApi() {

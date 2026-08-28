@@ -38,11 +38,9 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
     private static final double WEIGHT_VOLUME = 0.20;
     private static final double WEIGHT_ARTICLE_DIVERSITY = 0.10;
 
-    @Inject
     @Nonnull
     DepartamentoService departamentoService;
 
-    @Inject
     @Nonnull
     ComprobantesRecibidosService comprobantesRecibidosService;
 
@@ -124,16 +122,15 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
                 update(metrico);
             }
 
-            alertasService.registrarAlerta("Info",
-                    "Métricas calculadas para proveedor: " + dept.getNombre() + " - Score: " + String.format("%.1f", score),
-                    null, 0, "DepartamentoMetricoService.calcularMetricas()",
-                    null, DiffUtils.snapshotEntity(metrico));
+            LOG.info("Métricas calculadas para proveedor: " + dept.getNombre() + " - Score: " + String.format("%.1f", score)
+                    + " | source=DepartamentoMetricoService.calcularMetricas()"
+                    + " | despues=" + DiffUtils.snapshotEntity(metrico));
 
         } catch (Exception e) {
-            alertasService.registrarAlerta("Error",
-                    "Error calculando métricas para departamento " + dept.getNombre() + ": " + e.getMessage(),
-                    null, 0, "DepartamentoMetricoService.calcularMetricas()",
-                    null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING,
+                    "Error calculando métricas para departamento " + dept.getNombre() + ": " + e.getMessage()
+                    + " | source=DepartamentoMetricoService.calcularMetricas()"
+                    + " | despues=" + e.getMessage());
         }
     }
 
@@ -149,15 +146,13 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
                     calcularMetricas(dept);
                 }
             }
-            alertasService.registrarAlerta("Info",
-                    "Métricas recalculadas para todos los departamentos activos",
-                    null, 0, "DepartamentoMetricoService.calcularTodasLasMetricas()",
-                    null, null);
+            LOG.info("Métricas recalculadas para todos los departamentos activos"
+                    + " | source=DepartamentoMetricoService.calcularTodasLasMetricas()");
         } catch (Exception e) {
-            alertasService.registrarAlerta("Error",
-                    "Error recalculando todas las métricas: " + e.getMessage(),
-                    null, 0, "DepartamentoMetricoService.calcularTodasLasMetricas()",
-                    null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING,
+                    "Error recalculando todas las métricas: " + e.getMessage()
+                    + " | source=DepartamentoMetricoService.calcularTodasLasMetricas()"
+                    + " | despues=" + e.getMessage());
         }
     }
 
@@ -170,9 +165,10 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
                     DepartamentoMetrico.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error",
-                    "Error listing DepartamentoMetrico: " + e.getMessage(),
-                    null, 0, "DepartamentoMetricoService.listAll()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING,
+                    "Error listing DepartamentoMetrico: " + e.getMessage()
+                    + " | source=DepartamentoMetricoService.listAll()"
+                    + " | despues=" + e.getMessage());
             return Collections.emptyList();
         }
     }
@@ -187,10 +183,10 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
             List<DepartamentoMetrico> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error",
-                    "Error finding DepartamentoMetrico by Departamento: " + e.getMessage(),
-                    null, 0, "DepartamentoMetricoService.findByDepartamento()",
-                    null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING,
+                    "Error finding DepartamentoMetrico by Departamento: " + e.getMessage()
+                    + " | source=DepartamentoMetricoService.findByDepartamento()"
+                    + " | despues=" + e.getMessage());
             return null;
         }
     }
@@ -242,10 +238,10 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
             query.setParameter("nombre", dept.getNombre());
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error",
-                    "Error finding facturas for departamento: " + e.getMessage(),
-                    null, 0, "DepartamentoMetricoService.findFacturasForDepartamento()",
-                    null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING,
+                    "Error finding facturas for departamento: " + e.getMessage()
+                    + " | source=DepartamentoMetricoService.findFacturasForDepartamento()"
+                    + " | despues=" + e.getMessage());
             return Collections.emptyList();
         }
     }

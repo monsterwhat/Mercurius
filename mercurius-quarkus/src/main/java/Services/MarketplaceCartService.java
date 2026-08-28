@@ -27,10 +27,9 @@ import java.util.List;
 @ApplicationScoped
 public class MarketplaceCartService {
 
-    @Inject
-    @Nonnull
-    AlertasService alertasService;
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(MarketplaceCartService.class.getName());
 
+    
     @jakarta.persistence.PersistenceContext
     @Nonnull
     private jakarta.persistence.EntityManager em;
@@ -61,7 +60,7 @@ public class MarketplaceCartService {
 
             return new CartResponse(dtos, count, total.setScale(2, RoundingMode.HALF_UP));
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting cart: " + e.getMessage(), null, 0, "MarketplaceCartService.getCart()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting cart: " + e.getMessage() + " | source=" + "MarketplaceCartService.getCart()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return new CartResponse(Collections.emptyList(), 0, BigDecimal.ZERO);
         }
     }
@@ -93,7 +92,7 @@ public class MarketplaceCartService {
             em.persist(item);
             return toCartItemDTO(item);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error adding cart item: " + e.getMessage(), null, 0, "MarketplaceCartService.addItem()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error adding cart item: " + e.getMessage() + " | source=" + "MarketplaceCartService.addItem()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Error al agregar al carrito", e);
         }
     }
@@ -116,7 +115,7 @@ public class MarketplaceCartService {
                 em.merge(item);
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating cart item: " + e.getMessage(), null, 0, "MarketplaceCartService.updateItemQuantity()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error updating cart item: " + e.getMessage() + " | source=" + "MarketplaceCartService.updateItemQuantity()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Error al actualizar el carrito", e);
         }
     }
@@ -132,7 +131,7 @@ public class MarketplaceCartService {
                 em.remove(item);
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error removing cart item: " + e.getMessage(), null, 0, "MarketplaceCartService.removeItem()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error removing cart item: " + e.getMessage() + " | source=" + "MarketplaceCartService.removeItem()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -146,7 +145,7 @@ public class MarketplaceCartService {
                 .setParameter("clientCode", clientCode)
                 .executeUpdate();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error clearing cart: " + e.getMessage(), null, 0, "MarketplaceCartService.clearCart()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error clearing cart: " + e.getMessage() + " | source=" + "MarketplaceCartService.clearCart()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -163,7 +162,7 @@ public class MarketplaceCartService {
             List<MarketplaceCartItem> results = query.getResultList();
             return results != null ? results : Collections.emptyList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding cart items: " + e.getMessage(), null, 0, "MarketplaceCartService.findCartItems()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding cart items: " + e.getMessage() + " | source=" + "MarketplaceCartService.findCartItems()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -182,7 +181,7 @@ public class MarketplaceCartService {
             List<MarketplaceCartItem> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding cart item: " + e.getMessage(), null, 0, "MarketplaceCartService.findCartItem()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding cart item: " + e.getMessage() + " | source=" + "MarketplaceCartService.findCartItem()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

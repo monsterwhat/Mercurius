@@ -1,7 +1,6 @@
 package Controllers.Correos;
 
 import Models.Correos.ReporteProgramado; 
-import Services.AlertasService;
 import Services.Correos.ReportesProgramadosService;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.Nonnull;
@@ -21,7 +20,6 @@ public class CorreosScheduler {
     
     @Inject @Nonnull ReportesProgramadosService rpService;    
     @Inject @Nonnull CorreosHelper helper;
-    @Inject @Nonnull AlertasService alertasService;
     
     @Nullable
     private List<ReporteProgramado> reportes;

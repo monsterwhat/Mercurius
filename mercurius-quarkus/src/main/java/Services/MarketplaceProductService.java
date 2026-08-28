@@ -30,10 +30,9 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class MarketplaceProductService {
 
-    @Inject
-    @Nonnull
-    AlertasService alertasService;
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(MarketplaceProductService.class.getName());
 
+    
     @jakarta.persistence.PersistenceContext
     @Nonnull
     private jakarta.persistence.EntityManager em;
@@ -81,7 +80,7 @@ public class MarketplaceProductService {
             }
             return dtos;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing marketplace products: " + e.getMessage(), null, 0, "MarketplaceProductService.listActiveProducts()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.listActiveProducts()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -122,7 +121,7 @@ public class MarketplaceProductService {
             }
             return dtos;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error searching marketplace products: " + e.getMessage(), null, 0, "MarketplaceProductService.searchProducts()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error searching marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.searchProducts()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -169,7 +168,7 @@ public class MarketplaceProductService {
 
             return dto;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting product detail: " + e.getMessage(), null, 0, "MarketplaceProductService.getProductDetail()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting product detail: " + e.getMessage() + " | source=" + "MarketplaceProductService.getProductDetail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

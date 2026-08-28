@@ -5,7 +5,6 @@ import Models.DTO.ApiResponse;
 import Models.DTO.PagedResponse;
 import Models.Inventario;
 import Models.Users;
-import Services.AlertasService;
 import Services.ArticulosService;
 import Services.InventarioService;
 import Services.LoginService;
@@ -166,88 +165,67 @@ public class InventarioResource {
     /** Parser's own missing-consecutivo message (surfaced verbatim). */
     private static final String MSG_FALTA_CONSECUTIVO = "XML inválido: falta el número consecutivo";
 
-    @Inject
     @Nonnull
     InventarioService inventarioService;
 
-    @Inject
     @Nonnull
     ArticulosService articulosService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     Parser parser;
 
-    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as LoginPageResource/CategoriaResource).
-    @Inject
     @Nonnull
     @Location("pages/inventario/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/tabla-activos.html")
     Template tablaActivos;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/tabla-inactivos.html")
     Template tablaInactivos;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/tabla-procesados.html")
     Template tablaProcesados;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/tabla-pendientes.html")
     Template tablaPendientes;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/badges.html")
     Template badges;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/form-ajuste.html")
     Template formAjuste;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/form-revision.html")
     Template formRevision;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/form-rapido.html")
     Template formRapido;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/detalles-ajuste.html")
     Template detallesAjuste;
 
-    @Inject
     @Nonnull
     @Location("pages/inventario/upload-resultado.html")
     Template uploadResultado;
@@ -408,9 +386,10 @@ public class InventarioResource {
             nuevo.setNotas(notas);
             nuevo.setFechaMovimiento(new Date()); // legacy: explicit today
             inventarioService.createWithStock(nuevo);
-            alertas.registrarAlerta("Inventario creado",
-                    "Se ha creado el inventario: " + articulo.getNombre(), currentUser(), 0,
-                    "InventarioResource.createInventarioDialog", null, nuevo.toString());
+            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Inventario creado", "Se ha creado el inventario: " + articulo.getNombre(),
+                    currentUser() != null ? currentUser().getUsername() : "Sistema",
+                    0, "InventarioResource.createInventarioDialog", null, nuevo.toString()));
             if (isHxRequest()) {
                 return hxRedirect("/api/app/inventario/table?tab=" + TAB_ACTIVOS);
             }
@@ -530,12 +509,13 @@ public class InventarioResource {
                 seleccionado.setNotas(NOTAS_PROCESADO_PREFIJO + usuario.getUsername());
             }
             inventarioService.markAsProcessed(seleccionado);
-            alertas.registrarAlerta("Inventario actualizado",
-                    "Se ha actualizado el inventario: " + seleccionado.getArticulo().getNombre(),
-                    usuario, 0, rapido
+            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Inventario actualizado", "Se ha actualizado el inventario: " + seleccionado.getArticulo().getNombre(),
+                    usuario != null ? usuario.getUsername() : "Sistema",
+                    0, rapido
                             ? "InventarioResource.procesarMovimientoYSiguiente()"
                             : "InventarioResource.updateInventarioRevisionDialog",
-                    antes, DiffUtils.snapshotEntity(seleccionado));
+                    antes, DiffUtils.snapshotEntity(seleccionado)));
 
             if (isHxRequest() && rapido) {
                 // Wizard continuation: load the NEXT pending movement
@@ -577,10 +557,11 @@ public class InventarioResource {
             }
             String antes = DiffUtils.snapshotEntity(seleccionado);
             inventarioService.softDelete(seleccionado);
-            alertas.registrarAlerta("Inventario eliminado",
-                    "Se ha eliminado el inventario: " + nombreArticuloDe(seleccionado),
-                    currentUser(), 0, "InventarioResource.deleteInventario",
-                    antes, DiffUtils.snapshotEntity(seleccionado));
+            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Inventario eliminado", "Se ha eliminado el inventario: " + nombreArticuloDe(seleccionado),
+                    currentUser() != null ? currentUser().getUsername() : "Sistema",
+                    0, "InventarioResource.deleteInventario",
+                    antes, DiffUtils.snapshotEntity(seleccionado)));
             if (isHxRequest()) {
                 return tableFragment(TAB_PENDIENTES, 1, 20, null, "asc", null,
                         "warn", "Se rechazó el movimiento");
@@ -611,10 +592,7 @@ public class InventarioResource {
                 return notFound("No se encontró el movimiento solicitado");
             }
             String antes = DiffUtils.snapshotEntity(seleccionado);
-            alertas.registrarAlerta("Movimiento omitido",
-                    "Se ha omitido el movimiento: " + nombreArticuloDe(seleccionado),
-                    currentUser(), 0, "InventarioResource.skipCurrentMovement()",
-                    antes, DiffUtils.snapshotEntity(seleccionado));
+                        LOG.info("Se ha omitido el movimiento: " + nombreArticuloDe(seleccionado) + " | user=" + String.valueOf(currentUser()) + " | source=" + "InventarioResource.skipCurrentMovement()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(seleccionado)));
             List<Inventario> pendientes = new ArrayList<>(orEmpty(inventarioService.listAllSinProcesar()));
             pendientes.removeIf(m -> m.getCodigo() == codigo);
             Inventario siguiente = pendientes.isEmpty() ? null : pendientes.get(0);
@@ -727,20 +705,16 @@ public class InventarioResource {
         try {
             contenido = Files.readAllBytes(parte.uploadedFile());
         } catch (IOException e) {
-            alertas.registrarAlerta("Error al procesar archivo",
-                    "Archivo: " + fileName + " - Error: " + e.getMessage(), null, 0,
-                    "InventarioResource.processSingleFile()", fileName, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
             return new UploadFileResult(fileName, false, "No se pudo leer el archivo: " + e.getMessage());
         }
         if (contenido.length == 0) {
-            alertas.registrarAlerta("Error", "File is null or empty: " + fileName, null, 0,
-                    "InventarioResource.processSingleFile()", fileName, null);
+                        LOG.log(java.util.logging.Level.WARNING, "File is null or empty: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
             return new UploadFileResult(fileName, false, "El archivo está vacío");
         }
         String errorPrevalidacion = prevalidateXml(contenido);
         if (errorPrevalidacion != null) {
-            alertas.registrarAlerta("Error", errorPrevalidacion + " (" + fileName + ")", null, 0,
-                    "InventarioResource.prevalidateXml()", fileName, null);
+                        LOG.log(java.util.logging.Level.WARNING, errorPrevalidacion + " (" + fileName + ")" + " | source=" + "InventarioResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
             return new UploadFileResult(fileName, false, errorPrevalidacion);
         }
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(contenido)) {
@@ -749,13 +723,10 @@ public class InventarioResource {
             // the authenticated principal instead of the JSF session.
             AsyncUserContext.setCurrentUser(username);
             parser.parseXML(inputStream);
-            alertas.registrarAlerta("Info", "Successfully processed file: " + fileName,
-                    null, 0, "InventarioResource.processSingleFile()", fileName, null);
+                        LOG.info("Successfully processed file: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
-            alertas.registrarAlerta("Error al parsear XML",
-                    "Archivo: " + fileName + " - Error: " + e.getMessage(), null, 0,
-                    "InventarioResource.processSingleFile()", fileName, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
             return new UploadFileResult(fileName, false, "Error al parsear el XML: " + e.getMessage());
         } finally {
             AsyncUserContext.clear();

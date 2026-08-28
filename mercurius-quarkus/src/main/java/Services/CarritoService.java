@@ -9,8 +9,6 @@ import Models.Articulos.Promocion;
 import Models.Clients;
 import Models.Inventario;
 import Models.Users;
-import Models.Registros.Alertas;
-import Services.AlertasService;
 import Services.InventarioService; 
 import Utils.CarritoCalculations; 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -39,11 +37,11 @@ import lombok.Data;
 @ApplicationScoped
 public class CarritoService implements Serializable {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(CarritoService.class.getName());
+
     @Inject
     private @Nonnull ArticulosService articulosService;
-    @Inject
-    private @Nonnull AlertasService alertasService;
-    @Inject
+        @Inject
     private @Nonnull InventarioService inventario;
 
     /**
@@ -76,7 +74,7 @@ public class CarritoService implements Serializable {
                 ctx.getCarrito().add(ac);
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -103,7 +101,7 @@ public class CarritoService implements Serializable {
                     CartOperationResult.Severity.WARN, "Carrito vacío", "Agregue artículos al carrito antes de continuar");
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return CartOperationResult.silent(CartOperationResult.Status.FALLA_INTERNA);
         }
     }
@@ -116,7 +114,7 @@ public class CarritoService implements Serializable {
                 while (iterator.hasNext() && !removed) {
                     ArticuloCarrito articuloCarrito = iterator.next();
                     if (articuloCarrito.equals(articulo)) {
-                        alertasService.registrarAlerta("Modificacion Carrito", "Cajero " + currentUser.getUsername() + " elimino articulo de carrito", currentUser, 0, "CrearTiqueteController.removeArticulo", articulo.toString(), null);
+                                                LOG.info("Cajero " + currentUser.getUsername() + " elimino articulo de carrito" + " | user=" + String.valueOf(currentUser) + " | source=" + "CrearTiqueteController.removeArticulo" + " | antes=" + String.valueOf(articulo.toString()) + " | despues=" + String.valueOf(null));
                         iterator.remove();
                         removed = true;
                     }
@@ -124,7 +122,7 @@ public class CarritoService implements Serializable {
                 procesarPromocionesCarrito(ctx);
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -146,7 +144,7 @@ public class CarritoService implements Serializable {
             }
             return total;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -187,7 +185,7 @@ public class CarritoService implements Serializable {
             // Paso 3: Eliminar artículos con cantidad 0
             ctx.getCarrito().removeIf(articulo -> articulo.getCantidad().compareTo(BigDecimal.ZERO) <= 0);
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -249,7 +247,7 @@ public class CarritoService implements Serializable {
             }
             return aplicable;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -265,11 +263,11 @@ public class CarritoService implements Serializable {
                 if (!promocionSigueValida) {
                     // Si la promoción ya no es válida, revertimos los descuentos aplicados
                     revertirPromocion(promocion, ctx.getCarrito());
-                    alertasService.registrarAlerta("Info", "Promocion revertida: " + promocion.getNombre(), null, 0, "CarritoService.verificarPromocionesCarrito()", null, null);
+                                        LOG.info("Promocion revertida: " + promocion.getNombre() + " | source=" + "CarritoService.verificarPromocionesCarrito()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 }
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -284,7 +282,7 @@ public class CarritoService implements Serializable {
                     )
                     );
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -306,7 +304,7 @@ public class CarritoService implements Serializable {
                 articulosPromo.removeAll(carrito);
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -322,7 +320,7 @@ public class CarritoService implements Serializable {
                     .distinct()
                     .collect(Collectors.toList());
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -335,7 +333,7 @@ public class CarritoService implements Serializable {
                 ctx.getDescuentoPuntos() != null ? ctx.getDescuentoPuntos() : BigDecimal.ZERO);
             ctx.setVuelto(ctx.getPago().subtract(montoAPagar).setScale(0, RoundingMode.HALF_UP));
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         } 
     }
 
@@ -353,7 +351,7 @@ public class CarritoService implements Serializable {
                 return "Vuelto: 0 colones";
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return "Error";
         }
     }
@@ -390,7 +388,7 @@ public class CarritoService implements Serializable {
                 inventario.update(movimiento);
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -404,14 +402,13 @@ public class CarritoService implements Serializable {
         try {
             stockAlertService.checkAndCreateStockAlerts();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error Stock", "Error checking stock alerts: " + e.getMessage(), null, 0, "CarritoService.checkStockAlertsAfterSale()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error checking stock alerts: " + e.getMessage() + " | source=" + "CarritoService.checkStockAlertsAfterSale()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
  
     public @Nullable CartOperationResult cancel(@Nonnull CartSessionContext ctx, @Nonnull Users currentUser) {
         try {
             String cajero = currentUser.getUsername();
-            Alertas alerta = new Alertas();
             StringBuilder antesBuilder = new StringBuilder();
 
             antesBuilder.append("Items en Carrito: ");
@@ -449,16 +446,8 @@ public class CarritoService implements Serializable {
             antesBuilder.append("\nCliente: ").append(ctx.getSelectedClient() != null ? ctx.getSelectedClient().getName() : "Ninguno");
             antesBuilder.append("\nCantidad Articulo: ").append(ctx.getCantidadArticulo());
             antesBuilder.append("\nCódigo Barra: ").append(ctx.getCodigoBarra());
-
-            alerta.setMensaje("Eliminacion Articulo en Carrito - Cajero: " + cajero);
-            alerta.setTipo("facturacion");
-            alerta.setAntes(antesBuilder.toString());
-            alerta.setDespues("Empty");
-            alerta.setVista(false);
-
-            alertasService.create(alerta);
-
-            // Reset state
+            LOG.info("Eliminacion Articulo en Carrito - Cajero: " + cajero + " | tipo=facturacion | antes=" + antesBuilder.toString() + " | despues=Empty");
+// Reset state
             ctx.setResetFlag(!ctx.isResetFlag());
             ctx.setCodigoBarra("");
             ctx.setCantidadArticulo(BigDecimal.ONE);
@@ -467,7 +456,7 @@ public class CarritoService implements Serializable {
 
             return CartOperationResult.script(CartOperationResult.Status.CANCELADO, "window.close();");
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return CartOperationResult.silent(CartOperationResult.Status.FALLA_INTERNA);
         }
     }
@@ -528,7 +517,7 @@ public class CarritoService implements Serializable {
                         "El código de barra no corresponde a un artículo válido");
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error : " + e.getMessage(), null, 0, "CarritoService.method()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return CartOperationResult.silent(CartOperationResult.Status.FALLA_INTERNA);
         }
     }

@@ -3,9 +3,7 @@ package Controllers;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import Services.AlertasService;
 
 /**
  * Minimal stub for legacy JSF CabysController — referenced by CabysService.
@@ -15,8 +13,6 @@ import Services.AlertasService;
 @Named
 @ApplicationScoped
 public class CabysController {
-
-    @Inject @Nonnull AlertasService alertasService;
 
     public void showInfo(@Nonnull String title, @Nonnull String message) {
         // No-op: legacy FacesMessage push; tests don't exercise this path.

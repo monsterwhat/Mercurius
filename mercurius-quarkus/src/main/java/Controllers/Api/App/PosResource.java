@@ -11,7 +11,6 @@ import Models.DTO.ApiResponse;
 import Models.PagoEntry;
 import Models.TipoCambio;
 import Models.Users;
-import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.ArticulosService;
 import Services.CarritoService;
@@ -107,55 +106,40 @@ public class PosResource {
         return metodos;
     }
 
-    @Inject
     @Nonnull
     CarritoService carritoService;
 
-    @Inject
     @Nonnull
     CartSessionStore cartSessionStore;
 
-    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     ArticulosService articulosService;
 
-    @Inject
     @Nonnull
     ClientService clientService;
 
-    @Inject
     @Nonnull
     AppSettingsService appSettingsService;
 
-    @Inject
     @Nonnull
     ComprobanteService comprobanteService;
 
-    @Inject
     @Nonnull
     DocumentoStrategyFactory strategyFactory;
 
-    @Inject
     @Nonnull
     PDFGenerator pdfGenerator;
 
-    @Inject
     @Nonnull
     LoyaltyService loyaltyService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertasService;
-
-    @Inject
+    
     @Nonnull
     DirectoryService dirService;
 
@@ -165,7 +149,6 @@ public class PosResource {
      * Tipo de cambio for the POS badge. Read-only consumption of
      * {@link TipoCambioService#getNewestTipoCambio()} (service NOT modified).
      */
-    @Inject
     @Nonnull
     TipoCambioService tipoCambioService;
 
@@ -174,27 +157,22 @@ public class PosResource {
      * NOT quarkus-rest-qute, so no TemplateInstance message-body writer exists
      * (same approach as LoginPageResource/ClientsResource).
      */
-    @Inject
     @Nonnull
     @Location("pages/facturas/cart-panel")
     Template cartPanelTemplate;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas/payment-dialog")
     Template paymentDialogTemplate;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas/client-picker")
     Template clientPickerTemplate;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas/facturar-resultado")
     Template facturarResultadoTemplate;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas/auth-modal-body")
     Template authModalBodyTemplate;
@@ -602,9 +580,7 @@ public class PosResource {
             try {
                 loyaltyService.redeemPoints(cliente, puntosARedimir);
             } catch (RuntimeException e) {
-                alertasService.registrarAlerta("Error Puntos",
-                        "Error al canjear puntos: " + e.getMessage(),
-                        currentUser, 0, "PosResource.facturar()", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error al canjear puntos: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         }
 
@@ -624,9 +600,7 @@ public class PosResource {
                     pagos
             );
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error Facturación",
-                    "Error during PDF generation: " + e.getMessage(),
-                    currentUser, 0, "PosResource.facturar", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error during PDF generation: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.log(Level.WARNING, "PDF generation warning for comprobante "
                     + comprobante.getId(), e);
         }
@@ -651,9 +625,7 @@ public class PosResource {
                         pagos
                 );
             } catch (RuntimeException e) {
-                alertasService.registrarAlerta("Error Facturación",
-                        "Error enviando factura al cliente: " + e.getMessage(),
-                        currentUser, 0, "PosResource.facturar", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error enviando factura al cliente: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         }
 
@@ -756,21 +728,15 @@ public class PosResource {
             // disabled-user contract obvious and null-safe.
             Users authUser = loginService.findByUsername(supervisor);
             if (authUser == null) {
-                alertasService.registrarAlerta("Autorización Fallida",
-                        "Intento con usuario inexistente: " + supervisor,
-                        null, 0, "PosResource.overrideAuthorize()", null, null);
+                                LOG.info("Intento con usuario inexistente: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 return invalidCredentials();
             }
             if (!Boolean.TRUE.equals(authUser.getStatus())) {
-                alertasService.registrarAlerta("Autorización Fallida",
-                        "Intento con usuario deshabilitado: " + supervisor,
-                        null, 0, "PosResource.overrideAuthorize()", null, null);
+                                LOG.info("Intento con usuario deshabilitado: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 return invalidCredentials();
             }
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                alertasService.registrarAlerta("Autorización Fallida",
-                        "Contraseña incorrecta de: " + supervisor,
-                        null, 0, "PosResource.overrideAuthorize()", null, null);
+                                LOG.info("Contraseña incorrecta de: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 return invalidCredentials();
             }
 
@@ -779,9 +745,7 @@ public class PosResource {
                     new AppAuthResource.SupervisorAuthorizationDTO(
                             authUser.getUsername(), deriveRoles(authUser)))).build();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error",
-                    "Error en overrideAuthorize: " + e.getMessage(),
-                    null, 0, "PosResource.overrideAuthorize()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorize: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.log(Level.WARNING, "Error during POS supervisor authorization", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error durante la autorización"))
@@ -1204,18 +1168,14 @@ public class PosResource {
                 Users authUser = loginService.findByUsername(supervisor);
                 if (authUser == null || !Boolean.TRUE.equals(authUser.getStatus())
                         || !loginService.verifyPassword(password, authUser.getPassword())) {
-                    alertasService.registrarAlerta("Autorización Fallida",
-                            "Intento fallido de autorización de: " + supervisor,
-                            null, 0, "PosResource.overrideAuthorizeForm()", null, null);
+                                        LOG.info("Intento fallido de autorización de: " + supervisor + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                     errorGeneral = "Usuario o contraseña incorrectos";
                 } else {
                     cartSessionStore.getOrCreate(username).setAuthorizedBy(authUser.getUsername());
                     exito = true;
                 }
             } catch (RuntimeException e) {
-                alertasService.registrarAlerta("Error",
-                        "Error en overrideAuthorizeForm: " + e.getMessage(),
-                        null, 0, "PosResource.overrideAuthorizeForm()", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorizeForm: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
                 LOG.log(Level.WARNING, "Error during POS supervisor authorization", e);
                 errorGeneral = "Error durante la autorización";
             }

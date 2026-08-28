@@ -1,7 +1,6 @@
 package Services;
 
 import Controllers.Settings.SettingsDirController;
-import Services.AlertasService;
 import Utils.Parsers.Parser;
 import jakarta.activation.DataHandler;
 import jakarta.activation.DataSource;
@@ -49,10 +48,11 @@ import java.time.temporal.ChronoUnit;
 @Named
 @ApplicationScoped
 public class EmailService implements Serializable {
+
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(EmailService.class.getName());
     
     @Inject @Nonnull Parser parser;
     @Inject @Nonnull SettingsDirController dirController;
-    @Inject @Nonnull AlertasService alertasService;
     
     @Timeout(value = 30, unit = ChronoUnit.SECONDS)
     @Retry(maxRetries = 2, delay = 1000, jitter = 500)
@@ -87,10 +87,10 @@ public class EmailService implements Serializable {
                 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         } else {
-            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmail()", null, null);
+                        LOG.info("No email set up" + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             status[0] = "No Email Setup!";
         }
         
@@ -99,7 +99,7 @@ public class EmailService implements Serializable {
     }
     
     private void sendEmailFallback(String to, String subject, String body, String email, String pass, Consumer<String> callback) {
-        alertasService.registrarAlerta("Error", "FALLBACK: sendEmail failed, notifying via callback", null, 0, "EmailService.sendEmailFallback()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: sendEmail failed, notifying via callback" + " | source=" + "EmailService.sendEmailFallback()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         CompletableFuture.runAsync(() -> callback.accept("Email send failed: Timeout or error - please try again later"));
     }
     
@@ -143,10 +143,10 @@ public class EmailService implements Serializable {
                 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         } else {
-            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmail()", null, null);
+                        LOG.info("No email set up" + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             status[0] = "No Email Setup!";
         }
         
@@ -155,7 +155,7 @@ public class EmailService implements Serializable {
     }
     
     private void sendEmailsFallback(List<String> to, String subject, String body, String email, String pass, Consumer<String> callback) {
-        alertasService.registrarAlerta("Error", "FALLBACK: sendEmails failed, notifying via callback", null, 0, "EmailService.sendEmailsFallback()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: sendEmails failed, notifying via callback" + " | source=" + "EmailService.sendEmailsFallback()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         CompletableFuture.runAsync(() -> callback.accept("Email send failed: Timeout or error - please try again later"));
     }
     
@@ -206,10 +206,10 @@ public class EmailService implements Serializable {
                 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         } else {
-            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmail()", null, null);
+                        LOG.info("No email set up" + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             status[0] = "No Email Setup!";
         }
         
@@ -218,7 +218,7 @@ public class EmailService implements Serializable {
     }
     
     private void sendEmailsWithAttachmentFallback(List<String> to, String subject, String body, String email, String pass, File attachment, Consumer<String> callback) {
-        alertasService.registrarAlerta("Error", "FALLBACK: sendEmailsWithAttachment failed", null, 0, "EmailService.sendEmailsWithAttachmentFallback()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: sendEmailsWithAttachment failed" + " | source=" + "EmailService.sendEmailsWithAttachmentFallback()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         CompletableFuture.runAsync(() -> callback.accept("Email with attachment failed: Timeout or error - please try again later"));
     }
     
@@ -262,10 +262,10 @@ public class EmailService implements Serializable {
                 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                alertasService.registrarAlerta("Error", "Error sending HTML email: " + e.getMessage(), null, 0, "EmailService.sendHtmlEmails()", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error sending HTML email: " + e.getMessage() + " | source=" + "EmailService.sendHtmlEmails()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         } else {
-            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendHtmlEmails()", null, null);
+                        LOG.info("No email set up" + " | source=" + "EmailService.sendHtmlEmails()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             status[0] = "No Email Setup!";
         }
         
@@ -274,7 +274,7 @@ public class EmailService implements Serializable {
     }
     
     private void sendHtmlEmailsFallback(List<String> to, String subject, String htmlBody, String email, String pass, Consumer<String> callback) {
-        alertasService.registrarAlerta("Error", "FALLBACK: sendHtmlEmails failed, notifying via callback", null, 0, "EmailService.sendHtmlEmailsFallback()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: sendHtmlEmails failed, notifying via callback" + " | source=" + "EmailService.sendHtmlEmailsFallback()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         CompletableFuture.runAsync(() -> callback.accept("HTML email send failed: Timeout or error - please try again later"));
     }
     
@@ -342,14 +342,14 @@ public class EmailService implements Serializable {
                             File file = new File(directory, mimeBodyPart.getFileName());
                             mimeBodyPart.saveFile(file); // Save directly to the file
 
-                            alertasService.registrarAlerta("Info", "Saved XML attachment: " + file.getAbsolutePath(), null, 0, "EmailService.processUnreadXmlAttachments()", null, null);
+                                                        LOG.info("Saved XML attachment: " + file.getAbsolutePath() + " | source=" + "EmailService.processUnreadXmlAttachments()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
                             // Parse the saved XML file
                             try (InputStream inputStream = new FileInputStream(file)) {
                                 parser.parseXML(inputStream);
                                 successfullyProcessedFiles++;
                             } catch (IOException | RuntimeException e) {
-                                alertasService.registrarAlerta("Error", "Error parsing XML file: " + e.getMessage(), null, 0, "EmailService.processUnreadXmlAttachments()", null, e.getMessage());
+                                                                LOG.log(java.util.logging.Level.WARNING, "Error parsing XML file: " + e.getMessage() + " | source=" + "EmailService.processUnreadXmlAttachments()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
                             }
 
                             // Mark the message as read
@@ -380,13 +380,13 @@ public class EmailService implements Serializable {
                 totalEmails, emailsWithXmlAttachments, successfullyProcessedFiles));
 
         } catch (MessagingException | IOException e) {
-            alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "EmailService.sendEmail()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             callback.accept("Encountered an Error: " + e.getLocalizedMessage());
         }
     }
     
     private void processUnreadXmlAttachmentsFallback(String email, String pass, Consumer<String> callback) {
-        alertasService.registrarAlerta("Error", "FALLBACK: processUnreadXmlAttachments failed due to circuit breaker or repeated failures", null, 0, "EmailService.processUnreadXmlAttachmentsFallback()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: processUnreadXmlAttachments failed due to circuit breaker or repeated failures" + " | source=" + "EmailService.processUnreadXmlAttachmentsFallback()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         CompletableFuture.runAsync(() -> callback.accept("Email processing skipped: Service temporarily unavailable due to repeated failures. Will retry on next scheduled run."));
     }
 
@@ -450,10 +450,10 @@ public class EmailService implements Serializable {
 
             } catch (MessagingException e) {
                 status[0] = "Encountered an Error: " + e.getLocalizedMessage();
-                alertasService.registrarAlerta("Error", "Error sending email with attachments: " + e.getMessage(), null, 0, "EmailService.sendEmailsWithAttachments()", null, e.getMessage());
+                                LOG.log(java.util.logging.Level.WARNING, "Error sending email with attachments: " + e.getMessage() + " | source=" + "EmailService.sendEmailsWithAttachments()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         } else {
-            alertasService.registrarAlerta("Info", "No email set up", null, 0, "EmailService.sendEmailsWithAttachments()", null, null);
+                        LOG.info("No email set up" + " | source=" + "EmailService.sendEmailsWithAttachments()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             status[0] = "No Email Setup!";
         }
 
@@ -461,7 +461,7 @@ public class EmailService implements Serializable {
     }
 
     private void sendEmailsWithAttachmentsFallback(List<String> to, String subject, String body, String email, String pass, List<File> attachments, Consumer<String> callback) {
-        alertasService.registrarAlerta("Error", "FALLBACK: sendEmailsWithAttachments failed", null, 0, "EmailService.sendEmailsWithAttachmentsFallback()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: sendEmailsWithAttachments failed" + " | source=" + "EmailService.sendEmailsWithAttachmentsFallback()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
         CompletableFuture.runAsync(() -> callback.accept("Email with attachments failed: Timeout or error - please try again later"));
     }
 

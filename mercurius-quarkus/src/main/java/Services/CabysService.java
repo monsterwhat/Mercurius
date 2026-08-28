@@ -31,6 +31,8 @@ import java.util.List;
 @Named
 @ApplicationScoped
 public class CabysService extends GService<Cabys>{
+
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(CabysService.class.getName());
     
     @Inject @Nonnull CabysController controller;
     
@@ -50,7 +52,7 @@ public class CabysService extends GService<Cabys>{
             em.persist(entity);
             em.flush();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "CabysService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "CabysService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -80,10 +82,10 @@ public class CabysService extends GService<Cabys>{
                 em.remove(entity);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "CabysService.delete()", null, null);
+                                LOG.info("Entity not found" + " | source=" + "CabysService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             }
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "CabysService.delete()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "CabysService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     
@@ -148,7 +150,7 @@ public class CabysService extends GService<Cabys>{
             }
         } catch (IOException e) {
             controller.showError("Error", "Error: " + e.getLocalizedMessage());
-            alertasService.registrarAlerta("Error", "Error making HTTP request: " + e.getMessage(), null, 0, "CabysService.listAllAPI()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error making HTTP request: " + e.getMessage() + " | source=" + "CabysService.listAllAPI()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
         controller.showInfo("Exito", "Se descargo la lista CaByS");
         return cabysList;
@@ -179,7 +181,7 @@ public class CabysService extends GService<Cabys>{
                 resultList.add(cabys);
             }
         } catch (JsonProcessingException e) {
-            alertasService.registrarAlerta("Error", "Error parsing JSON response: " + e.getMessage(), null, 0, "CabysService.parseJsonResponse()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error parsing JSON response: " + e.getMessage() + " | source=" + "CabysService.parseJsonResponse()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
 
         return resultList;
@@ -197,7 +199,7 @@ public class CabysService extends GService<Cabys>{
                 .setMaxResults(10)
                 .getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error searching Cabys by name: " + e.getMessage(), null, 0, "CabysService.searchByName()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error searching Cabys by name: " + e.getMessage() + " | source=" + "CabysService.searchByName()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return List.of();
         }
     }
@@ -208,7 +210,7 @@ public class CabysService extends GService<Cabys>{
                 create(cabys);
             }
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error: " + e.getMessage(), null, 0, "CabysService.saveAllDB()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "CabysService.saveAllDB()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 }

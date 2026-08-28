@@ -17,7 +17,6 @@ import Models.Referencias.InformacionReferencia;
 import Models.Resumen.CodigoTipoMoneda;
 import Models.Resumen.ResumenFactura;
 import Models.Users;
-import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.ClientService;
 import Services.ComprobanteService;
@@ -131,56 +130,41 @@ public class DevolucionesResource {
 
     private static final int MAX_PAGE_SIZE = 100;
 
-    @Inject
     @Nonnull
     ComprobantesEmitidosService comprobantesService;
 
-    @Inject
     @Nonnull
     NotaCreditoService notaCreditoService;
 
-    @Inject
     @Nonnull
     InventarioService inventarioService;
 
-    @Inject
     @Nonnull
     ClientService clientService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertasService;
-
-    @Inject
+    
     @Nonnull
     AppSettingsService appSettingsService;
 
-    @Inject
     @Nonnull
     DocumentoStrategyFactory strategyFactory;
 
-    @Inject
     @Nonnull
     Services.HaciendaSigner haciendaSigner;
 
-    @Inject
     @Nonnull
     ComprobanteService comprobanteService;
 
-    @Inject
     @Nonnull
     ConsecutivoEmitidoService consecutivoEmitidoService;
 
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request headers (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     HttpHeaders httpHeaders;
 
@@ -189,7 +173,6 @@ public class DevolucionesResource {
      * {config:['quarkus.http.root-path']} in Qute; needed here because the
      * HTMX fragments are built in Java, where Qute expressions do not run.
      */
-    @Inject
     @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/")
     String rootPath;
 
@@ -419,29 +402,21 @@ public class DevolucionesResource {
         try {
             authUser = loginService.findByUsername(username);
             if (authUser == null) {
-                alertasService.registrarAlerta("Autorización Fallida",
-                        "Intento con usuario inexistente: " + username,
-                        currentUser(), 0, "DevolucionesResource.authorize()", null, null);
+                                LOG.info("Intento con usuario inexistente: " + username + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 return invalidCredentials();
             }
             if (!Boolean.TRUE.equals(authUser.getStatus())) {
-                alertasService.registrarAlerta("Autorización Fallida",
-                        "Intento con usuario deshabilitado: " + username,
-                        currentUser(), 0, "DevolucionesResource.authorize()", null, null);
+                                LOG.info("Intento con usuario deshabilitado: " + username + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 return invalidCredentials();
             }
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                alertasService.registrarAlerta("Autorización Fallida",
-                        "Contraseña incorrecta de: " + username,
-                        currentUser(), 0, "DevolucionesResource.authorize()", null, null);
+                                LOG.info("Contraseña incorrecta de: " + username + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 return invalidCredentials();
             }
         } catch (RuntimeException e) {
             // SessionController.authorizeAction parity: an error inside the
             // credential check is alerted and blocks processing.
-            alertasService.registrarAlerta("Error",
-                    "Error en authorizeAction: " + e.getMessage(),
-                    currentUser(), 0, "DevolucionesResource.authorize()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error en authorizeAction: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return invalidCredentials();
         }
 
@@ -449,9 +424,7 @@ public class DevolucionesResource {
 
         // ── Legacy authorize(): the exitosa alerta fires BEFORE the
         //    procesarDevolucion guards, so failed validations still carry it.
-        alertasService.registrarAlerta("Autorización Exitosa",
-                "Devolución autorizada por: " + authorizedBy,
-                currentUser(), 0, "DevolucionesResource.authorize()", null, null);
+                LOG.info("Devolución autorizada por: " + authorizedBy + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
         // ── procesarDevolucion guards (all BEFORE any domain write)
         ComprobantesEmitidos facturaSeleccionada = comprobantesService.find(id);
@@ -519,9 +492,7 @@ public class DevolucionesResource {
             NcElectronicaResultado nc = generarNcElectronica(
                     facturaSeleccionada, seleccion, motivoFinal, totalDevolucion, authorizedBy);
 
-            alertasService.registrarAlerta("Devolucion procesada",
-                    "Nota de credito creada por " + totalDevolucion + " - " + motivoFinal,
-                    currentUser, 0, "DevolucionesResource.procesarDevolucion()", null, null);
+                        LOG.info("Nota de credito creada por " + totalDevolucion + " - " + motivoFinal + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
             NcSummary summary = new NcSummary(consecutivoOriginal, nc.clave(), nc.consecutivo(),
                     totalDevolucion, motivoFinal, nc.generada(), nc.mensaje(), printUrl(nc.clave()));
@@ -533,10 +504,7 @@ public class DevolucionesResource {
 
         } catch (RuntimeException e) {
             // Legacy catch: alert + error message; partial state stays.
-            alertasService.registrarAlerta("Error devolucion",
-                    "Error al procesar devolucion: " + e.getMessage(),
-                    currentUser, 0, "DevolucionesResource.procesarDevolucion()",
-                    null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error al procesar devolucion: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.log(Level.WARNING, "Error procesando la devolucion de la factura " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
@@ -972,18 +940,12 @@ public class DevolucionesResource {
             // ComprobanteService — never a real network call).
             comprobanteService.enviarComprobanteAHacienda(ncComprobante);
 
-            alertasService.registrarAlerta("NC Electronica",
-                    "Nota de Credito electronica " + numeroConsecutivo + " generada para devolucion",
-                    currentUser, 0, "DevolucionesResource.procesarDevolucion()",
-                    null, null);
+                        LOG.info("Nota de Credito electronica " + numeroConsecutivo + " generada para devolucion" + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
             return new NcElectronicaResultado(true, clave, numeroConsecutivo,
                     "Nota de Credito electronica generada");
         } catch (RuntimeException eNC) {
-            alertasService.registrarAlerta("Error NC",
-                    "Error al generar Nota de Credito electronica: " + eNC.getMessage(),
-                    currentUser(), 0, "DevolucionesResource.procesarDevolucion()",
-                    null, eNC.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error al generar Nota de Credito electronica: " + eNC.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(eNC.getMessage()));
             return new NcElectronicaResultado(false, null, null,
                     "Error al generar Nota de Credito electronica: " + eNC.getMessage());
         }

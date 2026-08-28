@@ -1,7 +1,6 @@
 package Utils;
 
 import jakarta.annotation.Nonnull;
-import Services.AlertasService;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -22,6 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @ApplicationScoped
 public class AppLauncher {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(AppLauncher.class.getName());
+
     private static final String LOCK_FILE_PATH = System.getProperty("java.io.tmpdir") + "/mercurius.lock";
     private static final String APP_URL = "http://localhost:8081/Mercurius/index.xhtml";
     
@@ -30,14 +31,12 @@ public class AppLauncher {
     @Inject @Nonnull
     SystemTrayManager trayManager;
 
-    @Inject @Nonnull
-    AlertasService alertasService;
-
     void onStart(@Observes StartupEvent event) {
         try {
             // Check if application is already running
             if (!isSingleInstance()) {
-                alertasService.registrarAlerta("Error", "Mercurius is already running!", null, 0, "AppLauncher.onStart()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Mercurius is already running!", "Sistema", 0, "AppLauncher.onStart()", null, null));
                 return; // Don't exit immediately, let Quarkus handle it
             }
             
@@ -51,9 +50,11 @@ public class AppLauncher {
                     // Silently ignore tray initialization failures on non-Windows systems
                     String os = System.getProperty("os.name").toLowerCase();
                     if (os.contains("win")) {
-                        alertasService.registrarAlerta("Error", "System tray initialization failed: " + e.getMessage(), null, 0, "AppLauncher.onStart()", null, null);
+                        LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                                "Error", "System tray initialization failed: " + e.getMessage(), "Sistema", 0, "AppLauncher.onStart()", null, null));
                     } else {
-                        alertasService.registrarAlerta("Debug", "System tray not initialized (non-Windows system)", null, 0, "AppLauncher.onStart()", null, null);
+                        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                                "Debug", "System tray not initialized (non-Windows system)", "Sistema", 0, "AppLauncher.onStart()", null, null));
                     }
                 }
             });
@@ -65,7 +66,8 @@ public class AppLauncher {
             openBrowserAfterDelay(3000);
 
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error during application startup: " + e.getMessage(), null, 0, "AppLauncher.onStart()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Error", "Error during application startup: " + e.getMessage(), "Sistema", 0, "AppLauncher.onStart()", null, null));
             // Don't crash the app, just continue without these features
         }
     }
@@ -109,7 +111,8 @@ public class AppLauncher {
 
             return true;
         } catch (IOException | RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error checking single instance: " + e.getMessage(), null, 0, "AppLauncher.isSingleInstance()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Error", "Error checking single instance: " + e.getMessage(), "Sistema", 0, "AppLauncher.isSingleInstance()", null, null));
             return true; // Allow startup if we can't check
         }
     }
@@ -136,7 +139,8 @@ public class AppLauncher {
             try {
                 Desktop.getDesktop().browse(new URI(url));
             } catch (IOException | URISyntaxException e) {
-                alertasService.registrarAlerta("Error", "Error opening browser: " + e.getMessage(), null, 0, "AppLauncher.openBrowser()", null, e.getMessage());
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Error opening browser: " + e.getMessage(), "Sistema", 0, "AppLauncher.openBrowser()", null, e.getMessage()));
                 // Fallback: try with runtime exec
                 try {
                     String os = System.getProperty("os.name").toLowerCase();
@@ -148,11 +152,13 @@ public class AppLauncher {
                         new ProcessBuilder("xdg-open", url).start();
                     }
                 } catch (IOException ex) {
-                    alertasService.registrarAlerta("Error", "Failed to open browser with fallback: " + ex.getMessage(), null, 0, "AppLauncher.openBrowser()", null, ex.getMessage());
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                            "Error", "Failed to open browser with fallback: " + ex.getMessage(), "Sistema", 0, "AppLauncher.openBrowser()", null, ex.getMessage()));
                 }
             }
         } else {
-            alertasService.registrarAlerta("Warn", "Desktop browsing is not supported", null, 0, "AppLauncher.openBrowser()", null, null);
+            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Warn", "Desktop browsing is not supported", "Sistema", 0, "AppLauncher.openBrowser()", null, null));
         }
     }
 
@@ -165,7 +171,8 @@ public class AppLauncher {
             try {
                 trayManager.shutdown();
             } catch (RuntimeException e) {
-                alertasService.registrarAlerta("Error", "Error cleaning up tray manager: " + e.getMessage(), null, 0, "AppLauncher.shutdown()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Error cleaning up tray manager: " + e.getMessage(), "Sistema", 0, "AppLauncher.shutdown()", null, null));
             }
             
             // Shutdown the application

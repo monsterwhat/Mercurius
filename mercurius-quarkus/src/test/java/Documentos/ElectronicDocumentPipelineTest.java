@@ -20,7 +20,6 @@ import Models.Jaxb.FEE.FacturaExportacionElectronicaDocumento;
 import Models.Jaxb.REP.ReciboElectronicoPagoDocumento;
 import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
-import Services.AlertasService;
 import Services.HaciendaCertificateService;
 import Services.HaciendaSigner;
 import Services.HaciendaXsdValidator;
@@ -149,7 +148,6 @@ class ElectronicDocumentPipelineTest {
             .thenReturn(HaciendaXsdValidator.ValidationResult.ok());
         setField(signer, "xsdValidator", mockValidator);
 
-        setField(signer, "alertasService", mock(AlertasService.class));
     }
 
     // ── Parameterized pipeline test for all 7 doc types ───────────────────

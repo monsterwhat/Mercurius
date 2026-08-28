@@ -20,6 +20,8 @@ import java.util.Date;
 @ApplicationScoped
 public class ReportesProgramadosService extends GService<ReporteProgramado>{
     
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ReportesProgramadosService.class.getName());
+
     @PersistenceContext @Nonnull EntityManager em;
 
     @Override
@@ -39,7 +41,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             }
             em.persist(entity);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating ReporteProgramado: " + e.getMessage(), null, 0, "ReportesProgramadosService.create()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error creating ReporteProgramado: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.create()", null, e.getMessage()));
         }
     }
     
@@ -69,10 +71,10 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 }
                 em.persist(entity);
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ReportesProgramadosService.updateAndDisable()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Entity not found", "Sistema", 0, "ReportesProgramadosService.updateAndDisable()", null, null));
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.updateAndDisable()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error updating entity: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.updateAndDisable()", null, e.getMessage()));
         }
     }
     
@@ -92,7 +94,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             }
 
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.createIfNotExists()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error creating entity: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.createIfNotExists()", null, e.getMessage()));
             return false;
         }
     }
@@ -105,7 +107,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 em.remove(existingItem);
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting entity: " + e.getMessage(), null, 0, "ReportesProgramadosService.delete()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error deleting entity: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.delete()", null, e.getMessage()));
         }
     }
 
@@ -125,7 +127,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             java.util.List<ReporteProgramado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding next scheduled report: " + e.getMessage(), null, 0, "ReportesProgramadosService.findNextScheduledReport()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error finding next scheduled report: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.findNextScheduledReport()", null, e.getMessage()));
             return null;
         }
     }

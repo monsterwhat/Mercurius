@@ -15,7 +15,6 @@ import Models.Encabezado.Receptor;
 import Models.Users;
 import Models.Validacion.PrevalidationResult;
 import Models.Validacion.ValidationError;
-import Services.AlertasService;
 import Services.ComprobantesRecibidosPrevalidationService;
 import Services.ComprobantesRecibidosService;
 import Services.ConsecutivoReceptorService;
@@ -161,74 +160,56 @@ public class FacturasRecibidasResource {
     /** Parser's own missing-consecutivo message (surfaced verbatim, T35 parity). */
     private static final String MSG_FALTA_CONSECUTIVO = "XML inválido: falta el número consecutivo";
 
-    @Inject
     @Nonnull
     ComprobantesRecibidosService recibidosService;
 
-    @Inject
     @Nonnull
     LineaDetalleService lineaDetalleService;
 
-    @Inject
     @Nonnull
     ComprobantesRecibidosPrevalidationService prevalidationService;
 
-    @Inject
     @Nonnull
     ConsecutivoReceptorService consecutivoReceptorService;
 
-    @Inject
     @Nonnull
     MensajeReceptorService mensajeReceptorService;
 
-    @Inject
     @Nonnull
     DocumentoStrategyFactory strategyFactory;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
+    
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     Parser parser;
 
-    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request headers (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     HttpHeaders httpHeaders;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as InventarioResource/TributacionPagesResource).
-    @Inject
     @Nonnull
     @Location("pages/facturas-recibidas/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas-recibidas/tabla.html")
     Template tabla;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas-recibidas/detalle-drawer.html")
     Template detalleDrawer;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas-recibidas/prevalidacion-panel.html")
     Template prevalidacionPanel;
 
-    @Inject
     @Nonnull
     @Location("pages/facturas-recibidas/upload-resultado.html")
     Template uploadResultado;
@@ -584,10 +565,7 @@ public class FacturasRecibidasResource {
             String antes = DiffUtils.snapshotEntity(linea);
             linea.setCodigoCabys(codigo);
             lineaDetalleService.update(linea);
-            alertas.registrarAlerta("Exito",
-                    "Código CAByS de la línea " + lineaId + " corregido a " + codigo,
-                    currentUser(), 0, "FacturasRecibidasResource.corregirLinea()", antes,
-                    DiffUtils.snapshotEntity(linea));
+                        LOG.info("Código CAByS de la línea " + lineaId + " corregido a " + codigo + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.corregirLinea()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(linea)));
 
             ComprobantesRecibidos actualizada = recibidosService.findByIdWithDetails(id);
             if (isHxRequest()) {
@@ -749,15 +727,12 @@ public class FacturasRecibidasResource {
                 List<String> detalles = new ArrayList<>();
                 for (ValidationError err : preResultado.getErrors()) {
                     detalles.add(err.getField() + ": " + err.getMessage());
-                    alertas.registrarAlerta("Pre-validación (bloqueo)",
-                            err.getField() + ": " + err.getMessage(), currentUser(), 0,
-                            "FacturasRecibidasResource.doMensajeReceptor()", null, err.getMessage());
+                                        LOG.info(err.getField() + ": " + err.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(err.getMessage()));
                 }
                 if (detalles.isEmpty()) {
                     String msg = "codigoCabys: El código CAByS '999' no tiene 13 dígitos [INVALID_FORMAT]";
                     detalles.add(msg);
-                    alertas.registrarAlerta("Pre-validación (bloqueo)", msg, currentUser(), 0,
-                            "FacturasRecibidasResource.doMensajeReceptor()", null, msg);
+                                        LOG.info(msg + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(msg));
                 }
                 String resumen = (preResultado.getErrorCount() > 0 ? preResultado.getErrorCount() : detalles.size())
                         + " error(es) de pre-validación impiden enviar el Mensaje Receptor";
@@ -776,9 +751,7 @@ public class FacturasRecibidasResource {
                         .build();
             }
             for (ValidationError warn : preResultado.getWarnings()) {
-                alertas.registrarAlerta("Pre-validación (advertencia)",
-                        warn.getField() + ": " + warn.getMessage(), currentUser(), 0,
-                        "FacturasRecibidasResource.doMensajeReceptor()", null, warn.getMessage());
+                                LOG.info(warn.getField() + ": " + warn.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doMensajeReceptor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(warn.getMessage()));
             }
 
             // ── Totals: full uses resumen, partial sums accepted lines ──
@@ -994,20 +967,16 @@ public class FacturasRecibidasResource {
         try {
             contenido = Files.readAllBytes(parte.uploadedFile());
         } catch (IOException e) {
-            alertas.registrarAlerta("Error al procesar archivo",
-                    "Archivo: " + fileName + " - Error: " + e.getMessage(), null, 0,
-                    "FacturasRecibidasResource.processSingleFile()", fileName, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
             return new UploadFileResult(fileName, false, "No se pudo leer el archivo: " + e.getMessage());
         }
         if (contenido.length == 0) {
-            alertas.registrarAlerta("Error", "File is empty: " + fileName, null, 0,
-                    "FacturasRecibidasResource.processSingleFile()", fileName, null);
+                        LOG.log(java.util.logging.Level.WARNING, "File is empty: " + fileName + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
             return new UploadFileResult(fileName, false, "El archivo está vacío");
         }
         String errorPrevalidacion = prevalidateXml(contenido);
         if (errorPrevalidacion != null) {
-            alertas.registrarAlerta("Error", errorPrevalidacion + " (" + fileName + ")", null, 0,
-                    "FacturasRecibidasResource.prevalidateXml()", fileName, null);
+                        LOG.log(java.util.logging.Level.WARNING, errorPrevalidacion + " (" + fileName + ")" + " | source=" + "FacturasRecibidasResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
             return new UploadFileResult(fileName, false, errorPrevalidacion);
         }
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(contenido)) {
@@ -1016,13 +985,10 @@ public class FacturasRecibidasResource {
             // authenticated principal instead of the JSF session.
             AsyncUserContext.setCurrentUser(username);
             parser.parseXML(inputStream);
-            alertas.registrarAlerta("Info", "Successfully processed file: " + fileName,
-                    null, 0, "FacturasRecibidasResource.processSingleFile()", fileName, null);
+                        LOG.info("Successfully processed file: " + fileName + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(null));
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
-            alertas.registrarAlerta("Error al parsear xml de factura",
-                    "Archivo: " + fileName + " - Error: " + e.getMessage(), currentUser(), 0,
-                    "FacturasRecibidasResource.processSingleFile()", e.getMessage(), null);
+                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf(null));
             return new UploadFileResult(fileName, false, "Error al procesar el archivo XML: " + e.getMessage());
         } finally {
             AsyncUserContext.clear();

@@ -14,6 +14,8 @@ import java.util.List;
 @ApplicationScoped
 public class ClientService extends GService<Clients> {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ClientService.class.getName());
+
     @Override
     protected @Nonnull Class<Clients> getEntityClass() {
         return Clients.class;
@@ -30,7 +32,7 @@ public class ClientService extends GService<Clients> {
             em.persist(entity);
             em.flush();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ClientService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "ClientService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -45,10 +47,10 @@ public class ClientService extends GService<Clients> {
                 em.remove(entity);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "ClientService.delete()", null, null);
+                                LOG.info("Entity not found" + " | source=" + "ClientService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             }
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ClientService.delete()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "ClientService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     
@@ -59,7 +61,7 @@ public class ClientService extends GService<Clients> {
             query.setParameter("name", "%" + name + "%");
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error searching clients by name: " + e.getMessage(), null, 0, "ClientService.searchByName()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error searching clients by name: " + e.getMessage() + " | source=" + "ClientService.searchByName()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -74,7 +76,7 @@ public class ClientService extends GService<Clients> {
 
             return !resultList.isEmpty();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting client by username: " + e.getMessage(), null, 0, "ClientService.checkClientName()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting client by username: " + e.getMessage() + " | source=" + "ClientService.checkClientName()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -90,7 +92,7 @@ public class ClientService extends GService<Clients> {
             query.setParameter("idNumber", idNumber);
             return query.getSingleResult() > 0;
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error checking client by ID number: " + e.getMessage(), null, 0, "ClientService.checkClientByIdNumber()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error checking client by ID number: " + e.getMessage() + " | source=" + "ClientService.checkClientByIdNumber()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }

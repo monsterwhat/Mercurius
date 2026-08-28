@@ -25,9 +25,7 @@ import jakarta.inject.Inject;
 import Models.ComprobantesEmitidos;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
-import Models.Registros.Alertas;
 import Models.Resumen.ResumenFactura;
-import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.ComprobantesEmitidosService;
 import Services.HaciendaServiceFacade;
@@ -75,8 +73,6 @@ class RecibosResourceTest extends support.ContextPathIsolation {
     ComprobantesEmitidosService emitidosService;
 
     @Inject
-    AlertasService alertas;
-
     @Inject
     AppSettingsService appSettingsService;
 
@@ -179,7 +175,6 @@ class RecibosResourceTest extends support.ContextPathIsolation {
     }
 
     private boolean alertaEscrita(String source, String mensajeContiene) {
-        List<Alertas> todas = alertas.listAll();
         return todas.stream()
                 .anyMatch(a -> source.equals(a.getSource())
                         && a.getMensaje() != null

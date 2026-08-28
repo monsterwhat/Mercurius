@@ -4,7 +4,6 @@ import Models.Cabys;
 import Models.DTO.ApiResponse;
 import Models.DTO.CabysDTO;
 import Models.DTO.PagedResponse;
-import Services.AlertasService;
 import Services.CabysService;
 import Utils.DiffUtils;
 import io.quarkus.qute.Location;
@@ -47,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * listing/filtering the catalog ({@code globalFilterFunction} parity),
  * lookup by {@code codigo}, and description/status updates
  * ({@code updateCabys()} parity, including the audit trail via
- * {@link AlertasService#registrarAlerta}). Catalog sync from Hacienda
+ * {@code LOG.log(...)}). Catalog sync from Hacienda
  * ({@code listAllAPI()}) intentionally stays a legacy-controller action.</p>
  *
  * <p>The {@code @RolesAllowed} gate is dormant until the form-cookie auth
@@ -67,32 +66,23 @@ public class CabysResource {
 
     private static final Logger LOG = Logger.getLogger(CabysResource.class.getName());
 
-    @Inject
     @Nonnull
     CabysService cabysService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
-    @Inject
     @Nonnull
     @Location("pages/cabys/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/cabys/tabla.html")
     Template tablaPage;
 
-    @Inject
     @Nonnull
     @Location("pages/cabys/form.html")
     Template formCabys;
@@ -213,10 +203,11 @@ public class CabysResource {
 
             // Audit parity with CabysController.updateCabys() (usuario=null in the
             // REST world; attribution attaches when form auth lands).
-            alertas.registrarAlerta("CABYS actualizado",
-                    "Se ha actualizado el CABYS: " + codigo,
-                    null, 0, "CabysResource.update()",
-                    antes, DiffUtils.snapshotEntity(cabys));
+            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "CABYS actualizado", "Se ha actualizado el CABYS: " + codigo,
+                    "Sistema",
+                    0, "CabysResource.update()",
+                    antes, DiffUtils.snapshotEntity(cabys)));
 
             return Response.ok(ApiResponse.ok(toDTO(cabys))).build();
         } catch (Exception e) {

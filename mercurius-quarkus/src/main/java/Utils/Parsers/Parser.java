@@ -36,9 +36,7 @@ import Services.Facturas.ImpuestoService;
 import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
-import Services.AlertasService;
 import Models.Referencias.InformacionReferencia;
-import Models.Registros.Alertas;
 import Utils.ComprobanteFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -73,6 +71,8 @@ import java.time.temporal.ChronoUnit;
 @ApplicationScoped
 public class Parser {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(Parser.class.getName());
+
     @Inject @Nonnull
     DetalleServicioService detalleServicioService;
     @Inject @Nonnull
@@ -95,8 +95,6 @@ public class Parser {
     EncabezadoService encabezadoService;
     @Inject @Nonnull
     LineaDetalleService lineaDetalleService;
-    @Inject @Nonnull
-    AlertasService alertasService;
 
     @Nullable
     public ComprobantesRecibidos parseComprobanteXML(@Nonnull File xmlFile) {
@@ -109,7 +107,7 @@ public class Parser {
             // Parse the XML file into the ComprobantesRecibidos object
             return (ComprobantesRecibidos) unmarshaller.unmarshal(xmlFile);
         } catch (JAXBException e) {
-            alertasService.registrarAlerta("Error", "Error!" + e.getLocalizedMessage(), null, 0, "Parser.parseComprobanteXML()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error!" + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseComprobanteXML()", null, null));
             return null;
         }
     }
@@ -138,7 +136,7 @@ public class Parser {
             // If no format works, throw an exception
             return null;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing fecha emision: " + e.getMessage(), null, 0, "Parser.parseFechaEmision()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing fecha emision: " + e.getMessage(), "Sistema", 0, "Parser.parseFechaEmision()", null, null));
             return null;
         }
     }
@@ -207,7 +205,7 @@ public class Parser {
 
             return emisor;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error Parsing Emisor: " + e.getLocalizedMessage(), null, 0, "Parser.parseEmisor()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error Parsing Emisor: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseEmisor()", null, null));
             return null;
         }
     }
@@ -266,7 +264,7 @@ public class Parser {
 
             return receptor;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing receptor: " + e.getLocalizedMessage(), null, 0, "Parser.parseReceptor()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing receptor: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseReceptor()", null, null));
             return null;
         }
     }
@@ -290,7 +288,7 @@ public class Parser {
             return parsedUbicacion;
 
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing ubicacion: " + e.getLocalizedMessage(), null, 0, "Parser.parseUbicacion()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing ubicacion: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseUbicacion()", null, null));
             return null;
         }
     }
@@ -307,7 +305,7 @@ public class Parser {
 
             return telefono;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing telefono: " + e.getLocalizedMessage(), null, 0, "Parser.parseTelefono()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing telefono: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseTelefono()", null, null));
             return null;
         }
     }
@@ -334,7 +332,7 @@ public class Parser {
 
             return fax;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing fax: " + e.getLocalizedMessage(), null, 0, "Parser.parseFax()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing fax: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseFax()", null, null));
             return null;
         }
     }
@@ -354,7 +352,7 @@ public class Parser {
             }
             return emails;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing emails: " + e.getLocalizedMessage(), null, 0, "Parser.parseEmail()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing emails: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseEmail()", null, null));
             return null;
         }
     }
@@ -381,7 +379,7 @@ public class Parser {
 
             return lineasDetalle;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing detalle Servicio: " + e.getLocalizedMessage(), null, 0, "Parser.parseDetalleServicio()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing detalle Servicio: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseDetalleServicio()", null, null));
             return null;
         }
 
@@ -410,7 +408,7 @@ public class Parser {
 
             return mediosPago;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing medio pago: " + e.getLocalizedMessage(), null, 0, "Parser.parseMedioPago()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing medio pago: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseMedioPago()", null, null));
             return null;
         }
     }
@@ -523,7 +521,7 @@ public class Parser {
 
             return lineaDetalle;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing linea detalle: " + e.getLocalizedMessage(), null, 0, "Parser.parseLineaDetalle()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing linea detalle: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseLineaDetalle()", null, null));
             return null;
         }
     }
@@ -540,7 +538,7 @@ public class Parser {
 
             return codigoComercial;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing codigo comercial: " + e.getLocalizedMessage(), null, 0, "Parser.parseCodigoComercial()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing codigo comercial: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseCodigoComercial()", null, null));
             return null;
         }
     }
@@ -592,7 +590,7 @@ public class Parser {
             return impuesto;
         } catch (RuntimeException e) {
             String articleName = impuestoNode.path("Detalle").asText("unknown");
-            alertasService.registrarAlerta("Error", "Error parsing impuesto for '" + articleName + "': " + e.getLocalizedMessage(), null, 0, "Parser.parseImpuesto()", null, e.getLocalizedMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing impuesto for '" + articleName + "': " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseImpuesto()", null, e.getLocalizedMessage()));
             return null;
         }
     }
@@ -629,7 +627,7 @@ public class Parser {
 
             return datos;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing datos impuesto especifico: " + e.getLocalizedMessage(), null, 0, "Parser.parseDatosImpuestoEspecifico()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing datos impuesto especifico: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseDatosImpuestoEspecifico()", null, null));
             return null;
         }
     }
@@ -691,7 +689,7 @@ public class Parser {
 
             return exoneracion;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing exoneracion: " + e.getLocalizedMessage(), null, 0, "Parser.parseExoneracion()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing exoneracion: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseExoneracion()", null, null));
             return null;
         }
     }
@@ -705,7 +703,7 @@ public class Parser {
 
             CodigoTipoMoneda codigoMoneda = parseCodigoMoneda(codigoMonedaText, tipoCambioText);
             if (codigoMoneda == null) {
-                alertasService.registrarAlerta("Error", "Error parsing moneda", null, 0, "Parser.parseResumenFactura()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing moneda", "Sistema", 0, "Parser.parseResumenFactura()", null, null));
                 return null;
             }
 
@@ -784,7 +782,7 @@ public class Parser {
             return resumenFactura;
 
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing resumen factura: " + e.getLocalizedMessage(), null, 0, "Parser.parseResumenFactura()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing resumen factura: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseResumenFactura()", null, null));
             return null;
         }
     }
@@ -821,7 +819,7 @@ public class Parser {
 
             return mediosPagoR;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing medio pago in resumen: " + e.getLocalizedMessage(), null, 0, "Parser.parseMedioPagoR()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing medio pago in resumen: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseMedioPagoR()", null, null));
             return null;
         }
     }
@@ -848,7 +846,7 @@ public class Parser {
 
             return mp;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing single medio pago in resumen: " + e.getLocalizedMessage(), null, 0, "Parser.parseSingleMedioPagoR()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing single medio pago in resumen: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseSingleMedioPagoR()", null, null));
             return null;
         }
     }
@@ -866,7 +864,7 @@ public class Parser {
 
             return codigoMoneda;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing codigo moneda: " + e.getLocalizedMessage(), null, 0, "Parser.parseCodigoMoneda()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing codigo moneda: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseCodigoMoneda()", null, null));
             return null;
         }
     }
@@ -891,7 +889,7 @@ public class Parser {
 
             return descuento;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing descuento: " + e.getLocalizedMessage(), null, 0, "Parser.parseDescuento()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing descuento: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseDescuento()", null, null));
             return null;
         }
     }
@@ -983,19 +981,11 @@ public class Parser {
             String currentUser = Utils.AsyncUserContext.getCurrentUser() != null
                     ? Utils.AsyncUserContext.getCurrentUser() : "system";
 
-            alertasService.registrarAlerta(
-                    level,
-                    message,
-                    null, // No session user in virtual threads - use null
-                    0, // codigo
-                    source,
-                    xmlContent.length() > 1000 ? xmlContent.substring(0, 1000) : xmlContent, // antes
-                    null // despues
-            );
+            LOG.log("Error".equalsIgnoreCase(level) ? java.util.logging.Level.WARNING : java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", level, message, "Sistema", 0, source, xmlContent.length() > 1000 ? xmlContent.substring(0, 1000) : xmlContent, null));
         } catch (RuntimeException e) {
             // Fallback to console logging if AlertasService fails
-            alertasService.registrarAlerta("Error", "Failed to log async error: " + e.getMessage(), null, 0, "Parser.logAsyncError()", null, null);
-            alertasService.registrarAlerta("Error", "Original error [" + level + "]: " + message, null, 0, "Parser.logAsyncError()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Failed to log async error: " + e.getMessage(), "Sistema", 0, "Parser.logAsyncError()", null, null));
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Original error [" + level + "]: " + message, "Sistema", 0, "Parser.logAsyncError()", null, null));
         }
     }
 
@@ -1008,7 +998,7 @@ public class Parser {
                 try {
                     // Exponential backoff: 100ms, 200ms, 400ms
                     long delay = 100 * (1L << (attempt - 1));
-                    alertasService.registrarAlerta("Info", "Duplicate key detected in " + operation + ", retry attempt " + attempt + " after " + delay + "ms...", null, 0, "Parser.handleDuplicateKeyError()", null, null);
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Duplicate key detected in " + operation + ", retry attempt " + attempt + " after " + delay + "ms...", "Sistema", 0, "Parser.handleDuplicateKeyError()", null, null));
                     Thread.sleep(delay);
                     return true; // Continue retrying
                 } catch (InterruptedException ie) {
@@ -1016,7 +1006,7 @@ public class Parser {
                     return false;
                 }
             } else {
-                alertasService.registrarAlerta("Error", "Max retries reached for " + operation + ": " + e.getMessage(), null, 0, "Parser.handleDuplicateKeyError()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Max retries reached for " + operation + ": " + e.getMessage(), "Sistema", 0, "Parser.handleDuplicateKeyError()", null, null));
                 logAsyncError("ERROR", "Max retries reached for " + operation + ": " + e.getMessage(),
                         "Parser.handleDuplicateKeyError", "");
                 return false;
@@ -1034,13 +1024,13 @@ public class Parser {
                     xmlContent.append(line).append("\n");
                 }
 
-                alertasService.registrarAlerta("Debug", "XML Content length: " + xmlContent.length(), null, 0, "Parser.parseXML()", null, null);
-                alertasService.registrarAlerta("Debug", "XML Content preview: " + xmlContent.substring(0, Math.min(200, xmlContent.length())), null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "XML Content length: " + xmlContent.length(), "Sistema", 0, "Parser.parseXML()", null, null));
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "XML Content preview: " + xmlContent.substring(0, Math.min(200, xmlContent.length())), "Sistema", 0, "Parser.parseXML()", null, null));
 
                 XmlMapper xmlMapper = new XmlMapper();
                 JsonNode rootNode = xmlMapper.readTree(xmlContent.toString());
 
-                alertasService.registrarAlerta("Debug", "Root node: " + rootNode.getNodeType(), null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Root node: " + rootNode.getNodeType(), "Sistema", 0, "Parser.parseXML()", null, null));
 
                 // Validate required fields first with improved NumeroConsecutivo extraction
 // Detect document type first
@@ -1053,17 +1043,17 @@ public class Parser {
                 String clave = rootNode.path(documentType).path("Clave").asText();
                 if (clave.isEmpty()) clave = rootNode.path("Clave").asText();
 
-                alertasService.registrarAlerta("Debug", "Root node: " + documentType, null, 0, "Parser.parseXML()", null, null);
-                alertasService.registrarAlerta("Debug", "NumeroConsecutivo: '" + numeroConsecutivo + "'", null, 0, "Parser.parseXML()", null, null);
-                alertasService.registrarAlerta("Debug", "Clave: '" + clave + "'", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Root node: " + documentType, "Sistema", 0, "Parser.parseXML()", null, null));
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "NumeroConsecutivo: '" + numeroConsecutivo + "'", "Sistema", 0, "Parser.parseXML()", null, null));
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Clave: '" + clave + "'", "Sistema", 0, "Parser.parseXML()", null, null));
 
                 String schemaVersion = null;
                 try {
                     schemaVersion = ComprobanteFactory.detectVersion(
                         new java.io.ByteArrayInputStream(xmlContent.toString().getBytes(StandardCharsets.UTF_8)));
-                    alertasService.registrarAlerta("Debug", "Detected schema version: " + schemaVersion, null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Detected schema version: " + schemaVersion, "Sistema", 0, "Parser.parseXML()", null, null));
                 } catch (RuntimeException e) {
-                    alertasService.registrarAlerta("Error", "Warning: Could not detect schema version: " + e.getMessage(), null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Warning: Could not detect schema version: " + e.getMessage(), "Sistema", 0, "Parser.parseXML()", null, null));
                 }
 
                 if (isMensajeHacienda) {
@@ -1073,13 +1063,13 @@ public class Parser {
 
                 if (numeroConsecutivo.isEmpty()) {
                     String errorMsg = "XML inválido: falta el número consecutivo";
-                    alertasService.registrarAlerta("Error", errorMsg, null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", errorMsg, "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML", xmlContent.toString());
                     return;
                 }
 
                 if (facturaService.findByNumeroConsecutivo(numeroConsecutivo)) {
-                    alertasService.registrarAlerta("Info", "Factura duplicada: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Factura duplicada: " + numeroConsecutivo, "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("WARN", "Factura duplicada: " + numeroConsecutivo, "Parser.parseXML", xmlContent.toString());
                     return;
                 }
@@ -1087,24 +1077,24 @@ public class Parser {
                 Encabezado encabezado = new Encabezado();
                 DetalleServicio detalles = new DetalleServicio();
 
-                alertasService.registrarAlerta("Debug", "Parsing emisor...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Parsing emisor...", "Sistema", 0, "Parser.parseXML()", null, null));
                 JsonNode emisorNode = rootNode.path(documentType).isMissingNode() ? rootNode.path("Emisor") : rootNode.path(documentType).path("Emisor");
                 if (emisorNode.isMissingNode() || emisorNode.isEmpty()) emisorNode = rootNode.path("Emisor");
                 Emisor emisor = parseEmisor(emisorNode);
                 if (emisor == null) {
                     String errorMsg = "XML inválido: error en datos del emisor";
-                    alertasService.registrarAlerta("Error", "Error parsing emisor", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing emisor", "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.emisor", xmlContent.toString());
                     return;
                 }
 
-                alertasService.registrarAlerta("Debug", "Parsing receptor...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Parsing receptor...", "Sistema", 0, "Parser.parseXML()", null, null));
                 JsonNode receptorNode = rootNode.path(documentType).isMissingNode() ? rootNode.path("Receptor") : rootNode.path(documentType).path("Receptor");
                 if (receptorNode.isMissingNode() || receptorNode.isEmpty()) receptorNode = rootNode.path("Receptor");
                 Receptor receptor = parseReceptor(receptorNode);
                 if (receptor == null) {
                     String errorMsg = "XML inválido: error en datos del receptor";
-                    alertasService.registrarAlerta("Error", "Error parsing receptor", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing receptor", "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.receptor", xmlContent.toString());
                     return;
                 }
@@ -1113,12 +1103,12 @@ public class Parser {
                 if (codigoActividad.isEmpty()) codigoActividad = rootNode.path("CodigoActividad").asText();
                 String fechaEmisionStr = rootNode.path(documentType).path("FechaEmision").asText();
                 if (fechaEmisionStr.isEmpty()) fechaEmisionStr = rootNode.path("FechaEmision").asText();
-                alertasService.registrarAlerta("Debug", "FechaEmision: '" + fechaEmisionStr + "'", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "FechaEmision: '" + fechaEmisionStr + "'", "Sistema", 0, "Parser.parseXML()", null, null));
 
                 LocalDateTime localDateTime = parseFechaEmision(fechaEmisionStr);
                 if (localDateTime == null) {
                     String errorMsg = "XML inválido: error en fecha de emisión";
-                    alertasService.registrarAlerta("Error", "Error parsing fecha emision", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing fecha emision", "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.fechaEmision", xmlContent.toString());
                     return;
                 }
@@ -1129,16 +1119,16 @@ public class Parser {
                 List<MedioPago> medioPago = parseMedioPago(rootNode.path("MedioPago"), encabezado);
                 if (medioPago == null) {
                     String errorMsg = "XML inválido: error en medio de pago";
-                    alertasService.registrarAlerta("Error", "Error parsing medio pago", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing medio pago", "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.medioPago", xmlContent.toString());
                     return;
                 }
 
-                alertasService.registrarAlerta("Debug", "Parsing resumen factura...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Parsing resumen factura...", "Sistema", 0, "Parser.parseXML()", null, null));
                 ResumenFactura resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
                 if (resumenFactura == null) {
                     String errorMsg = "XML inválido: error en resumen de factura";
-                    alertasService.registrarAlerta("Error", "Error parsing resumen factura", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing resumen factura", "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.resumenFactura", xmlContent.toString());
                     return;
                 }
@@ -1146,31 +1136,31 @@ public class Parser {
                 // V4.4 Bitácora item 124/125: TotalComprobante must equal sum of TotalMedioPago
                 validarTotalMedioPago(resumenFactura, numeroConsecutivo, xmlContent.toString());
 
-                alertasService.registrarAlerta("Debug", "Parsing detalle servicio...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Parsing detalle servicio...", "Sistema", 0, "Parser.parseXML()", null, null));
                 List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
                 if (lineas == null || lineas.isEmpty()) {
                     String errorMsg = "XML inválido: no se encontraron líneas de detalle";
-                    alertasService.registrarAlerta("Error", "Error parsing detalle servicio - no lines found", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing detalle servicio - no lines found", "Sistema", 0, "Parser.parseXML()", null, null));
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.detalleServicio", xmlContent.toString());
                     return;
                 }
 
-                alertasService.registrarAlerta("Debug", "Found " + lineas.size() + " lineas detalle", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Found " + lineas.size() + " lineas detalle", "Sistema", 0, "Parser.parseXML()", null, null));
 
 // Check if encabezado already exists by numeroConsecutivo (before creating any entities)
                 // Use new method that handles duplicates properly
                 boolean existsByNumeroConsecutivo = encabezadoService.existsByNumeroConsecutivoWithValidComprobante(numeroConsecutivo);
 
                 if (existsByNumeroConsecutivo) {
-                    alertasService.registrarAlerta("Info", "Skipping existing encabezado for: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
-                    alertasService.registrarAlerta("Info", "Factura already processed: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Skipping existing encabezado for: " + numeroConsecutivo, "Sistema", 0, "Parser.parseXML()", null, null));
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Factura already processed: " + numeroConsecutivo, "Sistema", 0, "Parser.parseXML()", null, null));
                     return; // Skip processing if already exists
                 }
 
                 // Clean up any existing duplicates before proceeding
                 int duplicatesCleaned = encabezadoService.cleanDuplicateEncabezados(numeroConsecutivo);
                 if (duplicatesCleaned > 0) {
-                    alertasService.registrarAlerta("Debug", "Cleaned " + duplicatesCleaned + " duplicate encabezados for: " + numeroConsecutivo, null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Cleaned " + duplicatesCleaned + " duplicate encabezados for: " + numeroConsecutivo, "Sistema", 0, "Parser.parseXML()", null, null));
                 }
 
                 detalles.setLineasDetalle(lineas);
@@ -1188,37 +1178,37 @@ public class Parser {
                 encabezado.setClave(clave);
                 encabezado.setCodigoDocumento(codigoDocumento);
 
-                alertasService.registrarAlerta("Debug", "Creating emisor and receptor...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Creating emisor and receptor...", "Sistema", 0, "Parser.parseXML()", null, null));
                 Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
                 Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
 
                 if (persistedEmisor != null) {
                     encabezado.setEmisor(persistedEmisor);
                 } else {
-                    alertasService.registrarAlerta("Error", "Failed to create/find emisor", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Failed to create/find emisor", "Sistema", 0, "Parser.parseXML()", null, null));
                     return;
                 }
                 if (persistedReceptor != null) {
                     encabezado.setReceptor(persistedReceptor);
                 } else {
-                    alertasService.registrarAlerta("Error", "Failed to create/find receptor", null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Failed to create/find receptor", "Sistema", 0, "Parser.parseXML()", null, null));
                     return;
                 }
 
-                alertasService.registrarAlerta("Debug", "Creating detalle servicio...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Creating detalle servicio...", "Sistema", 0, "Parser.parseXML()", null, null));
 
                 // Set the lineasDetalle relationship before persisting
                 detalles.setLineasDetalle(lineas);
 
-                alertasService.registrarAlerta("Debug", "Creating resumen factura and encabezado...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Creating resumen factura and encabezado...", "Sistema", 0, "Parser.parseXML()", null, null));
 
 // For received documents, we don't create ComprobantesEmitidos
                 // Only ComprobantesRecibidos should be created for uploaded XML files
                 // This fixes the unique constraint violation issue
                 
-alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null, 0, "Parser.parseXML()", null, null);
+LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Creating comprobante recibido...", "Sistema", 0, "Parser.parseXML()", null, null));
                 
-                alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Creating comprobante recibido...", "Sistema", 0, "Parser.parseXML()", null, null));
                 ComprobantesRecibidos factura = new ComprobantesRecibidos();
                 factura.setEncabezado(encabezado);
                 factura.setResumen(resumenFactura);
@@ -1333,44 +1323,43 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
                     String errorSummary = prevalidation.getErrors().stream()
                         .map(e -> e.getField() + ": " + e.getMessage())
                         .collect(java.util.stream.Collectors.joining("; "));
-                    alertasService.registrarAlerta("Warning",
-                        "Factura saved with pre-validation warnings: " + factura.getEncabezado().getNumeroConsecutivo() +
-                        " — " + errorSummary, null, 0, "Parser.parseXML()", null, errorSummary);
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Warning", "Factura saved with pre-validation warnings: " + factura.getEncabezado().getNumeroConsecutivo() +
+                        " — " + errorSummary, "Sistema", 0, "Parser.parseXML()", null, errorSummary));
                 }
 
                 // Verify ID assignment after creation
                 if (factura.getId() == null) {
-                    alertasService.registrarAlerta("Error", "ERROR: ComprobantesRecibidos created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "ERROR: ComprobantesRecibidos created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), "Sistema", 0, "Parser.parseXML()", null, null));
                 } else {
-                    alertasService.registrarAlerta("Info", "Successfully created factura with ID: " + factura.getId() + " - " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
+                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Successfully created factura with ID: " + factura.getId() + " - " + factura.getEncabezado().getNumeroConsecutivo(), "Sistema", 0, "Parser.parseXML()", null, null));
                 }
                 
                 // Verify DetalleServicio ID assignment
                 if (factura.getDetalles() != null) {
                     if (factura.getDetalles().getId() == null) {
-                        alertasService.registrarAlerta("Error", "ERROR: DetalleServicio created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
+                        LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "ERROR: DetalleServicio created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), "Sistema", 0, "Parser.parseXML()", null, null));
                     } else {
-                        alertasService.registrarAlerta("Info", "Successfully created DetalleServicio with ID: " + factura.getDetalles().getId(), null, 0, "Parser.parseXML()", null, null);
+                        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Successfully created DetalleServicio with ID: " + factura.getDetalles().getId(), "Sistema", 0, "Parser.parseXML()", null, null));
                     }
                     
                     // Verify LineaDetalle IDs
                     if (factura.getDetalles().getLineasDetalle() != null) {
                         for (LineaDetalle linea : factura.getDetalles().getLineasDetalle()) {
                             if (linea.getId() == null) {
-                                alertasService.registrarAlerta("Error", "ERROR: LineaDetalle created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
+                                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "ERROR: LineaDetalle created without ID for factura: " + factura.getEncabezado().getNumeroConsecutivo(), "Sistema", 0, "Parser.parseXML()", null, null));
                             } else {
-                                alertasService.registrarAlerta("Info", "Successfully created LineaDetalle with ID: " + linea.getId(), null, 0, "Parser.parseXML()", null, null);
+                                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Successfully created LineaDetalle with ID: " + linea.getId(), "Sistema", 0, "Parser.parseXML()", null, null));
                             }
                         }
                     }
                 }
                 
-                alertasService.registrarAlerta("Info", "Successfully processed factura: " + factura.getEncabezado().getNumeroConsecutivo(), null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Successfully processed factura: " + factura.getEncabezado().getNumeroConsecutivo(), "Sistema", 0, "Parser.parseXML()", null, null));
                 // Note: No FacesContext calls in async context
 
             } catch (IOException | RuntimeException e) {
                 String errorMsg = "Error parsing XML: " + e.getLocalizedMessage();
-                alertasService.registrarAlerta("Error", errorMsg, null, 0, "Parser.parseXML()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", errorMsg, "Sistema", 0, "Parser.parseXML()", null, null));
                 logAsyncError("ERROR", errorMsg, "Parser.parseXML.exception", xmlContent.toString());
             }
     }
@@ -1390,7 +1379,7 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
             ref.setCodigoReferenciaOTRO(node.path("CodigoReferenciaOTRO").asText(null));
             return ref;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error parsing InformacionReferencia: " + e.getLocalizedMessage(), null, 0, "Parser.parseSingleInformacionReferencia()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error parsing InformacionReferencia: " + e.getLocalizedMessage(), "Sistema", 0, "Parser.parseSingleInformacionReferencia()", null, null));
             return null;
         }
     }
@@ -1398,7 +1387,7 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
     private void processMensajeHacienda(String clave, JsonNode rootNode, String rawXml) {
         try {
             if (clave == null || clave.isEmpty()) {
-                alertasService.registrarAlerta("Error", "MensajeHacienda sin Clave", null, 0, "Parser.processMensajeHacienda()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "MensajeHacienda sin Clave", "Sistema", 0, "Parser.processMensajeHacienda()", null, null));
                 return;
             }
 
@@ -1416,7 +1405,7 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
 
             List<ComprobantesEmitidos> resultados = comprobantesEmitidosService.findByClave(clave);
             if (resultados == null || resultados.isEmpty()) {
-                alertasService.registrarAlerta("Warn", "MensajeHacienda para factura no encontrada: " + clave, null, 0, "Parser.processMensajeHacienda()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Warn", "MensajeHacienda para factura no encontrada: " + clave, "Sistema", 0, "Parser.processMensajeHacienda()", null, null));
                 return;
             }
 
@@ -1442,12 +1431,12 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
                         if (receptorNombre != null) {
                             // Find client by name (this is a simplified lookup)
                             // In practice you might need to match by cedula
-                            alertasService.registrarAlerta("Info", "Factura ACEPTADA por Hacienda - listo para envio a cliente: " + clave, null, 0, "Parser.processMensajeHacienda()", null, null);
+                            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Factura ACEPTADA por Hacienda - listo para envio a cliente: " + clave, "Sistema", 0, "Parser.processMensajeHacienda()", null, null));
                             // The actual email sending would require client lookup, 
                             // which can be done in a separate process or by the controller
                         }
                     } catch (RuntimeException e) {
-                        alertasService.registrarAlerta("Error", "Error preparando envio a cliente: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error preparando envio a cliente: " + e.getMessage(), "Sistema", 0, "Parser.processMensajeHacienda()", null, e.getMessage()));
                     }
                 }
             }
@@ -1456,7 +1445,7 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
             if ("RECHAZADO".equals(nuevoEstado)) {
                 for (ComprobantesEmitidos factura : resultados) {
                     try {
-                        alertasService.registrarAlerta("Hacienda", "Iniciando corrección automática para factura rechazada: " + clave, null, 0, "Parser.processMensajeHacienda()", null, null);
+                        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Hacienda", "Iniciando corrección automática para factura rechazada: " + clave, "Sistema", 0, "Parser.processMensajeHacienda()", null, null));
                         // The actual credit note creation and correction preparation 
                         // will be handled by the controller when the user clicks "Corregir"
                         // Here we just mark it for automatic correction
@@ -1466,14 +1455,14 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
                         );
                         comprobantesEmitidosService.update(factura);
                     } catch (RuntimeException e) {
-                        alertasService.registrarAlerta("Error", "Error marcando factura para corrección automática: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error marcando factura para corrección automática: " + e.getMessage(), "Sistema", 0, "Parser.processMensajeHacienda()", null, e.getMessage()));
                     }
                 }
             }
 
-            alertasService.registrarAlerta("Info", "MensajeHacienda procesado: " + clave + " -> " + nuevoEstado, null, 0, "Parser.processMensajeHacienda()", null, null);
+            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "MensajeHacienda procesado: " + clave + " -> " + nuevoEstado, "Sistema", 0, "Parser.processMensajeHacienda()", null, null));
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error procesando MensajeHacienda: " + e.getMessage(), null, 0, "Parser.processMensajeHacienda()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error procesando MensajeHacienda: " + e.getMessage(), "Sistema", 0, "Parser.processMensajeHacienda()", null, e.getMessage()));
         }
     }
 
@@ -1520,7 +1509,7 @@ alertasService.registrarAlerta("Debug", "Creating comprobante recibido...", null
             String warnMsg = "TotalMedioPago sum (" + sumaMediosPago
                 + ") no coincide con TotalComprobante (" + totalComprobante
                 + ") para comprobante " + numeroConsecutivo;
-            alertasService.registrarAlerta("Warning", warnMsg, null, 0, "Parser.validarTotalMedioPago()", null, null);
+            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Warning", warnMsg, "Sistema", 0, "Parser.validarTotalMedioPago()", null, null));
             logAsyncError("WARN", warnMsg, "Parser.validarTotalMedioPago", xmlContent);
         }
     }

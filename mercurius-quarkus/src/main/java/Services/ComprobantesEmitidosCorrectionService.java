@@ -34,6 +34,8 @@ import java.util.List;
 @ApplicationScoped
 public class ComprobantesEmitidosCorrectionService {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ComprobantesEmitidosCorrectionService.class.getName());
+
     @Inject
     private @Nonnull ComprobantesEmitidosService comprobantesEmitidosService;
 
@@ -49,9 +51,7 @@ public class ComprobantesEmitidosCorrectionService {
     @Inject
     private @Nonnull HaciendaServiceFacade haciendaServiceFacade;
 
-    @Inject
-    private @Nonnull AlertasService alertasService;
-
+    
     @Inject
     private @Nonnull PrevalidationConfigService prevalidationConfigService;
 
@@ -90,18 +90,14 @@ public class ComprobantesEmitidosCorrectionService {
     public void corregirFactura(@Nonnull ComprobantesEmitidos factura) {
         String clave = factura.getHaciendaClave();
         try {
-            alertasService.registrarAlerta("Hacienda",
-                "Iniciando auto-corrección para factura: " + clave,
-                null, 0, "ComprobantesEmitidosCorrectionService.corregirFactura()", null, null);
+                        LOG.info("Iniciando auto-corrección para factura: " + clave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
             String motivoRechazo = factura.getEncabezado() != null
                 ? factura.getEncabezado().getMotivoRechazo() : null;
 
             Estrategia estrategia = determinarEstrategia(motivoRechazo);
             if (estrategia == Estrategia.NO_AUTOMATIZABLE) {
-                alertasService.registrarAlerta("Hacienda",
-                    "Auto-corrección no posible para: " + clave + " - motivo: " + motivoRechazo,
-                    null, 0, "ComprobantesEmitidosCorrectionService.corregirFactura()", null, null);
+                                LOG.info("Auto-corrección no posible para: " + clave + " - motivo: " + motivoRechazo + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 incrementarAttempts(factura);
                 return;
             }
@@ -115,9 +111,7 @@ public class ComprobantesEmitidosCorrectionService {
             // Verify clave is set on the clone
             String nuevaClave = nuevaFactura.getHaciendaClave();
             if (nuevaClave == null || nuevaClave.isEmpty()) {
-                alertasService.registrarAlerta("Error",
-                    "No se pudo generar clave para factura corregida", null, 0,
-                    "ComprobantesEmitidosCorrectionService.corregirFactura()", null, null);
+                                LOG.log(java.util.logging.Level.WARNING, "No se pudo generar clave para factura corregida" + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
                 incrementarAttempts(factura);
                 return;
             }
@@ -132,21 +126,15 @@ public class ComprobantesEmitidosCorrectionService {
                 }
                 comprobantesEmitidosService.create(nuevaFactura);
 
-                alertasService.registrarAlerta("Hacienda",
-                    "Auto-corrección exitosa: " + clave + " -> nueva clave: " + nuevaClave,
-                    null, 0, "ComprobantesEmitidosCorrectionService.corregirFactura()", null, null);
+                                LOG.info("Auto-corrección exitosa: " + clave + " -> nueva clave: " + nuevaClave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             } else {
-                alertasService.registrarAlerta("Error",
-                    "Hacienda rechazó factura corregida: " + result.errorMessage, null, 0,
-                    "ComprobantesEmitidosCorrectionService.corregirFactura()", null, result.errorMessage);
+                                LOG.log(java.util.logging.Level.WARNING, "Hacienda rechazó factura corregida: " + result.errorMessage + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(result.errorMessage));
             }
 
             incrementarAttempts(factura);
 
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error",
-                "Error en auto-corrección de " + clave + ": " + e.getMessage(), null, 0,
-                "ComprobantesEmitidosCorrectionService.corregirFactura()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error en auto-corrección de " + clave + ": " + e.getMessage() + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             incrementarAttempts(factura);
         }
     }

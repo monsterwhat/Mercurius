@@ -13,13 +13,14 @@ import java.time.LocalDateTime;
 @ApplicationScoped
 public class MensajeReceptorService {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(MensajeReceptorService.class.getName());
+
     @Inject AppSettingsService appSettingsService;
     @Inject HaciendaSigner haciendaSigner;
     @Inject HaciendaApiService haciendaApiService;
     @Inject ConsecutivoReceptorService consecutivoReceptorService;
     @Inject ComprobanteService comprobanteService;
     @Inject ComprobantesRecibidosService comprobantesRecibidosService;
-    @Inject AlertasService alertasService;
 
     public static class MRResult {
         public final boolean success;
@@ -128,8 +129,7 @@ public class MensajeReceptorService {
                 factura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
                 comprobantesRecibidosService.update(factura);
 
-                alertasService.registrarAlerta("Hacienda", "Mensaje Receptor " + accion + ": " + clave,
-                    null, 0, "MensajeReceptorService.enviarMensajeReceptor()", null, null);
+                                LOG.info("Mensaje Receptor " + accion + ": " + clave + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
                 return new MRResult(true,
                     "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor enviado a Hacienda.",
@@ -144,8 +144,7 @@ public class MensajeReceptorService {
             }
 
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error en Mensaje Receptor: " + e.getMessage(),
-                null, 0, "MensajeReceptorService.enviarMensajeReceptor()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error en Mensaje Receptor: " + e.getMessage() + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
 
             return new MRResult(false, "Error al procesar Mensaje Receptor: " + e.getMessage(), null);
         }
