@@ -7,6 +7,7 @@
 
     POST /api/app/pos/scan-form                     (codigoBarra, cantidad)
     POST /api/app/pos/item/{codigo}/qty-form        (delta)
+    POST /api/app/pos/item/{codigo}/qty-set-form    (cantidad, decimal directo)
     POST /api/app/pos/item/{codigo}/remove-form
     POST /api/app/pos/client-select-form            (clientCode)
     POST /api/app/pos/puntos-form                   (puntosARedimir)
@@ -86,7 +87,14 @@
                             hx-post="/Mercurius/api/app/pos/item/{item.codigo}/qty-form"
                             hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">&minus;</button>
                 </form>
-                <span class="has-text-weight-semibold" style="display:inline-block;min-width:2rem">{item.cantidad}</span>
+                <form class="is-inline" style="display:inline">
+                    <input type="number" name="cantidad" step="any" min="0"
+                           value="{item.cantidad}" class="input is-small has-text-centered"
+                           aria-label="Cantidad del artículo" style="width:4.5rem"
+                           hx-post="/Mercurius/api/app/pos/item/{item.codigo}/qty-set-form"
+                           hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
+                           hx-trigger="change"/>
+                </form>
                 <form class="is-inline" style="display:inline">
                     <input type="hidden" name="delta" value="1"/>
                     <button type="button" class="button is-small" aria-label="Sumar uno"

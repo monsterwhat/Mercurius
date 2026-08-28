@@ -47,6 +47,13 @@
                     <div class="control">
                         <button type="submit" class="button is-medium is-primary">Agregar</button>
                     </div>
+                    <div class="control">
+                        <button type="button" class="button is-medium is-light" aria-haspopup="dialog"
+                                title="Buscar y agregar un artículo"
+                                data-kit-open="modal-articulos"
+                                hx-get="/Mercurius/api/app/pos/articulos-picker?q="
+                                hx-target="#modal-articulos-body" hx-swap="innerHTML">&#128270; Buscar</button>
+                    </div>
                 </div>
                 <input type="hidden" name="cantidad" value="1"/>
                 <p class="help has-text-grey">El lector envía Enter solo; la cantidad por defecto es 1.</p>
@@ -84,6 +91,12 @@
 {! Client picker: kit modal shell over the reusable typeahead fragment. !}
 {#include _kit/modal id="modal-cliente" title="Seleccionar Cliente" triggerLabel="Cliente"
      triggerClass="is-hidden" bodyUrl="/api/app/pos/client-picker?q="}{/include}
+
+{! Article picker: kit modal shell over the search-as-you-type fragment. The
+   "Buscar" button beside Agregar opens it via data-kit-open + its own hx-get
+   (T18 bridge pattern, same as the client picker). !}
+{#include _kit/modal id="modal-articulos" title="Buscar y Agregar Artículo" triggerClass="is-hidden"
+     bodyUrl="/api/app/pos/articulos-picker?q="}{/include}
 
 {! Supervisor authorization: inline Alpine modal (same skeleton as
    _kit/modal) because its body is painted server-side and re-rendered by

@@ -1,0 +1,86 @@
+{!
+  pages/facturas/articulos-picker - POS article picker fragment (T37).
+
+  Search-as-you-type picker over the enabled articles, mirroring the
+  client-picker pattern: the search input re-requests this same endpoint
+  with ?q= (250ms debounce) and each row's "Agregar" posts
+  /articulo-add-form (form twin of /add), which swaps #cart-panel.
+
+  Model ("picker" bound key, Map):
+    q           String - current filter text (round-tripped)
+    resultados  List   - {codigo,nombre,codigoBarra,precio,departamento,familia}
+                         capped at TYPEAHEAD_LIMIT (10)
+
+  Search matches codigo / nombre / codigoBarra / departamento / familia.
+  Empty query lists the first enabled articles so the modal is never blank.
+!}
+<div id="articulos-picker-fragmento">
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{picker.q}" autocomplete="off"
+                   placeholder="Buscar por nombre, código o código de barras..."
+                   hx-get="/Mercurius/api/app/pos/articulos-picker"
+                   hx-trigger="keyup changed delay:250ms"
+                   hx-target="#articulos-picker-fragmento" hx-swap="outerHTML"
+                   hx-include="this"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+    <table class="table is-striped is-hoverable is-narrow is-fullwidth">
+        <thead>
+        <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th class="has-text-centered">Precio</th>
+            <th class="has-text-centered">Cantidad</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        {#for hit in picker.resultados}
+        <tr>
+            <td style="font-family:monospace">{hit.codigo}</td>
+            <td style="font-weight:500">
+                {hit.nombre}
+                {#if hit.departamento?? || hit.familia??}
+                <span class="is-block has-text-grey is-size-7">
+                    {#if hit.departamento??}{hit.departamento}{/if}{#if hit.departamento?? && hit.familia??} &middot; {/if}{#if hit.familia??}{hit.familia}{/if}
+                </span>
+                {/if}
+            </td>
+            <td class="has-text-centered">{#if hit.precio??}&#8353;{hit.precio}{#else}&mdash;{/if}</td>
+            <td class="has-text-centered" style="width:6rem">
+                <form style="display:inline">
+                    <input type="hidden" name="articuloId" value="{hit.codigo}"/>
+                    <input class="input is-small" type="number" name="cantidad" min="1" step="1" value="1"
+                           style="width:5rem"/>
+                    <button type="button" class="button is-small is-primary js-pick-articulo"
+                            hx-post="/Mercurius/api/app/pos/articulo-add-form"
+                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">
+                        Agregar</button>
+                </form>
+            </td>
+        </tr>
+        {#else}
+        <tr><td colspan="5" class="has-text-centered has-text-grey">
+            Sin coincidencias &mdash; escriba para buscar artículos</td></tr>
+        {/for}
+        </tbody>
+    </table>
+    </div>
+
+    {! Bridge: after the cart-panel swap request leaves, close the hosting kit
+       modal (same Alpine contract as the client picker). !}
+    <script>
+        document.querySelectorAll('#articulos-picker-fragmento .js-pick-articulo').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var root = button.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            });
+        });
+    </script>
+</div>
