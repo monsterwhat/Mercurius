@@ -52,7 +52,7 @@
                          bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
                     <form method="post" action="/Mercurius/api/app/export">
-                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                        <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="inventario"/>
                         <input type="hidden" name="type" value="pdf"/>
                         <button class="button is-info" type="submit">Exportar PDF</button>

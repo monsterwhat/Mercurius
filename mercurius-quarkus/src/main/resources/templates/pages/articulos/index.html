@@ -80,7 +80,7 @@
                              bodyUrl="/api/app/articulos/formularios/articulos/nueva"}{/include}
                         {#if canExport}
                         <form method="post" action="/Mercurius/api/app/export">
-                            <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                            <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="activos"/>
@@ -105,7 +105,7 @@
                 <div class="level-right">
                     {#if canExport}
                     <form method="post" action="/Mercurius/api/app/export">
-                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                        <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="inactivos"/>
@@ -126,7 +126,7 @@
                 <div class="level-right">
                     {#if canExport}
                     <form method="post" action="/Mercurius/api/app/export">
-                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                        <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <input type="hidden" name="tab" value="catalogo"/>
@@ -150,7 +150,7 @@
                              bodyUrl="/api/app/articulos/revision/siguiente"}{/include}
                         {#if canExport}
                         <form method="post" action="/Mercurius/api/app/export">
-                            <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                            <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <input type="hidden" name="tab" value="pendientes"/>
@@ -178,7 +178,7 @@
                              bodyUrl="/api/app/articulos/formularios/promociones/nueva"}{/include}
                         {#if canExport}
                         <form method="post" action="/Mercurius/api/app/export">
-                            <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                            <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="promociones"/>
                             <input type="hidden" name="type" value="xlsx"/>
                             <button class="button is-success" type="submit">Exportar Excel</button>

@@ -54,7 +54,7 @@
 
         <div class="buttons mt-4">
             <form method="post" action="/Mercurius/api/app/export">
-                <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="reportes-movimientos"/>
                 <input type="hidden" name="type" value="xlsx"/>
                 {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}

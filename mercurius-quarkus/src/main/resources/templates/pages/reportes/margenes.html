@@ -87,7 +87,7 @@
             </form>
 
             <form method="post" action="/Mercurius/api/app/export" class="mt-3">
-                <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
+                <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="profit-margins"/>
                 <input type="hidden" name="type" value="xlsx"/>
                 <button class="button is-info" type="submit">Exportar Excel</button>
