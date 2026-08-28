@@ -43,6 +43,12 @@ public class AlertasService extends GService<Alertas> {
     @Override
     @Transactional
     public void create(@Nonnull Alertas alerta) {
+        // Dual write: quarkus file log (logs/mercurius.log) + DB for backward compat during migration.
+        // File log is the source of truth per quarkus logging migration.
+        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | source=%s | antes=%s | despues=%s",
+                alerta.getTipo(), alerta.getMensaje(),
+                alerta.getUser() != null ? alerta.getUser().getUsername() : "Sistema",
+                alerta.getSource(), alerta.getAntes(), alerta.getDespues()));
         try {
             em.persist(alerta);
         } catch (jakarta.persistence.PersistenceException e) {
@@ -52,17 +58,21 @@ public class AlertasService extends GService<Alertas> {
     
     @Transactional
     public void registrarAlerta(@Nonnull String tipo, @Nonnull String Mensaje, @Nullable Users user, int codigo, @Nonnull String source, @Nullable String antes, @Nullable String despues){
+            // Quarkus file log (logs/mercurius.log via quarkus.log.file.*) is now primary; DB kept for UI compat.
+            String userStr = user != null ? user.getUsername() : "Sistema";
+            java.util.logging.Level lvl = "Error".equalsIgnoreCase(tipo) ? java.util.logging.Level.WARNING : java.util.logging.Level.INFO;
+            LOG.log(lvl, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    tipo, Mensaje, userStr, codigo, source, antes, despues));
             Alertas alerta = new Alertas();
             alerta.setTipo(tipo);
             alerta.setMensaje(Mensaje);
-            alerta.setTimestamp(LocalDateTime.now());
+            alerta.setTimestamp(java.time.LocalDateTime.now());
             alerta.setUser(user);
             alerta.setVista(false);
             alerta.setCodigo(codigo);
             alerta.setSource(source);
             alerta.setAntes(antes);
             alerta.setDespues(despues);
-            
             create(alerta);
     }  
     
