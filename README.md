@@ -32,12 +32,18 @@ GRANT ALL ON SCHEMA public TO mercurius;
 ```
 
 ### 2. Configurar Aplicación
-Editar `src/main/resources/application.properties` y ajustar la configuración de la base de datos si es necesario:
+Solo para desarrollo local (`%dev`), editar `src/main/resources/application.properties` si es necesario:
 ```properties
 quarkus.datasource.username=tu_usuario
 quarkus.datasource.password=tu_contraseña
 quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5433/mercurius
 ```
+> **Producción (`%prod`):** no edites `application.properties`. Configura por variables de entorno
+> (el arranque en `%prod` falla si faltan):
+> `DB_USERNAME` / `DB_PASSWORD` / `DB_URL` (JDBC URL),
+> `AUTH_SESSION_KEY` (≥32 bytes, p. ej. `openssl rand -base64 32`),
+> `HACIENDA_ENCRYPTION_KEY` (`openssl rand -hex 32`),
+> `MERCATUS_JWT_SECRET` (≥32 bytes) y `MERCATUS_CORS_ORIGINS`.
 
 ### 3. Compilar y Ejecutar
 ```bash
@@ -81,10 +87,9 @@ Variables de entorno sensibles (ver `src/main/resources/application.properties`)
 ### Backend
 - **Java 25** - Última versión de Java con soporte para virtual threads y mejoras de rendimiento
 - **Quarkus 3.36.2** - Framework Java nativo en la nube para alto rendimiento y bajo consumo de memoria
-- **Apache MyFaces 4.1.3** - Implementación de Jakarta Faces para JSF
-- **PrimeFaces 4.15.16** - Framework UI component para aplicaciones web Java con tema Bootstrap
 - **PostgreSQL** - Base de datos relacional para persistencia de datos
 - **Hibernate ORM** - Mapeo objeto-relacional integrado con Quarkus
+- **Quarkus Security + Qute** - Autenticación form-cookie y plantillas tipadas (reemplaza MyFaces/PrimeFaces)
 - **Maven** - Herramienta de gestión de dependencias y construcción
 
 ### Frontend
