@@ -1384,23 +1384,34 @@ public class ArticuloResource {
 
     /** Full-page model: five tables + stat counters (legacy stat cards). */
     private TemplateInstance renderFullPage() {
+        return pageIndex.data(fullPageModel());
+    }
+
+    /**
+     * Full-page model map: five tables + stat counters (legacy stat cards).
+     * Public so the HTML page twin {@code ArticulosPagesResource}
+     * ({@code /app/articulos}) can render the same model through its own
+     * template instance — page and fragment can never disagree.
+     */
+    public Map<String, Object> fullPageModel() {
         TableModel activos = buildTableModel(TAB_ACTIVOS, 1, 10, null, "asc", null);
         TableModel inactivos = buildTableModel(TAB_INACTIVOS, 1, 10, null, "asc", null);
         TableModel catalogo = buildTableModel(TAB_CATALOGO, 1, 10, null, "asc", null);
         TableModel pendientes = buildTableModel(TAB_PENDIENTES, 1, 10, null, "asc", null);
         TableModel promociones = buildTableModel(TAB_PROMOCIONES, 1, 10, null, "asc", null);
-        return pageIndex
-                .data("activosTabla", activos.asMap())
-                .data("inactivosTabla", inactivos.asMap())
-                .data("catalogoTabla", catalogo.asMap())
-                .data("pendientesTabla", pendientes.asMap())
-                .data("promocionesTabla", promociones.asMap())
-                .data("activosCount", articulosService.countActivos())
-                .data("inactivosCount", articulosService.countInactivos())
-                .data("catalogoCount", articulosService.count())
-                .data("pendientesCount", articulosService.countPendientes())
-                .data("promocionesCount", promoService.count())
-                .data("canExport", !identity.isAnonymous() && identity.hasRole("registro"));
+        Map<String, Object> model = new LinkedHashMap<>();
+        model.put("activosTabla", activos.asMap());
+        model.put("inactivosTabla", inactivos.asMap());
+        model.put("catalogoTabla", catalogo.asMap());
+        model.put("pendientesTabla", pendientes.asMap());
+        model.put("promocionesTabla", promociones.asMap());
+        model.put("activosCount", articulosService.countActivos());
+        model.put("inactivosCount", articulosService.countInactivos());
+        model.put("catalogoCount", articulosService.count());
+        model.put("pendientesCount", articulosService.countPendientes());
+        model.put("promocionesCount", promoService.count());
+        model.put("canExport", !identity.isAnonymous() && identity.hasRole("registro"));
+        return model;
     }
 
     /**

@@ -11,23 +11,54 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * HTML page of the Usuarios module for the NEW Qute/HTMX app surface:
+ * {@code GET /app/usuarios} — the route the T11 navbar reserved for the
+ * legacy secured/pages/Usuarios/index.xhtml.
+ *
+ * <p>Read-only page renderer: builds the full-page model (data table + stat
+ * counters) exactly like {@link UsersResource#fullPageModel()} and renders
+ * {@code pages/usuarios/index.html}. All mutation, fragment and JSON
+ * endpoints live in the API twin {@link UsersResource}
+ * ({@code /api/app/users}).</p>
+ *
+ * <p><b>Role gate</b>: {@code admin} + {@code usuario}, mirroring the
+ * module's managing roles (creation narrows to {@code admin} via the API
+ * twin's own gate).</p>
+ */
 @Path("/app/usuarios")
 @Produces(MediaType.TEXT_HTML)
 @RolesAllowed({"admin", "usuario"})
 public class UsuariosPagesResource {
     private static final Logger LOG = Logger.getLogger(UsuariosPagesResource.class.getName());
-    @Inject @Nonnull @Location("pages/usuarios/index") Template page;
-    @GET public Response index() {
+
+    @Inject
+    @Nonnull
+    UsersResource users;
+
+    @Inject
+    @Nonnull
+    @Location("pages/usuarios/index")
+    Template page;
+
+    @GET
+    public Response index() {
         try {
-            // usuarios/index may be form-based; fall back to simple render
-            TemplateInstance i = page.instance();
-            return Response.ok(i.render()).type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+            Map<String, Object> model = users.fullPageModel();
+            TemplateInstance instance = page.instance();
+            model.forEach(instance::data);
+            return Response.ok(instance.render())
+                    .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando usuarios", e);
-            return Response.ok("<html><body><h1>Usuarios</h1><p>Vista en construccion</p></body></html>").type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+            LOG.log(Level.WARNING, "Error renderizando la página de usuarios", e);
+            return Response.serverError()
+                    .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
+                            "No se pudieron cargar los usuarios"))
+                    .build();
         }
     }
 }

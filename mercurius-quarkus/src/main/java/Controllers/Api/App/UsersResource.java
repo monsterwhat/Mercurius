@@ -645,14 +645,26 @@ public class UsersResource {
     }
 
     private TemplateInstance renderFullPage() {
+        return pageIndex.data(fullPageModel());
+    }
+
+    /**
+     * Full-page model map: the usuarios data-table (page 1, size 20) plus the
+     * three stat counters. Public so the HTML page twin
+     * {@code UsuariosPagesResource} ({@code /app/usuarios}) can render the
+     * same model through its own template instance — page and fragment can
+     * never disagree (ArticuloResource#fullPageModel pattern).
+     */
+    public Map<String, Object> fullPageModel() {
         TableModel model = buildTableModel(1, 20, null, "asc", null);
         List<Users> todos = new ArrayList<>(loginService.listAll());
         long activos = todos.stream().filter(u -> u.getStatus() != null && u.getStatus()).count();
-        return pageIndex
-                .data("tablaUsuarios", model.asMap())
-                .data("usuariosTotal", model.total())
-                .data("usuariosActivosCount", activos)
-                .data("usuariosInactivosCount", todos.size() - activos);
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("tablaUsuarios", model.asMap());
+        map.put("usuariosTotal", model.total());
+        map.put("usuariosActivosCount", activos);
+        map.put("usuariosInactivosCount", todos.size() - activos);
+        return map;
     }
 
     private TemplateInstance tableInstance(int page, int size, @Nullable String sort,

@@ -41,17 +41,49 @@ public class MiscPagesResource {
             <body><nav class="navbar is-black"><div class="navbar-brand"><a class="navbar-item" href="/Mercurius/app"><span class="has-text-weight-bold">Mercurius</span></a></div></nav>
             <section class="section"><div class="container">
             <h1 class="title is-4">Reportes</h1><p class="subtitle is-6 has-text-grey">Seleccione un reporte</p>
+
+            <h2 class="title is-5 mt-5">Articulos</h2>
             <div class="columns is-multiline">
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/ventas">Ventas por articulo</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/ventas">Ventas por cajero</a></div>
               <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/familias">Ventas por familia</a></div>
               <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/departamentos">Ventas por departamento</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/resumen">Resumen inventario</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/fechas">Movimientos de inventario</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/tendencias">Tendencias de ventas</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/rendimiento">Rendimiento de productos</a></div>
+            </div>
+
+            <h2 class="title is-5 mt-5">Inventario</h2>
+            <div class="columns is-multiline">
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/resumen">Resumen de inventario</a></div>
               <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/alertas">Alertas de stock</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/merma">Mermas</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/merma">Mermas y perdidas</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/precios">Historico de precios</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/pronosticos">Pronosticos de inventario</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/etiquetas">Generar etiquetas</a></div>
+            </div>
+
+            <h2 class="title is-5 mt-5">Clientes y Usuarios</h2>
+            <div class="columns is-multiline">
               <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/clientes">Clientes</a></div>
               <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/usuarios">Usuarios</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/recibos">Recibos</a></div>
-            </div></div></section></body></html>
+            </div>
+
+            <h2 class="title is-5 mt-5">Recibos</h2>
+            <div class="columns is-multiline">
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/recibos/pendientes">Recibos pendientes</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/recibos/vencidos">Recibos vencidos</a></div>
+            </div>
+
+            <h2 class="title is-5 mt-5">Facturacion y Otros</h2>
+            <div class="columns is-multiline">
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/facturas">Facturas emitidas</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/correos">Reportes programados por correo</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/margenes">Margenes de utilidad</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/loyalty">Programa de lealtad</a></div>
+              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/estacionalidad">Estacionalidad</a></div>
+            </div>
+
+            </div></section></body></html>
             """;
         return Response.ok(html).type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
