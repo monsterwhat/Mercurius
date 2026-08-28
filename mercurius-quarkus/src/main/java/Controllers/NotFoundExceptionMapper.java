@@ -10,6 +10,7 @@ import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import java.net.URI;
+import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 
 /**
  * Auto-404: any unmatched JAX-RS path (no @Path) is mapped here.
@@ -18,6 +19,7 @@ import java.net.URI;
  * - otherwise authenticated -> 302 to /Mercurius/app (dashboard landing, avoids dead blank 404)
  */
 @Provider
+@jakarta.enterprise.context.ApplicationScoped
 public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
 
     @Inject
@@ -30,9 +32,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
     public Response toResponse(NotFoundException exception) {
         String path = uriInfo != null ? uriInfo.getPath() : "";
         String normalized = path == null ? "" : path;
-        // uriInfo path is without leading slash and without root-path prefix
         boolean isApi = normalized.startsWith("api/") || normalized.startsWith("api%2F");
-        // also handle leading slash variant if container normalizes differently
         if (!isApi && normalized.startsWith("/api/")) {
             isApi = true;
         }
@@ -42,11 +42,15 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
                     .type(MediaType.APPLICATION_JSON)
                     .build();
         }
-
         boolean anonymous = identity == null || identity.isAnonymous();
         if (anonymous) {
             return Response.seeOther(URI.create("/Mercurius/login")).build();
         }
         return Response.seeOther(URI.create("/Mercurius/app")).build();
+    }
+
+    @ServerExceptionMapper
+    public Response mapNotFound(NotFoundException exception) {
+        return toResponse(exception);
     }
 }
