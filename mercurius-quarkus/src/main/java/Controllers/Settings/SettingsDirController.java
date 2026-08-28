@@ -4,7 +4,6 @@ import Controllers.SessionController;
 import Models.AppSettings;
 import Services.AppSettingsService;
 import Services.EmailService;
-import Services.AlertasService;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -52,6 +51,8 @@ import jakarta.servlet.http.Part;
 @RequestScoped
 public class SettingsDirController implements Serializable {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(SettingsDirController.class.getName());
+
     @Nullable
     private List<AppSettings> currentSettingsList;
     @Nullable
@@ -65,19 +66,12 @@ public class SettingsDirController implements Serializable {
     @Nullable
     private Part imagen;
 
-    @Inject
     @Nonnull
     AppSettingsService settingsService;
-    @Inject
     @Nonnull
     private ServletContext servletContext;
-    @Inject
     @Nonnull
     private EmailService emailer;
-    @Inject
-    @Nonnull
-    private AlertasService alertasService;
-    @Inject
     @Nonnull
     private SessionController currentSession;
 
@@ -107,9 +101,15 @@ public class SettingsDirController implements Serializable {
         File homeDir = new File(getMainDirectory(), "Mercurius");
         if (!homeDir.exists()) {
             if (homeDir.mkdirs()) {
-                alertasService.registrarAlerta("Info", "Created directory: " + homeDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createHomeDir()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Info", "Created directory: " + homeDir.getAbsolutePath(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.createHomeDir()", null, null));
             } else {
-                alertasService.registrarAlerta("Error", "Failed to create directory: " + homeDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createHomeDir()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Failed to create directory: " + homeDir.getAbsolutePath(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.createHomeDir()", null, null));
             }
         }
     }
@@ -121,9 +121,15 @@ public class SettingsDirController implements Serializable {
         File profileDir = new File(getMainDirectory() + File.separator + "Mercurius", profileName);
         if (!profileDir.exists()) {
             if (profileDir.mkdirs()) {
-                alertasService.registrarAlerta("Info", "Created directory: " + profileDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createProfileDir()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Info", "Created directory: " + profileDir.getAbsolutePath(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.createProfileDir()", null, null));
             } else {
-                alertasService.registrarAlerta("Error", "Failed to create directory: " + profileDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createProfileDir()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Failed to create directory: " + profileDir.getAbsolutePath(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.createProfileDir()", null, null));
             }
         }
     }
@@ -136,9 +142,15 @@ public class SettingsDirController implements Serializable {
         File reportesDir = new File(basePath, "reportes");
         if (!reportesDir.exists()) {
             if (reportesDir.mkdirs()) {
-                alertasService.registrarAlerta("Info", "Created directory: " + reportesDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createReportesDir()", null, null);
+                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Info", "Created directory: " + reportesDir.getAbsolutePath(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.createReportesDir()", null, null));
             } else {
-                alertasService.registrarAlerta("Error", "Failed to create directory: " + reportesDir.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createReportesDir()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Failed to create directory: " + reportesDir.getAbsolutePath(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.createReportesDir()", null, null));
             }
         }
     }
@@ -186,7 +198,10 @@ public class SettingsDirController implements Serializable {
         settingsService.update(selectedSettings);
 
         // Save an alert (log) for updating the selected settings
-        alertasService.registrarAlerta("Configuración actualizada", "Se ha actualizado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.updateSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings));
+        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Configuración actualizada", "Se ha actualizado la configuración: " + selectedSettings.getNombrePerfil(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.updateSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings)));
     }
 
     public void disableSelectedSettings() {
@@ -194,7 +209,10 @@ public class SettingsDirController implements Serializable {
         settingsService.disable(selectedSettings);
 
         // Save an alert (log) for disabling the selected settings
-        alertasService.registrarAlerta("Configuración deshabilitada", "Se ha deshabilitado la configuración: " + selectedSettings.getNombrePerfil(), currentSession.getCurrentUser(), 0, "SettingsDirController.disableSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings));
+        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Configuración deshabilitada", "Se ha deshabilitado la configuración: " + selectedSettings.getNombrePerfil(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.disableSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings)));
     }
 
     @Nonnull
@@ -212,7 +230,10 @@ public class SettingsDirController implements Serializable {
             // Directory created successfully
         } else {
             // Failed to create directory
-            alertasService.registrarAlerta("Error", "Failed to create directory: " + newFolder.getAbsolutePath(), currentSession.getCurrentUser(), 0, "SettingsDirController.createFolder()", null, null);
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Failed to create directory: " + newFolder.getAbsolutePath(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.createFolder()", null, null));
         }
     }
 
@@ -289,7 +310,10 @@ public class SettingsDirController implements Serializable {
                 Files.copy(input, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            alertasService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), currentSession.getCurrentUser(), 0, "SettingsDirController.uploadLogo()", null, e.getLocalizedMessage());
+            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Error: " + e.getLocalizedMessage(),
+                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
+                        0, "SettingsDirController.uploadLogo()", null, e.getLocalizedMessage()));
         } 
     }
 

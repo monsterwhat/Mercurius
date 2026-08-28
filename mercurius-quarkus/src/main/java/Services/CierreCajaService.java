@@ -16,6 +16,8 @@ import java.util.List;
 @ApplicationScoped
 public class CierreCajaService extends GService<CierreCaja> {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(CierreCajaService.class.getName());
+
     @Override
     protected @Nonnull Class<CierreCaja> getEntityClass() {
         return CierreCaja.class;
@@ -37,7 +39,7 @@ public class CierreCajaService extends GService<CierreCaja> {
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding open session: " + e.getMessage(), usuario, 0, "CierreCajaService.findSesionAbierta()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding open session: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.findSesionAbierta()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -51,7 +53,7 @@ public class CierreCajaService extends GService<CierreCaja> {
             query.setParameter("usuario", usuario);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing session history: " + e.getMessage(), usuario, 0, "CierreCajaService.listHistorial()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorial()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -67,7 +69,7 @@ public class CierreCajaService extends GService<CierreCaja> {
             query.setParameter("hasta", hasta);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing session history by date: " + e.getMessage(), usuario, 0, "CierreCajaService.listHistorialPorFecha()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history by date: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorialPorFecha()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

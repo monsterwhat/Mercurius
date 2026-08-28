@@ -17,10 +17,13 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class DepartamentoService extends GService<Departamento> {
+
+    private static final Logger LOG = Logger.getLogger(DepartamentoService.class.getName());
 
     @Override
     @Nonnull
@@ -38,7 +41,7 @@ public class DepartamentoService extends GService<Departamento> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "DepartamentoService.countActivos()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=DepartamentoService.countActivos() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -49,7 +52,7 @@ public class DepartamentoService extends GService<Departamento> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "DepartamentoService.countActivos()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=DepartamentoService.countActivos() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -67,7 +70,7 @@ public class DepartamentoService extends GService<Departamento> {
         } catch (NoResultException e) {
             return null;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding department by name: " + e.getLocalizedMessage(), null, 0, "DepartamentoService.findByName()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding department by name: " + e.getLocalizedMessage() + " | source=DepartamentoService.findByName() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -79,7 +82,7 @@ public class DepartamentoService extends GService<Departamento> {
             em.persist(entity);
             em.flush();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "DepartamentoService.create()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=DepartamentoService.create() | despues=" + e.getMessage());
         }
     }
 
@@ -95,10 +98,10 @@ public class DepartamentoService extends GService<Departamento> {
                 em.remove(entity);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.delete()", null, null);
+                LOG.info("Entity not found | source=DepartamentoService.delete()");
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "DepartamentoService.delete()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=DepartamentoService.delete() | despues=" + e.getMessage());
         }
     }
 
@@ -112,7 +115,7 @@ public class DepartamentoService extends GService<Departamento> {
             em.merge(entity);
             em.flush();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "DepartamentoService.update()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=DepartamentoService.update() | despues=" + e.getMessage());
         }
     }
 
@@ -123,7 +126,7 @@ public class DepartamentoService extends GService<Departamento> {
             TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d", Departamento.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "DepartamentoService.listAll()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=DepartamentoService.listAll() | despues=" + e.getMessage());
             return List.of();
         }
     }
@@ -133,7 +136,7 @@ public class DepartamentoService extends GService<Departamento> {
     try {
         return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "DepartamentoService.findById()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=DepartamentoService.findById() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -144,7 +147,7 @@ public class DepartamentoService extends GService<Departamento> {
             TypedQuery<Departamento> query = em.createQuery("SELECT d FROM Departamento d WHERE d.status = true", Departamento.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing active departamentos: " + e.getMessage(), null, 0, "DepartamentoService.listAllActive()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing active departamentos: " + e.getMessage() + " | source=DepartamentoService.listAllActive() | despues=" + e.getMessage());
             return List.of();
         }
     }
@@ -169,11 +172,11 @@ public class DepartamentoService extends GService<Departamento> {
             em.flush();
                 return result;
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "DepartamentoService.softDelete()", null, null);
+                LOG.info("Entity not found | source=DepartamentoService.softDelete()");
                 return null;
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "DepartamentoService.softDelete()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error soft deleting entity: " + e.getMessage() + " | source=DepartamentoService.softDelete() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -194,7 +197,7 @@ public class DepartamentoService extends GService<Departamento> {
             }
         } catch (PersistenceException e) {
             // Catch the database constraint violation exception
-            alertasService.registrarAlerta("Error", "Error creating or retrieving Departamento: " + e.getMessage(), null, 0, "DepartamentoService.createIfNotExist()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error creating or retrieving Departamento: " + e.getMessage() + " | source=DepartamentoService.createIfNotExist() | despues=" + e.getMessage());
             // Handle the error gracefully, maybe log it or notify the user
             return null;
         }

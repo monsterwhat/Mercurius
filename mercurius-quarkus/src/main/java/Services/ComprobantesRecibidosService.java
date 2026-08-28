@@ -25,12 +25,14 @@ import java.util.List;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos> {
     
-    @Inject @Nonnull AlertasService alertasService;
+    private static final Logger LOG = Logger.getLogger(ComprobantesRecibidosService.class.getName());
+
     @Inject @Nonnull ComprobantesRecibidosPrevalidationService prevalidationService;
 
     @Override
@@ -49,9 +51,9 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             em.persist(entity);
             em.flush();
             em.refresh(entity);
-            alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos with ID: " + entity.getId(), null, 0, "ComprobantesRecibidosService.create()", null, null);
+            LOG.info("Successfully created ComprobantesRecibidos with ID: " + entity.getId() + " | source=ComprobantesRecibidosService.create()");
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.create()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=ComprobantesRecibidosService.create() | despues=" + e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos", e);
         }
     }
@@ -74,10 +76,11 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                     .map(e -> e.getField() + ": " + e.getMessage())
                     .collect(java.util.stream.Collectors.joining("; "));
                 entity.setPrevalidationErrors(errorSummary);
-                alertasService.registrarAlerta("Warning",
+                LOG.log(java.util.logging.Level.WARNING,
                     "Pre-validation warnings for " + (entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : "?") +
-                    ": " + errorSummary, null, 0,
-                    "ComprobantesRecibidosService.createWithRelatedEntities()", null, errorSummary);
+                    ": " + errorSummary
+                    + " | source=ComprobantesRecibidosService.createWithRelatedEntities()"
+                    + " | despues=" + errorSummary);
             }
 
             em.persist(entity);
@@ -85,9 +88,9 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             em.refresh(entity);
 
             String consecutive = entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : String.valueOf(entity.getId());
-            alertasService.registrarAlerta("Info", "Successfully created ComprobantesRecibidos: " + consecutive, null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, null);
+            LOG.info("Successfully created ComprobantesRecibidos: " + consecutive + " | source=ComprobantesRecibidosService.createWithRelatedEntities()");
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity with related entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.createWithRelatedEntities()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error creating entity with related entities: " + e.getMessage() + " | source=ComprobantesRecibidosService.createWithRelatedEntities() | despues=" + e.getMessage());
             throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
         }
         return prevalidation;
@@ -105,10 +108,10 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 em.remove(entity);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ComprobantesRecibidosService.delete()", null, null);
+                LOG.info("Entity not found for delete | source=ComprobantesRecibidosService.delete()");
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ComprobantesRecibidosService.delete()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=ComprobantesRecibidosService.delete() | despues=" + e.getMessage());
         }
     }
 
@@ -120,7 +123,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             em.flush();
             em.refresh(merged);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.update()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=ComprobantesRecibidosService.update() | despues=" + e.getMessage());
         }
     }
     
@@ -136,10 +139,10 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 em.merge(existingItem);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found for softDelete", null, 0, "ComprobantesRecibidosService.softDelete()", null, null);
+                LOG.info("Entity not found for softDelete | source=ComprobantesRecibidosService.softDelete()");
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.softDelete()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error soft deleting entity: " + e.getMessage() + " | source=ComprobantesRecibidosService.softDelete() | despues=" + e.getMessage());
         }
     }
     
@@ -159,10 +162,10 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 em.merge(existingItem);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found for toggle", null, 0, "ComprobantesRecibidosService.toggle()", null, null);
+                LOG.info("Entity not found for toggle | source=ComprobantesRecibidosService.toggle()");
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error toggling entity: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.toggle()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error toggling entity: " + e.getMessage() + " | source=ComprobantesRecibidosService.toggle() | despues=" + e.getMessage());
         }
     }
     
@@ -179,7 +182,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listAll()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=ComprobantesRecibidosService.listAll() | despues=" + e.getMessage());
             return java.util.Collections.emptyList();
         }
     }
@@ -198,7 +201,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.ListAllEnabled()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=ComprobantesRecibidosService.ListAllEnabled() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -215,7 +218,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             // If no result is found, catch the NoResultException and return false
             return false;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding entity by numeroConsecutivo: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findByNumeroConsecutivo()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding entity by numeroConsecutivo: " + e.getMessage() + " | source=ComprobantesRecibidosService.findByNumeroConsecutivo() | despues=" + e.getMessage());
             return false;
         }
 }
@@ -267,7 +270,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
         } catch (NoResultException e) {
             return null;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding ComprobantesRecibidos by ID with details: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findByIdWithDetails()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding ComprobantesRecibidos by ID with details: " + e.getMessage() + " | source=ComprobantesRecibidosService.findByIdWithDetails() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -287,7 +290,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             query.setParameter("end", end.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing recibidos by date range: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listByDateRange()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing recibidos by date range: " + e.getMessage() + " | source=ComprobantesRecibidosService.listByDateRange() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -336,7 +339,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 })
                 .collect(java.util.stream.Collectors.toList());
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing pendientes: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listPendientes()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing pendientes: " + e.getMessage() + " | source=ComprobantesRecibidosService.listPendientes() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -373,7 +376,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 })
                 .collect(java.util.stream.Collectors.toList());
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing vencidas: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.listVencidas()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing vencidas: " + e.getMessage() + " | source=ComprobantesRecibidosService.listVencidas() | despues=" + e.getMessage());
             return java.util.Collections.emptyList();
         }
     }
@@ -394,7 +397,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding pendientes Mensaje Receptor: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findPendientesMensajeReceptor()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding pendientes Mensaje Receptor: " + e.getMessage() + " | source=ComprobantesRecibidosService.findPendientesMensajeReceptor() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -410,7 +413,7 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                 .filter(f -> f.getMensajeReceptorLimite() != null && !f.getMensajeReceptorLimite().isAfter(limite))
                 .collect(java.util.stream.Collectors.toList());
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding proximos vencer Mensaje Receptor: " + e.getMessage(), null, 0, "ComprobantesRecibidosService.findProximosVencerMensajeReceptor()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding proximos vencer Mensaje Receptor: " + e.getMessage() + " | source=ComprobantesRecibidosService.findProximosVencerMensajeReceptor() | despues=" + e.getMessage());
             return null;
         }
 }

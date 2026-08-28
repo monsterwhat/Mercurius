@@ -5,7 +5,6 @@ import Models.DTO.ApiResponse;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
 import Models.Users;
-import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.BackupService;
 import Services.LoginService;
@@ -70,23 +69,16 @@ public class SettingsResource {
 
     private static final Logger LOG = Logger.getLogger(SettingsResource.class.getName());
 
-    @Inject
     @Nonnull
     AppSettingsService settingsService;
 
-    @Inject
     @Nonnull
     BackupService backupService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertasService;
-
-    @Inject
+    
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
@@ -186,14 +178,7 @@ public class SettingsResource {
 
             settingsService.update(settings);
 
-            alertasService.registrarAlerta(
-                    "Configuración actualizada",
-                    "Se ha actualizado la configuración: " + settings.getNombrePerfil(),
-                    currentUserOrNull(),
-                    0,
-                    "SettingsResource.update()",
-                    antes,
-                    DiffUtils.snapshotEntity(settings));
+                        LOG.info("Se ha actualizado la configuración: " + settings.getNombrePerfil() + " | user=" + String.valueOf(currentUserOrNull()) + " | source=" + "SettingsResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(settings)));
 
             return Response.ok(ApiResponse.ok(toDTO(settings))).build();
         } catch (Exception e) {

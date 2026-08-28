@@ -9,10 +9,13 @@ import jakarta.inject.Named;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
+import java.util.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
+
+    private static final Logger LOG = Logger.getLogger(ConsecutivoReceptorService.class.getName());
 
     @Override
     @Nonnull
@@ -65,9 +68,10 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
 
             return String.format("%010d", nextVal);
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error",
-                "Error generating consecutive number: " + e.getMessage(),
-                null, 0, "ConsecutivoReceptorService.getNextSequential()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING,
+                "Error generating consecutive number: " + e.getMessage()
+                + " | source=ConsecutivoReceptorService.getNextSequential()"
+                + " | despues=" + e.getMessage());
             // Fallback: generate a timestamp-based number to avoid blocking the MR flow
             return String.format("%010d", System.currentTimeMillis() % 10000000000L);
         }
@@ -91,9 +95,10 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error",
-                "Error finding counter: " + e.getMessage(),
-                null, 0, "ConsecutivoReceptorService.findCounter()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING,
+                "Error finding counter: " + e.getMessage()
+                + " | source=ConsecutivoReceptorService.findCounter()"
+                + " | despues=" + e.getMessage());
             return null;
         }
     }

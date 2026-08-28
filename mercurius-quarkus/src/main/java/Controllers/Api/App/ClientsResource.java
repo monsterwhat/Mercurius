@@ -6,7 +6,6 @@ import Models.DTO.ApiResponse;
 import Models.DTO.ClientsDTO;
 import Models.DTO.ClientsDetailDTO;
 import Models.DTO.PagedResponse;
-import Services.AlertasService;
 import Services.ClientService;
 import Utils.DiffUtils;
 import io.quarkus.qute.Location;
@@ -79,32 +78,24 @@ public class ClientsResource {
 
     private static final Logger LOG = Logger.getLogger(ClientsResource.class.getName());
 
-    @Inject
     @Nonnull
     ClientService clientService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
+    
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
-    @Inject
     @Nonnull
     @Location("pages/clientes/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/clientes/tabla.html")
     Template tablaPage;
 
-    @Inject
     @Nonnull
     @Location("pages/clientes/form.html")
     Template formCliente;
@@ -228,10 +219,7 @@ public class ClientsResource {
             // form auth lands (nullable FK).
             clientService.create(client);
 
-            alertas.registrarAlerta("Se creo el cliente",
-                    "Se creo el cliente: " + client.getName(),
-                    null, 0, "ClientsResource.create()",
-                    null, DiffUtils.snapshotEntity(client));
+                        LOG.info("Se creo el cliente: " + client.getName() + " | source=" + "ClientsResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(client)));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDetailDTO(client)))
@@ -284,10 +272,7 @@ public class ClientsResource {
             clientService.update(client);
 
             // Audit parity with ClientsController.updateClient()
-            alertas.registrarAlerta("Cliente Actualizado",
-                    "Se actualizo el cliente: " + client.getName(),
-                    null, 0, "ClientsResource.update()",
-                    antes, DiffUtils.snapshotEntity(client));
+                        LOG.info("Se actualizo el cliente: " + client.getName() + " | source=" + "ClientsResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(client)));
 
             return Response.ok(ApiResponse.ok(toDetailDTO(client))).build();
         } catch (Exception e) {
@@ -322,10 +307,7 @@ public class ClientsResource {
             client.setStatus(false);
             clientService.update(client);
 
-            alertas.registrarAlerta("Se cambio el status del cliente",
-                    "El estatus cambio",
-                    null, 0, "ClientsResource.delete()",
-                    antes, DiffUtils.snapshotEntity(client));
+                        LOG.info("El estatus cambio" + " | source=" + "ClientsResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(client)));
 
             // HTMX callers get the refreshed table fragment + OOB toast
             // (ui-kit §7 update="table region"); JSON callers keep the exact

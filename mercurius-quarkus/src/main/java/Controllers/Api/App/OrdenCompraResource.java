@@ -9,7 +9,6 @@ import Models.DTO.PagedResponse;
 import Models.OrdenCompra;
 import Models.OrdenCompraDetalle;
 import Models.Users;
-import Services.AlertasService;
 import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.LoginService;
@@ -129,74 +128,57 @@ public class OrdenCompraResource {
     private static final DateTimeFormatter FECHA_HORA =
             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    @Inject
     @Nonnull
     OrdenCompraService ordenCompraService;
 
-    @Inject
     @Nonnull
     DepartamentoService departamentoService;
 
-    @Inject
     @Nonnull
     ArticulosService articulosService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
+    
     /** Current-user resolution (same pattern as LoyaltyResource/SettingsResource). */
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     /** Root path for HX-Redirect targets (fixed /Mercurius in this app). */
-    @Inject
     @ConfigProperty(name = "quarkus.http.root-path", defaultValue = "/Mercurius")
     String rootPath;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
-    @Inject
     @Nonnull
     @Location("pages/compras/ordenes.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/compras/ordenes-tabla.html")
     Template tablaPage;
 
-    @Inject
     @Nonnull
     @Location("pages/compras/ordenes-form.html")
     Template formPage;
 
-    @Inject
     @Nonnull
     @Location("pages/compras/ordenes-detalle.html")
     Template detallePage;
 
-    @Inject
     @Nonnull
     @Location("pages/compras/ordenes-estado.html")
     Template estadoPage;
 
-    @Inject
     @Nonnull
     @Location("pages/compras/ordenes-cancelar.html")
     Template cancelarPage;
 
-    @Inject
     @Nonnull
     @Location("pages/compras/ordenes-articulos.html")
     Template articulosPage;
@@ -319,10 +301,7 @@ public class OrdenCompraResource {
             ordenCompraService.crearOrden(orden, detalles);
 
             String antes = DiffUtils.snapshotEntity(orden);
-            alertas.registrarAlerta("Orden de Compra Creada",
-                    "Se creó la orden de compra: " + orden.getNumeroOrden(),
-                    currentUser(), 0, "OrdenCompraResource.create()",
-                    "", DiffUtils.snapshotEntity(orden));
+                        LOG.info("Se creó la orden de compra: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.create()" + " | antes=" + String.valueOf("") + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDetailDTO(orden)))
@@ -375,10 +354,7 @@ public class OrdenCompraResource {
             orden.setUsuario(currentUser());
             ordenCompraService.update(orden);
 
-            alertas.registrarAlerta("Orden de Compra Actualizada",
-                    "Se actualizó la orden de compra: " + orden.getNumeroOrden(),
-                    currentUser(), 0, "OrdenCompraResource.update()",
-                    antes, DiffUtils.snapshotEntity(orden));
+                        LOG.info("Se actualizó la orden de compra: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             return Response.ok(ApiResponse.ok(toDetailDTO(orden))).build();
         } catch (Exception e) {
@@ -427,10 +403,7 @@ public class OrdenCompraResource {
             String antes = DiffUtils.snapshotEntity(orden);
             ordenCompraService.cambiarEstado(orden, nuevoEstado);
 
-            alertas.registrarAlerta("Estado de Orden Cambiado",
-                    "Orden " + orden.getNumeroOrden() + ": " + estadoActual + " → " + nuevoEstado,
-                    currentUser(), 0, "OrdenCompraResource.cambiarEstado()",
-                    antes, DiffUtils.snapshotEntity(orden));
+                        LOG.info("Orden " + orden.getNumeroOrden() + ": " + estadoActual + " → " + nuevoEstado + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.cambiarEstado()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return hxRedirect(tablaUrl());
@@ -472,10 +445,7 @@ public class OrdenCompraResource {
             }
             ordenCompraService.recibirOrden(orden);
 
-            alertas.registrarAlerta("Orden Recibida",
-                    "Se marcó como recibida la orden: " + orden.getNumeroOrden(),
-                    currentUser(), 0, "OrdenCompraResource.recibir()",
-                    antes, DiffUtils.snapshotEntity(orden));
+                        LOG.info("Se marcó como recibida la orden: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.recibir()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return hxRedirect(tablaUrl());
@@ -516,11 +486,8 @@ public class OrdenCompraResource {
             String antes = DiffUtils.snapshotEntity(orden);
             ordenCompraService.cancelarOrden(orden, motivo);
 
-            alertas.registrarAlerta("Orden Cancelada",
-                    "Se canceló la orden: " + orden.getNumeroOrden()
-                            + (motivo != null ? " - Motivo: " + motivo : ""),
-                    currentUser(), 0, "OrdenCompraResource.cancelar()",
-                    antes, DiffUtils.snapshotEntity(orden));
+                        LOG.info("Se canceló la orden: " + orden.getNumeroOrden()
+                            + (motivo != null ? " - Motivo: " + motivo : "") + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.cancelar()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return hxRedirect(tablaUrl());
@@ -558,10 +525,7 @@ public class OrdenCompraResource {
             String antes = DiffUtils.snapshotEntity(orden);
             ordenCompraService.softDelete(orden);
 
-            alertas.registrarAlerta("Orden de Compra Eliminada",
-                    "Se eliminó la orden de compra: " + orden.getNumeroOrden(),
-                    currentUser(), 0, "OrdenCompraResource.delete()",
-                    antes, DiffUtils.snapshotEntity(orden));
+                        LOG.info("Se eliminó la orden de compra: " + orden.getNumeroOrden() + " | user=" + String.valueOf(currentUser()) + " | source=" + "OrdenCompraResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(orden)));
 
             if (isHxRequest()) {
                 return htmlOk(tableInstance(1, 20, null, "asc", null, null, null, null, "info",

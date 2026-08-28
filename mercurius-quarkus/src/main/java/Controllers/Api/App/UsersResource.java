@@ -4,7 +4,6 @@ import Models.DTO.ApiResponse;
 import Models.DTO.PagedResponse;
 import Models.DTO.UsersDTO;
 import Models.Users;
-import Services.AlertasService;
 import Services.LoginService;
 import Utils.DiffUtils;
 import io.quarkus.qute.Location;
@@ -79,32 +78,24 @@ public class UsersResource {
 
     private static final Logger LOG = Logger.getLogger(UsersResource.class.getName());
 
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
+    
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
-    @Inject
     @Nonnull
     @Location("pages/usuarios/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/usuarios/tabla.html")
     Template tablaPage;
 
-    @Inject
     @Nonnull
     @Location("pages/usuarios/form.html")
     Template formUsuario;
@@ -180,10 +171,7 @@ public class UsersResource {
             user.setStatus(true); // parity: createUser() always enables new users
             loginService.create(user);
 
-            alertas.registrarAlerta("Usuario Creado",
-                    "Se creo el usuario: " + user.getUsername(),
-                    null, 0, "UsersResource.create()",
-                    null, user.getUsername());
+                        LOG.info("Se creo el usuario: " + user.getUsername() + " | source=" + "UsersResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(user.getUsername()));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(user)))
@@ -243,10 +231,7 @@ public class UsersResource {
             loginService.update(user);
 
             // Audit parity with UsersController.updateUser()
-            alertas.registrarAlerta("Usuario Actualizado",
-                    "Se actualizo el usuario: " + user.getUsername(),
-                    null, 0, "UsersResource.update()",
-                    antes, DiffUtils.snapshotEntity(user));
+                        LOG.info("Se actualizo el usuario: " + user.getUsername() + " | source=" + "UsersResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(user)));
 
             return Response.ok(ApiResponse.ok(toDTO(user))).build();
         } catch (Exception e) {
@@ -282,10 +267,7 @@ public class UsersResource {
             loginService.softDelete(user);
 
             // Audit parity with UsersController.toggleUser()
-            alertas.registrarAlerta("Estado de Usuario Cambiado",
-                    "Se cambio el estado del usuario: " + user.getUsername(),
-                    null, 0, "UsersResource.delete()",
-                    antes, DiffUtils.snapshotEntity(user));
+                        LOG.info("Se cambio el estado del usuario: " + user.getUsername() + " | source=" + "UsersResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(user)));
 
             // HTMX callers get the refreshed table fragment + OOB toast
             // (ui-kit §7 update="table region"); JSON callers keep the exact
@@ -355,10 +337,7 @@ public class UsersResource {
 
             loginService.updatePassword(user, request.newPassword);
 
-            alertas.registrarAlerta("ContraseÃ±a Cambiada",
-                    "Se cambiÃ³ la contraseÃ±a",
-                    null, 0, "UsersResource.changePassword()",
-                    null, null);
+                        LOG.info("Se cambiÃ³ la contraseÃ±a" + " | source=" + "UsersResource.changePassword()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
 
             return Response.ok(ApiResponse.ok(toDTO(user))).build();
         } catch (Exception e) {

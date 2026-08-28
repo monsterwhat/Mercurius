@@ -14,6 +14,8 @@ import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class CodigoComercialService extends GService<CodigoComercial>{
+
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(CodigoComercialService.class.getName());
       
     @Override
     @Nonnull
@@ -27,7 +29,7 @@ public class CodigoComercialService extends GService<CodigoComercial>{
         try {
             this.em.persist(codigoComercial);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "CodigoComercialService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "CodigoComercialService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     

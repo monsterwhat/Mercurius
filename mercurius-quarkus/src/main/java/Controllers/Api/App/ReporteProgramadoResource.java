@@ -5,7 +5,6 @@ import Models.Correos.ReportesEnum;
 import Models.DTO.ApiResponse;
 import Models.DTO.PagedResponse;
 import Models.DTO.ReporteProgramadoDTO;
-import Services.AlertasService;
 import Services.Correos.ReportesProgramadosService;
 import Utils.DiffUtils;
 import io.quarkus.qute.Location;
@@ -104,37 +103,28 @@ public class ReporteProgramadoResource {
 
     private static final Logger LOG = Logger.getLogger(ReporteProgramadoResource.class.getName());
 
-    @Inject
     @Nonnull
     ReportesProgramadosService reportesProgramadosService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
+    
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // View-half templates (W4B-CORREOS). Rendered to String: no
     // quarkus-rest-qute MessageBodyWriter on this stack — same approach as
     // CategoriaResource/T18 and LoginPageResource/T14.
-    @Inject
     @Nonnull
     @Location("pages/correos/reportes.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/correos/tabla-reportes.html")
     Template tablaReportes;
 
-    @Inject
     @Nonnull
     @Location("pages/correos/form-reporte.html")
     Template formReporte;
@@ -246,10 +236,7 @@ public class ReporteProgramadoResource {
 
             reportesProgramadosService.create(reporte);
 
-            alertas.registrarAlerta("Reporte programado creado",
-                    "Se ha creado el reporte programado: " + reporte.getPerfil(),
-                    null, 0, "ReporteProgramadoResource.create()",
-                    null, reporte.toString());
+                        LOG.info("Se ha creado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(reporte.toString()));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(reporte)))
@@ -317,10 +304,7 @@ public class ReporteProgramadoResource {
 
             reportesProgramadosService.update(reporte);
 
-            alertas.registrarAlerta("Reporte programado actualizado",
-                    "Se ha actualizado el reporte programado: " + reporte.getPerfil(),
-                    null, 0, "ReporteProgramadoResource.update()",
-                    antes, DiffUtils.snapshotEntity(reporte));
+                        LOG.info("Se ha actualizado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(reporte)));
 
             return Response.ok(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
@@ -360,10 +344,7 @@ public class ReporteProgramadoResource {
             reportesProgramadosService.update(reporte);
 
             String action = reporte.isStatus() ? "habilitado" : "deshabilitado";
-            alertas.registrarAlerta("Estado del reporte programado cambiado",
-                    "Se ha " + action + " el reporte programado: " + reporte.getPerfil(),
-                    null, 0, "ReporteProgramadoResource.toggle()",
-                    antes, DiffUtils.snapshotEntity(reporte));
+                        LOG.info("Se ha " + action + " el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.toggle()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(reporte)));
 
             // View-half branch (docs/ui-kit.md §2.9 dual-mode contract): HTMX
             // callers get the refreshed table fragment plus an out-of-band
@@ -408,10 +389,7 @@ public class ReporteProgramadoResource {
             String antes = DiffUtils.snapshotEntity(reporte);
             reportesProgramadosService.delete(reporte);
 
-            alertas.registrarAlerta("Reporte programado eliminado",
-                    "Se ha eliminado el reporte programado: " + reporte.getPerfil(),
-                    null, 0, "ReporteProgramadoResource.delete()",
-                    antes, null);
+                        LOG.info("Se ha eliminado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(null));
 
             // View-half branch — same dual-mode contract as toggle().
             if (isHxRequest()) {
@@ -559,10 +537,7 @@ public class ReporteProgramadoResource {
 
             reportesProgramadosService.create(reporte);
 
-            alertas.registrarAlerta("Reporte programado creado",
-                    "Se ha creado el reporte programado: " + reporte.getPerfil(),
-                    null, 0, "ReporteProgramadoResource.createReporteForm()",
-                    null, reporte.toString());
+                        LOG.info("Se ha creado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.createReporteForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(reporte.toString()));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/reportes-programados/table");
@@ -626,10 +601,7 @@ public class ReporteProgramadoResource {
 
             reportesProgramadosService.update(reporte);
 
-            alertas.registrarAlerta("Reporte programado actualizado",
-                    "Se ha actualizado el reporte programado: " + reporte.getPerfil(),
-                    null, 0, "ReporteProgramadoResource.updateReporteForm()",
-                    antes, DiffUtils.snapshotEntity(reporte));
+                        LOG.info("Se ha actualizado el reporte programado: " + reporte.getPerfil() + " | source=" + "ReporteProgramadoResource.updateReporteForm()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(reporte)));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/reportes-programados/table");

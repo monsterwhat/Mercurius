@@ -2,7 +2,6 @@ package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
 import Models.Users;
-import Services.AlertasService;
 import Services.LoginService;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.vertx.http.runtime.security.FormAuthenticationMechanism;
@@ -64,15 +63,9 @@ public class AppAuthResource {
     private static final List<String> ROLE_TOKENS =
             List.of("admin", "facturacion", "inventario", "usuario", "tributacion", "registro");
 
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
@@ -104,32 +97,36 @@ public class AppAuthResource {
             // disabled-user contract obvious and null-safe).
             Users authUser = loginService.findByUsername(username);
             if (authUser == null) {
-                alertas.registrarAlerta("Autorización Fallida",
-                        "Intento con usuario inexistente: " + username,
-                        null, 0, "AppAuthResource.supervisorAuthorize()", null, null);
+                LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Autorización Fallida", "Intento con usuario inexistente: " + username,
+                        "Sistema",
+                        0, "AppAuthResource.supervisorAuthorize()", null, null));
                 return invalidCredentials();
             }
 
             if (!Boolean.TRUE.equals(authUser.getStatus())) {
-                alertas.registrarAlerta("Autorización Fallida",
-                        "Intento con usuario deshabilitado: " + username,
-                        null, 0, "AppAuthResource.supervisorAuthorize()", null, null);
+                LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Autorización Fallida", "Intento con usuario deshabilitado: " + username,
+                        "Sistema",
+                        0, "AppAuthResource.supervisorAuthorize()", null, null));
                 return invalidCredentials();
             }
 
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                alertas.registrarAlerta("Autorización Fallida",
-                        "Contraseña incorrecta de: " + username,
-                        null, 0, "AppAuthResource.supervisorAuthorize()", null, null);
+                LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Autorización Fallida", "Contraseña incorrecta de: " + username,
+                        "Sistema",
+                        0, "AppAuthResource.supervisorAuthorize()", null, null));
                 return invalidCredentials();
             }
 
             return Response.ok(ApiResponse.ok(
                     new SupervisorAuthorizationDTO(username, deriveRoles(authUser)))).build();
         } catch (RuntimeException e) {
-            alertas.registrarAlerta("Error",
-                    "Error en supervisorAuthorize: " + e.getMessage(),
-                    null, 0, "AppAuthResource.supervisorAuthorize()", null, e.getMessage());
+            LOG.log(Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                        "Error", "Error en supervisorAuthorize: " + e.getMessage(),
+                        "Sistema",
+                        0, "AppAuthResource.supervisorAuthorize()", null, e.getMessage()));
             LOG.log(Level.WARNING, "Error during supervisor authorization", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error durante la autorización"))

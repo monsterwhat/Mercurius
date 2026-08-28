@@ -21,6 +21,8 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 @ApplicationScoped
 public class UserService extends GService<Users> {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(UserService.class.getName());
+
     private static final int BCRYPT_COST = 12;
 
     @Override
@@ -39,7 +41,7 @@ public class UserService extends GService<Users> {
             em.persist(entity);
             em.flush();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error creating user: " + e.getMessage(), null, 0, "UserService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating user: " + e.getMessage() + " | source=" + "UserService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -47,7 +49,7 @@ public class UserService extends GService<Users> {
         try {
             return BCrypt.withDefaults().hashToString(BCRYPT_COST, password.toCharArray());
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Password hashing error: " + e.getLocalizedMessage(), null, 0, "UserService.hashPassword()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Password hashing error: " + e.getLocalizedMessage() + " | source=" + "UserService.hashPassword()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Failed to hash password", e);
         }
     }
@@ -69,7 +71,7 @@ public class UserService extends GService<Users> {
             em.merge(entity);
             em.flush();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error updating user: " + e.getMessage(), null, 0, "UserService.update()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error updating user: " + e.getMessage() + " | source=" + "UserService.update()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -84,10 +86,10 @@ public class UserService extends GService<Users> {
                 em.remove(entity);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "UserService.delete()", null, null);
+                                LOG.info("Entity not found" + " | source=" + "UserService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "UserService.delete()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "UserService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -97,7 +99,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage(), null, 0, "UserService.count()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage() + " | source=" + "UserService.count()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -111,7 +113,7 @@ public class UserService extends GService<Users> {
             return !existingUser.isEmpty();
 
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error checking username: " + e.getLocalizedMessage(), null, 0, "UserService.usernameExists()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error checking username: " + e.getLocalizedMessage() + " | source=" + "UserService.usernameExists()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return true;
         }
     }
@@ -122,7 +124,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error counting active users: " + e.getLocalizedMessage(), null, 0, "UserService.countActivos()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error counting active users: " + e.getLocalizedMessage() + " | source=" + "UserService.countActivos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -133,7 +135,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error counting inactive users: " + e.getLocalizedMessage(), null, 0, "UserService.countInactivos()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error counting inactive users: " + e.getLocalizedMessage() + " | source=" + "UserService.countInactivos()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

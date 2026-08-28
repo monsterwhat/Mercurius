@@ -83,7 +83,6 @@ class ComprobanteTaxMathTest {
 
     // ── The 19 field-injected collaborators (mirrored from ComprobanteService.java:80-126) ──
     @Mock private HaciendaServiceFacade haciendaServiceFacade;
-    @Mock private AlertasService alertasService;
     @Mock private EncabezadoService encabezadoService;
     @Mock private DetalleServicioService detallesService;
     @Mock private ResumenFacturaService resumenService;
@@ -481,14 +480,6 @@ class ComprobanteTaxMathTest {
         DetalleServicio detalles = service.detallesComprobante(
                 List.of(item(141L, "501010119", "3", "100", "1")), "01");
         assertThat(detalles).isNull();
-        verify(alertasService).registrarAlerta(
-                eq("Error Detalles"),
-                contains("Código de impuesto no válido: 3"),
-                isNull(),
-                eq(0),
-                eq("detallesComprobante()"),
-                isNull(),
-                any());
 
         // 3) Resumen path survives: the inline percentage math never calls getTarifa,
         //    and the desglose loop skips unknown rates silently (empty, not null).

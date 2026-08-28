@@ -16,10 +16,13 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class FamiliaService extends GService<Familia> {
+
+    private static final Logger LOG = Logger.getLogger(FamiliaService.class.getName());
 
     @Override
     protected @Nonnull Class<Familia> getEntityClass() {
@@ -35,7 +38,7 @@ public class FamiliaService extends GService<Familia> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "FamiliaService.countActivas()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=FamiliaService.countActivas() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -45,7 +48,7 @@ public class FamiliaService extends GService<Familia> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage(), null, 0, "FamiliaService.countActivas()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=FamiliaService.countActivas() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -57,7 +60,7 @@ public class FamiliaService extends GService<Familia> {
             em.persist(entity);
             em.flush();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "FamiliaService.create()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=FamiliaService.create() | despues=" + e.getMessage());
         }
     }
     
@@ -78,7 +81,7 @@ public class FamiliaService extends GService<Familia> {
             }
 
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "FamiliaService.create()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=FamiliaService.create() | despues=" + e.getMessage());
             return false;
         }
     }
@@ -96,10 +99,10 @@ public class FamiliaService extends GService<Familia> {
                 em.remove(entity);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "FamiliaService.method()", null, null);
+                LOG.info("Entity not found | source=FamiliaService.method()");
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "FamiliaService.delete()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=FamiliaService.delete() | despues=" + e.getMessage());
         }
     }
 
@@ -110,7 +113,7 @@ public class FamiliaService extends GService<Familia> {
             em.merge(entity);
             em.flush();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "FamiliaService.method()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=FamiliaService.method() | despues=" + e.getMessage());
         }
     }
 
@@ -120,7 +123,7 @@ public class FamiliaService extends GService<Familia> {
             TypedQuery<Familia> query = em.createQuery("SELECT f FROM Familia f", Familia.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "FamiliaService.listAll()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=FamiliaService.listAll() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -129,7 +132,7 @@ public class FamiliaService extends GService<Familia> {
     try {
             return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "FamiliaService.findById()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=FamiliaService.findById() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -141,7 +144,7 @@ public class FamiliaService extends GService<Familia> {
             List<Familia> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding familia by nombre: " + e.getMessage(), null, 0, "FamiliaService.findByNombre()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding familia by nombre: " + e.getMessage() + " | source=FamiliaService.findByNombre() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -167,10 +170,10 @@ public class FamiliaService extends GService<Familia> {
                 em.persist(entity);
             em.flush();
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "FamiliaService.method()", null, null);
+                LOG.info("Entity not found | source=FamiliaService.method()");
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "FamiliaService.method()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=FamiliaService.method() | despues=" + e.getMessage());
         }
     }
 
@@ -194,11 +197,11 @@ public class FamiliaService extends GService<Familia> {
             em.flush();
                 return result;
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found", null, 0, "FamiliaService.method()", null, null);
+                LOG.info("Entity not found | source=FamiliaService.method()");
                 return null;
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error soft deleting entity: " + e.getMessage(), null, 0, "FamiliaService.softDelete()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error soft deleting entity: " + e.getMessage() + " | source=FamiliaService.softDelete() | despues=" + e.getMessage());
             return null;
         }
     }

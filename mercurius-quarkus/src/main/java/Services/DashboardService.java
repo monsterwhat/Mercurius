@@ -14,11 +14,14 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class DashboardService extends GService<ComprobantesEmitidos> {
     
+    private static final Logger LOG = Logger.getLogger(DashboardService.class.getName());
+
     @Override
     @Nonnull
     protected Class<ComprobantesEmitidos> getEntityClass() {
@@ -51,7 +54,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             
             return result;
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting today sales: " + e.getMessage(), null, 0, "DashboardService.getTodaySales()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error getting today sales: " + e.getMessage() + " | source=DashboardService.getTodaySales() | despues=" + e.getMessage());
             return BigDecimal.ZERO;
         }
     }
@@ -77,7 +80,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             
             return result.intValue();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting transaction count: " + e.getMessage(), null, 0, "DashboardService.getTransactionCount()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error getting transaction count: " + e.getMessage() + " | source=DashboardService.getTransactionCount() | despues=" + e.getMessage());
             return 0;
         }
     }
@@ -105,7 +108,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             
             return result.intValue();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting items sold: " + e.getMessage(), null, 0, "DashboardService.getItemsSold()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error getting items sold: " + e.getMessage() + " | source=DashboardService.getItemsSold() | despues=" + e.getMessage());
             return 0;
         }
     }
@@ -129,7 +132,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding last transaction: " + e.getMessage(), null, 0, "DashboardService.getLastTransaction()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error finding last transaction: " + e.getMessage() + " | source=DashboardService.getLastTransaction() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -150,7 +153,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
             query.setMaxResults(limit);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting recent sales: " + e.getMessage(), null, 0, "DashboardService.getRecentSales()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error getting recent sales: " + e.getMessage() + " | source=DashboardService.getRecentSales() | despues=" + e.getMessage());
             return null;
         }
     }

@@ -16,6 +16,8 @@ import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class DescuentoService extends GService<Descuento>{
+
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(DescuentoService.class.getName());
     
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -31,7 +33,7 @@ public class DescuentoService extends GService<Descuento>{
         try {
             em.persist(descuento);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "DescuentoService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "DescuentoService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     

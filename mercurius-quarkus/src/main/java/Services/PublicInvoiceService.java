@@ -37,6 +37,8 @@ import java.util.Map;
 @ApplicationScoped
 public class PublicInvoiceService {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(PublicInvoiceService.class.getName());
+
     @PersistenceContext
     @Nonnull
     protected EntityManager em;
@@ -61,9 +63,6 @@ public class PublicInvoiceService {
 
     @Inject @Nonnull
     private CierreCajaService cierreCajaService;
-
-    @Inject @Nonnull
-    private AlertasService alertasService;
 
     // ────────────────────────────────────────────────────────────────────
     // 1. getInvoicedInvoices — issued invoices list with pagination
@@ -92,8 +91,7 @@ public class PublicInvoiceService {
                 result.put("total", (long) data.size());
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting invoiced invoices: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getInvoicedInvoices()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting invoiced invoices: " + e.getMessage() + " | source=" + "PublicInvoiceService.getInvoicedInvoices()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             result.put("data", Collections.emptyList());
             result.put("total", 0L);
         }
@@ -127,8 +125,7 @@ public class PublicInvoiceService {
                 result.put("total", (long) data.size());
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting received invoices: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getReceivedInvoices()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting received invoices: " + e.getMessage() + " | source=" + "PublicInvoiceService.getReceivedInvoices()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             result.put("data", Collections.emptyList());
             result.put("total", 0L);
         }
@@ -151,8 +148,7 @@ public class PublicInvoiceService {
         try {
             return comprobantesEmitidosService.find(invoiceId);
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting invoice detail: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getInvoiceDetail()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting invoice detail: " + e.getMessage() + " | source=" + "PublicInvoiceService.getInvoiceDetail()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -187,8 +183,7 @@ public class PublicInvoiceService {
             summary.put("totalOtrosCargos", resumen.getTotalOtrosCargos());
             summary.put("totalComprobante", resumen.getTotalComprobante());
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting invoice summary: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getInvoiceSummary()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting invoice summary: " + e.getMessage() + " | source=" + "PublicInvoiceService.getInvoiceSummary()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
         return summary;
     }
@@ -213,8 +208,7 @@ public class PublicInvoiceService {
             }
             return invoice.getResumen().getMediosPago();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting payments: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getPayments()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting payments: " + e.getMessage() + " | source=" + "PublicInvoiceService.getPayments()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -248,8 +242,7 @@ public class PublicInvoiceService {
                 result.put("total", (long) data.size());
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting suppliers: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getSuppliers()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting suppliers: " + e.getMessage() + " | source=" + "PublicInvoiceService.getSuppliers()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             result.put("data", Collections.emptyList());
             result.put("total", 0L);
         }
@@ -308,8 +301,7 @@ public class PublicInvoiceService {
             result.put("totalValue", totalValue);
             result.put("itemCount", items.size());
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting inventory valuation: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getInventoryValuation()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting inventory valuation: " + e.getMessage() + " | source=" + "PublicInvoiceService.getInventoryValuation()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             result.put("items", Collections.emptyList());
             result.put("totalValue", BigDecimal.ZERO);
             result.put("itemCount", 0);
@@ -331,8 +323,7 @@ public class PublicInvoiceService {
         try {
             return tipoCambioService.getNewestTipoCambio();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting exchange rates: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getExchangeRates()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting exchange rates: " + e.getMessage() + " | source=" + "PublicInvoiceService.getExchangeRates()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -364,8 +355,7 @@ public class PublicInvoiceService {
                 result.put("total", (long) data.size());
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting cash register: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getCashRegister()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting cash register: " + e.getMessage() + " | source=" + "PublicInvoiceService.getCashRegister()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             result.put("data", Collections.emptyList());
             result.put("total", 0L);
         }
@@ -387,8 +377,7 @@ public class PublicInvoiceService {
             List<NotaCredito> notes = notaCreditoService.listAll();
             return notes != null ? notes : Collections.emptyList();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting credit notes: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getCreditNotes()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting credit notes: " + e.getMessage() + " | source=" + "PublicInvoiceService.getCreditNotes()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -449,8 +438,7 @@ public class PublicInvoiceService {
             result.put("data", margins);
             result.put("total", (long) total);
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error getting profit margins: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getProfitMargins()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting profit margins: " + e.getMessage() + " | source=" + "PublicInvoiceService.getProfitMargins()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             result.put("data", Collections.emptyList());
             result.put("total", 0L);
         }
@@ -519,8 +507,7 @@ public class PublicInvoiceService {
                 });
             return categories;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting sales by category: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getSalesByCategory()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting sales by category: " + e.getMessage() + " | source=" + "PublicInvoiceService.getSalesByCategory()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -573,8 +560,7 @@ public class PublicInvoiceService {
             result.put("data", summaries);
             result.put("total", (long) total);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error getting IVA summary: " + e.getMessage(),
-                null, 0, "PublicInvoiceService.getIVASummary()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error getting IVA summary: " + e.getMessage() + " | source=" + "PublicInvoiceService.getIVASummary()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             result.put("data", Collections.emptyList());
             result.put("total", 0L);
         }

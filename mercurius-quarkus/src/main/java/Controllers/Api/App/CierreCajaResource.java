@@ -5,7 +5,6 @@ import Models.DTO.ApiResponse;
 import Models.DTO.CierreCajaDTO;
 import Models.DTO.PagedResponse;
 import Models.Users;
-import Services.AlertasService;
 import Services.CierreCajaService;
 import Services.LoginService;
 import io.quarkus.qute.Location;
@@ -105,38 +104,27 @@ public class CierreCajaResource {
     private static final String DATE_PATTERN = "dd/MM/yyyy HH:mm";
     private static final String MONEY_SYMBOL = "\u20A1"; // colón
 
-    @Inject
     @Nonnull
     CierreCajaService cierreCajaService;
 
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertasService;
-
-    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
-    @Inject
     @Nonnull
     @Location("pages/caja/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/caja/estado-caja.html")
     Template estadoCaja;
 
-    @Inject
     @Nonnull
     @Location("pages/caja/tabla-historial.html")
     Template tablaHistorial;
@@ -212,9 +200,10 @@ public class CierreCajaResource {
 
             // Legacy alert text; deliberate deviation: the legacy controller
             // logged the field after nulling it (always "null").
-            alertasService.registrarAlerta("Caja abierta",
-                    "Sesion de caja abierta con monto inicial: " + monto.toPlainString(),
-                    usuario, 0, "CierreCajaResource.open()", null, null);
+            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Caja abierta", "Sesion de caja abierta con monto inicial: " + monto.toPlainString(),
+                    usuario != null ? usuario.getUsername() : "Sistema",
+                    0, "CierreCajaResource.open()", null, null));
 
             return Response.ok(ApiResponse.ok(toDTO(sesion))).build();
         } catch (Exception e) {
@@ -288,9 +277,10 @@ public class CierreCajaResource {
             sesionActual.setNotas(request == null ? null : request.notas);
             cierreCajaService.update(sesionActual);
 
-            alertasService.registrarAlerta("Caja cerrada",
-                    MSG_SESION_CERRADA + diferencia,
-                    usuario, 0, "CierreCajaResource.close()", null, null);
+            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
+                    "Caja cerrada", MSG_SESION_CERRADA + diferencia,
+                    usuario != null ? usuario.getUsername() : "Sistema",
+                    0, "CierreCajaResource.close()", null, null));
 
             boolean advertencia = diferencia.compareTo(BigDecimal.ZERO) != 0;
             CloseResult result = new CloseResult(

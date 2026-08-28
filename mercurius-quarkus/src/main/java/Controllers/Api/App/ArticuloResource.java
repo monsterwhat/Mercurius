@@ -14,7 +14,6 @@ import Models.Enums.Tipo_Codigo_Descuento;
 import Models.Familia;
 import Models.ProductoExoneracion;
 import Models.Users;
-import Services.AlertasService;
 import Services.ArticuloCarritoService;
 import Services.ArticuloPrecioService;
 import Services.ArticulosService;
@@ -174,102 +173,78 @@ public class ArticuloResource {
     static final String MSG_PROMO_RANGO_INVALIDO =
             "La fecha de fin debe ser posterior o igual a la fecha de inicio";
 
-    @Inject
     @Nonnull
     ArticulosService articulosService;
 
-    @Inject
     @Nonnull
     ArticuloPrecioService precioService;
 
-    @Inject
     @Nonnull
     DepartamentoService departamentoService;
 
-    @Inject
     @Nonnull
     FamiliaService familiaService;
 
-    @Inject
     @Nonnull
     InventarioService inventarioService;
 
-    @Inject
     @Nonnull
     PromocionesService promoService;
 
-    @Inject
     @Nonnull
     ArticuloCarritoService articuloCarritoService;
 
-    @Inject
     @Nonnull
     ProductoExoneracionService productoExoneracionService;
 
-    @Inject
     @Nonnull
     CabysService cabysService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
+    
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as CategoriaResource, T18).
-    @Inject
     @Nonnull
     @Location("pages/articulos/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/tabla-articulos.html")
     Template tablaArticulos;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/tabla-promociones.html")
     Template tablaPromociones;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/form-articulo.html")
     Template formArticulo;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/form-revision.html")
     Template formRevision;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/form-promocion.html")
     Template formPromocion;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/detalles.html")
     Template detallesArticulo;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/buscador-cabys.html")
     Template buscadorCabys;
 
-    @Inject
     @Nonnull
     @Location("pages/articulos/selector-articulos.html")
     Template selectorArticulos;
@@ -512,9 +487,7 @@ public class ArticuloResource {
                 productoExoneracionService.save(exoneracion);
             }
 
-            alertas.registrarAlerta("Artículo creado",
-                    "Se ha creado el artículo: " + nuevo.getNombre(), currentUser(), 0,
-                    "ArticuloResource.createArticulo", null, String.valueOf(nuevo.getCodigo()));
+                        LOG.info("Se ha creado el artículo: " + nuevo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createArticulo" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(String.valueOf(nuevo.getCodigo())));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/articulos/table?tab=" + TAB_ACTIVOS);
@@ -638,9 +611,7 @@ public class ArticuloResource {
                 }
             }
 
-            alertas.registrarAlerta("Artículo actualizado",
-                    "Se ha actualizado el artículo: " + articulo.getNombre(), currentUser(), 0,
-                    "ArticuloResource.updateArticulo", antes, DiffUtils.snapshotEntity(articulo));
+                        LOG.info("Se ha actualizado el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updateArticulo" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/articulos/table?tab=" + TAB_ACTIVOS);
@@ -678,9 +649,7 @@ public class ArticuloResource {
             }
             String antes = DiffUtils.snapshotEntity(articulo);
             articulosService.softDelete(articulo);
-            alertas.registrarAlerta("Artículo eliminado",
-                    "Se ha eliminado el artículo: " + articulo.getNombre(), currentUser(), 0,
-                    "ArticuloResource.deleteArticulo", antes, DiffUtils.snapshotEntity(articulo));
+                        LOG.info("Se ha eliminado el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.deleteArticulo" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
             if (isHxRequest()) {
                 return tableFragment(TAB_INACTIVOS, 1, 20, null, "asc", null,
                         "warn", "Se desactivo el artículo");
@@ -796,9 +765,7 @@ public class ArticuloResource {
 
             articulo.setProcessed(true);
             articulosService.update(articulo);
-            alertas.registrarAlerta("Artículo actualizado",
-                    "Se ha actualizado el artículo: " + articulo.getNombre(), currentUser(), 0,
-                    "ArticuloResource.updateArticuloRevision", antes, DiffUtils.snapshotEntity(articulo));
+                        LOG.info("Se ha actualizado el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updateArticuloRevision" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             boolean rapido = "rapido".equals(modo);
             if (isHxRequest()) {
@@ -844,9 +811,7 @@ public class ArticuloResource {
                 return notFound("No se encontró el artículo solicitado");
             }
             String antes = DiffUtils.snapshotEntity(articulo);
-            alertas.registrarAlerta("Artículo omitido",
-                    "Se ha omitido el artículo: " + articulo.getNombre(), currentUser(), 0,
-                    "ArticuloResource.skipCurrentArticle()", antes, DiffUtils.snapshotEntity(articulo));
+                        LOG.info("Se ha omitido el artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.skipCurrentArticle()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             List<Articulos> pendientes = orEmpty(articulosService.listAllSinProcesar());
             Articulos siguiente = pendientes.isEmpty() ? null : pendientes.get(0);
@@ -930,10 +895,7 @@ public class ArticuloResource {
             articulo.setPrecios(precios);
             articulosService.update(articulo);
 
-            alertas.registrarAlerta("Precio actualizado",
-                    "Se actualizó el precio del artículo: " + articulo.getNombre(),
-                    currentUser(), 0, "ArticuloResource.updatePrecio()", antes,
-                    DiffUtils.snapshotEntity(articulo));
+                        LOG.info("Se actualizó el precio del artículo: " + articulo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updatePrecio()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(articulo)));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/articulos/table?tab=" + TAB_CATALOGO);
@@ -957,21 +919,15 @@ public class ArticuloResource {
         }
         Users authUser = loginService.findByUsername(username.trim());
         if (authUser == null) {
-            alertas.registrarAlerta("Autorización Fallida",
-                    "Intento con usuario inexistente: " + username, null, 0,
-                    "ArticuloResource.isSupervisorAuthorized()", null, null);
+                        LOG.info("Intento con usuario inexistente: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             return false;
         }
         if (!Boolean.TRUE.equals(authUser.getStatus())) {
-            alertas.registrarAlerta("Autorización Fallida",
-                    "Intento con usuario deshabilitado: " + username, null, 0,
-                    "ArticuloResource.isSupervisorAuthorized()", null, null);
+                        LOG.info("Intento con usuario deshabilitado: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             return false;
         }
         if (!loginService.verifyPassword(password, authUser.getPassword())) {
-            alertas.registrarAlerta("Autorización Fallida",
-                    "Contraseña incorrecta de: " + username, null, 0,
-                    "ArticuloResource.isSupervisorAuthorized()", null, null);
+                        LOG.info("Contraseña incorrecta de: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             return false;
         }
         return true;
@@ -1141,9 +1097,7 @@ public class ArticuloResource {
             }
             String antes = DiffUtils.snapshotEntity(promo);
             promoService.delete(promo);
-            alertas.registrarAlerta("Promocion Eliminada",
-                    "Se elimino la promocion: " + promo.getNombre(), currentUser(), 0,
-                    "ArticuloResource.deletePromocion()", antes, null);
+                        LOG.info("Se elimino la promocion: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.deletePromocion()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(null));
             if (isHxRequest()) {
                 return tableFragment(TAB_PROMOCIONES, 1, 20, null, "asc", null,
                         "warn", "Se elimino la promocion");
@@ -1210,16 +1164,10 @@ public class ArticuloResource {
 
             if (id == null) {
                 promoService.create(promo);
-                alertas.registrarAlerta("Promoción Creada",
-                        "Se creó la promoción: " + promo.getNombre(), currentUser(), 0,
-                        "ArticuloResource.createPromocionByDialog()", null,
-                        String.valueOf(promo.getId()));
+                                LOG.info("Se creó la promoción: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.createPromocionByDialog()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(String.valueOf(promo.getId())));
             } else {
                 promoService.update(promo);
-                alertas.registrarAlerta("Promoción Actualizada",
-                        "Se actualizó la promoción: " + promo.getNombre(), currentUser(), 0,
-                        "ArticuloResource.updatePromocionByDialog()", antes,
-                        DiffUtils.snapshotEntity(promo));
+                                LOG.info("Se actualizó la promoción: " + promo.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "ArticuloResource.updatePromocionByDialog()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(promo)));
             }
 
             if (isHxRequest()) {

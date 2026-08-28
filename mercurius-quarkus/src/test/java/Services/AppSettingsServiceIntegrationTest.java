@@ -38,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *       ENTITY as id — only safe on a managed instance (em.contains==true).
  *       Tests therefore always call it right after create(), within the same
  *       persistence context.</li>
- *   <li>Services swallow PersistenceException into alertasService, so a
+ *   <li>Services swallow PersistenceException into LOG (quarkus logging), so a
  *       duplicate NombrePerfil insert through the service does NOT propagate.
  *       After such a failure PostgreSQL aborts the current transaction, which
  *       is why those scenarios perform NO further DB access.</li>
@@ -218,7 +218,7 @@ class AppSettingsServiceIntegrationTest {
 
     /**
      * Escenario 7 — contrato actual del servicio: create() traga la
-     * PersistenceException del duplicado (la registra en Alertas) y NO
+     * PersistenceException del duplicado (la registra en LOG (quarkus logging)) y NO
      * propaga la excepción al llamador. Sin más acceso a datos después del
      * intento (transacción abortada a nivel PostgreSQL).
      */

@@ -8,7 +8,6 @@ import Models.DTO.PagedResponse;
 import Models.DTO.PuntosTransaccionDTO;
 import Models.PuntosTransaccion;
 import Models.Users;
-import Services.AlertasService;
 import Services.AppSettingsService;
 import Services.ClientService;
 import Services.LoginService;
@@ -85,27 +84,19 @@ public class LoyaltyResource {
 
     private static final Logger LOG = Logger.getLogger(LoyaltyResource.class.getName());
 
-    @Inject
     @Nonnull
     LoyaltyService loyaltyService;
 
-    @Inject
     @Nonnull
     ClientService clientService;
 
-    @Inject
     @Nonnull
     AppSettingsService appSettingsService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertasService;
-
-    @Inject
+    
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
 
@@ -116,26 +107,21 @@ public class LoyaltyResource {
     private static final int TOP_LIMIT = 10;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
-    @Inject
     @Nonnull
     @Location("pages/loyalty/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/loyalty/tabla-top.html")
     Template tablaTop;
 
-    @Inject
     @Nonnull
     @Location("pages/loyalty/panel-ajustes.html")
     Template panelAjustes;
 
-    @Inject
     @Nonnull
     @Location("pages/loyalty/drawer-historial.html")
     Template drawerHistorial;
@@ -316,14 +302,7 @@ public class LoyaltyResource {
             // Deliberate deviation: legacy recorded settings.toString(); the
             // DiffUtils JSON snapshot matches SettingsDirController's
             // antes/despues convention and stays diffable.
-            alertasService.registrarAlerta(
-                    "Configuración de Lealtad Actualizada",
-                    "Se han actualizado las configuraciones del programa de lealtad",
-                    currentUserOrNull(),
-                    0,
-                    "LoyaltyResource.updateSettings()",
-                    null,
-                    DiffUtils.snapshotEntity(settings));
+                        LOG.info("Se han actualizado las configuraciones del programa de lealtad" + " | user=" + String.valueOf(currentUserOrNull()) + " | source=" + "LoyaltyResource.updateSettings()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(settings)));
 
             return Response.ok(ApiResponse.ok(new LoyaltySettingsResponse(
                     settings.getCashbackPercentage(),

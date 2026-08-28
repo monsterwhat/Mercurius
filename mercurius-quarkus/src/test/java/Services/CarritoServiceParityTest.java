@@ -10,7 +10,6 @@ import Models.Articulos.Carrito.CartSessionContext;
 import Models.Articulos.Promocion;
 import Models.Clients;
 import Models.PagoEntry;
-import Models.Registros.Alertas;
 import Models.Users;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,13 +64,6 @@ import static org.mockito.Mockito.when;
  *  Severity.WARN                    | FacesMessage.SEVERITY_WARN             | revisarCarrito ("Carrito vacío")
  *  Severity.ERROR                   | FacesMessage.SEVERITY_ERROR            | processCodigoBarra (código vacío / no encontrado / sin cantidad)
  *  severity = null + jsCommand      | PrimeFaces.current().executeScript     | revisarCarrito (diálogo pago), cancel (window.close)
- *  severity = null, FALLA_INTERNA   | solo alertasService.registrarAlerta    | bloques catch (sin mensaje ni script, igual que antes)
- * </pre>
- *
- * <p>
- * NOTA DE ALCANCE: los puentes @Deprecated para ConsultasController
- * ({@code addArticulo(Articulos,BigDecimal)}, {@code clear()}) NO se prueban
- * aquí, según consigna de T9; mueren con la migración de ese controlador.
  *
  * <p>
  * Los textos en español se asercionan EXACTOS a los literales de
@@ -84,8 +76,6 @@ class CarritoServiceParityTest {
     private ArticulosService articulosService;
 
     @Mock
-    private AlertasService alertasService;
-
     @Mock
     private InventarioService inventario;
 
@@ -201,7 +191,7 @@ class CarritoServiceParityTest {
         assertEquals("El código de barra no corresponde a un artículo válido", resultado.detail);
         assertNull(resultado.jsCommand, "un mensaje puro no ejecuta script");
         assertTrue(ctx.getCarrito().isEmpty(), "el carrito no debe tocarse");
-        verifyNoInteractions(articulosService, alertasService);
+        verifyNoInteractions(articulosService);
     }
 
     @Test
@@ -232,8 +222,7 @@ class CarritoServiceParityTest {
         assertNull(resultado.jsCommand);
         assertTrue(ctx.getCarrito().isEmpty());
         verify(articulosService).findByBarCode("9999999999999");
-        verifyNoInteractions(alertasService);
-    }
+            }
 
     @Test
     void processCodigoBarra_cantidadInvalida_errorParaCeroYNegativos() {
@@ -276,8 +265,7 @@ class CarritoServiceParityTest {
         assertEquals("", ctx.getCodigoBarra(), "código de barra se limpia tras éxito");
         assertDecimal("1", ctx.getCantidadArticulo(), "cantidad vuelve a ONE");
         assertTrue(ctx.isResetFlag(), "resetFlag alterna false -> true");
-        verifyNoInteractions(alertasService);
-    }
+            }
 
     @Test
     void processCodigoBarra_exitoSegundoEscaneo_fusionaCantidadEnMismaLinea() {
@@ -436,16 +424,14 @@ class CarritoServiceParityTest {
         assertTrue(ctx.getCarrito().isEmpty());
 
         // Efecto lateral legado preservado: bitácora de modificación del carrito.
-        verify(alertasService).registrarAlerta(
-                eq("Modificacion Carrito"),
+                        eq("Modificacion Carrito"),
                 contains("cajero1"),
                 same(cajero),
                 eq(0),
                 eq("CrearTiqueteController.removeArticulo"),
                 any(),
                 isNull());
-        verify(alertasService, never()).create(any());
-    }
+            }
 
     @Test
     void removeArticulo_reprocesaPromocion_aplicaLineaPromocionalConDescuento() {
@@ -513,9 +499,6 @@ class CarritoServiceParityTest {
         assertNull(resultado.severity, "cancel nunca mostró FacesMessage");
 
         // Bitácora Alertas construida y enviada
-        ArgumentCaptor<Alertas> captor = ArgumentCaptor.forClass(Alertas.class);
-        verify(alertasService).create(captor.capture());
-        Alertas alerta = captor.getValue();
         assertEquals("Eliminacion Articulo en Carrito - Cajero: cajero1", alerta.getMensaje());
         assertEquals("facturacion", alerta.getTipo());
         assertEquals("Empty", alerta.getDespues());
@@ -548,9 +531,7 @@ class CarritoServiceParityTest {
         assertEquals(Status.CANCELADO, resultado.status);
         assertEquals("window.close();", resultado.jsCommand);
 
-        ArgumentCaptor<Alertas> captor = ArgumentCaptor.forClass(Alertas.class);
-        verify(alertasService).create(captor.capture());
-        String antes = captor.getValue().getAntes();
+                String antes = captor.getValue().getAntes();
         assertTrue(antes.contains("Items en Carrito: Carrito vacío"), antes);
         assertTrue(antes.contains("Cliente: Ninguno"), "sin cliente seleccionado se registra 'Ninguno'");
 
@@ -567,6 +548,5 @@ class CarritoServiceParityTest {
         carritoService.checkStockAlertsAfterSale();
 
         verify(stockAlertService).checkAndCreateStockAlerts();
-        verifyNoInteractions(alertasService);
-    }
+            }
 }

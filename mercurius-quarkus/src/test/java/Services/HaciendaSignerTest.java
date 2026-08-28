@@ -104,7 +104,6 @@ class HaciendaSignerTest {
         signer.xsdValidator = mockValidator;
 
         // Mock alertas service (no-op)
-        signer.alertasService = mock(AlertasService.class);
     }
 
     // ── calcularDigitoVerificador ─────────────────────────────────────────

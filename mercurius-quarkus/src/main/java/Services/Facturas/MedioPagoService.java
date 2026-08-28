@@ -16,6 +16,8 @@ import jakarta.transaction.Transactional;
 
 @ApplicationScoped
 public class MedioPagoService extends GService<MedioPago>  {
+
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(MedioPagoService.class.getName());
     
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -31,7 +33,7 @@ public class MedioPagoService extends GService<MedioPago>  {
         try {
             em.persist(medioPago);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating Entity!", null, 0, "MedioPagoService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "MedioPagoService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     

@@ -17,6 +17,8 @@ import java.util.List;
 @Named 
 @ApplicationScoped
 public class DetalleServicioService extends GService<DetalleServicio> {
+
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(DetalleServicioService.class.getName());
     
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -36,7 +38,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "DetalleServicioService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -51,10 +53,10 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "DetalleServicioService.delete()", null, null);
+                                LOG.info("Entity not found for delete" + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "DetalleServicioService.delete()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -64,7 +66,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "DetalleServicioService.update()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.update()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     
@@ -82,7 +84,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "DetalleServicioService.listAll()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "DetalleServicioService.listAll()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -101,7 +103,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "DetalleServicioService.ListAllEnabled()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "DetalleServicioService.ListAllEnabled()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

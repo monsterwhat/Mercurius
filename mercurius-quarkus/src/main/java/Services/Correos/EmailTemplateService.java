@@ -17,6 +17,8 @@ import java.util.Map;
 @ApplicationScoped
 public class EmailTemplateService extends GService<EmailTemplate> {
 
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(EmailTemplateService.class.getName());
+
     @Override
     @Nonnull
     protected Class<EmailTemplate> getEntityClass() {
@@ -32,7 +34,7 @@ public class EmailTemplateService extends GService<EmailTemplate> {
             List<EmailTemplate> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding template by name: " + e.getMessage(), null, 0, "EmailTemplateService.findByNombre()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding template by name: " + e.getMessage() + " | source=" + "EmailTemplateService.findByNombre()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -47,7 +49,7 @@ public class EmailTemplateService extends GService<EmailTemplate> {
             List<EmailTemplate> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding active template by type: " + e.getMessage(), null, 0, "EmailTemplateService.findActivoByTipo()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding active template by type: " + e.getMessage() + " | source=" + "EmailTemplateService.findActivoByTipo()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -60,7 +62,7 @@ public class EmailTemplateService extends GService<EmailTemplate> {
             query.setParameter("tipo", tipo);
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding templates by type: " + e.getMessage(), null, 0, "EmailTemplateService.findByTipo()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding templates by type: " + e.getMessage() + " | source=" + "EmailTemplateService.findByTipo()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return List.of();
         }
     }
@@ -97,7 +99,7 @@ public class EmailTemplateService extends GService<EmailTemplate> {
             em.persist(template);
             return true;
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating template: " + e.getMessage(), null, 0, "EmailTemplateService.createIfNotExists()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating template: " + e.getMessage() + " | source=" + "EmailTemplateService.createIfNotExists()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }

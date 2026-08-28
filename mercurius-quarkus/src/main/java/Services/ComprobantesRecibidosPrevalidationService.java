@@ -45,9 +45,6 @@ public class ComprobantesRecibidosPrevalidationService {
     private ComprobantesRecibidosService comprobantesRecibidosService;
 
     @Inject @Nonnull
-    private AlertasService alertasService;
-
-    @Inject @Nonnull
     private PrevalidationConfigService prevalidationConfigService;
 
     @PostConstruct

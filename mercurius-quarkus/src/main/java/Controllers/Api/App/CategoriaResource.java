@@ -10,7 +10,6 @@ import Models.DTO.PagedResponse;
 import Models.Enums.Tipo_SoftDelete;
 import Models.Familia;
 import Models.Users;
-import Services.AlertasService;
 import Services.DepartamentoMetricoService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
@@ -127,58 +126,44 @@ public class CategoriaResource {
     /** Legacy duplicate-name warning parity (FamiliaController.createFamiliaDialog). */
     private static final String MSG_FAMILIA_DUPLICADA = "Ya existe una familia con ese nombre!";
 
-    @Inject
     @Nonnull
     DepartamentoService departamentoService;
 
-    @Inject
     @Nonnull
     FamiliaService familiaService;
 
-    @Inject
     @Nonnull
     DepartamentoMetricoService departamentoMetricoService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
+    
     @Nonnull
     LoginService loginService;
 
-    @Inject
     @Nonnull
     SecurityIdentity identity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // Templates (rendered to String: no quarkus-rest-qute MessageBodyWriter
     // on this stack — same approach as LoginPageResource, T14).
-    @Inject
     @Nonnull
     @Location("pages/categorias/index.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/categorias/tabla-familias.html")
     Template tablaFamilias;
 
-    @Inject
     @Nonnull
     @Location("pages/categorias/tabla-departamentos.html")
     Template tablaDepartamentos;
 
-    @Inject
     @Nonnull
     @Location("pages/categorias/form-familia.html")
     Template formFamilia;
 
-    @Inject
     @Nonnull
     @Location("pages/categorias/form-departamento.html")
     Template formDepartamento;
@@ -305,9 +290,7 @@ public class CategoriaResource {
             if (!created) {
                 return formFailure(TAB_FAMILIAS, "crear", "warn", MSG_FAMILIA_DUPLICADA);
             }
-            alertas.registrarAlerta("Familia creada",
-                    "Se ha creado la familia: " + nombre, currentUser(), 0,
-                    "CategoriaResource.createFamilia", null, familia.toString());
+                        LOG.info("Se ha creado la familia: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.createFamilia" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(familia.toString()));
             if (isHxRequest()) {
                 // Success in the dialog flow: send the client back to the
                 // page so table, counters and modal state reset (ui-kit §5).
@@ -365,9 +348,7 @@ public class CategoriaResource {
             existing.setUsuario(currentUser());
             existing.setFecha(new Date());
             familiaService.updateAndDisable(existing);
-            alertas.registrarAlerta("Familia actualizada",
-                    "Se ha actualizado la familia: " + nombre, currentUser(), 0,
-                    "CategoriaResource.updateFamilia", antes, DiffUtils.snapshotEntity(existing));
+                        LOG.info("Se ha actualizado la familia: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.updateFamilia" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(existing)));
             if (isHxRequest()) {
                 return hxRedirect("/api/app/categorias/table?tab=" + TAB_FAMILIAS);
             }
@@ -411,9 +392,7 @@ public class CategoriaResource {
             }
             String mensaje = resultado == Tipo_SoftDelete.DEACTIVATED
                     ? "Se desactivo la familia!" : "Se activo la familia!";
-            alertas.registrarAlerta("Familia eliminada",
-                    "Se ha eliminado la familia: " + existing.getNombre(), currentUser(), 0,
-                    "CategoriaResource.softDeleteFamilia", antes, DiffUtils.snapshotEntity(existing));
+                        LOG.info("Se ha eliminado la familia: " + existing.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.softDeleteFamilia" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(existing)));
             if (isHxRequest()) {
                 return tableFragment(TAB_FAMILIAS, 1, 20, null, "asc", null,
                         resultado == Tipo_SoftDelete.DEACTIVATED ? "warn" : "info", mensaje);
@@ -490,9 +469,7 @@ public class CategoriaResource {
             departamento.setStatus(true); // legacy: newDepartamento.setStatus(true)
             departamento.setUsuario(currentUser());
             departamentoService.create(departamento);
-            alertas.registrarAlerta("Departamento Creado",
-                    "Se creó el departamento: " + nombre, currentUser(), 0,
-                    "CategoriaResource.createDepartamento", "", departamento.toString());
+                        LOG.info("Se creó el departamento: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.createDepartamento" + " | antes=" + String.valueOf("") + " | despues=" + String.valueOf(departamento.toString()));
             if (isHxRequest()) {
                 return hxRedirect("/api/app/categorias/table?tab=" + TAB_DEPARTAMENTOS);
             }
@@ -569,9 +546,7 @@ public class CategoriaResource {
             existing.setNotas(notas);
             existing.setUsuario(currentUser());
             departamentoService.update(existing);
-            alertas.registrarAlerta("Departamento Actualizado",
-                    "Se actualizó el departamento: " + nombre, currentUser(), 0,
-                    "CategoriaResource.updateDepartamento", antes, DiffUtils.snapshotEntity(existing));
+                        LOG.info("Se actualizó el departamento: " + nombre + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.updateDepartamento" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(existing)));
             if (isHxRequest()) {
                 return hxRedirect("/api/app/categorias/table?tab=" + TAB_DEPARTAMENTOS);
             }
@@ -610,9 +585,7 @@ public class CategoriaResource {
             }
             String mensaje = resultado == Tipo_SoftDelete.DEACTIVATED
                     ? "Se desactivo el departamento!" : "Se activo el departamento!";
-            alertas.registrarAlerta("Departamento Eliminado",
-                    "Se eliminó el departamento: " + existing.getNombre(), currentUser(), 0,
-                    "CategoriaResource.softDeleteDepartamento", antes, DiffUtils.snapshotEntity(existing));
+                        LOG.info("Se eliminó el departamento: " + existing.getNombre() + " | user=" + String.valueOf(currentUser()) + " | source=" + "CategoriaResource.softDeleteDepartamento" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(existing)));
             if (isHxRequest()) {
                 return tableFragment(TAB_DEPARTAMENTOS, 1, 20, null, "asc", null,
                         resultado == Tipo_SoftDelete.DEACTIVATED ? "warn" : "info", mensaje);

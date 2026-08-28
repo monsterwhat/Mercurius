@@ -6,7 +6,6 @@ import Models.DTO.EmailTemplateDTO;
 import Models.DTO.PagedResponse;
 import Models.Correos.EmailTemplateTipo;
 import Models.Users;
-import Services.AlertasService;
 import Services.Correos.EmailTemplateService;
 import Services.LoginService;
 import Utils.DiffUtils;
@@ -105,41 +104,31 @@ public class EmailTemplateResource {
 
     private static final Logger LOG = Logger.getLogger(EmailTemplateResource.class.getName());
 
-    @Inject
     @Nonnull
     EmailTemplateService emailTemplateService;
 
-    @Inject
     @Nonnull
     LoginService loginService;
 
-    @Inject
-    @Nonnull
-    AlertasService alertas;
-
-    @Inject
+    
     @Nonnull
     SecurityIdentity securityIdentity;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
-    @Inject
     @Nonnull
     RoutingContext routing;
 
     // View-half templates (W4B-CORREOS). Rendered to String: no
     // quarkus-rest-qute MessageBodyWriter on this stack — same approach as
     // CategoriaResource/T18 and LoginPageResource/T14.
-    @Inject
     @Nonnull
     @Location("pages/correos/templates.html")
     Template pageIndex;
 
-    @Inject
     @Nonnull
     @Location("pages/correos/tabla-plantillas.html")
     Template tablaPlantillas;
 
-    @Inject
     @Nonnull
     @Location("pages/correos/form-plantilla.html")
     Template formPlantilla;
@@ -277,10 +266,7 @@ public class EmailTemplateResource {
 
             emailTemplateService.create(template);
 
-            alertas.registrarAlerta("Plantilla de correo creada",
-                    "Se ha creado la plantilla de correo: " + template.getNombre(),
-                    null, 0, "EmailTemplateResource.create()",
-                    null, DiffUtils.snapshotEntity(template));
+                        LOG.info("Se ha creado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(template)))
@@ -349,10 +335,7 @@ public class EmailTemplateResource {
 
             emailTemplateService.update(template);
 
-            alertas.registrarAlerta("Plantilla de correo actualizada",
-                    "Se ha actualizado la plantilla de correo: " + template.getNombre(),
-                    null, 0, "EmailTemplateResource.update()",
-                    antes, DiffUtils.snapshotEntity(template));
+                        LOG.info("Se ha actualizado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.update()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             return Response.ok(ApiResponse.ok(toDTO(template))).build();
         } catch (Exception e) {
@@ -388,10 +371,7 @@ public class EmailTemplateResource {
             String antes = DiffUtils.snapshotEntity(template);
             emailTemplateService.delete(template);
 
-            alertas.registrarAlerta("Plantilla de correo eliminada",
-                    "Se ha eliminado la plantilla de correo: " + template.getNombre(),
-                    null, 0, "EmailTemplateResource.delete()",
-                    antes, null);
+                        LOG.info("Se ha eliminado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.delete()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(null));
 
             // View-half branch (docs/ui-kit.md §2.9 dual-mode contract): HTMX
             // callers get the refreshed table fragment plus an out-of-band
@@ -537,10 +517,7 @@ public class EmailTemplateResource {
 
             emailTemplateService.create(template);
 
-            alertas.registrarAlerta("Plantilla de correo creada",
-                    "Se ha creado la plantilla de correo: " + template.getNombre(),
-                    null, 0, "EmailTemplateResource.createPlantillaForm()",
-                    null, DiffUtils.snapshotEntity(template));
+                        LOG.info("Se ha creado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.createPlantillaForm()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/email-templates/table");
@@ -607,10 +584,7 @@ public class EmailTemplateResource {
 
             emailTemplateService.update(template);
 
-            alertas.registrarAlerta("Plantilla de correo actualizada",
-                    "Se ha actualizado la plantilla de correo: " + template.getNombre(),
-                    null, 0, "EmailTemplateResource.updatePlantillaForm()",
-                    antes, DiffUtils.snapshotEntity(template));
+                        LOG.info("Se ha actualizado la plantilla de correo: " + template.getNombre() + " | source=" + "EmailTemplateResource.updatePlantillaForm()" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(template)));
 
             if (isHxRequest()) {
                 return hxRedirect("/api/app/email-templates/table");

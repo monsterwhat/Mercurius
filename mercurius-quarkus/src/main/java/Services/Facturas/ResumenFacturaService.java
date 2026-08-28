@@ -17,6 +17,8 @@ import java.util.List;
 @Named
 @ApplicationScoped
 public class ResumenFacturaService extends GService<ResumenFactura>  {
+
+    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ResumenFacturaService.class.getName());
     @PersistenceContext @Nonnull EntityManager em;
 
     @Override
@@ -34,7 +36,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error creating entity: " + e.getMessage(), null, 0, "ResumenFacturaService.create()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "ResumenFacturaService.create()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -49,10 +51,10 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
             if (entity != null) {
                 em.remove(entity);
             } else {
-                alertasService.registrarAlerta("Info", "Entity not found for delete", null, 0, "ResumenFacturaService.delete()", null, null);
+                                LOG.info("Entity not found for delete" + " | source=" + "ResumenFacturaService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(null));
             }
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage(), null, 0, "ResumenFacturaService.delete()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "ResumenFacturaService.delete()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -62,7 +64,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error updating entity: " + e.getMessage(), null, 0, "ResumenFacturaService.update()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "ResumenFacturaService.update()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -72,7 +74,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
             TypedQuery<ResumenFactura> query = em.createQuery("SELECT d FROM ResumenFactura d", ResumenFactura.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all entities: " + e.getMessage(), null, 0, "ResumenFacturaService.listAll()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "ResumenFacturaService.listAll()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -81,7 +83,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
     try {
         return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error finding entity by ID: " + e.getMessage(), null, 0, "ResumenFacturaService.findById()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=" + "ResumenFacturaService.findById()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -91,7 +93,7 @@ public class ResumenFacturaService extends GService<ResumenFactura>  {
             TypedQuery<ResumenFactura> query = em.createQuery("SELECT a FROM ResumenFactura a WHERE a.status = true", ResumenFactura.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            alertasService.registrarAlerta("Error", "Error listing all enabled entities: " + e.getMessage(), null, 0, "ResumenFacturaService.ListAllEnabled()", null, e.getMessage());
+                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "ResumenFacturaService.ListAllEnabled()" + " | antes=" + String.valueOf(null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

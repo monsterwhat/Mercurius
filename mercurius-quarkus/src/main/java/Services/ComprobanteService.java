@@ -63,6 +63,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import Services.EmailService;
 import Services.AppSettingsService;
 import Services.ConsecutivoEmitidoService;
@@ -77,11 +78,11 @@ import Models.Users;
 @ApplicationScoped
 public class ComprobanteService implements Serializable {
 
+    private static final Logger LOG = Logger.getLogger(ComprobanteService.class.getName());
+
     @Inject
     private @Nonnull HaciendaServiceFacade haciendaServiceFacade;
 
-    @Inject
-    private @Nonnull AlertasService alertasService;
     @Inject
     private @Nonnull EncabezadoService encabezadoService;
     @Inject
@@ -270,15 +271,15 @@ public class ComprobanteService implements Serializable {
                 try {
                     loyaltyService.earnPoints(selectedClient, totalAmount, facturaReferencia, currentUser);
                 } catch (RuntimeException e) {
-                    alertasService.registrarAlerta("Error Loyalty", "Error al agregar puntos de lealtad: " + e.getMessage(), currentUser, 0, "crearComprobante()", null, e.getMessage());
-                    alertasService.registrarAlerta("Error", "Error adding loyalty points: " + e.getMessage(), currentUser, 0, "crearComprobante()", null, e.getMessage());
+                    LOG.log(java.util.logging.Level.WARNING, "Error al agregar puntos de lealtad: " + e.getMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
+                    LOG.log(java.util.logging.Level.WARNING, "Error adding loyalty points: " + e.getMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
                 }
             }
             
             return result;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error Comprobante", "Error al crear comprobante: " + e.getMessage(), currentUser, 0, "crearComprobante()", null, e.getMessage());
-            alertasService.registrarAlerta("Error", "Error: " + e.getLocalizedMessage(), currentUser, 0, "crearComprobante()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error al crear comprobante: " + e.getMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getLocalizedMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
             return null;
         }
 
@@ -295,15 +296,15 @@ public class ComprobanteService implements Serializable {
         try {
             AppSettings appSettings = appSettingsService.returnCurrent();
             if (appSettings == null) {
-                alertasService.registrarAlerta("Error", "No hay configuracion de Hacienda para enviar comprobante", null, 0,
-                    "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "No hay configuracion de Hacienda para enviar comprobante"
+                    + " | source=ComprobanteService.enviarComprobanteAHacienda()");
                 return false;
             }
 
             String clave = comprobante.getHaciendaClave();
             if (clave == null || clave.isEmpty()) {
-                alertasService.registrarAlerta("Error", "Comprobante sin clave de Hacienda", null, 0,
-                    "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "Comprobante sin clave de Hacienda"
+                    + " | source=ComprobanteService.enviarComprobanteAHacienda()");
                 return false;
             }
 
@@ -314,8 +315,8 @@ public class ComprobanteService implements Serializable {
             // ──────────────────────────────────────────────────────────────
 
             String provider = haciendaServiceFacade.isFidesEnabled() ? "Fides" : "Hacienda directa";
-            alertasService.registrarAlerta("Hacienda", "Enviando comprobante " + clave + " via " + provider,
-                null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+            LOG.info("Enviando comprobante " + clave + " via " + provider
+                + " | source=ComprobanteService.enviarComprobanteAHacienda()");
 
             comprobante.setHaciendaEstado("ENVIADO");
             if (comprobante.getEncabezado() != null) {
@@ -333,8 +334,8 @@ public class ComprobanteService implements Serializable {
                     comprobante.getEncabezado().setEstado("ACEPTADO");
                 }
                 comprobantesEmitidosService.update(comprobante);
-                alertasService.registrarAlerta("Hacienda", "Comprobante " + (comprobante.getEncabezado() != null ? comprobante.getEncabezado().getNumeroConsecutivo() : clave) + " aceptado por Hacienda",
-                    null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, null);
+                LOG.info("Comprobante " + (comprobante.getEncabezado() != null ? comprobante.getEncabezado().getNumeroConsecutivo() : clave) + " aceptado por Hacienda"
+                    + " | source=ComprobanteService.enviarComprobanteAHacienda()");
                 return true;
             } else {
                 if (comprobante.getEncabezado() != null) {
@@ -342,13 +343,15 @@ public class ComprobanteService implements Serializable {
                     comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
                 }
                 comprobantesEmitidosService.update(comprobante);
-                alertasService.registrarAlerta("Hacienda", "Hacienda rechazo comprobante: " + result.errorMessage,
-                    null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, result.errorMessage);
+                LOG.info("Hacienda rechazo comprobante: " + result.errorMessage
+                    + " | source=ComprobanteService.enviarComprobanteAHacienda()"
+                    + " | despues=" + result.errorMessage);
                 return false;
             }
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error al enviar comprobante a Hacienda: " + e.getMessage(),
-                null, 0, "ComprobanteService.enviarComprobanteAHacienda()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error al enviar comprobante a Hacienda: " + e.getMessage()
+                + " | source=ComprobanteService.enviarComprobanteAHacienda()"
+                + " | despues=" + e.getMessage());
             return false;
         }
     }
@@ -470,7 +473,7 @@ public class ComprobanteService implements Serializable {
             }
             return resumen;
         } catch (RuntimeException e) {
-alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tiquete: " + e.getMessage(), null, 0, "resumenComprobante()", null, e.getMessage());
+LOG.log(java.util.logging.Level.WARNING, "Error al crear resumen de tiquete: " + e.getMessage() + " | source=resumenComprobante() | despues=" + e.getMessage());
             return null;
         }
 
@@ -707,7 +710,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
             detalles.setStatus(true);
             return detalles;
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error Detalles", "Error al crear detalles de tiquete: " + e.getMessage(), null, 0, "detallesComprobante()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error al crear detalles de tiquete: " + e.getMessage() + " | source=detallesComprobante() | despues=" + e.getMessage());
             return null;
         }
 
@@ -751,7 +754,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
             xml.append("</MensajeReceptor>");
             return xml.toString();
         } catch (RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error generating MensajeReceptor XML: " + e.getMessage(), null, 0, "ComprobanteService.generateMensajeReceptorXml()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error generating MensajeReceptor XML: " + e.getMessage() + " | source=ComprobanteService.generateMensajeReceptorXml() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -768,13 +771,13 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
     public void enviarFacturaACliente(ComprobantesEmitidos tiqueteElectronico, Clients cliente, Users user, BigDecimal pago, BigDecimal vuelto, List<PagoEntry> pagos) {
         try {
             if (cliente == null || cliente.getEmail() == null || cliente.getEmail().isEmpty()) {
-                alertasService.registrarAlerta("Info", "Cliente sin email, no se envia factura: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo(), null, 0, "ComprobanteService.enviarFacturaACliente()", null, null);
+                LOG.info("Cliente sin email, no se envia factura: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo() + " | source=ComprobanteService.enviarFacturaACliente()");
                 return;
             }
 
             AppSettings settings = appSettingsService.returnCurrent();
             if (settings == null) {
-                alertasService.registrarAlerta("Error", "No hay configuracion de Hacienda para enviar factura", null, 0, "ComprobanteService.enviarFacturaACliente()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "No hay configuracion de Hacienda para enviar factura | source=ComprobanteService.enviarFacturaACliente()");
                 return;
             }
 
@@ -783,7 +786,7 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
                 new ArrayList<>(), cliente, user, pago, vuelto, pagos);
             String pdfUrl = pdfGenerator.getPdfUrl();
             if (pdfUrl == null || pdfUrl.isEmpty()) {
-                alertasService.registrarAlerta("Error", "No se pudo generar PDF para envio", null, 0, "ComprobanteService.enviarFacturaACliente()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "No se pudo generar PDF para envio | source=ComprobanteService.enviarFacturaACliente()");
                 return;
             }
 
@@ -795,12 +798,13 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
             try {
                 xmlContent = strategy.buildXml(tiqueteElectronico);
             } catch (jakarta.xml.bind.JAXBException e) {
-                alertasService.registrarAlerta("Error", "Error generating XML for invoice: " + e.getMessage(), null, 0,
-                    "ComprobanteService.enviarFacturaACliente()", null, e.getMessage());
+                LOG.log(java.util.logging.Level.WARNING, "Error generating XML for invoice: " + e.getMessage()
+                    + " | source=ComprobanteService.enviarFacturaACliente()"
+                    + " | despues=" + e.getMessage());
                 return;
             }
             if (xmlContent == null) {
-                alertasService.registrarAlerta("Error", "No se pudo generar XML para envio", null, 0, "ComprobanteService.enviarFacturaACliente()", null, null);
+                LOG.log(java.util.logging.Level.WARNING, "No se pudo generar XML para envio | source=ComprobanteService.enviarFacturaACliente()");
                 return;
             }
 
@@ -839,14 +843,14 @@ alertasService.registrarAlerta("Error Resumen", "Error al crear resumen de tique
             emailService.sendEmailsWithAttachments(recipients, subject, body, 
                 settings.getCorreoElectronico(), settings.getContrasenaCorreo(), 
                 attachments, result -> {
-                    alertasService.registrarAlerta("Email", "Resultado envio factura a cliente: " + result, null, 0, "ComprobanteService.enviarFacturaACliente()", null, null);
+                    LOG.info("Resultado envio factura a cliente: " + result + " | source=ComprobanteService.enviarFacturaACliente()");
                     // Clean up temp files
                     pdfFile.delete();
                     xmlFile.delete();
                 });
 
         } catch (IOException | RuntimeException e) {
-            alertasService.registrarAlerta("Error", "Error enviando factura a cliente: " + e.getMessage(), null, 0, "ComprobanteService.enviarFacturaACliente()", null, e.getMessage());
+            LOG.log(java.util.logging.Level.WARNING, "Error enviando factura a cliente: " + e.getMessage() + " | source=ComprobanteService.enviarFacturaACliente() | despues=" + e.getMessage());
         }
     }
 
