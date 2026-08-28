@@ -64,7 +64,7 @@
       that pass no toasts render an empty container instead of failing.
     !}
     <div id="toast-container" aria-live="polite" aria-atomic="false"
-         style="position: fixed; top: 1rem; right: 1rem; z-index: 1000; width: 22rem;">
+         style="position: fixed; top: 1rem; right: 1rem; z-index: 1000; width: min(22rem, calc(100vw - 2rem)); max-width: 22rem;">
         {#if toasts??}
             {#include fragments/toasts /}
         {/if}

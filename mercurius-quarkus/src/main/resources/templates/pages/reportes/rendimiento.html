@@ -74,11 +74,13 @@
 
         <div class="box mt-4">
             <p class="title is-5">Ventas por Departamento</p>
-            <canvas id="grafica-rendimiento" width="900" height="320"
+            <div style="width:100%; overflow-x:auto;">
+            <canvas id="grafica-rendimiento" width="900" height="320" style="max-width:100%; height:auto; display:block;"
                     data-root="/Mercurius"
                     data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
                 Su navegador no soporta canvas.
             </canvas>
+            </div>
         </div>
 
         <script>
