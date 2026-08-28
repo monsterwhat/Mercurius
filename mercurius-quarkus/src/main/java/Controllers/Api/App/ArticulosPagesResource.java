@@ -11,22 +11,47 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * HTML page of the Artículos module for the NEW Qute/HTMX app surface:
+ * {@code GET /app/articulos} — the five-tab board (Activos / Inactivos /
+ * Catálogo / Pendientes / Promociones). This class only renders HTML; all
+ * reads/actions live in the JSON twin {@link ArticuloResource}
+ * ({@code /api/app/articulos}), whose full-page model is reused here so page
+ * and fragments can never disagree (same split as Recibos/Devoluciones).
+ */
 @Path("/app/articulos")
 @Produces(MediaType.TEXT_HTML)
 @RolesAllowed({"admin", "inventario"})
 public class ArticulosPagesResource {
     private static final Logger LOG = Logger.getLogger(ArticulosPagesResource.class.getName());
-    @Inject @Nonnull @Location("pages/articulos/index") Template page;
-    @GET public Response index() {
+
+    @Inject
+    @Nonnull
+    ArticuloResource articulos;
+
+    @Inject
+    @Nonnull
+    @Location("pages/articulos/index")
+    Template page;
+
+    @GET
+    public Response index() {
         try {
-            TemplateInstance i = page.instance();
-            return Response.ok(i.render()).type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+            Map<String, Object> model = articulos.fullPageModel();
+            TemplateInstance instance = page.instance();
+            model.forEach(instance::data);
+            return Response.ok(instance.render())
+                    .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando articulos", e);
-            return Response.ok("<html><body><h1>Articulos</h1><p>Vista articulos (datos no disponibles en placeholder)</p><a href=\"/Mercurius/app\">Inicio</a></body></html>").type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+            LOG.log(Level.WARNING, "Error renderizando la página de artículos", e);
+            return Response.serverError()
+                    .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
+                            "No se pudieron cargar los artículos"))
+                    .build();
         }
     }
 }

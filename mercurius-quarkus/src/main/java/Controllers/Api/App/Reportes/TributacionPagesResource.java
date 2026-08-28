@@ -113,6 +113,34 @@ public class TributacionPagesResource {
     @Location("pages/tributacion/declaracion")
     Template declaracionPage;
 
+    @Inject
+    @Nonnull
+    @Location("pages/tributacion/index")
+    Template indexPage;
+
+    // ════════════════════════════════════════════════════════════════════
+    // Landing page (legacy Tributacion/index.xhtml)
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * Gestión Tributaria landing page — the route the T11 navbar reserved
+     * ({@code /app/tributacion}) before the sub-pages landed. Renders
+     * {@code pages/tributacion/index.html} with the same invoice counters as
+     * the dashboard.
+     */
+    @GET
+    @Operation(summary = "Gestión Tributaria landing page")
+    public Response index() {
+        try {
+            TemplateInstance instance = indexPage.instance();
+            indexModel().forEach(instance::data);
+            return htmlOk(instance);
+        } catch (RuntimeException e) {
+            LOG.log(Level.WARNING, "Error renderizando la página de gestión tributaria", e);
+            return serverError("No se pudieron cargar los datos de tributación");
+        }
+    }
+
     // ════════════════════════════════════════════════════════════════════
     // Dashboard Hacienda (legacy Dashboard/index.xhtml)
     // ════════════════════════════════════════════════════════════════════
@@ -197,6 +225,21 @@ public class TributacionPagesResource {
     // ════════════════════════════════════════════════════════════════════
     // Page models
     // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * Landing model — the same invoice counters as the dashboard KPIs
+     * (contract of pages/tributacion/index.html).
+     */
+    private Map<String, Object> indexModel() {
+        List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAll());
+        Map<String, Object> model = new LinkedHashMap<>();
+        model.put("totalFacturas", (long) todos.size());
+        model.put("totalEnviadas", countEstado(todos, "ENVIADO"));
+        model.put("totalAceptadas", countEstado(todos, "ACEPTADO"));
+        model.put("totalRechazadas", countEstado(todos, "RECHAZADO"));
+        model.put("baseUrl", "/app/tributacion");
+        return model;
+    }
 
     /**
      * Dashboard model — counter/monto/tasa computations are a 1:1 port of
