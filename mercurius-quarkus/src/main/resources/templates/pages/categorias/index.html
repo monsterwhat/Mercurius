@@ -32,24 +32,22 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <p class="title is-3">Gestión de Categorías</p>
+        <div class="categorias-header">
+            <p class="title is-3 has-text-centered">Gestión de Categorías</p>
 
-        {! Stat cards — legacy clickable tabs became visible sections !}
-        <div class="columns">
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-1" style="margin-bottom:0">{familiaCount}</p>
-                    <p class="subtitle is-6">Familias</p>
-                    <p class="has-text-success is-size-7">Activas: {#if familiasActivasCount??}{familiasActivasCount}{#else}0{/if}</p>
-                    <p class="has-text-danger is-size-7">Inactivas: {#if familiasInactivasCount??}{familiasInactivasCount}{#else}0{/if}</p>
+            {! Stat cards — legacy clickable tabs became visible sections !}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">{familiaCount}</span>
+                    <span class="stat-label">Familias</span>
+                    <p class="is-size-7" style="opacity:0.85">Activas: {#if familiasActivasCount??}{familiasActivasCount}{#else}0{/if}</p>
+                    <p class="is-size-7" style="opacity:0.85">Inactivas: {#if familiasInactivasCount??}{familiasInactivasCount}{#else}0{/if}</p>
                 </div>
-            </div>
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-1" style="margin-bottom:0">{departamentoCount}</p>
-                    <p class="subtitle is-6">Departamentos</p>
-                    <p class="has-text-success is-size-7">Activos: {#if departamentosActivosCount??}{departamentosActivosCount}{#else}0{/if}</p>
-                    <p class="has-text-danger is-size-7">Inactivos: {#if departamentosInactivosCount??}{departamentosInactivosCount}{#else}0{/if}</p>
+                <div class="stat-card">
+                    <span class="stat-number">{departamentoCount}</span>
+                    <span class="stat-label">Departamentos</span>
+                    <p class="is-size-7" style="opacity:0.85">Activos: {#if departamentosActivosCount??}{departamentosActivosCount}{#else}0{/if}</p>
+                    <p class="is-size-7" style="opacity:0.85">Inactivos: {#if departamentosInactivosCount??}{departamentosInactivosCount}{#else}0{/if}</p>
                 </div>
             </div>
         </div>
@@ -65,6 +63,7 @@
                          bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
                     <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="familias"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <button class="button is-info" type="submit">Exportar Excel</button>
@@ -90,6 +89,7 @@
                          bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
                     <form method="post" action="/Mercurius/api/app/export">
+                        <input type="hidden" name="{inject:csrf.formFieldName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="departamentos"/>
                         <input type="hidden" name="type" value="xlsx"/>
                         <button class="button is-info" type="submit">Exportar Excel</button>
@@ -122,24 +122,18 @@
                 {/if}
             </div>
         </div>
-        <div class="columns">
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-2" style="margin-bottom:0">{metricasTotalProveedores}</p>
-                    <p class="subtitle is-6">Proveedores</p>
-                </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-number">{metricasTotalProveedores}</span>
+                <span class="stat-label">Proveedores</span>
             </div>
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-2" style="margin-bottom:0">{metricasScorePromedio}</p>
-                    <p class="subtitle is-6">Score Promedio</p>
-                </div>
+            <div class="stat-card">
+                <span class="stat-number">{metricasScorePromedio}</span>
+                <span class="stat-label">Score Promedio</span>
             </div>
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-2" style="margin-bottom:0">&#8353; {metricasComprasTotales}</p>
-                    <p class="subtitle is-6">Compras Totales</p>
-                </div>
+            <div class="stat-card">
+                <span class="stat-number">&#8353; {metricasComprasTotales}</span>
+                <span class="stat-label">Compras Totales</span>
             </div>
         </div>
         <div class="box is-shadowless" style="padding:0.75rem">

@@ -1,0 +1,67 @@
+{!
+  pages/articulos/selector-articulos-ajuste - article picker for the
+  inventory adjustment form (T35). Search-as-you-type over the same
+  activos-y-procesados source as the promotion selector, but the bridge
+  writes the chosen article into the ajuste form's hidden articuloId input
+  and shows its name in the read-only display field.
+
+  Returned by GET /api/app/articulos/formularios/ajuste/articulos.
+
+  Model:
+    resultados  List    - Models.Articulos (activos y procesados, cap 10)
+    q           String  - current filter text
+!}
+<div id="selector-articulos-ajuste-fragmento">
+    <div class="field">
+        <div class="control has-icons-left">
+            <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
+                   placeholder="Buscar artículo por nombre o código..."
+                   hx-get="/Mercurius/api/app/articulos/formularios/ajuste/articulos"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#selector-articulos-ajuste-fragmento" hx-swap="outerHTML"
+                   hx-include="this"/>
+            <span class="icon is-small is-left">&#128269;</span>
+        </div>
+    </div>
+
+    <table class="table is-striped is-hoverable is-fullwidth is-narrow">
+        <thead>
+            <tr><th>Nombre</th><th>Código</th><th class="has-text-right">Precio</th><th></th></tr>
+        </thead>
+        <tbody>
+            {#for articulo in resultados}
+            <tr data-codigo="{articulo.codigo}" data-nombre="{articulo.nombre}">
+                <td style="font-weight:500">{articulo.nombre}</td>
+                <td style="font-family:monospace">{articulo.codigo}</td>
+                <td class="has-text-right">{#if articulo.precioFinal??}{articulo.precioFinal}{#else}&mdash;{/if}</td>
+                <td class="has-text-centered">
+                    <button type="button" class="button is-small is-primary"
+                            data-kit-pick-articulo-ajuste="{articulo.codigo}">Seleccionar</button>
+                </td>
+            </tr>
+            {#else}
+            <tr><td colspan="4" class="has-text-centered has-text-grey">No se encontraron artículos</td></tr>
+            {/for}
+        </tbody>
+    </table>
+
+    {! Picker bridge: writes the chosen article into the ajuste form's hidden
+       articuloId input, updates the read-only display, and closes the modal. !}
+    <script>
+        document.querySelectorAll('#selector-articulos-ajuste-fragmento [data-kit-pick-articulo-ajuste]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var row = button.closest('tr');
+                var codigo = row.getAttribute('data-codigo');
+                var nombre = row.getAttribute('data-nombre');
+                var idInput = document.getElementById('ajuste-articulo-id');
+                var displayInput = document.getElementById('ajuste-articulo-display');
+                if (idInput) { idInput.value = codigo; }
+                if (displayInput) { displayInput.value = nombre + ' (#' + codigo + ')'; }
+                var root = button.closest('.kit-modal-root');
+                if (root && window.Alpine) {
+                    Alpine.$data(root).open = false;
+                }
+            });
+        });
+    </script>
+</div>

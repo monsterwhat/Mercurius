@@ -14,16 +14,16 @@
   Model keys supplied by CabysResource#renderFullPage:
     tablaCabys    Map  - model of tabla.html (kit data-table contract)
     totalCodigos  Long - stat card (legacy #{CabysController.cabysCount()} parity)
-
-  NOT PORTED: the "Cargar Catálogo" Hacienda sync button — it lives on the
-  legacy controller action (CabysService.listAllAPI) and the REST resource
-  deliberately exposes no sync endpoint (see CabysResource javadoc).
+    canImport     Boolean - admin/tributacion gate for the Hacienda sync button
 
   Interactions:
     - Search-as-you-type: keyup changed delay:300ms hx-get against the table
       endpoint, swapping the table container (ui-kit §7 filter-input mapping).
     - Edit dialog: shared hidden-trigger _kit/modal; row buttons carry
       data-kit-open + their own hx-get into #{id}-body (T18 bridge pattern).
+    - Import: "Importar/Actualizar Catálogo" button hx-post to
+      POST /api/app/cabys/import (admin/tributacion only), hx-confirm styled
+      via _kit/confirm, HX-Redirect refreshes the page on success.
 !}
 {#include layout}
     {#title}Catálogo CaByS | Mercurius{/title}
@@ -35,9 +35,20 @@
                 <p class="title is-3" style="margin-bottom:0">Catálogo de Bienes y Servicios (CAByS)</p>
             </div>
             <div class="level-right">
-                <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
-                    <p class="title is-2" style="margin-bottom:0">{totalCodigos ?: 0}</p>
-                    <p class="subtitle is-6">Códigos CAByS</p>
+                <div class="buttons">
+                    {#if canImport}
+                    <button type="button" class="button is-warning"
+                            hx-post="/Mercurius/api/app/cabys/import"
+                            hx-target="#tabla-cabys"
+                            hx-swap="outerHTML"
+                            hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
+                        Importar/Actualizar Catálogo
+                    </button>
+                    {/if}
+                    <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
+                        <p class="title is-2" style="margin-bottom:0">{totalCodigos ?: 0}</p>
+                        <p class="subtitle is-6">Códigos CAByS</p>
+                    </div>
                 </div>
             </div>
         </div>

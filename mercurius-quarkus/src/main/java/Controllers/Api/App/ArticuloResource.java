@@ -270,6 +270,11 @@ public class ArticuloResource {
     @Inject
     Template selectorArticulos;
 
+    @Nonnull
+    @Location("pages/articulos/selector-articulos-ajuste.html")
+    @Inject
+    Template selectorArticulosAjuste;
+
     // ════════════════════════════════════════════════════════════════════
     // Tab-filtered paginated list (kit contract)
     // ════════════════════════════════════════════════════════════════════
@@ -1296,6 +1301,31 @@ public class ArticuloResource {
                     .data("q", q));
         } catch (RuntimeException e) {
             LOG.log(Level.WARNING, "Error renderizando el selector de artículos", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando el selector"))
+                    .build();
+        }
+    }
+
+    /**
+     * GET /api/app/articulos/formularios/ajuste/articulos?q= — article picker
+     * fragment for the inventory adjustment form (T35). Same activos-y-procesados
+     * search source as {@link #formSelectorArticulos}, but the bridge writes the
+     * chosen article into the ajuste form's hidden articuloId input.
+     */
+    @GET
+    @Path("/formularios/ajuste/articulos")
+    @Produces(MediaType.TEXT_HTML)
+    @Operation(summary = "Article picker fragment for the inventory adjustment form")
+    public Response formSelectorArticulosAjuste(@QueryParam("q") @Nullable String q) {
+        try {
+            List<Articulos> filtered =
+                    filterArticulos(orEmpty(articulosService.listAllActivosYProcesados()), q);
+            return htmlOk(selectorArticulosAjuste
+                    .data("resultados", filtered.subList(0, Math.min(filtered.size(), 10)))
+                    .data("q", q));
+        } catch (RuntimeException e) {
+            LOG.log(Level.WARNING, "Error renderizando el selector de artículos para ajuste", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando el selector"))
                     .build();

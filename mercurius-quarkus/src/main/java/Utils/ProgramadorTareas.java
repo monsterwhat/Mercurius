@@ -97,6 +97,13 @@ public class ProgramadorTareas {
 AppSettings currentSettings = appSettingsService.returnCurrent();
 String correoElectronico = currentSettings.getCorreoElectronico();
 String contrasenaCorreo = currentSettings.getContrasenaCorreo();
+
+        // Skip unconfigured IMAP so the @CircuitBreaker is not tripped by repeated connect failures.
+        if (correoElectronico == null || correoElectronico.isBlank()
+                || contrasenaCorreo == null || contrasenaCorreo.isBlank()) {
+            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Email processing skipped: no IMAP credentials configured", "Sistema", 0, "ProgramadorTareas.revisarRecibosEnCorreos()", null, null));
+            return;
+        }
         
         emailer.processUnreadXmlAttachments(correoElectronico, contrasenaCorreo, this::handleEmailProcess);
     }

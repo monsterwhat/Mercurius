@@ -734,6 +734,22 @@ select,
 }
 
 // -----------------------------------------------------------------------------
+// Reportes nav-cards (section switcher pills used by alertas/merma/tendencias/
+// rendimiento/pronosticos)
+// -----------------------------------------------------------------------------
+.nav-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.nav-card.button {
+    border-radius: 2rem;
+    font-weight: 600;
+}
+
+// -----------------------------------------------------------------------------
 // Ported legacy layer: style.css
 // -----------------------------------------------------------------------------
 .side-panel {
