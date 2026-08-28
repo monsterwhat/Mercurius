@@ -1,93 +1,41 @@
 package Controllers.Api.App;
 
+import io.quarkus.qute.Location;
+import io.quarkus.qute.Template;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
- * Placeholder pages for navbar routes that have templates but no PageResource yet,
- * or no dedicated template. Returns a small HTML shell using the shared layout
- * concept so the navbar never 404s while the full module lands.
+ * Navbar routes rendered through the shared Qute layout (T11): the reportes hub
+ * and the log-activities placeholder. All render {@code layout.html} so they get
+ * the role-gated navbar, web-bundler tags and CSRF headers like every /app page.
  */
 @Path("/app")
 @Produces(MediaType.TEXT_HTML)
 public class MiscPagesResource {
 
-    private static Response placeholder(String titulo, String descripcion, String href) {
-        String html = """
-            <!DOCTYPE html>
-            <html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-            <title>%s | Mercurius</title><link rel="stylesheet" href="/Mercurius/static/bundle/app.css"/></head>
-            <body><nav class="navbar is-black"><div class="navbar-brand"><a class="navbar-item" href="/Mercurius/app"><span class="has-text-weight-bold">Mercurius</span></a></div></nav>
-            <section class="section"><div class="container"><div class="box has-text-centered">
-            <h1 class="title is-4">%s</h1><p class="subtitle is-6 has-text-grey">%s</p>
-            <a class="button is-link mt-4" href="%s">Volver al inicio</a>
-            <a class="button is-light mt-4 ml-2" href="/Mercurius/app/dashboard">Ir al dashboard</a>
-            </div></div></section></body></html>
-            """.formatted(titulo, titulo, descripcion, href);
-        return Response.ok(html).type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
-    }
+    @Inject
+    @Location("pages/reportes/index")
+    Template reportesPage;
+
+    @Inject
+    @Location("pages/registros/log")
+    Template logPage;
 
     @GET @Path("/reportes") @RolesAllowed({"admin","registro","inventario","tributacion"})
     public Response reportes() {
-        String html = """
-            <!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
-            <title>Reportes | Mercurius</title><link rel="stylesheet" href="/Mercurius/static/bundle/app.css"/></head>
-            <body><nav class="navbar is-black"><div class="navbar-brand"><a class="navbar-item" href="/Mercurius/app"><span class="has-text-weight-bold">Mercurius</span></a></div></nav>
-            <section class="section"><div class="container">
-            <h1 class="title is-4">Reportes</h1><p class="subtitle is-6 has-text-grey">Seleccione un reporte</p>
-
-            <h2 class="title is-5 mt-5">Articulos</h2>
-            <div class="columns is-multiline">
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/ventas">Ventas por cajero</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/familias">Ventas por familia</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/departamentos">Ventas por departamento</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/fechas">Movimientos de inventario</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/tendencias">Tendencias de ventas</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/rendimiento">Rendimiento de productos</a></div>
-            </div>
-
-            <h2 class="title is-5 mt-5">Inventario</h2>
-            <div class="columns is-multiline">
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/resumen">Resumen de inventario</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/alertas">Alertas de stock</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/merma">Mermas y perdidas</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/precios">Historico de precios</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/pronosticos">Pronosticos de inventario</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/etiquetas">Generar etiquetas</a></div>
-            </div>
-
-            <h2 class="title is-5 mt-5">Clientes y Usuarios</h2>
-            <div class="columns is-multiline">
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/clientes">Clientes</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/usuarios">Usuarios</a></div>
-            </div>
-
-            <h2 class="title is-5 mt-5">Recibos</h2>
-            <div class="columns is-multiline">
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/recibos/pendientes">Recibos pendientes</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/recibos/vencidos">Recibos vencidos</a></div>
-            </div>
-
-            <h2 class="title is-5 mt-5">Facturacion y Otros</h2>
-            <div class="columns is-multiline">
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/facturas">Facturas emitidas</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/correos">Reportes programados por correo</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/margenes">Margenes de utilidad</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/loyalty">Programa de lealtad</a></div>
-              <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/estacionalidad">Estacionalidad</a></div>
-            </div>
-
-            </div></section></body></html>
-            """;
-        return Response.ok(html).type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+        return Response.ok(reportesPage.instance().render())
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
     @GET @Path("/registros/log") @RolesAllowed({"admin","registro"})
-    public Response registrosLog() { return placeholder("Log de Actividades","Registro de actividades (placeholder)","/Mercurius/app"); }
+    public Response registrosLog() {
+        return Response.ok(logPage.instance().render())
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
+    }
 }
