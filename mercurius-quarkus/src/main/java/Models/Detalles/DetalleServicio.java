@@ -60,8 +60,7 @@ public class DetalleServicio {
     @ToString.Exclude
     @OneToMany(mappedBy = "detalleServicio", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<OtroCargo> otrosCargos;
-    
-    
+
     @PrePersist
     protected void onCreate() {
         status = Boolean.TRUE;

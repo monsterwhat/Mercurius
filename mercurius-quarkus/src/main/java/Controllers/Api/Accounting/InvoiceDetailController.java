@@ -18,8 +18,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -36,7 +36,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Invoice Detail")
 public class InvoiceDetailController {
 
-    private static final Logger LOG = Logger.getLogger(InvoiceDetailController.class.getName());
+    private static final Logger LOG = Logger.getLogger(InvoiceDetailController.class);
 
     @Inject
     @Nonnull
@@ -60,7 +60,7 @@ public class InvoiceDetailController {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(invoice))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting invoice detail for id=" + id, e);
+            LOG.warn("Error getting invoice detail for id=" + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting invoice detail"))
                     .build();
@@ -85,7 +85,7 @@ public class InvoiceDetailController {
             }
             return Response.ok(ApiResponse.ok(toSummaryDTO(summary))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting invoice summary for id=" + id, e);
+            LOG.warn("Error getting invoice summary for id=" + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting invoice summary"))
                     .build();

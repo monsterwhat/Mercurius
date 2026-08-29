@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 /**
  * In-memory sliding window rate limiter per API client.
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class RateLimiter {
 
-    private static final Logger LOG = Logger.getLogger(RateLimiter.class.getName());
+    private static final Logger LOG = Logger.getLogger(RateLimiter.class);
 
     // Per-minute window: tracks request timestamps
     private Cache<String, java.util.concurrent.atomic.AtomicInteger> minuteCounters;
@@ -53,7 +53,7 @@ public class RateLimiter {
         int currentMinute = minuteCount.incrementAndGet();
 
         if (currentMinute > limitPerMin) {
-            LOG.fine("Rate limit exceeded (per-minute) for client: " + clientId);
+            LOG.debug("Rate limit exceeded (per-minute) for client: " + clientId);
             minuteCount.decrementAndGet(); // Don't count the rejected request
             return 60L; // Retry after 60 seconds
         }
@@ -64,7 +64,7 @@ public class RateLimiter {
         int currentHour = hourCount.incrementAndGet();
 
         if (currentHour > limitPerHour) {
-            LOG.fine("Rate limit exceeded (per-hour) for client: " + clientId);
+            LOG.debug("Rate limit exceeded (per-hour) for client: " + clientId);
             hourCount.decrementAndGet(); // Don't count the rejected request
             return 3600L; // Retry after 3600 seconds
         }

@@ -146,6 +146,4 @@ public class Articulos implements Serializable {
         return BigDecimal.ZERO; // Return 0 if no precio matches the date range
     }
 
-    
-
 }

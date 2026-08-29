@@ -2,6 +2,7 @@ package Services.Correos;
 
 import Models.Correos.ReporteProgramado;
 import Services.GService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,7 +21,7 @@ import java.util.Date;
 @ApplicationScoped
 public class ReportesProgramadosService extends GService<ReporteProgramado>{
     
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ReportesProgramadosService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ReportesProgramadosService.class);
 
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -41,7 +42,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             }
             em.persist(entity);
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error creating ReporteProgramado: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.create()", null, e.getMessage()));
+            LOG.warn("failed to create", e);
         }
     }
     
@@ -71,10 +72,10 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 }
                 em.persist(entity);
             } else {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Entity not found", "Sistema", 0, "ReportesProgramadosService.updateAndDisable()", null, null));
+                LOG.info("failed to update and disable");
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error updating entity: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.updateAndDisable()", null, e.getMessage()));
+            LOG.warn("failed to update and disable", e);
         }
     }
     
@@ -94,7 +95,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             }
 
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error creating entity: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.createIfNotExists()", null, e.getMessage()));
+            LOG.warn("failed to create if not exists", e);
             return false;
         }
     }
@@ -107,7 +108,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
                 em.remove(existingItem);
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error deleting entity: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.delete()", null, e.getMessage()));
+            LOG.warn("failed to delete", e);
         }
     }
 
@@ -127,7 +128,7 @@ public class ReportesProgramadosService extends GService<ReporteProgramado>{
             java.util.List<ReporteProgramado> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error finding next scheduled report: " + e.getMessage(), "Sistema", 0, "ReportesProgramadosService.findNextScheduledReport()", null, e.getMessage()));
+            LOG.warn("failed to find next scheduled report", e);
             return null;
         }
     }

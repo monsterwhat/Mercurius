@@ -2,6 +2,7 @@ package Services.Facturas;
 
 import Models.Detalles.DetalleServicio;
 import Services.GService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -18,7 +19,7 @@ import java.util.List;
 @ApplicationScoped
 public class DetalleServicioService extends GService<DetalleServicio> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(DetalleServicioService.class.getName());
+    private static final Logger LOG = Logger.getLogger(DetalleServicioService.class);
     
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -38,7 +39,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -56,7 +57,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
                                 LOG.info("Entity not found for delete" + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "DetalleServicioService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -66,7 +67,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error updating entity: " + e.getMessage() + " | source=" + "DetalleServicioService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     
@@ -84,7 +85,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "DetalleServicioService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing all entities: " + e.getMessage() + " | source=" + "DetalleServicioService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -103,7 +104,7 @@ public class DetalleServicioService extends GService<DetalleServicio> {
             );
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "DetalleServicioService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=" + "DetalleServicioService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

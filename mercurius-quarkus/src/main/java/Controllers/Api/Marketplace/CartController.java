@@ -18,15 +18,15 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 @Path("/api/marketplace/cart")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CartController {
 
-    private static final Logger LOG = Logger.getLogger(CartController.class.getName());
+    private static final Logger LOG = Logger.getLogger(CartController.class);
 
     @Inject
     @Nonnull
@@ -43,7 +43,7 @@ public class CartController {
             CartResponse cart = cartService.getCart(clientCode);
             return Response.ok(cart).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error getting cart", e);
+            LOG.error("Error getting cart", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al obtener carrito\"}")
                     .build();
@@ -63,7 +63,7 @@ public class CartController {
                     .entity("{\"error\":\"" + e.getMessage() + "\"}")
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error adding cart item", e);
+            LOG.error("Error adding cart item", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al agregar al carrito\"}")
                     .build();
@@ -84,7 +84,7 @@ public class CartController {
                     .entity("{\"error\":\"" + e.getMessage() + "\"}")
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error updating cart item", e);
+            LOG.error("Error updating cart item", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al actualizar carrito\"}")
                     .build();
@@ -101,7 +101,7 @@ public class CartController {
             CartResponse cart = cartService.getCart(clientCode);
             return Response.ok(cart).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error removing cart item", e);
+            LOG.error("Error removing cart item", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al eliminar del carrito\"}")
                     .build();
@@ -116,7 +116,7 @@ public class CartController {
             cartService.clearCart(clientCode);
             return Response.ok(new CartResponse(java.util.Collections.emptyList(), 0, java.math.BigDecimal.ZERO)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error clearing cart", e);
+            LOG.error("Error clearing cart", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al limpiar carrito\"}")
                     .build();

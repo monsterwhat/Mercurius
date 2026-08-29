@@ -50,8 +50,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -110,7 +110,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Órdenes de Compra")
 public class OrdenCompraResource {
 
-    private static final Logger LOG = Logger.getLogger(OrdenCompraResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(OrdenCompraResource.class);
 
     /**
      * 422 Unprocessable Entity for HTMX form redisplays (ui-kit Pattern A).
@@ -140,7 +140,6 @@ public class OrdenCompraResource {
     @Inject
     ArticulosService articulosService;
 
-    
     /** Current-user resolution (same pattern as LoyaltyResource/SettingsResource). */
     @Nonnull
     @Inject
@@ -244,7 +243,7 @@ public class OrdenCompraResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing órdenes de compra", e);
+            LOG.warn("Error listing órdenes de compra", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando las órdenes de compra"))
                     .build();
@@ -273,7 +272,7 @@ public class OrdenCompraResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(orden))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error obteniendo la orden " + id, e);
+            LOG.warn("Error obteniendo la orden " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error obteniendo la orden de compra"))
                     .build();
@@ -320,7 +319,7 @@ public class OrdenCompraResource {
                     .entity(ApiResponse.ok(toDetailDTO(orden)))
                     .build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error creando la orden de compra", e);
+            LOG.warn("Error creando la orden de compra", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error al guardar: error interno"))
                     .build();
@@ -371,7 +370,7 @@ public class OrdenCompraResource {
 
             return Response.ok(ApiResponse.ok(toDetailDTO(orden))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error actualizando la orden " + id, e);
+            LOG.warn("Error actualizando la orden " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error al actualizar: error interno"))
                     .build();
@@ -423,7 +422,7 @@ public class OrdenCompraResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(orden))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error cambiando estado de la orden " + id, e);
+            LOG.warn("Error cambiando estado de la orden " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cambiando el estado de la orden"))
                     .build();
@@ -465,7 +464,7 @@ public class OrdenCompraResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(orden))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error recibiendo la orden " + id, e);
+            LOG.warn("Error recibiendo la orden " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error recibiendo la orden"))
                     .build();
@@ -508,7 +507,7 @@ public class OrdenCompraResource {
             return Response.ok(ApiResponse.ok(new CancelarResult(
                     toDetailDTO(orden), "warn", "Orden cancelada!"))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error cancelando la orden " + id, e);
+            LOG.warn("Error cancelando la orden " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cancelando la orden"))
                     .build();
@@ -546,7 +545,7 @@ public class OrdenCompraResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(orden))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error eliminando la orden " + id, e);
+            LOG.warn("Error eliminando la orden " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error eliminando la orden"))
                     .build();
@@ -618,7 +617,7 @@ public class OrdenCompraResource {
             }
             return htmlOk(renderFullPage(page, size, sort, dir, q, estado, proveedorId, numeroOrden));
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de órdenes", e);
+            LOG.warn("Error renderizando la página de órdenes", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();

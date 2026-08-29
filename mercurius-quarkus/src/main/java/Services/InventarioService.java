@@ -24,13 +24,13 @@ import java.util.Calendar;
 import jakarta.transaction.Transactional;
 import java.util.Date; 
 import java.util.List; 
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class InventarioService extends GService<Inventario> {
         
-    private static final Logger LOG = Logger.getLogger(InventarioService.class.getName());
+    private static final Logger LOG = Logger.getLogger(InventarioService.class);
 
     @Override
     protected @Nonnull Class<Inventario> getEntityClass() {
@@ -48,7 +48,7 @@ public class InventarioService extends GService<Inventario> {
             em.persist(entity);
             em.flush();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=InventarioService.create() | despues=" + e.getMessage());
+            LOG.warn("Error creating entity: " + e.getMessage() + " | source=InventarioService.create() | despues=" + e.getMessage());
         }
     }
     
@@ -59,7 +59,7 @@ public class InventarioService extends GService<Inventario> {
             updateStock(entity);
             em.flush();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=InventarioService.createWithStock() | despues=" + e.getMessage());
+            LOG.warn("Error creating entity: " + e.getMessage() + " | source=InventarioService.createWithStock() | despues=" + e.getMessage());
         }
     }
 
@@ -77,7 +77,7 @@ public class InventarioService extends GService<Inventario> {
                 LOG.info("Entity not found for deletion | source=InventarioService.delete()");
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=InventarioService.delete() | despues=" + e.getMessage());
+            LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=InventarioService.delete() | despues=" + e.getMessage());
         }
     }
 
@@ -89,7 +89,7 @@ public class InventarioService extends GService<Inventario> {
             updateStock(entity);
             em.flush();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=InventarioService.update() | despues=" + e.getMessage());
+            LOG.warn("Error updating entity: " + e.getMessage() + " | source=InventarioService.update() | despues=" + e.getMessage());
         }
     }
     
@@ -113,7 +113,7 @@ public class InventarioService extends GService<Inventario> {
                 LOG.info("Entity not found for markAsProcessed | source=InventarioService.markAsProcessed()");
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error marking as processed: " + e.getMessage() + " | source=InventarioService.markAsProcessed() | despues=" + e.getMessage());
+            LOG.warn("Error marking as processed: " + e.getMessage() + " | source=InventarioService.markAsProcessed() | despues=" + e.getMessage());
         }
     }
 
@@ -123,7 +123,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a", Inventario.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAll() | despues=" + e.getMessage());
+            LOG.warn("Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAll() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -133,7 +133,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true", Inventario.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=InventarioService.ListAllEnabled() | despues=" + e.getMessage());
+            LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=InventarioService.ListAllEnabled() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -152,7 +152,7 @@ public class InventarioService extends GService<Inventario> {
                 LOG.info("Entity not found for softDelete | source=InventarioService.softDelete()");
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error soft deleting entity: " + e.getMessage() + " | source=InventarioService.softDelete() | despues=" + e.getMessage());
+            LOG.warn("Error soft deleting entity: " + e.getMessage() + " | source=InventarioService.softDelete() | despues=" + e.getMessage());
         }
     }
     
@@ -175,7 +175,7 @@ public class InventarioService extends GService<Inventario> {
                 return 0.0; // Return 0 if no stock found
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error getting stock for barcode: " + barcode + " - " + e.getMessage() + " | source=InventarioService.getStock() | despues=" + e.getMessage());
+            LOG.warn("Error getting stock for barcode: " + barcode + " - " + e.getMessage() + " | source=InventarioService.getStock() | despues=" + e.getMessage());
             return 0.0;
         }
     }
@@ -194,7 +194,7 @@ public class InventarioService extends GService<Inventario> {
                 return 0.0;
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error calculating total stock for item by barcode: " + e.getMessage() + " | source=InventarioService.calculateTotalStockForItemByBarcode() | despues=" + e.getMessage());
+            LOG.warn("Error calculating total stock for item by barcode: " + e.getMessage() + " | source=InventarioService.calculateTotalStockForItemByBarcode() | despues=" + e.getMessage());
             return 0.0;
         }
     }
@@ -204,7 +204,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = false", Inventario.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAllSinProcesar() | despues=" + e.getMessage());
+            LOG.warn("Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAllSinProcesar() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -214,7 +214,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = true AND a.processed = true", Inventario.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAllActivosYProcesados() | despues=" + e.getMessage());
+            LOG.warn("Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAllActivosYProcesados() | despues=" + e.getMessage());
             return null;
         }    
     }
@@ -224,7 +224,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Inventario> query = em.createQuery("SELECT a FROM Inventario a WHERE a.status = false", Inventario.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAllInactivos() | despues=" + e.getMessage());
+            LOG.warn("Error listing all entities: " + e.getMessage() + " | source=InventarioService.listAllInactivos() | despues=" + e.getMessage());
             return null;
         }     
     }
@@ -310,7 +310,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=InventarioService.count() | despues=" + e.getMessage());
+            LOG.warn("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=InventarioService.count() | despues=" + e.getMessage());
             return 0l;
         }
     }
@@ -320,7 +320,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=InventarioService.count() | despues=" + e.getMessage());
+            LOG.warn("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=InventarioService.count() | despues=" + e.getMessage());
             return 0l;
         }
     }
@@ -330,7 +330,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Inventario e WHERE e.status = true AND e.processed = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=InventarioService.count() | despues=" + e.getMessage());
+            LOG.warn("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getMessage() + " | source=InventarioService.count() | despues=" + e.getMessage());
             return 0l;
         }
     }
@@ -358,7 +358,7 @@ public class InventarioService extends GService<Inventario> {
             em.flush();
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error updating stock: " + e.getMessage() + " | source=InventarioService.updateStock() | despues=" + e.getMessage());
+            LOG.warn("Error updating stock: " + e.getMessage() + " | source=InventarioService.updateStock() | despues=" + e.getMessage());
         }
     }
     
@@ -438,7 +438,7 @@ public class InventarioService extends GService<Inventario> {
         } catch (NoResultException e) {
             return null;
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error getting last purchase date: " + e.getMessage() + " | source=InventarioService.getLastPurchaseDateByDepartamento() | despues=" + e.getMessage());
+            LOG.warn("Error getting last purchase date: " + e.getMessage() + " | source=InventarioService.getLastPurchaseDateByDepartamento() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -462,7 +462,7 @@ public class InventarioService extends GService<Inventario> {
             query.setParameter("departamentoId", departamentoId);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error getting sales details: " + e.getMessage() + " | source=InventarioService.getSalesDetailsByDepartamento() | despues=" + e.getMessage());
+            LOG.warn("Error getting sales details: " + e.getMessage() + " | source=InventarioService.getSalesDetailsByDepartamento() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -517,7 +517,7 @@ public class InventarioService extends GService<Inventario> {
             TypedQuery<ArticuloStock> query = em.createQuery("SELECT a FROM ArticuloStock a", ArticuloStock.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error getting all stock: " + e.getMessage() + " | source=InventarioService.getAllStock() | despues=" + e.getMessage());
+            LOG.warn("Error getting all stock: " + e.getMessage() + " | source=InventarioService.getAllStock() | despues=" + e.getMessage());
             return new ArrayList<>();
         }
     }

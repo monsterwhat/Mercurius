@@ -41,8 +41,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -82,7 +82,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Lealtad")
 public class LoyaltyResource {
 
-    private static final Logger LOG = Logger.getLogger(LoyaltyResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(LoyaltyResource.class);
 
     @Nonnull
     @Inject
@@ -96,7 +96,6 @@ public class LoyaltyResource {
     @Inject
     AppSettingsService appSettingsService;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;
@@ -159,7 +158,7 @@ public class LoyaltyResource {
             }
             return Response.ok(ApiResponse.ok(toSummaryDTO(cliente))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error building loyalty summary for client " + clientCode, e);
+            LOG.warn("Error building loyalty summary for client " + clientCode, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error consultando el resumen de lealtad"))
                     .build();
@@ -188,7 +187,7 @@ public class LoyaltyResource {
                     .toList();
             return Response.ok(ApiResponse.ok(data)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing top loyalty customers", e);
+            LOG.warn("Error listing top loyalty customers", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando los mejores clientes de lealtad"))
                     .build();
@@ -232,7 +231,7 @@ public class LoyaltyResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing points history for client " + clientCode, e);
+            LOG.warn("Error listing points history for client " + clientCode, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error consultando el historial de puntos"))
                     .build();
@@ -318,7 +317,7 @@ public class LoyaltyResource {
                     settings.getCashbackPercentage(),
                     settings.getPuntosInactivityMonths()))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating loyalty settings", e);
+            LOG.warn("Error updating loyalty settings", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando la configuración de lealtad"))
                     .build();
@@ -364,7 +363,7 @@ public class LoyaltyResource {
                     .data("modelo", tablaModel(page, size, sort, dir))
                     .data("ajustes", ajustesMap()));
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de lealtad", e);
+            LOG.warn("Error renderizando la página de lealtad", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página de lealtad"))
                     .build();
@@ -427,7 +426,7 @@ public class LoyaltyResource {
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                     .build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando el historial de puntos del cliente " + clientCode, e);
+            LOG.warn("Error renderizando el historial de puntos del cliente " + clientCode, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando el historial de puntos"))
                     .build();
@@ -489,7 +488,7 @@ public class LoyaltyResource {
             }
             return redisplayAjustes(result.getStatus(), mensajeDe(result));
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error actualizando la configuración de lealtad desde el formulario", e);
+            LOG.warn("Error actualizando la configuración de lealtad desde el formulario", e);
             return redisplayAjustes(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                     "Error actualizando la configuración de lealtad");
         }

@@ -2,6 +2,7 @@ package Services.Facturas;
 
 import Models.Encabezado.Receptor;
 import Services.GService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -18,7 +19,7 @@ import java.util.List;
 @ApplicationScoped
 public class ReceptorService extends GService<Receptor> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ReceptorService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ReceptorService.class);
 
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -37,7 +38,7 @@ public class ReceptorService extends GService<Receptor> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "ReceptorService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating entity: " + e.getMessage() + " | source=" + "ReceptorService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -55,7 +56,7 @@ public class ReceptorService extends GService<Receptor> {
                                 LOG.info("Entity not found for delete" + " | source=" + "ReceptorService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "ReceptorService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "ReceptorService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -65,7 +66,7 @@ public class ReceptorService extends GService<Receptor> {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "ReceptorService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error updating entity: " + e.getMessage() + " | source=" + "ReceptorService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -75,7 +76,7 @@ public class ReceptorService extends GService<Receptor> {
             TypedQuery<Receptor> query = em.createQuery("SELECT d FROM Receptor d", Receptor.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "ReceptorService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing all entities: " + e.getMessage() + " | source=" + "ReceptorService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -84,7 +85,7 @@ public class ReceptorService extends GService<Receptor> {
     try {
         return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=" + "ReceptorService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error finding entity by ID: " + e.getMessage() + " | source=" + "ReceptorService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -94,7 +95,7 @@ public class ReceptorService extends GService<Receptor> {
             TypedQuery<Receptor> query = em.createQuery("SELECT a FROM Receptor", Receptor.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "ReceptorService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=" + "ReceptorService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -122,12 +123,10 @@ public class ReceptorService extends GService<Receptor> {
             }
         } catch (PersistenceException e) {
             // Catch the database constraint violation exception
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating or retrieving Receptor: " + e.getMessage() + " | source=" + "ReceptorService.createIfNotExist()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating or retrieving Receptor: " + e.getMessage() + " | source=" + "ReceptorService.createIfNotExist()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             // Handle the error gracefully, maybe log it or notify the user
             return null;
         }
     }
-
-
 
 }

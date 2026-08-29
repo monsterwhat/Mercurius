@@ -21,8 +21,8 @@ import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -53,7 +53,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Auth")
 public class AppAuthResource {
 
-    private static final Logger LOG = Logger.getLogger(AppAuthResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(AppAuthResource.class);
 
     /**
      * Role tokens derived from {@link Users#getGroupName()} substrings,
@@ -99,37 +99,25 @@ public class AppAuthResource {
             // disabled-user contract obvious and null-safe).
             Users authUser = loginService.findByUsername(username);
             if (authUser == null) {
-                LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Autorización Fallida", "Intento con usuario inexistente: " + username,
-                        "Sistema",
-                        0, "AppAuthResource.supervisorAuthorize()", null, null));
+                LOG.info("failed to supervisor authorize");
                 return invalidCredentials();
             }
 
             if (!Boolean.TRUE.equals(authUser.getStatus())) {
-                LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Autorización Fallida", "Intento con usuario deshabilitado: " + username,
-                        "Sistema",
-                        0, "AppAuthResource.supervisorAuthorize()", null, null));
+                LOG.info("failed to supervisor authorize");
                 return invalidCredentials();
             }
 
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Autorización Fallida", "Contraseña incorrecta de: " + username,
-                        "Sistema",
-                        0, "AppAuthResource.supervisorAuthorize()", null, null));
+                LOG.info("failed to supervisor authorize");
                 return invalidCredentials();
             }
 
             return Response.ok(ApiResponse.ok(
                     new SupervisorAuthorizationDTO(username, deriveRoles(authUser)))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Error", "Error en supervisorAuthorize: " + e.getMessage(),
-                        "Sistema",
-                        0, "AppAuthResource.supervisorAuthorize()", null, e.getMessage()));
-            LOG.log(Level.WARNING, "Error during supervisor authorization", e);
+            LOG.warn("failed to supervisor authorize", e);
+            LOG.warn("Error during supervisor authorization", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error durante la autorización"))
                     .build();

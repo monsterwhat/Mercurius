@@ -16,15 +16,15 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 @Path("/api/marketplace/profile")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProfileController {
 
-    private static final Logger LOG = Logger.getLogger(ProfileController.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProfileController.class);
 
     @Inject
     @Nonnull
@@ -46,7 +46,7 @@ public class ProfileController {
             }
             return Response.ok(toProfileDTO(client)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error getting profile", e);
+            LOG.error("Error getting profile", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al obtener perfil\"}")
                     .build();
@@ -75,7 +75,7 @@ public class ProfileController {
             clientService.update(client);
             return Response.ok(toProfileDTO(client)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error updating profile", e);
+            LOG.error("Error updating profile", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al actualizar perfil\"}")
                     .build();

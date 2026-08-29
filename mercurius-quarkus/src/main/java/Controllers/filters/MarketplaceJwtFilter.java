@@ -11,7 +11,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 /**
  * JWT authentication filter for Mercatus marketplace API endpoints.
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 @Priority(Priorities.AUTHENTICATION)
 public class MarketplaceJwtFilter implements ContainerRequestFilter {
 
-    private static final Logger LOG = Logger.getLogger(MarketplaceJwtFilter.class.getName());
+    private static final Logger LOG = Logger.getLogger(MarketplaceJwtFilter.class);
 
     private static final String AUTH_PREFIX = "/api/marketplace/auth";
     private static final String OPTIONS_METHOD = "OPTIONS";
@@ -53,7 +53,7 @@ public class MarketplaceJwtFilter implements ContainerRequestFilter {
         // Extract Authorization header
         String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            LOG.fine("Missing or invalid Authorization header for: " + path);
+            LOG.debug("Missing or invalid Authorization header for: " + path);
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
                             .entity("{\"error\":\"Token de autenticación requerido\"}")
@@ -66,7 +66,7 @@ public class MarketplaceJwtFilter implements ContainerRequestFilter {
         Integer clientCode = jwtTokenUtil.validateAccessToken(token);
 
         if (clientCode == null) {
-            LOG.fine("Invalid or expired JWT token for: " + path);
+            LOG.debug("Invalid or expired JWT token for: " + path);
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
                             .entity("{\"error\":\"Token inválido o expirado\"}")

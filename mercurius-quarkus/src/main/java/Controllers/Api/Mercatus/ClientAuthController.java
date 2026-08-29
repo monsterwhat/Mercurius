@@ -10,7 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -27,7 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Mercatus - Client Auth")
 public class ClientAuthController {
 
-    private static final Logger LOG = Logger.getLogger(ClientAuthController.class.getName());
+    private static final Logger LOG = Logger.getLogger(ClientAuthController.class);
 
     @Inject
     @Nonnull
@@ -53,7 +53,7 @@ public class ClientAuthController {
                     .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
                     .build();
         } catch (Exception e) {
-            LOG.warning("Registration error: " + e.getMessage());
+            LOG.warn("Registration error: " + e.getMessage());
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Registration failed"))
                     .build();
@@ -78,7 +78,7 @@ public class ClientAuthController {
                     .entity(ApiResponse.error("INVALID_CREDENTIALS", e.getMessage()))
                     .build();
         } catch (Exception e) {
-            LOG.warning("Login error: " + e.getMessage());
+            LOG.warn("Login error: " + e.getMessage());
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Login failed"))
                     .build();

@@ -20,8 +20,8 @@ import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * T27 — Recibos page ({@code GET /app/recibos}) for the NEW Qute/HTMX
@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 @RolesAllowed({"admin", "facturacion"})
 public class RecibosPagesResource {
 
-    private static final Logger LOG = Logger.getLogger(RecibosPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(RecibosPagesResource.class);
 
     @Inject
     @Nonnull
@@ -93,7 +93,7 @@ public class RecibosPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de recibos", e);
+            LOG.warn("Error renderizando la página de recibos", e);
             return Response.serverError()
                     .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron cargar los recibos"))

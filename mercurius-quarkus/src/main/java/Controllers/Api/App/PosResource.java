@@ -54,8 +54,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -85,7 +85,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - POS")
 public class PosResource {
 
-    private static final Logger LOG = Logger.getLogger(PosResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(PosResource.class);
 
     /** Only these invoice PDFs are servable — blocks path traversal by shape. */
     private static final String FACTURA_FILE_PATTERN = "tiqueteElectronico_\\d+\\.pdf";
@@ -151,7 +151,6 @@ public class PosResource {
     @Inject
     LoyaltyService loyaltyService;
 
-    
     @Nonnull
     @Inject
     DirectoryService dirService;
@@ -604,7 +603,7 @@ public class PosResource {
             try {
                 loyaltyService.redeemPoints(cliente, puntosARedimir);
             } catch (RuntimeException e) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error al canjear puntos: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                                LOG.warn("Error al canjear puntos: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         }
 
@@ -624,8 +623,8 @@ public class PosResource {
                     pagos
             );
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error during PDF generation: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-            LOG.log(Level.WARNING, "PDF generation warning for comprobante "
+                        LOG.warn("Error during PDF generation: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.warn("PDF generation warning for comprobante "
                     + comprobante.getId(), e);
         }
         String fileName = "tiqueteElectronico_" + comprobante.getId() + ".pdf";
@@ -649,7 +648,7 @@ public class PosResource {
                         pagos
                 );
             } catch (RuntimeException e) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error enviando factura al cliente: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                                LOG.warn("Error enviando factura al cliente: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             }
         }
 
@@ -769,8 +768,8 @@ public class PosResource {
                     new AppAuthResource.SupervisorAuthorizationDTO(
                             authUser.getUsername(), deriveRoles(authUser)))).build();
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorize: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-            LOG.log(Level.WARNING, "Error during POS supervisor authorization", e);
+                        LOG.warn("Error en overrideAuthorize: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.warn("Error during POS supervisor authorization", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error durante la autorización"))
                     .build();
@@ -1299,8 +1298,8 @@ public class PosResource {
                     exito = true;
                 }
             } catch (RuntimeException e) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error en overrideAuthorizeForm: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-                LOG.log(Level.WARNING, "Error during POS supervisor authorization", e);
+                                LOG.warn("Error en overrideAuthorizeForm: " + e.getMessage() + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                LOG.warn("Error during POS supervisor authorization", e);
                 errorGeneral = "Error durante la autorización";
             }
         }
@@ -1497,7 +1496,7 @@ public class PosResource {
         try {
             tc = tipoCambioService.getNewestTipoCambio();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "tipo-cambio badge unavailable", e);
+            LOG.warn("tipo-cambio badge unavailable", e);
         }
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put("disponible", tc != null);

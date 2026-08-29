@@ -10,8 +10,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Payments")
 public class PaymentsController {
 
-    private static final Logger LOG = Logger.getLogger(PaymentsController.class.getName());
+    private static final Logger LOG = Logger.getLogger(PaymentsController.class);
 
     @Inject
     @Nonnull
@@ -61,7 +61,7 @@ public class PaymentsController {
 
             return Response.ok(dtos).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting payments for invoice " + id, e);
+            LOG.warn("Error getting payments for invoice " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting payments for invoice"))
                     .build();

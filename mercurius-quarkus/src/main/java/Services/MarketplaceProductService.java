@@ -8,6 +8,7 @@ import Models.Departamento;
 import Models.Familia;
 import Models.DTO.ProductDTO;
 import Models.DTO.ProductDetailDTO;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,9 +31,8 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class MarketplaceProductService {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(MarketplaceProductService.class.getName());
+    private static final Logger LOG = Logger.getLogger(MarketplaceProductService.class);
 
-    
     @jakarta.persistence.PersistenceContext
     @Nonnull
     private jakarta.persistence.EntityManager em;
@@ -80,7 +80,7 @@ public class MarketplaceProductService {
             }
             return dtos;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.listActiveProducts()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.listActiveProducts()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -121,7 +121,7 @@ public class MarketplaceProductService {
             }
             return dtos;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error searching marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.searchProducts()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error searching marketplace products: " + e.getMessage() + " | source=" + "MarketplaceProductService.searchProducts()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -168,7 +168,7 @@ public class MarketplaceProductService {
 
             return dto;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error getting product detail: " + e.getMessage() + " | source=" + "MarketplaceProductService.getProductDetail()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error getting product detail: " + e.getMessage() + " | source=" + "MarketplaceProductService.getProductDetail()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

@@ -2,6 +2,7 @@ package Services;
 
 import Models.CierreCaja;
 import Models.Users;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -16,7 +17,7 @@ import java.util.List;
 @ApplicationScoped
 public class CierreCajaService extends GService<CierreCaja> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(CierreCajaService.class.getName());
+    private static final Logger LOG = Logger.getLogger(CierreCajaService.class);
 
     @Override
     protected @Nonnull Class<CierreCaja> getEntityClass() {
@@ -39,7 +40,7 @@ public class CierreCajaService extends GService<CierreCaja> {
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding open session: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.findSesionAbierta()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error finding open session: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.findSesionAbierta()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -53,7 +54,7 @@ public class CierreCajaService extends GService<CierreCaja> {
             query.setParameter("usuario", usuario);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorial()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing session history: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorial()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -69,7 +70,7 @@ public class CierreCajaService extends GService<CierreCaja> {
             query.setParameter("hasta", hasta);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing session history by date: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorialPorFecha()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing session history by date: " + e.getMessage() + " | user=" + String.valueOf(usuario) + " | source=" + "CierreCajaService.listHistorialPorFecha()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

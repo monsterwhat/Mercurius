@@ -2,6 +2,7 @@ package Services;
 
 import Models.AppSettings;
 import Models.ComprobantesRecibidos;
+import org.jboss.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @ApplicationScoped
 public class MensajeReceptorService {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(MensajeReceptorService.class.getName());
+    private static final Logger LOG = Logger.getLogger(MensajeReceptorService.class);
 
     @Inject AppSettingsService appSettingsService;
     @Inject HaciendaSigner haciendaSigner;
@@ -144,7 +145,7 @@ public class MensajeReceptorService {
             }
 
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error en Mensaje Receptor: " + e.getMessage() + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error en Mensaje Receptor: " + e.getMessage() + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
 
             return new MRResult(false, "Error al procesar Mensaje Receptor: " + e.getMessage(), null);
         }

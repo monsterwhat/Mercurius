@@ -1,5 +1,6 @@
 package Services;
 
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
@@ -20,7 +21,7 @@ import java.util.List;
  */
 
 public abstract class GService<T> implements Serializable{
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(GService.class.getName());
+    private static final Logger LOG = Logger.getLogger(GService.class);
     public @PersistenceContext @Nonnull EntityManager em;
 
     protected abstract @Nonnull Class<T> getEntityClass();
@@ -31,7 +32,7 @@ public abstract class GService<T> implements Serializable{
             TypedQuery<T> query = em.createQuery("SELECT e FROM " + getEntityClass().getSimpleName() + " e", getEntityClass());
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing " + getEntityClass().getSimpleName() + ": " + e.getMessage() + " | source=" + "GService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing " + getEntityClass().getSimpleName() + ": " + e.getMessage() + " | source=" + "GService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -42,7 +43,7 @@ public abstract class GService<T> implements Serializable{
             em.merge(entity);
             em.flush();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "No entity found!" + " | source=" + "GService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("No entity found!" + " | source=" + "GService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -52,7 +53,7 @@ public abstract class GService<T> implements Serializable{
             em.persist(entity);
             em.flush();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "GService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating Entity!" + " | source=" + "GService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -72,7 +73,7 @@ public abstract class GService<T> implements Serializable{
                                 LOG.info("Entity not found" + " | source=" + "GService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString() + " | source=" + "GService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting "+ getEntityClass().getSimpleName() +" : " + e.toString() + " | source=" + "GService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -82,7 +83,7 @@ public abstract class GService<T> implements Serializable{
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=" + "GService.count()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=" + "GService.count()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return 0L;
         }
     }
@@ -95,7 +96,7 @@ public abstract class GService<T> implements Serializable{
             query.setMaxResults(pageSize);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing page of " + getEntityClass().getSimpleName() + ": " + e.getMessage() + " | source=" + "GService.listPage()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing page of " + getEntityClass().getSimpleName() + ": " + e.getMessage() + " | source=" + "GService.listPage()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -107,7 +108,7 @@ public abstract class GService<T> implements Serializable{
             em.clear();
             return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding " + getEntityClass().getSimpleName() + " with ID " + id + ": " + e.getLocalizedMessage() + " | source=" + "GService.find()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error finding " + getEntityClass().getSimpleName() + " with ID " + id + ": " + e.getLocalizedMessage() + " | source=" + "GService.find()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

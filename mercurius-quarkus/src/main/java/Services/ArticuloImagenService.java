@@ -1,6 +1,7 @@
 package Services;
 
 import Models.Articulos.ArticuloImagen;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,7 +16,7 @@ import java.util.List;
 @ApplicationScoped
 public class ArticuloImagenService extends GService<ArticuloImagen> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ArticuloImagenService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ArticuloImagenService.class);
 
     @Override
     protected @Nonnull Class<ArticuloImagen> getEntityClass() {
@@ -26,7 +27,7 @@ public class ArticuloImagenService extends GService<ArticuloImagen> {
         try {
             return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding image: " + e.getMessage() + " | source=" + "ArticuloImagenService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error finding image: " + e.getMessage() + " | source=" + "ArticuloImagenService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -40,7 +41,7 @@ public class ArticuloImagenService extends GService<ArticuloImagen> {
             em.flush();
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting image: " + e.getMessage() + " | source=" + "ArticuloImagenService.deleteById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting image: " + e.getMessage() + " | source=" + "ArticuloImagenService.deleteById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -52,7 +53,7 @@ public class ArticuloImagenService extends GService<ArticuloImagen> {
             query.setParameter("codigo", articuloCodigo);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing images: " + e.getMessage() + " | source=" + "ArticuloImagenService.findByArticuloCodigo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing images: " + e.getMessage() + " | source=" + "ArticuloImagenService.findByArticuloCodigo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }
@@ -66,7 +67,7 @@ public class ArticuloImagenService extends GService<ArticuloImagen> {
                 em.merge(imagen);
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating image order: " + e.getMessage() + " | source=" + "ArticuloImagenService.updateOrden()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error updating image order: " + e.getMessage() + " | source=" + "ArticuloImagenService.updateOrden()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 

@@ -18,15 +18,15 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 @Path("/api/marketplace/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class OrderController {
 
-    private static final Logger LOG = Logger.getLogger(OrderController.class.getName());
+    private static final Logger LOG = Logger.getLogger(OrderController.class);
 
     @Inject
     @Nonnull
@@ -43,7 +43,7 @@ public class OrderController {
             List<OrderDTO> orders = orderService.listClientOrders(clientCode);
             return Response.ok(orders).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error listing orders", e);
+            LOG.error("Error listing orders", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al cargar órdenes\"}")
                     .build();
@@ -63,7 +63,7 @@ public class OrderController {
                     .entity("{\"error\":\"" + e.getMessage() + "\"}")
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error creating order", e);
+            LOG.error("Error creating order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al crear orden\"}")
                     .build();
@@ -84,7 +84,7 @@ public class OrderController {
             }
             return Response.ok(order).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error getting order", e);
+            LOG.error("Error getting order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al cargar orden\"}")
                     .build();
@@ -105,7 +105,7 @@ public class OrderController {
             }
             return Response.ok("{\"message\":\"Orden cancelada exitosamente\"}").build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error cancelling order", e);
+            LOG.error("Error cancelling order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al cancelar orden\"}")
                     .build();

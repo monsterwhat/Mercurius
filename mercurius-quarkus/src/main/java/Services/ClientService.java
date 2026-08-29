@@ -1,6 +1,7 @@
 package Services;
 
 import Models.Clients;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -14,7 +15,7 @@ import java.util.List;
 @ApplicationScoped
 public class ClientService extends GService<Clients> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ClientService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ClientService.class);
 
     @Override
     protected @Nonnull Class<Clients> getEntityClass() {
@@ -32,7 +33,7 @@ public class ClientService extends GService<Clients> {
             em.persist(entity);
             em.flush();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "ClientService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating entity: " + e.getMessage() + " | source=" + "ClientService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -50,7 +51,7 @@ public class ClientService extends GService<Clients> {
                                 LOG.info("Entity not found" + " | source=" + "ClientService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "ClientService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "ClientService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     
@@ -61,7 +62,7 @@ public class ClientService extends GService<Clients> {
             query.setParameter("name", "%" + name + "%");
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error searching clients by name: " + e.getMessage() + " | source=" + "ClientService.searchByName()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error searching clients by name: " + e.getMessage() + " | source=" + "ClientService.searchByName()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -76,7 +77,7 @@ public class ClientService extends GService<Clients> {
 
             return !resultList.isEmpty();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error getting client by username: " + e.getMessage() + " | source=" + "ClientService.checkClientName()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error getting client by username: " + e.getMessage() + " | source=" + "ClientService.checkClientName()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -92,7 +93,7 @@ public class ClientService extends GService<Clients> {
             query.setParameter("idNumber", idNumber);
             return query.getSingleResult() > 0;
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error checking client by ID number: " + e.getMessage() + " | source=" + "ClientService.checkClientByIdNumber()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error checking client by ID number: " + e.getMessage() + " | source=" + "ClientService.checkClientByIdNumber()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }

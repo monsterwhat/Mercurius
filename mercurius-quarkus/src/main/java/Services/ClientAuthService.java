@@ -15,8 +15,8 @@ import jakarta.transaction.Transactional;
 
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * Authentication service for Mercatus marketplace clients.
@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class ClientAuthService {
 
-    private static final Logger LOG = Logger.getLogger(ClientAuthService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ClientAuthService.class);
 
     @Inject
     @Nonnull
@@ -191,7 +191,7 @@ public class ClientAuthService {
             List<Clients> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            LOG.log(Level.WARNING, "Error finding client by email", e);
+            LOG.warn("Error finding client by email", e);
             return null;
         }
     }
@@ -208,7 +208,7 @@ public class ClientAuthService {
             List<Clients> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            LOG.log(Level.WARNING, "Error finding client by refresh token", e);
+            LOG.warn("Error finding client by refresh token", e);
             return null;
         }
     }

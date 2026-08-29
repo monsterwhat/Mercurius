@@ -59,8 +59,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -148,7 +148,7 @@ import org.w3c.dom.Element;
 @Tag(name = "App - Facturas Recibidas")
 public class FacturasRecibidasResource {
 
-    private static final Logger LOG = Logger.getLogger(FacturasRecibidasResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(FacturasRecibidasResource.class);
 
     /** Bucket keys (URL-facing); legacy tab titles kept in templates. */
     public static final String BUCKET_TODAS = "todas";
@@ -185,7 +185,6 @@ public class FacturasRecibidasResource {
     @Inject
     DocumentoStrategyFactory strategyFactory;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;
@@ -258,7 +257,7 @@ public class FacturasRecibidasResource {
             PagedResponse<ComprobantesRecibidosListDTO> payload = listPage(bucket, page, size, sort, dir, q);
             return Response.ok(payload).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando las facturas recibidas", e);
+            LOG.warn("Error listando las facturas recibidas", e);
             return serverError("Error listando las facturas recibidas");
         }
     }
@@ -286,7 +285,7 @@ public class FacturasRecibidasResource {
             }
             return htmlOk(pageIndex.instance().data("modelo", modelo).data("q", qSafe).data("bucket", normalizarBucket(bucket)));
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la tabla de facturas recibidas", e);
+            LOG.warn("Error renderizando la tabla de facturas recibidas", e);
             return serverError("Error cargando el buzón de facturas recibidas");
         }
     }
@@ -511,7 +510,7 @@ public class FacturasRecibidasResource {
             }
             return Response.ok(ApiResponse.ok(toDetalleResponse(factura))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error leyendo el detalle de la factura " + id, e);
+            LOG.warn("Error leyendo el detalle de la factura " + id, e);
             return serverError("Error leyendo el detalle de la factura");
         }
     }
@@ -590,7 +589,7 @@ public class FacturasRecibidasResource {
             }
             return Response.ok(ApiResponse.ok(LineaView.of(lineaDetalleService.findById(lineaId)))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error corrigiendo la línea " + lineaId, e);
+            LOG.warn("Error corrigiendo la línea " + lineaId, e);
             return serverError("Error corrigiendo la línea");
         }
     }
@@ -633,7 +632,7 @@ public class FacturasRecibidasResource {
             }
             return Response.ok(ApiResponse.ok(toPanel(resultado))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error pre-validando la factura " + id, e);
+            LOG.warn("Error pre-validando la factura " + id, e);
             return serverError("Error ejecutando la pre-validación");
         }
     }
@@ -851,7 +850,7 @@ public class FacturasRecibidasResource {
         } catch (IllegalArgumentException e) {
             return badRequest(e.getMessage());
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error enviando el Mensaje Receptor de la factura " + id, e);
+            LOG.warn("Error enviando el Mensaje Receptor de la factura " + id, e);
             return serverError("Error enviando el Mensaje Receptor");
         }
     }
@@ -909,7 +908,7 @@ public class FacturasRecibidasResource {
         } catch (NumberFormatException e) {
             return badRequest("sucursal debe ser numérico (3 dígitos) y terminal numérico (5 dígitos)");
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error consultando el consecutivo receptor", e);
+            LOG.warn("Error consultando el consecutivo receptor", e);
             return serverError("Error consultando el consecutivo receptor");
         }
     }
@@ -971,7 +970,7 @@ public class FacturasRecibidasResource {
             }
             return Response.ok(ApiResponse.ok(payload)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error procesando la subida de XML", e);
+            LOG.warn("Error procesando la subida de XML", e);
             return serverError("Error procesando los archivos");
         }
     }
@@ -983,16 +982,16 @@ public class FacturasRecibidasResource {
         try {
             contenido = Files.readAllBytes(parte.uploadedFile());
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
             return new UploadFileResult(fileName, false, "No se pudo leer el archivo: " + e.getMessage());
         }
         if (contenido.length == 0) {
-                        LOG.log(java.util.logging.Level.WARNING, "File is empty: " + fileName + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
+                        LOG.warn("File is empty: " + fileName + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, "El archivo está vacío");
         }
         String errorPrevalidacion = prevalidateXml(contenido);
         if (errorPrevalidacion != null) {
-                        LOG.log(java.util.logging.Level.WARNING, errorPrevalidacion + " (" + fileName + ")" + " | source=" + "FacturasRecibidasResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
+                        LOG.warn(errorPrevalidacion + " (" + fileName + ")" + " | source=" + "FacturasRecibidasResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, errorPrevalidacion);
         }
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(contenido)) {
@@ -1004,7 +1003,7 @@ public class FacturasRecibidasResource {
                         LOG.info("Successfully processed file: " + fileName + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf((Object) null));
+                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, "Error al procesar el archivo XML: " + e.getMessage());
         } finally {
             AsyncUserContext.clear();
@@ -1034,7 +1033,7 @@ public class FacturasRecibidasResource {
                     .parse(new ByteArrayInputStream(contenido));
         } catch (Exception e) {
             if (xml.contains("NumeroConsecutivo")) {
-                LOG.warning("prevalidateXml DOM fallback success for: " + e.getMessage());
+                LOG.warn("prevalidateXml DOM fallback success for: " + e.getMessage());
                 return null;
             }
             return "Error parsing XML: " + e.getMessage();
@@ -1295,7 +1294,7 @@ public class FacturasRecibidasResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.debug("No current user resolvable", e);
             return null;
         }
     }
@@ -1309,7 +1308,7 @@ public class FacturasRecibidasResource {
                 return identity.getPrincipal().getName();
             }
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No principal name resolvable", e);
+            LOG.debug("No principal name resolvable", e);
         }
         return "system";
     }

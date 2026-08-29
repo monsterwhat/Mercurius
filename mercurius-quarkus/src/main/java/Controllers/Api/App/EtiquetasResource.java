@@ -31,8 +31,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -67,7 +67,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Reportes")
 public class EtiquetasResource {
 
-    private static final Logger LOG = Logger.getLogger(EtiquetasResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(EtiquetasResource.class);
 
     /** {dataset}-{yyyyMMdd HH:mm}.ext, quoted in Content-Disposition (ExportResource parity). */
     private static final DateTimeFormatter FILE_STAMP =
@@ -107,7 +107,7 @@ public class EtiquetasResource {
             }
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando los artículos imprimibles", e);
+            LOG.warn("Error listando los artículos imprimibles", e);
             return serverError("Error listando los artículos imprimibles");
         }
     }
@@ -159,10 +159,10 @@ public class EtiquetasResource {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                     .build();
         } catch (DocumentException e) {
-            LOG.log(Level.WARNING, "Error generando las etiquetas", e);
+            LOG.warn("Error generando las etiquetas", e);
             return serverError("No se pudieron generar las etiquetas");
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error generando las etiquetas", e);
+            LOG.warn("Error generando las etiquetas", e);
             return serverError("Error generando las etiquetas");
         }
     }

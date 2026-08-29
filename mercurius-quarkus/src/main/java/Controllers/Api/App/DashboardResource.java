@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,7 +61,7 @@ import jakarta.ws.rs.core.Response;
 @RolesAllowed({"admin", "facturacion", "inventario", "usuario", "tributacion", "registro"})
 public class DashboardResource {
 
-    private static final Logger LOG = Logger.getLogger(DashboardResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(DashboardResource.class);
 
     /** Fixed hour labels — byte-for-byte port of the legacy HOUR_LABELS constant. */
     private static final String[] HOUR_LABELS = {
@@ -214,7 +214,7 @@ public class DashboardResource {
         try {
             return Response.ok(ApiResponse.ok(construirKpi(currentUser()))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error building dashboard KPI feed", e);
+            LOG.warn("Error building dashboard KPI feed", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error calculando los indicadores del dashboard"))
                     .build();
@@ -356,7 +356,7 @@ public class DashboardResource {
             return String.format("Factura %s - %s colones a las %s",
                     consecutivo, total, fecha.format(DateTimeFormatter.ofPattern("HH:mm")));
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error formatting last transaction", e);
+            LOG.warn("Error formatting last transaction", e);
             return "Error al cargar última transacción";
         }
     }
@@ -374,7 +374,7 @@ public class DashboardResource {
         try {
             return OBJECT_MAPPER.writeValueAsString(puntos);
         } catch (JsonProcessingException e) {
-            LOG.log(Level.WARNING, "Error serializing dashboard dataset", e);
+            LOG.warn("Error serializing dashboard dataset", e);
             return "[]";
         }
     }

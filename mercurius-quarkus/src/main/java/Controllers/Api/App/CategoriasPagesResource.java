@@ -24,8 +24,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * HTML page of the Categorías module for the NEW Qute/HTMX app surface:
@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 @RolesAllowed({"admin", "inventario"})
 public class CategoriasPagesResource {
 
-    private static final Logger LOG = Logger.getLogger(CategoriasPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(CategoriasPagesResource.class);
 
     private static final String TAB_FAMILIAS = "familias";
     private static final String TAB_DEPARTAMENTOS = "departamentos";
@@ -85,7 +85,7 @@ public class CategoriasPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de categorías", e);
+            LOG.warn("Error renderizando la página de categorías", e);
             return Response.serverError()
                     .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron cargar las categorías"))

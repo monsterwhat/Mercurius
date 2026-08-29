@@ -9,13 +9,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
 import java.util.List;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class ArticuloPrecioService extends GService<ArticuloPrecio> {
 
-    private static final Logger LOG = Logger.getLogger(ArticuloPrecioService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ArticuloPrecioService.class);
 
     @Override
     protected @Nonnull Class<ArticuloPrecio> getEntityClass() {
@@ -32,7 +32,7 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             TypedQuery<ArticuloPrecio> query = em.createQuery("SELECT a FROM ArticuloPrecio a", ArticuloPrecio.class);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=ArticuloPrecioService.listAll() | despues=" + e.getMessage());
+            LOG.warn("Error listing all entities: " + e.getMessage() + " | source=ArticuloPrecioService.listAll() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -44,7 +44,7 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             List<ArticuloPrecio> resultList = query.getResultList();
             return resultList.isEmpty() ? null : resultList.get(resultList.size() - 1);
         } catch (jakarta.persistence.PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error " + e.getLocalizedMessage() + " | source=ArticuloPrecioService.method() | despues=" + e.getMessage());
+            LOG.warn("Error " + e.getLocalizedMessage() + " | source=ArticuloPrecioService.method() | despues=" + e.getMessage());
             return null;
         }    
     }
@@ -56,7 +56,7 @@ public class ArticuloPrecioService extends GService<ArticuloPrecio> {
             List<ArticuloPrecio> resultList = query.getResultList();
             return resultList.isEmpty() ? null : resultList;
         } catch (jakarta.persistence.PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error " + e.getLocalizedMessage() + " | source=ArticuloPrecioService.method() | despues=" + e.getMessage());
+            LOG.warn("Error " + e.getLocalizedMessage() + " | source=ArticuloPrecioService.method() | despues=" + e.getMessage());
             return null;
         }    
     }

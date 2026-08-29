@@ -38,7 +38,6 @@ public class ReciboElectronicoPagoDocumento {
     @XmlElement(name = "DetalleServicio")
     private DetalleServicio detalleServicio;
 
-
     @Nonnull
     @XmlElement(name = "ResumenFactura")
     private ResumenFactura resumen;
@@ -46,7 +45,6 @@ public class ReciboElectronicoPagoDocumento {
     @Nullable
     @XmlElement(name = "InformacionReferencia")
     private List<InformacionReferencia> informacionReferencia;
-
 
     // JAXB requires no-arg constructor
     public ReciboElectronicoPagoDocumento() {}

@@ -9,8 +9,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -27,7 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Inventory Valuation")
 public class InventoryValuationController {
 
-    private static final Logger LOG = Logger.getLogger(InventoryValuationController.class.getName());
+    private static final Logger LOG = Logger.getLogger(InventoryValuationController.class);
 
     @Inject
     @Nonnull
@@ -53,7 +53,7 @@ public class InventoryValuationController {
 
             return Response.ok(dtos).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting inventory valuation", e);
+            LOG.warn("Error getting inventory valuation", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting inventory valuation"))
                     .build();

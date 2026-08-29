@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * HTML page of the CaByS catalog module for the NEW Qute/HTMX app surface:
@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 @RolesAllowed({"admin", "tributacion"})
 public class CabysPagesResource {
 
-    private static final Logger LOG = Logger.getLogger(CabysPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(CabysPagesResource.class);
 
     /** Legacy p:dataTable rows=20 on the CaByS catalog. */
     private static final int PAGE_SIZE = 20;
@@ -66,7 +66,7 @@ public class CabysPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de cabys", e);
+            LOG.warn("Error renderizando la página de cabys", e);
             return Response.serverError()
                     .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron cargar los códigos CAByS"))

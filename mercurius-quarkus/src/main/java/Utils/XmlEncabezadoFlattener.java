@@ -15,8 +15,8 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * Post-processes JAXB-marshalled XML to remove the {@code <Encabezado>} wrapper element
@@ -61,7 +61,7 @@ import java.util.logging.Logger;
  */
 public final class XmlEncabezadoFlattener {
 
-    private static final Logger LOG = Logger.getLogger(XmlEncabezadoFlattener.class.getName());
+    private static final Logger LOG = Logger.getLogger(XmlEncabezadoFlattener.class);
 
     private static final DocumentBuilderFactory DB_FACTORY;
     private static final TransformerFactory T_FACTORY;
@@ -74,7 +74,7 @@ public final class XmlEncabezadoFlattener {
             DB_FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
             DB_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         } catch (ParserConfigurationException e) {
-            LOG.log(Level.WARNING, "Failed to set XXE-prevention features on DocumentBuilderFactory", e);
+            LOG.warn("Failed to set XXE-prevention features on DocumentBuilderFactory", e);
         }
         DB_FACTORY.setXIncludeAware(false);
         DB_FACTORY.setExpandEntityReferences(false);
@@ -85,7 +85,7 @@ public final class XmlEncabezadoFlattener {
             T_FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
             T_FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Failed to set XXE-prevention features on TransformerFactory", e);
+            LOG.warn("Failed to set XXE-prevention features on TransformerFactory", e);
         }
     }
 
@@ -129,7 +129,7 @@ public final class XmlEncabezadoFlattener {
 
             if (encabezadoElem == null) {
                 // No Encabezado wrapper found — return as-is
-                LOG.warning("XmlEncabezadoFlattener: Encabezado tag not found, returning XML as-is. Input may not be a valid comprobante.");
+                LOG.warn("XmlEncabezadoFlattener: Encabezado tag not found, returning XML as-is. Input may not be a valid comprobante.");
                 return xml;
             }
 

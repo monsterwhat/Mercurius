@@ -46,8 +46,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -116,7 +116,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Categorías")
 public class CategoriaResource {
 
-    private static final Logger LOG = Logger.getLogger(CategoriaResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(CategoriaResource.class);
 
     private static final String TAB_FAMILIAS = "familias";
     private static final String TAB_DEPARTAMENTOS = "departamentos";
@@ -138,7 +138,6 @@ public class CategoriaResource {
     @Inject
     DepartamentoMetricoService departamentoMetricoService;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;
@@ -213,7 +212,7 @@ public class CategoriaResource {
                     .map(CategoriaResource::toDTO).toList();
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listing familias", e);
+            LOG.warn("Error listing familias", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando las familias"))
                     .build();
@@ -246,7 +245,7 @@ public class CategoriaResource {
                     .map(CategoriaResource::toDTO).toList();
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listing departamentos", e);
+            LOG.warn("Error listing departamentos", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando los departamentos"))
                     .build();
@@ -310,7 +309,7 @@ public class CategoriaResource {
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(familia))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error creating familia", e);
+            LOG.warn("Error creating familia", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error creando la familia"))
                     .build();
@@ -369,7 +368,7 @@ public class CategoriaResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(updated))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error updating familia " + id, e);
+            LOG.warn("Error updating familia " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando la familia"))
                     .build();
@@ -411,7 +410,7 @@ public class CategoriaResource {
             return Response.ok(ApiResponse.ok(
                     new SoftDeleteResult(resultado.name(), mensaje))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error toggling familia " + id, e);
+            LOG.warn("Error toggling familia " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cambiando el estado de la familia"))
                     .build();
@@ -487,7 +486,7 @@ public class CategoriaResource {
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(departamento))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error creating departamento", e);
+            LOG.warn("Error creating departamento", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error creando el departamento"))
                     .build();
@@ -567,7 +566,7 @@ public class CategoriaResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(updated))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error updating departamento " + id, e);
+            LOG.warn("Error updating departamento " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando el departamento"))
                     .build();
@@ -604,7 +603,7 @@ public class CategoriaResource {
             return Response.ok(ApiResponse.ok(
                     new SoftDeleteResult(resultado.name(), mensaje))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error toggling departamento " + id, e);
+            LOG.warn("Error toggling departamento " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cambiando el estado del departamento"))
                     .build();
@@ -640,7 +639,7 @@ public class CategoriaResource {
                     data);
             return Response.ok(ApiResponse.ok(payload)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error leyendo métricas de proveedores", e);
+            LOG.warn("Error leyendo métricas de proveedores", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error leyendo las métricas"))
                     .build();
@@ -671,7 +670,7 @@ public class CategoriaResource {
             return Response.ok(ApiResponse.ok(
                     Map.of("mensaje", "Métricas recalculadas correctamente"))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error recalculando métricas", e);
+            LOG.warn("Error recalculando métricas", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error recalculando las métricas"))
                     .build();
@@ -716,7 +715,7 @@ public class CategoriaResource {
             }
             return htmlOk(renderFullPage());
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de categorías", e);
+            LOG.warn("Error renderizando la página de categorías", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();
@@ -1242,7 +1241,7 @@ public class CategoriaResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.debug("No current user resolvable", e);
             return null;
         }
     }

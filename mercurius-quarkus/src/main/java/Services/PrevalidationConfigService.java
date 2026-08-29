@@ -1,6 +1,7 @@
 package Services;
 
 import Models.Validacion.PrevalidationConfig;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -25,13 +26,12 @@ import java.util.List;
 @Transactional
 public class PrevalidationConfigService {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(PrevalidationConfigService.class.getName());
+    private static final Logger LOG = Logger.getLogger(PrevalidationConfigService.class);
 
     @PersistenceContext
     @Nonnull
     EntityManager em;
 
-    
     // ─── Defaults ───────────────────────────────────────────────────
 
     private static final boolean DEFAULT_CABYS_STRICT_MODE = false;
@@ -82,7 +82,7 @@ public class PrevalidationConfigService {
                 return createDefaultConfig();
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error reading PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.getActiveConfig()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error reading PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.getActiveConfig()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return createDefaultConfig();
         }
     }
@@ -109,7 +109,7 @@ public class PrevalidationConfigService {
                 PrevalidationConfig.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return List.of();
         }
     }
@@ -119,7 +119,7 @@ public class PrevalidationConfigService {
         try {
             return em.find(PrevalidationConfig.class, id);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding PrevalidationConfig by ID: " + e.getMessage() + " | source=" + "PrevalidationConfigService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error finding PrevalidationConfig by ID: " + e.getMessage() + " | source=" + "PrevalidationConfigService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -130,7 +130,7 @@ public class PrevalidationConfigService {
                 "SELECT COUNT(c) FROM PrevalidationConfig c", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "PrevalidationConfig count failed: " + e.getMessage() + " | source=" + "PrevalidationConfigService.count()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("PrevalidationConfig count failed: " + e.getMessage() + " | source=" + "PrevalidationConfigService.count()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return 0;
         }
     }
@@ -145,7 +145,7 @@ public class PrevalidationConfigService {
                 em.merge(config);
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error saving PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.save()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error saving PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.save()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -164,7 +164,7 @@ public class PrevalidationConfigService {
                 em.merge(target);
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error setting active PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.setActive()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error setting active PrevalidationConfig: " + e.getMessage() + " | source=" + "PrevalidationConfigService.setActive()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 }

@@ -40,8 +40,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -102,7 +102,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Plantillas de Correo")
 public class EmailTemplateResource {
 
-    private static final Logger LOG = Logger.getLogger(EmailTemplateResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(EmailTemplateResource.class);
 
     @Nonnull
     @Inject
@@ -112,7 +112,6 @@ public class EmailTemplateResource {
     @Inject
     LoginService loginService;
 
-    
     @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
@@ -190,7 +189,7 @@ public class EmailTemplateResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, filtered.size(), page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing email templates", e);
+            LOG.warn("Error listing email templates", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error listando las plantillas de correo"))
@@ -217,7 +216,7 @@ public class EmailTemplateResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(template))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error fetching email template " + id, e);
+            LOG.warn("Error fetching email template " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error obteniendo la plantilla de correo"))
@@ -279,7 +278,7 @@ public class EmailTemplateResource {
                     .entity(ApiResponse.ok(toDTO(template)))
                     .build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error creating email template", e);
+            LOG.warn("Error creating email template", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error creando la plantilla de correo"))
@@ -346,7 +345,7 @@ public class EmailTemplateResource {
 
             return Response.ok(ApiResponse.ok(toDTO(template))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating email template " + id, e);
+            LOG.warn("Error updating email template " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error actualizando la plantilla de correo"))
@@ -391,7 +390,7 @@ public class EmailTemplateResource {
 
             return Response.ok(ApiResponse.ok(toDTO(template))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error deleting email template " + id, e);
+            LOG.warn("Error deleting email template " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error eliminando la plantilla de correo"))
@@ -436,7 +435,7 @@ public class EmailTemplateResource {
             }
             return htmlOk(renderFullPage());
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de plantillas", e);
+            LOG.warn("Error renderizando la página de plantillas", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();
@@ -532,7 +531,7 @@ public class EmailTemplateResource {
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(template))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error creating email template from form", e);
+            LOG.warn("Error creating email template from form", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error creando la plantilla de correo"))
@@ -598,7 +597,7 @@ public class EmailTemplateResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(template))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating email template " + id + " from form", e);
+            LOG.warn("Error updating email template " + id + " from form", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error actualizando la plantilla de correo"))

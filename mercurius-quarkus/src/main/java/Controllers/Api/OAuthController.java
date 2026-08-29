@@ -15,7 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -32,7 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Auth")
 public class OAuthController {
 
-    private static final Logger LOG = Logger.getLogger(OAuthController.class.getName());
+    private static final Logger LOG = Logger.getLogger(OAuthController.class);
 
     @Inject
     @Nonnull
@@ -70,14 +70,14 @@ public class OAuthController {
 
         ApiClients client = apiClientsService.findByClientId(clientId);
         if (client == null) {
-            LOG.fine("OAuth token request failed: unknown client_id");
+            LOG.debug("OAuth token request failed: unknown client_id");
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(ApiResponse.error("INVALID_CLIENT", "Unknown client_id"))
                     .build();
         }
 
         if (!apiClientsService.verifySecret(clientSecret, client.getClientSecret())) {
-            LOG.fine("OAuth token request failed: invalid client_secret for " + clientId);
+            LOG.debug("OAuth token request failed: invalid client_secret for " + clientId);
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(ApiResponse.error("INVALID_CLIENT", "Invalid client_secret"))
                     .build();

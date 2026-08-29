@@ -37,8 +37,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -84,7 +84,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Lotes")
 public class LoteResource {
 
-    private static final Logger LOG = Logger.getLogger(LoteResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(LoteResource.class);
 
     /** Legacy ingresarLote() failure message (FacesMessage severity error). */
     private static final String MSG_ERROR_CREAR = "Error al crear lote";
@@ -97,7 +97,6 @@ public class LoteResource {
     @Inject
     ArticulosService articulosService;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;
@@ -146,7 +145,7 @@ public class LoteResource {
                     .map(LoteResource::toDTO).toList();
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando los lotes", e);
+            LOG.warn("Error listando los lotes", e);
             return serverError("Error listando los lotes");
         }
     }
@@ -169,7 +168,7 @@ public class LoteResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(lote))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error leyendo el lote " + id, e);
+            LOG.warn("Error leyendo el lote " + id, e);
             return serverError("Error leyendo el lote");
         }
     }
@@ -242,8 +241,8 @@ public class LoteResource {
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(nuevo))).build();
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, MSG_ERROR_CREAR + ": " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.ingresarLote()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-            LOG.log(Level.WARNING, "Error creando el lote", e);
+                        LOG.warn(MSG_ERROR_CREAR + ": " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.ingresarLote()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.warn("Error creando el lote", e);
             return serverError(MSG_ERROR_CREAR);
         }
     }
@@ -301,7 +300,7 @@ public class LoteResource {
                         LOG.info("Lote actualizado: " + lote.getNumeroLote() + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return Response.ok(ApiResponse.ok(toDTO(lote))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error actualizando el lote " + id, e);
+            LOG.warn("Error actualizando el lote " + id, e);
             return serverError("Error actualizando el lote");
         }
     }
@@ -326,7 +325,7 @@ public class LoteResource {
                         LOG.info("Lote eliminado: " + numeroLote + " | user=" + String.valueOf(currentUser()) + " | source=" + "LoteResource.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return Response.ok(ApiResponse.ok(Map.of("mensaje", "Lote eliminado"))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error eliminando el lote " + id, e);
+            LOG.warn("Error eliminando el lote " + id, e);
             return serverError("Error eliminando el lote");
         }
     }
@@ -509,7 +508,7 @@ public class LoteResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.debug("No current user resolvable", e);
             return null;
         }
     }

@@ -12,8 +12,8 @@ import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -30,7 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Credit Notes")
 public class CreditNotesController {
 
-    private static final Logger LOG = Logger.getLogger(CreditNotesController.class.getName());
+    private static final Logger LOG = Logger.getLogger(CreditNotesController.class);
 
     @Inject
     @Nonnull
@@ -52,7 +52,7 @@ public class CreditNotesController {
 
             return Response.ok(dtos).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing credit notes", e);
+            LOG.warn("Error listing credit notes", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing credit notes"))
                     .build();

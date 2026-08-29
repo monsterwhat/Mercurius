@@ -16,9 +16,9 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import java.io.StringWriter;
-import java.util.logging.Level;
+
 import Utils.XmlEncabezadoFlattener;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 import java.util.Objects;
 
 /**
@@ -28,7 +28,7 @@ import java.util.Objects;
 @ApplicationScoped
 public class NotaCreditoElectronicaStrategy implements DocumentoStrategy {
 
-    private static final Logger LOG = Logger.getLogger(NotaCreditoElectronicaStrategy.class.getName());
+    private static final Logger LOG = Logger.getLogger(NotaCreditoElectronicaStrategy.class);
     private static final JAXBContext JAXB_CONTEXT;
 
     static {
@@ -36,7 +36,7 @@ public class NotaCreditoElectronicaStrategy implements DocumentoStrategy {
         try {
             ctx = JAXBContext.newInstance(NotaCreditoElectronicaDocumento.class);
         } catch (JAXBException e) {
-            LOG.log(Level.SEVERE, "Failed to initialize JAXBContext for NotaCreditoElectronicaDocumento", e);
+            LOG.error("Failed to initialize JAXBContext for NotaCreditoElectronicaDocumento", e);
         }
         JAXB_CONTEXT = ctx;
     }

@@ -10,8 +10,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Mercatus - Families")
 public class FamiliesController {
 
-    private static final Logger LOG = Logger.getLogger(FamiliesController.class.getName());
+    private static final Logger LOG = Logger.getLogger(FamiliesController.class);
 
     @Inject
     @Nonnull
@@ -53,7 +53,7 @@ public class FamiliesController {
             PagedResponse<FamilyDTO> paged = new PagedResponse<>(dtos, total, 0, dtos.size());
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing families", e);
+            LOG.warn("Error listing families", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing families"))
                     .build();
@@ -78,7 +78,7 @@ public class FamiliesController {
             }
             return Response.ok(toDTO(familia)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting family", e);
+            LOG.warn("Error getting family", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting family"))
                     .build();

@@ -18,15 +18,15 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 @Path("/api/marketplace/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class AuthController {
 
-    private static final Logger LOG = Logger.getLogger(AuthController.class.getName());
+    private static final Logger LOG = Logger.getLogger(AuthController.class);
 
     @Inject
     @Nonnull
@@ -47,7 +47,7 @@ public class AuthController {
                     .entity("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}")
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Registration error", e);
+            LOG.error("Registration error", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al registrar. Intente nuevamente.\"}")
                     .build();
@@ -66,7 +66,7 @@ public class AuthController {
                     .entity("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}")
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Login error", e);
+            LOG.error("Login error", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al iniciar sesión. Intente nuevamente.\"}")
                     .build();
@@ -90,7 +90,7 @@ public class AuthController {
                     .entity("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}")
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Token refresh error", e);
+            LOG.error("Token refresh error", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al actualizar sesión. Intente nuevamente.\"}")
                     .build();
@@ -129,7 +129,7 @@ public class AuthController {
 
             return Response.ok(profile).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error getting profile", e);
+            LOG.error("Error getting profile", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al obtener perfil\"}")
                     .build();

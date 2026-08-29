@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 import Models.ComprobantesEmitidos;
 import Models.DTO.ApiResponse;
@@ -118,7 +118,7 @@ import jakarta.ws.rs.core.Response;
 @RolesAllowed({"admin", "facturacion"})
 public class RecibosResource {
 
-    private static final Logger LOG = Logger.getLogger(RecibosResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(RecibosResource.class);
 
     /** Bucket keys (URL-facing); legacy tab titles kept in templates. */
     public static final String BUCKET_TODAS = "todas";
@@ -137,7 +137,6 @@ public class RecibosResource {
     @Inject
     ComprobanteService comprobanteService;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;
@@ -265,7 +264,7 @@ public class RecibosResource {
             }
             return Response.ok(new PagedResponse<>(data, total, pagina, medida)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando los recibos", e);
+            LOG.warn("Error listando los recibos", e);
             return serverError("Error listando los recibos");
         }
     }
@@ -279,7 +278,7 @@ public class RecibosResource {
         try {
             return Response.ok(ApiResponse.ok(statsView())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error calculando las estadísticas de recibos", e);
+            LOG.warn("Error calculando las estadísticas de recibos", e);
             return serverError("Error calculando las estadísticas");
         }
     }
@@ -301,7 +300,7 @@ public class RecibosResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(f))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error obteniendo el detalle del recibo " + id, e);
+            LOG.warn("Error obteniendo el detalle del recibo " + id, e);
             return serverError("Error obteniendo el detalle del recibo");
         }
     }
@@ -336,7 +335,7 @@ public class RecibosResource {
             }
             return htmlOk(tableroInstance(null, null));
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la tabla de recibos", e);
+            LOG.warn("Error renderizando la tabla de recibos", e);
             return serverError("Error cargando la tabla de recibos");
         }
     }
@@ -387,7 +386,7 @@ public class RecibosResource {
                         LOG.info("Se marco la factura #" + f.getId() + " como pagada" + " | user=" + String.valueOf(currentUser()) + " | source=" + "paySelectedFactura" + " | antes=" + String.valueOf(f.toString()) + " | despues=" + String.valueOf((Object) null));
             return accionOk(id, "Se marco la factura como pagada!");
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error marcando el recibo " + id + " como pagada", e);
+            LOG.warn("Error marcando el recibo " + id + " como pagada", e);
             return serverError("Error marcando el recibo como pagada");
         }
     }
@@ -421,7 +420,7 @@ public class RecibosResource {
                     estado, haciendaEstado)))
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error procesando el recibo " + id, e);
+            LOG.warn("Error procesando el recibo " + id, e);
             return serverError("Error procesando el recibo");
         }
     }
@@ -448,7 +447,7 @@ public class RecibosResource {
                         LOG.info("Se acepto la factura #" + f.getId() + " (Mensaje Receptor)" + " | user=" + String.valueOf(currentUser()) + " | source=" + "RecibosResource.accept" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(f)));
             return accionOk(id, "Factura aceptada");
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error aceptando el recibo " + id, e);
+            LOG.warn("Error aceptando el recibo " + id, e);
             return serverError("Error aceptando el recibo");
         }
     }
@@ -495,7 +494,7 @@ public class RecibosResource {
                             + (motivoLimpio != null ? " Motivo: " + motivoLimpio : "") + " | user=" + String.valueOf(currentUser()) + " | source=" + "RecibosResource.reject" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(f)));
             return accionOk(id, "Factura rechazada");
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error rechazando el recibo " + id, e);
+            LOG.warn("Error rechazando el recibo " + id, e);
             return serverError("Error rechazando el recibo");
         }
     }
@@ -518,8 +517,8 @@ public class RecibosResource {
                         LOG.info("La factura ha sido eliminada correctamente." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.deleteFactura" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(despues != null ? DiffUtils.snapshotEntity(despues) : null));
             return accionOk(id, "La factura ha sido eliminada correctamente.");
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al eliminar la factura." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.deleteFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
-            LOG.log(Level.WARNING, "Error eliminando el recibo " + id, e);
+                        LOG.warn("Error al eliminar la factura." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.deleteFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.warn("Error eliminando el recibo " + id, e);
             return serverError("Error al eliminar la factura.");
         }
     }
@@ -542,8 +541,8 @@ public class RecibosResource {
                         LOG.info("El estado de la factura ha sido cambiado correctamente." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.toggleFactura" + " | antes=" + String.valueOf(antes) + " | despues=" + String.valueOf(despues != null ? DiffUtils.snapshotEntity(despues) : null));
             return accionOk(id, "El estado de la factura ha sido cambiado correctamente.");
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al cambiar el estado de la factura." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.toggleFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
-            LOG.log(Level.WARNING, "Error cambiando el estado del recibo " + id, e);
+                        LOG.warn("Error al cambiar el estado de la factura." + " | user=" + String.valueOf(currentUser()) + " | source=" + "ComprobantesEmitidosController.toggleFactura" + " | antes=" + String.valueOf(String.valueOf(id)) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.warn("Error cambiando el estado del recibo " + id, e);
             return serverError("Error al cambiar el estado de la factura.");
         }
     }
@@ -908,7 +907,7 @@ public class RecibosResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.debug("No current user resolvable", e);
             return null;
         }
     }

@@ -2,6 +2,7 @@ package Services.Facturas;
 
 import Models.Detalles.Impuesto;
 import Services.GService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
@@ -17,7 +18,7 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class ImpuestoService extends GService<Impuesto>{
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ImpuestoService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ImpuestoService.class);
     
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -33,7 +34,7 @@ public class ImpuestoService extends GService<Impuesto>{
         try {
             em.persist(impuesto);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "ImpuestoService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating Entity!" + " | source=" + "ImpuestoService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     

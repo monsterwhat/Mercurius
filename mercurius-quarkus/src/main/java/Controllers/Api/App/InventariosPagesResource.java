@@ -20,8 +20,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * HTML page of the Inventario module for the NEW Qute/HTMX app surface:
@@ -43,7 +43,7 @@ import java.util.logging.Logger;
 @RolesAllowed({"admin", "inventario"})
 public class InventariosPagesResource {
 
-    private static final Logger LOG = Logger.getLogger(InventariosPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(InventariosPagesResource.class);
 
     private static final String TAB_ACTIVOS = "activos";
     private static final String TAB_INACTIVOS = "inactivos";
@@ -74,7 +74,7 @@ public class InventariosPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de inventarios", e);
+            LOG.warn("Error renderizando la página de inventarios", e);
             return Response.serverError()
                     .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron cargar los inventarios"))

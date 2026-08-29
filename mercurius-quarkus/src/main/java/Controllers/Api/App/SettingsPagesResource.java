@@ -14,8 +14,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import Models.AppSettings;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
@@ -46,7 +46,7 @@ import Services.BackupService;
 @RolesAllowed({"admin"})
 public class SettingsPagesResource {
 
-    private static final Logger LOG = Logger.getLogger(SettingsPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(SettingsPagesResource.class);
 
     private static final String BASE_URL = "/api/app/settings";
 
@@ -90,7 +90,7 @@ public class SettingsPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de ajustes", e);
+            LOG.warn("Error renderizando la página de ajustes", e);
             return Response.serverError()
                     .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron cargar los ajustes de la aplicación"))

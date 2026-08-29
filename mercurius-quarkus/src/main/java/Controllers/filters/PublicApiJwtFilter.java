@@ -16,7 +16,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.util.Set;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 /**
  * JWT authentication filter for the public REST API endpoints.
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 @Priority(Priorities.AUTHENTICATION)
 public class PublicApiJwtFilter implements ContainerRequestFilter {
 
-    private static final Logger LOG = Logger.getLogger(PublicApiJwtFilter.class.getName());
+    private static final Logger LOG = Logger.getLogger(PublicApiJwtFilter.class);
     private static final String OPTIONS_METHOD = "OPTIONS";
 
     // Paths that are exempt from auth (token endpoint, etc.)
@@ -98,7 +98,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
         // Extract Authorization header
         String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            LOG.fine("Missing or invalid Authorization header for: " + path);
+            LOG.debug("Missing or invalid Authorization header for: " + path);
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
                             .header("WWW-Authenticate", "Bearer error=\"invalid_token\"")
@@ -185,7 +185,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
         }
 
         // No valid token found
-        LOG.fine("Invalid or expired JWT token for: " + path);
+        LOG.debug("Invalid or expired JWT token for: " + path);
         requestContext.abortWith(
                 Response.status(Response.Status.UNAUTHORIZED)
                         .header("WWW-Authenticate", "Bearer error=\"invalid_token\"")

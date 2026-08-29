@@ -33,8 +33,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -66,7 +66,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Cabys")
 public class CabysResource {
 
-    private static final Logger LOG = Logger.getLogger(CabysResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(CabysResource.class);
 
     @Nonnull
     @Inject
@@ -138,7 +138,7 @@ public class CabysResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing CABYS", e);
+            LOG.warn("Error listing CABYS", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando el catálogo CABYS"))
                     .build();
@@ -165,7 +165,7 @@ public class CabysResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(cabys))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting CABYS " + codigo, e);
+            LOG.warn("Error getting CABYS " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error obteniendo el CABYS"))
                     .build();
@@ -214,15 +214,11 @@ public class CabysResource {
 
             // Audit parity with CabysController.updateCabys() (usuario=null in the
             // REST world; attribution attaches when form auth lands).
-            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "CABYS actualizado", "Se ha actualizado el CABYS: " + codigo,
-                    "Sistema",
-                    0, "CabysResource.update()",
-                    antes, DiffUtils.snapshotEntity(cabys)));
+            LOG.info("failed to update");
 
             return Response.ok(ApiResponse.ok(toDTO(cabys))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating CABYS " + codigo, e);
+            LOG.warn("Error updating CABYS " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando el CABYS"))
                     .build();
@@ -260,7 +256,7 @@ public class CabysResource {
             }
             return htmlOk(renderFullPage());
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de CABYS", e);
+            LOG.warn("Error renderizando la página de CABYS", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();
@@ -355,13 +351,13 @@ public class CabysResource {
         try {
             List<Cabys> catalogo = cabysService.listAllAPI();
             cabysService.saveAllDB(catalogo);
-            LOG.log(Level.INFO, "Catálogo CABYS importado desde Hacienda: {0} códigos", catalogo.size());
+            LOG.infof("catalogo CABYS imported: %d codes", catalogo.size());
             if (isHxRequest()) {
                 return hxRedirect("/api/app/cabys/table");
             }
             return Response.ok(ApiResponse.ok(Map.of("importados", catalogo.size()))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error importando el catálogo CABYS", e);
+            LOG.warn("Error importando el catálogo CABYS", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error importando el catálogo CABYS"))
                     .build();
