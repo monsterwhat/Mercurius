@@ -75,7 +75,7 @@ jobs:
 
       - name: Stage release artifact
         if: steps.decide.outputs.release == 'true'
-        run: cp target/mercurius-quarkus-runner.jar mercurius-quarkus-runner.jar
+        run: cp target/mercurius-quarkus-runner.jar Mercurius-runner.jar
 
       - name: Publish GitHub Release
         if: steps.decide.outputs.release == 'true'
@@ -84,4 +84,4 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: Mercurius v${{ steps.version.outputs.version }}
           generate_release_notes: true
-          files: mercurius-quarkus/mercurius-quarkus-runner.jar
+          files: mercurius-quarkus/Mercurius-runner.jar
