@@ -21,13 +21,13 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class HaciendaCertificateService extends GService<AppSettings> {
 
-    private static final Logger LOG = Logger.getLogger(HaciendaCertificateService.class.getName());
+    private static final Logger LOG = Logger.getLogger(HaciendaCertificateService.class);
 
     private SecretKey encryptionKey;
 
@@ -46,14 +46,13 @@ public class HaciendaCertificateService extends GService<AppSettings> {
                     encryptionKey = EncryptionUtil.getKeyFromString(dbKey);
                     migrateExistingSecrets();
                 } else {
-                    LOG.warning("No encryption key configured — secrets stored in plaintext. " +
-                        "Use Settings UI to initialize the encryption key.");
+                    LOG.warn("No encryption key configured, secrets stored in plaintext. Use Settings UI to initialize.");
                 }
             } else {
-                LOG.warning("No active AppSettings — encryption key not available, secrets stored in plaintext");
+                LOG.warn("No active AppSettings — encryption key not available, secrets stored in plaintext");
             }
         } catch (RuntimeException e) {
-            LOG.warning("Failed to initialize encryption key: " + e.getMessage());
+            LOG.warn("Failed to initialize encryption key: " + e.getMessage());
         }
     }
 
@@ -66,7 +65,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
     public boolean initializeEncryptionKey() {
         AppSettings settings = getActiveSettings();
         if (settings == null) {
-            LOG.warning("Cannot initialize encryption key — no active settings");
+            LOG.warn("Cannot initialize encryption key — no active settings");
             return false;
         }
         String existing = settings.getHaciendaEncryptionKey();
@@ -84,8 +83,8 @@ public class HaciendaCertificateService extends GService<AppSettings> {
             migrateExistingSecrets();
             return true;
         } catch (RuntimeException e) {
-            LOG.warning("Failed to initialize encryption key: " + e.getMessage());
-                        LOG.log(java.util.logging.Level.WARNING, "Failed to initialize encryption key: " + e.getMessage() + " | source=" + "HaciendaCertificateService.initializeEncryptionKey()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.warn("Failed to initialize encryption key: " + e.getMessage());
+                        LOG.warn( "Failed to initialize encryption key: " + e.getMessage() + " | source=" + "HaciendaCertificateService.initializeEncryptionKey()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -130,7 +129,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
         try {
             return EncryptionUtil.encrypt(plaintext, encryptionKey);
         } catch (RuntimeException e) {
-            LOG.warning("Failed to encrypt value: " + e.getMessage());
+            LOG.warn("Failed to encrypt value: " + e.getMessage());
             return plaintext;
         }
     }
@@ -161,7 +160,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
                                 LOG.info("Existing Hacienda credentials encrypted at rest" + " | source=" + "HaciendaCertificateService.migrateExistingSecrets()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (RuntimeException e) {
-            LOG.warning("Secret migration failed (non-blocking): " + e.getMessage());
+            LOG.warn("Secret migration failed (non-blocking): " + e.getMessage());
         }
     }
 
@@ -171,7 +170,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
                     .getResultList();
             return list != null && !list.isEmpty() ? list.get(0) : null;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error getting active settings: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.getActiveSettings()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn( "Error getting active settings: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.getActiveSettings()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -198,7 +197,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
             CertificateInfo info = getCertificateInfo();
             return info != null && !info.isExpired && !info.isNotYetValid;
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error checking certificate validity: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.hasValidCertificate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn( "Error checking certificate validity: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.hasValidCertificate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -236,7 +235,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
             }
             return null;
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error reading certificate info: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.getCertificateInfo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn( "Error reading certificate info: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.getCertificateInfo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -284,7 +283,7 @@ public class HaciendaCertificateService extends GService<AppSettings> {
                         LOG.info("No valid certificate found in keystore" + " | source=" + "HaciendaCertificateService.validateCertificate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return false;
         } catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Certificate validation error: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.validateCertificate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn( "Certificate validation error: " + e.getLocalizedMessage() + " | source=" + "HaciendaCertificateService.validateCertificate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
