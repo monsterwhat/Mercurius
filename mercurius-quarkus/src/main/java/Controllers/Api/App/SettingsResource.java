@@ -23,8 +23,8 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -67,7 +67,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Ajustes")
 public class SettingsResource {
 
-    private static final Logger LOG = Logger.getLogger(SettingsResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(SettingsResource.class);
 
     @Nonnull
     @Inject
@@ -77,7 +77,6 @@ public class SettingsResource {
     @Inject
     BackupService backupService;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;
@@ -107,7 +106,7 @@ public class SettingsResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(settings))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error reading app settings", e);
+            LOG.warn("Error reading app settings", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error consultando la configuración"))
                     .build();
@@ -186,7 +185,7 @@ public class SettingsResource {
 
             return Response.ok(ApiResponse.ok(toDTO(settings))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating app settings", e);
+            LOG.warn("Error updating app settings", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando la configuración"))
                     .build();
@@ -214,7 +213,7 @@ public class SettingsResource {
             AppSettings settings = backupService.getSettings();
             return Response.ok(ApiResponse.ok(toBackupStatusDTO(settings))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error reading backup status", e);
+            LOG.warn("Error reading backup status", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error consultando el estado de los respaldos"))
                     .build();
@@ -262,7 +261,7 @@ public class SettingsResource {
             // carries the refreshed status instead of a file listing.
             return Response.ok(ApiResponse.ok(toBackupStatusDTO(backupService.getSettings()))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error triggering backup", e);
+            LOG.warn("Error triggering backup", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error ejecutando el backup"))
                     .build();

@@ -56,8 +56,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -121,7 +121,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Devoluciones")
 public class DevolucionesResource {
 
-    private static final Logger LOG = Logger.getLogger(DevolucionesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(DevolucionesResource.class);
 
     /** Hacienda document code for Nota de Crédito Electrónica (legacy "03"). */
     public static final String CODIGO_NC = "03";
@@ -147,7 +147,6 @@ public class DevolucionesResource {
     @Inject
     ClientService clientService;
 
-    
     @Nonnull
     @Inject
     AppSettingsService appSettingsService;
@@ -238,7 +237,7 @@ public class DevolucionesResource {
             return Response.ok(ApiResponse.ok(new PagedFacturas(pagina, rows.size(),
                     safePage, safeSize, totalPages))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error buscando facturas para devolucion", e);
+            LOG.warn("Error buscando facturas para devolucion", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error buscando las facturas"))
                     .build();
@@ -276,7 +275,7 @@ public class DevolucionesResource {
             return Response.ok(ApiResponse.ok(new FacturaDetalle(
                     facturaHeader(factura), rows))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error obteniendo las lineas de la factura " + id, e);
+            LOG.warn("Error obteniendo las lineas de la factura " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error obteniendo las líneas"))
                     .build();
@@ -307,7 +306,7 @@ public class DevolucionesResource {
             }
             return htmlOk(authformFragment(id));
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando el formulario de autorización", e);
+            LOG.warn("Error renderizando el formulario de autorización", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando el formulario"))
                     .build();
@@ -365,7 +364,7 @@ public class DevolucionesResource {
             }
             return Response.ok(ApiResponse.ok(resultado)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error validando la devolucion", e);
+            LOG.warn("Error validando la devolucion", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error validando la devolución"))
                     .build();
@@ -429,7 +428,7 @@ public class DevolucionesResource {
         } catch (RuntimeException e) {
             // SessionController.authorizeAction parity: an error inside the
             // credential check is alerted and blocks processing.
-                        LOG.log(java.util.logging.Level.WARNING, "Error en authorizeAction: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error en authorizeAction: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return invalidCredentials();
         }
 
@@ -517,8 +516,8 @@ public class DevolucionesResource {
 
         } catch (RuntimeException e) {
             // Legacy catch: alert + error message; partial state stays.
-                        LOG.log(java.util.logging.Level.WARNING, "Error al procesar devolucion: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-            LOG.log(Level.WARNING, "Error procesando la devolucion de la factura " + id, e);
+                        LOG.warn("Error al procesar devolucion: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.warn("Error procesando la devolucion de la factura " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error al procesar devolucion: " + e.getMessage()))
@@ -925,7 +924,7 @@ public class DevolucionesResource {
                     } catch (IllegalArgumentException e) {
                         // Legacy parity: unknown rates are skipped from the
                         // desglose (documented latent gap, do NOT fix here).
-                        LOG.fine("Tarifa fuera del enum Tipo_TarifaIVA: " + entry.getKey());
+                        LOG.debug("Tarifa fuera del enum Tipo_TarifaIVA: " + entry.getKey());
                     }
                 }
                 ncResumen.setTotalDesgloseImpuestos(desgloseList);
@@ -958,7 +957,7 @@ public class DevolucionesResource {
             return new NcElectronicaResultado(true, clave, numeroConsecutivo,
                     "Nota de Credito electronica generada");
         } catch (RuntimeException eNC) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al generar Nota de Credito electronica: " + eNC.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(eNC.getMessage()));
+                        LOG.warn("Error al generar Nota de Credito electronica: " + eNC.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(eNC.getMessage()));
             return new NcElectronicaResultado(false, null, null,
                     "Error al generar Nota de Credito electronica: " + eNC.getMessage());
         }
@@ -988,7 +987,7 @@ public class DevolucionesResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.debug("No current user resolvable", e);
             return null;
         }
     }

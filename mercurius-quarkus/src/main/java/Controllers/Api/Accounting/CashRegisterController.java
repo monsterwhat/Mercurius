@@ -11,8 +11,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -29,7 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Cash Register")
 public class CashRegisterController {
 
-    private static final Logger LOG = Logger.getLogger(CashRegisterController.class.getName());
+    private static final Logger LOG = Logger.getLogger(CashRegisterController.class);
 
     @Inject
     @Nonnull
@@ -64,7 +64,7 @@ public class CashRegisterController {
             PagedResponse<CashRegisterDTO> paged = new PagedResponse<>(dtos, total, page, size);
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing cash register entries", e);
+            LOG.warn("Error listing cash register entries", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing cash register entries"))
                     .build();

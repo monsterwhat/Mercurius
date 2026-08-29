@@ -43,8 +43,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -137,7 +137,7 @@ import org.w3c.dom.NodeList;
 @Tag(name = "App - Inventario")
 public class InventarioResource {
 
-    private static final Logger LOG = Logger.getLogger(InventarioResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(InventarioResource.class);
 
     /** Tab keys (URL-facing); legacy tab titles kept in templates. */
     public static final String TAB_ACTIVOS = "activos";
@@ -280,7 +280,7 @@ public class InventarioResource {
                     .map(InventarioResource::toDTO).toList();
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listing ajustes de inventario", e);
+            LOG.warn("Error listing ajustes de inventario", e);
             return serverError("Error listando los ajustes de inventario");
         }
     }
@@ -302,7 +302,7 @@ public class InventarioResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(inventario))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error leyendo el ajuste " + codigo, e);
+            LOG.warn("Error leyendo el ajuste " + codigo, e);
             return serverError("Error leyendo el ajuste");
         }
     }
@@ -334,7 +334,7 @@ public class InventarioResource {
                     inventarioService.getStock(barcode),
                     inventarioService.calculateTotalStockForItemByBarcode(barcode)))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error consultando stock para " + codigoBarra, e);
+            LOG.warn("Error consultando stock para " + codigoBarra, e);
             return serverError("Error consultando el stock");
         }
     }
@@ -402,17 +402,14 @@ public class InventarioResource {
             nuevo.setNotas(notas);
             nuevo.setFechaMovimiento(new Date()); // legacy: explicit today
             inventarioService.createWithStock(nuevo);
-            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Inventario creado", "Se ha creado el inventario: " + articulo.getNombre(),
-                    currentUser() != null ? currentUser().getUsername() : "Sistema",
-                    0, "InventarioResource.createInventarioDialog", null, nuevo.toString()));
+            LOG.info("failed to create inventario dialog");
             if (isHxRequest()) {
                 return hxRedirect("/api/app/inventario/table?tab=" + TAB_ACTIVOS);
             }
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(nuevo))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error creando el ajuste", e);
+            LOG.warn("Error creando el ajuste", e);
             return serverError("Error creando el ajuste");
         }
     }
@@ -446,7 +443,7 @@ public class InventarioResource {
             return Response.ok(ApiResponse.ok(new RevisionNextDTO(hasNext,
                     siguiente == null ? null : toDTO(siguiente)))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error cargando el siguiente movimiento pendiente", e);
+            LOG.warn("Error cargando el siguiente movimiento pendiente", e);
             return serverError("Error cargando el siguiente movimiento");
         }
     }
@@ -525,13 +522,7 @@ public class InventarioResource {
                 seleccionado.setNotas(NOTAS_PROCESADO_PREFIJO + usuario.getUsername());
             }
             inventarioService.markAsProcessed(seleccionado);
-            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Inventario actualizado", "Se ha actualizado el inventario: " + seleccionado.getArticulo().getNombre(),
-                    usuario != null ? usuario.getUsername() : "Sistema",
-                    0, rapido
-                            ? "InventarioResource.procesarMovimientoYSiguiente()"
-                            : "InventarioResource.updateInventarioRevisionDialog",
-                    antes, DiffUtils.snapshotEntity(seleccionado)));
+            LOG.info("failed to update inventario revision dialog");
 
             if (isHxRequest() && rapido) {
                 // Wizard continuation: load the NEXT pending movement
@@ -547,7 +538,7 @@ public class InventarioResource {
             long restantes = orEmpty(inventarioService.listAllSinProcesar()).size();
             return Response.ok(ApiResponse.ok(new AprobacionResult(true, MSG_SE_PROCESO, restantes))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error aprobando el movimiento " + codigo, e);
+            LOG.warn("operation failed");
             return serverError("Error aprobando el movimiento");
         }
     }
@@ -573,18 +564,14 @@ public class InventarioResource {
             }
             String antes = DiffUtils.snapshotEntity(seleccionado);
             inventarioService.softDelete(seleccionado);
-            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Inventario eliminado", "Se ha eliminado el inventario: " + nombreArticuloDe(seleccionado),
-                    currentUser() != null ? currentUser().getUsername() : "Sistema",
-                    0, "InventarioResource.deleteInventario",
-                    antes, DiffUtils.snapshotEntity(seleccionado)));
+            LOG.info("failed to delete inventario");
             if (isHxRequest()) {
                 return tableFragment(TAB_PENDIENTES, 1, 20, null, "asc", null,
                         "warn", "Se rechazó el movimiento");
             }
             return Response.ok(ApiResponse.ok(Map.of("mensaje", "Se rechazó el movimiento"))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error rechazando el movimiento " + codigo, e);
+            LOG.warn("Error rechazando el movimiento " + codigo, e);
             return serverError("Error rechazando el movimiento");
         }
     }
@@ -618,7 +605,7 @@ public class InventarioResource {
             return Response.ok(ApiResponse.ok(new RevisionNextDTO(siguiente != null,
                     siguiente == null ? null : toDTO(siguiente)))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error omitiendo el movimiento " + codigo, e);
+            LOG.warn("Error omitiendo el movimiento " + codigo, e);
             return serverError("Error omitiendo el movimiento");
         }
     }
@@ -650,7 +637,7 @@ public class InventarioResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(seleccionado))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error reabriendo el movimiento " + codigo, e);
+            LOG.warn("Error reabriendo el movimiento " + codigo, e);
             return serverError("Error reabriendo el movimiento");
         }
     }
@@ -709,7 +696,7 @@ public class InventarioResource {
             }
             return Response.ok(ApiResponse.ok(payload)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error procesando la subida de XML", e);
+            LOG.warn("Error procesando la subida de XML", e);
             return serverError("Error procesando los archivos");
         }
     }
@@ -721,16 +708,16 @@ public class InventarioResource {
         try {
             contenido = Files.readAllBytes(parte.uploadedFile());
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
             return new UploadFileResult(fileName, false, "No se pudo leer el archivo: " + e.getMessage());
         }
         if (contenido.length == 0) {
-                        LOG.log(java.util.logging.Level.WARNING, "File is null or empty: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
+                        LOG.warn("File is null or empty: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, "El archivo está vacío");
         }
         String errorPrevalidacion = prevalidateXml(contenido);
         if (errorPrevalidacion != null) {
-                        LOG.log(java.util.logging.Level.WARNING, errorPrevalidacion + " (" + fileName + ")" + " | source=" + "InventarioResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
+                        LOG.warn(errorPrevalidacion + " (" + fileName + ")" + " | source=" + "InventarioResource.prevalidateXml()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, errorPrevalidacion);
         }
         try (ByteArrayInputStream inputStream = new ByteArrayInputStream(contenido)) {
@@ -742,7 +729,7 @@ public class InventarioResource {
                         LOG.info("Successfully processed file: " + fileName + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | source=" + "InventarioResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf(e.getMessage()));
             return new UploadFileResult(fileName, false, "Error al parsear el XML: " + e.getMessage());
         } finally {
             AsyncUserContext.clear();
@@ -842,7 +829,7 @@ public class InventarioResource {
             }
             return htmlOk(renderFullPage());
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de inventario", e);
+            LOG.warn("Error renderizando la página de inventario", e);
             return serverError("Error renderizando la página");
         }
     }
@@ -860,7 +847,7 @@ public class InventarioResource {
         try {
             return htmlOk(badges.data("badges", badgeModel()));
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando los contadores", e);
+            LOG.warn("Error renderizando los contadores", e);
             return serverError("Error renderizando los contadores");
         }
     }
@@ -1318,7 +1305,7 @@ public class InventarioResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.error("No current user resolvable", e);
             return null;
         }
     }
@@ -1332,7 +1319,7 @@ public class InventarioResource {
                 return identity.getPrincipal().getName();
             }
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No principal name resolvable", e);
+            LOG.error("No principal name resolvable", e);
         }
         return "system"; // uploadController.handleFileUpload fallback parity
     }

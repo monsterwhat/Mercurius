@@ -15,13 +15,13 @@ import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class ArticulosService extends GService<Articulos> {
 
-    private static final Logger LOG = Logger.getLogger(ArticulosService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ArticulosService.class);
 
     @Override
     protected @Nonnull Class<Articulos> getEntityClass() {
@@ -39,7 +39,7 @@ public class ArticulosService extends GService<Articulos> {
             em.persist(entity);
             em.flush();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=ArticulosService.create() | despues=" + e.getMessage());
+            LOG.warn("Error creating entity: " + e.getMessage() + " | source=ArticulosService.create() | despues=" + e.getMessage());
         }
     }
 
@@ -57,7 +57,7 @@ public class ArticulosService extends GService<Articulos> {
                 LOG.info("Entity not found | source=ArticulosService.method()");
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=ArticulosService.delete() | despues=" + e.getMessage());
+            LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=ArticulosService.delete() | despues=" + e.getMessage());
         }
     }
 
@@ -67,7 +67,7 @@ public class ArticulosService extends GService<Articulos> {
             em.merge(entity);
             em.flush();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error updating entity: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
         }
     }
     
@@ -77,7 +77,7 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a", Articulos.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=ArticulosService.listAll() | despues=" + e.getMessage());
+            LOG.warn("Error listing all entities: " + e.getMessage() + " | source=ArticulosService.listAll() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -101,7 +101,7 @@ public class ArticulosService extends GService<Articulos> {
                 LOG.info("Entity not found | source=ArticulosService.method()");
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error updating entity: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
         }
     }
 
@@ -110,7 +110,7 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.status = true", Articulos.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -129,7 +129,7 @@ public class ArticulosService extends GService<Articulos> {
                 LOG.info("Entity not found | source=ArticulosService.method()");
             }
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error soft deleting entity: " + e.getMessage() + " | source=ArticulosService.softDelete() | despues=" + e.getMessage());
+            LOG.warn("Error soft deleting entity: " + e.getMessage() + " | source=ArticulosService.softDelete() | despues=" + e.getMessage());
         }
     }
     
@@ -137,7 +137,7 @@ public class ArticulosService extends GService<Articulos> {
     try {
         return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=ArticulosService.findById() | despues=" + e.getMessage());
+            LOG.warn("Error finding entity by ID: " + e.getMessage() + " | source=ArticulosService.findById() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -149,7 +149,7 @@ public class ArticulosService extends GService<Articulos> {
             List<Articulos> resultList = query.getResultList();
             return resultList.isEmpty() ? null : resultList.get(0);
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error " + e.getLocalizedMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error " + e.getLocalizedMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
             return null;
         }
     }
@@ -163,7 +163,7 @@ public class ArticulosService extends GService<Articulos> {
             query.setMaxResults(20);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error searching by name: " + e.getMessage() + " | source=ArticulosService.findByNameContaining() | despues=" + e.getMessage());
+            LOG.warn("Error searching by name: " + e.getMessage() + " | source=ArticulosService.findByNameContaining() | despues=" + e.getMessage());
             return List.of();
         }
     }
@@ -175,7 +175,7 @@ public class ArticulosService extends GService<Articulos> {
             List<Articulos> resultList = query.getResultList();
             return resultList.isEmpty() ? null : resultList.get(0);
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error " + e.getLocalizedMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error " + e.getLocalizedMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
             return null;
         }    
     }
@@ -185,7 +185,7 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.processed = false AND a.status = true", Articulos.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
             return null;
         }    
     }
@@ -195,7 +195,7 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.processed = true AND a.status = true", Articulos.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
             return null;
         }     
     }
@@ -205,7 +205,7 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Articulos> query = em.createQuery("SELECT a FROM Articulos a WHERE a.status = false", Articulos.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
+            LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=ArticulosService.method() | despues=" + e.getMessage());
             return null;
         }     
     }
@@ -227,7 +227,7 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Articulos e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=ArticulosService.count() | despues=" + e.getMessage());
+            LOG.warn("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=ArticulosService.count() | despues=" + e.getMessage());
             return 0l;
         }
     }
@@ -237,7 +237,7 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Articulos e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=ArticulosService.count() | despues=" + e.getMessage());
+            LOG.warn("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=ArticulosService.count() | despues=" + e.getMessage());
             return 0l;
         }
     }
@@ -247,10 +247,9 @@ public class ArticulosService extends GService<Articulos> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM Articulos e WHERE e.status = true AND e.processed = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING, "Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=ArticulosService.count() | despues=" + e.getMessage());
+            LOG.warn("Error counting "+ getEntityClass().getSimpleName() +" : " + e.getLocalizedMessage() + " | source=ArticulosService.count() | despues=" + e.getMessage());
             return 0l;
         }
     }
-    
 
 }

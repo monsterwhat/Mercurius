@@ -35,8 +35,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * HTML pages of the Tributación module for the NEW Qute/HTMX app surface
@@ -65,7 +65,7 @@ import java.util.logging.Logger;
 @RolesAllowed({"admin", "tributacion"})
 public class TributacionPagesResource {
 
-    private static final Logger LOG = Logger.getLogger(TributacionPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(TributacionPagesResource.class);
 
     private static final String[] MESES = {
         "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -136,7 +136,7 @@ public class TributacionPagesResource {
             indexModel().forEach(instance::data);
             return htmlOk(instance);
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de gestión tributaria", e);
+            LOG.warn("Error renderizando la página de gestión tributaria", e);
             return serverError("No se pudieron cargar los datos de tributación");
         }
     }
@@ -160,7 +160,7 @@ public class TributacionPagesResource {
             dashboardModel().forEach(instance::data);
             return htmlOk(instance);
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando el dashboard de Hacienda", e);
+            LOG.warn("Error renderizando el dashboard de Hacienda", e);
             return serverError("No se pudieron cargar los datos del dashboard");
         }
     }
@@ -187,7 +187,7 @@ public class TributacionPagesResource {
             consultasModel(tab, q).forEach(instance::data);
             return htmlOk(instance);
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de consultas", e);
+            LOG.warn("Error renderizando la página de consultas", e);
             return serverError("No se pudieron cargar los datos de consultas");
         }
     }
@@ -217,7 +217,7 @@ public class TributacionPagesResource {
             declaracionModel(m, y).forEach(instance::data);
             return htmlOk(instance);
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la declaración IVA", e);
+            LOG.warn("Error renderizando la declaración IVA", e);
             return serverError("Error al calcular la declaración IVA");
         }
     }

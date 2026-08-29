@@ -14,7 +14,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -30,7 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Mercatus - Orders")
 public class OrderController {
 
-    private static final Logger LOG = Logger.getLogger(OrderController.class.getName());
+    private static final Logger LOG = Logger.getLogger(OrderController.class);
 
     @Inject
     @Nonnull
@@ -87,7 +87,7 @@ public class OrderController {
             PagedResponse<OrderSummaryDTO> paged = new PagedResponse<>(dtos, total, page, size);
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.warning("Error listing orders: " + e.getMessage());
+            LOG.warn("Error listing orders: " + e.getMessage());
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing orders"))
                     .build();
@@ -120,7 +120,7 @@ public class OrderController {
 
             return Response.ok(toDetailDTO(order)).build();
         } catch (Exception e) {
-            LOG.warning("Error getting order: " + e.getMessage());
+            LOG.warn("Error getting order: " + e.getMessage());
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting order"))
                     .build();

@@ -21,7 +21,5 @@ public class TipoCambio {
 
     @Column(nullable = false, precision = 18, scale = 5)
     private BigDecimal valorVenta;
-    
-    
-    
+
 }

@@ -12,8 +12,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -30,7 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Invoices Received")
 public class InvoicesReceivedController {
 
-    private static final Logger LOG = Logger.getLogger(InvoicesReceivedController.class.getName());
+    private static final Logger LOG = Logger.getLogger(InvoicesReceivedController.class);
 
     @Inject
     @Nonnull
@@ -75,7 +75,7 @@ public class InvoicesReceivedController {
             PagedResponse<InvoiceReceivedDTO> paged = new PagedResponse<>(dtos, total, page, size);
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing received invoices", e);
+            LOG.warn("Error listing received invoices", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing received invoices"))
                     .build();
@@ -118,7 +118,7 @@ public class InvoicesReceivedController {
 
             return Response.ok(toDTO(found.get())).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting received invoice", e);
+            LOG.warn("Error getting received invoice", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting received invoice"))
                     .build();

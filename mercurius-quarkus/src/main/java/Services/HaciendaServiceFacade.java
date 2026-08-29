@@ -10,8 +10,8 @@ import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.xml.bind.JAXBException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * Facade that routes electronic invoice operations to either the Fides API
@@ -36,7 +36,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class HaciendaServiceFacade {
 
-    private static final Logger LOG = Logger.getLogger(HaciendaServiceFacade.class.getName());
+    private static final Logger LOG = Logger.getLogger(HaciendaServiceFacade.class);
 
     @Inject
     private AppSettingsService appSettingsService;
@@ -101,7 +101,7 @@ public class HaciendaServiceFacade {
             AppSettings settings = appSettingsService.returnCurrent();
             return settings != null && settings.isUseFides();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Failed to read AppSettings for Fides flag", e);
+            LOG.warn("Failed to read AppSettings for Fides flag", e);
             return false;
         }
     }
@@ -180,7 +180,7 @@ public class HaciendaServiceFacade {
             }
 
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Fides submission error", e);
+            LOG.error("Fides submission error", e);
             return SubmitResult.error("Error al enviar via Fides: " + e.getMessage());
         }
     }
@@ -292,7 +292,7 @@ public class HaciendaServiceFacade {
             }
 
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Direct Hacienda submission error", e);
+            LOG.error("Direct Hacienda submission error", e);
             return SubmitResult.error("Error al enviar a Hacienda: " + e.getMessage());
         }
     }

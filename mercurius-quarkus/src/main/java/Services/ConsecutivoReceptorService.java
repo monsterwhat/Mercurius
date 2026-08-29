@@ -9,13 +9,13 @@ import jakarta.inject.Named;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
 
-    private static final Logger LOG = Logger.getLogger(ConsecutivoReceptorService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ConsecutivoReceptorService.class);
 
     @Override
     @Nonnull
@@ -68,8 +68,7 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
 
             return String.format("%010d", nextVal);
         } catch (jakarta.persistence.PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                "Error generating consecutive number: " + e.getMessage()
+            LOG.warn("Error generating consecutive number: " + e.getMessage()
                 + " | source=ConsecutivoReceptorService.getNextSequential()"
                 + " | despues=" + e.getMessage());
             // Fallback: generate a timestamp-based number to avoid blocking the MR flow
@@ -95,8 +94,7 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
         } catch (NoResultException e) {
             return null;
         } catch (jakarta.persistence.PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                "Error finding counter: " + e.getMessage()
+            LOG.warn("Error finding counter: " + e.getMessage()
                 + " | source=ConsecutivoReceptorService.findCounter()"
                 + " | despues=" + e.getMessage());
             return null;

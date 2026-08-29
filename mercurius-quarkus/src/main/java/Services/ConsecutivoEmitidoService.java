@@ -10,7 +10,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 /**
  * Thread-safe sequential number generator for emitted electronic documents.
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
 
-    private static final Logger LOG = Logger.getLogger(ConsecutivoEmitidoService.class.getName());
+    private static final Logger LOG = Logger.getLogger(ConsecutivoEmitidoService.class);
 
     @Override
     @Nonnull
@@ -83,8 +83,7 @@ public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
 
             return nextVal;
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                "Error generating consecutive number: " + e.getMessage()
+            LOG.warn("Error generating consecutive number: " + e.getMessage()
                 + " | source=ConsecutivoEmitidoService.getNextSequential()"
                 + " | despues=" + e.getMessage());
             throw new RuntimeException("Cannot generate consecutive number for " + sucursal + "-" + terminal + "-" + tipo + ": " + e.getMessage(), e);

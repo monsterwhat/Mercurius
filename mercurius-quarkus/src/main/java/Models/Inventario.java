@@ -62,5 +62,4 @@ public class Inventario implements Serializable {
     
     private Boolean processed;
 
-
 }

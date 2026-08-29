@@ -12,8 +12,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * HTML pages of the Correos module for the NEW Qute/HTMX app surface:
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 @Produces(MediaType.TEXT_HTML)
 @RolesAllowed({"admin", "tributacion"})
 public class CorreosPagesResource {
-    private static final Logger LOG = Logger.getLogger(CorreosPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(CorreosPagesResource.class);
 
     @Inject
     @Nonnull
@@ -71,7 +71,7 @@ public class CorreosPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de correos", e);
+            LOG.warn("Error renderizando la página de correos", e);
             return Response.serverError()
                     .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR", errorMessage))
                     .build();

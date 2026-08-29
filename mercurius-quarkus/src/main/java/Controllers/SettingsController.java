@@ -5,6 +5,7 @@ import Services.AppSettingsService;
 import Services.EmailService;
 import Services.HaciendaCertificateService;
 import Services.HaciendaCertificateService.CertificateInfo;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -58,7 +59,7 @@ import jakarta.servlet.http.Part;
 @ApplicationScoped
 public class SettingsController implements Serializable {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(SettingsController.class.getName());
+    private static final Logger LOG = Logger.getLogger(SettingsController.class);
 
     @Nullable
     private List<AppSettings> currentSettingsList;
@@ -360,7 +361,7 @@ public class SettingsController implements Serializable {
                 reloadPage();
 
             } catch (IOException ex) {
-                                LOG.log(java.util.logging.Level.WARNING, "Error: " + ex.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.handleFileUpload()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(ex.getLocalizedMessage()));
+                                LOG.warn("Error: " + ex.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.handleFileUpload()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(ex.getLocalizedMessage()));
             }
                         LOG.info("stub" + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         }
@@ -407,7 +408,7 @@ public class SettingsController implements Serializable {
             reloadPage();
             addMessage(null, "Éxito", "Se añadió el correo electrónico");
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error:" + e.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.saveCorreo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getLocalizedMessage()));
+                        LOG.warn("Error:" + e.getLocalizedMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.saveCorreo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getLocalizedMessage()));
             addMessage(null, "Error", "No se pudo enviar el correo: " + e.getMessage());
         }
     }
@@ -418,7 +419,7 @@ public class SettingsController implements Serializable {
         CompletableFuture.runAsync(() -> {
             probarCorreo(correoElectronico, contrasenaCorreo);
         }).exceptionally(ex -> {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al probar correo: " + ex.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.asyncProbarCorreo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(ex.getMessage()));
+                        LOG.warn("Error al probar correo: " + ex.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.asyncProbarCorreo()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(ex.getMessage()));
             addMessage(null, 
                    "Prueba de correo fallida", 
                    "El correo fue guardado, pero no se pudo enviar el mensaje de prueba."); 
@@ -461,7 +462,7 @@ public class SettingsController implements Serializable {
         tipoCambioController.recargar();
     }
 
-    private void addMessage(Object severity, String summary, String detail) {              LOG.log("Error".equalsIgnoreCase(String.valueOf(summary)) ? java.util.logging.Level.WARNING : java.util.logging.Level.INFO, detail + " | user=" + String.valueOf(currentSession != null && currentSession.getCurrentUser() != null ? (Models.Users) currentSession.getCurrentUser() : null) + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+    private void addMessage(Object severity, String summary, String detail) {              LOG.warn(detail + " | user=" + String.valueOf(currentSession != null && currentSession.getCurrentUser() != null ? (Models.Users) currentSession.getCurrentUser() : null) + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
     }
 
     public void saveProfile() {
@@ -484,7 +485,7 @@ public class SettingsController implements Serializable {
         try {
             httpResponse.sendRedirect(url);
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al redirigir: " + e.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.reloadPage()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error al redirigir: " + e.getMessage() + " | user=" + String.valueOf(currentSession.getCurrentUser()) + " | source=" + "SettingsController.reloadPage()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 

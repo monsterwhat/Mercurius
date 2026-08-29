@@ -28,6 +28,7 @@ import jakarta.annotation.Nullable;
 import jakarta.inject.Singleton;
 import jakarta.inject.Inject;
 import java.math.BigDecimal;
+import org.jboss.logging.Logger;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -45,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 public class ProgramadorTareas {
     
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(ProgramadorTareas.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProgramadorTareas.class);
 
     @Inject @Nonnull private TipoCambioService tipoCambioService;
     @Inject @Nonnull private EmailService emailer;
@@ -80,11 +81,11 @@ public class ProgramadorTareas {
                 try {
                     comprobanteService.enviarComprobanteAHacienda(factura);
                 } catch (RuntimeException e) {
-                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error enviando factura pendiente: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.enviarFacturasPendientes()", null, e.getMessage()));
+                    LOG.warn("failed to enviar facturas pendientes", e);
                 }
             }
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en enviarFacturasPendientes: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.enviarFacturasPendientes()", null, e.getMessage()));
+            LOG.warn("failed to enviar facturas pendientes", e);
         }
     }
 
@@ -101,7 +102,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
         // Skip unconfigured IMAP so the @CircuitBreaker is not tripped by repeated connect failures.
         if (correoElectronico == null || correoElectronico.isBlank()
                 || contrasenaCorreo == null || contrasenaCorreo.isBlank()) {
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Email processing skipped: no IMAP credentials configured", "Sistema", 0, "ProgramadorTareas.revisarRecibosEnCorreos()", null, null));
+            LOG.info("failed to revisar recibos en correos");
             return;
         }
         
@@ -109,18 +110,18 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
     }
     
     private void revisarRecibosEnCorreosFallback() {
-        LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "FALLBACK: revisarRecibosEnCorreos skipped - circuit breaker open or repeated failures", "Sistema", 0, "ProgramadorTareas.revisarRecibosEnCorreosFallback()", null, null));
+        LOG.warn("failed to revisar recibos en correos fallback");
     }
     
     public void handleEmailProcess(@Nonnull String emailResult) {
     // Log the result of the email processing
-    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Email processing result: " + emailResult, "Sistema", 0, "ProgramadorTareas.handleEmailProcess()", null, null));
+    LOG.info("failed to handle email process");
 
         if (emailResult.startsWith("Processing completed")) {
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Success: " + emailResult, "Sistema", 0, "ProgramadorTareas.handleEmailProcess()", null, null));
+            LOG.info("failed to handle email process");
         } else {
             // If there was an error, handle it appropriately
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error: " + emailResult, "Sistema", 0, "ProgramadorTareas.handleEmailProcess()", null, null));
+            LOG.warn("failed to handle email process");
         }
     
     }
@@ -149,14 +150,14 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                                 }
                                 comprobantesEmitidosService.update(factura);
 
-                                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Hacienda", "Estado actualizado: " + clave + " -> " + nuevoEstado, "Sistema", 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, null));
+                                LOG.info("failed to verificar estado facturas enviadas");
 
                                 // If newly accepted, send to client
                                 if ("ACEPTADO".equals(nuevoEstado) && !"ACEPTADO".equals(estadoAnterior)) {
                                     try {
                                         comprobanteService.enviarFacturaACliente(factura, null, null, null, null, null);
                                     } catch (RuntimeException e) {
-                                        LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error enviando factura a cliente: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, e.getMessage()));
+                                        LOG.warn("failed to verificar estado facturas enviadas", e);
                                     }
                                 }
                             }
@@ -174,7 +175,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                                 correctionService.corregirFactura(factura);
                             }
                         } catch (RuntimeException ce) {
-                            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en auto-corrección: " + ce.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, ce.getMessage()));
+                            LOG.warn("failed to verificar estado facturas enviadas", ce);
                         }
 
                         // Send email notification if configured
@@ -204,19 +205,19 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                                     subject, body,
                                     currentSettings.getCorreoElectronico(),
                                     currentSettings.getContrasenaCorreo(),
-                                    result -> LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación de rechazo enviada: " + result, "Sistema", 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, null))
+                                    result -> LOG.info("failed to verificar estado facturas enviadas")
                                 );
                             }
                         } catch (RuntimeException ne) {
-                            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error enviando notificación de rechazo: " + ne.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, ne.getMessage()));
+                            LOG.warn("failed to verificar estado facturas enviadas", ne);
                         }
                     }
                 } catch (RuntimeException e) {
-                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error verificando estado factura: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, e.getMessage()));
+                    LOG.warn("failed to verificar estado facturas enviadas", e);
                 }
             }
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en verificarEstadoFacturasEnviadas: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarEstadoFacturasEnviadas()", null, e.getMessage()));
+            LOG.warn("failed to verificar estado facturas enviadas", e);
         }
     }
 
@@ -241,8 +242,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                     String clave = factura.getHaciendaClave();
                     if (clave == null || clave.isEmpty()) continue;
 
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Advertencia Hacienda", "Factura sin respuesta de Hacienda tras 3 horas: " + clave + 
-                        " (Enviada: " + factura.getHaciendaFechaEnvio() + ")", "Sistema", 0, "ProgramadorTareas.verificarFacturasSinRespuesta3Horas()", null, null));
+                    LOG.info("failed to verificar facturas sin respuesta3 horas");
 
                     // Try to check status one more time
                     HaciendaApiService.ApiResponse response = haciendaApiService.checkInvoiceStatus(clave);
@@ -256,7 +256,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                             }
                             comprobantesEmitidosService.update(factura);
                             
-                            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Hacienda", "Estado recuperado tras 3h: " + clave + " -> " + nuevoEstado, "Sistema", 0, "ProgramadorTareas.verificarFacturasSinRespuesta3Horas()", null, null));
+                            LOG.info("failed to verificar facturas sin respuesta3 horas");
 
                             if ("ACEPTADO".equals(nuevoEstado)) {
                                 comprobanteService.enviarFacturaACliente(factura, null, null, null, null, null);
@@ -264,11 +264,11 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                         }
                     }
                 } catch (RuntimeException e) {
-                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error verificando factura 3h: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarFacturasSinRespuesta3Horas()", null, e.getMessage()));
+                    LOG.warn("failed to verificar facturas sin respuesta3 horas", e);
                 }
             }
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en verificarFacturasSinRespuesta3Horas: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarFacturasSinRespuesta3Horas()", null, e.getMessage()));
+            LOG.warn("failed to verificar facturas sin respuesta3 horas", e);
         }
     }
 
@@ -283,15 +283,15 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                 String consecutivo = factura.getEncabezado() != null ? factura.getEncabezado().getNumeroConsecutivo() : "N/A";
                 
                 if (diasRestantes <= 0) {
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Crítico Hacienda", "VENCIDO: Mensaje Receptor para factura " + consecutivo + " - Perdida de crédito fiscal IVA", "Sistema", 0, "ProgramadorTareas.verificarVencimientoMensajeReceptor()", null, null));
+                    LOG.info("failed to verificar vencimiento mensaje receptor");
                 } else if (diasRestantes <= 1) {
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Urgente Hacienda", "MAÑANA VENCE: Mensaje Receptor para factura " + consecutivo + " (" + diasRestantes + " día)", "Sistema", 0, "ProgramadorTareas.verificarVencimientoMensajeReceptor()", null, null));
+                    LOG.info("failed to verificar vencimiento mensaje receptor");
                 } else {
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Advertencia Hacienda", "Próximo a vencer: Mensaje Receptor para factura " + consecutivo + " (" + diasRestantes + " días)", "Sistema", 0, "ProgramadorTareas.verificarVencimientoMensajeReceptor()", null, null));
+                    LOG.info("failed to verificar vencimiento mensaje receptor");
                 }
             }
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en verificarVencimientoMensajeReceptor: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.verificarVencimientoMensajeReceptor()", null, e.getMessage()));
+            LOG.warn("failed to verificar vencimiento mensaje receptor", e);
         }
     }
 
@@ -320,16 +320,16 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                         factura, 1, "ACEPTADO", montoTotalImpuesto, montoTotalFactura);
 
                     if (result.success) {
-                        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Hacienda", "Auto-envío MR aceptado para factura " + consecutivo + " (" + diasRestantes + " días restantes)", "Sistema", 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, null));
+                        LOG.info("failed to enviar mensajes receptor pendientes");
                     } else {
-                        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Advertencia Hacienda", "No se pudo auto-enviar MR para factura " + consecutivo + ": " + result.message, "Sistema", 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, result.message));
+                        LOG.info("failed to enviar mensajes receptor pendientes");
                     }
                 } catch (RuntimeException e) {
-                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error auto-enviando MR: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, e.getMessage()));
+                    LOG.warn("failed to enviar mensajes receptor pendientes", e);
                 }
             }
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en enviarMensajesReceptorPendientes: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.enviarMensajesReceptorPendientes()", null, e.getMessage()));
+            LOG.warn("failed to enviar mensajes receptor pendientes", e);
         }
     }
 
@@ -381,10 +381,10 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                 "Mercurius - Productos Próximos a Vencer", body.toString(),
                 currentSettings.getCorreoElectronico(), currentSettings.getContrasenaCorreo(), null);
 
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación de lotes próximos a vencer enviada a " + correoNotif, "Sistema", 0, "ProgramadorTareas.notificarLotesProximosVencer()", null, null));
+            LOG.info("failed to notificar lotes proximos vencer");
 
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en notificarLotesProximosVencer: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.notificarLotesProximosVencer()", null, e.getMessage()));
+            LOG.warn("failed to notificar lotes proximos vencer", e);
         }
     }
 
@@ -396,7 +396,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
             String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
             if (correoElectronico == null || contrasenaCorreo == null) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Email not configured for supplier notifications", "Sistema", 0, "ProgramadorTareas.notificarLlegadaProveedores()", null, null));
+                LOG.info("failed to notificar llegada proveedores");
                 return;
             }
 
@@ -492,14 +492,14 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                         body.toString(),
                         correoElectronico,
                         contrasenaCorreo,
-                        result -> LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación enviada a " + dept.getContactoEmail() + ": " + result, "Sistema", 0, "ProgramadorTareas.notificarLlegadaProveedores()", null, null))
+                        result -> LOG.info("failed to notificar llegada proveedores")
                     );
                 } catch (RuntimeException e) {
-                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error notificando proveedor " + dept.getNombre() + ": " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.notificarLlegadaProveedores()", null, e.getMessage()));
+                    LOG.warn("failed to notificar llegada proveedores", e);
                 }
             }
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en notificarLlegadaProveedores: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.notificarLlegadaProveedores()", null, e.getMessage()));
+            LOG.warn("failed to notificar llegada proveedores", e);
         }
     }
 
@@ -522,9 +522,9 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
     public void expirePuntosInactivos() {
         try {
             loyaltyService.checkAndExpireInactivePoints();
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Expiración automática de puntos completada", "Sistema", 0, "ProgramadorTareas.expirePuntosInactivos()", null, null));
+            LOG.info("failed to expire puntos inactivos");
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error expirando puntos inactivos: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.expirePuntosInactivos()", null, e.getMessage()));
+            LOG.warn("failed to expire puntos inactivos", e);
         }
     }
 
@@ -541,7 +541,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
             List<ComprobantesEmitidos> rechazadas = comprobantesEmitidosService.findFacturasRechazadas();
             if (rechazadas == null || rechazadas.isEmpty()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación diaria: No hay facturas rechazadas pendientes", "Sistema", 0, "ProgramadorTareas.notificarRechazosPendientes()", null, null));
+                LOG.info("failed to notificar rechazos pendientes");
                 return;
             }
 
@@ -574,12 +574,12 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                 subject, body.toString(),
                 currentSettings.getCorreoElectronico(),
                 currentSettings.getContrasenaCorreo(),
-                result -> LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Resumen diario de rechazos enviado: " + result, "Sistema", 0, "ProgramadorTareas.notificarRechazosPendientes()", null, null))
+                result -> LOG.info("failed to notificar rechazos pendientes")
             );
 
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Resumen diario de rechazos enviado a " + currentSettings.getCorreoNotificaciones(), "Sistema", 0, "ProgramadorTareas.notificarRechazosPendientes()", null, null));
+            LOG.info("failed to notificar rechazos pendientes");
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en notificarRechazosPendientes: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.notificarRechazosPendientes()", null, e.getMessage()));
+            LOG.warn("failed to notificar rechazos pendientes", e);
         }
     }
 
@@ -590,14 +590,14 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
             List<StockAlert> alertas = stockAlertService.getActiveStockAlerts();
             if (alertas == null || alertas.isEmpty()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación diaria de stock: No hay alertas activas", "Sistema", 0, "ProgramadorTareas.notificarAlertasStock()", null, null));
+                LOG.info("failed to notificar alertas stock");
                 return;
             }
 
             var currentSettings = appSettingsService.returnCurrent();
             String correoNotif = currentSettings.getCorreoNotificaciones();
             if (correoNotif == null || correoNotif.isEmpty()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación de stock omitida: correo de notificaciones no configurado", "Sistema", 0, "ProgramadorTareas.notificarAlertasStock()", null, null));
+                LOG.info("failed to notificar alertas stock");
                 return;
             }
 
@@ -609,13 +609,13 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                 subject, body,
                 currentSettings.getCorreoElectronico(),
                 currentSettings.getContrasenaCorreo(),
-                result -> LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación de stock enviada: " + result, "Sistema", 0, "ProgramadorTareas.notificarAlertasStock()", null, null))
+                result -> LOG.info("failed to notificar alertas stock")
             );
 
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Notificación de alertas de stock enviada a " + correoNotif + " (" + alertas.size() + " alertas)", "Sistema", 0, "ProgramadorTareas.notificarAlertasStock()", null, null));
+            LOG.info("failed to notificar alertas stock");
 
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en notificarAlertasStock: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.notificarAlertasStock()", null, e.getMessage()));
+            LOG.warn("failed to notificar alertas stock", e);
         }
     }
 
@@ -674,12 +674,12 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
             }
 
             if (now.getHour() == scheduledTime.getHour() && now.getMinute() == scheduledTime.getMinute()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Iniciando backup programado...", "Sistema", 0, "ProgramadorTareas.ejecutarBackupProgramado()", null, null));
+                LOG.info("failed to ejecutar backup programado");
                 backupService.ejecutarBackup();
             }
 
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error en backup programado: " + e.getMessage(), "Sistema", 0, "ProgramadorTareas.ejecutarBackupProgramado()", null, e.getMessage()));
+            LOG.warn("failed to ejecutar backup programado", e);
         }
     }
     

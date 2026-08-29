@@ -6,8 +6,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 import Models.Articulos.Articulos;
 import Models.Departamento;
@@ -76,7 +76,7 @@ import jakarta.ws.rs.core.Response;
 @RolesAllowed({"admin", "inventario"})
 public class StockAlertConfigResource {
 
-    private static final Logger LOG = Logger.getLogger(StockAlertConfigResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(StockAlertConfigResource.class);
 
     /** Page/fragment endpoint serving templates/pages/inventario/stock-alert-config.html. */
     private static final String PAGINA_URL = "/api/app/stock-alert-config/pagina";
@@ -141,7 +141,7 @@ public class StockAlertConfigResource {
             }
             return Response.ok(ApiResponse.ok(vistaArticulo(articuloEntidad))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error leyendo la configuración de alertas", e);
+            LOG.warn("Error leyendo la configuración de alertas", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron cargar los umbrales: " + e.getMessage()))
@@ -241,7 +241,7 @@ public class StockAlertConfigResource {
             }
             return Response.ok(ApiResponse.ok(actualizado)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error guardando los umbrales del artículo " + articulo, e);
+            LOG.warn("Error guardando los umbrales del artículo " + articulo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron guardar los umbrales: " + e.getMessage()))
@@ -278,7 +278,7 @@ public class StockAlertConfigResource {
             }
             return Response.ok(ApiResponse.ok(datos)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando las alertas disparadas", e);
+            LOG.warn("Error listando las alertas disparadas", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "No se pudieron cargar las alertas de stock: " + e.getMessage()))
@@ -362,7 +362,7 @@ public class StockAlertConfigResource {
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                     .build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de configuración", e);
+            LOG.warn("Error renderizando la página de configuración", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "No se pudo cargar la página de configuración: " + e.getMessage()))

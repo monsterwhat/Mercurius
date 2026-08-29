@@ -12,8 +12,8 @@ import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -30,7 +30,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Invoices Issued")
 public class InvoicesIssuedController {
 
-    private static final Logger LOG = Logger.getLogger(InvoicesIssuedController.class.getName());
+    private static final Logger LOG = Logger.getLogger(InvoicesIssuedController.class);
 
     @Inject
     @Nonnull
@@ -65,7 +65,7 @@ public class InvoicesIssuedController {
             PagedResponse<InvoiceDTO> paged = new PagedResponse<>(dtos, total, page, size);
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing issued invoices", e);
+            LOG.warn("Error listing issued invoices", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing issued invoices"))
                     .build();
@@ -90,7 +90,7 @@ public class InvoicesIssuedController {
             }
             return Response.ok(toDTO(invoice)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting issued invoice", e);
+            LOG.warn("Error getting issued invoice", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting issued invoice"))
                     .build();

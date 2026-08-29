@@ -1,6 +1,7 @@
 package Services;
 
 import Models.AppSettings;
+import org.jboss.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -31,7 +32,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class BackupService implements Serializable {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(BackupService.class.getName());
+    private static final Logger LOG = Logger.getLogger(BackupService.class);
 
     private static final long serialVersionUID = 1L;
     private static final String BACKUP_PREFIX = "mercurius_";
@@ -41,7 +42,6 @@ public class BackupService implements Serializable {
     @Inject
     private @Nonnull AppSettingsService appSettingsService;
 
-    
     @ConfigProperty(name = "quarkus.datasource.jdbc.url")
     @Nonnull String jdbcUrl;
 
@@ -64,7 +64,7 @@ public class BackupService implements Serializable {
         try {
             AppSettings settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) {
-                                LOG.log(java.util.logging.Level.WARNING, "No se encontró configuración activa para ejecutar backup" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                                LOG.warn("No se encontró configuración activa para ejecutar backup" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return false;
             }
 
@@ -111,17 +111,17 @@ public class BackupService implements Serializable {
                 limpiarBackupsViejos();
                 return true;
             } else {
-                                LOG.log(java.util.logging.Level.WARNING, "pg_dump falló con código: " + exitCode + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                                LOG.warn("pg_dump falló con código: " + exitCode + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 try { Files.deleteIfExists(outputFile); } catch (IOException ignored) {}
                 return false;
             }
 
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error de E/S en backup: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error de E/S en backup: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-                        LOG.log(java.util.logging.Level.WARNING, "Backup interrumpido: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Backup interrumpido: " + e.getMessage() + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -160,7 +160,7 @@ public class BackupService implements Serializable {
             }
 
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error limpiando backups viejos: " + e.getMessage() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error limpiando backups viejos: " + e.getMessage() + " | source=" + "BackupService.limpiarBackupsViejos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -193,7 +193,7 @@ public class BackupService implements Serializable {
             }
 
         } catch (IOException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listando backups: " + e.getMessage() + " | source=" + "BackupService.listarBackups()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listando backups: " + e.getMessage() + " | source=" + "BackupService.listarBackups()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
         return result;
     }

@@ -1,6 +1,7 @@
 package Services;
 
 import Models.Users;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -48,11 +49,10 @@ import org.eclipse.microprofile.faulttolerance.Fallback;
 @ApplicationScoped
 public class HaciendaSigner {
 
-    private static final java.util.logging.Logger LOG =
-        java.util.logging.Logger.getLogger(HaciendaSigner.class.getName());
+    private static final Logger LOG =
+        Logger.getLogger(HaciendaSigner.class);
 
     private final HaciendaCertificateService certificateService;
-    
 
     @Inject HaciendaXsdValidator xsdValidator;
 
@@ -104,7 +104,7 @@ public class HaciendaSigner {
 
             HaciendaXsdValidator.ValidationResult vr = xsdValidator.validate(xmlContent, rootNs);
             if (!vr.valid) {
-                                LOG.log(java.util.logging.Level.WARNING, "El XML no pasó la validación contra el esquema XSD: " + vr.errorMessage + " | source=" + "HaciendaSigner.signXml()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(xmlContent));
+                                LOG.warn("El XML no pasó la validación contra el esquema XSD: " + vr.errorMessage + " | source=" + "HaciendaSigner.signXml()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(xmlContent));
                 return SignResult.error("XSD validation failed: " + vr.errorMessage);
             }
 
@@ -161,10 +161,10 @@ public class HaciendaSigner {
             return SignResult.ok(outputStream.toString("UTF-8"));
 
         } catch (ParserConfigurationException | SAXException | IOException | GeneralSecurityException | TransformerException | XAdES4jException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al firmar XML: " + e.getMessage() + " | source=" + "HaciendaSigner.signXml()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error al firmar XML: " + e.getMessage() + " | source=" + "HaciendaSigner.signXml()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Error signing XML: " + e.getMessage(), e);
         } catch (Exception e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error al firmar XML: " + e.getMessage() + " | source=" + "HaciendaSigner.signXml()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error al firmar XML: " + e.getMessage() + " | source=" + "HaciendaSigner.signXml()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Error signing XML: " + e.getMessage(), e);
         }
     }
@@ -240,7 +240,7 @@ public class HaciendaSigner {
         }
         String stripped = input.replaceAll("[^0-9]", "");
         if (stripped.length() != input.length()) {
-            LOG.warning("Clave numeric: non-digit chars stripped from '" + maskInput(input)
+            LOG.warn("Clave numeric: non-digit chars stripped from '" + maskInput(input)
                 + "' — clave must be 50-digit numeric per Hacienda spec");
         }
         if (stripped.isEmpty()) {
@@ -284,8 +284,8 @@ public class HaciendaSigner {
     }
     
     private SignResult signXmlFallback(String xmlContent) {
-                LOG.log(java.util.logging.Level.WARNING, "FALLBACK: XML signing failed after retries" + " | source=" + "HaciendaSigner.signXmlFallback()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
-                LOG.log(java.util.logging.Level.WARNING, "Fallo en firma XML despues de reintentos" + " | source=" + "HaciendaSigner.signXmlFallback()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                LOG.warn("FALLBACK: XML signing failed after retries" + " | source=" + "HaciendaSigner.signXmlFallback()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                LOG.warn("Fallo en firma XML despues de reintentos" + " | source=" + "HaciendaSigner.signXmlFallback()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         return SignResult.error("XML signing failed: Service temporarily unavailable. Please try again later.");
     }
 

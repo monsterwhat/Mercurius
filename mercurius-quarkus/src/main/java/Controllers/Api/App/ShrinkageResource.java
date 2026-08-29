@@ -25,8 +25,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -60,7 +60,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Reportes")
 public class ShrinkageResource {
 
-    private static final Logger LOG = Logger.getLogger(ShrinkageResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(ShrinkageResource.class);
 
     @Inject
     @Nonnull
@@ -124,7 +124,7 @@ public class ShrinkageResource {
                     mermaPorCausa, mermaPorDepartamento, filas);
             return Response.ok(ApiResponse.ok(reporte)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error generando el análisis de mermas", e);
+            LOG.warn("Error generando el análisis de mermas", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error generando el análisis de mermas"))
                     .build();

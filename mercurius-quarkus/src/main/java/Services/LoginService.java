@@ -1,6 +1,7 @@
 package Services;
 
 import Models.Users;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -21,7 +22,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 @ApplicationScoped
 public class LoginService extends GService<Users> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(LoginService.class.getName());
+    private static final Logger LOG = Logger.getLogger(LoginService.class);
 
     // Secure BCrypt password hashing with automatic salt generation
     private static final int BCRYPT_COST = 12;
@@ -42,7 +43,7 @@ public class LoginService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage() + " | source=" + "LoginService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage() + " | source=" + "LoginService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -52,7 +53,7 @@ public class LoginService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage() + " | source=" + "LoginService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage() + " | source=" + "LoginService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -62,7 +63,7 @@ public class LoginService extends GService<Users> {
             BCrypt.Result result = BCrypt.verifyer().verify(password.toCharArray(), hashedPassword);
             return result.verified;
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Password verification error: " + e.getLocalizedMessage() + " | source=" + "LoginService.verifyPassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Password verification error: " + e.getLocalizedMessage() + " | source=" + "LoginService.verifyPassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return false;
         }
     }
@@ -71,7 +72,7 @@ public class LoginService extends GService<Users> {
         try {
             return BCrypt.withDefaults().hashToString(BCRYPT_COST, password.toCharArray());
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Password hashing error: " + e.getLocalizedMessage() + " | source=" + "LoginService.hashPassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Password hashing error: " + e.getLocalizedMessage() + " | source=" + "LoginService.hashPassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Failed to hash password", e);
         }
     }
@@ -84,7 +85,7 @@ public class LoginService extends GService<Users> {
             }
             return null;
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Authentication error: " + e.getLocalizedMessage() + " | source=" + "LoginService.authenticate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Authentication error: " + e.getLocalizedMessage() + " | source=" + "LoginService.authenticate()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -102,7 +103,7 @@ public class LoginService extends GService<Users> {
                 return null;
             }
         } catch (IllegalStateException | SecurityException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error in findByUsername: " + (e != null ? e.getMessage() : "null") + " | source=" + "LoginService.findByUsername()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e != null ? e.getMessage() : null));
+                        LOG.warn("Error in findByUsername: " + (e != null ? e.getMessage() : "null") + " | source=" + "LoginService.findByUsername()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e != null ? e.getMessage() : null));
             return null;
         }
     }
@@ -150,7 +151,7 @@ public class LoginService extends GService<Users> {
                                 LOG.info("=============================" + " | source=" + "LoginService.InsertAdmin()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error in InsertAdmin! Error: " + e.getMessage() + " | source=" + "LoginService.InsertAdmin()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error in InsertAdmin! Error: " + e.getMessage() + " | source=" + "LoginService.InsertAdmin()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -163,7 +164,7 @@ public class LoginService extends GService<Users> {
             em.persist(entity);
             em.flush();
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating user: " + e.getMessage() + " | source=" + "LoginService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating user: " + e.getMessage() + " | source=" + "LoginService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -181,7 +182,7 @@ public class LoginService extends GService<Users> {
                                 LOG.info("Entity not found" + " | source=" + "LoginService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "LoginService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "LoginService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -200,7 +201,7 @@ public class LoginService extends GService<Users> {
                                 LOG.info("Entity not found" + " | source=" + "LoginService.softDelete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error soft deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "LoginService.softDelete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error soft deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "LoginService.softDelete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -213,7 +214,7 @@ public class LoginService extends GService<Users> {
             return !existingUser.isEmpty();
 
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error:" + e.getLocalizedMessage() + " | source=" + "LoginService.usernameExists()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error:" + e.getLocalizedMessage() + " | source=" + "LoginService.usernameExists()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return true;
         }
     }
@@ -233,7 +234,7 @@ public class LoginService extends GService<Users> {
             }
 
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getLocalizedMessage() + " | source=" + "LoginService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error: " + e.getLocalizedMessage() + " | source=" + "LoginService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -251,7 +252,7 @@ public class LoginService extends GService<Users> {
                 }
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getLocalizedMessage() + " | source=" + "LoginService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error: " + e.getLocalizedMessage() + " | source=" + "LoginService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -269,7 +270,7 @@ public class LoginService extends GService<Users> {
                 }
             }
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getLocalizedMessage() + " | source=" + "LoginService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error: " + e.getLocalizedMessage() + " | source=" + "LoginService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 

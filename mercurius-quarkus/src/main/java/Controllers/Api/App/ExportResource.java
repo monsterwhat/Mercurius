@@ -27,8 +27,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -57,7 +57,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Export")
 public class ExportResource {
 
-    private static final Logger LOG = Logger.getLogger(ExportResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(ExportResource.class);
 
     private static final String TYPE_XLSX = "xlsx";
     private static final String TYPE_PDF = "pdf";
@@ -118,7 +118,7 @@ public class ExportResource {
         } catch (UnsupportedDatasetException e) {
             return notFound(e.getMessage());
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error building export " + key + "/" + normalizedType, e);
+            LOG.warn("Error building export " + key + "/" + normalizedType, e);
             return serverError("No se pudo generar la exportación");
         }
 

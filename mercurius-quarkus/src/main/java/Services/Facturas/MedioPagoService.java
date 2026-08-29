@@ -2,6 +2,7 @@ package Services.Facturas;
 
 import Models.Encabezado.MedioPago;
 import Services.GService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
@@ -17,7 +18,7 @@ import jakarta.transaction.Transactional;
 @ApplicationScoped
 public class MedioPagoService extends GService<MedioPago>  {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(MedioPagoService.class.getName());
+    private static final Logger LOG = Logger.getLogger(MedioPagoService.class);
     
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -33,7 +34,7 @@ public class MedioPagoService extends GService<MedioPago>  {
         try {
             em.persist(medioPago);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating Entity!" + " | source=" + "MedioPagoService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating Entity!" + " | source=" + "MedioPagoService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
     

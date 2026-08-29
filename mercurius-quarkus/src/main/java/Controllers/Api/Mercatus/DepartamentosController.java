@@ -10,8 +10,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Mercatus - Departments")
 public class DepartamentosController {
 
-    private static final Logger LOG = Logger.getLogger(DepartamentosController.class.getName());
+    private static final Logger LOG = Logger.getLogger(DepartamentosController.class);
 
     @Inject
     @Nonnull
@@ -53,7 +53,7 @@ public class DepartamentosController {
             PagedResponse<DepartamentoDTO> paged = new PagedResponse<>(dtos, total, 0, dtos.size());
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing departamentos", e);
+            LOG.warn("Error listing departamentos", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing departamentos"))
                     .build();
@@ -78,7 +78,7 @@ public class DepartamentosController {
             }
             return Response.ok(toDTO(departamento)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting departamento", e);
+            LOG.warn("Error getting departamento", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting departamento"))
                     .build();

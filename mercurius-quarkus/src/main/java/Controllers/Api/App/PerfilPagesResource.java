@@ -18,8 +18,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * HTML page of the Perfil module for the NEW Qute/HTMX app surface:
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 @Produces(MediaType.TEXT_HTML)
 @RolesAllowed({"admin", "inventario", "facturacion", "tributacion", "usuario", "registro"})
 public class PerfilPagesResource {
-    private static final Logger LOG = Logger.getLogger(PerfilPagesResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(PerfilPagesResource.class);
 
     @Inject
     @Nonnull
@@ -64,7 +64,7 @@ public class PerfilPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la pagina de perfil", e);
+            LOG.warn("Error renderizando la pagina de perfil", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "No se pudo cargar el perfil"))

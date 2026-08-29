@@ -17,8 +17,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
@@ -53,7 +53,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Tipo de Cambio")
 public class TipoCambioPageResource {
 
-    private static final Logger LOG = Logger.getLogger(TipoCambioPageResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(TipoCambioPageResource.class);
 
     /** Cap for the historial modal table. */
     private static final int HISTORIAL_LIMIT = 20;
@@ -148,7 +148,7 @@ public class TipoCambioPageResource {
         try {
             tc = tipoCambioService.getNewestTipoCambio();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "tipo-cambio page unavailable", e);
+            LOG.warn("tipo-cambio page unavailable", e);
         }
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("disponible", tc != null);

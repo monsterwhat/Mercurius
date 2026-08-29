@@ -59,8 +59,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -149,7 +149,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Artículos")
 public class ArticuloResource {
 
-    private static final Logger LOG = Logger.getLogger(ArticuloResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(ArticuloResource.class);
 
     /** Tab keys of the five-tab page (legacy tab order preserved). */
     public static final String TAB_ACTIVOS = "activos";
@@ -209,7 +209,6 @@ public class ArticuloResource {
     @Inject
     CabysService cabysService;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;
@@ -321,7 +320,7 @@ public class ArticuloResource {
                     .map(ArticuloResource::toListDTO).toList();
             return Response.ok(new PagedResponse<>(data, total, w.page(), w.size())).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error listando artículos", e);
+            LOG.warn("Error listando artículos", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando los artículos"))
                     .build();
@@ -355,7 +354,7 @@ public class ArticuloResource {
             }
             return htmlOk(renderFullPage());
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de artículos", e);
+            LOG.warn("Error renderizando la página de artículos", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();
@@ -393,7 +392,7 @@ public class ArticuloResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(articulo))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error leyendo el artículo " + codigo, e);
+            LOG.warn("Error leyendo el artículo " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error leyendo el artículo"))
                     .build();
@@ -521,7 +520,7 @@ public class ArticuloResource {
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDetailDTO(nuevo))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error creando el artículo", e);
+            LOG.warn("Error creando el artículo", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error creando el artículo"))
                     .build();
@@ -648,7 +647,7 @@ public class ArticuloResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(updated))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error actualizando el artículo " + codigo, e);
+            LOG.warn("Error actualizando el artículo " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando el artículo"))
                     .build();
@@ -684,7 +683,7 @@ public class ArticuloResource {
                     "resultado", "DEACTIVATED",
                     "mensaje", "Se desactivo el artículo"))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error eliminando el artículo " + codigo, e);
+            LOG.warn("Error eliminando el artículo " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error eliminando el artículo"))
                     .build();
@@ -719,7 +718,7 @@ public class ArticuloResource {
             return Response.ok(ApiResponse.ok(new RevisionNextDTO(hasNext,
                     siguiente == null ? null : toDetailDTO(siguiente)))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error cargando el siguiente pendiente", e);
+            LOG.warn("Error cargando el siguiente pendiente", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cargando el siguiente artículo"))
                     .build();
@@ -810,7 +809,7 @@ public class ArticuloResource {
                     "Se proceso el articulo");
             return Response.ok(ApiResponse.ok(result)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error procesando la revisión del artículo " + codigo, e);
+            LOG.warn("Error procesando la revisión del artículo " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error procesando la revisión"))
                     .build();
@@ -848,7 +847,7 @@ public class ArticuloResource {
             return Response.ok(ApiResponse.ok(new RevisionNextDTO(siguiente != null,
                     siguiente == null ? null : toDetailDTO(siguiente)))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error saltando el artículo " + codigo, e);
+            LOG.warn("Error saltando el artículo " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error saltando el artículo"))
                     .build();
@@ -928,7 +927,7 @@ public class ArticuloResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(articulo))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error actualizando el precio del artículo " + codigo, e);
+            LOG.warn("Error actualizando el precio del artículo " + codigo, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando el precio"))
                     .build();
@@ -989,7 +988,7 @@ public class ArticuloResource {
             List<CabysDTO> data = resultados.stream().map(ArticuloResource::toDTO).toList();
             return Response.ok(ApiResponse.ok(data)).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error buscando en CAByS", e);
+            LOG.warn("Error buscando en CAByS", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error buscando en CAByS"))
                     .build();
@@ -1020,7 +1019,7 @@ public class ArticuloResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(promo))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error leyendo la promoción " + id, e);
+            LOG.warn("Error leyendo la promoción " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error leyendo la promoción"))
                     .build();
@@ -1130,7 +1129,7 @@ public class ArticuloResource {
             }
             return Response.ok(ApiResponse.ok(Map.of("mensaje", "Se elimino la promocion"))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error eliminando la promoción " + id, e);
+            LOG.warn("Error eliminando la promoción " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error eliminando la promoción"))
                     .build();
@@ -1203,7 +1202,7 @@ public class ArticuloResource {
                             ? Response.Status.CREATED : Response.Status.OK)
                     .entity(ApiResponse.ok(toDTO(promo))).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error guardando la promoción", e);
+            LOG.warn("Error guardando la promoción", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error guardando la promoción"))
                     .build();
@@ -1300,7 +1299,7 @@ public class ArticuloResource {
                     .data("resultados", filtered.subList(0, Math.min(filtered.size(), 10)))
                     .data("q", q));
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando el selector de artículos", e);
+            LOG.warn("Error renderizando el selector de artículos", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando el selector"))
                     .build();
@@ -1325,7 +1324,7 @@ public class ArticuloResource {
                     .data("resultados", filtered.subList(0, Math.min(filtered.size(), 10)))
                     .data("q", q));
         } catch (RuntimeException e) {
-            LOG.log(Level.WARNING, "Error renderizando el selector de artículos para ajuste", e);
+            LOG.warn("Error renderizando el selector de artículos para ajuste", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando el selector"))
                     .build();
@@ -1923,7 +1922,7 @@ public class ArticuloResource {
             }
             return loginService.findByUsername(identity.getPrincipal().getName());
         } catch (RuntimeException e) {
-            LOG.log(Level.FINE, "No current user resolvable", e);
+            LOG.debug("No current user resolvable", e);
             return null;
         }
     }

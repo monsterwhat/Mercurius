@@ -36,8 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -92,7 +92,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Cierre de Caja")
 public class CierreCajaResource {
 
-    private static final Logger LOG = Logger.getLogger(CierreCajaResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(CierreCajaResource.class);
 
     /** Legacy FacesMessage texts, kept byte-for-byte. */
     static final String MSG_APERTURA_INVALIDA = "Debe ingresar un monto inicial valido";
@@ -161,7 +161,7 @@ public class CierreCajaResource {
             CierreCaja sesion = cierreCajaService.findSesionAbierta(usuario);
             return Response.ok(ApiResponse.ok(sesion == null ? null : toDTO(sesion))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error consultando la sesion de caja actual", e);
+            LOG.warn("Error consultando la sesion de caja actual", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error consultando la sesion de caja"))
                     .build();
@@ -207,14 +207,11 @@ public class CierreCajaResource {
 
             // Legacy alert text; deliberate deviation: the legacy controller
             // logged the field after nulling it (always "null").
-            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Caja abierta", "Sesion de caja abierta con monto inicial: " + monto.toPlainString(),
-                    usuario != null ? usuario.getUsername() : "Sistema",
-                    0, "CierreCajaResource.open()", null, null));
+            LOG.info("failed to open");
 
             return Response.ok(ApiResponse.ok(toDTO(sesion))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error abriendo la sesion de caja", e);
+            LOG.warn("Error abriendo la sesion de caja", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error abriendo la sesion de caja"))
                     .build();
@@ -284,10 +281,7 @@ public class CierreCajaResource {
             sesionActual.setNotas(request == null ? null : request.notas);
             cierreCajaService.update(sesionActual);
 
-            LOG.log(Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Caja cerrada", MSG_SESION_CERRADA + diferencia,
-                    usuario != null ? usuario.getUsername() : "Sistema",
-                    0, "CierreCajaResource.close()", null, null));
+            LOG.info("failed to close");
 
             boolean advertencia = diferencia.compareTo(BigDecimal.ZERO) != 0;
             CloseResult result = new CloseResult(
@@ -295,7 +289,7 @@ public class CierreCajaResource {
                     advertencia, MSG_SESION_CERRADA + diferencia);
             return Response.ok(ApiResponse.ok(result)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error cerrando la sesion de caja", e);
+            LOG.warn("Error cerrando la sesion de caja", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cerrando la sesion de caja"))
                     .build();
@@ -335,7 +329,7 @@ public class CierreCajaResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listando el historial de caja", e);
+            LOG.warn("Error listando el historial de caja", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando el historial de caja"))
                     .build();
@@ -377,7 +371,7 @@ public class CierreCajaResource {
                     .data("sesion", sesionView(usuario))
                     .data("modelo", tablaModel(usuario, page, size, sort, dir)));
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la pagina de caja", e);
+            LOG.warn("Error renderizando la pagina de caja", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la pagina de caja"))
                     .build();
@@ -416,7 +410,7 @@ public class CierreCajaResource {
             }
             return estadoError(result.getStatus(), mensajeDe(result, MSG_APERTURA_INVALIDA));
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error abriendo la sesion de caja desde el formulario", e);
+            LOG.warn("Error abriendo la sesion de caja desde el formulario", e);
             return estadoError(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                     "Error abriendo la sesion de caja");
         }
@@ -465,7 +459,7 @@ public class CierreCajaResource {
             }
             return estadoError(result.getStatus(), mensajeDe(result, MSG_SIN_SESION));
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error cerrando la sesion de caja desde el formulario", e);
+            LOG.warn("Error cerrando la sesion de caja desde el formulario", e);
             return estadoError(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
                     "Error cerrando la sesion de caja");
         }

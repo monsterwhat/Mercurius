@@ -16,9 +16,9 @@ import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
 import java.io.StringWriter;
-import java.util.logging.Level;
+
 import Utils.XmlEncabezadoFlattener;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -30,7 +30,7 @@ import java.util.Objects;
 @ApplicationScoped
 public class ReciboElectronicoPagoStrategy implements DocumentoStrategy {
 
-    private static final Logger LOG = Logger.getLogger(ReciboElectronicoPagoStrategy.class.getName());
+    private static final Logger LOG = Logger.getLogger(ReciboElectronicoPagoStrategy.class);
     private static final JAXBContext JAXB_CONTEXT;
 
     static {
@@ -38,7 +38,7 @@ public class ReciboElectronicoPagoStrategy implements DocumentoStrategy {
         try {
             ctx = JAXBContext.newInstance(ReciboElectronicoPagoDocumento.class);
         } catch (JAXBException e) {
-            LOG.log(Level.SEVERE, "Failed to initialize JAXBContext for ReciboElectronicoPagoDocumento", e);
+            LOG.error("Failed to initialize JAXBContext for ReciboElectronicoPagoDocumento", e);
         }
         JAXB_CONTEXT = ctx;
     }

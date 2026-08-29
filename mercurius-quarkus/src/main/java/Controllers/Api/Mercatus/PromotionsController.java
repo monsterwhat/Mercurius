@@ -11,8 +11,8 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -29,7 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Mercatus - Promotions")
 public class PromotionsController {
 
-    private static final Logger LOG = Logger.getLogger(PromotionsController.class.getName());
+    private static final Logger LOG = Logger.getLogger(PromotionsController.class);
 
     @Inject
     @Nonnull
@@ -57,7 +57,7 @@ public class PromotionsController {
             PagedResponse<PromotionDTO> paged = new PagedResponse<>(dtos, total, 0, dtos.size());
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing promotions", e);
+            LOG.warn("Error listing promotions", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing promotions"))
                     .build();
@@ -82,7 +82,7 @@ public class PromotionsController {
             }
             return Response.ok(toDTO(promocion)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting promotion", e);
+            LOG.warn("Error getting promotion", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting promotion"))
                     .build();

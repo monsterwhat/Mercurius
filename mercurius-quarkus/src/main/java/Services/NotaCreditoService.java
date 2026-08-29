@@ -1,6 +1,7 @@
 package Services;
 
 import Models.NotaCredito;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -13,7 +14,7 @@ import java.util.List;
 @ApplicationScoped
 public class NotaCreditoService extends GService<NotaCredito> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(NotaCreditoService.class.getName());
+    private static final Logger LOG = Logger.getLogger(NotaCreditoService.class);
 
     @Override
     protected Class<NotaCredito> getEntityClass() {
@@ -33,7 +34,7 @@ public class NotaCreditoService extends GService<NotaCredito> {
             query.setParameter("comprobanteId", comprobanteId);
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listPorComprobante()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listPorComprobante()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -46,7 +47,7 @@ public class NotaCreditoService extends GService<NotaCredito> {
             );
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing all credit notes: " + e.getMessage() + " | source=" + "NotaCreditoService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

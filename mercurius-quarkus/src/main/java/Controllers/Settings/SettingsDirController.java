@@ -4,6 +4,7 @@ import Controllers.SessionController;
 import Models.AppSettings;
 import Services.AppSettingsService;
 import Services.EmailService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -51,7 +52,7 @@ import jakarta.servlet.http.Part;
 @RequestScoped
 public class SettingsDirController implements Serializable {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(SettingsDirController.class.getName());
+    private static final Logger LOG = Logger.getLogger(SettingsDirController.class);
 
     @Nullable
     private List<AppSettings> currentSettingsList;
@@ -101,15 +102,9 @@ public class SettingsDirController implements Serializable {
         File homeDir = new File(getMainDirectory(), "Mercurius");
         if (!homeDir.exists()) {
             if (homeDir.mkdirs()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Info", "Created directory: " + homeDir.getAbsolutePath(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.createHomeDir()", null, null));
+                LOG.info("failed to create home dir");
             } else {
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Error", "Failed to create directory: " + homeDir.getAbsolutePath(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.createHomeDir()", null, null));
+                LOG.warn("failed to create home dir");
             }
         }
     }
@@ -121,15 +116,9 @@ public class SettingsDirController implements Serializable {
         File profileDir = new File(getMainDirectory() + File.separator + "Mercurius", profileName);
         if (!profileDir.exists()) {
             if (profileDir.mkdirs()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Info", "Created directory: " + profileDir.getAbsolutePath(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.createProfileDir()", null, null));
+                LOG.info("failed to create profile dir");
             } else {
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Error", "Failed to create directory: " + profileDir.getAbsolutePath(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.createProfileDir()", null, null));
+                LOG.warn("failed to create profile dir");
             }
         }
     }
@@ -142,15 +131,9 @@ public class SettingsDirController implements Serializable {
         File reportesDir = new File(basePath, "reportes");
         if (!reportesDir.exists()) {
             if (reportesDir.mkdirs()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Info", "Created directory: " + reportesDir.getAbsolutePath(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.createReportesDir()", null, null));
+                LOG.info("failed to create reportes dir");
             } else {
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Error", "Failed to create directory: " + reportesDir.getAbsolutePath(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.createReportesDir()", null, null));
+                LOG.warn("failed to create reportes dir");
             }
         }
     }
@@ -198,10 +181,7 @@ public class SettingsDirController implements Serializable {
         settingsService.update(selectedSettings);
 
         // Save an alert (log) for updating the selected settings
-        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Configuración actualizada", "Se ha actualizado la configuración: " + selectedSettings.getNombrePerfil(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.updateSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings)));
+        LOG.info("failed to update selected settings");
     }
 
     public void disableSelectedSettings() {
@@ -209,10 +189,7 @@ public class SettingsDirController implements Serializable {
         settingsService.disable(selectedSettings);
 
         // Save an alert (log) for disabling the selected settings
-        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Configuración deshabilitada", "Se ha deshabilitado la configuración: " + selectedSettings.getNombrePerfil(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.disableSelectedSettings", antes, DiffUtils.snapshotEntity(selectedSettings)));
+        LOG.info("failed to disable selected settings");
     }
 
     @Nonnull
@@ -230,10 +207,7 @@ public class SettingsDirController implements Serializable {
             // Directory created successfully
         } else {
             // Failed to create directory
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Error", "Failed to create directory: " + newFolder.getAbsolutePath(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.createFolder()", null, null));
+            LOG.warn("failed to create folder");
         }
     }
 
@@ -310,10 +284,7 @@ public class SettingsDirController implements Serializable {
                 Files.copy(input, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Error", "Error: " + e.getLocalizedMessage(),
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "SettingsDirController.uploadLogo()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to upload logo");
         } 
     }
 

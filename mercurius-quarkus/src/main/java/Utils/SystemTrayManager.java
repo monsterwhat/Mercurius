@@ -1,5 +1,6 @@
 package Utils;
 
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -15,7 +16,7 @@ import java.net.URL;
 @ApplicationScoped
 public class SystemTrayManager {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(SystemTrayManager.class.getName());
+    private static final Logger LOG = Logger.getLogger(SystemTrayManager.class);
 
     @Inject @Nonnull
     AppLauncher appLauncher;
@@ -28,32 +29,32 @@ public class SystemTrayManager {
     public void initializeTray() {
         // Early return if already initialized
         if (initialized) {
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "System tray icon already initialized", "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+            LOG.info("failed to initialize tray");
             return;
         }
         
         synchronized (trayLock) {
             // Double-check after acquiring lock
             if (initialized) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "System tray icon already initialized (double-check)", "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+                LOG.info("failed to initialize tray");
                 return;
             }
             
             // Only enable tray on Windows desktop environments
             String os = System.getProperty("os.name").toLowerCase();
             if (!os.contains("win")) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "System tray disabled - only enabled on Windows", "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+                LOG.info("failed to initialize tray");
                 return;
             }
             
             // Check if running in headless mode
             if (GraphicsEnvironment.isHeadless()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Running in headless mode - system tray not available", "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+                LOG.info("failed to initialize tray");
                 return;
             }
             
             if (!SystemTray.isSupported()) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "System tray is not supported on this Windows system", "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+                LOG.info("failed to initialize tray");
                 return;
             }
 
@@ -63,7 +64,7 @@ public class SystemTrayManager {
                 // Check if there's already a tray icon in the system tray
                 for (TrayIcon existingIcon : tray.getTrayIcons()) {
                     if ("Mercurius".equals(existingIcon.getToolTip())) {
-                        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Debug", "Mercurius tray icon already exists in system tray", "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+                        LOG.info("failed to initialize tray");
                         initialized = true;
                         return;
                     }
@@ -94,10 +95,10 @@ public class SystemTrayManager {
                 tray.add(trayIcon);
                 initialized = true;
                 
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "System tray icon initialized successfully", "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+                LOG.info("failed to initialize tray");
                 
             } catch (AWTException e) {
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error adding tray icon: " + e.getMessage(), "Sistema", 0, "SystemTrayManager.initializeTray()", null, null));
+                LOG.warn("failed to initialize tray", e);
                 initialized = false;
             }
         }
@@ -164,7 +165,7 @@ public class SystemTrayManager {
                     tray.remove(trayIcon);
                 }
                 } catch (RuntimeException ex) {
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error removing tray icon: " + ex.getMessage(), "Sistema", 0, "SystemTrayManager.createPopupMenu()", null, null));
+                LOG.warn("failed to create popup menu");
             }
             System.exit(0);
         });
@@ -186,8 +187,8 @@ public class SystemTrayManager {
     private void showSimpleAboutDialog() {
         // This would require a proper GUI implementation
         // For now, just print to console
-        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "Mercurius v1.0 - Business Management System", "Sistema", 0, "SystemTrayManager.showSimpleAboutDialog()", null, null));
-        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "A comprehensive solution for business operations", "Sistema", 0, "SystemTrayManager.showSimpleAboutDialog()", null, null));
+        LOG.info("failed to show simple about dialog");
+        LOG.info("failed to show simple about dialog");
     }
 
     /**
@@ -226,9 +227,9 @@ public class SystemTrayManager {
                     tray.remove(trayIcon);
                     trayIcon = null;
                     initialized = false;
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Info", "System tray icon removed successfully", "Sistema", 0, "SystemTrayManager.removeTrayIcon()", null, null));
+                    LOG.info("failed to remove tray icon");
                 } catch (RuntimeException e) {
-                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s", "Error", "Error removing tray icon: " + e.getMessage(), "Sistema", 0, "SystemTrayManager.removeTrayIcon()", null, null));
+                    LOG.warn("failed to remove tray icon", e);
                 }
             }
         }

@@ -155,7 +155,6 @@ public class TributacionResource {
     @Inject
     HaciendaServiceFacade haciendaFacade;
 
-    
     @Nonnull
     @Inject
     LoginService loginService;

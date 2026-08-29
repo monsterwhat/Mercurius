@@ -11,8 +11,8 @@ import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -29,7 +29,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Accounting - Reports")
 public class ReportsController {
 
-    private static final Logger LOG = Logger.getLogger(ReportsController.class.getName());
+    private static final Logger LOG = Logger.getLogger(ReportsController.class);
 
     @Inject
     @Nonnull
@@ -79,7 +79,7 @@ public class ReportsController {
             PagedResponse<ProfitMarginDTO> paged = new PagedResponse<>(dtos, total, page, size);
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting profit margins", e);
+            LOG.warn("Error getting profit margins", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting profit margins"))
                     .build();
@@ -114,7 +114,7 @@ public class ReportsController {
 
             return Response.ok(dtos).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting sales by category", e);
+            LOG.warn("Error getting sales by category", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting sales by category"))
                     .build();
@@ -169,7 +169,7 @@ public class ReportsController {
             PagedResponse<IVASummaryDTO> paged = new PagedResponse<>(dtos, total, page, size);
             return Response.ok(paged).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting IVA summary", e);
+            LOG.warn("Error getting IVA summary", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting IVA summary"))
                     .build();

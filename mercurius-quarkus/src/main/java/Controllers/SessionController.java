@@ -2,12 +2,11 @@ package Controllers;
 
 import Models.Users;
 import Services.LoginService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.SessionScoped;
-
-
 
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -33,7 +32,7 @@ import lombok.ToString;
 @SessionScoped
 public class SessionController implements Serializable{
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(SessionController.class.getName());
+    private static final Logger LOG = Logger.getLogger(SessionController.class);
 
     public SessionController() {
     }
@@ -63,36 +62,18 @@ public class SessionController implements Serializable{
         try {
             if (processAuthentication()) {
                 if(currentUser != null){
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Usuario Conectado", "El usuario se conectó",
-                            currentUser != null ? currentUser.getUsername() : "Sistema",
-                            0, "executeLogin()", null, null));
+                    LOG.info("failed to execute login()");
                     redirectToSecuredArea();
                 }
             } else {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Intento de Login Fallido", "Usuario: " + username + " - Credenciales incorrectas",
-                            "Sistema",
-                            0, "executeLogin()", username, null));
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Credenciales invalidas",
-                            "Sistema",
-                            0, "SessionController.login", null, null));
+                LOG.info("failed to execute login()");
+                LOG.warn("failed to login");
             }
             
         } catch (IOException e) { 
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error al iniciar sesion " + username, e.getLocalizedMessage(),
-                            "Sistema",
-                            0, "sessionController.executelogin()", e.getLocalizedMessage(), null));
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Error al iniciar sesion",
-                            "Sistema",
-                            0, "SessionController.login", null, null));
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Error logging in " + e.getLocalizedMessage(),
-                            "Sistema",
-                            0, "SessionController.login()", null, e.getLocalizedMessage()));
+            LOG.info("failed to executelogin");
+            LOG.warn("failed to login");
+            LOG.warn("failed to login");
         }
     }
     
@@ -117,24 +98,15 @@ public class SessionController implements Serializable{
             
             // Register logout alert (user may be null after session clear)
             if (userToLog != null) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Usuario Desconectado", "El usuario se desconectó",
-                            userToLog != null ? userToLog.getUsername() : "Sistema",
-                            0, "logOut()", null, null));
+                LOG.info("failed to log out()");
             }
             
             // Redirect after session is properly invalidated
             httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
             
         } catch (IOException e) { 
-            LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error al cerrar sesion", e.getLocalizedMessage(),
-                            "Sistema",
-                            0, "sessionController.logout()", null, null));
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Error al cerrar sesion: " + e.getLocalizedMessage(),
-                            "Sistema",
-                            0, "SessionController.logout()", null, e.getLocalizedMessage())); 
+            LOG.info("failed to logout");
+            LOG.warn("failed to logout"); 
             
             // Fallback redirect if primary fails
             try {
@@ -142,26 +114,17 @@ public class SessionController implements Serializable{
                     httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
                 }
             } catch (IOException fallbackEx) {
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Fallback redirect failed: " + fallbackEx.getLocalizedMessage(),
-                            "Sistema",
-                            0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage()));
+                LOG.warn("failed to logout");
             }
         } catch (IllegalStateException e) {
             // Session already invalidated - this is expected
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Session already invalidated: " + e.getLocalizedMessage(),
-                            "Sistema",
-                            0, "SessionController.logout()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to logout");
             try {
                 if (ec != null) {
                     httpResponse.sendRedirect(httpRequest.getContextPath() + "/login");
                 }
             } catch (IOException fallbackEx) {
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Redirect after invalid session failed: " + fallbackEx.getLocalizedMessage(),
-                            "Sistema",
-                            0, "SessionController.logout()", null, fallbackEx.getLocalizedMessage()));
+                LOG.warn("failed to logout");
             }
         }
     }
@@ -235,10 +198,7 @@ public class SessionController implements Serializable{
             }
             return false;
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Authentication error: " + e.getLocalizedMessage(),
-                            "Sistema",
-                            0, "SessionController.authenticate()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to authenticate");
             return false;
         }
     }
@@ -252,24 +212,15 @@ public class SessionController implements Serializable{
     }
     
     public void errorMessage(@Nonnull String message){
-        LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", message,
-                            "Sistema",
-                            0, "SessionController", null, null));
+        LOG.warn("failed to session controller");
     }
     
     public void infoMessage(@Nonnull String message){
-        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Info", message,
-                            "Sistema",
-                            0, "SessionController", null, null));
+        LOG.info("failed to session controller");
     }
         
     public void warnMessage(@Nonnull String message){
-        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Advertencia", message,
-                            "Sistema",
-                            0, "SessionController", null, null));
+        LOG.info("failed to session controller");
     }
     
     @Nullable
@@ -294,16 +245,12 @@ public class SessionController implements Serializable{
         newPassword = new String();
         confirmPassword = new String();
     }
-    
-    
+
     public synchronized void changeName(){
         if(newUsername != null){
             if(!newUsername.isBlank()){
                 if(!currentUser.getUsername().equals(newUsername)){
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Nombre de Usuario Cambiado", "Se cambió el nombre de usuario a: " + newUsername,
-                            getCurrentUser() != null ? getCurrentUser().getUsername() : "Sistema",
-                            0, "changeName()", currentUser.getUsername(), newUsername));
+                    LOG.info("failed to change name()");
                     loginService.updateUsername(currentUser, newUsername);
                     infoMessage("Se actualizo el nombre de usuario.");
                     newUsername = null;
@@ -320,10 +267,7 @@ public class SessionController implements Serializable{
         if(newEmail != null){
             if(!newEmail.isBlank()){
                 if(!currentUser.getEmail().equals(newEmail)){
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Correo Electrónico Cambiado", "Se cambió el correo electrónico a: " + newEmail,
-                            getCurrentUser() != null ? getCurrentUser().getUsername() : "Sistema",
-                            0, "changeEmail()", currentUser.getEmail(), newEmail));
+                    LOG.info("failed to change email()");
                     loginService.updateEmail(currentUser, newEmail);
                     infoMessage("Se actualizo el correo electronico.");
                     newEmail = null;
@@ -331,10 +275,7 @@ public class SessionController implements Serializable{
                     warnMessage("El nuevo correo no puede ser igual");
                 }
             }else{
-                LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "El nuevo correo no puede estar vacio.",
-                            "Sistema",
-                            0, "SessionController", null, null));
+                LOG.warn("failed to session controller");
             }
         }
     }
@@ -352,10 +293,7 @@ public class SessionController implements Serializable{
                         return;
                     }
                     loginService.updatePassword(currentUser, newPassword);
-                    LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Contraseña Cambiada", "Se cambió la contraseña",
-                            getCurrentUser() != null ? getCurrentUser().getUsername() : "Sistema",
-                            0, "changePassword()", null, null));
+                    LOG.info("failed to change password()");
                     infoMessage("Se actualizo la contrasena.");
                     newPassword = null;
                 }else{
@@ -377,27 +315,18 @@ public class SessionController implements Serializable{
         try {
             Users authUser = loginService.findByUsername(username);
             if (authUser == null) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Autorización Fallida", "Intento con usuario inexistente: " + username,
-                    currentUser != null ? currentUser.getUsername() : "Sistema",
-                    0, "authorizeAction()", null, null));
+                LOG.info("failed to authorize action()");
                 return null;
             }
 
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Autorización Fallida", "Contraseña incorrecta de: " + username,
-                    currentUser != null ? currentUser.getUsername() : "Sistema",
-                    0, "authorizeAction()", null, null));
+                LOG.info("failed to authorize action()");
                 return null;
             }
 
             return authUser;
         } catch (RuntimeException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error en authorizeAction: " + e.getMessage(),
-                    currentUser != null ? currentUser.getUsername() : "Sistema",
-                    0, "authorizeAction()", null, e.getMessage()));
+            LOG.warn("failed to authorize action()", e);
             return null;
         }
     }

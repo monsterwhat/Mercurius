@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 
 /**
  * Servicio para calcular y almacenar métricas de rendimiento de proveedores (Departamentos).
@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
 
-    private static final Logger LOG = Logger.getLogger(DepartamentoMetricoService.class.getName());
+    private static final Logger LOG = Logger.getLogger(DepartamentoMetricoService.class);
 
     /** Pesos para el cálculo del score */
     private static final double WEIGHT_ON_TIME_DELIVERY = 0.40;
@@ -127,8 +127,7 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
                     + " | despues=" + DiffUtils.snapshotEntity(metrico));
 
         } catch (Exception e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                    "Error calculando métricas para departamento " + dept.getNombre() + ": " + e.getMessage()
+            LOG.warn("Error calculando métricas para departamento " + dept.getNombre() + ": " + e.getMessage()
                     + " | source=DepartamentoMetricoService.calcularMetricas()"
                     + " | despues=" + e.getMessage());
         }
@@ -149,8 +148,7 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
             LOG.info("Métricas recalculadas para todos los departamentos activos"
                     + " | source=DepartamentoMetricoService.calcularTodasLasMetricas()");
         } catch (Exception e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                    "Error recalculando todas las métricas: " + e.getMessage()
+            LOG.warn("Error recalculando todas las métricas: " + e.getMessage()
                     + " | source=DepartamentoMetricoService.calcularTodasLasMetricas()"
                     + " | despues=" + e.getMessage());
         }
@@ -165,8 +163,7 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
                     DepartamentoMetrico.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                    "Error listing DepartamentoMetrico: " + e.getMessage()
+            LOG.warn("Error listing DepartamentoMetrico: " + e.getMessage()
                     + " | source=DepartamentoMetricoService.listAll()"
                     + " | despues=" + e.getMessage());
             return Collections.emptyList();
@@ -183,8 +180,7 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
             List<DepartamentoMetrico> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                    "Error finding DepartamentoMetrico by Departamento: " + e.getMessage()
+            LOG.warn("Error finding DepartamentoMetrico by Departamento: " + e.getMessage()
                     + " | source=DepartamentoMetricoService.findByDepartamento()"
                     + " | despues=" + e.getMessage());
             return null;
@@ -238,8 +234,7 @@ public class DepartamentoMetricoService extends GService<DepartamentoMetrico> {
             query.setParameter("nombre", dept.getNombre());
             return query.getResultList();
         } catch (PersistenceException e) {
-            LOG.log(java.util.logging.Level.WARNING,
-                    "Error finding facturas for departamento: " + e.getMessage()
+            LOG.warn("Error finding facturas for departamento: " + e.getMessage()
                     + " | source=DepartamentoMetricoService.findFacturasForDepartamento()"
                     + " | despues=" + e.getMessage());
             return Collections.emptyList();

@@ -9,7 +9,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.math.BigDecimal;
-import java.util.logging.Logger;
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -25,7 +25,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "Mercatus - Inventory")
 public class InventoryController {
 
-    private static final Logger LOG = Logger.getLogger(InventoryController.class.getName());
+    private static final Logger LOG = Logger.getLogger(InventoryController.class);
 
     @Inject
     @Nonnull
@@ -58,7 +58,7 @@ public class InventoryController {
 
             return Response.ok(dto).build();
         } catch (Exception e) {
-            LOG.warning("Error getting stock status: " + e.getMessage());
+            LOG.warn("Error getting stock status: " + e.getMessage());
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting stock status"))
                     .build();

@@ -1,8 +1,8 @@
 package Services.Facturas;
 
-
 import Models.Detalles.LineaDetalle;
 import Services.GService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -19,7 +19,7 @@ import java.util.List;
 @ApplicationScoped
 public class LineaDetalleService extends GService<LineaDetalle>  {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(LineaDetalleService.class.getName());
+    private static final Logger LOG = Logger.getLogger(LineaDetalleService.class);
     
     @PersistenceContext @Nonnull EntityManager em;
 
@@ -42,7 +42,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
             em.refresh(entity);
                         LOG.info("Successfully created LineaDetalle with ID: " + entity.getId() + " | source=" + "LineaDetalleService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "LineaDetalleService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating entity: " + e.getMessage() + " | source=" + "LineaDetalleService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Failed to create LineaDetalle", e);
         }
     }
@@ -61,7 +61,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
                                 LOG.info("Entity not found for delete" + " | source=" + "LineaDetalleService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "LineaDetalleService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "LineaDetalleService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -71,7 +71,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
         try {
             em.merge(entity);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating entity: " + e.getMessage() + " | source=" + "LineaDetalleService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error updating entity: " + e.getMessage() + " | source=" + "LineaDetalleService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -82,7 +82,7 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
             TypedQuery<LineaDetalle> query = em.createQuery("SELECT d FROM LineaDetalle d", LineaDetalle.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all entities: " + e.getMessage() + " | source=" + "LineaDetalleService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing all entities: " + e.getMessage() + " | source=" + "LineaDetalleService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -99,19 +99,17 @@ public List<LineaDetalle> listAllWhereID(@Nonnull Long detalleServicioId) {
             query.setParameter("detalleServicioId", detalleServicioId);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing LineaDetalle by DetalleServicio ID: " + e.getMessage() + " | source=" + "LineaDetalleService.listAllWhereID()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing LineaDetalle by DetalleServicio ID: " + e.getMessage() + " | source=" + "LineaDetalleService.listAllWhereID()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
 
-
-    
     @Nullable
     public LineaDetalle findById(@Nonnull Long id) {
     try {
         return em.find(getEntityClass(), id);
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error finding entity by ID: " + e.getMessage() + " | source=" + "LineaDetalleService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error finding entity by ID: " + e.getMessage() + " | source=" + "LineaDetalleService.findById()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -122,7 +120,7 @@ public List<LineaDetalle> listAllWhereID(@Nonnull Long detalleServicioId) {
             TypedQuery<LineaDetalle> query = em.createQuery("SELECT a FROM LineaDetalle a WHERE a.status = true", LineaDetalle.class);
             return query.getResultList();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error listing all enabled entities: " + e.getMessage() + " | source=" + "LineaDetalleService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing all enabled entities: " + e.getMessage() + " | source=" + "LineaDetalleService.ListAllEnabled()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -134,10 +132,9 @@ public List<LineaDetalle> listAllWhereID(@Nonnull Long detalleServicioId) {
             em.persist(entity);
             return entity;
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating and returning entity: " + e.getMessage() + " | source=" + "LineaDetalleService.createAndReturnEntity()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating and returning entity: " + e.getMessage() + " | source=" + "LineaDetalleService.createAndReturnEntity()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
-
 
 }

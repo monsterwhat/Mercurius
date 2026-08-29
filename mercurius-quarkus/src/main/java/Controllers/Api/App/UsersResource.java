@@ -35,8 +35,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -76,13 +76,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Usuarios")
 public class UsersResource {
 
-    private static final Logger LOG = Logger.getLogger(UsersResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(UsersResource.class);
 
     @Nonnull
     @Inject
     LoginService loginService;
 
-    
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
     @Inject
@@ -128,7 +127,7 @@ public class UsersResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing users", e);
+            LOG.warn("Error listing users", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando los usuarios"))
                     .build();
@@ -182,7 +181,7 @@ public class UsersResource {
                     .entity(ApiResponse.ok(toDTO(user)))
                     .build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error creating user", e);
+            LOG.warn("Error creating user", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error creando el usuario"))
                     .build();
@@ -240,7 +239,7 @@ public class UsersResource {
 
             return Response.ok(ApiResponse.ok(toDTO(user))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating user " + id, e);
+            LOG.warn("Error updating user " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando el usuario"))
                     .build();
@@ -285,7 +284,7 @@ public class UsersResource {
             Users updated = loginService.find(id);
             return Response.ok(ApiResponse.ok(toDTO(updated != null ? updated : user))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error deleting user " + id, e);
+            LOG.warn("Error deleting user " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error eliminando el usuario"))
                     .build();
@@ -346,7 +345,7 @@ public class UsersResource {
 
             return Response.ok(ApiResponse.ok(toDTO(user))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error changing password for user " + id, e);
+            LOG.warn("Error changing password for user " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error cambiando la contraseÃ±a"))
                     .build();
@@ -390,7 +389,7 @@ public class UsersResource {
             }
             return htmlOk(renderFullPage());
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de usuarios", e);
+            LOG.warn("Error renderizando la página de usuarios", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();

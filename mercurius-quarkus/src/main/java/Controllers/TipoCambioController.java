@@ -2,6 +2,7 @@ package Controllers;
 
 import Models.TipoCambio;
 import Services.TipoCambioService;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -20,7 +21,7 @@ import lombok.ToString;
 @ApplicationScoped
 public class TipoCambioController implements Serializable {
     
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(TipoCambioController.class.getName());
+    private static final Logger LOG = Logger.getLogger(TipoCambioController.class);
     
     @Inject @Nonnull private TipoCambioService tipoCambioService;
     @Inject @Nonnull private SettingsController settings;
@@ -43,10 +44,7 @@ public class TipoCambioController implements Serializable {
             tipoCambios = tipoCambioService.listAll();
             if (tipoCambios == null || tipoCambios.isEmpty()) {
                 fetchTipoCambioFromApi();
-                LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                        "Tipo de Cambio Cargado", "Se cargó el tipo de cambio desde la API",
-                        currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                        0, "loadTipoCambios()", null, null));
+                LOG.info("failed to load tipo cambios()");
             }
         }
         return tipoCambios;
@@ -55,10 +53,7 @@ public class TipoCambioController implements Serializable {
     public void recargar(){
         cambioActual = getTipoCambioActual();
         String cambioString = cambioActual != null ? cambioActual.toString() : "null";
-        LOG.log(java.util.logging.Level.INFO, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                "Tipo de Cambio Recargado", "Se recargo el tipo de cambio",
-                currentSession.getCurrentUser() != null ? currentSession.getCurrentUser().getUsername() : "Sistema",
-                0, "recargar()", null, cambioString));
+        LOG.info("failed to recargar()");
     }
     
     private void fetchTipoCambioFromApi() {

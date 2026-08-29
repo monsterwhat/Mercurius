@@ -39,8 +39,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -101,13 +101,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Reportes Programados")
 public class ReporteProgramadoResource {
 
-    private static final Logger LOG = Logger.getLogger(ReporteProgramadoResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(ReporteProgramadoResource.class);
 
     @Nonnull
     @Inject
     ReportesProgramadosService reportesProgramadosService;
 
-    
     @Inject
     @Nonnull
     SecurityIdentity identity;
@@ -161,7 +160,7 @@ public class ReporteProgramadoResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing scheduled reports", e);
+            LOG.warn("Error listing scheduled reports", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error listando los reportes programados"))
@@ -188,7 +187,7 @@ public class ReporteProgramadoResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error fetching scheduled report " + id, e);
+            LOG.warn("Error fetching scheduled report " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error obteniendo el reporte programado"))
@@ -248,7 +247,7 @@ public class ReporteProgramadoResource {
                     .entity(ApiResponse.ok(toDTO(reporte)))
                     .build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error creating scheduled report", e);
+            LOG.warn("Error creating scheduled report", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error creando el reporte programado"))
@@ -314,7 +313,7 @@ public class ReporteProgramadoResource {
 
             return Response.ok(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating scheduled report " + id, e);
+            LOG.warn("Error updating scheduled report " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error actualizando el reporte programado"))
@@ -363,7 +362,7 @@ public class ReporteProgramadoResource {
 
             return Response.ok(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error toggling scheduled report " + id, e);
+            LOG.warn("Error toggling scheduled report " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error cambiando el estado del reporte programado"))
@@ -405,7 +404,7 @@ public class ReporteProgramadoResource {
 
             return Response.ok(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error deleting scheduled report " + id, e);
+            LOG.warn("Error deleting scheduled report " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error eliminando el reporte programado"))
@@ -450,7 +449,7 @@ public class ReporteProgramadoResource {
             }
             return htmlOk(renderFullPage());
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de reportes programados", e);
+            LOG.warn("Error renderizando la página de reportes programados", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();
@@ -551,7 +550,7 @@ public class ReporteProgramadoResource {
             return Response.status(Response.Status.CREATED)
                     .entity(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error creating scheduled report from form", e);
+            LOG.warn("Error creating scheduled report from form", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error creando el reporte programado"))
@@ -614,7 +613,7 @@ public class ReporteProgramadoResource {
             }
             return Response.ok(ApiResponse.ok(toDTO(reporte))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating scheduled report " + id + " from form", e);
+            LOG.warn("Error updating scheduled report " + id + " from form", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error actualizando el reporte programado"))

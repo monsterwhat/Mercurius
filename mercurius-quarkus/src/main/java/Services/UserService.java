@@ -1,5 +1,6 @@
 package Services;
 
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import Models.Users;
@@ -21,7 +22,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 @ApplicationScoped
 public class UserService extends GService<Users> {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(UserService.class.getName());
+    private static final Logger LOG = Logger.getLogger(UserService.class);
 
     private static final int BCRYPT_COST = 12;
 
@@ -41,7 +42,7 @@ public class UserService extends GService<Users> {
             em.persist(entity);
             em.flush();
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating user: " + e.getMessage() + " | source=" + "UserService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating user: " + e.getMessage() + " | source=" + "UserService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -49,7 +50,7 @@ public class UserService extends GService<Users> {
         try {
             return BCrypt.withDefaults().hashToString(BCRYPT_COST, password.toCharArray());
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Password hashing error: " + e.getLocalizedMessage() + " | source=" + "UserService.hashPassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Password hashing error: " + e.getLocalizedMessage() + " | source=" + "UserService.hashPassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             throw new RuntimeException("Failed to hash password", e);
         }
     }
@@ -71,7 +72,7 @@ public class UserService extends GService<Users> {
             em.merge(entity);
             em.flush();
         } catch (RuntimeException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error updating user: " + e.getMessage() + " | source=" + "UserService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error updating user: " + e.getMessage() + " | source=" + "UserService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -89,7 +90,7 @@ public class UserService extends GService<Users> {
                                 LOG.info("Entity not found" + " | source=" + "UserService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "UserService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "UserService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -99,7 +100,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage() + " | source=" + "UserService.count()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error counting " + getEntityClass().getSimpleName() + " : " + e.getLocalizedMessage() + " | source=" + "UserService.count()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -113,7 +114,7 @@ public class UserService extends GService<Users> {
             return !existingUser.isEmpty();
 
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error checking username: " + e.getLocalizedMessage() + " | source=" + "UserService.usernameExists()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error checking username: " + e.getLocalizedMessage() + " | source=" + "UserService.usernameExists()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return true;
         }
     }
@@ -124,7 +125,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = true", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting active users: " + e.getLocalizedMessage() + " | source=" + "UserService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error counting active users: " + e.getLocalizedMessage() + " | source=" + "UserService.countActivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }
@@ -135,7 +136,7 @@ public class UserService extends GService<Users> {
             TypedQuery<Long> query = em.createQuery("SELECT COUNT(e) FROM " + getEntityClass().getSimpleName() + " e WHERE e.status = false", Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error counting inactive users: " + e.getLocalizedMessage() + " | source=" + "UserService.countInactivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error counting inactive users: " + e.getLocalizedMessage() + " | source=" + "UserService.countInactivos()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return null;
         }
     }

@@ -5,6 +5,7 @@ import Models.Cabys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -22,7 +23,6 @@ import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  *
  * @author Al
@@ -32,7 +32,7 @@ import java.util.List;
 @ApplicationScoped
 public class CabysService extends GService<Cabys>{
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(CabysService.class.getName());
+    private static final Logger LOG = Logger.getLogger(CabysService.class);
     
     @Inject @Nonnull CabysController controller;
     
@@ -52,7 +52,7 @@ public class CabysService extends GService<Cabys>{
             em.persist(entity);
             em.flush();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error creating entity: " + e.getMessage() + " | source=" + "CabysService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error creating entity: " + e.getMessage() + " | source=" + "CabysService.create()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 
@@ -85,11 +85,10 @@ public class CabysService extends GService<Cabys>{
                                 LOG.info("Entity not found" + " | source=" + "CabysService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             }
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "CabysService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error deleting " + getEntityClass().getSimpleName() + " : " + e.getMessage() + " | source=" + "CabysService.delete()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
-    
-    
+
     public @Nonnull List<Cabys> listAllAPI() {
         List<Cabys> cabysList = new ArrayList<>();
 
@@ -150,7 +149,7 @@ public class CabysService extends GService<Cabys>{
             }
         } catch (IOException e) {
             controller.showError("Error", "Error: " + e.getLocalizedMessage());
-                        LOG.log(java.util.logging.Level.WARNING, "Error making HTTP request: " + e.getMessage() + " | source=" + "CabysService.listAllAPI()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error making HTTP request: " + e.getMessage() + " | source=" + "CabysService.listAllAPI()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
         controller.showInfo("Exito", "Se descargo la lista CaByS");
         return cabysList;
@@ -181,7 +180,7 @@ public class CabysService extends GService<Cabys>{
                 resultList.add(cabys);
             }
         } catch (JsonProcessingException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error parsing JSON response: " + e.getMessage() + " | source=" + "CabysService.parseJsonResponse()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error parsing JSON response: " + e.getMessage() + " | source=" + "CabysService.parseJsonResponse()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
 
         return resultList;
@@ -199,7 +198,7 @@ public class CabysService extends GService<Cabys>{
                 .setMaxResults(10)
                 .getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error searching Cabys by name: " + e.getMessage() + " | source=" + "CabysService.searchByName()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error searching Cabys by name: " + e.getMessage() + " | source=" + "CabysService.searchByName()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return List.of();
         }
     }
@@ -210,7 +209,7 @@ public class CabysService extends GService<Cabys>{
                 create(cabys);
             }
         } catch (jakarta.persistence.PersistenceException e) {
-                        LOG.log(java.util.logging.Level.WARNING, "Error: " + e.getMessage() + " | source=" + "CabysService.saveAllDB()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error: " + e.getMessage() + " | source=" + "CabysService.saveAllDB()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
     }
 }

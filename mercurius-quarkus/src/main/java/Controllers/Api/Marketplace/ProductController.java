@@ -14,15 +14,15 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 @Path("/api/marketplace/products")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class ProductController {
 
-    private static final Logger LOG = Logger.getLogger(ProductController.class.getName());
+    private static final Logger LOG = Logger.getLogger(ProductController.class);
 
     @Inject
     @Nonnull
@@ -35,7 +35,7 @@ public class ProductController {
             List<ProductDTO> products = productService.listActiveProducts();
             return Response.ok(products).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error listing products", e);
+            LOG.error("Error listing products", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al cargar productos\"}")
                     .build();
@@ -53,7 +53,7 @@ public class ProductController {
             List<ProductDTO> products = productService.searchProducts(query);
             return Response.ok(products).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error searching products", e);
+            LOG.error("Error searching products", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al buscar productos\"}")
                     .build();
@@ -73,7 +73,7 @@ public class ProductController {
             }
             return Response.ok(product).build();
         } catch (RuntimeException e) {
-            LOG.log(Level.SEVERE, "Error getting product detail", e);
+            LOG.error("Error getting product detail", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al cargar detalle del producto\"}")
                     .build();

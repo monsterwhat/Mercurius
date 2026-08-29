@@ -39,8 +39,8 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
@@ -76,13 +76,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 @Tag(name = "App - Clientes")
 public class ClientsResource {
 
-    private static final Logger LOG = Logger.getLogger(ClientsResource.class.getName());
+    private static final Logger LOG = Logger.getLogger(ClientsResource.class);
 
     @Nonnull
     @Inject
     ClientService clientService;
 
-    
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
     @Inject
@@ -141,7 +140,7 @@ public class ClientsResource {
                     .toList();
             return Response.ok(new PagedResponse<>(data, total, page, size)).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error listing clients", e);
+            LOG.warn("Error listing clients", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error listando los clientes"))
                     .build();
@@ -167,7 +166,7 @@ public class ClientsResource {
             }
             return Response.ok(ApiResponse.ok(toDetailDTO(client))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error getting client " + code, e);
+            LOG.warn("Error getting client " + code, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error obteniendo el cliente"))
                     .build();
@@ -230,7 +229,7 @@ public class ClientsResource {
                     .entity(ApiResponse.ok(toDetailDTO(client)))
                     .build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error creating client", e);
+            LOG.warn("Error creating client", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error creando el cliente"))
                     .build();
@@ -281,7 +280,7 @@ public class ClientsResource {
 
             return Response.ok(ApiResponse.ok(toDetailDTO(client))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error updating client " + code, e);
+            LOG.warn("Error updating client " + code, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando el cliente"))
                     .build();
@@ -324,7 +323,7 @@ public class ClientsResource {
 
             return Response.ok(ApiResponse.ok(toDetailDTO(client))).build();
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error deleting client " + code, e);
+            LOG.warn("Error deleting client " + code, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error eliminando el cliente"))
                     .build();
@@ -364,7 +363,7 @@ public class ClientsResource {
             }
             return htmlOk(renderFullPage());
         } catch (Exception e) {
-            LOG.log(Level.WARNING, "Error renderizando la página de clientes", e);
+            LOG.warn("Error renderizando la página de clientes", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error renderizando la página"))
                     .build();

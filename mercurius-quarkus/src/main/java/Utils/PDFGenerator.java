@@ -1,5 +1,6 @@
 package Utils;
 
+import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import Services.DirectoryService;
@@ -53,7 +54,7 @@ import lombok.Data;
 @Data
 public class PDFGenerator {
 
-    private static final java.util.logging.Logger LOG = java.util.logging.Logger.getLogger(PDFGenerator.class.getName());
+    private static final Logger LOG = Logger.getLogger(PDFGenerator.class);
 
     @Nullable
     private String pdfUrl;
@@ -77,8 +78,7 @@ public class PDFGenerator {
             savePdfToFileSystem(baos, tiqueteElectronico);
 
         } catch (DocumentException | IOException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error: " + e.getLocalizedMessage(), "Sistema", 0, "PDFGenerator.generarPDFTiqueteElectronico()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to generar p d f tiquete electronico");
         }
 
     }
@@ -493,8 +493,7 @@ public class PDFGenerator {
             pdfFile = savePdfToFileSystem(baos, "ReporteVentasXDepartamento_" + formattedDate); // Get the File
 
         } catch (DocumentException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error generating PDF: " + e.getLocalizedMessage(), "Sistema", 0, "PDFGenerator.generarPDF()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to generar p d f");
         }
 
         return pdfFile; // Return the created File
@@ -554,8 +553,7 @@ public class PDFGenerator {
             pdfFile = savePdfToFileSystem(baos, "ReporteVentasXFamilia_" + formattedDate); // Get the File
 
         } catch (DocumentException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error generating PDF: " + e.getLocalizedMessage(), "Sistema", 0, "PDFGenerator.generarPDF()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to generar p d f");
         }
 
         return pdfFile; // Return the created File
@@ -573,8 +571,7 @@ public class PDFGenerator {
             File parentDir = pdfFile.getParentFile();
             if (parentDir != null && !parentDir.exists()) {
                 if (!parentDir.mkdirs()) {
-                    LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                            "Error", "Failed to create directory: " + parentDir.getAbsolutePath(), "Sistema", 0, "PDFGenerator.savePdfToFileSystem()", null, null));
+                    LOG.warn("failed to save pdf to file system");
                     return null;
                 }
             }
@@ -583,8 +580,7 @@ public class PDFGenerator {
                 baos.writeTo(fos);
             }
         } catch (IOException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error saving PDF to file system: " + e.getLocalizedMessage(), "Sistema", 0, "PDFGenerator.savePdfToFileSystem()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to save pdf to file system");
         }
         return pdfFile; // Return the created File
     }
@@ -649,8 +645,7 @@ public class PDFGenerator {
             pdfFile = savePdfToFileSystem(baos, "ReporteVentasXCajero_" + username + "_" + formattedDate); // Get the File
 
         } catch (DocumentException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error generating PDF: " + e.getLocalizedMessage(), "Sistema", 0, "PDFGenerator.generarPDF()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to generar p d f");
         }
 
         return pdfFile; // Return the created File
@@ -706,8 +701,7 @@ public class PDFGenerator {
             pdfFile = savePdfToFileSystem(baos, "ReporteStockAlerts_" + formattedDate);
 
         } catch (DocumentException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error generating PDF: " + e.getLocalizedMessage(), "Sistema", 0, "PDFGenerator.generarPDF()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to generar p d f");
         }
 
         return pdfFile;
@@ -763,8 +757,7 @@ public class PDFGenerator {
             pdfFile = savePdfToFileSystem(baos, "ReporteProfitMargins_" + formattedDate);
 
         } catch (DocumentException e) {
-            LOG.log(java.util.logging.Level.WARNING, String.format("ALERT [%s] %s | user=%s | codigo=%d | source=%s | antes=%s | despues=%s",
-                    "Error", "Error generating PDF: " + e.getLocalizedMessage(), "Sistema", 0, "PDFGenerator.generarPDF()", null, e.getLocalizedMessage()));
+            LOG.warn("failed to generar p d f");
         }
 
         return pdfFile;

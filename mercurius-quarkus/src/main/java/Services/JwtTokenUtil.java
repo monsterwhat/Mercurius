@@ -18,8 +18,8 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.jboss.logging.Logger;
 
 /**
  * Utility for JWT access token generation and validation for Mercatus marketplace clients.
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class JwtTokenUtil {
 
-    private static final Logger LOG = Logger.getLogger(JwtTokenUtil.class.getName());
+    private static final Logger LOG = Logger.getLogger(JwtTokenUtil.class);
 
     private final SecretKey signingKey;
     private final long accessTokenExpiryMs;
@@ -48,7 +48,7 @@ public class JwtTokenUtil {
         }
         // Ensure minimum 256-bit key for HS256
         if (keyBytes.length < 32) {
-            LOG.warning("JWT secret is less than 256 bits. Padding to minimum length.");
+            LOG.warn("JWT secret is less than 256 bits. Padding to minimum length.");
             byte[] padded = new byte[32];
             System.arraycopy(keyBytes, 0, padded, 0, Math.min(keyBytes.length, 32));
             keyBytes = padded;
@@ -114,15 +114,15 @@ public class JwtTokenUtil {
 
             String subject = claims.getPayload().getSubject();
             if (subject == null) {
-                LOG.warning("JWT token has no subject claim");
+                LOG.warn("JWT token has no subject claim");
                 return null;
             }
             return Integer.parseInt(subject);
         } catch (ExpiredJwtException e) {
-            LOG.log(Level.FINE, "JWT token expired", e);
+            LOG.debug("JWT token expired", e);
             return null;
         } catch (MalformedJwtException | SecurityException | IllegalArgumentException e) {
-            LOG.log(Level.WARNING, "Invalid JWT token", e);
+            LOG.warn("Invalid JWT token", e);
             return null;
         }
     }
@@ -166,10 +166,10 @@ public class JwtTokenUtil {
                     .parseSignedClaims(token);
             return claims.getPayload();
         } catch (ExpiredJwtException e) {
-            LOG.log(Level.FINE, "API JWT token expired", e);
+            LOG.debug("API JWT token expired", e);
             return null;
         } catch (MalformedJwtException | SecurityException | IllegalArgumentException e) {
-            LOG.log(Level.WARNING, "Invalid API JWT token", e);
+            LOG.warn("Invalid API JWT token", e);
             return null;
         }
     }
