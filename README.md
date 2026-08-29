@@ -87,16 +87,18 @@ Variables de entorno sensibles (ver `src/main/resources/application.properties`)
 ### Backend
 - **Java 25** - Última versión de Java con soporte para virtual threads y mejoras de rendimiento
 - **Quarkus 3.36.2** - Framework Java nativo en la nube para alto rendimiento y bajo consumo de memoria
-- **PostgreSQL** - Base de datos relacional para persistencia de datos
-- **Hibernate ORM** - Mapeo objeto-relacional integrado con Quarkus
-- **Quarkus Security + Qute** - Autenticación form-cookie y plantillas tipadas (reemplaza MyFaces/PrimeFaces)
-- **Maven** - Herramienta de gestión de dependencias y construcción
+- **PostgreSQL 18** - Base de datos relacional (único motor soportado)
+- **Hibernate ORM + Panache** - Mapeo objeto-relacional integrado con Quarkus
+- **Quarkus REST (RESTEasy Reactive) + Qute** - APIs REST y plantillas tipadas nativas
+- **Quarkus Security** - Autenticación form-cookie y autorización por roles
+- **Maven 3.9+** - Herramienta de gestión de dependencias y construcción
 
 ### Frontend
+- **Qute** - Motor de plantillas nativo de Quarkus para renderizado del lado del servidor
 - **HTMX 2.0.10** - Interactividad AJAX declarativa directamente en HTML
 - **Alpine.js 3.16.1** - Reactividad ligera del lado del cliente
 - **Bulma.io 1.0.4** - Framework CSS moderno basado en Flexbox
-- **Qute** - Motor de plantillas nativo de Quarkus para el renderizado del lado del servidor
+- **Quarkus Web Bundler 2.3.3** - Pipeline de assets en tiempo de construcción (`/static/bundle/*`)
 
 ### Librerías Adicionales
 - **Lombok 1.18.46** - Reducción de código boilerplate mediante anotaciones
@@ -109,7 +111,7 @@ Variables de entorno sensibles (ver `src/main/resources/application.properties`)
 
 ### Plataforma
 - **Quarkus Scheduler** - Tareas programadas automatizadas
-- **Quarkus Security (quarkus-security)** - Autenticación y autorización seguras (reemplaza a elytron-security-jdbc) 
+- **Vert.x + Undertow** - Servidor reactivo y contenedor de servlets para compatibilidad 
 
 ## Características
 
