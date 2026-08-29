@@ -118,6 +118,9 @@ public class AppSettings {
     @Nullable @Column(length = 64)
     private String haciendaEncryptionKey; //Auto-generated AES-256 key (Base64) for credential encryption
 
+    @Nullable @Column(length = 64)
+    private String authSessionKey; //Auto-generated AES key (Base64) for quarkus-credential cookie encryption
+
     @Nullable @Column(length = 500)
     private String haciendaCallbackUrl; //TRIBU-CR async notification callback
 

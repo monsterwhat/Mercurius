@@ -41,9 +41,8 @@ quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5433/mercurius
 > **Producción (`%prod`):** no edites `application.properties`. Configura por variables de entorno
 > (el arranque en `%prod` falla si faltan):
 > `DB_USERNAME` / `DB_PASSWORD` / `DB_URL` (JDBC URL),
-> `AUTH_SESSION_KEY` (≥32 bytes, p. ej. `openssl rand -base64 32`),
-> `HACIENDA_ENCRYPTION_KEY` (`openssl rand -hex 32`),
 > `MERCATUS_JWT_SECRET` (≥32 bytes) y `MERCATUS_CORS_ORIGINS`.
+> Claves `authSessionKey` y `haciendaEncryptionKey` son **autogeneradas en la BD** (`appsettings`) en el primer arranque — no requieren variables de entorno.
 
 ### 3. Compilar y Ejecutar
 ```bash
@@ -78,9 +77,8 @@ Las pruebas de autenticación usan form-cookie auth (login real vía `/Mercurius
 
 Variables de entorno sensibles (ver `src/main/resources/application.properties`):
 
-- **`AUTH_SESSION_KEY`** - Clave de cifrado de la cookie de sesión (mínimo 32 bytes). Establecer por entorno; el valor por defecto es desechable y solo para `%dev`/`%test`.
-- **`HACIENDA_ENCRYPTION_KEY`** - Clave para derivar la clave AES-256-GCM que cifra en reposo `HaciendaApiKey` y `certificadoPassword` en la base de datos. Generar con `openssl rand -hex 32`.
 - **`DB_PASSWORD`** / **`DB_URL`** - Sobrescrituras por entorno de la contraseña y URL JDBC de la base de datos, sin editar `application.properties`.
+- **Claves en BD (autogeneradas):** `authSessionKey` y `haciendaEncryptionKey` se generan al primer arranque y se guardan en `appsettings` — no requieren variables de entorno. Rotación vía `AppSettingsService.rotate*` (requiere re-login para `authSessionKey`).
 
 ## Tecnologías Utilizadas
 
