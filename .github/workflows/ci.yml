@@ -36,10 +36,13 @@ jobs:
       - name: Package
         run: mvn -B -ntp package -DskipTests
 
+      - name: Stage artifact
+        run: cp target/mercurius-quarkus-runner.jar Mercurius-runner.jar
+
       - name: Upload runnable uber jar
         uses: actions/upload-artifact@v5
         with:
-          name: mercurius-quarkus-runner
-          path: mercurius-quarkus/target/mercurius-quarkus-runner.jar
+          name: Mercurius-runner
+          path: mercurius-quarkus/Mercurius-runner.jar
           if-no-files-found: error
           retention-days: 30
