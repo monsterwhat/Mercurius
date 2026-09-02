@@ -1,10 +1,24 @@
 {!
   pages/reportes/index - Reportes navigation hub (link cards to every report).
 
-  Rendered by GET /app/reportes (MiscPagesResource). Uses the shared layout so
-  it gets the role-gated fragments/navbar, bundle tags and CSRF headers like
-  every other /app page (previously this route emitted a hand-rolled HTML shell
-  with a minimal inline navbar).
+  Rendered by GET /app/reportes (MiscPagesResource). Mirror of the legacy
+  Registros/index.xhtml four-card dashboard (Facturación / Recibos /
+  Inventarios / Usuarios with colored header bars), repointed at the real
+  /app routes of the new surface.
+
+  Button parity notes:
+    - Every legacy button appears, mapped to its new route (Órdenes de
+      Compra -> /api/app/ordenes/table, full page when opened without HTMX;
+      Resumen de Impuestos -> /app/tributacion/declaracion, etc.).
+    - Legacy Departamentos/Familias catalog reports and the Scorecard de
+      Proveedores had no dedicated new route; /app/categorias is the closest
+      equivalent (it renders the departamentos, familias and supplier-metrics
+      sections), so those buttons point there.
+    - New-only reports added into their matching group (Estacionalidad,
+      Recibos Pendientes/Vencidos, Mermas, Histórico de Precios).
+    - Visibility mirrors the legacy page: buttons are shown to every role and
+      the destination pages enforce their own gates; only "Registros Internos"
+      stays admin-gated (as in legacy rendered="#{SessionController.admin}").
 !}
 {#include layout}
     {#title}Reportes | Mercurius{/title}
@@ -13,45 +27,109 @@
         <h1 class="title is-3">Reportes</h1>
         <p class="subtitle is-6">Seleccione un reporte</p>
 
-        <h2 class="title is-5 mt-5">Articulos</h2>
-        <div class="columns is-multiline">
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/ventas">Ventas por cajero</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/familias">Ventas por familia</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/departamentos">Ventas por departamento</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/fechas">Movimientos de inventario</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/tendencias">Tendencias de ventas</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/articulos/rendimiento">Rendimiento de productos</a></div>
-        </div>
+        <div class="columns is-centered is-vcentered is-multiline has-text-centered">
 
-        <h2 class="title is-5 mt-5">Inventario</h2>
-        <div class="columns is-multiline">
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/resumen">Resumen de inventario</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/alertas">Alertas de stock</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/merma">Mermas y perdidas</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/precios">Historico de precios</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/pronosticos">Pronosticos de inventario</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/inventario/etiquetas">Generar etiquetas</a></div>
-        </div>
+            {! Reportes de Facturación (legacy: is-info card) !}
+            <div class="column is-one-quarter">
+                <div class="card">
+                    <div class="header-bar" style="padding:5px 10px;border-radius:4px 4px 0 0;background-color:var(--bulma-info)"></div>
+                    <br/>
+                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
+                        <div class="column is-full">
+                            <p class="title is-5">Reportes de Facturación</p>
+                        </div>
+                        <div class="column">
+                            <div class="buttons">
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">Movimientos</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">Facturación de Artículos</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">Ventas por Familia</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">Ventas por Departamento</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/facturas" title="Lista completa de facturas emitidas">Todas las Facturas</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">Tendencias de Ventas</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">Productos Destacados</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">Estacionalidad</a>
+                                <a class="button is-info is-fullwidth" href="/Mercurius/app/tributacion/declaracion" title="Resumen de impuestos por período">Resumen de Impuestos</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <h2 class="title is-5 mt-5">Clientes y Usuarios</h2>
-        <div class="columns is-multiline">
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/clientes">Clientes</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/usuarios">Usuarios</a></div>
-        </div>
+            {! Reportes de Recibos (legacy: is-primary card) !}
+            <div class="column is-one-quarter">
+                <div class="card">
+                    <div class="header-bar" style="padding:5px 10px;border-radius:4px 4px 0 0;background-color:var(--bulma-primary)"></div>
+                    <br/>
+                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
+                        <div class="column is-full">
+                            <p class="title is-5">Reportes de Recibos</p>
+                        </div>
+                        <div class="column">
+                            <div class="buttons">
+                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/recibos" title="Lista completa de recibos generados">Todos los Recibos</a>
+                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/reportes/recibos/pendientes" title="Recibos pendientes de pago">Recibos Pendientes</a>
+                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/reportes/recibos/vencidos" title="Recibos vencidos">Recibos Vencidos</a>
+                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/reportes/correos" title="Configuración de envío automático de reportes">Reportes por Email</a>
+                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">Plantillas de Correo</a>
+                                {#if inject:securityIdentity.hasRole('admin')}
+                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/registros/log" title="Registros internos del sistema">Registros Internos</a>
+                                {/if}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <h2 class="title is-5 mt-5">Recibos</h2>
-        <div class="columns is-multiline">
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/recibos/pendientes">Recibos pendientes</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/recibos/vencidos">Recibos vencidos</a></div>
-        </div>
+            {! Reportes de Inventarios (legacy: is-danger card) !}
+            <div class="column is-one-quarter">
+                <div class="card">
+                    <div class="header-bar" style="padding:5px 10px;border-radius:4px 4px 0 0;background-color:var(--bulma-danger)"></div>
+                    <br/>
+                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
+                        <div class="column is-full">
+                            <p class="title is-5">Reportes de Inventarios</p>
+                        </div>
+                        <div class="column">
+                            <div class="buttons">
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/articulos" title="Catálogo completo de artículos">Artículos</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/resumen" title="Estado general del inventario">Resumen de Inventario</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/categorias" title="Reporte de artículos por departamento">Departamentos</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/categorias" title="Reporte de artículos por familia">Familias</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/inventarios" title="Historial de inventarios realizados">Inventarios</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">Generar Etiquetas</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">Márgenes de Utilidad</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">Alertas de Stock</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">Pronósticos de Stock</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">Mermas y Perdidas</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/precios" title="Histórico de precios de artículos">Historico de Precios</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/api/app/ordenes/table" title="Órdenes de compra a proveedores">Órdenes de Compra</a>
+                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/categorias" title="Métricas de rendimiento de proveedores">Scorecard de Proveedores</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <h2 class="title is-5 mt-5">Facturacion y Otros</h2>
-        <div class="columns is-multiline">
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/facturas">Facturas emitidas</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/correos">Reportes programados por correo</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/margenes">Margenes de utilidad</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/loyalty">Programa de lealtad</a></div>
-            <div class="column is-4"><a class="box" href="/Mercurius/app/reportes/estacionalidad">Estacionalidad</a></div>
+            {! Reportes de Usuarios (legacy: is-warning card) !}
+            <div class="column is-one-quarter">
+                <div class="card">
+                    <div class="header-bar" style="padding:5px 10px;border-radius:4px 4px 0 0;background-color:var(--bulma-warning)"></div>
+                    <br/>
+                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
+                        <div class="column is-full">
+                            <p class="title is-5">Reportes de Usuarios</p>
+                        </div>
+                        <div class="column">
+                            <div class="buttons">
+                                <a class="button is-warning is-fullwidth" href="/Mercurius/app/reportes/usuarios" title="Información detallada de usuarios del sistema">Usuarios Detallados</a>
+                                <a class="button is-warning is-fullwidth" href="/Mercurius/app/reportes/clientes" title="Reporte de clientes registrados">Clientes</a>
+                                <a class="button is-warning is-fullwidth" href="/Mercurius/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">Puntos y Recompensas</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     {/body}
 {/include}

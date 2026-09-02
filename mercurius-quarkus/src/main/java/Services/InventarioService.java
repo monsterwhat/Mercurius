@@ -52,6 +52,7 @@ public class InventarioService extends GService<Inventario> {
         }
     }
     
+    @Transactional
     public void createWithStock(@Nonnull Inventario entity) {
         try {
             em.persist(entity);
@@ -64,6 +65,7 @@ public class InventarioService extends GService<Inventario> {
     }
 
     @Override
+    @Transactional
     public void delete(@Nonnull Inventario entity) {
         try {
             if (!em.contains(entity)) {
@@ -82,6 +84,7 @@ public class InventarioService extends GService<Inventario> {
     }
 
     @Override
+    @Transactional
     public void update(@Nonnull Inventario entity) {
         try {
             em.merge(entity);
@@ -93,6 +96,7 @@ public class InventarioService extends GService<Inventario> {
         }
     }
     
+    @Transactional
     public void markAsProcessed(@Nonnull Inventario entity) {
         try {
             Inventario existingItem = em.find(getEntityClass(), entity.getCodigo());
@@ -138,6 +142,7 @@ public class InventarioService extends GService<Inventario> {
         }
     }
 
+    @Transactional
     public void softDelete(Inventario entity) {
         try {
             // Find the item by its ID

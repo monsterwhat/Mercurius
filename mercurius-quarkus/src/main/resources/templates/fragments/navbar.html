@@ -55,6 +55,12 @@
             </div>
             {/if}
 
+            {!
+              token: facturacion - removed to match legacy userBar parity (user directive:
+              "el legacy navbar tenia menos botones"; Recibos board and Devoluciones are
+              reached from the Reportes hub like the legacy Registros/index.xhtml).
+            !}
+
             {! token: inventario - legacy: "Articulos" dropdown !}
             {#if inject:securityIdentity.hasRole('inventario')}
             <div class="navbar-item has-dropdown is-hoverable">
@@ -123,6 +129,7 @@
             !}
             <div class="navbar-item">
                 <form method="post" action="/Mercurius/api/app/auth/logout">
+                    <input type="hidden" name="csrf-token" value="{inject:csrf.token}"/>
                     <button type="submit" class="button is-rounded is-danger">Cerrar Session</button>
                 </form>
             </div>

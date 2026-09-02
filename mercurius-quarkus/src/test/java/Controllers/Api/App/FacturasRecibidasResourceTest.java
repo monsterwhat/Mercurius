@@ -34,17 +34,21 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 
+import Models.Articulos.Articulos;
 import Models.Cabys;
 import Models.ComprobantesRecibidos;
 import Models.Encabezado.Encabezado;
+import Models.Inventario;
 import Models.Resumen.ResumenFactura;
 import Services.AppSettingsService;
+import Services.ArticulosService;
 import Services.CabysService;
 import Services.ComprobanteService;
 import Services.ComprobantesRecibidosService;
 import Services.Facturas.LineaDetalleService;
 import Services.HaciendaApiService;
 import Services.HaciendaSigner;
+import Services.InventarioService;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -106,6 +110,12 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
 
     @Inject
     AppSettingsService appSettingsService;
+
+    @Inject
+    ArticulosService articulosService;
+
+    @Inject
+    InventarioService inventarioService;
 
     // ── Hacienda boundary stubs: NO real network call can happen ────────
     @InjectMock
@@ -617,6 +627,9 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
         given().when().get(API).then().statusCode(403);
         given().when().get(API + "/tabla").then().statusCode(403);
         given().when().get(API + "/consecutivo-receptor").then().statusCode(403);
+        given().when().put(API + "/1/procesar").then().statusCode(403);
+        given().when().put(API + "/1/pagar").then().statusCode(403);
+        given().when().put(API + "/1/toggle").then().statusCode(403);
     }
 
     @Test
@@ -635,6 +648,12 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
                 .when().post(API + "/upload")
                 .then()
                 .statusCode(302);
+        given().redirects().follow(false)
+                .contentType(ContentType.URLENC)
+                .when().put(API + "/1/procesar")
+                .then()
+                .statusCode(302)
+                .header("Location", containsString("/login"));
     }
 
     // ── 11. Page render markers + fragment dual-mode ─────────────────────
@@ -661,6 +680,166 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
                 .header("HX-Request", "true")
                 .when().get(API + "/tabla").asString();
         assertThat(fragmento).doesNotContain("<footer");
+    }
+
+    // ── 12. Row actions: Procesar / Pagar / Desactivar ──────────────────
+
+    @Test
+    void procesarCreatesArticuloAndInventarioAndFlagsProcessed() throws Exception {
+        Map<String, String> session = adminSession();
+        ComprobantesRecibidos fila = null;
+        Articulos articulo = null;
+        List<Inventario> movimientos = List.of();
+        try {
+            fila = subirValidaUnica(session, "PRC" + uniqueSuffix());
+            if (fila.getDetalles() == null || fila.getDetalles().getLineasDetalle() == null
+                    || fila.getDetalles().getLineasDetalle().isEmpty()) {
+                return;
+            }
+            String nombre = fila.getDetalles().getLineasDetalle().get(0).getDetalle();
+
+            // HX-Request → re-rendered table fragment carrying the OOB toast.
+            authed(session)
+                    .header("HX-Request", "true")
+                    .contentType(ContentType.URLENC)
+                    .formParam("bucket", "todas")
+                    .formParam("q", "")
+                    .when().put(API + "/" + fila.getId() + "/procesar")
+                    .then()
+                    .statusCode(200)
+                    .body(containsString("id=\"facturas-recibidas\""))
+                    .body(containsString("hx-swap-oob"));
+
+            ComprobantesRecibidos trasProcesar = recibidosService.find(fila.getId());
+            assertThat(trasProcesar.getProcessed()).isTrue();
+
+            articulo = articulosService.findByName(nombre);
+            assertNotNull(articulo, "procesar must create or update the line's article");
+            assertThat(articulo.isProcessed()).isFalse();
+            Long articuloCodigo = articulo.getCodigo();
+
+            movimientos = inventarioService.listAll().stream()
+                    .filter(m -> m.getArticulo() != null
+                            && m.getArticulo().getCodigo().equals(articuloCodigo))
+                    .toList();
+            assertThat(movimientos).isNotEmpty();
+            assertThat(movimientos.get(0).getTipoMovimiento())
+                    .isEqualTo("Ingreso Automatico por factura");
+        } finally {
+            for (Inventario m : movimientos) {
+                inventarioService.delete(m);
+            }
+            if (articulo != null) {
+                articulosService.delete(articulo);
+            }
+            deleteQuietly(fila);
+        }
+    }
+
+    @Test
+    void procesarRejectsAlreadyProcessedInactiveAndUnknown() throws Exception {
+        Map<String, String> session = adminSession();
+        ComprobantesRecibidos procesada = null;
+        ComprobantesRecibidos inactiva = null;
+        try {
+            procesada = seedRow("0010000104999" + String.format("%06d", SECUENCIA.getAndIncrement()),
+                    LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("113"), false, true, null);
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .when().put(API + "/" + procesada.getId() + "/procesar")
+                    .then()
+                    .statusCode(400)
+                    .body("error.code", equalTo("VALIDATION_ERROR"));
+
+            inactiva = seedRow("0010000104888" + String.format("%06d", SECUENCIA.getAndIncrement()),
+                    LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("113"), false, false, null);
+            inactiva.setStatus(false);
+            recibidosService.update(inactiva);
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .when().put(API + "/" + inactiva.getId() + "/procesar")
+                    .then()
+                    .statusCode(400)
+                    .body("error.code", equalTo("VALIDATION_ERROR"));
+
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .when().put(API + "/999999999/procesar")
+                    .then()
+                    .statusCode(404)
+                    .body("error.code", equalTo("NOT_FOUND"));
+        } finally {
+            deleteQuietly(procesada, inactiva);
+        }
+    }
+
+    @Test
+    void pagarFlipsPaidFlagAndRejectsAlreadyPaid() throws Exception {
+        Map<String, String> session = adminSession();
+        ComprobantesRecibidos noPagada = null;
+        ComprobantesRecibidos pagada = null;
+        try {
+            noPagada = seedRow("0010000104997" + String.format("%06d", SECUENCIA.getAndIncrement()),
+                    LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("113"), false, false, null);
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .when().put(API + "/" + noPagada.getId() + "/pagar")
+                    .then()
+                    .statusCode(200);
+            assertThat(recibidosService.find(noPagada.getId()).getPaid()).isTrue();
+
+            // JSON twin: application/json body → same mutation, JSON envelope.
+            ComprobantesRecibidos viaJson = seedRow("0010000104996" + String.format("%06d", SECUENCIA.getAndIncrement()),
+                    LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("113"), false, false, null);
+            authed(session)
+                    .contentType(ContentType.JSON)
+                    .body("{}")
+                    .when().put(API + "/" + viaJson.getId() + "/pagar")
+                    .then()
+                    .statusCode(200)
+                    .body("data.message", equalTo("Factura marcada como pagada"));
+            assertThat(recibidosService.find(viaJson.getId()).getPaid()).isTrue();
+            deleteQuietly(viaJson);
+
+            pagada = seedRow("0010000104995" + String.format("%06d", SECUENCIA.getAndIncrement()),
+                    LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("113"), true, false, null);
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .when().put(API + "/" + pagada.getId() + "/pagar")
+                    .then()
+                    .statusCode(400)
+                    .body("error.code", equalTo("VALIDATION_ERROR"));
+        } finally {
+            deleteQuietly(noPagada, pagada);
+        }
+    }
+
+    @Test
+    void toggleFlipsStatusBackAndForth() throws Exception {
+        Map<String, String> session = adminSession();
+        ComprobantesRecibidos fila = null;
+        try {
+            fila = seedRow("0010000104994" + String.format("%06d", SECUENCIA.getAndIncrement()),
+                    LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("113"), false, false, null);
+            assertThat(fila.getStatus()).isTrue();
+
+            authed(session)
+                    .contentType(ContentType.URLENC)
+                    .when().put(API + "/" + fila.getId() + "/toggle")
+                    .then()
+                    .statusCode(200);
+            assertThat(recibidosService.find(fila.getId()).getStatus()).isFalse();
+
+            authed(session)
+                    .contentType(ContentType.JSON)
+                    .body("{}")
+                    .when().put(API + "/" + fila.getId() + "/toggle")
+                    .then()
+                    .statusCode(200);
+            assertThat(recibidosService.find(fila.getId()).getStatus()).isTrue();
+        } finally {
+            deleteQuietly(fila);
+        }
     }
 
     // ── Programmatic row fixture (production-service path, T28 parity) ──

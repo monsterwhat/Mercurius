@@ -5,6 +5,7 @@ import Models.DTO.PagedResponse;
 import Models.DTO.UsersDTO;
 import Models.Users;
 import Services.LoginService;
+import Services.auth.UserRoleMapper;
 import Utils.DiffUtils;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -35,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -77,6 +79,20 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 public class UsersResource {
 
     private static final Logger LOG = Logger.getLogger(UsersResource.class);
+
+    /**
+     * Canonical permission tokens accepted by the dedicated permisos endpoint.
+     * Must stay in lockstep with {@link UserRoleMapper}'s ROLE_* constants —
+     * the mapper's case-sensitive substring semantics are the source of truth
+     * for what a stored groupName means.
+     */
+    private static final Set<String> TOKENS_VALIDOS = Set.of(
+            UserRoleMapper.ROLE_ADMIN,
+            UserRoleMapper.ROLE_FACTURACION,
+            UserRoleMapper.ROLE_INVENTARIO,
+            UserRoleMapper.ROLE_USUARIO,
+            UserRoleMapper.ROLE_TRIBUTACION,
+            UserRoleMapper.ROLE_REGISTRO);
 
     @Nonnull
     @Inject
@@ -494,6 +510,61 @@ public class UsersResource {
         Response result = update(id, request);
         return handleFormMutationResult(result, "editar", loginService.find(id), null, null,
                 "/api/app/users/table");
+    }
+
+    /**
+     * Dedicated endpoint that edits ONLY a user's permissions (groupName) —
+     * the one promised by pages/usuarios/form.html. Validates the submitted
+     * tokens against {@link UserRoleMapper}'s ROLE_* constants, then persists
+     * via the existing service update path. It never touches username/email/
+     * status/password; those stay on PUT /{id} and /{id}/password.
+     */
+    @PUT
+    @Path("/{id}/permisos")
+    @Transactional
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Operation(summary = "Update a user's permissions (groupName) from an HTMX form", hidden = true)
+    public Response updatePermisos(
+            @PathParam("id") Long id,
+            @FormParam("groupName") @Nullable List<String> groupName) {
+        try {
+            Users user = loginService.find(id);
+            if (user == null) {
+                return notFound(id);
+            }
+
+            List<String> permisos = permisosLimpios(groupName);
+            List<String> invalidos = permisos.stream()
+                    .filter(p -> !TOKENS_VALIDOS.contains(p))
+                    .toList();
+            if (!invalidos.isEmpty()) {
+                return redisplayForm("editar", user, null, null,
+                        "Permisos inválidos: " + String.join(", ", invalidos), null,
+                        "error", "Permisos inválidos");
+            }
+            if (permisos.isEmpty()) {
+                return redisplayForm("editar", user, null, null,
+                        "Los permisos no pueden estar vacíos", null,
+                        "error", "Los permisos no pueden estar vacíos");
+            }
+
+            String antes = DiffUtils.snapshotEntity(user);
+            user.setGroupName(joinGroupNames(permisos));
+            loginService.update(user);
+
+            LOG.info("Se actualizaron los permisos del usuario: " + user.getUsername()
+                    + " | source=UsersResource.updatePermisos()"
+                    + " | antes=" + antes
+                    + " | despues=" + DiffUtils.snapshotEntity(user));
+
+            return handleFormMutationResult(Response.ok(ApiResponse.ok(toDTO(user))).build(),
+                    "editar", user, null, null, "/api/app/users/table");
+        } catch (Exception e) {
+            LOG.warn("Error updating permisos for user " + id, e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error actualizando los permisos"))
+                    .build();
+        }
     }
 
     private static Response notFound(Long id) {

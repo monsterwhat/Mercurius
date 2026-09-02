@@ -82,15 +82,24 @@ public class ComprobantesRecibidosService extends GService<ComprobantesRecibidos
                     + " | despues=" + errorSummary);
             }
 
-            em.persist(entity);
+            // The Emisor/Receptor arrive DETACHED here: Parser.parseXML() persisted
+            // them via EmisorService.createIfNotExist / ReceptorService.createIfNotExist
+            // inside their own committed transactions, so persist() rejects them
+            // ("Detached entity passed to persist" — bug seen in prod logs, 238/245
+            // recibidos silently lost). merge() re-attaches the whole graph
+            // idempotently: each transient child (Encabezado, Resumen, Detalles,
+            // LineaDetalle) is inserted and each detached child with an ID is
+            // matched by ID and updated with identical data. This is the same
+            // convention create()/update()/toggle() in this service already use.
+            ComprobantesRecibidos managed = em.merge(entity);
             em.flush();
-            em.refresh(entity);
+            em.refresh(managed);
 
-            String consecutive = entity.getEncabezado() != null ? entity.getEncabezado().getNumeroConsecutivo() : String.valueOf(entity.getId());
+            String consecutive = managed.getEncabezado() != null ? managed.getEncabezado().getNumeroConsecutivo() : String.valueOf(managed.getId());
             LOG.info("Successfully created ComprobantesRecibidos: " + consecutive + " | source=ComprobantesRecibidosService.createWithRelatedEntities()");
         } catch (PersistenceException e) {
             LOG.warn("Error creating entity with related entities: " + e.getMessage() + " | source=ComprobantesRecibidosService.createWithRelatedEntities() | despues=" + e.getMessage());
-            throw new RuntimeException("Failed to create ComprobantesRecibidos with related entities", e);
+            throw new RuntimeException("No se pudo guardar el comprobante recibido: " + e.getMessage(), e);
         }
         return prevalidation;
     }

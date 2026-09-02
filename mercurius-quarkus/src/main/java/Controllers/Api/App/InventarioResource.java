@@ -178,6 +178,7 @@ public class InventarioResource {
     LoginService loginService;
 
     @Nonnull
+    @Inject
     Parser parser;
 
     @Inject
@@ -770,16 +771,40 @@ public class InventarioResource {
         return null;
     }
 
-    /** Loose NumeroConsecutivo search mirroring Parser.extractNumeroConsecutivo. */
+    /**
+     * Loose NumeroConsecutivo search — parity with
+     * FacturasRecibidasResource.consecutivoDe() and
+     * Parser.extractNumeroConsecutivo(). The Hacienda v4.4 layout puts
+     * {@code <NumeroConsecutivo>} as a DIRECT child of the document root
+     * (e.g. {@code <FacturaElectronica><Clave/>...<NumeroConsecutivo/>...}),
+     * so a scan that only inspects the children of each descendant (the
+     * previous logic here) never reaches it — the root's own children are
+     * not in {@code getElementsByTagName("*")}. First try the tag-name
+     * search (finds the element at any depth), then fall back to a
+     * full-descendant scan (element name, attribute, child text).
+     */
     @Nonnull
     private static String consecutivoDe(@Nonnull Element raiz) {
         String directo = raiz.getAttribute("NumeroConsecutivo");
         if (!directo.isEmpty()) {
             return directo;
         }
+        NodeList porTag = raiz.getElementsByTagName("NumeroConsecutivo");
+        if (porTag.getLength() > 0) {
+            String texto = porTag.item(0).getTextContent();
+            if (texto != null && !texto.isBlank() && !"null".equals(texto)) {
+                return texto.trim();
+            }
+        }
         NodeList hijos = raiz.getElementsByTagName("*");
         for (int i = 0; i < hijos.getLength(); i++) {
             Element hijo = (Element) hijos.item(i);
+            if ("NumeroConsecutivo".equals(hijo.getNodeName())) {
+                String texto = hijo.getTextContent();
+                if (texto != null && !texto.isBlank() && !"null".equals(texto)) {
+                    return texto.trim();
+                }
+            }
             String atributo = hijo.getAttribute("NumeroConsecutivo");
             if (!atributo.isEmpty()) {
                 return atributo;
