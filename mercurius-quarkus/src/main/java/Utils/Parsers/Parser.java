@@ -24,7 +24,7 @@ import Models.Encabezado.Ubicacion;
 import Models.Enums.Tipo_MedioPago;
 import Models.Resumen.CodigoTipoMoneda;
 import Models.Resumen.ResumenFactura;
-import Models.Validacion.PrevalidationResult;
+
 import Services.ComprobantesRecibidosService;
 import Services.ComprobantesEmitidosService;
 import Services.ComprobanteService;
@@ -108,7 +108,7 @@ public class Parser {
             // Parse the XML file into the ComprobantesRecibidos object
             return (ComprobantesRecibidos) unmarshaller.unmarshal(xmlFile);
         } catch (JAXBException e) {
-            LOG.warn("failed to parse comprobante x m l");
+            LOG.warn("failed to parse comprobante x m l | source=Parser.parseComprobante() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -137,7 +137,7 @@ public class Parser {
             // If no format works, throw an exception
             return null;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse fecha emision", e);
+            LOG.warn("failed to parse fecha emision | source=Parser.parseFechaEmision() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -206,7 +206,7 @@ public class Parser {
 
             return emisor;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse emisor");
+            LOG.warn("failed to parse emisor | source=Parser.parseEmisor() | emisorNode=" + emisorNode.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -265,7 +265,7 @@ public class Parser {
 
             return receptor;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse receptor");
+            LOG.warn("failed to parse receptor | source=Parser.parseReceptor() | receptorNode=" + receptorNode.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -289,7 +289,7 @@ public class Parser {
             return parsedUbicacion;
 
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse ubicacion");
+            LOG.warn("failed to parse ubicacion | source=Parser.parseUbicacion() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -306,7 +306,7 @@ public class Parser {
 
             return telefono;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse telefono");
+            LOG.warn("failed to parse telefono | source=Parser.parseTelefono() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -333,7 +333,7 @@ public class Parser {
 
             return fax;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse fax");
+            LOG.warn("failed to parse fax | source=Parser.parseFax() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -353,7 +353,7 @@ public class Parser {
             }
             return emails;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse email");
+            LOG.warn("failed to parse email | source=Parser.parseEmail() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -380,7 +380,7 @@ public class Parser {
 
             return lineasDetalle;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse detalle servicio");
+            LOG.warn("failed to parse detalle servicio | source=Parser.parseDetalleServicio() | node=" + detalleServicio.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
 
@@ -409,7 +409,7 @@ public class Parser {
 
             return mediosPago;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse medio pago");
+            LOG.warn("failed to parse medio pago | source=Parser.parseMedioPago() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -442,13 +442,13 @@ public class Parser {
                 }
             }
 
-            String cantidad = lineaDetalleNode.path("Cantidad").asText();
-            String unidadMedida = lineaDetalleNode.path("UnidadMedida").asText();
-            String unidadMedidaComercial = lineaDetalleNode.path("UnidadMedidaComercial").asText();
-            String detalle = lineaDetalleNode.path("Detalle").asText();
-            String precioUnitario = lineaDetalleNode.path("PrecioUnitario").asText();
-            String montoTotal = lineaDetalleNode.path("MontoTotal").asText();
-            String subTotal = lineaDetalleNode.path("SubTotal").asText();
+            String cantidad = lineaDetalleNode.path("Cantidad").asText().trim();
+            String unidadMedida = lineaDetalleNode.path("UnidadMedida").asText().trim();
+            String unidadMedidaComercial = lineaDetalleNode.path("UnidadMedidaComercial").asText().trim();
+            String detalle = lineaDetalleNode.path("Detalle").asText().trim();
+            String precioUnitario = lineaDetalleNode.path("PrecioUnitario").asText().trim();
+            String montoTotal = lineaDetalleNode.path("MontoTotal").asText().trim();
+            String subTotal = lineaDetalleNode.path("SubTotal").asText().trim();
             List<Impuesto> impuestos = new ArrayList<>();
             List<Descuento> descuentos = new ArrayList<>();
 
@@ -498,9 +498,9 @@ public class Parser {
                 descuento.setLineaDetalle(lineaDetalle);
             }
 
-            String montoTotalLinea = lineaDetalleNode.path("MontoTotalLinea").asText();
-            String baseImponible = lineaDetalleNode.path("BaseImponible").asText();
-            String impuestoNeto = lineaDetalleNode.path("ImpuestoNeto").asText();
+            String montoTotalLinea = lineaDetalleNode.path("MontoTotalLinea").asText().trim();
+            String baseImponible = lineaDetalleNode.path("BaseImponible").asText().trim();
+            String impuestoNeto = lineaDetalleNode.path("ImpuestoNeto").asText().trim();
             String tipoTransaccion = lineaDetalleNode.path("TipoTransaccion").asText();
 
             lineaDetalle.setNumeroLinea(numeroLinea);
@@ -522,7 +522,7 @@ public class Parser {
 
             return lineaDetalle;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse linea detalle");
+            LOG.warn("failed to parse linea detalle | source=Parser.parseLineaDetalle() | lineaNode=" + lineaDetalleNode.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -539,7 +539,7 @@ public class Parser {
 
             return codigoComercial;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse codigo comercial");
+            LOG.warn("failed to parse codigo comercial | source=Parser.parseCodigoComercial() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -591,7 +591,7 @@ public class Parser {
             return impuesto;
         } catch (RuntimeException e) {
             String articleName = impuestoNode.path("Detalle").asText("unknown");
-            LOG.warn("failed to parse impuesto");
+            LOG.warn("failed to parse impuesto | source=Parser.parseImpuesto() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -628,7 +628,7 @@ public class Parser {
 
             return datos;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse datos impuesto especifico");
+            LOG.warn("failed to parse datos impuesto especifico | source=Parser.parseDatosImpuestoEspecifico() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -690,7 +690,7 @@ public class Parser {
 
             return exoneracion;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse exoneracion");
+            LOG.warn("failed to parse exoneracion | source=Parser.parseExoneracion() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -699,35 +699,35 @@ public class Parser {
     public ResumenFactura parseResumenFactura(@Nonnull JsonNode resumenFacturaNode) {
         try {
             JsonNode codigoMonedaPath = resumenFacturaNode.path("CodigoTipoMoneda");
-            String codigoMonedaText = codigoMonedaPath.path("CodigoMoneda").asText();
-            String tipoCambioText = codigoMonedaPath.path("TipoCambio").asText();
+            String codigoMonedaText = codigoMonedaPath.path("CodigoMoneda").asText().trim();
+            String tipoCambioText = codigoMonedaPath.path("TipoCambio").asText().trim();
 
             CodigoTipoMoneda codigoMoneda = parseCodigoMoneda(codigoMonedaText, tipoCambioText);
             if (codigoMoneda == null) {
-                LOG.warn("failed to parse resumen factura");
+                LOG.warn("failed to parse codigo moneda | source=Parser.parseResumenFactura() | resumenNode=" + resumenFacturaNode.toString() + " | codigo=" + codigoMonedaText + " | tipo=" + tipoCambioText + " | despues=codigoMoneda devolvió null");
                 return null;
             }
 
-            // Extracting values
-            String totalServiciosGravados = resumenFacturaNode.path("TotalServGravados").asText();
-            String totalServiciosExentos = resumenFacturaNode.path("TotalServExentos").asText();
-            String totalServiciosExonerados = resumenFacturaNode.path("TotalServExonerado").asText();
-            String totalServNoSujeto = resumenFacturaNode.path("TotalServNoSujeto").asText();
-            String totalMercanciasGravadas = resumenFacturaNode.path("TotalMercanciasGravadas").asText();
-            String totalMercanciasExentas = resumenFacturaNode.path("TotalMercanciasExentas").asText();
-            String totalMercanciaExonerada = resumenFacturaNode.path("TotalMercExonerada").asText();
-            String totalMercNoSujeta = resumenFacturaNode.path("TotalMercNoSujeta").asText();
-            String totalGravado = resumenFacturaNode.path("TotalGravado").asText();
-            String totalExento = resumenFacturaNode.path("TotalExento").asText();
-            String totalExonerado = resumenFacturaNode.path("TotalExonerado").asText();
-            String totalNoSujeto = resumenFacturaNode.path("TotalNoSujeto").asText();
-            String totalVenta = resumenFacturaNode.path("TotalVenta").asText();
-            String totalDescuentos = resumenFacturaNode.path("TotalDescuentos").asText();
-            String totalVentaNeta = resumenFacturaNode.path("TotalVentaNeta").asText();
-            String totalImpuesto = resumenFacturaNode.path("TotalImpuesto").asText();
-            String totalIVADevuelto = resumenFacturaNode.path("TotalIVADevuelto").asText();
-            String totalOtrosCargos = resumenFacturaNode.path("TotalOtrosCargos").asText();
-            String totalComprobante = resumenFacturaNode.path("TotalComprobante").asText();
+            // Extracting values - trim to tolerate trailing spaces in Hacienda XML (e.g. "0.00 " from some emisores)
+            String totalServiciosGravados = resumenFacturaNode.path("TotalServGravados").asText().trim();
+            String totalServiciosExentos = resumenFacturaNode.path("TotalServExentos").asText().trim();
+            String totalServiciosExonerados = resumenFacturaNode.path("TotalServExonerado").asText().trim();
+            String totalServNoSujeto = resumenFacturaNode.path("TotalServNoSujeto").asText().trim();
+            String totalMercanciasGravadas = resumenFacturaNode.path("TotalMercanciasGravadas").asText().trim();
+            String totalMercanciasExentas = resumenFacturaNode.path("TotalMercanciasExentas").asText().trim();
+            String totalMercanciaExonerada = resumenFacturaNode.path("TotalMercExonerada").asText().trim();
+            String totalMercNoSujeta = resumenFacturaNode.path("TotalMercNoSujeta").asText().trim();
+            String totalGravado = resumenFacturaNode.path("TotalGravado").asText().trim();
+            String totalExento = resumenFacturaNode.path("TotalExento").asText().trim();
+            String totalExonerado = resumenFacturaNode.path("TotalExonerado").asText().trim();
+            String totalNoSujeto = resumenFacturaNode.path("TotalNoSujeto").asText().trim();
+            String totalVenta = resumenFacturaNode.path("TotalVenta").asText().trim();
+            String totalDescuentos = resumenFacturaNode.path("TotalDescuentos").asText().trim();
+            String totalVentaNeta = resumenFacturaNode.path("TotalVentaNeta").asText().trim();
+            String totalImpuesto = resumenFacturaNode.path("TotalImpuesto").asText().trim();
+            String totalIVADevuelto = resumenFacturaNode.path("TotalIVADevuelto").asText().trim();
+            String totalOtrosCargos = resumenFacturaNode.path("TotalOtrosCargos").asText().trim();
+            String totalComprobante = resumenFacturaNode.path("TotalComprobante").asText().trim();
 
             // Check for null or empty values before converting to BigDecimal
             BigDecimal bigDecimalTotalServiciosGravados = totalServiciosGravados.isEmpty() ? BigDecimal.ZERO : new BigDecimal(totalServiciosGravados);
@@ -783,7 +783,7 @@ public class Parser {
             return resumenFactura;
 
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse resumen factura");
+            LOG.warn("failed to parse resumen factura | source=Parser.parseResumenFactura() | node=" + resumenFacturaNode.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -820,14 +820,14 @@ public class Parser {
 
             return mediosPagoR;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse medio pago r");
+            LOG.warn("failed to parse medio pago r | source=Parser.parseMedioPagoR() | node=" + resumenFacturaNode.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
 
     private MedioPagoR parseSingleMedioPagoR(JsonNode medioPagoNode) {
         try {
-            String tipoMedioPago = medioPagoNode.path("TipoMedioPago").asText();
+            String tipoMedioPago = medioPagoNode.path("TipoMedioPago").asText().trim();
             if (tipoMedioPago.isEmpty()) {
                 return null;
             }
@@ -835,19 +835,19 @@ public class Parser {
             MedioPagoR mp = new MedioPagoR();
             mp.setTipoMedioPago(tipoMedioPago);
 
-            String otros = medioPagoNode.path("MedioPagoOtros").asText();
+            String otros = medioPagoNode.path("MedioPagoOtros").asText().trim();
             if (!otros.isEmpty()) {
                 mp.setMedioPagoOtros(otros);
             }
 
-            String total = medioPagoNode.path("TotalMedioPago").asText();
+            String total = medioPagoNode.path("TotalMedioPago").asText().trim();
             if (!total.isEmpty()) {
                 mp.setTotalMedioPago(new BigDecimal(total));
             }
 
             return mp;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse single medio pago r");
+            LOG.warn("failed to parse single medio pago r | source=Parser.parseSingleMedioPagoR() | medioPagoNode=" + medioPagoNode.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -855,17 +855,19 @@ public class Parser {
     @Nullable
     public CodigoTipoMoneda parseCodigoMoneda(@Nonnull String codigo, @Nullable String tipo) {
         try {
+            String codigoTrim = codigo == null ? "" : codigo.trim();
+            String tipoTrim = tipo == null ? "" : tipo.trim();
             CodigoTipoMoneda codigoMoneda = new CodigoTipoMoneda();
-            codigoMoneda.setCodigoMoneda(codigo);
-            if (tipo == null || tipo.isEmpty()) {
+            codigoMoneda.setCodigoMoneda(codigoTrim);
+            if (tipoTrim.isEmpty()) {
                 codigoMoneda.setTipoCambioMoneda(BigDecimal.ONE);
             } else {
-                codigoMoneda.setTipoCambioMoneda(new BigDecimal(tipo));
+                codigoMoneda.setTipoCambioMoneda(new BigDecimal(tipoTrim));
             }
 
             return codigoMoneda;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse codigo moneda");
+            LOG.warn("failed to parse codigo moneda | source=Parser.parseCodigoMoneda() | codigo=" + codigo + " tipo=" + tipo + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -873,10 +875,10 @@ public class Parser {
     @Nullable
     public Descuento parseDescuento(@Nonnull JsonNode descuentoNode) {
         try {
-            String montoDescuento = descuentoNode.path("MontoDescuento").asText();
-            String naturalezaDescuento = descuentoNode.path("NaturalezaDescuento").asText();
-            String codigoDescuento = descuentoNode.path("CodigoDescuento").asText();
-            String codigoDescuentoOtro = descuentoNode.path("CodigoDescuentoOtro").asText();
+            String montoDescuento = descuentoNode.path("MontoDescuento").asText().trim();
+            String naturalezaDescuento = descuentoNode.path("NaturalezaDescuento").asText().trim();
+            String codigoDescuento = descuentoNode.path("CodigoDescuento").asText().trim();
+            String codigoDescuentoOtro = descuentoNode.path("CodigoDescuentoOtro").asText().trim();
 
             Descuento descuento = new Descuento();
             descuento.setMontoDescuento(new BigDecimal(montoDescuento));
@@ -890,7 +892,7 @@ public class Parser {
 
             return descuento;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse descuento");
+            LOG.warn("failed to parse descuento | source=Parser.parseDescuento() | descuentoNode=" + descuentoNode.toString() + " | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -982,7 +984,7 @@ public class Parser {
             String currentUser = Utils.AsyncUserContext.getCurrentUser() != null
                     ? Utils.AsyncUserContext.getCurrentUser() : "system";
 
-            LOG.warn("failed to source");
+            LOG.debug("failed to source | source=Parser | despues=trial parser mismatch");
         } catch (RuntimeException e) {
             // Fallback to console logging if AlertasService fails
             LOG.warn("failed to log async error", e);
@@ -1016,6 +1018,17 @@ public class Parser {
         return false;
     }
  
+    /**
+     * Per-file parse/persistence failure. Thrown by parseXML AFTER the error was
+     * already recorded (console log) at its source site, so the catch block can
+     * distinguish "document failed validation/persistence" from unexpected
+     * IO/Jackson errors (which get the generic log before rethrowing) and callers
+     * surface a real failure instead of the previous false "successfully processed".
+     */
+    private static final class XmlParseException extends RuntimeException {
+        XmlParseException(String message) { super(message); }
+    }
+
     @Transactional
     public void parseXML(@Nonnull InputStream inputStream) {
         StringBuilder xmlContent = new StringBuilder();
@@ -1025,13 +1038,10 @@ public class Parser {
                     xmlContent.append(line).append("\n");
                 }
 
-                LOG.info("failed to parse x m l");
-                LOG.info("failed to parse x m l");
 
                 XmlMapper xmlMapper = new XmlMapper();
                 JsonNode rootNode = xmlMapper.readTree(xmlContent.toString());
 
-                LOG.info("failed to parse x m l");
 
                 // Validate required fields first with improved NumeroConsecutivo extraction
 // Detect document type first
@@ -1044,17 +1054,13 @@ public class Parser {
                 String clave = rootNode.path(documentType).path("Clave").asText();
                 if (clave.isEmpty()) clave = rootNode.path("Clave").asText();
 
-                LOG.info("failed to parse x m l");
-                LOG.info("failed to parse x m l");
-                LOG.info("failed to parse x m l");
 
                 String schemaVersion = null;
                 try {
                     schemaVersion = ComprobanteFactory.detectVersion(
                         new java.io.ByteArrayInputStream(xmlContent.toString().getBytes(StandardCharsets.UTF_8)));
-                    LOG.info("failed to parse x m l");
                 } catch (RuntimeException e) {
-                    LOG.warn("failed to parse x m l", e);
+                    LOG.debug("Parser.parseXML.detectVersion trial failed | source=Parser.parseXML.detectVersion | despues=" + e.getMessage(), e);
                 }
 
                 if (isMensajeHacienda) {
@@ -1064,13 +1070,11 @@ public class Parser {
 
                 if (numeroConsecutivo.isEmpty()) {
                     String errorMsg = "XML inválido: falta el número consecutivo";
-                    LOG.warn("failed to parse x m l");
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML", xmlContent.toString());
-                    return;
+                    throw new XmlParseException(errorMsg);
                 }
 
                 if (facturaService.findByNumeroConsecutivo(numeroConsecutivo)) {
-                    LOG.info("failed to parse x m l");
                     logAsyncError("WARN", "Factura duplicada: " + numeroConsecutivo, "Parser.parseXML", xmlContent.toString());
                     return;
                 }
@@ -1078,40 +1082,34 @@ public class Parser {
                 Encabezado encabezado = new Encabezado();
                 DetalleServicio detalles = new DetalleServicio();
 
-                LOG.info("failed to parse x m l");
                 JsonNode emisorNode = rootNode.path(documentType).isMissingNode() ? rootNode.path("Emisor") : rootNode.path(documentType).path("Emisor");
                 if (emisorNode.isMissingNode() || emisorNode.isEmpty()) emisorNode = rootNode.path("Emisor");
                 Emisor emisor = parseEmisor(emisorNode);
                 if (emisor == null) {
                     String errorMsg = "XML inválido: error en datos del emisor";
-                    LOG.warn("failed to parse x m l");
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.emisor", xmlContent.toString());
-                    return;
+                    throw new XmlParseException(errorMsg);
                 }
 
-                LOG.info("failed to parse x m l");
                 JsonNode receptorNode = rootNode.path(documentType).isMissingNode() ? rootNode.path("Receptor") : rootNode.path(documentType).path("Receptor");
                 if (receptorNode.isMissingNode() || receptorNode.isEmpty()) receptorNode = rootNode.path("Receptor");
                 Receptor receptor = parseReceptor(receptorNode);
                 if (receptor == null) {
                     String errorMsg = "XML inválido: error en datos del receptor";
-                    LOG.warn("failed to parse x m l");
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.receptor", xmlContent.toString());
-                    return;
+                    throw new XmlParseException(errorMsg);
                 }
 
                 String codigoActividad = rootNode.path(documentType).path("CodigoActividad").asText();
                 if (codigoActividad.isEmpty()) codigoActividad = rootNode.path("CodigoActividad").asText();
                 String fechaEmisionStr = rootNode.path(documentType).path("FechaEmision").asText();
                 if (fechaEmisionStr.isEmpty()) fechaEmisionStr = rootNode.path("FechaEmision").asText();
-                LOG.info("failed to parse x m l");
 
                 LocalDateTime localDateTime = parseFechaEmision(fechaEmisionStr);
                 if (localDateTime == null) {
                     String errorMsg = "XML inválido: error en fecha de emisión";
-                    LOG.warn("failed to parse x m l");
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.fechaEmision", xmlContent.toString());
-                    return;
+                    throw new XmlParseException(errorMsg);
                 }
 
                 String condicionVenta = rootNode.path("CondicionVenta").asText();
@@ -1120,48 +1118,39 @@ public class Parser {
                 List<MedioPago> medioPago = parseMedioPago(rootNode.path("MedioPago"), encabezado);
                 if (medioPago == null) {
                     String errorMsg = "XML inválido: error en medio de pago";
-                    LOG.warn("failed to parse x m l");
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.medioPago", xmlContent.toString());
-                    return;
+                    throw new XmlParseException(errorMsg);
                 }
 
-                LOG.info("failed to parse x m l");
                 ResumenFactura resumenFactura = parseResumenFactura(rootNode.path("ResumenFactura"));
                 if (resumenFactura == null) {
                     String errorMsg = "XML inválido: error en resumen de factura";
-                    LOG.warn("failed to parse x m l");
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.resumenFactura", xmlContent.toString());
-                    return;
+                    throw new XmlParseException(errorMsg);
                 }
 
                 // V4.4 Bitácora item 124/125: TotalComprobante must equal sum of TotalMedioPago
                 validarTotalMedioPago(resumenFactura, numeroConsecutivo, xmlContent.toString());
 
-                LOG.info("failed to parse x m l");
                 List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
                 if (lineas == null || lineas.isEmpty()) {
                     String errorMsg = "XML inválido: no se encontraron líneas de detalle";
-                    LOG.warn("failed to parse x m l");
                     logAsyncError("ERROR", errorMsg, "Parser.parseXML.detalleServicio", xmlContent.toString());
-                    return;
+                    throw new XmlParseException(errorMsg);
                 }
 
-                LOG.info("failed to parse x m l");
 
 // Check if encabezado already exists by numeroConsecutivo (before creating any entities)
                 // Use new method that handles duplicates properly
                 boolean existsByNumeroConsecutivo = encabezadoService.existsByNumeroConsecutivoWithValidComprobante(numeroConsecutivo);
 
                 if (existsByNumeroConsecutivo) {
-                    LOG.info("failed to parse x m l");
-                    LOG.info("failed to parse x m l");
                     return; // Skip processing if already exists
                 }
 
                 // Clean up any existing duplicates before proceeding
                 int duplicatesCleaned = encabezadoService.cleanDuplicateEncabezados(numeroConsecutivo);
                 if (duplicatesCleaned > 0) {
-                    LOG.info("failed to parse x m l");
                 }
 
                 detalles.setLineasDetalle(lineas);
@@ -1179,37 +1168,34 @@ public class Parser {
                 encabezado.setClave(clave);
                 encabezado.setCodigoDocumento(codigoDocumento);
 
-                LOG.info("failed to parse x m l");
                 Emisor persistedEmisor = emisorService.createIfNotExist(emisor);
                 Receptor persistedReceptor = receptorService.createIfNotExist(receptor);
 
                 if (persistedEmisor != null) {
                     encabezado.setEmisor(persistedEmisor);
                 } else {
-                    LOG.warn("failed to parse x m l");
-                    return;
+                    String errorMsg = "XML inválido: no se pudo guardar el emisor";
+                    logAsyncError("ERROR", errorMsg, "Parser.parseXML.emisor.persist", xmlContent.toString());
+                    throw new XmlParseException(errorMsg);
                 }
                 if (persistedReceptor != null) {
                     encabezado.setReceptor(persistedReceptor);
                 } else {
-                    LOG.warn("failed to parse x m l");
-                    return;
+                    String errorMsg = "XML inválido: no se pudo guardar el receptor";
+                    logAsyncError("ERROR", errorMsg, "Parser.parseXML.receptor.persist", xmlContent.toString());
+                    throw new XmlParseException(errorMsg);
                 }
 
-                LOG.info("failed to parse x m l");
 
                 // Set the lineasDetalle relationship before persisting
                 detalles.setLineasDetalle(lineas);
 
-                LOG.info("failed to parse x m l");
 
 // For received documents, we don't create ComprobantesEmitidos
                 // Only ComprobantesRecibidos should be created for uploaded XML files
                 // This fixes the unique constraint violation issue
                 
-LOG.info("failed to parse x m l");
                 
-                LOG.info("failed to parse x m l");
                 ComprobantesRecibidos factura = new ComprobantesRecibidos();
                 factura.setEncabezado(encabezado);
                 factura.setResumen(resumenFactura);
@@ -1318,49 +1304,24 @@ LOG.info("failed to parse x m l");
                     }
                 }
 
-                PrevalidationResult prevalidation = facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
+                // Merge-based create returns managed copies and rethrows on
+                // persistence failure (the caller surfaces it); pre-validation
+                // warnings are logged inside the service. The original
+                // factura/detalles objects stay DETACHED after the merge, so the
+                // old post-create ID checks would log placeholders for every file
+                // and proved nothing — removed as dead code.
+                facturaService.createWithRelatedEntities(factura, encabezado, resumenFactura);
 
-                if (prevalidation != null && prevalidation.hasErrors()) {
-                    String errorSummary = prevalidation.getErrors().stream()
-                        .map(e -> e.getField() + ": " + e.getMessage())
-                        .collect(java.util.stream.Collectors.joining("; "));
-                    LOG.info("failed to parse x m l");
-                }
-
-                // Verify ID assignment after creation
-                if (factura.getId() == null) {
-                    LOG.warn("failed to parse x m l");
-                } else {
-                    LOG.info("failed to parse x m l");
-                }
-                
-                // Verify DetalleServicio ID assignment
-                if (factura.getDetalles() != null) {
-                    if (factura.getDetalles().getId() == null) {
-                        LOG.warn("failed to parse x m l");
-                    } else {
-                        LOG.info("failed to parse x m l");
-                    }
-                    
-                    // Verify LineaDetalle IDs
-                    if (factura.getDetalles().getLineasDetalle() != null) {
-                        for (LineaDetalle linea : factura.getDetalles().getLineasDetalle()) {
-                            if (linea.getId() == null) {
-                                LOG.warn("failed to parse x m l");
-                            } else {
-                                LOG.info("failed to parse x m l");
-                            }
-                        }
-                    }
-                }
-                
-                LOG.info("failed to parse x m l");
                 // Note: No FacesContext calls in async context
 
+            } catch (XmlParseException e) {
+                // Already logged at its source site; rethrow so the caller
+                // reports a real per-file failure instead of a false success.
+                throw e;
             } catch (IOException | RuntimeException e) {
-                String errorMsg = "Error parsing XML: " + e.getLocalizedMessage();
-                LOG.warn("failed to parse x m l");
+                String errorMsg = "Error parsing XML: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName());
                 logAsyncError("ERROR", errorMsg, "Parser.parseXML.exception", xmlContent.toString());
+                throw new RuntimeException(errorMsg, e);
             }
     }
 
@@ -1379,7 +1340,7 @@ LOG.info("failed to parse x m l");
             ref.setCodigoReferenciaOTRO(node.path("CodigoReferenciaOTRO").asText(null));
             return ref;
         } catch (RuntimeException e) {
-            LOG.warn("failed to parse single informacion referencia");
+            LOG.warn("failed to parse single informacion referencia | source=Parser.parseSingleInformacionReferencia() | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -1479,11 +1440,11 @@ LOG.info("failed to parse x m l");
             case "NotaCreditoElectronica":
             case "NotaCréditoElectrónica":
             case "NotaCredito":
-                return "03";
+                return "02";
             case "NotaDebitoElectronica":
             case "NotaDébitoElectrónica":
             case "NotaDebito":
-                return "02";
+                return "03";
             case "ReciboElectronico":
             case "ReciboElectronicoPago":
                 return "10";

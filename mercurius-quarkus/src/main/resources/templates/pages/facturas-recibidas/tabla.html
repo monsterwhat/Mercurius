@@ -73,10 +73,29 @@
                 <td class="has-text-right" style="font-weight:600">{#if factura.totalComprobante??}&#8362;{factura.totalComprobante}{#else}&mdash;{/if}</td>
                 <td class="has-text-right">{#if factura.totalImpuesto??}&#8362;{factura.totalImpuesto}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
-                    <button type="button" class="button is-small is-info" title="Revisar detalle"
-                            aria-haspopup="dialog" data-kit-open="detalle-factura"
-                            hx-get="/Mercurius/api/app/facturas-recibidas/{factura.id}"
-                            hx-target="#detalle-factura-body" hx-swap="innerHTML">&#128065;</button>
+                    <div style="display:flex;gap:0.25rem;justify-content:center;align-items:center">
+                        {#if !factura.processed && factura.status}
+                        <button type="button" class="button is-small is-success" title="Procesar factura: crea los artículos y los movimientos de inventario"
+                                hx-put="/Mercurius/api/app/facturas-recibidas/{factura.id}/procesar"
+                                hx-include="#recibidas-cubeta, #recibidas-busqueda"
+                                hx-confirm="¿Procesar la factura? Se crearán los artículos y los movimientos de inventario.">Procesar</button>
+                        {/if}
+                        {#if !factura.paid && factura.status}
+                        <button type="button" class="button is-small is-info" title="Marcar como pagada"
+                                hx-put="/Mercurius/api/app/facturas-recibidas/{factura.id}/pagar"
+                                hx-include="#recibidas-cubeta, #recibidas-busqueda"
+                                hx-confirm="¿Marcar la factura como pagada?">Pagar</button>
+                        {/if}
+                        <button type="button" class="button is-small {factura.status ? 'is-warning' : 'is-success'}"
+                                title="Activar o desactivar la factura"
+                                hx-put="/Mercurius/api/app/facturas-recibidas/{factura.id}/toggle"
+                                hx-include="#recibidas-cubeta, #recibidas-busqueda"
+                                hx-confirm="¿{factura.status ? 'Desactivar' : 'Activar'} la factura?">{factura.status ? 'Desactivar' : 'Activar'}</button>
+                        <button type="button" class="button is-small is-link" title="Revisar detalle"
+                                aria-haspopup="dialog" data-kit-open="detalle-factura"
+                                hx-get="/Mercurius/api/app/facturas-recibidas/{factura.id}"
+                                hx-target="#detalle-factura-body" hx-swap="innerHTML">&#128065;</button>
+                    </div>
                 </td>
             </tr>
             {#else}

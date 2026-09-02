@@ -123,8 +123,8 @@ public class DevolucionesResource {
 
     private static final Logger LOG = Logger.getLogger(DevolucionesResource.class);
 
-    /** Hacienda document code for Nota de Crédito Electrónica (legacy "03"). */
-    public static final String CODIGO_NC = "03";
+    /** Hacienda document code for Nota de Crédito Electrónica ("02"). */
+    public static final String CODIGO_NC = "02";
 
     /** Legacy p:dataTable rows=10 on both search results and historial. */
     public static final int DEFAULT_PAGE_SIZE = 10;

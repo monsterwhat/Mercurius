@@ -22,6 +22,32 @@
     <section class="section" style="padding-top:1rem">
         <p class="title is-3">Gestión de Recibos</p>
 
+        {! ── Subir XML (facturas electrónicas) — port of legacy subirFacturas dialog ── !}
+        <div class="level">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Subir Facturas Electrónicas</h2>
+            </div>
+        </div>
+        <div class="box is-shadowless" style="padding:0.75rem">
+            <form id="recibos-upload-forma"
+                  hx-post="/Mercurius/api/app/facturas-recibidas/upload"
+                  hx-encoding="multipart/form-data"
+                  hx-target="#upload-resultado-recibos" hx-swap="innerHTML">
+                <div class="field">
+                    <label class="label" for="recibos-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
+                    <div class="control">
+                        <input class="input" type="file" id="recibos-upload-archivos"
+                               name="files" accept=".xml" multiple required/>
+                    </div>
+                </div>
+                <progress id="upload-progreso-recibos" class="progress is-primary" value="0" max="100">0%</progress>
+                <div class="field">
+                    <button class="button is-primary" type="submit">Procesar Facturas</button>
+                </div>
+            </form>
+            <div id="upload-resultado-recibos"></div>
+        </div>
+
         {#include pages/recibos/tablero /}
 
         <div class="box is-shadowless mt-5">
@@ -38,5 +64,15 @@
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
     {#include _kit/confirm /}
+
+    {! Upload progress bar driven by htmx's own xhr events (no extra libs). !}
+    <script>
+        document.addEventListener('htmx:xhr:progress', function (evt) {
+            var bar = document.getElementById('upload-progreso-recibos');
+            if (bar && evt.detail.lengthComputable) {
+                bar.value = (evt.detail.loaded / evt.detail.total) * 100;
+            }
+        });
+    </script>
     {/body}
 {/include}

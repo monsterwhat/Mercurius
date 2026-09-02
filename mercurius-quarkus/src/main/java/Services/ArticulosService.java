@@ -44,6 +44,7 @@ public class ArticulosService extends GService<Articulos> {
     }
 
     @Override
+    @Transactional
     public void delete(@Nonnull Articulos entity) {
         try {
             if (!em.contains(entity)) {
@@ -62,6 +63,7 @@ public class ArticulosService extends GService<Articulos> {
     }
 
     @Override
+    @Transactional
     public void update(@Nonnull Articulos entity) {
         try {
             em.merge(entity);
@@ -82,6 +84,7 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
     
+    @Transactional
     public void updateAndDisable(@Nonnull Articulos entity) {
         try {
             // Find the existing item by its ID
@@ -115,6 +118,7 @@ public class ArticulosService extends GService<Articulos> {
         }
     }
 
+    @Transactional
     public void softDelete(@Nonnull Articulos entity) {
         try {
             // Find the item by its ID

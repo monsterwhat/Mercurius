@@ -1,24 +1,32 @@
 package Controllers.Api.App;
 
 import Controllers.Api.App.Reportes.ReportePageSupport;
+import Models.Articulos.ArticuloPrecio;
+import Models.Articulos.Articulos;
 import Models.ComprobantesRecibidos;
+import Models.Departamento;
 import Models.DTO.ApiResponse;
 import Models.DTO.ComprobantesRecibidosDetailDTO;
 import Models.DTO.ComprobantesRecibidosListDTO;
 import Models.DTO.PagedResponse;
+import Models.Detalles.CodigoComercial;
 import Models.Detalles.LineaDetalle;
 import Models.Encabezado.CorreoElectronicoEmisor;
 import Models.Encabezado.CorreoElectronicoReceptor;
 import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.Receptor;
+import Models.Inventario;
 import Models.Users;
 import Models.Validacion.PrevalidationResult;
 import Models.Validacion.ValidationError;
+import Services.ArticulosService;
 import Services.ComprobantesRecibidosPrevalidationService;
 import Services.ComprobantesRecibidosService;
 import Services.ConsecutivoReceptorService;
+import Services.DepartamentoService;
 import Services.Facturas.LineaDetalleService;
+import Services.InventarioService;
 import Services.LoginService;
 import Services.MensajeReceptorService;
 import Services.Strategies.DocumentoStrategyFactory;
@@ -50,10 +58,12 @@ import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -168,6 +178,18 @@ public class FacturasRecibidasResource {
     @Nonnull
     @Inject
     LineaDetalleService lineaDetalleService;
+
+    @Nonnull
+    @Inject
+    ArticulosService articulosService;
+
+    @Nonnull
+    @Inject
+    DepartamentoService departamentoService;
+
+    @Nonnull
+    @Inject
+    InventarioService inventarioService;
 
     @Nonnull
     @Inject
@@ -865,6 +887,320 @@ public class FacturasRecibidasResource {
         } catch (NumberFormatException e) {
             return null;
         }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Row actions (T36): Procesar / Marcar como Pagada / Desactivar.
+    // Port of ComprobantesRecibidosController.processFactura — "Procesar"
+    // creates each line's Articulos (+ ArticuloPrecio de costo) and the
+    // Inventario movement (ingreso por factura; egreso por nota de crédito
+    // "02"), then marks the comprobante processed=true. Parity contract:
+    // each service call commits its own transaction (never a shared
+    // @Transactional here — createIfNotExist/create swallow
+    // PersistenceException internally, which would poison a shared tx).
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * PUT /{id}/procesar — port of the legacy "Procesar" row action: creates
+     * the articles and inventory movements of every line and marks the
+     * comprobante as processed. HX-Request → re-rendered table fragment with
+     * toast; otherwise JSON {@link ApiResponse}.
+     */
+    @PUT
+    @Path("/{id}/procesar")
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED, MediaType.MULTIPART_FORM_DATA})
+    @Operation(summary = "Procesar factura recibida (crea artículos e inventario)", hidden = true)
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Procesada (fragmento de tabla si HX-Request)"),
+        @APIResponse(responseCode = "400", description = "Ya procesada o inactiva"),
+        @APIResponse(responseCode = "404", description = "Id desconocido"),
+        @APIResponse(responseCode = "500", description = "Error interno")
+    })
+    public Response procesarForm(@PathParam("id") long id,
+                                 @FormParam("bucket") @Nullable String bucket,
+                                 @FormParam("q") @Nullable String q) {
+        return doProcesar(id, bucket, q);
+    }
+
+    /** Twin JSON de {@link #procesarForm}. */
+    @PUT
+    @Path("/{id}/procesar")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Procesar factura recibida (twin JSON)", hidden = true)
+    public Response procesarJson(@PathParam("id") long id) {
+        return doProcesar(id, null, null);
+    }
+
+    private Response doProcesar(long id, @Nullable String bucket, @Nullable String q) {
+        try {
+            ComprobantesRecibidos factura = recibidosService.findByIdWithDetails(id);
+            if (factura == null) {
+                return notFound("No se encontró la factura solicitada");
+            }
+            if (Boolean.TRUE.equals(factura.getProcessed())) {
+                return tablaConToastError(bucket, q, "La factura ya fue procesada",
+                        Response.Status.BAD_REQUEST, "VALIDATION_ERROR");
+            }
+            if (!Boolean.TRUE.equals(factura.getStatus())) {
+                return tablaConToastError(bucket, q, "La factura está inactiva y no se puede procesar",
+                        Response.Status.BAD_REQUEST, "VALIDATION_ERROR");
+            }
+            String antes = estadoRegistroDe(factura);
+            procesarArticulos(factura, currentUser());
+            factura.setProcessed(true);
+            recibidosService.update(factura);
+            String despues = estadoRegistroDe(recibidosService.findByIdWithDetails(id));
+            LOG.info("Factura " + id + " procesada (artículos e inventarios creados) | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doProcesar()" + " | antes=" + antes + " | despues=" + despues);
+            return tablaConToast(bucket, q, "success", "Se procesaron los artículos de la factura");
+        } catch (RuntimeException e) {
+            LOG.warn("Error procesando la factura " + id + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doProcesar()", e);
+            return serverError("Error procesando la factura recibida");
+        }
+    }
+
+    /**
+     * PUT /{id}/pagar — port of the legacy "Marcar como Pagada" row action:
+     * flips the {@code paid} flag of the comprobante.
+     */
+    @PUT
+    @Path("/{id}/pagar")
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED, MediaType.MULTIPART_FORM_DATA})
+    @Operation(summary = "Marcar como pagada una factura recibida", hidden = true)
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Marcada (fragmento de tabla si HX-Request)"),
+        @APIResponse(responseCode = "400", description = "Ya estaba pagada"),
+        @APIResponse(responseCode = "404", description = "Id desconocido"),
+        @APIResponse(responseCode = "500", description = "Error interno")
+    })
+    public Response pagarForm(@PathParam("id") long id,
+                              @FormParam("bucket") @Nullable String bucket,
+                              @FormParam("q") @Nullable String q) {
+        return doPagar(id, bucket, q);
+    }
+
+    /** Twin JSON de {@link #pagarForm}. */
+    @PUT
+    @Path("/{id}/pagar")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Marcar como pagada una factura recibida (twin JSON)", hidden = true)
+    public Response pagarJson(@PathParam("id") long id) {
+        return doPagar(id, null, null);
+    }
+
+    private Response doPagar(long id, @Nullable String bucket, @Nullable String q) {
+        try {
+            ComprobantesRecibidos factura = recibidosService.findByIdWithDetails(id);
+            if (factura == null) {
+                return notFound("No se encontró la factura solicitada");
+            }
+            if (Boolean.TRUE.equals(factura.getPaid())) {
+                return tablaConToastError(bucket, q, "La factura ya estaba marcada como pagada",
+                        Response.Status.BAD_REQUEST, "VALIDATION_ERROR");
+            }
+            String antes = estadoRegistroDe(factura);
+            factura.setPaid(true);
+            recibidosService.update(factura);
+            String despues = estadoRegistroDe(recibidosService.findByIdWithDetails(id));
+            LOG.info("Factura " + id + " marcada como pagada | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doPagar()" + " | antes=" + antes + " | despues=" + despues);
+            return tablaConToast(bucket, q, "success", "Factura marcada como pagada");
+        } catch (RuntimeException e) {
+            LOG.warn("Error marcando como pagada la factura " + id + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doPagar()", e);
+            return serverError("Error marcando la factura como pagada");
+        }
+    }
+
+    /**
+     * PUT /{id}/toggle — port of the legacy "Desactivar/Activar" row action:
+     * flips the {@code status} flag of the comprobante.
+     */
+    @PUT
+    @Path("/{id}/toggle")
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED, MediaType.MULTIPART_FORM_DATA})
+    @Operation(summary = "Activar/desactivar una factura recibida", hidden = true)
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Estado cambiado (fragmento de tabla si HX-Request)"),
+        @APIResponse(responseCode = "404", description = "Id desconocido"),
+        @APIResponse(responseCode = "500", description = "Error interno")
+    })
+    public Response toggleForm(@PathParam("id") long id,
+                               @FormParam("bucket") @Nullable String bucket,
+                               @FormParam("q") @Nullable String q) {
+        return doToggle(id, bucket, q);
+    }
+
+    /** Twin JSON de {@link #toggleForm}. */
+    @PUT
+    @Path("/{id}/toggle")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Activar/desactivar una factura recibida (twin JSON)", hidden = true)
+    public Response toggleJson(@PathParam("id") long id) {
+        return doToggle(id, null, null);
+    }
+
+    private Response doToggle(long id, @Nullable String bucket, @Nullable String q) {
+        try {
+            ComprobantesRecibidos factura = recibidosService.findByIdWithDetails(id);
+            if (factura == null) {
+                return notFound("No se encontró la factura solicitada");
+            }
+            boolean eraActiva = Boolean.TRUE.equals(factura.getStatus());
+            String antes = estadoRegistroDe(factura);
+            recibidosService.toggle(factura);
+            String despues = estadoRegistroDe(recibidosService.findByIdWithDetails(id));
+            LOG.info("Factura " + id + (eraActiva ? " desactivada" : " activada") + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doToggle()" + " | antes=" + antes + " | despues=" + despues);
+            return tablaConToast(bucket, q, "success",
+                    eraActiva ? "Factura desactivada" : "Factura activada");
+        } catch (RuntimeException e) {
+            LOG.warn("Error cambiando el estado de la factura " + id + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.doToggle()", e);
+            return serverError("Error cambiando el estado de la factura");
+        }
+    }
+
+    /**
+     * Legacy {@code processFactura} port. Para cada LineaDetalle resuelve el
+     * código de barra (CodigoComercial cuyo tipo contiene "03"), crea o
+     * actualiza el {@link Articulos} (departamento = nombre del emisor,
+     * {@link ArticuloPrecio} c/u = costo sin IVA) y crea el movimiento de
+     * {@link Inventario} (ingreso por factura; egreso de cantidad negativa y
+     * nota por nota de crédito "02"). No es atómico: cada llamada de servicio
+     * confirma su propia transacción, igual que el flujo legacy.
+     */
+    private void procesarArticulos(@Nonnull ComprobantesRecibidos factura, @Nullable Users usuario) {
+        List<LineaDetalle> lineasDetalle = factura.getDetalles() == null
+                ? null : factura.getDetalles().getLineasDetalle();
+        if (lineasDetalle == null || lineasDetalle.isEmpty()) {
+            LOG.warn("Factura " + factura.getId() + " sin líneas en memoria, recargando… | user=" + String.valueOf(usuario) + " | source=" + "FacturasRecibidasResource.procesarArticulos()");
+            if (factura.getDetalles() != null) {
+                lineasDetalle = lineaDetalleService.listAllWhereID(factura.getDetalles().getId());
+            }
+            if (lineasDetalle == null || lineasDetalle.isEmpty()) {
+                return; // paridad legacy: factura vacía → aborta sin cambios
+            }
+        }
+        for (LineaDetalle linea : lineasDetalle) {
+            String codigoBarra = "";
+            String nombre = linea.getDetalle();
+            List<CodigoComercial> comerciales = linea.getCodigosComerciales();
+            if (comerciales != null) {
+                for (CodigoComercial cc : comerciales) {
+                    if (cc.getTipo() != null && cc.getTipo().contains("03")) {
+                        codigoBarra = cc.getCodigo();
+                    }
+                }
+            }
+
+            Articulos articuloExistente = codigoBarra.isEmpty()
+                    ? articulosService.findByName(nombre)
+                    : articulosService.findByBarCode(codigoBarra);
+
+            BigDecimal cantidad = linea.getCantidad();
+            BigDecimal montoTotalLinea = linea.getMontoTotalLinea();
+            BigDecimal totalUnitario = montoTotalLinea.divide(cantidad, 20, RoundingMode.HALF_UP);
+            BigDecimal unidadesParseadas = parser.parseUnidadMedida(
+                    linea.getUnidadMedida(), linea.getUnidadMedidaComercial()).multiply(cantidad);
+
+            String nombreEmisor = (factura.getEncabezado() != null
+                    && factura.getEncabezado().getEmisor() != null
+                    && factura.getEncabezado().getEmisor().getNombre() != null)
+                    ? factura.getEncabezado().getEmisor().getNombre() : "Sin emisor";
+            Departamento departamento = new Departamento();
+            departamento.setNombre(nombreEmisor);
+            departamento.setStatus(true);
+            departamento.setUsuario(usuario);
+            Departamento persistido = departamentoService.createIfNotExist(departamento);
+            if (persistido == null) {
+                LOG.warn("No se pudo crear u obtener el departamento '" + nombreEmisor + "' | user=" + String.valueOf(usuario) + " | source=" + "FacturasRecibidasResource.procesarArticulos()");
+            }
+
+            Articulos articuloFinal;
+            if (articuloExistente == null) {
+                Articulos articulo = new Articulos();
+                articulo.setNombre(nombre);
+                articulo.setCodigoBarra(codigoBarra);
+                articulo.setRecomendacionCabys(linea.getCodigoCabys());
+                articulo.setDepartamento(persistido);
+                articulo.setUnidadMedida(linea.getUnidadMedida());
+                articulo.setUnidadMedidaComercial(linea.getUnidadMedidaComercial());
+                articulo.setUsuario(usuario);
+                articulo.setStatus(true);
+                articulo.setProcessed(false);
+                ArticuloPrecio precio = new ArticuloPrecio();
+                precio.setArticulo(articulo);
+                precio.setPrecioCostoSinIVA(totalUnitario);
+                List<ArticuloPrecio> precios = new ArrayList<>();
+                precios.add(precio);
+                articulo.setPrecios(precios);
+                articulosService.create(articulo);
+                articuloFinal = articulo;
+            } else {
+                articuloExistente.setRecomendacionCabys(linea.getCodigoCabys());
+                articuloExistente.setUnidadMedida(linea.getUnidadMedida());
+                articuloExistente.setUnidadMedidaComercial(linea.getUnidadMedidaComercial());
+                articuloExistente.setDepartamento(persistido);
+                articuloExistente.setUsuario(usuario);
+                articuloExistente.setStatus(true);
+                articuloExistente.setProcessed(false);
+                ArticuloPrecio precio = new ArticuloPrecio();
+                precio.setArticulo(articuloExistente);
+                precio.setPrecioCostoSinIVA(totalUnitario);
+                precio.setPrecioConUtilidad(BigDecimal.ZERO);
+                precio.setPrecioFinal(BigDecimal.ZERO);
+                List<ArticuloPrecio> precios = articuloExistente.getPrecios();
+                if (precios == null) {
+                    precios = new ArrayList<>();
+                }
+                precios.add(precio);
+                articuloExistente.setPrecios(precios);
+                articulosService.update(articuloExistente);
+                articuloFinal = articuloExistente;
+            }
+
+            boolean notaCredito = "02".equals(factura.getEncabezado() != null
+                    ? factura.getEncabezado().getCodigoDocumento() : null);
+            Inventario movimiento = new Inventario();
+            movimiento.setArticulo(articuloFinal);
+            movimiento.setUnidadesRecomendadasFactura(unidadesParseadas);
+            movimiento.setUsuario(usuario);
+            movimiento.setFechaMovimiento(new Date());
+            movimiento.setTipoMovimiento(notaCredito
+                    ? "Egreso Automatico por nota de credito" : "Ingreso Automatico por factura");
+            movimiento.setStatus(true);
+            movimiento.setProcessed(false);
+            movimiento.setCantidad(notaCredito ? cantidad.negate() : cantidad);
+            movimiento.setNotas(notaCredito ? "Nota de credito - egreso de inventario" : "");
+            inventarioService.create(movimiento);
+        }
+    }
+
+    /** Fragmento de tabla con el contexto cubeta/búsqueda actual (página 1). */
+    private @Nonnull TemplateInstance tablaFragmento(@Nullable String bucket, @Nullable String q) {
+        Map<String, Object> modelo = tablaModel(bucket == null ? BUCKET_TODAS : bucket,
+                1, 20, null, "asc", q);
+        return tabla.instance().data("modelo", modelo).data("q", q == null ? "" : q);
+    }
+
+    /** Re-render de tabla con toast (HX-Request) o JSON ok. */
+    private Response tablaConToast(@Nullable String bucket, @Nullable String q,
+                                   @Nonnull String severidad, @Nonnull String mensaje) {
+        if (isHxRequest()) {
+            return htmlOk(tablaFragmento(bucket, q)
+                    .data("toastSeverity", severidad)
+                    .data("toastMessage", mensaje));
+        }
+        return Response.ok(ApiResponse.ok(Map.of("message", mensaje))).build();
+    }
+
+    /** Igual que {@link #tablaConToast} pero con estado y código de error. */
+    private Response tablaConToastError(@Nullable String bucket, @Nullable String q,
+                                        @Nonnull String mensaje, @Nonnull Response.Status status,
+                                        @Nonnull String codigo) {
+        return failureWithToast(tablaFragmento(bucket, q), "error", mensaje, status, codigo);
+    }
+
+    /** Flags processed/paid/status de la factura para los LOGs (antes/después). */
+    private static @Nonnull String estadoRegistroDe(@Nullable ComprobantesRecibidos f) {
+        return f == null ? "n/a"
+                : "processed=" + f.getProcessed() + ", paid=" + f.getPaid() + ", status=" + f.getStatus();
     }
 
     // ════════════════════════════════════════════════════════════════════

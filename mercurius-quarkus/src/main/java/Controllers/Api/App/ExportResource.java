@@ -2,7 +2,10 @@ package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
 import Models.ProfitMarginSnapshot;
+import Models.ReportesFamiliasYDepartamentos;
 import Services.ArticulosService;
+import Services.DepartamentoService;
+import Services.FamiliaService;
 import Services.InventarioService;
 import Services.ProfitAnalysisService;
 import Services.StockAlertService;
@@ -20,7 +23,9 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -39,12 +44,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * report bytes produced by {@link ReportExporter} as HTTP attachments,
  * replacing the JSF dataExporter / ExternalContext download flows.
  *
- * <p>Dataset keys map 1:1 to the four migrated datasets:</p>
+ * <p>Dataset keys map 1:1 to the migrated datasets:</p>
  * <ul>
- *   <li>{@code articulos} → "Reporte de Articulos Activos" (pdf)</li>
+ *   <li>{@code articulos} → "Reporte de Articulos Activos" (pdf) / "Articulos" workbook (xlsx)</li>
  *   <li>{@code inventario} → "Reporte de Ajustes Activos" (pdf)</li>
  *   <li>{@code stock-alerts} → "Alertas de Stock" workbook (xlsx)</li>
  *   <li>{@code profit-margins} → "Snapshots Márgenes" workbook (xlsx)</li>
+ *   <li>{@code familias} → "Familias" workbook (xlsx)</li>
+ *   <li>{@code departamentos} → "Departamentos" workbook (xlsx)</li>
+ *   <li>{@code reportes-familias} → "Ventas por Familia" workbook (xlsx)</li>
+ *   <li>{@code reportes-departamentos} → "Ventas por Departamento" workbook (xlsx)</li>
  * </ul>
  *
  * <p>Once T15 enables the declarative policies, every path under
@@ -72,6 +81,14 @@ public class ExportResource {
 
     @Nonnull
     @Inject
+    DepartamentoService departamentoService;
+
+    @Nonnull
+    @Inject
+    FamiliaService familiaService;
+
+    @Nonnull
+    @Inject
     InventarioService inventarioService;
 
     @Nonnull
@@ -87,6 +104,12 @@ public class ExportResource {
      *
      * @param type    export format: {@code xlsx} or {@code pdf}
      * @param dataset dataset key (see class doc); unknown keys yield 404
+     * @param desde   optional ISO {@code yyyy-MM-dd} start bound for the
+     *                {@code reportes-familias} / {@code reportes-departamentos}
+     *                datasets (blank/invalid → empty workbook)
+     * @param hasta   optional ISO {@code yyyy-MM-dd} end bound for the
+     *                {@code reportes-familias} / {@code reportes-departamentos}
+     *                datasets (blank/invalid → empty workbook)
      */
     @POST
     @Operation(summary = "Stream a dataset export (xlsx/pdf) as an attachment download")
@@ -98,7 +121,9 @@ public class ExportResource {
     })
     public Response download(
             @FormParam("type") @Nullable String type,
-            @FormParam("dataset") @Nullable String dataset) {
+            @FormParam("dataset") @Nullable String dataset,
+            @FormParam("desde") @Nullable String desde,
+            @FormParam("hasta") @Nullable String hasta) {
 
         if (type == null || type.isBlank()) {
             return badRequest("Falta el parámetro 'type' (xlsx|pdf)");
@@ -114,7 +139,7 @@ public class ExportResource {
         String key = dataset.trim().toLowerCase(Locale.ROOT);
         byte[] bytes;
         try {
-            bytes = buildExport(key, normalizedType);
+            bytes = buildExport(key, normalizedType, desde, hasta);
         } catch (UnsupportedDatasetException e) {
             return notFound(e.getMessage());
         } catch (Exception e) {
@@ -128,14 +153,15 @@ public class ExportResource {
                 .build();
     }
 
-    private byte[] buildExport(@Nonnull String dataset, @Nonnull String type)
+    private byte[] buildExport(@Nonnull String dataset, @Nonnull String type,
+                               @Nullable String desde, @Nullable String hasta)
             throws DocumentException, IOException, UnsupportedDatasetException {
         boolean wantsPdf = TYPE_PDF.equals(type);
 
         return switch (dataset) {
             case "articulos" -> wantsPdf
                     ? ReportExporter.exportArticulosPdf(orEmpty(articulosService.ListAllEnabled()))
-                    : unsupported(dataset, type);
+                    : ReportExporter.exportArticulosExcel(orEmpty(articulosService.ListAllEnabled()));
             case "inventario" -> wantsPdf
                     ? ReportExporter.exportInventarioPdf(orEmpty(inventarioService.ListAllEnabled()))
                     : unsupported(dataset, type);
@@ -144,6 +170,18 @@ public class ExportResource {
                     : unsupported(dataset, type);
             case "profit-margins" -> !wantsPdf
                     ? ReportExporter.exportProfitMarginSnapshotsExcel(marginSnapshotsLast30Days())
+                    : unsupported(dataset, type);
+            case "familias" -> !wantsPdf
+                    ? ReportExporter.exportFamiliasExcel(orEmpty(familiaService.listAll()))
+                    : unsupported(dataset, type);
+            case "departamentos" -> !wantsPdf
+                    ? ReportExporter.exportDepartamentosExcel(orEmpty(departamentoService.listAllActive()))
+                    : unsupported(dataset, type);
+            case "reportes-familias" -> !wantsPdf
+                    ? ReportExporter.exportVentasPorFamiliaExcel(ventasPorFamilia(desde, hasta))
+                    : unsupported(dataset, type);
+            case "reportes-departamentos" -> !wantsPdf
+                    ? ReportExporter.exportVentasPorDepartamentoExcel(ventasPorDepartamento(desde, hasta))
                     : unsupported(dataset, type);
             default -> unsupported(dataset, type);
         };
@@ -160,6 +198,55 @@ public class ExportResource {
         cal.add(Calendar.DAY_OF_MONTH, -30);
         Date startDate = cal.getTime();
         return orEmpty(profitAnalysisService.getMarginTrend(null, "department", startDate, endDate));
+    }
+
+    /**
+     * Sales-by-family rows for the reportes-familias dataset, mirroring
+     * FamiliasResource: both {@code desde} and {@code hasta} are required (the
+     * report page shows an empty table otherwise); blank/invalid dates yield an
+     * empty workbook.
+     */
+    @Nonnull
+    private List<ReportesFamiliasYDepartamentos> ventasPorFamilia(@Nullable String desde, @Nullable String hasta) {
+        Date inicio = fecha(desde, false);
+        Date fin = fecha(hasta, true);
+        if (inicio == null || fin == null) {
+            return new ArrayList<>();
+        }
+        return orEmpty(inventarioService.getTotalSalesByFamilia(inicio, fin));
+    }
+
+    /** Sales-by-department twin of {@link #ventasPorFamilia}. */
+    @Nonnull
+    private List<ReportesFamiliasYDepartamentos> ventasPorDepartamento(@Nullable String desde, @Nullable String hasta) {
+        Date inicio = fecha(desde, false);
+        Date fin = fecha(hasta, true);
+        if (inicio == null || fin == null) {
+            return new ArrayList<>();
+        }
+        return orEmpty(inventarioService.getTotalSalesByDepartamento(inicio, fin));
+    }
+
+    /** Parses an ISO {@code yyyy-MM-dd} input into a Date; null when blank/invalid. */
+    @Nullable
+    private static Date fecha(@Nullable String iso, boolean finDeDia) {
+        if (iso == null || iso.isBlank()) {
+            return null;
+        }
+        try {
+            LocalDate localDate = LocalDate.parse(iso.trim());
+            if (finDeDia) {
+                return Date.from(localDate.atTime(23, 59, 59)
+                        .atZone(ZoneId.systemDefault()).toInstant());
+            }
+            return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        } catch (RuntimeException e) {
+            // Intentionally silent (AGENTS.md logging rule): an unparsable or
+            // out-of-range date is caller-data noise, not an application failure;
+            // the returned null becomes the explicit "invalid date range" error
+            // in the report builders, which is where it gets reported.
+            return null;
+        }
     }
 
     private static byte[] unsupported(@Nonnull String dataset, @Nonnull String type) throws UnsupportedDatasetException {

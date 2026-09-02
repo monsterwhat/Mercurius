@@ -2,8 +2,11 @@ package Utils;
 
 import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
+import Models.Departamento;
+import Models.Familia;
 import Models.Inventario;
 import Models.ProfitMarginSnapshot;
+import Models.ReportesFamiliasYDepartamentos;
 import Models.StockAlert;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
@@ -42,6 +45,13 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
  *       (called from StockAlertController.exportToExcel())</li>
  *   <li>{@link #exportProfitMarginSnapshotsExcel} ← Utils/ExcelExporter.exportProfitMarginSnapshotsToExcel()
  *       (called from ProfitAnalysisController.exportToExcel())</li>
+ *   <li>{@link #exportArticulosExcel} ← Utils/ExcelExporter.exportArticulosToExcel()</li>
+ *   <li>{@link #exportDepartamentosExcel} ← Utils/ExcelExporter.exportDepartamentosToExcel()</li>
+ *   <li>{@link #exportFamiliasExcel} ← Utils/ExcelExporter.exportFamiliasToExcel()</li>
+ *   <li>{@link #exportVentasPorFamiliaExcel} / {@link #exportVentasPorDepartamentoExcel}
+ *       ← canonical byte producers for the reportes-familias / reportes-departamentos
+ *       datasets (no legacy ExcelExporter method exists; they mirror the report
+ *       table columns)</li>
  * </ul>
  *
  * <p>The paragraph/cell sequences, sheet names, header captions and null
@@ -286,6 +296,142 @@ public final class ReportExporter {
         }
 
         return exportGenericExcel("Snapshots Márgenes", headers, rows);
+    }
+
+    /**
+     * "Articulos" workbook — same sheet name, headers, cell order and null
+     * fallbacks as ExcelExporter.exportArticulosToExcel(). The legacy
+     * header/cell mismatch (cell 10 = precioFinal under the "Precio Costo con
+     * IVA" header, cell 12 = precioConUtilidad under "Precio Final") is kept
+     * byte-for-byte; parity is the contract.
+     */
+    @Nonnull
+    public static byte[] exportArticulosExcel(@Nonnull List<Articulos> articulos) throws IOException {
+        String[] headers = {"Código", "Código Cabys", "Recomendación Cabys", "Nombre", "Código de Barras",
+                            "Unidad de Medida", "Unidad de Medida Comercial", "Departamento", "Familia",
+                            "Precio Costo sin IVA", "Precio Costo con IVA", "Porcentaje de Utilidad", "Precio Final",
+                            "Status", "Fecha Creación", "Usuario"};
+
+        List<Object[]> rows = new ArrayList<>(articulos.size());
+        for (Articulos articulo : articulos) {
+            Object[] row = new Object[16];
+            row[0] = articulo.getCodigo();
+            row[1] = articulo.getCodigoCabys() != null ? articulo.getCodigoCabys().getCodigo() : "";
+            row[2] = articulo.getRecomendacionCabys();
+            row[3] = articulo.getNombre();
+            row[4] = articulo.getCodigoBarra();
+            row[5] = articulo.getUnidadMedida();
+            row[6] = articulo.getUnidadMedidaComercial();
+            row[7] = articulo.getDepartamento() != null ? articulo.getDepartamento().getNombre() : "";
+            row[8] = articulo.getFamilia() != null ? articulo.getFamilia().getNombre() : "";
+            if (articulo.getPrecios() != null && !articulo.getPrecios().isEmpty()) {
+                ArticuloPrecio latestPrecio = articulo.getPrecios().get(articulo.getPrecios().size() - 1);
+                row[9] = latestPrecio.getPrecioCostoSinIVA() != null ? Double.valueOf(latestPrecio.getPrecioCostoSinIVA().doubleValue()) : Double.valueOf(0.0);
+                row[10] = latestPrecio.getPrecioFinal() != null ? Double.valueOf(latestPrecio.getPrecioFinal().doubleValue()) : Double.valueOf(0.0);
+                row[11] = latestPrecio.getPorcentajeUtilidad() != null ? Double.valueOf(latestPrecio.getPorcentajeUtilidad().doubleValue()) : Double.valueOf(0.0);
+                row[12] = latestPrecio.getPrecioConUtilidad() != null ? Double.valueOf(latestPrecio.getPrecioConUtilidad().doubleValue()) : Double.valueOf(0.0);
+            } else {
+                row[9] = Double.valueOf(0.0);
+                row[10] = Double.valueOf(0.0);
+                row[11] = Double.valueOf(0.0);
+                row[12] = Double.valueOf(0.0);
+            }
+            row[13] = articulo.isStatus();
+            row[14] = articulo.getFecha() != null ? articulo.getFecha().toString() : "";
+            row[15] = articulo.getUsuario() != null ? articulo.getUsuario().getUsername() : "";
+            rows.add(row);
+        }
+
+        return exportGenericExcel("Articulos", headers, rows);
+    }
+
+    /**
+     * "Departamentos" workbook — same sheet name, headers, cell order and null
+     * fallbacks as ExcelExporter.exportDepartamentosToExcel().
+     */
+    @Nonnull
+    public static byte[] exportDepartamentosExcel(@Nonnull List<Departamento> departamentos) throws IOException {
+        String[] headers = {"ID", "Nombre", "Status", "Usuario", "Fecha de Creación"};
+
+        List<Object[]> rows = new ArrayList<>(departamentos.size());
+        for (Departamento departamento : departamentos) {
+            rows.add(new Object[]{
+                departamento.getId(),
+                departamento.getNombre(),
+                departamento.getStatus(),
+                departamento.getUsuario() != null ? departamento.getUsuario().getUsername() : "",
+                departamento.getFecha() != null ? departamento.getFecha().toString() : ""
+            });
+        }
+
+        return exportGenericExcel("Departamentos", headers, rows);
+    }
+
+    /**
+     * "Familias" workbook — same sheet name, headers, cell order and null
+     * fallbacks as ExcelExporter.exportFamiliasToExcel().
+     */
+    @Nonnull
+    public static byte[] exportFamiliasExcel(@Nonnull List<Familia> familias) throws IOException {
+        String[] headers = {"ID", "Nombre", "Status", "Usuario", "Fecha de Creación"};
+
+        List<Object[]> rows = new ArrayList<>(familias.size());
+        for (Familia familia : familias) {
+            rows.add(new Object[]{
+                familia.getId(),
+                familia.getNombre(),
+                familia.getStatus(),
+                familia.getUsuario() != null ? familia.getUsuario().getUsername() : "",
+                familia.getFecha() != null ? familia.getFecha().toString() : ""
+            });
+        }
+
+        return exportGenericExcel("Familias", headers, rows);
+    }
+
+    /**
+     * "Ventas por Familia" workbook — mirrors the Reporte de Ventas por
+     * Familia table (FamiliasResource): one row per family with total sales
+     * and share percentage. No legacy ExcelExporter method exists; this is the
+     * canonical byte producer for the reportes-familias dataset.
+     */
+    @Nonnull
+    public static byte[] exportVentasPorFamiliaExcel(@Nonnull List<ReportesFamiliasYDepartamentos> reportes) throws IOException {
+        String[] headers = {"Familia", "Total", "Porcentaje"};
+
+        List<Object[]> rows = new ArrayList<>(reportes.size());
+        for (ReportesFamiliasYDepartamentos reporte : reportes) {
+            rows.add(new Object[]{
+                reporte.getNombre() != null ? reporte.getNombre() : "",
+                reporte.getCantidad() != null ? Double.valueOf(reporte.getCantidad().doubleValue()) : Double.valueOf(0.0),
+                reporte.getPorcentaje() != null ? Double.valueOf(reporte.getPorcentaje().doubleValue()) : Double.valueOf(0.0)
+            });
+        }
+
+        return exportGenericExcel("Ventas por Familia", headers, rows);
+    }
+
+    /**
+     * "Ventas por Departamento" workbook — mirrors the Reporte de Ventas por
+     * Departamento table (DepartamentosResource): one row per department with
+     * total sales and share percentage. No legacy ExcelExporter method exists;
+     * this is the canonical byte producer for the reportes-departamentos
+     * dataset.
+     */
+    @Nonnull
+    public static byte[] exportVentasPorDepartamentoExcel(@Nonnull List<ReportesFamiliasYDepartamentos> reportes) throws IOException {
+        String[] headers = {"Departamento", "Total", "Porcentaje"};
+
+        List<Object[]> rows = new ArrayList<>(reportes.size());
+        for (ReportesFamiliasYDepartamentos reporte : reportes) {
+            rows.add(new Object[]{
+                reporte.getNombre() != null ? reporte.getNombre() : "",
+                reporte.getCantidad() != null ? Double.valueOf(reporte.getCantidad().doubleValue()) : Double.valueOf(0.0),
+                reporte.getPorcentaje() != null ? Double.valueOf(reporte.getPorcentaje().doubleValue()) : Double.valueOf(0.0)
+            });
+        }
+
+        return exportGenericExcel("Ventas por Departamento", headers, rows);
     }
 
     /**

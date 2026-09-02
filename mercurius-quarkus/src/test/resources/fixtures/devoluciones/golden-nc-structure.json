@@ -6,7 +6,7 @@
   ],
   "totalDevolucion": 7000,
   "nc": {
-    "codigoDocumento": "03",
+    "codigoDocumento": "02",
     "clave": {
       "longitud": 50,
       "soloDigitos": true,
@@ -18,7 +18,7 @@
       "sucursalSlice": [0, 3],
       "terminalSlice": [3, 6],
       "tipoSlice": [6, 8],
-      "tipoEsperado": "03",
+      "tipoEsperado": "02",
       "secuencialSlice": [8, 18]
     },
     "medioPago": ["01"],

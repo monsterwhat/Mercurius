@@ -12,6 +12,13 @@
     {#body}
         <h1 class="title is-3">Recibos Pendientes</h1>
 
+        <div class="notification is-light">
+            Este reporte es de solo lectura. Para marcar como pagados, procesar o
+            activar/desactivar los recibos,
+            <a href="/Mercurius/app/recibos?bucket=todas">ir a Recibos</a>
+            (pestañas Todas / Pagadas / Procesadas).
+        </div>
+
         <div class="box">
             <form method="get" action="/Mercurius{baseUrl}" id="recibos-pendientes-filtros">
                 <div class="field">

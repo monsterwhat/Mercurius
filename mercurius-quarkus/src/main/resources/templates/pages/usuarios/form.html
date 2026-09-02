@@ -10,9 +10,10 @@
   Arrays.toString(selectedPuestos) groupName storage format ("[a, b]"),
   which Services.auth.UserRoleMapper parses back into role tokens.
 
-  PARITY GAP: the legacy edit dialog also edited permisos, but the REST
-  PUT /api/app/users/{id} contract only accepts username/email/status, so
-  editar mode shows the stored permisos read-only instead of checkboxes.
+  In editar mode the form posts to the dedicated permisos endpoint
+  PUT /api/app/users/{id}/permisos, which updates ONLY groupName (never
+  username/email/status/password); the checkboxes are pre-checked from the
+  stored groupName using UserRoleMapper's case-sensitive substring semantics.
 
   Model:
     modo           String - "crear" | "editar"
@@ -22,7 +23,7 @@
     per-request gate, unlike the legacy rendered="#{SessionController.admin}")
     errorUsuario   String - blank-username error (legacy requiredMessage)
     errorPassword  String - blank-password error (crear only)
-    errorPermisos  String - no-permisos error (crear only)
+    errorPermisos  String - no-permisos / invalid-token error (crear and editar)
     errorGeneral   String - guard failures surfaced by the API (duplicate
                      username) shown under the form + as toast
     toastSeverity  String - OOB toast severity (nullable)
@@ -30,7 +31,7 @@
 !}
 <div id="forma-usuario">
     {#if modo == 'editar' && usuario??}
-    <form hx-put="/Mercurius/api/app/users/{usuario.id}"
+    <form hx-put="/Mercurius/api/app/users/{usuario.id}/permisos"
           hx-target="#forma-usuario" hx-swap="outerHTML">
     {#else}
     <form hx-post="/Mercurius/api/app/users"
@@ -55,8 +56,24 @@
         </div>
         <div class="field">
             <label class="label">Permisos:</label>
-            <p class="input is-static has-text-grey">{#if usuario.groupName??}{usuario.groupName}{#else}&mdash;{/if}</p>
-            <p class="help has-text-grey">Los permisos se editan por un endpoint dedicado (aún no disponible en la API REST).</p>
+            <div class="control">
+                <label class="checkbox mr-2">
+                    <input type="checkbox" name="groupName" value="admin"
+                           {#if usuario.groupName?? && usuario.groupName.contains('admin')}checked="checked"{/if}/>
+                    Administrativo
+                </label>
+                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="facturacion"
+                           {#if usuario.groupName?? && usuario.groupName.contains('facturacion')}checked="checked"{/if}/> Facturacion</label>
+                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="inventario"
+                           {#if usuario.groupName?? && usuario.groupName.contains('inventario')}checked="checked"{/if}/> Inventarios</label>
+                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="usuario"
+                           {#if usuario.groupName?? && usuario.groupName.contains('usuario')}checked="checked"{/if}/> Usuarios</label>
+                <label class="checkbox mr-2"><input type="checkbox" name="groupName" value="tributacion"
+                           {#if usuario.groupName?? && usuario.groupName.contains('tributacion')}checked="checked"{/if}/> Tributacion</label>
+                <label class="checkbox"><input type="checkbox" name="groupName" value="registro"
+                           {#if usuario.groupName?? && usuario.groupName.contains('registro')}checked="checked"{/if}/> Registros</label>
+            </div>
+            {#if errorPermisos??}<p class="help is-danger">{errorPermisos}</p>{/if}
         </div>
         {#else}
         <div class="field">
