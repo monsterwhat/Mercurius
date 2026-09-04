@@ -20,6 +20,14 @@
             <tr><th>Departamento</th><td>{#if articulo.departamento??}{articulo.departamento.nombre}{#else}&mdash;{/if}</td></tr>
             <tr><th>Familia</th><td>{#if articulo.familia??}{articulo.familia.nombre}{#else}&mdash;{/if}</td></tr>
             <tr><th>Código CABYS</th><td style="font-family:monospace">{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo} - {articulo.codigoCabys.descripcion}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Tipo de Refrigeración</th><td>
+                {#if articulo.tipoRefrigeracion??}
+                    {#if articulo.tipoRefrigeracion == 'NINGUNA'}Sin refrigeración
+                    {#else if articulo.tipoRefrigeracion == 'REFRIGERADO'}Refrigerado (2-8°C)
+                    {#else if articulo.tipoRefrigeracion == 'CONGELADO'}Congelado (-18°C)
+                    {/if}
+                {#else}&mdash;{/if}
+            </td></tr>
             {#for precio in precios}
             <tr>
                 <th>Precio {precio_index + 1} (Costo / Utilidad / Final)</th>

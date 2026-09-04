@@ -17,10 +17,12 @@ import java.util.Map;
 
 import org.jboss.logging.Logger;
 import Models.AppSettings;
+import Models.ConfiguracionMargen;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
 import Services.AppSettingsService;
 import Services.BackupService;
+import Services.ConfiguracionMargenService;
 
 /**
  * HTML pages of the consolidated application-settings module for the NEW
@@ -60,6 +62,10 @@ public class SettingsPagesResource {
 
     @Inject
     @Nonnull
+    ConfiguracionMargenService margenService;
+
+    @Inject
+    @Nonnull
     @Location("pages/settings/index")
     Template page;
 
@@ -85,6 +91,11 @@ public class SettingsPagesResource {
             model.put("backup", toBackupStatusDTO(settings));
             model.put("backupLog", toBackupLog(backupService.listarBackups()));
             model.put("baseUrl", BASE_URL);
+
+            ConfiguracionMargen configMargen = margenService.findOrCreateDefault();
+            model.put("configuracionMargen", configMargen);
+            model.put("margenHistorial", margenService.listAllOrderById());
+
             TemplateInstance instance = page.instance();
             model.forEach(instance::data);
             return Response.ok(instance.render())

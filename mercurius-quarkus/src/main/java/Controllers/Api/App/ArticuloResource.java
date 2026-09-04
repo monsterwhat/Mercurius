@@ -5,12 +5,14 @@ import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Promocion;
 import Models.Cabys;
+import Models.ConfiguracionMargen;
 import Models.Departamento;
 import Models.DTO.ApiResponse;
 import Models.DTO.CabysDTO;
 import Models.DTO.PagedResponse;
 import Models.DTO.PromocionDTO;
 import Models.Enums.Tipo_Codigo_Descuento;
+import Models.Enums.TipoRefrigeracion;
 import Models.Familia;
 import Models.ProductoExoneracion;
 import Models.Users;
@@ -18,10 +20,12 @@ import Services.ArticuloCarritoService;
 import Services.ArticuloPrecioService;
 import Services.ArticulosService;
 import Services.CabysService;
+import Services.ConfiguracionMargenService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.InventarioService;
 import Services.LoginService;
+import Services.MargenCalculadora;
 import Services.PromocionesService;
 import Services.ProductoExoneracionService;
 import Utils.DiffUtils;
@@ -212,6 +216,14 @@ public class ArticuloResource {
     @Nonnull
     @Inject
     LoginService loginService;
+
+    @Nonnull
+    @Inject
+    MargenCalculadora margenCalculadora;
+
+    @Nonnull
+    @Inject
+    ConfiguracionMargenService configuracionMargenService;
 
     @Inject
     @Nonnull
@@ -433,7 +445,7 @@ public class ArticuloResource {
             @FormParam("familiaId") @Nullable String familiaId,
             @FormParam("cabysCodigo") @Nullable String cabysCodigo,
             @FormParam("precioCostoSinIVA") @Nullable String precioCostoSinIVA,
-            @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
+            @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("exento") @Nullable String exento,
             @FormParam("stockOptimo") @Nullable String stockOptimo,
             @FormParam("diasStockSeguridad") @Nullable String diasStockSeguridad) {
@@ -447,7 +459,7 @@ public class ArticuloResource {
         form.familiaId = parseIntOrNull(familiaId);
         form.cabysCodigo = emptyToNull(cabysCodigo);
         form.precioCostoSinIVA = parseDecimalOrNull(precioCostoSinIVA);
-        form.porcentajeUtilidad = parseDecimalOrNull(porcentajeUtilidad);
+        form.tipoRefrigeracion = parseRefrigeracion(tipoRefrigeracion);
         form.exento = "on".equalsIgnoreCase(exento) || "true".equalsIgnoreCase(exento);
         form.stockOptimo = parseIntOrNull(stockOptimo);
         form.diasStockSeguridad = parseIntOrNull(diasStockSeguridad);
@@ -489,6 +501,7 @@ public class ArticuloResource {
             nuevo.setDiasStockSeguridad(form.diasStockSeguridad);
             nuevo.setEstadoAlertas(Boolean.TRUE);
             nuevo.setExento(form.exento);
+            nuevo.setTipoRefrigeracion(form.tipoRefrigeracion);
             if (form.cabysCodigo != null) {
                 nuevo.setCodigoCabys(findCabys(form.cabysCodigo));
             }
@@ -497,7 +510,6 @@ public class ArticuloResource {
             ArticuloPrecio precio = new ArticuloPrecio();
             precio.setArticulo(nuevo);
             precio.setPrecioCostoSinIVA(form.precioCostoSinIVA);
-            precio.setPorcentajeUtilidad(form.porcentajeUtilidad);
             calcularPrecioConUtilidad(precio, form.cabysCodigo);
             List<ArticuloPrecio> precios = new ArrayList<>();
             precios.add(precio);
@@ -561,7 +573,7 @@ public class ArticuloResource {
             @FormParam("familiaId") @Nullable String familiaId,
             @FormParam("cabysCodigo") @Nullable String cabysCodigo,
             @FormParam("precioCostoSinIVA") @Nullable String precioCostoSinIVA,
-            @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
+            @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("exento") @Nullable String exento,
             @FormParam("stockOptimo") @Nullable String stockOptimo,
             @FormParam("diasStockSeguridad") @Nullable String diasStockSeguridad) {
@@ -575,7 +587,7 @@ public class ArticuloResource {
         form.familiaId = parseIntOrNull(familiaId);
         form.cabysCodigo = emptyToNull(cabysCodigo);
         form.precioCostoSinIVA = parseDecimalOrNull(precioCostoSinIVA);
-        form.porcentajeUtilidad = parseDecimalOrNull(porcentajeUtilidad);
+        form.tipoRefrigeracion = parseRefrigeracion(tipoRefrigeracion);
         form.exento = "on".equalsIgnoreCase(exento) || "true".equalsIgnoreCase(exento);
         form.stockOptimo = parseIntOrNull(stockOptimo);
         form.diasStockSeguridad = parseIntOrNull(diasStockSeguridad);
@@ -620,6 +632,7 @@ public class ArticuloResource {
                 articulo.setDiasStockSeguridad(form.diasStockSeguridad);
             }
             articulo.setExento(form.exento);
+            articulo.setTipoRefrigeracion(form.tipoRefrigeracion);
 
             articulosService.update(articulo);
 
@@ -742,7 +755,7 @@ public class ArticuloResource {
             @FormParam("familiaId") @Nullable String familiaId,
             @FormParam("cabysCodigo") @Nullable String cabysCodigo,
             @FormParam("precioCostoSinIVA") @Nullable String precioCostoSinIVA,
-            @FormParam("porcentajeUtilidad") @Nullable String porcentajeUtilidad,
+            @FormParam("tipoRefrigeracion") @Nullable String tipoRefrigeracion,
             @FormParam("modo") @Nullable String modo) {
         try {
             Articulos articulo = articulosService.findById((int) codigo);
@@ -767,6 +780,7 @@ public class ArticuloResource {
             articulo.setFamilia(familia);
             articulo.setUsuario(currentUser());
             articulo.setCodigoCabys(cabys);
+            articulo.setTipoRefrigeracion(parseRefrigeracion(tipoRefrigeracion));
 
             // Legacy: recalculate the LAST precio row in place before the
             // processed flip; precioFinal must end up non-null.
@@ -779,10 +793,10 @@ public class ArticuloResource {
                 precios.add(precio);
                 articulo.setPrecios(precios);
             }
-            precio.setPrecioCostoSinIVA(parseDecimalOrNull(precioCostoSinIVA) != null
-                    ? parseDecimalOrNull(precioCostoSinIVA) : precio.getPrecioCostoSinIVA());
-            precio.setPorcentajeUtilidad(parseDecimalOrNull(porcentajeUtilidad) != null
-                    ? parseDecimalOrNull(porcentajeUtilidad) : precio.getPorcentajeUtilidad());
+            BigDecimal costoRevision = parseDecimalOrNull(precioCostoSinIVA);
+            if (costoRevision != null) {
+                precio.setPrecioCostoSinIVA(costoRevision);
+            }
             calcularPrecioConUtilidad(precio, cabysCodigo);
             if (precio.getPrecioFinal() == null) {
                 return revisionFailure(articulo, "warn", MSG_SIN_PRECIO_FINAL, modo);
@@ -1670,14 +1684,20 @@ public class ArticuloResource {
      * HALF_UP at 4dp, CEILING to 0dp, then delegates to the IVA step.
      */
     private void calcularPrecioConUtilidad(@Nonnull ArticuloPrecio precio, @Nullable String cabysCodigo) {
-        BigDecimal porcentajeUtilidad = precio.getPorcentajeUtilidad();
         BigDecimal precioCosto = precio.getPrecioCostoSinIVA();
-        if (precioCosto == null || porcentajeUtilidad == null) {
+        if (precioCosto == null) {
             return;
         }
+        Articulos articulo = precio.getArticulo();
+        BigDecimal porcentajeUtilidad;
+        if (articulo != null) {
+            porcentajeUtilidad = margenCalculadora.calcularMargenPorcentaje(articulo);
+        } else {
+            ConfiguracionMargen config = configuracionMargenService.findOrCreateDefault();
+            porcentajeUtilidad = config.getMargenBase();
+        }
+        precio.setPorcentajeUtilidad(porcentajeUtilidad);
         if (precioCosto.compareTo(BigDecimal.ZERO) < 0 || porcentajeUtilidad.compareTo(BigDecimal.ZERO) < 0) {
-            // Legacy surfaced an error message; here the computation simply
-            // does not run (no partial write) — same observable outcome.
             return;
         }
         BigDecimal factorUtilidad = porcentajeUtilidad.divide(new BigDecimal(100), 4, RoundingMode.HALF_UP);
@@ -1904,6 +1924,18 @@ public class ArticuloResource {
         return raw == null || raw.isBlank() ? null : raw;
     }
 
+    @Nullable
+    private static TipoRefrigeracion parseRefrigeracion(@Nullable String raw) {
+        if (raw == null || raw.isBlank()) {
+            return TipoRefrigeracion.NINGUNA;
+        }
+        try {
+            return TipoRefrigeracion.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return TipoRefrigeracion.NINGUNA;
+        }
+    }
+
     private static <T> List<T> orEmpty(@Nullable List<T> list) {
         return list == null ? Collections.emptyList() : list;
     }
@@ -1943,6 +1975,7 @@ public class ArticuloResource {
         @Nullable public String cabysCodigo;
         @Nullable public BigDecimal precioCostoSinIVA;
         @Nullable public BigDecimal porcentajeUtilidad;
+        @Nullable public TipoRefrigeracion tipoRefrigeracion;
         public boolean exento;
         @Nullable public Integer stockOptimo;
         @Nullable public Integer diasStockSeguridad;

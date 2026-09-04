@@ -148,6 +148,25 @@
         <div class="columns">
             <div class="column">
                 <div class="field">
+                    <label class="label" for="articulo-tipo-refrigeracion">Tipo de Refrigeración:</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="articulo-tipo-refrigeracion" name="tipoRefrigeracion">
+                                <option value="">Seleccionar...</option>
+                                <option value="NINGUNA" {#if modo == 'editar' && articulo.tipoRefrigeracion?? && articulo.tipoRefrigeracion == 'NINGUNA'}selected{/if}>Sin refrigeración</option>
+                                <option value="REFRIGERADO" {#if modo == 'editar' && articulo.tipoRefrigeracion?? && articulo.tipoRefrigeracion == 'REFRIGERADO'}selected{/if}>Refrigerado (2-8°C)</option>
+                                <option value="CONGELADO" {#if modo == 'editar' && articulo.tipoRefrigeracion?? && articulo.tipoRefrigeracion == 'CONGELADO'}selected{/if}>Congelado (-18°C)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <p class="help">El margen de ganancia se aplica automáticamente según el tipo de refrigeración.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column">
+                <div class="field">
                     <label class="label" for="articulo-costo">Precio Costo sin IVA:</label>
                     <div class="control">
                         <input class="input" id="articulo-costo" type="number" step="0.01" min="0"
@@ -158,12 +177,13 @@
             </div>
             <div class="column">
                 <div class="field">
-                    <label class="label" for="articulo-utilidad">Porcentaje de Utilidad:</label>
+                    <label class="label">Margen Aplicado:</label>
                     <div class="control">
-                        <input class="input" id="articulo-utilidad" type="number" step="1" min="0"
-                               name="porcentajeUtilidad" placeholder="0"
-                               value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}{/if}"/>
+                        <input class="input" id="articulo-margen-aplicado" type="text" readonly
+                               placeholder="Calculado automáticamente"
+                               value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}%{/if}"/>
                     </div>
+                    <p class="help">Calculado según el tipo de refrigeración y la configuración global.</p>
                 </div>
             </div>
         </div>
@@ -241,9 +261,10 @@
         (function () {
             var cabysInput = document.getElementById('articulo-cabys');
             var costoInput = document.getElementById('articulo-costo');
-            var utilidadInput = document.getElementById('articulo-utilidad');
             var precioUtilidadOutput = document.getElementById('articulo-precio-utilidad');
             var precioFinalOutput = document.getElementById('articulo-precio-final');
+            var margenInput = document.getElementById('articulo-margen-aplicado');
+            var tipoRefrigeracionSelect = document.getElementById('articulo-tipo-refrigeracion');
 
             function csrfHeaders() {
                 var headers = { };
@@ -257,15 +278,20 @@
             }
 
             function recalcularPrecios() {
-                if (!costoInput || !utilidadInput || !precioUtilidadOutput || !precioFinalOutput) {
+                if (!costoInput || !precioUtilidadOutput || !precioFinalOutput) {
                     return;
                 }
                 var costo = parseFloat(costoInput.value);
-                var utilidad = parseFloat(utilidadInput.value);
-                if (isNaN(costo) || isNaN(utilidad) || costo < 0 || utilidad < 0) {
+                if (isNaN(costo) || costo < 0) {
+                    precioUtilidadOutput.value = '';
+                    precioFinalOutput.value = '';
                     return;
                 }
-                var precioConUtilidad = Math.ceil(costo * (1 + utilidad / 100));
+                var margen = parseFloat(margenInput ? margenInput.value : null);
+                if (isNaN(margen) || margen < 0) {
+                    margen = 0;
+                }
+                var precioConUtilidad = Math.ceil(costo * (1 + margen / 100));
                 precioUtilidadOutput.value = precioConUtilidad;
 
                 var impuesto = parseFloat(cabysInput ? cabysInput.getAttribute('data-impuesto') : null);
@@ -303,7 +329,22 @@
             }
 
             if (costoInput) { costoInput.addEventListener('input', recalcularPrecios); }
-            if (utilidadInput) { utilidadInput.addEventListener('input', recalcularPrecios); }
+            if (tipoRefrigeracionSelect) {
+                tipoRefrigeracionSelect.addEventListener('change', function () {
+                    var tipo = tipoRefrigeracionSelect.value;
+                    var margenBase = 25;
+                    var margen = margenBase;
+                    if (tipo === 'REFRIGERADO') {
+                        margen = margenBase + 5;
+                    } else if (tipo === 'CONGELADO') {
+                        margen = margenBase + 10;
+                    }
+                    if (margenInput) {
+                        margenInput.value = margen + '%';
+                    }
+                    recalcularPrecios();
+                });
+            }
             if (cabysInput) {
                 cabysInput.addEventListener('change', function () { cargarImpuesto(cabysInput.value.trim()); });
                 cabysInput.addEventListener('input', function () { cargarImpuesto(cabysInput.value.trim()); });
