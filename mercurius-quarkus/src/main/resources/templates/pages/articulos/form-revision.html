@@ -121,6 +121,21 @@
             </div>
         </div>
 
+        <div class="field">
+            <label class="label" for="revision-tipo-refrigeracion">Tipo de Refrigeración:</label>
+            <div class="control">
+                <div class="select is-fullwidth">
+                    <select id="revision-tipo-refrigeracion" name="tipoRefrigeracion">
+                        <option value="">Seleccionar...</option>
+                        <option value="NINGUNA" {#if articulo.tipoRefrigeracion?? && articulo.tipoRefrigeracion == 'NINGUNA'}selected{/if}>Sin refrigeración</option>
+                        <option value="REFRIGERADO" {#if articulo.tipoRefrigeracion?? && articulo.tipoRefrigeracion == 'REFRIGERADO'}selected{/if}>Refrigerado (2-8°C)</option>
+                        <option value="CONGELADO" {#if articulo.tipoRefrigeracion?? && articulo.tipoRefrigeracion == 'CONGELADO'}selected{/if}>Congelado (-18°C)</option>
+                    </select>
+                </div>
+            </div>
+            <p class="help">El margen de ganancia se aplica automáticamente según el tipo seleccionado.</p>
+        </div>
+
         <div class="box is-shadowless" style="background:var(--bulma-info-00);border:1px solid var(--bulma-info)">
             <div class="columns">
                 <div class="column">
@@ -135,11 +150,11 @@
                 </div>
                 <div class="column">
                     <div class="field">
-                        <label class="label" for="revision-utilidad">Porcentaje de Utilidad:</label>
+                        <label class="label">Margen Aplicado:</label>
                         <div class="control">
-                            <input class="input" id="revision-utilidad" type="number" step="1" min="0"
-                                   name="porcentajeUtilidad" placeholder="0" required="required"
-                                   value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}{/if}"/>
+                            <input class="input" id="revision-margen-aplicado" type="text" readonly
+                                   placeholder="Calculado automáticamente"
+                                   value="{#if precio?? && precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}%{/if}"/>
                         </div>
                     </div>
                 </div>

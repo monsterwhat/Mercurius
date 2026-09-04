@@ -2,6 +2,7 @@ package Models.Articulos;
 
 import Models.Cabys;
 import Models.Departamento;
+import Models.Enums.TipoRefrigeracion;
 import Models.Familia;
 import Models.Users;
 import jakarta.annotation.Nullable;
@@ -85,6 +86,15 @@ public class Articulos implements Serializable {
 
     @Column
     private boolean exento; // Whether the product is tax-exempt (exonerado)
+
+    /**
+     * Tipo de refrigeración del producto. Determina el ajuste de margen
+     * de utilidad global aplicado (NINGUNA / REFRIGERADO / CONGELADO).
+     */
+    @Nullable
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo_refrigeracion", length = 20)
+    private TipoRefrigeracion tipoRefrigeracion;
 
     @EqualsAndHashCode.Exclude
     @ToString.Exclude

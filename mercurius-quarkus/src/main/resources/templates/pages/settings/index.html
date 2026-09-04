@@ -424,6 +424,96 @@
                 Configurar umbrales por artículo</a>
         </div>
 
+        {! ── Grupo: márgenes de ganancia (configuración global) ── !}
+        <div class="box mb-5" data-group="margenes">
+            <p class="title is-5">Márgenes de Ganancia</p>
+            <p class="subtitle is-6 has-text-grey">
+                Configuración global de márgenes aplicada a todos los productos
+                según su tipo de refrigeración. Cada cambio crea un nuevo registro
+                en el historial.
+            </p>
+
+            <form hx-post="/Mercurius/api/app/settings/margen"
+                  hx-target="#margen-resultado" hx-swap="innerHTML">
+                <div class="columns">
+                    <div class="column is-one-third">
+                        <div class="field">
+                            <label class="label" for="margen-base">Margen Base (%)</label>
+                            <div class="control">
+                                <input class="input" id="margen-base" type="number" step="0.01" min="0"
+                                       name="margenBase" required="required"
+                                       placeholder="25"
+                                       value="{configuracionMargen.margenBase}"/>
+                            </div>
+                            <p class="help">Aplicado a productos sin refrigeración.</p>
+                        </div>
+                    </div>
+                    <div class="column is-one-third">
+                        <div class="field">
+                            <label class="label" for="margen-refrigerado">Ajuste Refrigerado (% extra)</label>
+                            <div class="control">
+                                <input class="input" id="margen-refrigerado" type="number" step="0.01" min="0"
+                                       name="ajusteRefrigerado" required="required"
+                                       placeholder="5"
+                                       value="{configuracionMargen.ajusteRefrigerado}"/>
+                            </div>
+                            <p class="help">Sumado al margen base para productos refrigerados (2-8°C).</p>
+                        </div>
+                    </div>
+                    <div class="column is-one-third">
+                        <div class="field">
+                            <label class="label" for="margen-congelado">Ajuste Congelado (% extra)</label>
+                            <div class="control">
+                                <input class="input" id="margen-congelado" type="number" step="0.01" min="0"
+                                       name="ajusteCongelado" required="required"
+                                       placeholder="10"
+                                       value="{configuracionMargen.ajusteCongelado}"/>
+                            </div>
+                            <p class="help">Sumado al margen base para productos congelados (-18°C).</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <button class="button is-primary" type="submit">
+                        Guardar Configuración
+                    </button>
+                </div>
+            </form>
+            <div id="margen-resultado"></div>
+
+            {#if margenHistorial?? && margenHistorial.size() > 1}
+            <hr/>
+            <p class="title is-6">Historial de Cambios</p>
+            <div class="table-container">
+                <table class="table is-striped is-fullwidth is-narrow">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Margen Base</th>
+                            <th>Ajuste Refrigerado</th>
+                            <th>Ajuste Congelado</th>
+                            <th>Fecha</th>
+                            <th>Usuario</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#for c in margenHistorial}
+                        <tr {#if c.id == configuracionMargen.id}class="is-selected"{/if}>
+                            <td>{c.id}</td>
+                            <td>{c.margenBase}%</td>
+                            <td>+{c.ajusteRefrigerado}%</td>
+                            <td>+{c.ajusteCongelado}%</td>
+                            <td>{c.fechaCreacion}</td>
+                            <td>{#if c.usuario??}{c.usuario.username}{#else}&mdash;{/if}</td>
+                        </tr>
+                        {/for}
+                    </tbody>
+                </table>
+            </div>
+            {/if}
+        </div>
+
         {! ── Grupo: modo de prevalidación (informativo; sin setting respaldo aún) ── !}
         <div class="box mb-5" data-group="prevalidacion">
             <p class="title is-5">Prevalidación de Cargas</p>
