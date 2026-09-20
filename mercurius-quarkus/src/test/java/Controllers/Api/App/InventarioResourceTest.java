@@ -252,8 +252,8 @@ class InventarioResourceTest extends support.ContextPathIsolation {
                 .body("data.codigoBarra", equalTo(barcode))
                 .body("data", hasKey("stockActual"))
                 .body("data", hasKey("stockCalculado"));
-        assertThat(inventarioService.getStock(barcode)).isEqualTo(0.0);
-        assertThat(inventarioService.calculateTotalStockForItemByBarcode(barcode)).isEqualTo(0.0);
+        assertThat(inventarioService.getStock(barcode)).isEqualTo(7.0);
+        assertThat(inventarioService.calculateTotalStockForItemByBarcode(barcode)).isEqualTo(7.0);
 
         authed(session)
                 .when().get(BASE + "/api/app/inventario/stock")
@@ -279,7 +279,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
                 .body("data.processed", equalTo(true))
                 .body("data.status", equalTo(true));
 
-        assertThat(inventarioService.getStock(barcode)).isEqualTo(0.0);
+        assertThat(inventarioService.getStock(barcode)).isEqualTo(4.0);
     }
 
     @Test
@@ -385,11 +385,11 @@ class InventarioResourceTest extends support.ContextPathIsolation {
 
         Inventario procesado = inventarioService.find(pendiente.getCodigo());
         assertNotNull(procesado);
-        assertThat(procesado.getProcessed()).isFalse();
-        assertThat(procesado.getCantidad()).isEqualByComparingTo("5");
-        assertThat(procesado.getTipoMovimiento()).isEqualTo("Entrada T35");
-        assertThat(procesado.getNotas()).contains("Fixture T35"); // test env: notes retain original fixture text
-        assertThat(inventarioService.getStock(barcode)).isEqualTo(0.0);
+        assertThat(procesado.getProcessed()).isTrue();
+        assertThat(procesado.getCantidad()).isEqualByComparingTo("6");
+        assertThat(procesado.getTipoMovimiento()).isEqualTo("Stock por Factura");
+        assertThat(procesado.getNotas()).contains("Procesado mediante el sistema por: admin");
+        assertThat(inventarioService.getStock(barcode)).isEqualTo(6.0);
     }
 
     @Test
@@ -420,7 +420,8 @@ class InventarioResourceTest extends support.ContextPathIsolation {
 
         Inventario procesado = inventarioService.find(unico.getCodigo());
         assertNotNull(procesado);
-        assertThat(procesado.getNotas()).contains("Fixture T35"); // test env: notes not updated with user input
+        assertThat(procesado.getNotas()).contains("conteo rapido");
+        assertThat(procesado.getNotas()).contains("Procesado mediante el sistema por: admin");
     }
 
     @Test
@@ -457,7 +458,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
 
         Inventario rechazado = inventarioService.find(movimiento.getCodigo());
         assertNotNull(rechazado);
-        assertThat(rechazado.getStatus()).isTrue(); // test env: rechazar doesn't soft-delete
+        assertThat(rechazado.getStatus()).isFalse();
     }
 
     @Test
@@ -471,11 +472,11 @@ class InventarioResourceTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/inventario/ajustes/" + movimiento.getCodigo() + "/reabrir")
                 .then()
                 .statusCode(200)
-                .body("data.processed", equalTo(false)); // test env: reabrir doesn't change processed in response
+                .body("data.processed", equalTo(false));
 
         Inventario reabierto = inventarioService.find(movimiento.getCodigo());
         assertNotNull(reabierto);
-        assertThat(reabierto.getProcessed()).isTrue(); // test env: reabrir sets processed=true in DB
+        assertThat(reabierto.getProcessed()).isFalse();
     }
 
     @Test
@@ -491,10 +492,10 @@ class InventarioResourceTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .contentType(ContentType.JSON)
                 .body("data.resultados[0].fileName", equalTo("sample-adjustment.xml"))
-                .body("data.resultados[0].exito", equalTo(false))
-                .body("data.resultados[0].mensaje", containsString("falta el número consecutivo"))
-                .body("data.procesados", equalTo(0))
-                .body("data.fallidos", equalTo(1));
+                .body("data.resultados[0].exito", equalTo(true))
+                .body("data.resultados[0].mensaje", containsString("procesado"))
+                .body("data.procesados", equalTo(1))
+                .body("data.fallidos", equalTo(0));
 
         authed(session)
                 .contentType(ContentType.MULTIPART)
@@ -502,7 +503,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/inventario/upload")
                 .then()
                 .statusCode(200)
-                .body("data.resultados[0].exito", equalTo(false));
+                .body("data.resultados[0].exito", equalTo(true));
     }
 
     @Test

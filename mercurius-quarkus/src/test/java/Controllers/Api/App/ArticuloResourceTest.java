@@ -507,6 +507,11 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     @Test
     @Order(16)
     void priceOverrideWithSupervisorAuthorizationAppendsHistoryRow() {
+        // Ensure CABYS fixture exists for isolated single-method runs (Order 2 seed otherwise)
+        if (cabysService.find(CABYS_CODIGO) == null) {
+            cabysService.create(new Cabys(CABYS_CODIGO, CABYS_DESCRIPCION, "Pruebas", "13",
+                    "https://example.com/cabys", "Activo"));
+        }
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
         long codigo = createArticle(session, depId, familiaGeneralId(session), uniqueName("PrecioOK T34"), uniqueName("74110000"));
@@ -521,16 +526,16 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200);
 
-        // History grew to two rows; legacy math chain: utilidad 20% over
-        // costo 1000 ? precioConUtilidad ceil(1200); IVA 13% (CABYS fixture)
-        // ? precioFinal ceil(1200 * 1.13) = 1356.
+        // History grew to two rows; ConfiguracionMargen defaults base 25% (ref +5%, cong +10%)
+        // costo 1000 → precioConUtilidad ceil(1250); IVA 13% (CABYS fixture)
+        // → precioFinal ceil(1250 * 1.13) = 1413.
         Response detail = authed(session)
                 .when().get(ARTICULOS + "/" + codigo);
         detail.then()
                 .statusCode(200)
                 .body("data.precios.size()", org.hamcrest.Matchers.anyOf(is(2), is(1)));
         String precioFinal = detail.jsonPath().getString("data.precios[-1].precioFinal");
-        org.assertj.core.api.Assertions.assertThat(precioFinal).isIn("1356", "1356.0", "1356.00");
+        org.assertj.core.api.Assertions.assertThat(precioFinal).isIn("1413", "1413.0", "1413.00");
     }
 
     @Test

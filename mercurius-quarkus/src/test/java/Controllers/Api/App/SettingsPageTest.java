@@ -18,6 +18,7 @@ import jakarta.inject.Inject;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import Models.ConfiguracionMargen;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
 import org.junit.jupiter.api.Test;
@@ -92,11 +93,20 @@ class SettingsPageTest extends AppBase {
         settings.setPuntosInactivityMonths(6);
         settings.setCompletedSteps(5);
         BackupStatusDTO backup = new BackupStatusDTO(null, true, false);
+        ConfiguracionMargen configuracionMargen = new ConfiguracionMargen();
+        configuracionMargen.setMargenBase(new BigDecimal("25.00"));
+        configuracionMargen.setAjusteRefrigerado(new BigDecimal("5.00"));
+        configuracionMargen.setAjusteCongelado(new BigDecimal("10.00"));
 
         String html = pagina.getFragment("contenido")
+                .data("titulo", "Ajustes de la Aplicación")
+                .data("modo", "")
                 .data("settings", settings)
                 .data("backup", backup)
+                .data("backupLog", java.util.Collections.emptyList())
                 .data("baseUrl", "/api/app/settings")
+                .data("configuracionMargen", configuracionMargen)
+                .data("margenHistorial", java.util.Collections.emptyList())
                 .render();
 
         // every legacy field group is present and marked
