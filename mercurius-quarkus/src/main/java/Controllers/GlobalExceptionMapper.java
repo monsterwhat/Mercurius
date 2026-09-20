@@ -1,6 +1,7 @@
 package Controllers;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
@@ -15,6 +16,9 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
 
     @Override
     public Response toResponse(Exception exception) {
+        if (exception instanceof WebApplicationException wae) {
+            return wae.getResponse();
+        }
         LOG.error("Unhandled exception | source=GlobalExceptionMapper", exception);
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"code\":\"INTERNAL_ERROR\",\"message\":\"Error interno\"}")

@@ -7,6 +7,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +53,7 @@ public class ConfiguracionMargenService extends GService<ConfiguracionMargen> {
      * Obtiene la configuración actual, o crea una con valores por defecto
      * si la tabla está vacía.
      */
+    @Transactional
     @Nonnull
     public ConfiguracionMargen findOrCreateDefault() {
         ConfiguracionMargen existente = getConfiguracionActual();
