@@ -3,11 +3,13 @@ package Models.Jaxb.REP;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Data;
 
 @XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(propOrder = {"nombre", "identificacion", "correosElectronicos", "Registrofiscal8707", "nombreComercial", "ubicacion", "telefono"})
 @Data
 public class Emisor {
     @XmlElement(name = "Nombre")
@@ -15,6 +17,9 @@ public class Emisor {
 
     @XmlElement(name = "Identificacion")
     private IdentificacionEmisor identificacion;
+
+    @XmlElement(name = "CorreoElectronico")
+    private List<CorreoElectronicoEmisor> correosElectronicos;
 
     @XmlElement(name = "Registrofiscal8707")
     private String Registrofiscal8707;
@@ -28,25 +33,21 @@ public class Emisor {
     @XmlElement(name = "Telefono")
     private Telefono telefono;
 
-    @XmlElement(name = "CorreoElectronico")
-    private List<CorreoElectronicoEmisor> correosElectronicos;
-
     public Emisor() {}
 
     public Emisor(Models.Encabezado.Emisor src) {
         if (src != null) {
             this.nombre = src.getNombre();
-            this.Registrofiscal8707 = src.getRegistrofiscal8707();
-            this.nombreComercial = src.getNombreComercial();
             if (src.getIdentificacion() != null)
                 this.identificacion = new IdentificacionEmisor(src.getIdentificacion());
-            if (src.getUbicacion() != null)
-                this.ubicacion = new Ubicacion(src.getUbicacion());
-            if (src.getTelefono() != null)
-                this.telefono = new Telefono(src.getTelefono());
             if (src.getCorreosElectronicos() != null)
                 this.correosElectronicos = src.getCorreosElectronicos().stream()
                     .map(CorreoElectronicoEmisor::new).collect(Collectors.toList());
+            // REP minimal per XSD
+            this.Registrofiscal8707 = null;
+            this.nombreComercial = null;
+            this.ubicacion = null;
+            this.telefono = null;
         }
     }
 }

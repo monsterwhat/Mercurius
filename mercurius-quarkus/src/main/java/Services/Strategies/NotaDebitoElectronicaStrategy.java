@@ -18,6 +18,7 @@ import jakarta.xml.bind.Marshaller;
 import java.io.StringWriter;
 
 import Utils.XmlEncabezadoFlattener;
+import Utils.XmlEncabezadoUnflattener;
 import org.jboss.logging.Logger;
 import java.util.Objects;
 
@@ -82,7 +83,24 @@ public class NotaDebitoElectronicaStrategy implements DocumentoStrategy {
         StringWriter sw = new StringWriter();
         NotaDebitoElectronicaDocumento doc = new NotaDebitoElectronicaDocumento(comprobante);
         marshaller.marshal(doc, sw);
-        return XmlEncabezadoFlattener.flatten(sw.toString());
+        String flattened = XmlEncabezadoFlattener.flatten(sw.toString());
+        if (isVersion43(comprobante)) {
+            LOG.info("NotaDebitoElectronicaStrategy: emitting v4.3 unflattened XML for adjustment of 4.3 original | clave=" + (comprobante.getEncabezado() != null ? comprobante.getEncabezado().getClave() : "null"));
+            return XmlEncabezadoUnflattener.unflatten(flattened);
+        }
+        return flattened;
+    }
+
+    private static boolean isVersion43(ComprobantesEmitidos c) {
+        String v = null;
+        if (c != null && c.getSchemaVersion() != null && !c.getSchemaVersion().isBlank()) {
+            v = c.getSchemaVersion();
+        } else if (c != null && c.getEncabezado() != null && c.getEncabezado().getSchemaVersion() != null && !c.getEncabezado().getSchemaVersion().isBlank()) {
+            v = c.getEncabezado().getSchemaVersion();
+        } else if (c != null && c.getResumen() != null && c.getResumen().getSchemaVersion() != null && !c.getResumen().getSchemaVersion().isBlank()) {
+            v = c.getResumen().getSchemaVersion();
+        }
+        return "4.3".equals(v != null ? v.trim() : null);
     }
 
     @Override

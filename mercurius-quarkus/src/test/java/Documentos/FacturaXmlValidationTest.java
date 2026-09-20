@@ -54,29 +54,32 @@ class FacturaXmlValidationTest {
         when(mockCert.loadKeyStore()).thenReturn(loaded);
         when(mockCert.getDecryptedCertificadoPassword()).thenReturn("testpass");
         signer = new HaciendaSigner(mockCert);
-        HaciendaXsdValidator mockValidator = mock(HaciendaXsdValidator.class);
-        when(mockValidator.validate(anyString(), anyString())).thenReturn(HaciendaXsdValidator.ValidationResult.ok());
+        // Use real XSD validator — no mock; invalid Clave/Consecutivo must fail XSD validation.
+        // The only expected pre-sign XSD gap is ds:Signature (required by Hacienda XSD but added during signing).
+        HaciendaXsdValidator realValidator = new HaciendaXsdValidator();
         var f = HaciendaSigner.class.getDeclaredField("xsdValidator");
         f.setAccessible(true);
-        f.set(signer, mockValidator);
+        f.set(signer, realValidator);
 
         validXml = """
             <?xml version="1.0" encoding="UTF-8"?>
             <FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
                 <Clave>50626072600031011569830010000001040000000001000000</Clave>
+                <ProveedorSistemas>3101156983</ProveedorSistemas>
+                <CodigoActividadEmisor>464100</CodigoActividadEmisor>
                 <NumeroConsecutivo>00100001040000000001</NumeroConsecutivo>
                 <FechaEmision>2026-07-02T12:00:00</FechaEmision>
+                <Emisor><Nombre>Test Emisor SA</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156983</Numero></Identificacion>
+                    <Ubicacion><Provincia>1</Provincia><Canton>01</Canton><Distrito>01</Distrito><OtrasSenas>Direccion de prueba</OtrasSenas></Ubicacion>
+                    <CorreoElectronico>test@test.com</CorreoElectronico></Emisor>
+                <Receptor><Nombre>Test Emisor SA</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156984</Numero></Identificacion></Receptor>
                 <CondicionVenta>01</CondicionVenta>
-                <Emisor><Nombre>Test</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156983</Numero></Identificacion>
-                    <Ubicacion><Provincia>1</Provincia><Canton>01</Canton><Distrito>01</Distrito><OtrasSenas>X</OtrasSenas></Ubicacion>
-                    <CorreoElectronico><Correo>test@test.com</Correo></CorreoElectronico></Emisor>
-                <Receptor><Nombre>Test</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156984</Numero></Identificacion></Receptor>
                 <DetalleServicio><LineaDetalle><NumeroLinea>1</NumeroLinea><CodigoCABYS>0111010010010</CodigoCABYS>
                     <Cantidad>1.000</Cantidad><UnidadMedida>Unid</UnidadMedida><Detalle>Item</Detalle>
                     <PrecioUnitario>100.00000</PrecioUnitario><MontoTotal>100.00000</MontoTotal><SubTotal>100.00000</SubTotal>
                     <BaseImponible>100.00000</BaseImponible><Impuesto><Codigo>01</Codigo><CodigoTarifaIVA>08</CodigoTarifaIVA><Tarifa>13.00</Tarifa><Monto>13.00000</Monto></Impuesto>
-                    <MontoTotalLinea>113.00000</MontoTotalLinea></LineaDetalle></DetalleServicio>
-                <ResumenFactura><CodigoTipoMoneda><CodigoMoneda>CRC</CodigoMoneda></CodigoTipoMoneda>
+                    <ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>13.00000</ImpuestoNeto><MontoTotalLinea>113.00000</MontoTotalLinea></LineaDetalle></DetalleServicio>
+                <ResumenFactura><CodigoTipoMoneda><CodigoMoneda>CRC</CodigoMoneda><TipoCambio>1</TipoCambio></CodigoTipoMoneda>
                     <TotalVenta>100.00000</TotalVenta><TotalVentaNeta>100.00000</TotalVentaNeta><TotalImpuesto>13.00000</TotalImpuesto><TotalComprobante>113.00000</TotalComprobante></ResumenFactura>
             </FacturaElectronica>""";
     }
@@ -119,9 +122,8 @@ class FacturaXmlValidationTest {
     void missingClaveFailsXsdOrSign() {
         String noClave = validXml.replace("<Clave>50626072600031011569830010000001040000000001000000</Clave>", "");
         var r = signer.signXml(noClave);
-        // With mocked validator, signing still succeeds (validator mocked), but real validator would fail
-        // Here we test that at least it doesn't crash with NPE
         assertNotNull(r);
+        assertFalse(r.success, "Missing Clave must fail XSD validation");
     }
 
     @Test
@@ -173,11 +175,11 @@ class FacturaXmlValidationTest {
     @Test
     void claveMustBe50Digits() {
         String shortClave = validXml.replace("50626072600031011569830010000001040000000001000000", "5062607260003101156983");
-        // Short clave still signs with mocked validator, but business logic would flag length
         assertEquals(50, "50626072600031011569830010000001040000000001000000".length());
         assertNotEquals(50, "5062607260003101156983".length());
         var r = signer.signXml(shortClave);
         assertNotNull(r);
+        assertFalse(r.success, "Short Clave must fail XSD validation (expected 50 digits)");
     }
 
     @Test
@@ -187,5 +189,6 @@ class FacturaXmlValidationTest {
         assertEquals(20, "00100001040000000001".length());
         var r = signer.signXml(badConsec);
         assertNotNull(r);
+        assertFalse(r.success, "Bad NumeroConsecutivo must fail XSD validation (expected 20 chars)");
     }
 }

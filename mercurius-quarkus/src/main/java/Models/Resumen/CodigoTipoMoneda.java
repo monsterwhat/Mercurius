@@ -19,9 +19,8 @@ public class CodigoTipoMoneda {
     @Column(name = "codigo_moneda", length = 3)
     private String codigoMoneda;
 
-    @Nullable
-    @XmlElement(name = "TipoCambio")
+    @XmlElement(name = "TipoCambio", required = true)
     @Column(name = "tipo_cambio_moneda", precision = 18, scale = 5)
-    private BigDecimal tipoCambioMoneda;
+    private BigDecimal tipoCambioMoneda = BigDecimal.ONE;
 
 }

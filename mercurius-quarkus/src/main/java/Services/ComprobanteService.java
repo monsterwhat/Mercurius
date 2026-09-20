@@ -219,11 +219,22 @@ public class ComprobanteService implements Serializable {
                 sumaPagos = sumaPagos.add(entry.getMonto());
                 pagoCount++;
             }
+            String schemaVersion = resumen.getSchemaVersion();
+            if (schemaVersion == null || schemaVersion.isBlank()) {
+                if (encabezado != null && encabezado.getSchemaVersion() != null && !encabezado.getSchemaVersion().isBlank()) {
+                    schemaVersion = encabezado.getSchemaVersion();
+                } else {
+                    schemaVersion = "4.4";
+                }
+            }
+            resumen.setSchemaVersion(schemaVersion);
             // Hacienda v4.4 requires sum of TotalMedioPago == TotalComprobante
-            if (pagoCount > 0 && sumaPagos.compareTo(totalComprobante) != 0) {
-                // Adjust last entry to match total — prevents rounding mismatch
-                MedioPagoR last = mediosPagoResumen.get(pagoCount - 1);
-                last.setTotalMedioPago(last.getTotalMedioPago().add(totalComprobante.subtract(sumaPagos)));
+            if ("4.4".equals(schemaVersion)) {
+                if (pagoCount > 0 && sumaPagos.compareTo(totalComprobante) != 0) {
+                    // Adjust last entry to match total — prevents rounding mismatch
+                    MedioPagoR last = mediosPagoResumen.get(pagoCount - 1);
+                    last.setTotalMedioPago(last.getTotalMedioPago().add(totalComprobante.subtract(sumaPagos)));
+                }
             }
             if (mediosPagoResumen.isEmpty()) {
                 MedioPagoR medioR = new MedioPagoR();
@@ -235,7 +246,9 @@ public class ComprobanteService implements Serializable {
             resumen.setMediosPago(mediosPagoResumen);
 
             // V4.4 Bitácora item 124/125: TotalComprobante must equal sum of TotalMedioPago
-            validarTotalMedioPago(resumen, numeroConsecutivo);
+            if ("4.4".equals(schemaVersion)) {
+                validarTotalMedioPago(resumen, numeroConsecutivo);
+            }
 
             resumenService.create(resumen);
             
@@ -856,23 +869,26 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
 
     private void validarTotalMedioPago(ResumenFactura resumen, String numeroConsecutivo) {
         if (resumen == null) return;
-        List<MedioPagoR> mediosPago = resumen.getMediosPago();
-        if (mediosPago == null || mediosPago.isEmpty()) {
-            throw new IllegalArgumentException(
-                "V4.4: MedioPago es obligatorio en ResumenFactura para comprobante " + numeroConsecutivo);
-        }
+        String schemaVersion = resumen.getSchemaVersion();
+        if ("4.4".equals(schemaVersion)) {
+            List<MedioPagoR> mediosPago = resumen.getMediosPago();
+            if (mediosPago == null || mediosPago.isEmpty()) {
+                throw new IllegalArgumentException(
+                    "V4.4: MedioPago es obligatorio en ResumenFactura para comprobante " + numeroConsecutivo);
+            }
 
-        BigDecimal totalComprobante = resumen.getTotalComprobante();
-        BigDecimal sumaMediosPago = mediosPago.stream()
-            .map(mp -> mp.getTotalMedioPago() != null ? mp.getTotalMedioPago() : BigDecimal.ZERO)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalComprobante = resumen.getTotalComprobante();
+            BigDecimal sumaMediosPago = mediosPago.stream()
+                .map(mp -> mp.getTotalMedioPago() != null ? mp.getTotalMedioPago() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        if (sumaMediosPago.compareTo(totalComprobante) != 0) {
-            throw new IllegalArgumentException(
-                "V4.4: Suma de TotalMedioPago (" + sumaMediosPago
-                + ") no coincide con TotalComprobante (" + totalComprobante
-                + ") para comprobante " + numeroConsecutivo
-                + ". Bitácora item 124/125: Total del Comprobante debe coincidir con sumatoria de montos por Medio de Pago.");
+            if (sumaMediosPago.compareTo(totalComprobante) != 0) {
+                throw new IllegalArgumentException(
+                    "V4.4: Suma de TotalMedioPago (" + sumaMediosPago
+                    + ") no coincide con TotalComprobante (" + totalComprobante
+                    + ") para comprobante " + numeroConsecutivo
+                    + ". Bitácora item 124/125: Total del Comprobante debe coincidir con sumatoria de montos por Medio de Pago.");
+            }
         }
     }
 

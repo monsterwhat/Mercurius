@@ -37,6 +37,7 @@ import Services.Facturas.LineaDetalleService;
 import Services.Facturas.ReceptorService;
 import Services.Facturas.ResumenFacturaService;
 import Models.Referencias.InformacionReferencia;
+import Services.HaciendaXsdValidator;
 import Utils.ComprobanteFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
@@ -48,11 +49,17 @@ import jakarta.transaction.Transactional;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Unmarshaller;
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.validation.Schema;
+import org.w3c.dom.Document;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -96,19 +103,70 @@ public class Parser {
     EncabezadoService encabezadoService;
     @Inject @Nonnull
     LineaDetalleService lineaDetalleService;
+    @Inject @Nonnull
+    HaciendaXsdValidator haciendaXsdValidator;
 
     @Nullable
     public ComprobantesRecibidos parseComprobanteXML(@Nonnull File xmlFile) {
         try {
             JAXBContext context = JAXBContext.newInstance(ComprobantesRecibidos.class);
-
-            // Create an unmarshaller instance
             Unmarshaller unmarshaller = context.createUnmarshaller();
-
-            // Parse the XML file into the ComprobantesRecibidos object
+            try {
+                String namespace = extractNamespace(xmlFile);
+                if (namespace != null) {
+                    Schema schema = haciendaXsdValidator.getSchemaForNamespace(namespace);
+                    if (schema != null) {
+                        unmarshaller.setSchema(schema);
+                    }
+                }
+            } catch (Exception e) {
+                LOG.warn("failed to resolve XSD schema | source=Parser.parseComprobanteXML | despues=" + e.getMessage(), e);
+            }
             return (ComprobantesRecibidos) unmarshaller.unmarshal(xmlFile);
         } catch (JAXBException e) {
-            LOG.warn("failed to parse comprobante x m l | source=Parser.parseComprobante() | despues=" + e.getMessage(), e);
+            String despues = e.getMessage();
+            if (e.getLinkedException() != null && e.getLinkedException().getMessage() != null) {
+                despues = e.getLinkedException().getMessage();
+            }
+            LOG.warn("XSD validation failed | source=Parser.parseComprobanteXML | despues=" + despues, e);
+            throw new XmlParseException("XSD validation failed: " + despues);
+        }
+    }
+
+    @Nullable
+    private String extractNamespace(@Nonnull File xmlFile) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(xmlFile);
+            return doc.getDocumentElement().getNamespaceURI();
+        } catch (Exception e) {
+            LOG.warn("failed to extract namespace | source=Parser.extractNamespace | despues=" + e.getMessage(), e);
+            return null;
+        }
+    }
+
+    @Nullable
+    private String extractNamespaceFromString(@Nonnull String xml) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+            return doc.getDocumentElement().getNamespaceURI();
+        } catch (Exception e) {
+            LOG.warn("failed to extract namespace from string | source=Parser.extractNamespaceFromString | despues=" + e.getMessage(), e);
             return null;
         }
     }
@@ -1031,16 +1089,48 @@ public class Parser {
 
     @Transactional
     public void parseXML(@Nonnull InputStream inputStream) {
+        InputStream is = inputStream;
+        if (!is.markSupported()) {
+            is = new BufferedInputStream(is);
+        }
+        try {
+            is.mark(Integer.MAX_VALUE);
+        } catch (Exception e) {
+            LOG.debug("Parser.parseXML mark | source=Parser.parseXML | despues=" + e.getMessage(), e);
+        }
         StringBuilder xmlContent = new StringBuilder();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = br.readLine()) != null) {
                     xmlContent.append(line).append("\n");
                 }
-
+                try {
+                    if (is.markSupported()) {
+                        is.reset();
+                        is.mark(Integer.MAX_VALUE);
+                    }
+                } catch (IOException e) {
+                    LOG.debug("Parser.parseXML reset | source=Parser.parseXML | despues=" + e.getMessage(), e);
+                }
 
                 XmlMapper xmlMapper = new XmlMapper();
                 JsonNode rootNode = xmlMapper.readTree(xmlContent.toString());
+                String namespace = extractNamespaceFromString(xmlContent.toString());
+                if (namespace != null && haciendaXsdValidator != null) {
+                    Schema schema = haciendaXsdValidator.getSchemaForNamespace(namespace);
+                    if (schema != null) {
+                        HaciendaXsdValidator.ValidationResult vr = haciendaXsdValidator.validate(xmlContent.toString(), namespace);
+                        if (!vr.valid) {
+                            String msg = vr.errorMessage != null ? vr.errorMessage : "XSD validation failed";
+                            if (msg.contains("unsupported version") || msg.contains("lenient business validation")) {
+                                LOG.debug("Parser.parseXML lenient fallback | source=Parser.parseXML | despues=" + msg);
+                            } else {
+                                LOG.warn("XSD validation failed | source=Parser.parseXML | despues=" + msg);
+                                throw new XmlParseException("XSD validation failed: " + msg);
+                            }
+                        }
+                    }
+                }
 
 
                 // Validate required fields first with improved NumeroConsecutivo extraction
@@ -1130,7 +1220,9 @@ public class Parser {
                 }
 
                 // V4.4 Bitácora item 124/125: TotalComprobante must equal sum of TotalMedioPago
-                validarTotalMedioPago(resumenFactura, numeroConsecutivo, xmlContent.toString());
+                if ("4.4".equals(schemaVersion)) {
+                    validarTotalMedioPago(resumenFactura, numeroConsecutivo, xmlContent.toString());
+                }
 
                 List<LineaDetalle> lineas = parseDetalleServicio(rootNode.path("DetalleServicio"));
                 if (lineas == null || lineas.isEmpty()) {

@@ -10,7 +10,7 @@ import lombok.Data;
 @XmlAccessorType(XmlAccessType.FIELD)
 @Data
 public class DetalleServicio {
-    @XmlElement(name = "LineaDetalle")
+    @XmlElement(name = "LineaDetalle", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private List<LineaDetalle> lineasDetalle;
 
     public DetalleServicio() {}

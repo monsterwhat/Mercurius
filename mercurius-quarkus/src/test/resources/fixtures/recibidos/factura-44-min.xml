@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  v4.4 minimal fixture: flat Encabezado fields + Resumen.MedioPago.
+  Namespace: https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica
+  Contract: Parser must branch on schemaVersion 4.4 -> expect flat structure
+            (no Encabezado wrapper) and <ResumenFactura><MedioPago><TipoMedioPago>01</TipoMedioPago><TotalMedioPago>113.00000</TotalMedioPago></MedioPago></ResumenFactura>.
+            Root-level simple MedioPago is NOT expected for 4.4.
+  Template provenance: Documentos/FacturaXmlValidationTest.java validXml (lines 63-81).
+  Clave 50626072600031011569830010000001040000000001000000 (50 digits),
+  NumeroConsecutivo 00100001040000000001 (20 chars) per task spec.
+  Minimal detalle: single LineaDetalle (<10 lines).
+-->
+<FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
+    <Clave>50626072600031011569830010000001040000000001000000</Clave>
+    <NumeroConsecutivo>00100001040000000001</NumeroConsecutivo>
+    <FechaEmision>2026-07-02T12:00:00</FechaEmision>
+    <CondicionVenta>01</CondicionVenta>
+    <Emisor><Nombre>Test</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156983</Numero></Identificacion><Ubicacion><Provincia>1</Provincia><Canton>01</Canton><Distrito>01</Distrito><OtrasSenas>X</OtrasSenas></Ubicacion><CorreoElectronico><Correo>test@test.com</Correo></CorreoElectronico></Emisor>
+    <Receptor><Nombre>Test</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156984</Numero></Identificacion></Receptor>
+    <DetalleServicio><LineaDetalle><NumeroLinea>1</NumeroLinea><CodigoCABYS>0111010010010</CodigoCABYS><Cantidad>1.000</Cantidad><UnidadMedida>Unid</UnidadMedida><Detalle>Item</Detalle><PrecioUnitario>100.00000</PrecioUnitario><MontoTotal>100.00000</MontoTotal><SubTotal>100.00000</SubTotal><BaseImponible>100.00000</BaseImponible><Impuesto><Codigo>01</Codigo><CodigoTarifaIVA>08</CodigoTarifaIVA><Tarifa>13.00</Tarifa><Monto>13.00000</Monto></Impuesto><MontoTotalLinea>113.00000</MontoTotalLinea></LineaDetalle></DetalleServicio>
+    <ResumenFactura><CodigoTipoMoneda><CodigoMoneda>CRC</CodigoMoneda></CodigoTipoMoneda><MedioPago><TipoMedioPago>01</TipoMedioPago><TotalMedioPago>113.00000</TotalMedioPago></MedioPago><TotalVenta>100.00000</TotalVenta><TotalVentaNeta>100.00000</TotalVentaNeta><TotalImpuesto>13.00000</TotalImpuesto><TotalComprobante>113.00000</TotalComprobante></ResumenFactura>
+</FacturaElectronica>

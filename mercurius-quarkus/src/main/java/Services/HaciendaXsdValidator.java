@@ -63,6 +63,32 @@ public class HaciendaXsdValidator {
     static final String MH_NS =
         "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/mensajeHacienda";
 
+    // v4.3 namespaces
+    static final String FE_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica";
+    static final String TE_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/tiqueteElectronico";
+    static final String NC_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaCreditoElectronica";
+    static final String ND_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaDebitoElectronica";
+    static final String FEC_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronicaCompra";
+    static final String FEE_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronicaExportacion";
+    // REP never existed in 4.3, v4.4 only; validator returns lenient ok for REP v4.3 ns.
+    static final String MR_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/mensajeReceptor";
+    static final String MH_V43_NS =
+        "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/mensajeHacienda";
+
+    private static boolean isV43Namespace(String ns) {
+        if (ns == null) {
+            return false;
+        }
+        return ns.contains("/v4.3/");
+    }
+
     // Schema instances are created lazily and cached
     private volatile Schema feSchema;
     private volatile Schema teSchema;
@@ -73,6 +99,15 @@ public class HaciendaXsdValidator {
     private volatile Schema repSchema;
     private volatile Schema mrSchema;
     private volatile Schema mhSchema;
+
+    private volatile Schema feV43Schema;
+    private volatile Schema teV43Schema;
+    private volatile Schema ncV43Schema;
+    private volatile Schema ndV43Schema;
+    private volatile Schema fecV43Schema;
+    private volatile Schema feeV43Schema;
+    private volatile Schema mrV43Schema;
+    private volatile Schema mhV43Schema;
 
     // ── Resource resolver ──────────────────────────────────────────────────
 
@@ -260,6 +295,135 @@ public class HaciendaXsdValidator {
         return mhSchema;
     }
 
+    private Schema getFeV43Schema() {
+        if (feV43Schema == null) {
+            synchronized (this) {
+                if (feV43Schema == null) {
+                    feV43Schema = createSchema("/xsd/v4.3/FacturaElectronica_V4.3.xsd");
+                }
+            }
+        }
+        return feV43Schema;
+    }
+
+    private Schema getTeV43Schema() {
+        if (teV43Schema == null) {
+            synchronized (this) {
+                if (teV43Schema == null) {
+                    teV43Schema = createSchema("/xsd/v4.3/TiqueteElectronico_V4.3.xsd");
+                }
+            }
+        }
+        return teV43Schema;
+    }
+
+    private Schema getNcV43Schema() {
+        if (ncV43Schema == null) {
+            synchronized (this) {
+                if (ncV43Schema == null) {
+                    ncV43Schema = createSchema("/xsd/v4.3/NotaCreditoElectronica_V4.3.xsd");
+                }
+            }
+        }
+        return ncV43Schema;
+    }
+
+    private Schema getNdV43Schema() {
+        if (ndV43Schema == null) {
+            synchronized (this) {
+                if (ndV43Schema == null) {
+                    ndV43Schema = createSchema("/xsd/v4.3/NotaDebitoElectronica_V4.3.xsd");
+                }
+            }
+        }
+        return ndV43Schema;
+    }
+
+    private Schema getFecV43Schema() {
+        if (fecV43Schema == null) {
+            synchronized (this) {
+                if (fecV43Schema == null) {
+                    fecV43Schema = createSchema("/xsd/v4.3/FacturaElectronicaCompra_V4.3.xsd");
+                }
+            }
+        }
+        return fecV43Schema;
+    }
+
+    private Schema getFeeV43Schema() {
+        if (feeV43Schema == null) {
+            synchronized (this) {
+                if (feeV43Schema == null) {
+                    feeV43Schema = createSchema("/xsd/v4.3/FacturaElectronicaExportacion_V4.3.xsd");
+                }
+            }
+        }
+        return feeV43Schema;
+    }
+
+    private Schema getMrV43Schema() {
+        if (mrV43Schema == null) {
+            synchronized (this) {
+                if (mrV43Schema == null) {
+                    mrV43Schema = createSchema("/xsd/v4.3/MensajeReceptor_V4.3.xsd");
+                }
+            }
+        }
+        return mrV43Schema;
+    }
+
+    private Schema getMhV43Schema() {
+        if (mhV43Schema == null) {
+            synchronized (this) {
+                if (mhV43Schema == null) {
+                    mhV43Schema = createSchema("/xsd/v4.3/MensajeHacienda_V4.3.xsd");
+                }
+            }
+        }
+        return mhV43Schema;
+    }
+
+    // ── Schema by namespace ────────────────────────────────────────────────
+
+    /**
+     * Resolve {@link Schema} for a namespace when available.
+     * Returns {@code null} for unknown namespaces or when the XSD resource
+     * could not be loaded (e.g. v4.3 without XSD) so callers can fall back
+     * to lenient business validation.
+     */
+    @Nullable
+    public Schema getSchemaForNamespace(@Nullable String namespace) {
+        if (namespace == null) {
+            return null;
+        }
+        if (FE_NS.equals(namespace)) return getFeSchema();
+        if (TE_NS.equals(namespace)) return getTeSchema();
+        if (NC_NS.equals(namespace)) return getNcSchema();
+        if (ND_NS.equals(namespace)) return getNdSchema();
+        if (FEC_NS.equals(namespace)) return getFecSchema();
+        if (FEE_NS.equals(namespace)) return getFeeSchema();
+        if (REP_NS.equals(namespace)) return getRepSchema();
+        if (MR_NS.equals(namespace)) return getMrSchema();
+        if (MH_NS.equals(namespace)) return getMhSchema();
+        if (FE_V43_NS.equals(namespace)) return getFeV43Schema();
+        if (TE_V43_NS.equals(namespace)) return getTeV43Schema();
+        if (NC_V43_NS.equals(namespace)) return getNcV43Schema();
+        if (ND_V43_NS.equals(namespace)) return getNdV43Schema();
+        if (FEC_V43_NS.equals(namespace)) return getFecV43Schema();
+        if (FEE_V43_NS.equals(namespace)) return getFeeV43Schema();
+        if (MR_V43_NS.equals(namespace)) return getMrV43Schema();
+        if (MH_V43_NS.equals(namespace)) return getMhV43Schema();
+        return null;
+    }
+
+    /**
+     * Alias for {@link #getSchemaForNamespace(String)} — schema-by-namespace.
+     */
+    @Nullable
+    public Schema getSchemaByNamespace(@Nullable String namespace) {
+        return getSchemaForNamespace(namespace);
+    }
+
     // ── Public API ─────────────────────────────────────────────────────────
 
     /** Outcome of an XSD validation check. */
@@ -311,13 +475,34 @@ public class HaciendaXsdValidator {
             schema = getMrSchema();
         } else if (MH_NS.equals(namespace)) {
             schema = getMhSchema();
+        } else if (FE_V43_NS.equals(namespace)) {
+            schema = getFeV43Schema();
+        } else if (TE_V43_NS.equals(namespace)) {
+            schema = getTeV43Schema();
+        } else if (NC_V43_NS.equals(namespace)) {
+            schema = getNcV43Schema();
+        } else if (ND_V43_NS.equals(namespace)) {
+            schema = getNdV43Schema();
+        } else if (FEC_V43_NS.equals(namespace)) {
+            schema = getFecV43Schema();
+        } else if (FEE_V43_NS.equals(namespace)) {
+            schema = getFeeV43Schema();
+        // REP never existed in 4.3, v4.4 only; validator returns lenient ok for REP v4.3 ns.
+        } else if ("https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/reciboElectronicoPago".equals(namespace)) {
+            LOG.info("REP v4.3 namespace has no XSD — lenient ok (REP introduced in v4.4)");
+            return ValidationResult.ok();
+        } else if (MR_V43_NS.equals(namespace)) {
+            schema = getMrV43Schema();
+        } else if (MH_V43_NS.equals(namespace)) {
+            schema = getMhV43Schema();
         } else {
-            return ValidationResult.error("Unknown document namespace: " + namespace);
+            LOG.warn("Unknown Hacienda document namespace: " + namespace + " — lenient business validation");
+            return ValidationResult.error("unsupported version, lenient business validation");
         }
 
         if (schema == null) {
-            return ValidationResult.error(
-                "XSD schema could not be loaded — validation unavailable");
+            LOG.warn("XSD schema could not be loaded for namespace: " + namespace + " — lenient business validation");
+            return ValidationResult.error("unsupported version, lenient business validation");
         }
 
         try {
@@ -326,7 +511,15 @@ public class HaciendaXsdValidator {
                 new StreamSource(new ByteArrayInputStream(xml.getBytes("UTF-8"))));
             return ValidationResult.ok();
         } catch (SAXException | IOException | RuntimeException e) {
-            return ValidationResult.error("XSD validation failed: " + e.getMessage());
+            String msg = e.getMessage();
+            String errorMessage = "XSD validation failed: " + msg;
+            // pre-sign lenient: Signature added during signing
+            if (msg != null && msg.contains("Signature") && msg.contains("cvc-complex-type.2.4.b")
+                    && (msg.contains("InformacionReferencia") || msg.contains("Otros"))) {
+                LOG.info("pre-sign lenient: Signature added during signing - " + errorMessage);
+                return ValidationResult.ok();
+            }
+            return ValidationResult.error(errorMessage);
         }
     }
 }
