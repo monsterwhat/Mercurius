@@ -11,6 +11,7 @@ import Models.Encabezado.IdentificacionReceptor;
 import Models.Encabezado.Receptor;
 import Models.Encabezado.Ubicacion;
 import Models.Resumen.CodigoTipoMoneda;
+import Models.Resumen.MedioPagoR;
 import Models.Jaxb.FE.FacturaElectronicaDocumento;
 import Models.Jaxb.TE.TiqueteElectronicoDocumento;
 import Models.Jaxb.NC.NotaCreditoElectronicaDocumento;
@@ -179,6 +180,10 @@ class XsdModelAlignmentTest {
         r.setTotalVentaNeta(new BigDecimal("100.00000"));
         r.setTotalImpuesto(new BigDecimal("13.00000"));
         r.setTotalComprobante(new BigDecimal("113.00000"));
+        MedioPagoR mp = new MedioPagoR();
+        mp.setTipoMedioPago("01");
+        mp.setTotalMedioPago(new BigDecimal("113.00000"));
+        r.setMediosPago(List.of(mp));
         return r;
     }
 
@@ -332,16 +337,14 @@ class XsdModelAlignmentTest {
     // ── XSD validation helper ───────────────────────────────────────────────
 
     /**
-     * Known XSD gap prefixes: cvc-complex-type.2.4.a (element namespace
-     * qualification — the shared Encabezado/DetalleServicio/ResumenFactura
-     * entities use @XmlElement without namespace because each entity is
-     * shared across 7 document types with different target namespaces) and
-     * Signature/xcml/schema.load (ds:Signature not present pre-signing).
+     * Remaining known XSD gap: ds:Signature is required by the Hacienda XSD but
+     * is only added during the signing step. Pre-signing XML therefore
+     * legitimately fails validation on Signature/xcml/schema.load. All other
+     * XSD errors (including cvc-complex-type.2.4.a/b) are real model/XSD
+     * misalignments and must not be swallowed.
      */
     private static boolean isKnownXsdGap(String msg) {
-        return msg.contains("cvc-complex-type.2.4.a")
-            || msg.contains("cvc-complex-type.2.4.b")
-            || msg.contains("Signature")
+        return msg.contains("Signature")
             || msg.contains("xcml")
             || msg.contains("schema.load");
     }

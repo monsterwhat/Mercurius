@@ -14,10 +14,35 @@ import java.util.regex.Pattern;
  */
 public class ComprobanteFactory {
 
+    private static final Pattern NAMESPACE_VERSION_PATTERN = Pattern.compile("xml-schemas/v(\\d+\\.\\d+)/");
     private static final Pattern VERSION_PATTERN = Pattern.compile("v(\\d+\\.\\d+)");
 
     @Nonnull
+    public static String detectVersionByNamespace(@Nonnull String namespaceUri) throws IOException {
+        if (namespaceUri == null || namespaceUri.trim().isEmpty()) {
+            throw new IOException("Namespace URI is null or empty");
+        }
+
+        Matcher matcher = NAMESPACE_VERSION_PATTERN.matcher(namespaceUri);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        Pattern fallback = Pattern.compile("/v(\\d+\\.\\d+)/");
+        Matcher fallbackMatcher = fallback.matcher(namespaceUri);
+        if (fallbackMatcher.find()) {
+            return fallbackMatcher.group(1);
+        }
+
+        throw new IOException("Unable to detect version from namespace URI: " + namespaceUri);
+    }
+
+    @Nonnull
     public static String detectVersion(@Nonnull InputStream xmlStream) throws IOException {
+
+        if (xmlStream == null) {
+            throw new IOException("XML stream is null");
+        }
 
         if (!xmlStream.markSupported()) {
             xmlStream = new BufferedInputStream(xmlStream);
@@ -34,6 +59,11 @@ public class ComprobanteFactory {
             }
 
             String xmlHeader = new String(buffer, 0, bytesRead);
+
+            Matcher nsMatcher = NAMESPACE_VERSION_PATTERN.matcher(xmlHeader);
+            if (nsMatcher.find()) {
+                return nsMatcher.group(1);
+            }
 
             Matcher matcher = VERSION_PATTERN.matcher(xmlHeader);
             if (matcher.find()) {
@@ -65,7 +95,7 @@ public class ComprobanteFactory {
 
     @Nonnull
     public static String[] getSupportedVersions() {
-        return new String[]{"4.3", "4.4", "4.5"};
+        return new String[]{"4.3", "4.4"};
     }
 
     public static boolean isVersionSupported(@Nonnull String version) {

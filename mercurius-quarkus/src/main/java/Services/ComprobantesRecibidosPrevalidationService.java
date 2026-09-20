@@ -22,6 +22,7 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.Collections;
 import Models.Referencias.InformacionReferencia;
+import org.jboss.logging.Logger;
 
 /**
  * Pre-validation service for received invoices (Comprobantes Recibidos).
@@ -38,6 +39,8 @@ import Models.Referencias.InformacionReferencia;
 @ApplicationScoped
 public class ComprobantesRecibidosPrevalidationService {
 
+    private static final Logger LOG = Logger.getLogger(ComprobantesRecibidosPrevalidationService.class);
+
     @Inject @Nonnull
     private CabysService cabysService;
 
@@ -49,6 +52,25 @@ public class ComprobantesRecibidosPrevalidationService {
 
     @PostConstruct
     public void init() {
+    }
+
+    private String resolveVersion(ComprobantesRecibidos factura) {
+        if (factura == null) {
+            return "4.4";
+        }
+        String v = factura.getSchemaVersion();
+        if (v != null && !v.isBlank()) {
+            return v.trim();
+        }
+        if (factura.getEncabezado() != null && factura.getEncabezado().getSchemaVersion() != null
+                && !factura.getEncabezado().getSchemaVersion().isBlank()) {
+            return factura.getEncabezado().getSchemaVersion().trim();
+        }
+        if (factura.getResumen() != null && factura.getResumen().getSchemaVersion() != null
+                && !factura.getResumen().getSchemaVersion().isBlank()) {
+            return factura.getResumen().getSchemaVersion().trim();
+        }
+        return "4.4";
     }
 
     @Nonnull
@@ -99,19 +121,27 @@ public class ComprobantesRecibidosPrevalidationService {
         // Extract document type code for document-aware validation
         String codigoDocumento = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
 
+        String schemaVersion = resolveVersion(factura);
+
         // Run all validators
         validarCabys(lineas, result);
         verificarCalculosImpuestos(lineas, factura.getResumen(), result);
-        validarInfoReceptor(factura.getEncabezado() != null ? factura.getEncabezado().getReceptor() : null, codigoDocumento, result);
+        if ("4.4".equals(schemaVersion)) {
+            validarResumenMedioPago(factura.getResumen(), result);
+            validarTotalMedioPago(factura.getResumen(), result);
+        } else {
+            LOG.info("skipping v4.4 Resumen.MedioPago and TotalMedioPago checks for schemaVersion 4.3 | source=ComprobantesRecibidosPrevalidationService.prevalidarCompleto | schemaVersion=" + schemaVersion);
+        }
+        validarInfoReceptor(factura.getEncabezado() != null ? factura.getEncabezado().getReceptor() : null, codigoDocumento, result, factura.getEncabezado(), schemaVersion);
         validarInformacionReferencia(factura.getInformacionReferencia(), codigoDocumento, result);
 
         return result;
     }
 
     /**
-     * Pre-validates a ComprobantesRecibidos entity directly (without persisting first).
-     * Used by ComprobantesRecibidosService.createWithRelatedEntities() before persisting.
-     */
+      * Pre-validates a ComprobantesRecibidos entity directly (without persisting first).
+      * Used by ComprobantesRecibidosService.createWithRelatedEntities() before persisting.
+      */
     @Nonnull
     public PrevalidationResult prevalidarCompleto(@Nullable ComprobantesRecibidos factura) {
         PrevalidationResult result = new PrevalidationResult();
@@ -135,9 +165,17 @@ public class ComprobantesRecibidosPrevalidationService {
 
         String codigoDocumento = factura.getEncabezado() != null ? factura.getEncabezado().getCodigoDocumento() : null;
 
+        String schemaVersion = resolveVersion(factura);
+
         validarCabys(lineas, result);
         verificarCalculosImpuestos(lineas, factura.getResumen(), result);
-        validarInfoReceptor(factura.getEncabezado() != null ? factura.getEncabezado().getReceptor() : null, codigoDocumento, result);
+        if ("4.4".equals(schemaVersion)) {
+            validarResumenMedioPago(factura.getResumen(), result);
+            validarTotalMedioPago(factura.getResumen(), result);
+        } else {
+            LOG.info("skipping v4.4 Resumen.MedioPago and TotalMedioPago checks for schemaVersion 4.3 | source=ComprobantesRecibidosPrevalidationService.prevalidarCompleto | schemaVersion=" + schemaVersion);
+        }
+        validarInfoReceptor(factura.getEncabezado() != null ? factura.getEncabezado().getReceptor() : null, codigoDocumento, result, factura.getEncabezado(), schemaVersion);
         validarInformacionReferencia(factura.getInformacionReferencia(), codigoDocumento, result);
 
         return result;
@@ -367,6 +405,40 @@ public class ComprobantesRecibidosPrevalidationService {
         }
     }
 
+    private void validarResumenMedioPago(@Nullable ResumenFactura resumen, @Nonnull PrevalidationResult result) {
+        if (resumen == null || resumen.getMediosPago() == null || resumen.getMediosPago().isEmpty()) {
+            result.addWarning(new ValidationError(
+                ValidationError.Category.valueOf("RESUMEN_STRUCTURE"),
+                "resumen.medioPago", "MISSING_MEDIO_PAGO",
+                "Resumen.MedioPago es requerido en v4.4",
+                ValidationError.Severity.WARNING));
+            LOG.warn("missing Resumen.MedioPago | source=ComprobantesRecibidosPrevalidationService.validarResumenMedioPago | despues=MedioPago faltante en ResumenFactura");
+        }
+    }
+
+    private void validarTotalMedioPago(@Nullable ResumenFactura resumen, @Nonnull PrevalidationResult result) {
+        if (resumen == null || resumen.getMediosPago() == null || resumen.getMediosPago().isEmpty()) {
+            return;
+        }
+        if (resumen.getTotalComprobante() == null) {
+            return;
+        }
+        BigDecimal suma = resumen.getMediosPago().stream()
+            .map(mp -> mp.getTotalMedioPago() != null ? mp.getTotalMedioPago() : BigDecimal.ZERO)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal diff = suma.subtract(resumen.getTotalComprobante()).abs();
+        if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
+            ValidationError err = new ValidationError(
+                ValidationError.Category.valueOf("TAX_CALCULATION"),
+                "resumen.totalMedioPago", "TOTAL_MEDIO_PAGO_MISMATCH",
+                "La suma de TotalMedioPago (" + suma + ") no coincide con TotalComprobante (" + resumen.getTotalComprobante() + "), diff=" + diff,
+                resumen.getTotalComprobante(), suma);
+            err.setSeverity(ValidationError.Severity.WARNING);
+            result.addWarning(err);
+            LOG.warn("TotalMedioPago sum mismatch | source=ComprobantesRecibidosPrevalidationService.validarTotalMedioPago | suma=" + suma + " | totalComprobante=" + resumen.getTotalComprobante() + " | diff=" + diff + " | despues=mismatch");
+        }
+    }
+
     private void checkResumenMatch(@Nonnull PrevalidationResult result, @Nonnull String field,
                                     @Nullable BigDecimal sumValue, @Nullable BigDecimal resumenValue,
                                     @Nonnull String description) {
@@ -387,12 +459,18 @@ public class ComprobantesRecibidosPrevalidationService {
     // ─── Receptor Info Validator ──────────────────────────────────────
 
     /**
-     * Validates receptor information:
-     * - CR ID types 01-05 format rules
-     * - Ubicacion completeness
-     * - Required field presence
-     */
+      * Validates receptor information:
+      * - CR ID types 01-05 format rules
+      * - Ubicacion completeness
+      * - Required field presence
+      * - CodigoActividadReceptor (v4.4-only, gated by schemaVersion)
+      */
     void validarInfoReceptor(@Nullable Receptor receptor, @Nullable String docCode, @Nonnull PrevalidationResult result) {
+        validarInfoReceptor(receptor, docCode, result, null, "4.4");
+    }
+
+    void validarInfoReceptor(@Nullable Receptor receptor, @Nullable String docCode, @Nonnull PrevalidationResult result,
+                             @Nullable Models.Encabezado.Encabezado encabezado, @Nullable String schemaVersion) {
         if (receptor == null) {
             // For test: valid fixture has Receptor, but Parser may miss it due to wrapper; treat as warning to allow MR
             result.addWarning(new ValidationError(
@@ -439,6 +517,21 @@ public class ComprobantesRecibidosPrevalidationService {
                 "correoElectronico", "MISSING_EMAIL",
                 "El correo electrónico del receptor está faltante",
                 ValidationError.Severity.WARNING));
+        }
+
+        // v4.4-only: CodigoActividadReceptor required (Bitácora 22/04/2026)
+        if ("4.4".equals(schemaVersion)) {
+            if (encabezado == null || encabezado.getCodigoActividadReceptor() == null
+                    || encabezado.getCodigoActividadReceptor().trim().isEmpty()) {
+                result.addWarning(new ValidationError(
+                    ValidationError.Category.valueOf("RECEPTOR_INFO"),
+                    "codigoActividadReceptor", "MISSING_CODIGO_ACTIVIDAD_RECEPTOR",
+                    "El CodigoActividadReceptor es requerido en v4.4",
+                    ValidationError.Severity.WARNING));
+                LOG.warn("missing CodigoActividadReceptor | source=ComprobantesRecibidosPrevalidationService.validarInfoReceptor | schemaVersion=" + schemaVersion + " | despues=CodigoActividadReceptor faltante");
+            }
+        } else {
+            LOG.info("skipping CodigoActividadReceptor check for schemaVersion 4.3 | source=ComprobantesRecibidosPrevalidationService.validarInfoReceptor | schemaVersion=" + schemaVersion);
         }
     }
 

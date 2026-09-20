@@ -532,3 +532,7 @@ all.txt
 modified.txt
 /mercurius-quarkus/.omo
 /docs2
+
+# --- Repo hygiene (logs / build / deps) ---
+logs/
+sessions/

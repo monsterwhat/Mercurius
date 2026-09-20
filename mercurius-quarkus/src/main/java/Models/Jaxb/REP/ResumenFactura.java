@@ -3,6 +3,7 @@ package Models.Jaxb.REP;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlType;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -10,6 +11,30 @@ import lombok.Data;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @Data
+@XmlType(propOrder = {
+    "codigoMoneda",
+    "totalServGravados",
+    "totalServExentos",
+    "totalServExonerado",
+    "totalServNoSujeto",
+    "totalMercanciasGravadas",
+    "totalMercanciasExentas",
+    "totalMercExonerada",
+    "totalMercNoSujeta",
+    "totalGravado",
+    "totalExento",
+    "totalExonerado",
+    "totalNoSujeto",
+    "totalVenta",
+    "totalDescuentos",
+    "totalVentaNeta",
+    "totalDesgloseImpuestos",
+    "totalImpuesto",
+    "totalIVADevuelto",
+    "totalOtrosCargos",
+    "mediosPago",
+    "totalComprobante"
+})
 public class ResumenFactura {
     @XmlElement(name = "CodigoTipoMoneda")
     private CodigoTipoMoneda codigoMoneda;

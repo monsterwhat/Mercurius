@@ -12,39 +12,39 @@ import lombok.Data;
 @XmlAccessorType(XmlAccessType.FIELD)
 @Data
 public class Encabezado {
-    @XmlElement(name = "Clave")
+    @XmlElement(name = "Clave", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String clave;
 
-    @XmlElement(name = "ProveedorSistemas")
+    @XmlElement(name = "ProveedorSistemas", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String proveedorSistemas;
 
-    @XmlElement(name = "CodigoActividadEmisor")
+    @XmlElement(name = "CodigoActividadEmisor", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String codigoActividadEmisor;
 
-    @XmlElement(name = "CodigoActividadReceptor")
+    @XmlElement(name = "CodigoActividadReceptor", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String codigoActividadReceptor;
 
-    @XmlElement(name = "NumeroConsecutivo")
+    @XmlElement(name = "NumeroConsecutivo", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String numeroConsecutivo;
 
-    @XmlElement(name = "FechaEmision")
+    @XmlElement(name = "FechaEmision", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     @XmlSchemaType(name = "dateTime")
     @XmlJavaTypeAdapter(LocalDateTimeAdapter.class)
     private LocalDateTime fechaEmision;
 
-    @XmlElement(name = "Emisor")
+    @XmlElement(name = "Emisor", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private Emisor emisor;
 
-    @XmlElement(name = "Receptor")
+    @XmlElement(name = "Receptor", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private Receptor receptor;
 
-    @XmlElement(name = "CondicionVenta")
+    @XmlElement(name = "CondicionVenta", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String condicionVenta;
 
-    @XmlElement(name = "CondicionVentaOtros")
+    @XmlElement(name = "CondicionVentaOtros", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String condicionVentaOtros;
 
-    @XmlElement(name = "PlazoCredito")
+    @XmlElement(name = "PlazoCredito", namespace = "https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica")
     private String plazoCredito;
 
     public Encabezado() {}

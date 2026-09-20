@@ -53,6 +53,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
@@ -916,9 +917,10 @@ public class FacturasRecibidasResource {
         @APIResponse(responseCode = "404", description = "Id desconocido"),
         @APIResponse(responseCode = "500", description = "Error interno")
     })
+    @Transactional
     public Response procesarForm(@PathParam("id") long id,
-                                 @FormParam("bucket") @Nullable String bucket,
-                                 @FormParam("q") @Nullable String q) {
+                                  @FormParam("bucket") @Nullable String bucket,
+                                  @FormParam("q") @Nullable String q) {
         return doProcesar(id, bucket, q);
     }
 
@@ -927,6 +929,7 @@ public class FacturasRecibidasResource {
     @Path("/{id}/procesar")
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Procesar factura recibida (twin JSON)", hidden = true)
+    @Transactional
     public Response procesarJson(@PathParam("id") long id) {
         return doProcesar(id, null, null);
     }
