@@ -284,6 +284,51 @@ select,
     color: white;
 }
 
+/* Header con métricas - Backups */
+.backups-header {
+    background: linear-gradient(135deg, #00897b 0%, #004d40 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.backups-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+/* Header con métricas - Registros */
+.registros-header {
+    background: linear-gradient(135deg, #455a64 0%, #263238 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.registros-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
+/* Header con métricas - Correos */
+.correos-header {
+    background: linear-gradient(135deg, #42a5f5 0%, #1565c0 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.correos-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
 /* Header con métricas - Usuarios */
 .usuarios-header {
     background: linear-gradient(135deg, #607d8b 0%, #37474f 100%);

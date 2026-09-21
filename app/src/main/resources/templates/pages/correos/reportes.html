@@ -32,20 +32,19 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="level">
-            <div class="level-left">
-                <p class="title is-3" style="margin-bottom:0">Reportes Programados X Correo Electronico</p>
-            </div>
-            <div class="level-right">
-                <div class="buttons" style="align-items:center">
-                    <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
-                        <p class="title is-2" style="margin-bottom:0">{#if totalReportes??}{totalReportes}{#else}0{/if}</p>
-                        <p class="subtitle is-6">Reportes Programados</p>
-                    </div>
-                    {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-success"
-                         bodyUrl="/api/app/reportes-programados/formularios/nueva"}{/include}
+        <div class="correos-header">
+            <p class="title is-3 has-text-centered">Reportes Programados X Correo Electronico</p>
+            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
+                <div class="stat-card">
+                    <span class="stat-number">{#if totalReportes??}{totalReportes}{#else}0{/if}</span>
+                    <span class="stat-label">Reportes Programados</span>
                 </div>
             </div>
+        </div>
+
+        <div class="buttons">
+            {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-success"
+                 bodyUrl="/api/app/reportes-programados/formularios/nueva"}{/include}
         </div>
 
         {#include pages/correos/tabla-reportes modelo=tablaReportes q=tablaReportes.q isAdmin=isAdmin /}
