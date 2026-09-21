@@ -348,16 +348,22 @@ public class CabysResource {
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response importar() {
+        String usuario = identity.getPrincipal() != null ? identity.getPrincipal().getName() : "?";
+        LOG.info("inicio importacion CABYS | user=" + usuario);
         try {
             List<Cabys> catalogo = cabysService.listAllAPI();
             cabysService.saveAllDB(catalogo);
-            LOG.infof("catalogo CABYS imported: %d codes", catalogo.size());
+            LOG.infof("catalogo CABYS imported: %d codes | user=" + usuario, catalogo.size());
             if (isHxRequest()) {
                 return hxRedirect("/api/app/cabys/table");
             }
             return Response.ok(ApiResponse.ok(Map.of("importados", catalogo.size()))).build();
         } catch (Exception e) {
-            LOG.warn("Error importando el catálogo CABYS", e);
+            LOG.warn("Error importando el catálogo CABYS | user=" + usuario, e);
+            if (isHxRequest()) {
+                String mensaje = "Error importando el catálogo CABYS: " + e.getMessage();
+                return htmlOk(tableInstance(1, 20, null, "asc", null, "error", mensaje));
+            }
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error importando el catálogo CABYS"))
                     .build();
