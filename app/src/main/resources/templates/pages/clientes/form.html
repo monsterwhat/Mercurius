@@ -1,0 +1,304 @@
+{!
+  pages/clientes/form - modal-body form for crear|editar cliente (W4B lane).
+  Returned by GET /api/app/clientes/formularios[/nueva|/{code}] and
+  re-rendered by the form-urlencoded POST/PUT twins on validation failure
+  (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
+
+  Field labels and required semantics are verbatim ports of
+  CrearClientesDialog.xhtml / EditClientesDialog.xhtml ("Nombre:", "Correo:",
+  "Dirección:", "Teléfono:", "Código de Zona:", "Tipo de Cédula:",
+  "Número de Cédula:", "Fecha de Nacimiento:", "Contribuyente:",
+  "Códigos de Actividad Económica (CIIU4):").
+
+  Model:
+    modo          String - "crear" | "editar"
+    cliente       Object - Models.Clients when editar, null when crear
+    birthDateIso  String - cliente.birthDate as yyyy-MM-dd (null when crear;
+                    pre-formatted server-side so the template stays dumb)
+    errorNombre   String - blank-name error (legacy requiredMessage parity)
+    errorGeneral  String - guard failures surfaced by the API (duplicate
+                    nombre / cédula taken) shown under the form + as toast
+    toastSeverity String - OOB toast severity (nullable)
+    toastMessage  String - OOB toast text (nullable)
+!}
+<div id="forma-cliente">
+    {#if modo == 'editar' && cliente??}
+    <form hx-put="/Mercurius/api/app/clientes/{cliente.code}"
+          hx-target="#forma-cliente" hx-swap="outerHTML">
+    {#else}
+    <form hx-post="/Mercurius/api/app/clientes"
+          hx-target="#forma-cliente" hx-swap="outerHTML">
+    {/if}
+        <div class="field">
+            <label class="label" for="cliente-nombre">Nombre:</label>
+            <div class="control">
+                <input class="input {#if errorNombre??}is-danger{/if}" id="cliente-nombre"
+                       name="name" required="required" autocomplete="off"
+                       value="{#if cliente??}{cliente.name}{/if}"/>
+            </div>
+            {#if errorNombre??}<p class="help is-danger">{errorNombre}</p>{/if}
+        </div>
+        <div class="field">
+            <label class="label" for="cliente-email">Correo:</label>
+            <div class="control">
+                <input class="input" type="email" id="cliente-email" name="email" required="required"
+                       autocomplete="off" value="{#if cliente??}{#if cliente.email??}{cliente.email}{/if}{/if}"/>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label" for="cliente-address">Dirección:</label>
+            <div class="control">
+                <input class="input" id="cliente-address" name="address" required="required"
+                       autocomplete="off" value="{#if cliente??}{#if cliente.address??}{cliente.address}{/if}{/if}"/>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-phone">Teléfono:</label>
+                    <div class="control">
+                        <input class="input" id="cliente-phone" name="phoneNumber" required="required"
+                               autocomplete="off" value="{#if cliente??}{#if cliente.phoneNumber??}{cliente.phoneNumber}{/if}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-zone">Código de Zona:</label>
+                    <div class="control">
+                        <input class="input" type="number" min="0" step="1" id="cliente-zone" list="zonas-list"
+                               name="zoneCode" required="required" value="{#if cliente??}{cliente.zoneCode}{#else}0{/if}"/>
+                        <datalist id="zonas-list"></datalist>
+                    </div>
+                    <p class="help">Zonas ya usadas — elija o escriba un número nuevo.</p>
+                </div>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-idType">Tipo de Cédula:</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="cliente-idType" name="idType" required="required">
+                                <option value="Cédula Física" {#if cliente?? && cliente.idType == 'Cédula Física'}selected{/if}>Cédula Física</option>
+                                <option value="Cédula Jurídica" {#if cliente?? && cliente.idType == 'Cédula Jurídica'}selected{/if}>Cédula Jurídica</option>
+                                <option value="DIMEX" {#if cliente?? && cliente.idType == 'DIMEX'}selected{/if}>DIMEX</option>
+                                <option value="NITE" {#if cliente?? && cliente.idType == 'NITE'}selected{/if}>NITE</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-idNumber">Número de Cédula:</label>
+                    <div class="control">
+                        <input class="input" id="cliente-idNumber" name="idNumber" required="required"
+                               autocomplete="off" value="{#if cliente??}{#if cliente.idNumber??}{cliente.idNumber}{/if}{/if}"/>
+                    </div>
+                    <p class="help"><a href="#" id="buscar-cedula">Buscar nombre por cédula</a>
+                        <span id="buscar-cedula-msg"></span></p>
+                </div>
+            </div>
+        </div>
+        <div class="columns">
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-birthDate">Fecha de Nacimiento:</label>
+                    <div class="control">
+                        <input class="input" type="date" id="cliente-birthDate" name="birthDate"
+                               required="required" value="{#if birthDateIso??}{birthDateIso}{/if}"/>
+                    </div>
+                </div>
+            </div>
+            <div class="column">
+                <div class="field">
+                    <label class="label" for="cliente-taxpayer">Contribuyente:</label>
+                    <div class="control">
+                        <label class="checkbox">
+                            <input type="checkbox" id="cliente-taxpayer" name="taxpayer" value="true"
+                                   {#if cliente?? && cliente.taxpayer}checked{/if}/>
+                            Es contribuyente
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label class="label">Códigos de Actividad Económica (CIIU4):</label>
+            <p class="help">La marcada como principal se usa en los comprobantes.</p>
+            <div id="actividades-lista">
+                {#if modo == 'editar' && cliente??}
+                {#for actividad in cliente.actividades}
+                <div class="field has-addons mb-2">
+                    <div class="control">
+                        <label class="radio" title="Principal">
+                            <input type="radio" name="actividadPrincipal" {#if actividad_isFirst}checked{/if}/> Principal
+                        </label>
+                    </div>
+                    <div class="control is-expanded">
+                        <input class="input" name="actividad" placeholder="Ej: 561110" value="{actividad.codigo}"/>
+                    </div>
+                    <div class="control">
+                        <button class="button is-small is-danger" type="button" data-quitar-actividad title="Quitar">✕</button>
+                    </div>
+                </div>
+                {/for}
+                {/if}
+                <div class="field has-addons mb-2">
+                    <div class="control">
+                        <label class="radio" title="Principal">
+                            <input type="radio" name="actividadPrincipal"/> Principal
+                        </label>
+                    </div>
+                    <div class="control is-expanded">
+                        <input class="input" name="actividad" placeholder="Ej: 561110"/>
+                    </div>
+                    <div class="control">
+                        <button class="button is-small is-danger" type="button" data-quitar-actividad title="Quitar">✕</button>
+                    </div>
+                </div>
+            </div>
+            <button class="button is-light is-small" type="button" id="agregar-actividad">+ Agregar actividad</button>
+        </div>
+        {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
+        <div class="field is-grouped is-grouped-right">
+            <div class="control">
+                <button class="button is-primary" type="submit">
+                    {#if modo == 'editar'}Guardar cambios{#else}Crear Cliente{/if}
+                </button>
+            </div>
+            <div class="control">
+                <button class="button" type="button" data-kit-close>Cerrar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+{!
+  Adds another actividad input row (kept trivial on purpose — no Alpine state,
+  survives htmx re-swap because htmx executes scripts inside swapped content).
+!}
+<script>
+    (function () {
+        var lista = document.getElementById('actividades-lista');
+        function filaActividad(valor, principal) {
+            var fila = document.createElement('div');
+            fila.className = 'field has-addons mb-2';
+            fila.innerHTML = '<div class="control"><label class="radio" title="Principal">' +
+                '<input type="radio" name="actividadPrincipal"' + (principal ? ' checked' : '') + '/> Principal</label></div>' +
+                '<div class="control is-expanded">' +
+                '<input class="input" name="actividad" placeholder="Ej: 561110" value="' + valor + '"/></div>' +
+                '<div class="control"><button class="button is-small is-danger" type="button" data-quitar-actividad title="Quitar">✕</button></div>';
+            return fila;
+        }
+        var boton = document.getElementById('agregar-actividad');
+        if (boton && lista) {
+            boton.addEventListener('click', function () {
+                lista.appendChild(filaActividad('', false));
+            });
+        }
+        if (lista) {
+            lista.addEventListener('click', function (ev) {
+                var quitar = ev.target.closest('[data-quitar-actividad]');
+                if (quitar) {
+                    var fila = quitar.closest('.field');
+                    if (fila && lista.querySelectorAll('.field').length > 1) { fila.remove(); }
+                }
+            });
+            var forma = lista.closest('form');
+            if (forma) {
+                forma.addEventListener('submit', function () {
+                    var marcada = lista.querySelector('input[name="actividadPrincipal"]:checked');
+                    if (marcada) {
+                        var primera = marcada.closest('.field');
+                        if (primera && primera.previousElementSibling) {
+                            lista.insertBefore(primera, lista.firstElementChild);
+                        }
+                    }
+                });
+            }
+        }
+        var buscar = document.getElementById('buscar-cedula');
+        if (buscar) {
+            buscar.addEventListener('click', function (ev) {
+                ev.preventDefault();
+                var cedulaInput = document.getElementById('cliente-idNumber');
+                var nombreInput = document.getElementById('cliente-nombre');
+                var tipoSelect = document.getElementById('cliente-idType');
+                var msg = document.getElementById('buscar-cedula-msg');
+                var tipos = {'01': 'Cédula Física', '02': 'Cédula Jurídica', '03': 'DIMEX', '04': 'NITE'};
+                if (msg) { msg.textContent = ' …buscando'; }
+                fetch('/Mercurius/api/app/clientes/lookup?cedula=' + encodeURIComponent(cedulaInput.value))
+                    .then(function (r) { return r.json(); })
+                    .then(function (env) {
+                        var d = env.data || {};
+                        if (d.ok) {
+                            if (nombreInput && d.nombre) { nombreInput.value = d.nombre; }
+                            if (tipoSelect && tipos[d.tipoIdentificacion]) {
+                                tipoSelect.value = tipos[d.tipoIdentificacion];
+                            }
+                            var contrib = document.getElementById('cliente-taxpayer');
+                            if (contrib) { contrib.checked = !!d.contribuyente; }
+                            var acts = d.actividades || [];
+                            var listaAct = document.getElementById('actividades-lista');
+                            if (listaAct && acts.length) {
+                                var inputs = listaAct.querySelectorAll('input[name="actividad"]');
+                                var vacia = inputs.length === 1 && !inputs[0].value;
+                                for (var i = 0; i < acts.length; i++) {
+                                    if (!vacia || i > 0) {
+                                        listaAct.appendChild(filaActividad(acts[i], i === 0));
+                                    } else {
+                                        inputs[0].value = acts[i];
+                                        var r0 = inputs[0].closest('.field').querySelector('input[name="actividadPrincipal"]');
+                                        if (r0) { r0.checked = true; }
+                                    }
+                                }
+                            }
+                            if (msg) { msg.textContent = ''; }
+                        } else if (msg) {
+                            msg.textContent = ' — ' + (d.mensaje || 'no encontrado');
+                        }
+                    })
+                    .catch(function () {
+                        if (msg) { msg.textContent = ' — servicio no disponible'; }
+                    });
+            });
+        }
+        var zonas = document.getElementById('zonas-list');
+        if (zonas) {
+            fetch('/Mercurius/api/app/clientes/zonas')
+                .then(function (r) { return r.json(); })
+                .then(function (env) {
+                    (env.data || []).forEach(function (z) {
+                        var op = document.createElement('option');
+                        op.value = z.zone;
+                        op.textContent = 'Zona ' + z.zone + ' (' + z.clientes + ' clientes)';
+                        zonas.appendChild(op);
+                    });
+                })
+                .catch(function () { /* sin directorio: entrada manual */ });
+        }
+    })();
+</script>
+
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
+</div>
+{/if}
+
+{!
+  Theme hardening (same pattern as _kit/confirm): body inherits the raw
+  --bulma-text-title-l lightness token which computes to black, so text
+  that only inherits (help, checkbox/radio labels) goes black on dark
+  cards. Pin it to adaptive --bulma-text.
+!}
+<style>
+    #forma-cliente .help,
+    #forma-cliente label.checkbox,
+    #forma-cliente label.radio {
+        color: var(--bulma-text);
+    }
+</style>

@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "active_work_id": "tributacion-remediation",
+  "works": {
+    "tributacion-remediation": {
+      "work_id": "tributacion-remediation",
+      "active_plan": ".omo/plans/tributacion-remediation.md",
+      "plan_name": "tributacion-remediation",
+      "session_ids": ["codex:current"],
+      "status": "active",
+      "worktree_path": null
+    }
+  }
+}

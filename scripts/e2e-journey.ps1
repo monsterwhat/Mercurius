@@ -186,7 +186,7 @@ function Send-MultipartXml {
 # ======================================================================
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$fixturePath = Join-Path $repoRoot 'mercurius-quarkus\src\test\resources\fixtures\recibidos\factura-recibida-valida.xml'
+$fixturePath = Join-Path $repoRoot 'app\src\test\resources\fixtures\recibidos\factura-recibida-valida.xml'
 Assert-Journey (Test-Path -LiteralPath $fixturePath) "fixture not found: $fixturePath"
 $fixtureXml = [System.IO.File]::ReadAllText($fixturePath)
 
