@@ -88,7 +88,7 @@
                 {/include}
             </div>
 
-            <div x-show="tab === 'aceptadas'" hidden>
+            <div x-show="tab === 'aceptadas'" style="display:none">
                 {#include _kit/data-table id="consultas-tabla-aceptadas" baseUrl=baseUrlTabla
                      headers=headersConsulta}
                   {#rows}
@@ -105,7 +105,7 @@
                 {/include}
             </div>
 
-            <div x-show="tab === 'rechazadas'" hidden>
+            <div x-show="tab === 'rechazadas'" style="display:none">
                 {#include _kit/data-table id="consultas-tabla-rechazadas" baseUrl=baseUrlTabla
                      headers=headersRechazadas}
                   {#rows}
@@ -132,7 +132,7 @@
                 {/include}
             </div>
 
-            <div x-show="tab === 'mensajes'" hidden>
+            <div x-show="tab === 'mensajes'" style="display:none">
                 {#include _kit/data-table id="consultas-tabla-mensajes" baseUrl=baseUrlTabla
                      headers=headersMensajes}
                   {#rows}

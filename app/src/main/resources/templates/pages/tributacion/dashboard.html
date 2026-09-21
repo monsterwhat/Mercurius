@@ -15,41 +15,47 @@
     {#title}Dashboard Hacienda | Mercurius{/title}
 
     {#body}
-        <div id="tributacion-kpis">
+            <div id="tributacion-kpis" x-data="{ tab: 'resumen' }">
             {#fragment id=kpis}
             <div class="tributacion-header">
             <p class="title is-3 has-text-centered">Dashboard Hacienda</p>
             <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Estado actual de las facturas enviadas a Hacienda</p>
 
             <div class="stats-grid">
-                <div class="stat-card">
+                <button type="button" class="stat-card" @click="tab = 'resumen'"
+                        :class="{ 'active': tab === 'resumen' }">
                     <span class="stat-number">{totalEmitidos}</span>
                     <span class="stat-label">Total Emitidos</span>
                     <p class="is-size-7" style="opacity:0.85">Tasa de éxito: {tasaExito}%</p>
-                </div>
-                <div class="stat-card">
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'resumen'"
+                        :class="{ 'active': tab === 'resumen' }">
                     <span class="stat-number">{totalAceptados}</span>
                     <span class="stat-label">Aceptados</span>
                     <p class="is-size-7" style="opacity:0.85">{montoAceptados}</p>
-                </div>
-                <div class="stat-card">
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'rechazados'"
+                        :class="{ 'active': tab === 'rechazados' }">
                     <span class="stat-number">{totalRechazados}</span>
                     <span class="stat-label">Rechazados</span>
-                </div>
-                <div class="stat-card">
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'pendientes'"
+                        :class="{ 'active': tab === 'pendientes' }">
                     <span class="stat-number">{totalPendientes}</span>
                     <span class="stat-label">Pendientes</span>
                     <p class="is-size-7" style="opacity:0.85">{montoPendientes}</p>
-                </div>
-                <div class="stat-card">
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'pendientes'"
+                        :class="{ 'active': tab === 'pendientes' }">
                     <span class="stat-number">{totalEnviadosSinRespuesta}</span>
                     <span class="stat-label">Enviados s/Respuesta</span>
-                </div>
-                <div class="stat-card">
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'resumen'"
+                        :class="{ 'active': tab === 'resumen' }">
                     <span class="stat-number">{emitidosHoy}</span>
                     <span class="stat-label">Emitidos Hoy</span>
                     <p class="is-size-7" style="opacity:0.85">✓ {aceptadosHoy} · ✗ {rechazadosHoy}</p>
-                </div>
+                </button>
             </div>
             </div>
 
@@ -61,6 +67,7 @@
                 </button>
             </div>
 
+            <div x-show="tab === 'resumen'">
             <div class="box">
                 <h2 class="title is-5">Últimos 7 días</h2>
                 <div class="table-container">
@@ -86,7 +93,9 @@
                 </table>
                 </div>
             </div>
+            </div>
 
+            <div x-show="tab === 'pendientes'" style="display:none">
             <div class="box">
                 <h2 class="title is-5">
                     Pendientes de envío
@@ -107,7 +116,9 @@
                   {/rows}
                 {/include}
             </div>
+            </div>
 
+            <div x-show="tab === 'rechazados'" style="display:none">
             <div class="box">
                 <h2 class="title is-5">
                     Rechazados recientes
@@ -127,6 +138,7 @@
                     {/for}
                   {/rows}
                 {/include}
+            </div>
             </div>
             {/fragment}
         </div>
