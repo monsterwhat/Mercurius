@@ -36,6 +36,7 @@ import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.ArrayList;
 import org.eclipse.microprofile.faulttolerance.Fallback;
 import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
@@ -75,36 +76,122 @@ public class ProgramadorTareas {
         tipoCambioService.getTipoCambioFromApi();
     }
 
-    //Monthly log retention: rotated file logs are kept unbounded by the file
-    //handler (max-backup-index) and purged here once older than 4 years.
-    @Scheduled(cron = "0 0 4 1 * ?")
+    //Log retention: unbounded file backups, .gz after 30 days, delete after 4 years (1461d).
+    @Scheduled(cron = "0 0 4 * * ?")
     public void purgarLogsAntiguos() {
         try {
             Path dir = Paths.get("logs");
             if (!Files.isDirectory(dir)) {
                 return;
             }
-            Instant limite = Instant.now().minus(1461, ChronoUnit.DAYS);
+            Instant ahora = Instant.now();
+            List<String> porVencer30 = new ArrayList<>();
+            List<String> porVencer7 = new ArrayList<>();
+            List<String> porVencer1 = new ArrayList<>();
             int borrados = 0;
+            int comprimidos = 0;
             try (Stream<Path> archivos = Files.list(dir)) {
                 for (Path archivo : (Iterable<Path>) archivos::iterator) {
                     String nombre = archivo.getFileName().toString();
                     if (!nombre.startsWith("mercurius.log") || nombre.equals("mercurius.log")) {
                         continue;
                     }
+                    long edadDias;
+                    java.nio.file.attribute.FileTime mtime;
                     try {
-                        if (Files.getLastModifiedTime(archivo).toInstant().isBefore(limite)) {
+                        mtime = Files.getLastModifiedTime(archivo);
+                        edadDias = java.time.Duration.between(mtime.toInstant(), ahora).toDays();
+                    } catch (java.io.IOException e) {
+                        LOG.warn("no se pudo leer la fecha del log " + nombre, e);
+                        continue;
+                    }
+                    if (edadDias > 1461) {
+                        try {
                             Files.deleteIfExists(archivo);
                             borrados++;
+                        } catch (java.io.IOException e) {
+                            LOG.warn("no se pudo purgar el log " + nombre, e);
                         }
-                    } catch (java.io.IOException e) {
-                        LOG.warn("no se pudo purgar el log " + nombre, e);
+                    } else if (edadDias > 30 && !nombre.endsWith(".gz")) {
+                        try {
+                            comprimirLog(archivo, mtime);
+                            comprimidos++;
+                        } catch (java.io.IOException e) {
+                            LOG.warn("no se pudo comprimir el log " + nombre, e);
+                        }
+                    } else if (edadDias == 1431) {
+                        porVencer30.add(nombre);
+                    } else if (edadDias == 1454) {
+                        porVencer7.add(nombre);
+                    } else if (edadDias == 1460) {
+                        porVencer1.add(nombre);
                     }
                 }
             }
-            LOG.info("purga de logs: " + borrados + " archivos mayores de 4 años eliminados");
+            if (!porVencer30.isEmpty() || !porVencer7.isEmpty() || !porVencer1.isEmpty()) {
+                avisarVencimientoLogs(porVencer30, porVencer7, porVencer1);
+            }
+            LOG.info("purga de logs: " + borrados + " eliminados, " + comprimidos + " comprimidos (.gz)");
         } catch (RuntimeException | java.io.IOException e) {
-            LOG.warn("fallo la purga mensual de logs antiguos", e);
+            LOG.warn("fallo la purga diaria de logs antiguos", e);
+        }
+    }
+
+    private static void comprimirLog(Path archivo, java.nio.file.attribute.FileTime mtime)
+            throws java.io.IOException {
+        Path destino = archivo.resolveSibling(archivo.getFileName().toString() + ".gz");
+        if (Files.exists(destino)) {
+            return;
+        }
+        try (java.io.InputStream in = Files.newInputStream(archivo);
+             java.util.zip.GZIPOutputStream out =
+                     new java.util.zip.GZIPOutputStream(Files.newOutputStream(destino))) {
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) != -1) {
+                out.write(buf, 0, n);
+            }
+        }
+        Files.setLastModifiedTime(destino, mtime);
+        Files.deleteIfExists(archivo);
+    }
+
+    private void avisarVencimientoLogs(List<String> dias30, List<String> dias7, List<String> dias1) {
+        try {
+            StringBuilder cuerpo = new StringBuilder("Archivos de log próximos a eliminarse (retención 4 años):\n\n");
+            if (!dias30.isEmpty()) {
+                cuerpo.append("Vencen en 30 días:\n");
+                dias30.forEach(n -> cuerpo.append("- ").append(n).append("\n"));
+                cuerpo.append("\n");
+            }
+            if (!dias7.isEmpty()) {
+                cuerpo.append("Vencen en 7 días:\n");
+                dias7.forEach(n -> cuerpo.append("- ").append(n).append("\n"));
+                cuerpo.append("\n");
+            }
+            if (!dias1.isEmpty()) {
+                cuerpo.append("Vencen mañana:\n");
+                dias1.forEach(n -> cuerpo.append("- ").append(n).append("\n"));
+                cuerpo.append("\n");
+            }
+            cuerpo.append("Este es un aviso automático generado por Mercurius.");
+            int total = dias30.size() + dias7.size() + dias1.size();
+            LOG.warn("vencimiento de logs: " + total + " archivos por vencer (" + cuerpo.toString().replace("\n", " ") + ")");
+            var ajustes = appSettingsService.returnCurrent();
+            String destino = ajustes != null ? ajustes.getCorreoNotificaciones() : null;
+            if (destino == null || destino.isEmpty()) {
+                return;
+            }
+            emailer.sendEmails(
+                List.of(destino),
+                "Aviso de retención de logs - " + total + " archivos por vencer",
+                cuerpo.toString(),
+                ajustes.getCorreoElectronico(),
+                ajustes.getContrasenaCorreo(),
+                result -> LOG.info("aviso de vencimiento de logs enviado")
+            );
+        } catch (RuntimeException e) {
+            LOG.warn("fallo el aviso de vencimiento de logs", e);
         }
     }
     
