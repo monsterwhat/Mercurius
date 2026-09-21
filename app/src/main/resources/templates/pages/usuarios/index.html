@@ -31,27 +31,26 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <p class="title is-3">Usuarios del Sistema</p>
+        <div class="usuarios-header">
+            <p class="title is-3 has-text-centered">Usuarios del Sistema</p>
 
-        {! Stat cards — legacy tab counters became visible counters !}
-        <div class="columns">
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-1" style="margin-bottom:0">{usuariosTotal ?: 0}</p>
-                    <p class="subtitle is-6">Total</p>
-                </div>
-            </div>
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-1 has-text-success" style="margin-bottom:0">{usuariosActivosCount ?: 0}</p>
-                    <p class="subtitle is-6">Activos</p>
-                </div>
-            </div>
-            <div class="column">
-                <div class="box has-text-centered">
-                    <p class="title is-1 has-text-danger" style="margin-bottom:0">{usuariosInactivosCount ?: 0}</p>
-                    <p class="subtitle is-6">Inactivos</p>
-                </div>
+            {! Stat cards — click to filter the table by status !}
+            <div class="stats-grid">
+                <a class="stat-card {#if filtroEstado == null}active{/if}" style="color:inherit"
+                   href="/Mercurius/app/usuarios">
+                    <span class="stat-number">{usuariosTotal ?: 0}</span>
+                    <span class="stat-label">Total</span>
+                </a>
+                <a class="stat-card {#if filtroEstado == 'activo'}active{/if}" style="color:inherit"
+                   href="/Mercurius/app/usuarios?estado=activo">
+                    <span class="stat-number">{usuariosActivosCount ?: 0}</span>
+                    <span class="stat-label">Activos</span>
+                </a>
+                <a class="stat-card {#if filtroEstado == 'inactivo'}active{/if}" style="color:inherit"
+                   href="/Mercurius/app/usuarios?estado=inactivo">
+                    <span class="stat-number">{usuariosInactivosCount ?: 0}</span>
+                    <span class="stat-label">Inactivos</span>
+                </a>
             </div>
         </div>
 

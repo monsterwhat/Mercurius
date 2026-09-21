@@ -284,9 +284,23 @@ select,
     color: white;
 }
 
+/* Header con métricas - Usuarios */
+.usuarios-header {
+    background: linear-gradient(135deg, #607d8b 0%, #37474f 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.usuarios-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
 /* Header con métricas - Tributación */
-.tributacion-header {
-    background: linear-gradient(135deg, var(--bulma-link) 0%, var(--bulma-link-dark) 100%);
+.tributacion-header {    background: linear-gradient(135deg, var(--bulma-link) 0%, var(--bulma-link-dark) 100%);
     border-radius: 1rem;
     padding: 2rem;
     margin-bottom: 2rem;

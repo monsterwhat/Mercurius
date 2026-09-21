@@ -84,12 +84,14 @@ public class AlertasStockResource {
             @QueryParam("dir") @DefaultValue("asc") String dir,
             @QueryParam("departamento") @Nullable String departamento,
             @QueryParam("prioridad") @Nullable String prioridad,
+            @QueryParam("tipo") @Nullable String tipo,
             @QueryParam("seccion") @Nullable String seccion) {
 
         String vista = "sugerencias".equals(seccion) ? "sugerencias" : "alertas";
         Map<String, String> filtros = new LinkedHashMap<>();
         filtros.put("departamento", departamento);
         filtros.put("prioridad", prioridad);
+        filtros.put("tipo", tipo);
         filtros.put("seccion", vista);
 
         List<Map<String, Object>> filas = new ArrayList<>();
@@ -139,6 +141,10 @@ public class AlertasStockResource {
         }
 
         Tablas.ordenar(filas, sort, dir);
+        if (tipo != null && !tipo.isBlank() && "alertas".equals(vista)) {
+            String aguja = tipo.trim();
+            filas.removeIf(f -> !aguja.equalsIgnoreCase(String.valueOf(f.get("tipo"))));
+        }
         long totalFilas = filas.size();
         int totalPages = Tablas.totalPaginas(totalFilas, size);
 
