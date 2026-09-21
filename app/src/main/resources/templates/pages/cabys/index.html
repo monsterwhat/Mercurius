@@ -30,27 +30,26 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="level">
-            <div class="level-left">
-                <p class="title is-3" style="margin-bottom:0">Catálogo de Bienes y Servicios (CAByS)</p>
-            </div>
-            <div class="level-right">
-                <div class="buttons">
-                    {#if canImport}
-                    <button type="button" class="button is-warning"
-                            hx-post="/Mercurius/api/app/cabys/import"
-                            hx-target="#tabla-cabys"
-                            hx-swap="outerHTML"
-                            hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
-                        Importar/Actualizar Catálogo
-                    </button>
-                    {/if}
-                    <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
-                        <p class="title is-2" style="margin-bottom:0">{totalCodigos ?: 0}</p>
-                        <p class="subtitle is-6">Códigos CAByS</p>
-                    </div>
+        <div class="cabys-header">
+            <p class="title is-3 has-text-centered">Catálogo de Bienes y Servicios (CAByS)</p>
+            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
+                <div class="stat-card">
+                    <span class="stat-number">{totalCodigos ?: 0}</span>
+                    <span class="stat-label">Códigos CAByS</span>
                 </div>
             </div>
+        </div>
+
+        <div class="buttons">
+            {#if canImport}
+            <button type="button" class="button is-warning"
+                    hx-post="/Mercurius/api/app/cabys/import"
+                    hx-target="#tabla-cabys"
+                    hx-swap="outerHTML"
+                    hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
+                Importar/Actualizar Catálogo
+            </button>
+            {/if}
         </div>
 
         {#include pages/cabys/tabla modelo=tablaCabys q=tablaCabys.q /}
