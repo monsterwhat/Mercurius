@@ -47,7 +47,7 @@
                             hx-target="#tabla-cabys"
                             hx-swap="outerHTML"
                             hx-disabled-elt="this"
-                            hx-on::response-error="var c=document.getElementById('toast-container'); if(c){var d=document.createElement('div'); d.className='notification is-danger'; d.setAttribute('role','alert'); d.textContent='Importación CABYS falló (HTTP '+event.detail.xhr.status+') — revise logs/mercurius.log'; c.appendChild(d); setTimeout(function(){d.remove()},8000);}"
+                            hx-on::response-error="cabysImportFailed(event)"
                             hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
                 Importar/Actualizar Catálogo
             </button>
@@ -65,8 +65,22 @@
     {#include _kit/confirm /}
 
     {! Bridge: row-level edit buttons open the shared edit modal; the swapped
-       form's [data-kit-close] button closes it (same contract as T18). !}
+       form's [data-kit-close] button closes it (same contract as T18).
+       cabysImportFailed surfaces non-2xx import responses as a toast. !}
     <script>
+        function cabysImportFailed(evt) {
+            var c = document.getElementById('toast-container');
+            if (!c) {
+                return;
+            }
+            var status = evt && evt.detail && evt.detail.xhr ? evt.detail.xhr.status : '?';
+            var d = document.createElement('div');
+            d.className = 'notification is-danger';
+            d.setAttribute('role', 'alert');
+            d.textContent = 'Importación CABYS falló (HTTP ' + status + ') — revise logs/mercurius.log';
+            c.appendChild(d);
+            setTimeout(function () { d.remove(); }, 8000);
+        }
         document.addEventListener('click', function (e) {
             var opener = e.target.closest('[data-kit-open]');
             if (opener) {
