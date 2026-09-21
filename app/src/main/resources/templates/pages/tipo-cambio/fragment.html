@@ -56,6 +56,8 @@
                     <p class="heading">Fecha del tipo de cambio</p>
                     <p class="title is-5">
                         {#if disponible}{fecha}{#else}No disponible{/if}
+                        {#if manual} <span class="tag is-warning">Manual</span>
+                        {#else if disponible} <span class="tag is-info">BCCR</span>{/if}
                     </p>
                 </div>
             </div>
@@ -103,6 +105,7 @@
         </form>
         <p class="help has-text-grey">
             Registra la tasa del día con sus propios valores en lugar de la API de Hacienda/BCCR.
+            La tasa manual se mantiene hasta que se cambie; Actualizar vuelve a la tasa BCCR.
         </p>
     </div>
 

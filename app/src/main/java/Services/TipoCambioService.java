@@ -37,7 +37,9 @@ public class TipoCambioService extends GService<TipoCambio> {
     }
 
     public void getTipoCambioFromApi() {
-        
+        if (isManualLatchActive()) {
+            return;
+        }
         LocalDateTime currentDateTime = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
         
         if (tipoCambioExistsForDate(currentDateTime)) {
@@ -79,6 +81,7 @@ public class TipoCambioService extends GService<TipoCambio> {
             tipoCambio.setFecha(fechaVenta);
             tipoCambio.setValorCompra(valorCompra);
             tipoCambio.setValorVenta(valorVenta);
+            tipoCambio.setManual(Boolean.FALSE);
             
             return tipoCambio;
         } catch (JsonProcessingException e) {
@@ -98,7 +101,38 @@ public class TipoCambioService extends GService<TipoCambio> {
         tipoCambio.setFecha(LocalDateTime.now());
         tipoCambio.setValorCompra(compra.setScale(5, RoundingMode.HALF_UP));
         tipoCambio.setValorVenta(venta.setScale(5, RoundingMode.HALF_UP));
+        tipoCambio.setManual(Boolean.TRUE);
         saveTipoCambio(tipoCambio);
+    }
+
+    private boolean isManualLatchActive() {
+        try {
+            TipoCambio newest = getNewestTipoCambioFromDb();
+            return newest != null && Boolean.TRUE.equals(newest.getManual());
+        } catch (RuntimeException e) {
+            LOG.warn("no se pudo verificar tasa manual", e);
+            return false;
+        }
+    }
+
+    public void forceRefreshFromApi() {
+        try (Client client = ClientBuilder.newClient()) {
+            Response response = client
+                .target("https://api.hacienda.go.cr/indicadores/tc/dolar")
+                .request(MediaType.APPLICATION_JSON)
+                .get();
+            if (response.getStatus() == Response.Status.OK.getStatusCode()) {
+                TipoCambio tipoCambio = parseTipoCambio(response.readEntity(String.class));
+                if (tipoCambio != null) {
+                    tipoCambio.setManual(Boolean.FALSE);
+                    saveTipoCambio(tipoCambio);
+                }
+            } else {
+                LOG.warn("forced tipo-cambio refresh failed, status " + response.getStatus());
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("forced tipo-cambio refresh failed", e);
+        }
     }
 
     /** Display form: 512.34000 -&gt; 512.34, 512.00000 -&gt; 512. */
