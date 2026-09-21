@@ -339,6 +339,7 @@ public class CabysResource {
      */
     @POST
     @Path("/import")
+    @Consumes(MediaType.WILDCARD)
     @RolesAllowed({"admin", "tributacion"})
     @Operation(summary = "Import/refresh the CABYS catalog from Hacienda")
     @APIResponses({

@@ -35,25 +35,28 @@
             </div>
         </div>
 
-        {! ── Stat Cards ─────────────────────────────────────────── !}
+        {! ── Stat Cards (click to filter the table) ─────────────── !}
         <div class="columns mb-5">
             <div class="column is-4">
-                <div class="box has-text-centered">
+                <button type="button" class="box has-text-centered" data-estado-filtro=""
+                        style="border:none;width:100%;cursor:pointer;display:block">
                     <p class="title is-1" style="margin-bottom:0">{totalConfigs ?: 0}</p>
                     <p class="subtitle is-6">Total Configuraciones</p>
-                </div>
+                </button>
             </div>
             <div class="column is-4">
-                <div class="box has-text-centered">
+                <button type="button" class="box has-text-centered" data-estado-filtro="activo"
+                        style="border:none;width:100%;cursor:pointer;display:block">
                     <p class="title is-1 has-text-success" style="margin-bottom:0">{configsActivas ?: 0}</p>
                     <p class="subtitle is-6">Activas</p>
-                </div>
+                </button>
             </div>
             <div class="column is-4">
-                <div class="box has-text-centered">
+                <button type="button" class="box has-text-centered" data-estado-filtro="inactivo"
+                        style="border:none;width:100%;cursor:pointer;display:block">
                     <p class="title is-1 has-text-danger" style="margin-bottom:0">{configsInactivas ?: 0}</p>
                     <p class="subtitle is-6">Inactivas</p>
-                </div>
+                </button>
             </div>
         </div>
 
@@ -179,8 +182,19 @@
     {#include _kit/confirm /}
 
     {! Bridge: row-level buttons open shared modals; the swapped form's
-       [data-kit-close] button closes them (same contract as T18). !}
+       [data-kit-close] button closes them (same contract as T18).
+       Stat cards set the estado filter and refresh the table. !}
     <script>
+        document.querySelectorAll('[data-estado-filtro]').forEach(function (card) {
+            card.addEventListener('click', function () {
+                var select = document.getElementById('filtro-estado');
+                if (!select) {
+                    return;
+                }
+                select.value = card.getAttribute('data-estado-filtro');
+                select.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
         document.addEventListener('click', function (e) {
             var opener = e.target.closest('[data-kit-open]');
             if (opener) {
