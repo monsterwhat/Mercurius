@@ -37,20 +37,19 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="level">
-            <div class="level-left">
-                <p class="title is-3" style="margin-bottom:0">Plantillas de Correo Electronico</p>
-            </div>
-            <div class="level-right">
-                <div class="buttons" style="align-items:center">
-                    <div class="box has-text-centered" style="margin-bottom:0; padding:0.75rem 1.5rem">
-                        <p class="title is-2" style="margin-bottom:0">{#if totalPlantillas??}{totalPlantillas}{#else}0{/if}</p>
-                        <p class="subtitle is-6">Plantillas</p>
-                    </div>
-                    {#include _kit/modal id="crear-plantilla" title="Crear Plantilla de Correo" triggerLabel="Crear Plantilla" triggerClass="is-success"
-                         bodyUrl="/api/app/email-templates/formularios/nueva"}{/include}
+        <div class="correos-header">
+            <p class="title is-3 has-text-centered">Plantillas de Correo Electronico</p>
+            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
+                <div class="stat-card">
+                    <span class="stat-number">{#if totalPlantillas??}{totalPlantillas}{#else}0{/if}</span>
+                    <span class="stat-label">Plantillas</span>
                 </div>
             </div>
+        </div>
+
+        <div class="buttons">
+            {#include _kit/modal id="crear-plantilla" title="Crear Plantilla de Correo" triggerLabel="Crear Plantilla" triggerClass="is-success"
+                 bodyUrl="/api/app/email-templates/formularios/nueva"}{/include}
         </div>
 
         {#include pages/correos/tabla-plantillas modelo=tablaPlantillas q=tablaPlantillas.q /}

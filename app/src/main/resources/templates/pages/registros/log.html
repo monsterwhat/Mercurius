@@ -1,19 +1,64 @@
 {!
-  pages/registros/log - Log de Actividades (placeholder shell).
+  pages/registros/log - Log de Actividades: downloadable application logs.
 
-  Rendered by GET /app/registros/log (MiscPagesResource). Awaiting its real
-  module; uses the shared layout so it gets the role-gated navbar, bundle tags
-  and CSRF headers like every other /app page.
+  Rendered by GET /app/registros/log (MiscPagesResource) with:
+    archivos      List<Map> - {nombre, tamanio, modificado} newest-first
+                              from logs/mercurius.log*
+    totalArchivos int       - count for the stat card
+
+  Download links hit GET /app/registros/log/descargar?archivo= (role-gated,
+  traversal-guarded, served as attachment).
 !}
 {#include layout}
     {#title}Log de Actividades | Mercurius{/title}
 
     {#body}
-        <div class="box has-text-centered">
-            <h1 class="title is-4">Log de Actividades</h1>
-            <p class="subtitle is-6 has-text-grey">Registro de actividades (placeholder)</p>
-            <a class="button is-link mt-4" href="/Mercurius/app">Volver al inicio</a>
-            <a class="button is-light mt-4 ml-2" href="/Mercurius/app/dashboard">Ir al dashboard</a>
+    <section class="section" style="padding-top:1rem">
+        <div class="registros-header">
+            <p class="title is-3 has-text-centered">Log de Actividades</p>
+            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Archivos de registro de la aplicación</p>
+            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
+                <div class="stat-card">
+                    <span class="stat-number">{totalArchivos}</span>
+                    <span class="stat-label">Archivos</span>
+                </div>
+            </div>
         </div>
+
+        <div class="box">
+            <div class="table-container">
+            <table class="table is-striped is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Archivo</th>
+                        <th class="has-text-right">Tamaño</th>
+                        <th>Modificado</th>
+                        <th class="has-text-centered">Descarga</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for a in archivos}
+                    <tr>
+                        <td style="font-family:monospace">{a.nombre}</td>
+                        <td class="has-text-right">{a.tamanio}</td>
+                        <td>{a.modificado}</td>
+                        <td class="has-text-centered">
+                            <a class="button is-small is-info"
+                               href="/Mercurius/app/registros/log/descargar?archivo={a.nombre}">
+                                Descargar</a>
+                        </td>
+                    </tr>
+                    {#else}
+                    <tr><td colspan="4" class="has-text-centered has-text-grey">
+                        No hay archivos de registro. Verifique que el log de archivo esté habilitado.</td></tr>
+                    {/for}
+                </tbody>
+            </table>
+            </div>
+            <p class="help has-text-grey">
+                Los respaldos rotados se comprimen (.gz) tras 30 días y se eliminan tras 4 años.
+            </p>
+        </div>
+    </section>
     {/body}
 {/include}
