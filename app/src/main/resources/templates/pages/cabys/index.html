@@ -40,13 +40,14 @@
             </div>
         </div>
 
-        <div class="buttons">
+        <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
             {#if canImport}
                     <button type="button" class="button is-warning"
                             hx-post="/Mercurius/api/app/cabys/import"
                             hx-target="#tabla-cabys"
                             hx-swap="outerHTML"
                             hx-disabled-elt="this"
+                            hx-on::response-error="var c=document.getElementById('toast-container'); if(c){var d=document.createElement('div'); d.className='notification is-danger'; d.setAttribute('role','alert'); d.textContent='Importación CABYS falló (HTTP '+event.detail.xhr.status+') — revise logs/mercurius.log'; c.appendChild(d); setTimeout(function(){d.remove()},8000);}"
                             hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
                 Importar/Actualizar Catálogo
             </button>
