@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mercurius-quarkus
+        working-directory: app
 
     steps:
       - name: Checkout
@@ -84,4 +84,4 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: Mercurius v${{ steps.version.outputs.version }}
           generate_release_notes: true
-          files: mercurius-quarkus/Mercurius-runner.jar
+           files: app/Mercurius-runner.jar

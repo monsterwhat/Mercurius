@@ -47,7 +47,7 @@ quarkus.datasource.jdbc.url=jdbc:postgresql://localhost:5433/mercurius
 ### 3. Compilar y Ejecutar
 ```bash
 # Ir al directorio del proyecto Quarkus
-cd mercurius-quarkus
+cd app
 
 # Modo desarrollo
 .\run-dev.bat

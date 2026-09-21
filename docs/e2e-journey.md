@@ -81,7 +81,7 @@ in every path below**. Credentials: `admin` / `admin123` (seeded by
 
 - **Request:** `POST /Mercurius/api/app/facturas-recibidas/upload`
   (`multipart/form-data`, field **`files`**, `application/xml`)
-- **Fixture:** `mercurius-quarkus/src/test/resources/fixtures/recibidos/factura-recibida-valida.xml`
+- **Fixture:** `app/src/test/resources/fixtures/recibidos/factura-recibida-valida.xml`
   (v4.4-shaped `FacturaElectronica`). Both runners re-stamp `Clave` (50 digits)
   and `NumeroConsecutivo` uniquely per run because the parser skips duplicate
   consecutivos.

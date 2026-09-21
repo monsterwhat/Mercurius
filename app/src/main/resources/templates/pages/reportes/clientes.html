@@ -1,0 +1,105 @@
+{!
+  pages/reportes/clientes - read-only "Reportes de Clientes" (T20).
+
+  Replaces secured/pages/Clientes/Reportes/index.xhtml over ClientService
+  aggregates. The legacy dataExporter buttons have no T17 dataset yet
+  (ExportResource only ships articulos/inventario/stock-alerts/profit-margins)
+  — export wiring TODO once a clientes dataset lands in T17/T21.
+!}
+{#include layout}
+    {#title}Reportes de Clientes | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3 has-text-centered">Reportes de Clientes</h1>
+
+        <div class="columns is-multiline has-text-centered box">
+            <div class="column">
+                <p class="heading">Clientes Activos</p>
+                <p class="title is-4">{activos}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Clientes Inactivos</p>
+                <p class="title is-4">{inactivos}</p>
+            </div>
+            <div class="column">
+                <p class="heading">Total Clientes</p>
+                <p class="title is-4">{total}</p>
+            </div>
+        </div>
+
+        <div class="box">
+            <form method="get" action="/Mercurius{baseUrl}" id="clientes-filtros">
+                <div class="field">
+                    <label class="label" for="clientes-q">Buscar clientes…</label>
+                    <input class="input" type="text" id="clientes-q" name="q"
+                           value="{#if filtros.q??}{filtros.q}{/if}"
+                           placeholder="Nombre, correo, cédula…"
+                           hx-get="/Mercurius{baseUrl}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-include="closest form"
+                           hx-target="#clientes-tabla-container" hx-swap="innerHTML"/>
+                </div>
+            </form>
+        </div>
+
+        <div id="clientes-tabla-container">
+            <div class="mb-3">
+                {#include _kit/modal id="crear-cliente" title="Nuevo Cliente" triggerLabel="Nuevo Cliente" triggerClass="is-primary"
+                     bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
+                {#include _kit/modal id="editar-cliente" title="Editar Cliente" triggerClass="is-hidden"
+                     bodyUrl="/api/app/clientes/formularios/nueva"}{#footer}{/footer}{/include}
+            </div>
+            {#fragment id=tabla}
+                {#include _kit/data-table id="clientes-tabla" baseUrl=baseUrl
+                     headers=columnas sortKey=sortKey sortDir=sortDir
+                     page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
+                  {#rows}
+                    {#for c in rows}
+                    <tr data-row-key="{c.code}">
+                        <td>
+                            {#if c.status?? && c.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                        </td>
+                        <td>{c.name}</td>
+                        <td>{c.address}</td>
+                        <td>{#if c.email??}{c.email}{/if}</td>
+                        <td>{#if c.idNumber??}{c.idNumber}{/if}</td>
+                        <td>{#if c.phoneNumber??}{c.phoneNumber}{/if}</td>
+                        <td>{#if c.taxpayer}Sí{#else}No{/if}</td>
+                        <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
+                        <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                        <td>
+                            <button type="button" class="button is-small is-success" title="Editar cliente"
+                                    aria-haspopup="dialog" data-kit-open="editar-cliente"
+                                    hx-get="/Mercurius/api/app/clientes/formularios/{c.code}"
+                                    hx-target="#editar-cliente-body" hx-swap="innerHTML">&#9998;</button>
+                        </td>
+                    </tr>
+                    {/for}
+                  {/rows}
+                {/include}
+            {/fragment}
+        </div>
+
+        {! Bridge: row-level edit buttons open the shared modal (same pattern
+           as artículos T18). !}
+        <script>
+            document.addEventListener('click', function (e) {
+                var opener = e.target.closest('[data-kit-open]');
+                if (opener) {
+                    var modal = document.getElementById(opener.getAttribute('data-kit-open'));
+                    if (modal && window.Alpine) {
+                        Alpine.$data(modal).open = true;
+                    }
+                    return;
+                }
+                var closer = e.target.closest('[data-kit-close]');
+                if (closer) {
+                    var root = closer.closest('.kit-modal-root');
+                    if (root && window.Alpine) {
+                        Alpine.$data(root).open = false;
+                    }
+                }
+            });
+        </script>
+    {/body}
+{/include}
