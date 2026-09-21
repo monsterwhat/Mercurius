@@ -24,7 +24,10 @@
   from layout.html body hx-headers (swapped fragments stay inside the body).
   Alpine braces ALWAYS carry a space after "{" (Qute golden rule).
 !}
-<div id="tc-contenido">
+<div id="tc-contenido" x-data="{ tcHistorialOpen:false }">
+    {#if errorMensaje??}
+    <div class="notification is-danger" role="alert" style="padding:0.5rem 0.75rem">{errorMensaje}</div>
+    {/if}
     <div class="columns is-multiline">
         <div class="column is-half">
             <div class="box has-text-centered">
@@ -80,9 +83,31 @@
         </p>
     </div>
 
+    <div class="box">
+        <p class="heading">Tasa manual del dólar</p>
+        <form hx-post="/Mercurius/app/tipo-cambio/manual"
+              hx-target="#modal-tipo-cambio-body" hx-swap="innerHTML">
+            <div class="columns is-mobile">
+                <div class="column">
+                    <label class="label is-small" for="tc-manual-compra">Compra ₡</label>
+                    <input class="input" id="tc-manual-compra" name="compra" type="number"
+                           min="0" step="0.01" required="required" placeholder="0.00"/>
+                </div>
+                <div class="column">
+                    <label class="label is-small" for="tc-manual-venta">Venta ₡</label>
+                    <input class="input" id="tc-manual-venta" name="venta" type="number"
+                           min="0" step="0.01" required="required" placeholder="0.00"/>
+                </div>
+            </div>
+            <button class="button is-success is-fullwidth" type="submit">Guardar tasa manual</button>
+        </form>
+        <p class="help has-text-grey">
+            Registra la tasa del día con sus propios valores en lugar de la API de Hacienda/BCCR.
+        </p>
+    </div>
+
     {! ── Nested Historial modal (loaded via hx-get into its own body) ── !}
-    <div class="kit-modal-root" style="display:inline-block"
-         x-data="{ tcHistorialOpen:false }">
+    <div class="kit-modal-root" style="display:inline-block">
         <div class="modal" id="modal-tc-historial"
              :class="{ 'is-active': tcHistorialOpen }"
              @keydown.escape.window="tcHistorialOpen = false"

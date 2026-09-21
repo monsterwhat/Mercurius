@@ -602,9 +602,11 @@ public class TributacionResource {
         List<ComprobantesEmitidos> pendientes = orEmpty(emitidosService.findFacturasPendientes());
         List<ComprobantesEmitidos> aceptadas = orEmpty(emitidosService.findFacturasAceptadas());
         List<ComprobantesEmitidos> rechazadas = orEmpty(emitidosService.findFacturasRechazadas());
+        long mensajes = orEmpty(recibidosService.listAll()).size();
 
         return new CountdownDTO(proximo != null, proximoDisplay, display,
-                (long) pendientes.size(), (long) aceptadas.size(), (long) rechazadas.size());
+                (long) pendientes.size(), (long) aceptadas.size(), (long) rechazadas.size(),
+                mensajes);
     }
 
     /**
@@ -614,7 +616,7 @@ public class TributacionResource {
      */
     private String countdownFragment(@Nonnull CountdownDTO dto) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<span id=\"consultas-countdown\" class=\"is-family-monospace has-text-weight-bold is-size-4\"")
+        sb.append("<span id=\"consultas-countdown\" class=\"is-family-monospace has-text-weight-bold is-size-4\" style=\"color:white\"")
                 .append(" data-countdown-display=\"").append(escape(dto.countdownDisplay())).append("\"")
                 .append(" title=\"").append(escape(dto.proximoEnvioDisplay())).append("\"")
                 .append(" hx-get=\"").append(rootPath).append("/api/app/tributacion/consultas/countdown\"")
@@ -623,21 +625,22 @@ public class TributacionResource {
                 .append(escape(dto.proximoEnvioDisplay()))
                 .append(" — ").append(escape(dto.countdownDisplay()))
                 .append("</span>");
-        sb.append("<div hx-swap-oob=\"true\" id=\"consultas-contadores\"")
-                .append(" class=\"columns is-centered has-text-centered mb-4\">")
-                .append(contadorBox("pendientes", "Facturas Pendientes", dto.contadorPendientes()))
-                .append(contadorBox("aceptadas", "Facturas Aceptadas", dto.contadorAceptadas()))
-                .append(contadorBox("rechazadas", "Facturas Rechazadas", dto.contadorRechazadas()))
-                .append("</div>");
+        sb.append("<div hx-swap-oob=\"true\" id=\"consultas-contadores\">")
+                .append("<div class=\"stats-grid\">")
+                .append(contadorBox("pendientes", "Pendientes", dto.contadorPendientes()))
+                .append(contadorBox("aceptadas", "Aceptadas", dto.contadorAceptadas()))
+                .append(contadorBox("rechazadas", "Rechazadas", dto.contadorRechazadas()))
+                .append(contadorBox("mensajes", "Mensajes", dto.contadorMensajes()))
+                .append("</div></div>");
         return sb.toString();
     }
 
     private static String contadorBox(@Nonnull String tab, @Nonnull String label, long valor) {
-        return "<div class=\"column is-3\">"
-                + "<div class=\"box\" @click=\"tab = '" + tab + "'\" style=\"cursor:pointer\">"
-                + "<p class=\"title is-3 mb-0\" data-contador=\"" + tab + "\">" + valor + "</p>"
-                + "<p class=\"heading\">" + escape(label) + "</p>"
-                + "</div></div>";
+        return "<button type=\"button\" class=\"stat-card\" @click=\"tab = '" + tab + "'\""
+                + " :class=\"{ 'active': tab === '" + tab + "' }\">"
+                + "<span class=\"stat-number\" data-contador=\"" + tab + "\">" + valor + "</span>"
+                + "<span class=\"stat-label\">" + escape(label) + "</span>"
+                + "</button>";
     }
 
     private static String escape(@Nullable String value) {
@@ -840,7 +843,8 @@ public class TributacionResource {
     /** Payload of GET /consultas/countdown (JSON mode). */
     public record CountdownDTO(boolean hasProximoEnvio, String proximoEnvioDisplay,
                                String countdownDisplay, Long contadorPendientes,
-                               Long contadorAceptadas, Long contadorRechazadas) {}
+                               Long contadorAceptadas, Long contadorRechazadas,
+                               Long contadorMensajes) {}
 
     /** Payload of POST /consultas/enviar-pendientes. */
     public record BulkSendResult(int total, int enviadas, int fallidas,

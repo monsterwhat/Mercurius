@@ -19,38 +19,44 @@
     {#body}
         {#include _kit/confirm /}
 
-        <h1 class="title is-3">Consultas de Facturas</h1>
-        <p class="subtitle is-6">Estado de facturas y envíos programados</p>
-
         <div x-data="{ tab: '{tabActiva}' }">
-        <div id="consultas-contadores" class="columns is-centered has-text-centered mb-4">
-            <div class="column is-3">
-                <div class="box" @click="tab = 'pendientes'" style="cursor:pointer">
-                    <p class="title is-3 mb-0" data-contador="pendientes">{contadorPendientes}</p>
-                    <p class="heading">Facturas Pendientes</p>
-                </div>
-            </div>
-            <div class="column is-3">
-                <div class="box" @click="tab = 'aceptadas'" style="cursor:pointer">
-                    <p class="title is-3 mb-0" data-contador="aceptadas">{contadorAceptadas}</p>
-                    <p class="heading">Facturas Aceptadas</p>
-                </div>
-            </div>
-            <div class="column is-3">
-                <div class="box" @click="tab = 'rechazadas'" style="cursor:pointer">
-                    <p class="title is-3 mb-0" data-contador="rechazadas">{contadorRechazadas}</p>
-                    <p class="heading">Facturas Rechazadas</p>
-                </div>
-            </div>
-        </div>
+        <div class="tributacion-header">
+            <p class="title is-3 has-text-centered">Consultas de Facturas</p>
+            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Estado de facturas y envíos programados</p>
+            <p class="has-text-centered">
+                <span id="consultas-countdown"
+                      class="is-family-monospace has-text-weight-bold is-size-4"
+                      style="color:white"
+                      title="{proximoEnvioDisplay}"
+                      hx-get="/Mercurius/api/app/tributacion/consultas/countdown"
+                      hx-trigger="every 5s"
+                      hx-swap="outerHTML">{proximoEnvioDisplay} — {countdownDisplay}</span>
+            </p>
 
-        <div class="box has-text-centered mb-5">
-            <span id="consultas-countdown"
-                  class="is-family-monospace has-text-weight-bold is-size-4"
-                  title="{proximoEnvioDisplay}"
-                  hx-get="/Mercurius/api/app/tributacion/consultas/countdown"
-                  hx-trigger="every 5s"
-                  hx-swap="outerHTML">{proximoEnvioDisplay} — {countdownDisplay}</span>
+            <div id="consultas-contadores">
+            <div class="stats-grid">
+                <button type="button" class="stat-card" @click="tab = 'pendientes'"
+                        :class="{ 'active': tab === 'pendientes' }">
+                    <span class="stat-number" data-contador="pendientes">{contadorPendientes}</span>
+                    <span class="stat-label">Pendientes</span>
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'aceptadas'"
+                        :class="{ 'active': tab === 'aceptadas' }">
+                    <span class="stat-number" data-contador="aceptadas">{contadorAceptadas}</span>
+                    <span class="stat-label">Aceptadas</span>
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'rechazadas'"
+                        :class="{ 'active': tab === 'rechazadas' }">
+                    <span class="stat-number" data-contador="rechazadas">{contadorRechazadas}</span>
+                    <span class="stat-label">Rechazadas</span>
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'mensajes'"
+                        :class="{ 'active': tab === 'mensajes' }">
+                    <span class="stat-number" data-contador="mensajes">{contadorMensajes}</span>
+                    <span class="stat-label">Mensajes</span>
+                </button>
+            </div>
+            </div>
         </div>
 
         <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
@@ -64,22 +70,6 @@
 
         <div id="consultas-tablas">
             {#fragment id=tabla}
-            <div class="tabs is-boxed is-centered">
-                <ul>
-                    <li :class="{ 'is-active': tab === 'pendientes' }">
-                        <a href="#!" @click="tab = 'pendientes'">Pendientes ({contadorPendientes})</a>
-                    </li>
-                    <li :class="{ 'is-active': tab === 'aceptadas' }">
-                        <a href="#!" @click="tab = 'aceptadas'">Aceptadas ({contadorAceptadas})</a>
-                    </li>
-                    <li :class="{ 'is-active': tab === 'rechazadas' }">
-                        <a href="#!" @click="tab = 'rechazadas'">Rechazadas ({contadorRechazadas})</a>
-                    </li>
-                    <li :class="{ 'is-active': tab === 'mensajes' }">
-                        <a href="#!" @click="tab = 'mensajes'">Mensajes Receptor ({contadorMensajes})</a>
-                    </li>
-                </ul>
-            </div>
 
             <div x-show="tab === 'pendientes'">
                 {#include _kit/data-table id="consultas-tabla-pendientes" baseUrl=baseUrlTabla

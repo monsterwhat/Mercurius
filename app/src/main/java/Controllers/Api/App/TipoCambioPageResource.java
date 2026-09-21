@@ -11,6 +11,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
@@ -110,6 +112,35 @@ public class TipoCambioPageResource {
     }
 
     /**
+     * Persists a user-supplied rate and returns the updated fragment.
+     * Validation failures re-render the fragment with an error banner.
+     */
+    @POST
+    @Path("/manual")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Operation(summary = "Save a custom dollar rate and return the updated fragment")
+    public Response manual(@FormParam("compra") String compraRaw,
+                           @FormParam("venta") String ventaRaw) {
+        Map<String, Object> model = new LinkedHashMap<>();
+        try {
+            java.math.BigDecimal compra = new java.math.BigDecimal(compraRaw.trim());
+            java.math.BigDecimal venta = new java.math.BigDecimal(ventaRaw.trim());
+            if (compra.signum() <= 0 || venta.signum() <= 0) {
+                throw new NumberFormatException("non-positive");
+            }
+            tipoCambioService.saveManualRate(compra, venta);
+        } catch (RuntimeException e) {
+            LOG.warn("manual tipo-cambio rejected", e);
+            model.put("errorMensaje", "Tasa inválida: ingrese valores numéricos mayores que cero.");
+        }
+        model.putAll(tipoCambioModel());
+        String html = tipoCambioPage.data(model).render();
+        return Response.ok(html)
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
+                .build();
+    }
+
+    /**
      * Returns a small table of the most recent rates for the historial modal.
      */
     @GET
@@ -124,8 +155,8 @@ public class TipoCambioPageResource {
                 TipoCambio tc = todos.get(i);
                 Map<String, Object> fila = new LinkedHashMap<>();
                 fila.put("fecha", tc.getFecha() != null ? tc.getFecha().toString() : "—");
-                fila.put("compra", tc.getValorCompra());
-                fila.put("venta", tc.getValorVenta());
+                fila.put("compra", TipoCambioService.displayRate(tc.getValorCompra()));
+                fila.put("venta", TipoCambioService.displayRate(tc.getValorVenta()));
                 filas.add(fila);
             }
         }
@@ -152,8 +183,8 @@ public class TipoCambioPageResource {
         }
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("disponible", tc != null);
-        model.put("venta", tc != null ? tc.getValorVenta() : null);
-        model.put("compra", tc != null ? tc.getValorCompra() : null);
+        model.put("venta", tc != null ? TipoCambioService.displayRate(tc.getValorVenta()) : null);
+        model.put("compra", tc != null ? TipoCambioService.displayRate(tc.getValorCompra()) : null);
         model.put("fecha", tc != null && tc.getFecha() != null ? tc.getFecha().toString() : null);
         return model;
     }
