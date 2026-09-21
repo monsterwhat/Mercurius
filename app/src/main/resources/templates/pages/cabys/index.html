@@ -42,11 +42,12 @@
 
         <div class="buttons">
             {#if canImport}
-            <button type="button" class="button is-warning"
-                    hx-post="/Mercurius/api/app/cabys/import"
-                    hx-target="#tabla-cabys"
-                    hx-swap="outerHTML"
-                    hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
+                    <button type="button" class="button is-warning"
+                            hx-post="/Mercurius/api/app/cabys/import"
+                            hx-target="#tabla-cabys"
+                            hx-swap="outerHTML"
+                            hx-disabled-elt="this"
+                            hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
                 Importar/Actualizar Catálogo
             </button>
             {/if}
