@@ -626,7 +626,8 @@ public class TributacionPagesResource {
         row.put("vencido", vencido);
         row.put("indicador", indicador);
         row.put("chipClass", chipClass);
-        row.put("montoImpuesto", r.getResumen() != null ? r.getResumen().getTotalImpuesto() : null);
+        row.put("montoImpuesto", r.getResumen() != null && r.getResumen().getTotalImpuesto() != null
+                ? r.getResumen().getTotalImpuesto().stripTrailingZeros().toPlainString() : null);
         row.put("montoFactura", r.getResumen() != null ? r.getResumen().getTotalComprobante() : null);
         return row;
     }

@@ -78,7 +78,7 @@
                     {#for f in filasPendientes}
                     <tr data-row-key="{f.id}">
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
-                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
                         <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td><span class="tag is-warning">Pendiente</span></td>
@@ -95,7 +95,7 @@
                     {#for f in filasAceptadas}
                     <tr data-row-key="{f.id}">
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
-                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
                         <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td><span class="tag is-success">Aceptada</span></td>
@@ -112,12 +112,12 @@
                     {#for f in filasRechazadas}
                     <tr data-row-key="{f.id}">
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
-                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
                         <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
                         <td class="has-text-centered">{f.intentos}</td>
-                        <td>{#if f.fechaRechazo??}{{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}}{#else}-{/if}</td>
+                        <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td><span class="tag is-danger">Rechazada</span></td>
                         <td>
                             <button type="button" class="button is-primary is-small"
@@ -140,9 +140,9 @@
                     <tr data-row-key="{m.id}">
                         <td class="is-family-monospace">{#if m.consecutivo??}{m.consecutivo}{#else}-{/if}</td>
                         <td>{#if m.emisor??}{m.emisor}{#else}-{/if}</td>
-                        <td>{#if m.fechaEmision??}{{time:format(m.fechaEmision, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td>{#if m.fechaEmision??}{time:format(m.fechaEmision, 'dd/MM/yyyy')}{#else}-{/if}</td>
                         <td>{#if m.estado??}{m.estado}{#else}Sin enviar{/if}</td>
-                        <td>{#if m.limite??}{{time:format(m.limite, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td>{#if m.limite??}{time:format(m.limite, 'dd/MM/yyyy')}{#else}-{/if}</td>
                         <td class="has-text-centered">
                             <span class="tag {m.chipClass}" title="Días restantes: {m.diasRestantes}">{m.indicador}</span>
                         </td>
