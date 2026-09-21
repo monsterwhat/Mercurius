@@ -254,7 +254,7 @@ public class CabysResource {
             if (isHxRequest()) {
                 return htmlOk(tableInstance(page, size, sort, dir, q, null, null));
             }
-            return htmlOk(renderFullPage());
+            return htmlOk(renderFullPage(page, size, sort, dir, q));
         } catch (Exception e) {
             LOG.warn("Error renderizando la página de CABYS", e);
             return Response.serverError()
@@ -325,7 +325,7 @@ public class CabysResource {
         Response result = update(codigo,
                 new CabysDTO(codigo, descripcionLimpia, null, null, null, estadoLimpio));
         if (isHxRequest() && result.getStatus() == Response.Status.OK.getStatusCode()) {
-            return hxRedirect("/api/app/cabys/table");
+            return hxRedirect("/Mercurius/app/cabys");
         }
         return result;
     }
@@ -356,7 +356,7 @@ public class CabysResource {
             cabysService.saveAllDB(catalogo);
             LOG.infof("catalogo CABYS imported: %d codes | user=" + usuario, catalogo.size());
             if (isHxRequest()) {
-                return hxRedirect("/api/app/cabys/table");
+                return hxRedirect("/Mercurius/app/cabys");
             }
             return Response.ok(ApiResponse.ok(Map.of("importados", catalogo.size()))).build();
         } catch (Exception e) {
@@ -416,7 +416,12 @@ public class CabysResource {
     }
 
     private TemplateInstance renderFullPage() {
-        TableModel model = buildTableModel(1, 20, null, "asc", null);
+        return renderFullPage(1, 20, null, "asc", null);
+    }
+
+    private TemplateInstance renderFullPage(int page, int size, @Nullable String sort,
+                                            @Nullable String dir, @Nullable String q) {
+        TableModel model = buildTableModel(page, size, sort, dir, q);
         return pageIndex
                 .data("tablaCabys", model.asMap())
                 .data("totalCodigos", cabysService.count())
@@ -463,7 +468,6 @@ public class CabysResource {
         columnas.add(col("Descripción", "descripcion"));
         columnas.add(col("Impuesto", "impuesto"));
         columnas.add(col("Estado", "estado"));
-        columnas.add(col("Acciones", null));
 
         Map<String, Object> filtros = new LinkedHashMap<>();
         if (q != null && !q.isBlank()) {
