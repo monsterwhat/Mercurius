@@ -908,3 +908,19 @@ select,
 .button .icon svg, .tag .icon svg {
     stroke: currentColor;
 }
+
+// Dialogs: pin the modal card subtree to the adaptive scheme pair so text
+// stays legible when the browser runs a dark color scheme.
+.modal-card-head, .modal-card-body, .modal-card-foot {
+    background-color: var(--bulma-scheme-main);
+    color: var(--bulma-text);
+}
+.modal-card-title {
+    color: var(--bulma-text-strong);
+}
+.modal-card-body .label {
+    color: var(--bulma-text-strong);
+}
+.modal-card-body .help {
+    color: var(--bulma-text-weak);
+}
