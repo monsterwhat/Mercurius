@@ -29,7 +29,7 @@
     {#title}Gestión de Inventario | Mercurius{/title}
 
     {#body}
-    <section class="section" style="padding-top:1rem">
+    <section class="section" style="padding-top:1rem" x-data="{ tab: 'activos' }">
         <div class="inventario-header">
             <p class="title is-3 has-text-centered">Gestión de Inventario</p>
 
@@ -42,6 +42,7 @@
         </div>
 
         {! ── Ajustes Activos ──────────────────────────────────────── !}
+        <div x-show="tab === 'activos'">
         <div class="level mt-5">
             <div class="level-left">
                 <h2 class="title is-4" style="margin-bottom:0">Ajustes Activos</h2>
@@ -62,24 +63,30 @@
             </div>
         </div>
         {#include pages/inventario/tabla-activos modelo=tablaActivos q=tablaActivos.q /}
+        </div>
 
         {! ── Ajustes Inactivos ────────────────────────────────────── !}
+        <div x-show="tab === 'inactivos'" style="display:none">
         <div class="level mt-5">
             <div class="level-left">
                 <h2 class="title is-4" style="margin-bottom:0">Ajustes Inactivos</h2>
             </div>
         </div>
         {#include pages/inventario/tabla-inactivos modelo=tablaInactivos q=tablaInactivos.q /}
+        </div>
 
         {! ── Movimientos Procesados ───────────────────────────────── !}
+        <div x-show="tab === 'procesados'" style="display:none">
         <div class="level mt-5">
             <div class="level-left">
                 <h2 class="title is-4" style="margin-bottom:0">Movimientos Procesados</h2>
             </div>
         </div>
         {#include pages/inventario/tabla-procesados modelo=tablaProcesados q=tablaProcesados.q /}
+        </div>
 
         {! ── Movimientos Pendientes (revisión) ────────────────────── !}
+        <div x-show="tab === 'pendientes'" style="display:none">
         <div class="level mt-5">
             <div class="level-left">
                 <h2 class="title is-4" style="margin-bottom:0">Movimientos Pendientes</h2>
@@ -90,31 +97,6 @@
             </div>
         </div>
         {#include pages/inventario/tabla-pendientes modelo=tablaPendientes q=tablaPendientes.q /}
-
-        {! ── Subir Facturas XML (uploadController parity) ─────────── !}
-        <div class="level mt-6">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Subir Facturas XML</h2>
-            </div>
-        </div>
-        <div class="box is-shadowless" style="padding:0.75rem">
-            <form id="inventario-upload-forma"
-                  hx-post="/Mercurius/api/app/inventario/upload"
-                  hx-encoding="multipart/form-data"
-                  hx-target="#upload-resultado" hx-swap="innerHTML">
-                <div class="field">
-                    <label class="label" for="inventario-upload-archivos">Archivos XML de facturas electrónicas</label>
-                    <div class="control">
-                        <input class="input" type="file" id="inventario-upload-archivos"
-                               name="files" accept=".xml" multiple required/>
-                    </div>
-                </div>
-                <progress id="upload-progreso" class="progress is-primary" value="0" max="100">0%</progress>
-                <div class="field">
-                    <button class="button is-primary" type="submit">Procesar Facturas</button>
-                </div>
-            </form>
-            <div id="upload-resultado"></div>
         </div>
     </section>
 
@@ -138,15 +120,6 @@
                 if (modal && window.Alpine) {
                     Alpine.$data(modal).open = true;
                 }
-            }
-        });
-    </script>
-    {! Upload progress bar driven by htmx's own xhr events (no extra libs). !}
-    <script>
-        document.addEventListener('htmx:xhr:progress', function (evt) {
-            var bar = document.getElementById('upload-progreso');
-            if (bar && evt.detail.lengthComputable) {
-                bar.value = (evt.detail.loaded / evt.detail.total) * 100;
             }
         });
     </script>

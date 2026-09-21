@@ -15,55 +15,44 @@
     {#title}Dashboard Hacienda | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3">Dashboard Hacienda</h1>
-        <p class="subtitle is-6">Estado actual de las facturas enviadas a Hacienda</p>
+        <div class="tributacion-header">
+            <p class="title is-3 has-text-centered">Dashboard Hacienda</p>
+            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Estado actual de las facturas enviadas a Hacienda</p>
 
-        <div id="tributacion-kpis">
+            <div id="tributacion-kpis">
             {#fragment id=kpis}
-            <div class="columns is-multiline is-centered has-text-centered mb-5">
-                <div class="column is-2">
-                    <div class="box">
-                        <p class="title is-3 mb-0">{totalEmitidos}</p>
-                        <p class="heading">Total Emitidos</p>
-                        <p class="is-size-7 has-text-grey">Tasa de éxito: {tasaExito}%</p>
-                    </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">{totalEmitidos}</span>
+                    <span class="stat-label">Total Emitidos</span>
+                    <p class="is-size-7" style="opacity:0.85">Tasa de éxito: {tasaExito}%</p>
                 </div>
-                <div class="column is-2">
-                    <div class="box has-background-success-light">
-                        <p class="title is-3 mb-0">{totalAceptados}</p>
-                        <p class="heading">Aceptados</p>
-                        <p class="is-size-7 has-text-grey">{montoAceptados}</p>
-                    </div>
+                <div class="stat-card">
+                    <span class="stat-number">{totalAceptados}</span>
+                    <span class="stat-label">Aceptados</span>
+                    <p class="is-size-7" style="opacity:0.85">{montoAceptados}</p>
                 </div>
-                <div class="column is-2">
-                    <div class="box has-background-danger-light">
-                        <p class="title is-3 mb-0">{totalRechazados}</p>
-                        <p class="heading">Rechazados</p>
-                    </div>
+                <div class="stat-card">
+                    <span class="stat-number">{totalRechazados}</span>
+                    <span class="stat-label">Rechazados</span>
                 </div>
-                <div class="column is-2">
-                    <div class="box has-background-warning-light">
-                        <p class="title is-3 mb-0">{totalPendientes}</p>
-                        <p class="heading">Pendientes</p>
-                        <p class="is-size-7 has-text-grey">{montoPendientes}</p>
-                    </div>
+                <div class="stat-card">
+                    <span class="stat-number">{totalPendientes}</span>
+                    <span class="stat-label">Pendientes</span>
+                    <p class="is-size-7" style="opacity:0.85">{montoPendientes}</p>
                 </div>
-                <div class="column is-2">
-                    <div class="box has-background-info-light">
-                        <p class="title is-3 mb-0">{totalEnviadosSinRespuesta}</p>
-                        <p class="heading">Enviados s/Respuesta</p>
-                    </div>
+                <div class="stat-card">
+                    <span class="stat-number">{totalEnviadosSinRespuesta}</span>
+                    <span class="stat-label">Enviados s/Respuesta</span>
                 </div>
-                <div class="column is-2">
-                    <div class="box">
-                        <p class="title is-3 mb-0">{emitidosHoy}</p>
-                        <p class="heading">Emitidos Hoy</p>
-                        <p class="is-size-7 has-text-grey">✓ {aceptadosHoy} · ✗ {rechazadosHoy}</p>
-                    </div>
+                <div class="stat-card">
+                    <span class="stat-number">{emitidosHoy}</span>
+                    <span class="stat-label">Emitidos Hoy</span>
+                    <p class="is-size-7" style="opacity:0.85">✓ {aceptadosHoy} · ✗ {rechazadosHoy}</p>
                 </div>
             </div>
 
-            <div class="buttons is-centered">
+            <div class="buttons is-centered" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
                 <button type="button" class="button is-info"
                         hx-get="/Mercurius{baseUrl}"
                         hx-target="#tributacion-kpis" hx-swap="innerHTML">

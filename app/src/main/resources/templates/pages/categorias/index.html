@@ -2,10 +2,7 @@
   pages/categorias/index - Gestión de Categorías (T18).
 
   Qute/HTMX/Bulma port of secured/pages/Categorias/index.xhtml (Familias +
-  Departamentos tabs), Familias/Reportes and Departamentos/Reportes badges,
-  plus a compact Métricas de Proveedores section replacing
-  Departamentos/Reportes/Metricas/index.xhtml (charts omitted here — the
-  JSON feed lives at GET /api/app/categorias/metricas for the Chart.js wave).
+  Departamentos tabs) plus Familias/Reportes and Departamentos/Reportes badges.
 
   Model keys supplied by Controllers.Api.App.CategoriaResource#renderFullPage:
     familiasTabla / departamentosTabla  Map   - tabla-*.html models
@@ -31,28 +28,31 @@
     {#title}Gestión de Categorías | Mercurius{/title}
 
     {#body}
-    <section class="section" style="padding-top:1rem">
+    <section class="section" style="padding-top:1rem" x-data="{ tab: 'familias' }">
         <div class="categorias-header">
             <p class="title is-3 has-text-centered">Gestión de Categorías</p>
 
-            {! Stat cards — legacy clickable tabs became visible sections !}
+            {! Stat cards — legacy clickable tabs: switch the visible section !}
             <div class="stats-grid">
-                <div class="stat-card">
+                <button type="button" class="stat-card" @click="tab = 'familias'"
+                        :class="{ 'active': tab === 'familias' }">
                     <span class="stat-number">{familiaCount}</span>
                     <span class="stat-label">Familias</span>
                     <p class="is-size-7" style="opacity:0.85">Activas: {#if familiasActivasCount??}{familiasActivasCount}{#else}0{/if}</p>
                     <p class="is-size-7" style="opacity:0.85">Inactivas: {#if familiasInactivasCount??}{familiasInactivasCount}{#else}0{/if}</p>
-                </div>
-                <div class="stat-card">
+                </button>
+                <button type="button" class="stat-card" @click="tab = 'departamentos'"
+                        :class="{ 'active': tab === 'departamentos' }">
                     <span class="stat-number">{departamentoCount}</span>
                     <span class="stat-label">Departamentos</span>
                     <p class="is-size-7" style="opacity:0.85">Activos: {#if departamentosActivosCount??}{departamentosActivosCount}{#else}0{/if}</p>
                     <p class="is-size-7" style="opacity:0.85">Inactivos: {#if departamentosInactivosCount??}{departamentosInactivosCount}{#else}0{/if}</p>
-                </div>
+                </button>
             </div>
         </div>
 
         {! ── Familias ─────────────────────────────────────────────── !}
+        <div x-show="tab === 'familias'">
         <div class="level">
             <div class="level-left">
                 <h2 class="title is-4" style="margin-bottom:0">Familias</h2>
@@ -77,8 +77,10 @@
         {!$1!}
         {#include _kit/modal id="editar-familia" title="Editar Familia" triggerClass="is-hidden"
              bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
+        </div>
 
         {! ── Departamentos ────────────────────────────────────────── !}
+        <div x-show="tab === 'departamentos'" style="display:none">
         <div class="level mt-5">
             <div class="level-left">
                 <h2 class="title is-4" style="margin-bottom:0">Departamentos</h2>
@@ -103,72 +105,6 @@
         {!$1!}
         {#include _kit/modal id="editar-departamento" title="Editar Departamento" triggerClass="is-hidden"
              bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
-
-        {! ── Métricas de Proveedores (legacy Metricas subpage) ────── !}
-        <div id="metricas-panel">
-        <div class="level mt-6">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Métricas de Proveedores</h2>
-            </div>
-            <div class="level-right">
-                {#if isAdmin}
-                <button type="button" class="button is-link"
-                        hx-post="/Mercurius/api/app/categorias/metricas/recalcular"
-                        hx-target="#metricas-panel"
-                        hx-swap="outerHTML"
-                        hx-confirm="¿Recalcular las métricas de todos los proveedores?">
-                    Recalcular Métricas
-                </button>
-                {/if}
-            </div>
-        </div>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-number">{metricasTotalProveedores}</span>
-                <span class="stat-label">Proveedores</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">{metricasScorePromedio}</span>
-                <span class="stat-label">Score Promedio</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">&#8353; {metricasComprasTotales}</span>
-                <span class="stat-label">Compras Totales</span>
-            </div>
-        </div>
-        <div class="box is-shadowless" style="padding:0.75rem">
-            <p class="title is-5 has-text-centered">Ranking de Rendimiento de Proveedores</p>
-            <table class="table is-striped is-hoverable is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Proveedor</th>
-                        <th class="has-text-centered">Score</th>
-                        <th>Progreso</th>
-                        <th class="has-text-centered">Facturas</th>
-                        <th class="has-text-centered">Pagadas</th>
-                        <th class="has-text-right">Monto Total</th>
-                        <th class="has-text-centered">Entregas a Tiempo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#for m in metricasFilas}
-                    <tr>
-                        <td>{m.id}</td>
-                        <td>{m.proveedor}</td>
-                        <td class="has-text-centered"><span class="tag is-{m.scoreSeverity}">{m.score}</span></td>
-                        <td><progress class="progress {m.barColor}" value="{m.score}" max="100">{m.score}%</progress></td>
-                        <td class="has-text-centered">{m.facturas}</td>
-                        <td class="has-text-centered">{m.pagadas}</td>
-                        <td class="has-text-right">&#8353; {m.montoTotal}</td>
-                        <td class="has-text-centered">{m.onTime}%</td>
-                    </tr>
-                    {#else}
-                    <tr><td colspan="8" class="has-text-centered has-text-grey">No hay métricas disponibles. Haga clic en 'Recalcular Métricas' para generar datos.</td></tr>
-                    {/for}
-                </tbody>
-            </table>
-        </div>
         </div>
     </section>
 

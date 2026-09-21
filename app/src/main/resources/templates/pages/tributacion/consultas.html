@@ -22,21 +22,22 @@
         <h1 class="title is-3">Consultas de Facturas</h1>
         <p class="subtitle is-6">Estado de facturas y envíos programados</p>
 
+        <div x-data="{ tab: '{tabActiva}' }">
         <div id="consultas-contadores" class="columns is-centered has-text-centered mb-4">
             <div class="column is-3">
-                <div class="box has-background-warning-light">
+                <div class="box" @click="tab = 'pendientes'" style="cursor:pointer">
                     <p class="title is-3 mb-0" data-contador="pendientes">{contadorPendientes}</p>
                     <p class="heading">Facturas Pendientes</p>
                 </div>
             </div>
             <div class="column is-3">
-                <div class="box has-background-success-light">
+                <div class="box" @click="tab = 'aceptadas'" style="cursor:pointer">
                     <p class="title is-3 mb-0" data-contador="aceptadas">{contadorAceptadas}</p>
                     <p class="heading">Facturas Aceptadas</p>
                 </div>
             </div>
             <div class="column is-3">
-                <div class="box has-background-danger-light">
+                <div class="box" @click="tab = 'rechazadas'" style="cursor:pointer">
                     <p class="title is-3 mb-0" data-contador="rechazadas">{contadorRechazadas}</p>
                     <p class="heading">Facturas Rechazadas</p>
                 </div>
@@ -52,7 +53,7 @@
                   hx-swap="outerHTML">{proximoEnvioDisplay} — {countdownDisplay}</span>
         </div>
 
-        <div class="buttons">
+        <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
             <button type="button" class="button is-info"
                     hx-post="/Mercurius/api/app/tributacion/consultas/enviar-pendientes"
                     hx-confirm="¿Enviar las facturas pendientes a Hacienda?"
@@ -61,7 +62,7 @@
             </button>
         </div>
 
-        <div id="consultas-tablas" x-data="{ tab: '{tabActiva}' }">
+        <div id="consultas-tablas">
             {#fragment id=tabla}
             <div class="tabs is-boxed is-centered">
                 <ul>
@@ -75,7 +76,7 @@
                         <a href="#!" @click="tab = 'rechazadas'">Rechazadas ({contadorRechazadas})</a>
                     </li>
                     <li :class="{ 'is-active': tab === 'mensajes' }">
-                        <a href="#!" @click="tab = 'mensajes'">Mensajes Receptor</a>
+                        <a href="#!" @click="tab = 'mensajes'">Mensajes Receptor ({contadorMensajes})</a>
                     </li>
                 </ul>
             </div>
@@ -162,6 +163,7 @@
                 {/include}
             </div>
             {/fragment}
+        </div>
         </div>
     {/body}
 {/include}
