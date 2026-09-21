@@ -5,10 +5,12 @@ import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.Map;
@@ -46,9 +48,9 @@ public class UsuariosPagesResource {
     Template page;
 
     @GET
-    public Response index() {
+    public Response index(@QueryParam("estado") @Nullable String estado) {
         try {
-            Map<String, Object> model = users.fullPageModel();
+            Map<String, Object> model = users.fullPageModel(estado);
             TemplateInstance instance = page.instance();
             model.forEach(instance::data);
             return Response.ok(instance.render())

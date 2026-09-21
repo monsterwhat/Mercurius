@@ -13,22 +13,26 @@
         <div class="inventario-header">
             <p class="title is-3 has-text-centered">{titulo}</p>
             <div class="stats-grid">
-                <div class="stat-card">
+                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == 'Sin Stock'}active{/if}" style="color:inherit"
+                   href="?seccion=alertas&tipo=Sin Stock{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
                     <span class="stat-number">{sinStock}</span>
                     <span class="stat-label">Sin Stock</span>
-                </div>
-                <div class="stat-card">
+                </a>
+                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == 'Stock Bajo'}active{/if}" style="color:inherit"
+                   href="?seccion=alertas&tipo=Stock Bajo{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
                     <span class="stat-number">{stockBajo}</span>
                     <span class="stat-label">Stock Bajo</span>
-                </div>
-                <div class="stat-card">
+                </a>
+                <a class="stat-card {#if seccion == 'sugerencias'}active{/if}" style="color:inherit"
+                   href="?seccion=sugerencias{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
                     <span class="stat-number">{sugerencias}</span>
                     <span class="stat-label">Sugerencias</span>
-                </div>
-                <div class="stat-card">
+                </a>
+                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == null}active{/if}" style="color:inherit"
+                   href="?seccion=alertas{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
                     <span class="stat-number">{totalAlertas}</span>
                     <span class="stat-label">Total Alertas</span>
-                </div>
+                </a>
             </div>
         </div>
 

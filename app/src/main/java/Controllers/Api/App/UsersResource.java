@@ -293,7 +293,7 @@ public class UsersResource {
             // (ui-kit §7 update="table region"); JSON callers keep the exact
             // envelope below.
             if (isHxRequest()) {
-                return htmlOk(tableInstance(1, 20, null, "asc", null, "warn",
+                return htmlOk(tableInstance(1, 20, null, "asc", null, null, "warn",
                         "Se cambio el estado del usuario: " + user.getUsername()));
             }
 
@@ -398,12 +398,13 @@ public class UsersResource {
             @QueryParam("size") @DefaultValue("20") int size,
             @QueryParam("sort") @Nullable String sort,
             @QueryParam("dir") @DefaultValue("asc") String dir,
-            @QueryParam("q") @Nullable String q) {
+            @QueryParam("q") @Nullable String q,
+            @QueryParam("estado") @Nullable String estado) {
         try {
             if (isHxRequest()) {
-                return htmlOk(tableInstance(page, size, sort, dir, q, null, null));
+                return htmlOk(tableInstance(page, size, sort, dir, q, estado, null, null));
             }
-            return htmlOk(renderFullPage());
+            return htmlOk(renderFullPage(estado));
         } catch (Exception e) {
             LOG.warn("Error renderizando la página de usuarios", e);
             return Response.serverError()
@@ -715,7 +716,11 @@ public class UsersResource {
     }
 
     private TemplateInstance renderFullPage() {
-        return pageIndex.data(fullPageModel());
+        return renderFullPage(null);
+    }
+
+    private TemplateInstance renderFullPage(@Nullable String estado) {
+        return pageIndex.data(fullPageModel(estado));
     }
 
     /**
@@ -726,7 +731,11 @@ public class UsersResource {
      * never disagree (ArticuloResource#fullPageModel pattern).
      */
     public Map<String, Object> fullPageModel() {
-        TableModel model = buildTableModel(1, 20, null, "asc", null);
+        return fullPageModel(null);
+    }
+
+    public Map<String, Object> fullPageModel(@Nullable String estado) {
+        TableModel model = buildTableModel(1, 20, null, "asc", null, estado);
         List<Users> todos = new ArrayList<>(loginService.listAll());
         long activos = todos.stream().filter(u -> u.getStatus() != null && u.getStatus()).count();
         Map<String, Object> map = new LinkedHashMap<>();
@@ -734,14 +743,16 @@ public class UsersResource {
         map.put("usuariosTotal", model.total());
         map.put("usuariosActivosCount", activos);
         map.put("usuariosInactivosCount", todos.size() - activos);
+        map.put("filtroEstado", estado != null && !estado.isBlank() ? estado.trim().toLowerCase(Locale.ROOT) : null);
         return map;
     }
 
     private TemplateInstance tableInstance(int page, int size, @Nullable String sort,
                                            @Nullable String dir, @Nullable String q,
+                                           @Nullable String estado,
                                            @Nullable String toastSeverity,
                                            @Nullable String toastMessage) {
-        TableModel model = buildTableModel(page, size, sort, dir, q);
+        TableModel model = buildTableModel(page, size, sort, dir, q, estado);
         return tablaPage
                 .data("modelo", model.asMap())
                 .data("q", model.q())
@@ -750,8 +761,17 @@ public class UsersResource {
     }
 
     private TableModel buildTableModel(int page, int size, @Nullable String sort,
-                                       @Nullable String dir, @Nullable String q) {
+                                       @Nullable String dir, @Nullable String q,
+                                       @Nullable String estado) {
         List<Users> filas = new ArrayList<>(loginService.listAll());
+        if (estado != null && !estado.isBlank()) {
+            String filtro = estado.trim().toLowerCase(Locale.ROOT);
+            if ("activo".equals(filtro)) {
+                filas.removeIf(u -> u.getStatus() == null || !u.getStatus());
+            } else if ("inactivo".equals(filtro)) {
+                filas.removeIf(u -> u.getStatus() != null && u.getStatus());
+            }
+        }
         if (q != null && !q.isBlank()) {
             String needle = q.trim().toLowerCase(Locale.ROOT);
             filas.removeIf(user -> !matchesFilter(user, needle));
@@ -773,6 +793,9 @@ public class UsersResource {
         Map<String, Object> filtros = new LinkedHashMap<>();
         if (q != null && !q.isBlank()) {
             filtros.put("q", q.trim());
+        }
+        if (estado != null && !estado.isBlank()) {
+            filtros.put("estado", estado.trim());
         }
 
         return new TableModel("tabla-usuarios", "/api/app/users/table", columnas, filas,
