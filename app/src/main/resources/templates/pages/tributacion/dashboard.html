@@ -15,12 +15,12 @@
     {#title}Dashboard Hacienda | Mercurius{/title}
 
     {#body}
-        <div class="tributacion-header">
+        <div id="tributacion-kpis">
+            {#fragment id=kpis}
+            <div class="tributacion-header">
             <p class="title is-3 has-text-centered">Dashboard Hacienda</p>
             <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Estado actual de las facturas enviadas a Hacienda</p>
 
-            <div id="tributacion-kpis">
-            {#fragment id=kpis}
             <div class="stats-grid">
                 <div class="stat-card">
                     <span class="stat-number">{totalEmitidos}</span>
@@ -50,6 +50,7 @@
                     <span class="stat-label">Emitidos Hoy</span>
                     <p class="is-size-7" style="opacity:0.85">✓ {aceptadosHoy} · ✗ {rechazadosHoy}</p>
                 </div>
+            </div>
             </div>
 
             <div class="buttons is-centered" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
