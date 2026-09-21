@@ -92,6 +92,24 @@ public class TipoCambioService extends GService<TipoCambio> {
         create(tipoCambio);
     }
 
+    /** Persists a user rate as today's entry (scale 5, callers validate). */
+    public void saveManualRate(@Nonnull BigDecimal compra, @Nonnull BigDecimal venta) {
+        TipoCambio tipoCambio = new TipoCambio();
+        tipoCambio.setFecha(LocalDateTime.now());
+        tipoCambio.setValorCompra(compra.setScale(5, RoundingMode.HALF_UP));
+        tipoCambio.setValorVenta(venta.setScale(5, RoundingMode.HALF_UP));
+        saveTipoCambio(tipoCambio);
+    }
+
+    /** Display form: 512.34000 -&gt; 512.34, 512.00000 -&gt; 512. */
+    @Nullable
+    public static String displayRate(@Nullable BigDecimal valor) {
+        if (valor == null) {
+            return null;
+        }
+        return valor.stripTrailingZeros().toPlainString();
+    }
+
     @Nonnull
     private LocalDateTime parseFechaVenta(@Nonnull JsonNode ventaNode) {
         String fecha = ventaNode.get("fecha").asText();

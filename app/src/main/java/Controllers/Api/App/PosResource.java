@@ -1500,8 +1500,8 @@ public class PosResource {
         }
         Map<String, Object> badge = new LinkedHashMap<>();
         badge.put("disponible", tc != null);
-        badge.put("venta", tc != null ? tc.getValorVenta() : null);
-        badge.put("compra", tc != null ? tc.getValorCompra() : null);
+        badge.put("venta", tc != null && tc.getValorVenta() != null ? tc.getValorVenta().stripTrailingZeros() : null);
+        badge.put("compra", tc != null && tc.getValorCompra() != null ? tc.getValorCompra().stripTrailingZeros() : null);
         badge.put("fecha", tc != null && tc.getFecha() != null ? tc.getFecha().toString() : null);
         return badge;
     }
