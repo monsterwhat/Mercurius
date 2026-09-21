@@ -41,7 +41,12 @@ import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import java.time.temporal.ChronoUnit;
 import java.time.DayOfWeek;
+import java.time.Instant;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @Singleton
 public class ProgramadorTareas {
@@ -68,6 +73,39 @@ public class ProgramadorTareas {
     @Scheduled(cron = "0 0 0 * * ?")
     public void actualizarTipoCambioUSD() {
         tipoCambioService.getTipoCambioFromApi();
+    }
+
+    //Monthly log retention: rotated file logs are kept unbounded by the file
+    //handler (max-backup-index) and purged here once older than 4 years.
+    @Scheduled(cron = "0 0 4 1 * ?")
+    public void purgarLogsAntiguos() {
+        try {
+            Path dir = Paths.get("logs");
+            if (!Files.isDirectory(dir)) {
+                return;
+            }
+            Instant limite = Instant.now().minus(1461, ChronoUnit.DAYS);
+            int borrados = 0;
+            try (Stream<Path> archivos = Files.list(dir)) {
+                for (Path archivo : (Iterable<Path>) archivos::iterator) {
+                    String nombre = archivo.getFileName().toString();
+                    if (!nombre.startsWith("mercurius.log") || nombre.equals("mercurius.log")) {
+                        continue;
+                    }
+                    try {
+                        if (Files.getLastModifiedTime(archivo).toInstant().isBefore(limite)) {
+                            Files.deleteIfExists(archivo);
+                            borrados++;
+                        }
+                    } catch (java.io.IOException e) {
+                        LOG.warn("no se pudo purgar el log " + nombre, e);
+                    }
+                }
+            }
+            LOG.info("purga de logs: " + borrados + " archivos mayores de 4 años eliminados");
+        } catch (RuntimeException | java.io.IOException e) {
+            LOG.warn("fallo la purga mensual de logs antiguos", e);
+        }
     }
     
     // Every 48h — batch-send pending invoices to Hacienda
