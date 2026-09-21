@@ -38,14 +38,6 @@
                 <td>{#if cabys.descripcion??}{cabys.descripcion}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">{#if cabys.impuesto??}{cabys.impuesto}%{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">{#if cabys.estado??}{cabys.estado}{#else}&mdash;{/if}</td>
-                <td class="has-text-centered">
-                    <div class="buttons is-centered" style="margin:0">
-                        <button type="button" class="button is-small is-success" title="Editar código CAByS"
-                                aria-haspopup="dialog" data-kit-open="editar-cabys"
-                                hx-get="/Mercurius/api/app/cabys/formularios/{cabys.codigo}"
-                                hx-target="#editar-cabys-body" hx-swap="innerHTML">&#9998;</button>
-                    </div>
-                </td>
             </tr>
             {#else}
             <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron códigos CAByS</td></tr>

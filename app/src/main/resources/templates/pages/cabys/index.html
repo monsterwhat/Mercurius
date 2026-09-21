@@ -54,15 +54,67 @@
             {/if}
         </div>
 
-        {#include pages/cabys/tabla modelo=tablaCabys q=tablaCabys.q /}
+        <div class="buttons are-small mb-3">
+            <span class="has-text-grey is-size-7" style="align-self:center">Columnas:</span>
+            <button type="button" class="button is-light" data-col-toggle="2">Categoría</button>
+            <button type="button" class="button is-light" data-col-toggle="3">Descripción</button>
+        </div>
 
-        {!$1!}
-        {#include _kit/modal id="editar-cabys" title="Editar Código CAByS" triggerClass="is-hidden"
-             bodyUrl="/api/app/cabys/table"}{/include}
+        {#include pages/cabys/tabla modelo=tablaCabys q=tablaCabys.q /}
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
     {#include _kit/confirm /}
+
+    {! Column visibility toggles: hide long Categoría/Descripción columns.
+       State persists in localStorage and is reapplied after table swaps. !}
+    <script>
+        function cabysApplyHiddenCols() {
+            var ocultas = [];
+            try {
+                ocultas = JSON.parse(localStorage.getItem('cabys-hidden-cols') || '[]');
+            } catch (e) { /* ignore */ }
+            document.querySelectorAll('#tabla-cabys table tr').forEach(function (fila) {
+                Array.prototype.forEach.call(fila.children, function (celda, idx) {
+                    if (ocultas.indexOf(idx + 1) !== -1) {
+                        celda.style.display = 'none';
+                    } else {
+                        celda.style.display = '';
+                    }
+                });
+            });
+            document.querySelectorAll('[data-col-toggle]').forEach(function (btn) {
+                var col = parseInt(btn.getAttribute('data-col-toggle'), 10);
+                if (ocultas.indexOf(col) !== -1) {
+                    btn.classList.add('is-info');
+                    btn.classList.remove('is-light');
+                } else {
+                    btn.classList.add('is-light');
+                    btn.classList.remove('is-info');
+                }
+            });
+        }
+        document.querySelectorAll('[data-col-toggle]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var col = parseInt(btn.getAttribute('data-col-toggle'), 10);
+                var ocultas = [];
+                try {
+                    ocultas = JSON.parse(localStorage.getItem('cabys-hidden-cols') || '[]');
+                } catch (e) { /* ignore */ }
+                var i = ocultas.indexOf(col);
+                if (i !== -1) {
+                    ocultas.splice(i, 1);
+                } else {
+                    ocultas.push(col);
+                }
+                try {
+                    localStorage.setItem('cabys-hidden-cols', JSON.stringify(ocultas));
+                } catch (e) { /* ignore */ }
+                cabysApplyHiddenCols();
+            });
+        });
+        document.body.addEventListener('htmx:afterSwap', function () { cabysApplyHiddenCols(); });
+        cabysApplyHiddenCols();
 
     {! Bridge: row-level edit buttons open the shared edit modal; the swapped
        form's [data-kit-close] button closes it (same contract as T18).
