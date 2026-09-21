@@ -10,20 +10,24 @@
     badges.procesados  Long - legacy tab-counter arithmetic activos - pendientes
 !}
 <div class="stats-grid">
-    <div class="stat-card">
+    <button type="button" class="stat-card" @click="tab = 'activos'"
+            :class="{ 'active': tab === 'activos' }">
         <span class="stat-number">{badges.activos}</span>
         <span class="stat-label">Activos</span>
-    </div>
-    <div class="stat-card">
+    </button>
+    <button type="button" class="stat-card" @click="tab = 'pendientes'"
+            :class="{ 'active': tab === 'pendientes' }">
         <span class="stat-number">{badges.pendientes}</span>
         <span class="stat-label">Pendientes</span>
-    </div>
-    <div class="stat-card">
+    </button>
+    <button type="button" class="stat-card" @click="tab = 'procesados'"
+            :class="{ 'active': tab === 'procesados' }">
         <span class="stat-number">{badges.procesados}</span>
         <span class="stat-label">Procesados</span>
-    </div>
-    <div class="stat-card">
+    </button>
+    <button type="button" class="stat-card" @click="tab = 'inactivos'"
+            :class="{ 'active': tab === 'inactivos' }">
         <span class="stat-number">{badges.inactivos}</span>
         <span class="stat-label">Inactivos</span>
-    </div>
+    </button>
 </div>

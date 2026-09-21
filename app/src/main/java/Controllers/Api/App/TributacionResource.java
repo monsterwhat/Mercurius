@@ -614,7 +614,7 @@ public class TributacionResource {
      */
     private String countdownFragment(@Nonnull CountdownDTO dto) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<span id=\"consultas-countdown\" class=\"is-family-monospace has-text-weight-bold\"")
+        sb.append("<span id=\"consultas-countdown\" class=\"is-family-monospace has-text-weight-bold is-size-4\"")
                 .append(" data-countdown-display=\"").append(escape(dto.countdownDisplay())).append("\"")
                 .append(" title=\"").append(escape(dto.proximoEnvioDisplay())).append("\"")
                 .append(" hx-get=\"").append(rootPath).append("/api/app/tributacion/consultas/countdown\"")
@@ -625,11 +625,19 @@ public class TributacionResource {
                 .append("</span>");
         sb.append("<div hx-swap-oob=\"true\" id=\"consultas-contadores\"")
                 .append(" class=\"columns is-centered has-text-centered mb-4\">")
-                .append("<span data-contador=\"pendientes\">").append(dto.contadorPendientes()).append("</span>")
-                .append("<span data-contador=\"aceptadas\">").append(dto.contadorAceptadas()).append("</span>")
-                .append("<span data-contador=\"rechazadas\">").append(dto.contadorRechazadas()).append("</span>")
+                .append(contadorBox("pendientes", "Facturas Pendientes", dto.contadorPendientes()))
+                .append(contadorBox("aceptadas", "Facturas Aceptadas", dto.contadorAceptadas()))
+                .append(contadorBox("rechazadas", "Facturas Rechazadas", dto.contadorRechazadas()))
                 .append("</div>");
         return sb.toString();
+    }
+
+    private static String contadorBox(@Nonnull String tab, @Nonnull String label, long valor) {
+        return "<div class=\"column is-3\">"
+                + "<div class=\"box\" @click=\"tab = '" + tab + "'\" style=\"cursor:pointer\">"
+                + "<p class=\"title is-3 mb-0\" data-contador=\"" + tab + "\">" + valor + "</p>"
+                + "<p class=\"heading\">" + escape(label) + "</p>"
+                + "</div></div>";
     }
 
     private static String escape(@Nullable String value) {

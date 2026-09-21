@@ -441,6 +441,7 @@ public class TributacionPagesResource {
         mensajes.sort(Comparator.comparing(m -> (java.time.LocalDate) m.get("limite"),
                 Comparator.nullsLast(Comparator.naturalOrder())));
         model.put("filasMensajes", mensajes.size() > 100 ? mensajes.subList(0, 100) : mensajes);
+        model.put("contadorMensajes", mensajes.size());
         return model;
     }
 

@@ -284,6 +284,21 @@ select,
     color: white;
 }
 
+/* Header con métricas - Tributación */
+.tributacion-header {
+    background: linear-gradient(135deg, var(--bulma-link) 0%, var(--bulma-link-dark) 100%);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.tributacion-header .title {
+    color: white !important;
+    margin-bottom: 1.5rem;
+}
+
 .cabys-header .title {
     color: white !important;
     margin-bottom: 1.5rem;
@@ -872,4 +887,24 @@ select,
 
 .vis-time-axis .vis-text {
     color: var(--bulma-text-title-l) !important;
+}
+
+// -----------------------------------------------------------------------------
+// UI fix: texto invisible dentro de heroes/notificaciones/cajas de color.
+// Los titulos y subtitulos heredan el color del contenedor en lugar de usar
+// el color global (que queda ilegible sobre fondos is-info/is-light/etc).
+// -----------------------------------------------------------------------------
+.hero .title, .hero .subtitle, .notification .title, .notification .subtitle,
+.box .title, .box .subtitle, .footer .title, .footer .subtitle {
+    color: inherit;
+}
+.hero .subtitle, .notification .subtitle, .box .subtitle {
+    opacity: .85;
+}
+.notification.is-light .title, .notification.is-light p,
+.notification.is-info.is-light .title, .notification.is-info.is-light p {
+    color: var(--bulma-text);
+}
+.button .icon svg, .tag .icon svg {
+    stroke: currentColor;
 }
