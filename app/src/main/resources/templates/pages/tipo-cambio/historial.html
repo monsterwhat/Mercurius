@@ -9,19 +9,21 @@
 <div class="table-container">
     <table class="table is-striped is-fullwidth is-hoverable">
         <thead>
-            <tr>
-                <th>Fecha</th>
-                <th class="has-text-right">Compra</th>
-                <th class="has-text-right">Venta</th>
-            </tr>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Origen</th>
+                    <th class="has-text-right">Compra</th>
+                    <th class="has-text-right">Venta</th>
+                </tr>
         </thead>
         <tbody>
             {#for fila in filas}
-            <tr>
-                <td>{fila.fecha}</td>
-                <td class="has-text-right">&#8353;{fila.compra}</td>
-                <td class="has-text-right">&#8353;{fila.venta}</td>
-            </tr>
+                <tr>
+                    <td>{fila.fecha}</td>
+                    <td>{#if fila.origen == 'Manual'}<span class="tag is-warning">Manual</span>{#else}<span class="tag is-info">BCCR</span>{/if}</td>
+                    <td class="has-text-right">&#8353;{fila.compra}</td>
+                    <td class="has-text-right">&#8353;{fila.venta}</td>
+                </tr>
             {/for}
         </tbody>
     </table>

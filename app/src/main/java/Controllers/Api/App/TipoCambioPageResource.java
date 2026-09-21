@@ -104,6 +104,12 @@ public class TipoCambioPageResource {
     @Operation(summary = "Re-fetch the current BCCR dollar rate and return the updated fragment")
     public Response actualizar() {
         Map<String, Object> model = new LinkedHashMap<>();
+        try {
+            tipoCambioService.forceRefreshFromApi();
+        } catch (RuntimeException e) {
+            LOG.warn("actualizar tipo-cambio failed", e);
+            model.put("errorMensaje", "No se pudo actualizar desde BCCR; se muestra la tasa vigente.");
+        }
         model.putAll(tipoCambioModel());
         String html = tipoCambioPage.data(model).render();
         return Response.ok(html)
@@ -157,6 +163,7 @@ public class TipoCambioPageResource {
                 fila.put("fecha", tc.getFecha() != null ? tc.getFecha().toString() : "—");
                 fila.put("compra", TipoCambioService.displayRate(tc.getValorCompra()));
                 fila.put("venta", TipoCambioService.displayRate(tc.getValorVenta()));
+                fila.put("origen", Boolean.TRUE.equals(tc.getManual()) ? "Manual" : "BCCR");
                 filas.add(fila);
             }
         }
@@ -186,6 +193,7 @@ public class TipoCambioPageResource {
         model.put("venta", tc != null ? TipoCambioService.displayRate(tc.getValorVenta()) : null);
         model.put("compra", tc != null ? TipoCambioService.displayRate(tc.getValorCompra()) : null);
         model.put("fecha", tc != null && tc.getFecha() != null ? tc.getFecha().toString() : null);
+        model.put("manual", tc != null && Boolean.TRUE.equals(tc.getManual()));
         return model;
     }
 
