@@ -59,13 +59,19 @@
             {/if}
         </div>
 
-        <div class="nav-cards">
-            <a class="nav-card button is-danger {#if seccion == 'causas'}is-outlined{/if}"
-               href="?seccion=causas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Causa</a>
-            <a class="nav-card button is-info {#if seccion == 'departamentos'}is-outlined{/if}"
-               href="?seccion=departamentos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Departamento</a>
-            <a class="nav-card button is-link {#if seccion == 'detalle'}is-outlined{/if}"
-               href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Detalle de Movimientos</a>
+        <div class="stats-grid">
+            <a class="stat-card {#if seccion == 'causas'}active{/if}" style="color:inherit"
+               href="?seccion=causas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">
+                <span class="stat-label">Por Causa</span>
+            </a>
+            <a class="stat-card {#if seccion == 'departamentos'}active{/if}" style="color:inherit"
+               href="?seccion=departamentos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">
+                <span class="stat-label">Por Departamento</span>
+            </a>
+            <a class="stat-card {#if seccion == 'detalle'}active{/if}" style="color:inherit"
+               href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">
+                <span class="stat-label">Detalle de Movimientos</span>
+            </a>
         </div>
 
         {#include pages/reportes/_tablas/merma /}
