@@ -3,6 +3,10 @@ name: Release
 on:
   push:
     branches: [main, Master, master]
+    paths:
+      - 'app/**'
+      - '.github/workflows/release.yml'
+      - '!**/*.md'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -84,4 +88,4 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: Mercurius v${{ steps.version.outputs.version }}
           generate_release_notes: true
-           files: app/Mercurius-runner.jar
+          files: app/Mercurius-runner.jar
