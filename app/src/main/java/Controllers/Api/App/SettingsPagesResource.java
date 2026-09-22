@@ -90,6 +90,7 @@ public class SettingsPagesResource {
             model.put("settings", toDTO(settings));
             model.put("backup", toBackupStatusDTO(settings));
             model.put("backupLog", toBackupLog(backupService.listarBackups()));
+            model.put("backupRutaEfectiva", backupService.rutaEfectiva());
             model.put("baseUrl", BASE_URL);
 
             ConfiguracionMargen configMargen = margenService.findOrCreateDefault();

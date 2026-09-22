@@ -21,8 +21,11 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -264,6 +267,36 @@ public class SettingsResource {
             LOG.warn("Error triggering backup", e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error ejecutando el backup"))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/backup-descargar")
+    @Produces("application/gzip")
+    @Operation(summary = "Download a backup file (admin, traversal-guarded)")
+    public Response backupDescargar(@QueryParam("archivo") @Nullable String archivo) {
+        try {
+            if (archivo == null || archivo.isBlank()) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            String nombre = archivo.trim();
+            if (!nombre.endsWith(".sql.gz") || nombre.contains("/") || nombre.contains("\\")) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            java.nio.file.Path base = Paths.get(backupService.rutaEfectiva()).toAbsolutePath().normalize();
+            java.nio.file.Path file = base.resolve(nombre).normalize();
+            if (!file.startsWith(base) || !Files.isRegularFile(file)) {
+                return Response.status(Response.Status.NOT_FOUND).build();
+            }
+            return Response.ok(file.toFile())
+                    .type("application/gzip")
+                    .header("Content-Disposition", "attachment; filename=\"" + nombre + "\"")
+                    .build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error descargando respaldo", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error descargando el respaldo"))
                     .build();
         }
     }

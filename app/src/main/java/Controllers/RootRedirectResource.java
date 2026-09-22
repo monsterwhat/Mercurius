@@ -3,6 +3,9 @@ package Controllers;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
+import jakarta.annotation.Nonnull;
+import jakarta.inject.Inject;
+import io.quarkus.security.identity.SecurityIdentity;
 import java.net.URI;
 
 /**
@@ -18,7 +21,14 @@ import java.net.URI;
 @Path("/")
 public class RootRedirectResource {
 
-    private static Response redirectToApp() {
+    @Inject
+    @Nonnull
+    SecurityIdentity identity;
+
+    private Response redirectToApp() {
+        if (identity.isAnonymous()) {
+            return Response.seeOther(URI.create("/Mercurius/login")).build();
+        }
         return Response.seeOther(URI.create("/Mercurius/app/dashboard")).build();
     }
 

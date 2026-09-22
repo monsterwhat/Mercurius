@@ -1,0 +1,27 @@
+{!
+  pages/error/404 - "Página no encontrada" (NotFoundExceptionMapper +
+  FallbackResource for authenticated browser hits; API keeps JSON).
+
+  Model:
+    ruta String - the requested path that matched nothing (nullable)
+!}
+{#include layout}
+    {#title}Página no encontrada | Mercurius{/title}
+
+    {#body}
+    <section class="section" style="padding-top:1rem">
+        <div class="correos-header" style="text-align:center">
+            <p class="title is-1" style="color:white;margin-bottom:0.5rem">404</p>
+            <p class="title is-4 has-text-centered" style="color:white">Página no encontrada</p>
+            {#if ruta??}
+            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85;word-break:break-all">{ruta}</p>
+            {/if}
+        </div>
+
+        <div class="buttons is-centered">
+            <a class="button is-link" href="/Mercurius/app/dashboard">Ir al dashboard</a>
+            <a class="button is-light" href="javascript:history.back()">Volver atrás</a>
+        </div>
+    </section>
+    {/body}
+{/include}
