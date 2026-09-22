@@ -2,6 +2,7 @@ package Controllers;
 
 import io.quarkus.vertx.web.Route;
 import io.vertx.ext.web.RoutingContext;
+import jakarta.enterprise.context.ApplicationScoped;
 
 /**
  * Bare-root redirect. The application lives under
@@ -10,6 +11,7 @@ import io.vertx.ext.web.RoutingContext;
  * 404s before reaching the app router. This raw Vert.x route is absolute
  * (not root-path prefixed) and sends bare-root hits to the login page.
  */
+@ApplicationScoped
 public class RootLoginRedirectRoute {
 
     @Route(path = "/", methods = Route.HttpMethod.GET)

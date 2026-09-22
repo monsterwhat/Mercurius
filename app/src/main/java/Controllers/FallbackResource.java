@@ -1,6 +1,9 @@
 package Controllers;
 
+import io.quarkus.qute.Location;
+import io.quarkus.qute.Template;
 import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -21,6 +24,11 @@ public class FallbackResource {
 
     @Inject
     SecurityIdentity identity;
+
+    @Inject
+    @Nonnull
+    @Location("pages/error/404")
+    Template pagina404;
 
     @Context
     UriInfo uriInfo;
@@ -57,7 +65,11 @@ public class FallbackResource {
         if (anonymous) {
             return Response.seeOther(URI.create("/login")).build();
         }
-        return Response.seeOther(URI.create("/app")).build();
+        String html = pagina404.data("ruta", requestPath).render();
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(html)
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
+                .build();
     }
 
     @GET

@@ -68,6 +68,7 @@
     {#body}
 <div id="pagina-ajustes">
 {#fragment contenido}
+    {#if modo != 'backups'}
     <div class="level mb-5">
         <div class="level-left">
             <div>
@@ -78,6 +79,7 @@
             </div>
         </div>
     </div>
+    {/if}
 
     {! ── Aplicacion mode: wizard + AppSettings field groups (hidden on /backups) ── !}
     {#if modo != 'backups'}
@@ -244,29 +246,35 @@
         {! ── Backups mode: status card + trigger + scheduling + log (hidden on /aplicacion) ── !}
         {#if modo != 'aplicacion'}
         {! ── Grupo: backups (legacy Ajustes/Backups page) ── !}
-        <div class="box mb-5" data-group="backups">
-            <p class="title is-5">Respaldos de Base de Datos</p>
-
-            <div class="columns is-multiline mb-4" id="backup-status-card">
-                <div class="column is-one-third">
-                    <p class="heading">Estado</p>
+        <div class="backups-header">
+            <p class="title is-3 has-text-centered">Respaldos de Base de Datos</p>
+            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Copias de seguridad programadas y bajo demanda</p>
+            <div class="level" style="justify-content:center;gap:2.5rem">
+                <div class="has-text-centered">
+                    <p class="heading" style="color:white;opacity:0.85">Estado</p>
                     <span class="tag {#if backup.backupHabilitado}is-success{#else}is-danger{/if}" id="backup-estado">
                         {#if backup.backupHabilitado}Habilitado{#else}Deshabilitado{/if}</span>
                 </div>
-                <div class="column is-one-third">
-                    <p class="heading">Último backup</p>
-                    <p id="backup-ultimo-ejecutado">{#if backup.backupUltimoEjecutado??}{backup.backupUltimoEjecutado}{#else}Nunca{/if}</p>
+                <div class="has-text-centered">
+                    <p class="heading" style="color:white;opacity:0.85">Último backup</p>
+                    <p id="backup-ultimo-ejecutado" style="color:white">{#if backup.backupUltimoEjecutado??}{backup.backupUltimoEjecutado}{#else}Nunca{/if}</p>
                 </div>
-                <div class="column is-one-third">
-                    <p class="heading">Motor pg_dump</p>
+                <div class="has-text-centered">
+                    <p class="heading" style="color:white;opacity:0.85">Motor pg_dump</p>
                     <span class="tag {#if backup.mysqldumpResuelto}is-success{#else}is-warning{/if}">
                         {#if backup.mysqldumpResuelto}Ruta resuelta{#else}Fallback (sin ruta concreta){/if}</span>
                 </div>
             </div>
+        </div>
+        <div class="box mb-5" data-group="backups">
+            <p class="title is-5">Respaldo manual</p>
 
             <div class="field">
                 <button class="button is-success" type="button" data-json-save
-                        hx-post="/Mercurius{baseUrl}/backup-trigger">
+                        hx-post="/Mercurius{baseUrl}/backup-trigger"
+                        hx-disabled-elt="this"
+                        hx-on::before-request="this.classList.add('is-loading')"
+                        hx-on::after-request="this.classList.remove('is-loading')">
                     Ejecutar Backup Ahora</button>
                 <p class="help has-text-grey">
                     Ejecuta el mismo flujo del botón legacy; el resultado llega
@@ -311,10 +319,11 @@
                 <div class="column is-half">
                     <div class="field">
                         <label class="label" for="backup-ruta">Ruta de backups</label>
-                        <div class="control">
-                            <input id="backup-ruta" class="input" type="text"
-                                   name="backupRuta" value="{settings.backupRuta}"/>
-                        </div>
+                    <div class="control">
+                        <input id="backup-ruta" class="input" type="text"
+                               name="backupRuta" value="{settings.backupRuta}"/>
+                    </div>
+                    <p class="help has-text-grey">Carpeta del servidor. Vacío = se usa: {backupRutaEfectiva}</p>
                     </div>
                 </div>
             </div>
@@ -332,6 +341,7 @@
                     <tr>
                         <th>Archivo</th>
                         <th class="has-text-right">Tamaño</th>
+                        <th class="has-text-centered">Descarga</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -339,14 +349,30 @@
                     <tr>
                         <td>{entrada.archivo}</td>
                         <td class="has-text-right">{#if entrada.tamano??}{entrada.tamano}{#else}&mdash;{/if}</td>
+                        <td class="has-text-centered">
+                            <a class="button is-small is-info"
+                               href="/Mercurius/api/app/settings/backup-descargar?archivo={entrada.archivo}">
+                                Descargar</a>
+                        </td>
                     </tr>
                     {/for}
                 </tbody>
             </table>
             </div>
             {#else}
-            <div class="notification is-light">
-                No hay respaldos registrados todavia.
+            <div class="box has-text-centered" style="padding:2.5rem 1.5rem">
+                <p class="title is-5">Aún no hay respaldos</p>
+                <p class="subtitle is-6 has-text-grey">
+                    Los respaldos se guardan en:<br/>
+                    <code style="word-break:break-all">{backupRutaEfectiva}</code>
+                </p>
+                <button class="button is-success is-medium" type="button" data-json-save
+                        hx-post="/Mercurius{baseUrl}/backup-trigger"
+                        hx-disabled-elt="this"
+                        hx-on::before-request="this.classList.add('is-loading')"
+                        hx-on::after-request="this.classList.remove('is-loading'); event.detail.successful && window.location.reload()">
+                    Crear mi primer respaldo</button>
+                <p class="help has-text-grey mt-3">O configure la programación automática abajo.</p>
             </div>
             {/if}
         </div>

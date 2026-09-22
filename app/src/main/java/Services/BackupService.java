@@ -248,7 +248,21 @@ public class BackupService implements Serializable {
         return String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024));
     }
 
+    public @Nonnull String rutaEfectiva() {
+        try {
+            AppSettings settings = appSettingsService.findOrCreateCurrent();
+            if (settings != null && settings.getBackupRuta() != null
+                    && !settings.getBackupRuta().isBlank()) {
+                return settings.getBackupRuta();
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("Error leyendo ruta de backups, usando defecto: " + e.getMessage());
+        }
+        return getDefaultBackupPath();
+    }
+
     private String getDefaultBackupPath() {
+
         String mainDir;
         try {
             javax.swing.filechooser.FileSystemView fsv = javax.swing.filechooser.FileSystemView.getFileSystemView();

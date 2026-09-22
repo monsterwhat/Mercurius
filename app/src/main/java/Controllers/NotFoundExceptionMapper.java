@@ -1,6 +1,9 @@
 package Controllers;
 
+import io.quarkus.qute.Location;
+import io.quarkus.qute.Template;
 import io.quarkus.security.identity.SecurityIdentity;
+import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Context;
@@ -25,6 +28,11 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
     @Inject
     SecurityIdentity identity;
 
+    @Inject
+    @Nonnull
+    @Location("pages/error/404")
+    Template pagina404;
+
     @Context
     UriInfo uriInfo;
 
@@ -46,7 +54,11 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
         if (anonymous) {
             return Response.seeOther(URI.create("/Mercurius/login")).build();
         }
-        return Response.seeOther(URI.create("/Mercurius/app")).build();
+        String html = pagina404.data("ruta", "/" + normalized).render();
+        return Response.status(Response.Status.NOT_FOUND)
+                .entity(html)
+                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
+                .build();
     }
 
     @ServerExceptionMapper
