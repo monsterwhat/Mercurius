@@ -1,6 +1,6 @@
 package Services;
 
-import Models.Clients;
+import Models.Clientes;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -13,13 +13,13 @@ import java.util.List;
 
 @Named
 @ApplicationScoped
-public class ClientService extends GService<Clients> {
+public class ClientService extends GService<Clientes> {
 
     private static final Logger LOG = Logger.getLogger(ClientService.class);
 
     @Override
-    protected @Nonnull Class<Clients> getEntityClass() {
-        return Clients.class;
+    protected @Nonnull Class<Clientes> getEntityClass() {
+        return Clientes.class;
     }
 
     @PostConstruct
@@ -28,7 +28,7 @@ public class ClientService extends GService<Clients> {
 
     @Override
     @Transactional
-    public void create(@Nonnull Clients entity) {
+    public void create(@Nonnull Clientes entity) {
         try {
             em.persist(entity);
             em.flush();
@@ -38,7 +38,7 @@ public class ClientService extends GService<Clients> {
     }
 
     @Override
-    public void delete(@Nonnull Clients entity) {
+    public void delete(@Nonnull Clientes entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getCode());
@@ -55,10 +55,10 @@ public class ClientService extends GService<Clients> {
         }
     }
     
-    public @Nullable List<Clients> searchByName(@Nonnull String name) {
+    public @Nullable List<Clientes> searchByName(@Nonnull String name) {
         try {
-            TypedQuery<Clients> query = em.createQuery(
-                "SELECT c FROM Clients c WHERE LOWER(c.name) LIKE LOWER(:name)", Clients.class);
+            TypedQuery<Clientes> query = em.createQuery(
+                "SELECT c FROM Clientes c WHERE LOWER(c.name) LIKE LOWER(:name)", Clientes.class);
             query.setParameter("name", "%" + name + "%");
             return query.getResultList();
         } catch (jakarta.persistence.PersistenceException e) {
@@ -69,11 +69,11 @@ public class ClientService extends GService<Clients> {
 
     public boolean checkClientName(@Nonnull String username) {
         try {
-            TypedQuery<Clients> query = em.createQuery(
-                "SELECT c FROM Clients c WHERE LOWER(c.name) = LOWER(:username)", Clients.class);
+            TypedQuery<Clientes> query = em.createQuery(
+                "SELECT c FROM Clientes c WHERE LOWER(c.name) = LOWER(:username)", Clientes.class);
             query.setParameter("username", username);
 
-            List<Clients> resultList = query.getResultList();
+            List<Clientes> resultList = query.getResultList();
 
             return !resultList.isEmpty();
         } catch (jakarta.persistence.PersistenceException e) {
@@ -89,7 +89,7 @@ public class ClientService extends GService<Clients> {
     public boolean checkClientByIdNumber(@Nonnull String idNumber) {
         try {
             TypedQuery<Long> query = em.createQuery(
-                "SELECT COUNT(c) FROM Clients c WHERE c.idNumber = :idNumber", Long.class);
+                "SELECT COUNT(c) FROM Clientes c WHERE c.idNumber = :idNumber", Long.class);
             query.setParameter("idNumber", idNumber);
             return query.getSingleResult() > 0;
         } catch (jakarta.persistence.PersistenceException e) {

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import Models.Inventario;
-import Models.Users;
+import Models.Usuarios;
 import Services.InventarioService;
 import Services.UserService;
 import io.quarkus.qute.Location;
@@ -82,7 +82,7 @@ public class FechasResource {
         filtros.put("hasta", hasta);
 
         List<Map<String, Object>> usuarios = new ArrayList<>();
-        for (Users u : userService.listAll()) {
+        for (Usuarios u : userService.listAll()) {
             usuarios.add(Tablas.fila("id", u.getId(), "username", u.getUsername()));
         }
 

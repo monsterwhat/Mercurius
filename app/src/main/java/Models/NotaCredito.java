@@ -41,7 +41,7 @@ public class NotaCredito implements Serializable {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cliente_id")
-    private Clients cliente;
+    private Clientes cliente;
 
     @Column(length = 50)
     private String usuario;

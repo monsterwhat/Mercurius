@@ -17,7 +17,7 @@ import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.Receptor;
 import Models.Inventario;
-import Models.Users;
+import Models.Usuarios;
 import Models.Validacion.PrevalidationResult;
 import Models.Validacion.ValidationError;
 import Services.ArticulosService;
@@ -860,7 +860,7 @@ public class FacturasRecibidasResource {
             // ── Queue through the existing service (only Hacienda path) ──
             MensajeReceptorService.MRResult resultado = mensajeReceptorService.enviarMensajeReceptor(
                     factura, codigo, accion, montoTotalImpuesto, montoTotalFactura);
-            System.out.println("MR result for " + id + " codigo=" + codigo + " accion=" + accion + " success=" + resultado.success + " estado=" + resultado.estado + " message=" + resultado.message);
+            LOG.debug("MR result for " + id + " codigo=" + codigo + " accion=" + accion + " success=" + resultado.success + " estado=" + resultado.estado + " message=" + resultado.message);
 
             String severidad = resultado.success ? "success" : "error";
             if (isHxRequest()) {
@@ -1068,7 +1068,7 @@ public class FacturasRecibidasResource {
      * nota por nota de crédito "02"). No es atómico: cada llamada de servicio
      * confirma su propia transacción, igual que el flujo legacy.
      */
-    private void procesarArticulos(@Nonnull ComprobantesRecibidos factura, @Nullable Users usuario) {
+    private void procesarArticulos(@Nonnull ComprobantesRecibidos factura, @Nullable Usuarios usuario) {
         List<LineaDetalle> lineasDetalle = factura.getDetalles() == null
                 ? null : factura.getDetalles().getLineasDetalle();
         if (lineasDetalle == null || lineasDetalle.isEmpty()) {
@@ -1339,15 +1339,17 @@ public class FacturasRecibidasResource {
             // authenticated principal instead of the JSF session.
             AsyncUserContext.setCurrentUser(username);
             parser.parseXML(inputStream);
-                        LOG.info("Successfully processed file: " + fileName + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Successfully processed file: " + fileName + " | source=FacturasRecibidasResource.processSingleFile() | antes=" + String.valueOf(fileName) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
-                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "FacturasRecibidasResource.processSingleFile()" + " | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf((Object) null));
+                        LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=FacturasRecibidasResource.processSingleFile() | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf((Object) null));
             return new UploadFileResult(fileName, false, "Error al procesar el archivo XML: " + e.getMessage());
         } finally {
             AsyncUserContext.clear();
         }
     }
+
+
 
     /**
      * Cheap structural gate BEFORE the parser runs so malformed documents get
@@ -1622,11 +1624,11 @@ public class FacturasRecibidasResource {
     // ════════════════════════════════════════════════════════════════════
 
     /**
-     * Resolves the authenticated {@link Users} row through the T12 identity
+     * Resolves the authenticated {@link Usuarios} row through the T12 identity
      * provider's principal; null for anonymous/system contexts (alertas
      * accepts null, mirroring the legacy null-session branches).
      */
-    private Users currentUser() {
+    private Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

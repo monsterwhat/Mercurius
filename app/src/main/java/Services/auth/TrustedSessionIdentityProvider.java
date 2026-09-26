@@ -10,14 +10,14 @@ import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import Models.Users;
+import Models.Usuarios;
 
 /**
  * Restores identity on every request that already carries the encrypted
  * form-auth session cookie (Quarkus issues a
  * {@link TrustedAuthenticationRequest} for the replay path).
  *
- * <p>Roles are re-derived LIVE from the current {@code Users.groupName} on
+ * <p>Roles are re-derived LIVE from the current {@code Usuarios.groupName} on
  * each request — matching the legacy {@code SessionController.is*()} checks
  * that never cached roles. A user deleted or disabled between requests fails
  * authentication here, killing the session.</p>
@@ -41,7 +41,7 @@ public class TrustedSessionIdentityProvider implements IdentityProvider<TrustedA
 
     private SecurityIdentity authenticateBlocking(TrustedAuthenticationRequest request) {
         String username = request.getPrincipal();
-        Users user = loginService.findByUsername(username);
+        Usuarios user = loginService.findByUsername(username);
         if (user == null || Boolean.FALSE.equals(user.getStatus())) {
             throw new AuthenticationFailedException("Sesión inválida para: " + username);
         }

@@ -1,7 +1,7 @@
 package Controllers.Api.App;
 
-import Models.AppSettings;
-import Models.Clients;
+import Models.ConfiguracionAplicacion;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.Detalles.CodigoComercial;
 import Models.Detalles.DetalleServicio;
@@ -16,7 +16,7 @@ import Models.NotaCredito;
 import Models.Referencias.InformacionReferencia;
 import Models.Resumen.CodigoTipoMoneda;
 import Models.Resumen.ResumenFactura;
-import Models.Users;
+import Models.Usuarios;
 import Services.AppSettingsService;
 import Services.ClientService;
 import Services.ComprobanteService;
@@ -410,7 +410,7 @@ public class DevolucionesResource {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             return invalidCredentials();
         }
-        Users authUser;
+        Usuarios authUser;
         try {
             authUser = loginService.findByUsername(username);
             if (authUser == null) {
@@ -463,11 +463,11 @@ public class DevolucionesResource {
 
         String motivoFinal = motivo.trim();
         BigDecimal totalDevolucion = totalDevolucion(seleccion);
-        Users currentUser = currentUser();
+        Usuarios currentUser = currentUser();
 
         try {
             // ── NotaCredito row (legacy field-for-field)
-            Clients notaCliente = buscarClienteDeFactura(facturaSeleccionada);
+            Clientes notaCliente = buscarClienteDeFactura(facturaSeleccionada);
             NotaCredito nota = new NotaCredito();
             nota.setComprobanteOriginal(facturaSeleccionada);
             nota.setFecha(new Date());
@@ -539,7 +539,7 @@ public class DevolucionesResource {
     private @Nonnull List<Map<String, Object>> buscarFacturas(@Nonnull String tipo, @Nonnull String criterio) {
         List<ComprobantesEmitidasRow> encontradas = new ArrayList<>();
         if ("cliente".equals(tipo)) {
-            List<Clients> clients = clientService.searchByName(criterio);
+            List<Clientes> clients = clientService.searchByName(criterio);
             if (clients != null && !clients.isEmpty()) {
                 String needle = criterio.toLowerCase(Locale.ROOT);
                 for (ComprobantesEmitidos f : orEmpty(comprobantesService.listAll())) {
@@ -694,11 +694,11 @@ public class DevolucionesResource {
         return total;
     }
 
-    private @Nullable Clients buscarClienteDeFactura(@Nonnull ComprobantesEmitidos factura) {
+    private @Nullable Clientes buscarClienteDeFactura(@Nonnull ComprobantesEmitidos factura) {
         if (factura.getEncabezado() != null
                 && factura.getEncabezado().getReceptor() != null
                 && factura.getEncabezado().getReceptor().getNombre() != null) {
-            List<Clients> found = clientService.searchByName(
+            List<Clientes> found = clientService.searchByName(
                     factura.getEncabezado().getReceptor().getNombre());
             if (found != null && !found.isEmpty()) {
                 return found.get(0);
@@ -729,12 +729,12 @@ public class DevolucionesResource {
             @Nonnull BigDecimal totalDevolucion,
             @Nonnull String authorizedBy) {
         try {
-            AppSettings appSettings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null || facturaSeleccionada.getEncabezado() == null) {
                 return new NcElectronicaResultado(false, null, null,
                         "NC electrónica omitida: configuración o encabezado no disponible");
             }
-            Clients client = buscarClienteDeFactura(facturaSeleccionada);
+            Clientes client = buscarClienteDeFactura(facturaSeleccionada);
 
             DocumentoStrategy ncStrategy = strategyFactory.forCode(CODIGO_NC);
             String sucursal = appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001";
@@ -939,7 +939,7 @@ public class DevolucionesResource {
             ncComprobante.setDetalles(ncDetalles);
             ncComprobante.setResumen(ncResumen);
             ncComprobante.setInformacionReferencia(referencias);
-            Models.Users currentUser = currentUser();
+            Models.Usuarios currentUser = currentUser();
             ncComprobante.setUser(currentUser != null ? currentUser.getUsername() : authorizedBy);
             ncComprobante.setStatus(true);
             ncComprobante.setHaciendaClave(clave);
@@ -976,11 +976,11 @@ public class DevolucionesResource {
     // ════════════════════════════════════════════════════════════════════
 
     /**
-     * Resolves the authenticated {@link Users} row through the T12 identity
+     * Resolves the authenticated {@link Usuarios} row through the T12 identity
      * provider's principal (SessionController.getCurrentUser parity); null
      * for anonymous/system contexts (alertas accepts null).
      */
-    private @Nullable Users currentUser() {
+    private @Nullable Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

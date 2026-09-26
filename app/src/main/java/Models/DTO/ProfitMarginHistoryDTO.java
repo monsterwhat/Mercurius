@@ -6,7 +6,7 @@ import java.util.Date;
 
 /**
  * Read-side view of a profit margin history record (entity
- * {@code Models.ProfitMarginHistory}) for the Márgenes de Utilidad report page.
+ * {@code Models.HistorialMargen}) for the Márgenes de Utilidad report page.
  *
  * Mapping notes (entity -> DTO):
  * - id                -> id

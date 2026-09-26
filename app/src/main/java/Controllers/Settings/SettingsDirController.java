@@ -1,7 +1,7 @@
 package Controllers.Settings;
 
 import Controllers.SessionController;
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Services.AppSettingsService;
 import Services.EmailService;
 import org.jboss.logging.Logger;
@@ -55,13 +55,13 @@ public class SettingsDirController implements Serializable {
     private static final Logger LOG = Logger.getLogger(SettingsDirController.class);
 
     @Nullable
-    private List<AppSettings> currentSettingsList;
+    private List<ConfiguracionAplicacion> currentSettingsList;
     @Nullable
-    private AppSettings currentSettings;
+    private ConfiguracionAplicacion currentSettings;
     @Nullable
-    private AppSettings newSettings;
+    private ConfiguracionAplicacion newSettings;
     @Nullable
-    private AppSettings selectedSettings;
+    private ConfiguracionAplicacion selectedSettings;
     @Nullable
     private Boolean hasValidProfile;
     @Nullable
@@ -81,7 +81,7 @@ public class SettingsDirController implements Serializable {
         currentSettingsList = settingsService.listAll();
         currentSettings = settingsService.returnCurrent();
         if (currentSettings == null) {
-            currentSettings = new AppSettings();
+            currentSettings = new ConfiguracionAplicacion();
         }
     }
 
@@ -167,7 +167,7 @@ public class SettingsDirController implements Serializable {
     }
 
     public void createNewSettings() {
-        newSettings = new AppSettings();
+        newSettings = new ConfiguracionAplicacion();
     }
 
     public void saveInitSettings() {

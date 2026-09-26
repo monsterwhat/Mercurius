@@ -1,7 +1,7 @@
 package Models.Articulos;
 
 import Models.Articulos.Carrito.ArticuloCarrito;
-import Models.Users;
+import Models.Usuarios;
 import Utils.CarritoCalculations;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
@@ -60,7 +60,7 @@ public class Promocion {
     @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario; // Quien creó la promoción
+    private Usuarios usuario; // Quien creó la promoción
 
     public List<Date> getFechas() {
         List<Date> fechas = new ArrayList<>();

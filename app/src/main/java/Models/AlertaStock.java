@@ -1,7 +1,7 @@
 package Models;
 
 import Models.Articulos.Articulos;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.persistence.*;
 import java.io.Serializable;
 import java.util.Date;
@@ -14,7 +14,7 @@ import lombok.Data;
 @Entity
 @Data
 @Table(name = "stock_alerts")
-public class StockAlert implements Serializable {
+public class AlertaStock implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,12 +53,12 @@ public class StockAlert implements Serializable {
     
     @ManyToOne
     @JoinColumn(name = "usuario_resolucion")
-    private Users usuarioResolucion;
+    private Usuarios usuarioResolucion;
     
     @Column(name = "notas")
     private String notas;
     
-    public StockAlert() {
+    public AlertaStock() {
         this.fechaCreacion = new Date();
         this.estado = "active";
     }

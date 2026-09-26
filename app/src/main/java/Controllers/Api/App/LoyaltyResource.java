@@ -1,13 +1,13 @@
 package Controllers.Api.App;
 
-import Models.Clients;
-import Models.AppSettings;
+import Models.Clientes;
+import Models.ConfiguracionAplicacion;
 import Models.DTO.ApiResponse;
 import Models.DTO.LoyaltySummaryDTO;
 import Models.DTO.PagedResponse;
 import Models.DTO.PuntosTransaccionDTO;
 import Models.PuntosTransaccion;
-import Models.Users;
+import Models.Usuarios;
 import Services.AppSettingsService;
 import Services.ClientService;
 import Services.LoginService;
@@ -56,7 +56,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Reads reuse the exact service queries the legacy controller calls:
  * {@link ClientService#find} for the client lookup (clientCode is the
- * {@code Clients} primary key), {@link LoyaltyService#getTopLoyaltyCustomers}
+ * {@code Clientes} primary key), {@link LoyaltyService#getTopLoyaltyCustomers}
  * and {@link LoyaltyService#getCustomerPointsHistory}. The tier color is a
  * verbatim port of {@code LoyaltyController.getCustomerTierColor} thresholds
  * (#ffd700 Oro / #c0c0c0 Plata / #cd7f32 Bronce / #cccccc Básico).</p>
@@ -150,9 +150,9 @@ public class LoyaltyResource {
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response summary(
-            @PathParam("clientCode") @Parameter(description = "Client code (Clients.code)") int clientCode) {
+            @PathParam("clientCode") @Parameter(description = "Client code (Clientes.code)") int clientCode) {
         try {
-            Clients cliente = clientService.find(clientCode);
+            Clientes cliente = clientService.find(clientCode);
             if (cliente == null) {
                 return notFoundClient(clientCode);
             }
@@ -166,7 +166,7 @@ public class LoyaltyResource {
     }
 
     /**
-     * Clients with the highest points balances — same query as the legacy
+     * Clientes with the highest points balances — same query as the legacy
      * loadTopCustomers(), which uses a fixed limit of 10.
      */
     @GET
@@ -210,7 +210,7 @@ public class LoyaltyResource {
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response history(
-            @PathParam("clientCode") @Parameter(description = "Client code (Clients.code)") int clientCode,
+            @PathParam("clientCode") @Parameter(description = "Client code (Clientes.code)") int clientCode,
             @QueryParam("page") @DefaultValue("0") @Parameter(description = "Page number (0-based)") int page,
             @QueryParam("size") @DefaultValue("20") @Parameter(description = "Page size (max 100)") int size) {
 
@@ -219,7 +219,7 @@ public class LoyaltyResource {
         page = Math.max(page, 0);
 
         try {
-            Clients cliente = clientService.find(clientCode);
+            Clientes cliente = clientService.find(clientCode);
             if (cliente == null) {
                 return notFoundClient(clientCode);
             }
@@ -292,7 +292,7 @@ public class LoyaltyResource {
             // Legacy loads selectedSettings via appSettingsService.returnCurrent()
             // and silently skips the save when it is null; over REST that state
             // is surfaced as 404 instead of a silent no-op.
-            AppSettings settings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
             if (settings == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity(ApiResponse.error("NOT_FOUND", "No hay una configuración activa del sistema"))
@@ -393,7 +393,7 @@ public class LoyaltyResource {
             @QueryParam("page") @DefaultValue("0") int page,
             @QueryParam("size") @DefaultValue("20") int size) {
         try {
-            Clients cliente = clientService.find(clientCode);
+            Clientes cliente = clientService.find(clientCode);
             if (cliente == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
@@ -502,11 +502,11 @@ public class LoyaltyResource {
     }
 
     /**
-     * Resolves the authenticated Users row for audit attribution, mirroring
+     * Resolves the authenticated Usuarios row for audit attribution, mirroring
      * legacy currentSession.getCurrentUser(); null when anonymous/unknown.
      */
     @Nullable
-    private Users currentUserOrNull() {
+    private Usuarios currentUserOrNull() {
         if (securityIdentity == null || securityIdentity.isAnonymous()
                 || securityIdentity.getPrincipal() == null) {
             return null;
@@ -521,10 +521,10 @@ public class LoyaltyResource {
     }
 
     /**
-     * Manual mapper: Clients → LoyaltySummaryDTO with the tier color ported
+     * Manual mapper: Clientes → LoyaltySummaryDTO with the tier color ported
      * verbatim from LoyaltyController.getCustomerTierColor().
      */
-    private static LoyaltySummaryDTO toSummaryDTO(@Nonnull Clients cliente) {
+    private static LoyaltySummaryDTO toSummaryDTO(@Nonnull Clientes cliente) {
         return new LoyaltySummaryDTO(
                 cliente.getCode(),
                 cliente.getName(),
@@ -536,7 +536,7 @@ public class LoyaltyResource {
 
     /** Verbatim port of LoyaltyController.getCustomerTierColor(). */
     @Nonnull
-    private static String tierColor(@Nonnull Clients cliente) {
+    private static String tierColor(@Nonnull Clientes cliente) {
         if (cliente.getPuntosAcumulados() == null) {
             return "#cccccc"; // Gray
         }
@@ -553,7 +553,7 @@ public class LoyaltyResource {
 
     /** Manual mapper: PuntosTransaccion → PuntosTransaccionDTO (cliente flattened). */
     private static PuntosTransaccionDTO toTransaccionDTO(@Nonnull PuntosTransaccion tx) {
-        Clients cliente = tx.getCliente();
+        Clientes cliente = tx.getCliente();
         return new PuntosTransaccionDTO(
                 tx.getFechaCreacion(),
                 tx.getTipoTransaccion(),
@@ -613,7 +613,7 @@ public class LoyaltyResource {
 
     /** Current loyalty settings for the panel; ZERO/0 defaults mirror T20 reportes stats. */
     private Map<String, Object> ajustesMap() {
-        AppSettings settings = appSettingsService.returnCurrent();
+        ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         Map<String, Object> ajustes = new HashMap<>();
         ajustes.put("cashbackPercentage",
                 settings == null || settings.getCashbackPercentage() == null

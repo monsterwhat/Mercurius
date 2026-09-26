@@ -32,8 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * DocumentoStrategy flow does; receptor/emisor stay null because every
  * Encabezado column is nullable.</p>
  *
- * <p>Note: {@code listAllEmitidosBy(Users)} deliberately has no scenario — it
- * binds a Users entity parameter against a plain String column, a pre-existing
+ * <p>Note: {@code listAllEmitidosBy(Usuarios)} deliberately has no scenario — it
+ * binds a Usuarios entity parameter against a plain String column, a pre-existing
  * quirk that is out of scope per plan guardrails (no behavior fixes here).</p>
  *
  * <p>Scenarios (8): createAndReturn→find→update→delete round-trip;

@@ -1,6 +1,6 @@
 package Utils;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import Models.Departamento;
@@ -20,7 +20,7 @@ import Services.LoyaltyService;
 import Services.MensajeReceptorService;
 import Services.StockAlertService;
 import Services.TipoCambioService;
-import Models.StockAlert;
+import Models.AlertaStock;
 import io.quarkus.scheduler.Scheduled;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import jakarta.annotation.Nonnull;
@@ -220,7 +220,7 @@ public class ProgramadorTareas {
     @Fallback(fallbackMethod = "revisarRecibosEnCorreosFallback")
     public void revisarRecibosEnCorreos() {
         
-AppSettings currentSettings = appSettingsService.returnCurrent();
+ConfiguracionAplicacion currentSettings = appSettingsService.returnCurrent();
 String correoElectronico = currentSettings.getCorreoElectronico();
 String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
@@ -516,7 +516,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
     @Scheduled(cron = "0 0 6 * * ?")
     public void notificarLlegadaProveedores() {
         try {
-            AppSettings currentSettings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion currentSettings = appSettingsService.returnCurrent();
             String correoElectronico = currentSettings.getCorreoElectronico();
             String contrasenaCorreo = currentSettings.getContrasenaCorreo();
 
@@ -713,7 +713,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
         try {
             stockAlertService.checkAndCreateStockAlerts();
 
-            List<StockAlert> alertas = stockAlertService.getActiveStockAlerts();
+            List<AlertaStock> alertas = stockAlertService.getActiveStockAlerts();
             if (alertas == null || alertas.isEmpty()) {
                 LOG.info("failed to notificar alertas stock");
                 return;
@@ -744,7 +744,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
         }
     }
 
-    private String construirCuerpoAlertasStock(List<StockAlert> alertas) {
+    private String construirCuerpoAlertasStock(List<AlertaStock> alertas) {
         StringBuilder body = new StringBuilder();
         body.append("Reporte Diario de Alertas de Stock\n");
         body.append("===================================\n\n");
@@ -754,7 +754,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
         body.append(String.format(fmt, "Artículo", "Stock Actual", "Stock Mínimo", "Tipo", "Departamento"));
         body.append(String.format(fmt, "------------------------------", "------------", "------------", "---------------", "--------------------"));
 
-        for (StockAlert alerta : alertas) {
+        for (AlertaStock alerta : alertas) {
             String nombre = alerta.getArticulo() != null ? alerta.getArticulo().getNombre() : "N/A";
             String depto = alerta.getDepartamento() != null ? alerta.getDepartamento().getNombre() : "N/A";
             String tipo;
@@ -781,7 +781,7 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
     @Scheduled(cron = "0 0 * * * ?")
     public void ejecutarBackupProgramado() {
         try {
-            AppSettings currentSettings = backupService.getSettings();
+            ConfiguracionAplicacion currentSettings = backupService.getSettings();
             if (currentSettings == null) return;
 
             Boolean habilitado = currentSettings.getBackupHabilitado();

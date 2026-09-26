@@ -12,7 +12,7 @@ import io.quarkus.security.runtime.QuarkusSecurityIdentity;
 import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import Models.Users;
+import Models.Usuarios;
 import Services.auth.SessionAuthAdapter;
 
 /**
@@ -44,7 +44,7 @@ import Services.auth.SessionAuthAdapter;
  * explicit disabled check is defense-in-depth for callers that hand us a
  * loaded-but-disabled entity path in the future.
  *
- * <p><b>Roles:</b> derived from {@code Users.groupName} via
+ * <p><b>Roles:</b> derived from {@code Usuarios.groupName} via
  * {@link UserRoleMapper#mapGroupNameToRoles(String)}, preserving the legacy
  * {@code SessionController.is*()} truth table (admin ⇒ all six roles).
  */
@@ -73,7 +73,7 @@ public class MercuriusIdentityProvider implements IdentityProvider<UsernamePassw
             throw new AuthenticationFailedException("Credenciales vacias para: " + username);
         }
 
-        Users user = loginService.findByUsername(username);
+        Usuarios user = loginService.findByUsername(username);
         if (user == null) {
             // findByUsername filters status = true, so this also covers disabled users.
             throw new AuthenticationFailedException("Usuario desconocido o deshabilitado: " + username);

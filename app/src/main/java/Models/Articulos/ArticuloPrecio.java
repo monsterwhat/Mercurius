@@ -1,6 +1,6 @@
 package Models.Articulos;
 
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
@@ -50,7 +50,7 @@ public class ArticuloPrecio {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario; // Who made the purchase or set the price
+    private Usuarios usuario; // Who made the purchase or set the price
 
     @PrePersist
     protected void onCreate() {

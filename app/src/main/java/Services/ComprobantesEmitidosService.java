@@ -2,7 +2,7 @@ package Services;
 
 import Models.ComprobantesEmitidos;
 import Models.Encabezado.Encabezado;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
@@ -148,7 +148,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
       
-    public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Users user) {
+    public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Usuarios user) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -171,7 +171,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
     
-    public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Users user, @Nonnull Date startDate, @Nonnull Date endDate) {
+    public @Nullable List<ComprobantesEmitidos> listAllEmitidosBy(@Nonnull Usuarios user, @Nonnull Date startDate, @Nonnull Date endDate) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -214,7 +214,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
     
-    public @Nullable ComprobantesEmitidos findLastTransactionByUser(@Nonnull Users user) {
+    public @Nullable ComprobantesEmitidos findLastTransactionByUser(@Nonnull Usuarios user) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +

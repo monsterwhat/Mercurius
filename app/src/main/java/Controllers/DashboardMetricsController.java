@@ -23,7 +23,7 @@ public class DashboardMetricsController {
     @Nonnull
     public Response getKPIs(@QueryParam("username") @Nullable String username) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             DashboardMetricsService.DashboardKPI kpis = dashboardMetricsService.getKPIs(user);
             return Response.ok(kpis).build();
@@ -38,7 +38,7 @@ public class DashboardMetricsController {
     @Nonnull
     public Response getTodaySales(@QueryParam("username") @Nullable String username) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             return Response.ok(dashboardMetricsService.getTodaySales(user)).build();
         } catch (RuntimeException e) {
@@ -52,7 +52,7 @@ public class DashboardMetricsController {
     @Nonnull
     public Response getYesterdaySales(@QueryParam("username") @Nullable String username) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             return Response.ok(dashboardMetricsService.getYesterdaySales(user)).build();
         } catch (RuntimeException e) {
@@ -66,7 +66,7 @@ public class DashboardMetricsController {
     @Nonnull
     public Response getWeekSales(@QueryParam("username") @Nullable String username) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             return Response.ok(dashboardMetricsService.getWeekSales(user)).build();
         } catch (RuntimeException e) {
@@ -80,7 +80,7 @@ public class DashboardMetricsController {
     @Nonnull
     public Response getMonthSales(@QueryParam("username") @Nullable String username) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             return Response.ok(dashboardMetricsService.getMonthSales(user)).build();
         } catch (RuntimeException e) {
@@ -94,7 +94,7 @@ public class DashboardMetricsController {
     @Nonnull
     public Response getTodayTransactions(@QueryParam("username") @Nullable String username) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             return Response.ok(dashboardMetricsService.getTodayTransactions(user)).build();
         } catch (RuntimeException e) {
@@ -110,7 +110,7 @@ public class DashboardMetricsController {
             @QueryParam("username") @Nullable String username,
             @QueryParam("days") @DefaultValue("30") int days) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             return Response.ok(dashboardMetricsService.getAverageTicket(user, days)).build();
         } catch (RuntimeException e) {
@@ -126,7 +126,7 @@ public class DashboardMetricsController {
             @QueryParam("username") @Nullable String username,
             @QueryParam("limit") @DefaultValue("10") int limit) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             List<DashboardMetricsService.TopProduct> products = dashboardMetricsService.getTopSellingProducts(user, limit);
             return Response.ok(products).build();
@@ -143,7 +143,7 @@ public class DashboardMetricsController {
             @QueryParam("username") @Nullable String username,
             @QueryParam("date") @Nullable String dateStr) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             LocalDate date = dateStr != null ? LocalDate.parse(dateStr) : LocalDate.now();
             List<DashboardMetricsService.HourlySales> hourlySales = dashboardMetricsService.getHourlySalesDistribution(user, date);
@@ -159,7 +159,7 @@ public class DashboardMetricsController {
     @Nonnull
     public Response getWeeklySalesBreakdown(@QueryParam("username") @Nullable String username) {
         try {
-            Models.Users user = new Models.Users();
+            Models.Usuarios user = new Models.Usuarios();
             user.setUsername(username);
             List<DashboardMetricsService.DailySales> weeklySales = dashboardMetricsService.getWeeklySalesBreakdown(user);
             return Response.ok(weeklySales).build();

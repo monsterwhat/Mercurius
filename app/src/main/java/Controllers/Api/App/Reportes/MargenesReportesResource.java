@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import Models.Familia;
-import Models.ProfitMarginSnapshot;
+import Models.CorteMargen;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.ProfitAnalysisService;
@@ -91,7 +91,7 @@ public class MargenesReportesResource {
         Date endDate = toDate(ReportePageSupport.parseDate(fin), LocalDate.now());
         Date startDate = toDate(ReportePageSupport.parseDate(inicio), LocalDate.now().minusDays(30));
 
-        List<ProfitMarginSnapshot> snapshots;
+        List<CorteMargen> snapshots;
         if (departamento != null && !departamento.isBlank()) {
             snapshots = profitAnalysisService.getMarginTrend(departamento, "department", startDate, endDate);
         } else if (familia != null && !familia.isBlank()) {
@@ -103,16 +103,16 @@ public class MargenesReportesResource {
 
         BigDecimal averageMargin = profitAnalysisService.getAverageProfitMargin(startDate, endDate);
         BigDecimal totalRevenue = snapshots.stream()
-                .map(ProfitMarginSnapshot::getTotalVentas)
+                .map(CorteMargen::getTotalVentas)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal totalProfit = snapshots.stream()
-                .map(ProfitMarginSnapshot::getTotalUtilidad)
+                .map(CorteMargen::getTotalUtilidad)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<Map<String, Object>> filasBase = new ArrayList<>();
-        for (ProfitMarginSnapshot snapshot : snapshots) {
+        for (CorteMargen snapshot : snapshots) {
             filasBase.add(Map.of(
                     "s", snapshot,
                     "etiqueta", etiquetaDesempeno(snapshot.getMargenPromedio())));
@@ -199,10 +199,10 @@ public class MargenesReportesResource {
             @Nullable String sort, @Nullable String dir) {
         boolean ascending = !ReportePageSupport.isDescending(dir);
         Comparator<Map<String, Object>> comparator = switch (sort == null ? "" : sort) {
-            case "departamento" -> ReportePageSupport.sortBy(f -> (String) ((ProfitMarginSnapshot) f.get("s")).getDepartamento(), ascending);
-            case "ventas" -> ReportePageSupport.sortBy(f -> ((ProfitMarginSnapshot) f.get("s")).getTotalVentas(), ascending);
-            case "utilidad" -> ReportePageSupport.sortBy(f -> ((ProfitMarginSnapshot) f.get("s")).getTotalUtilidad(), ascending);
-            case "margen" -> ReportePageSupport.sortBy(f -> ((ProfitMarginSnapshot) f.get("s")).getMargenPromedio(), ascending);
+            case "departamento" -> ReportePageSupport.sortBy(f -> (String) ((CorteMargen) f.get("s")).getDepartamento(), ascending);
+            case "ventas" -> ReportePageSupport.sortBy(f -> ((CorteMargen) f.get("s")).getTotalVentas(), ascending);
+            case "utilidad" -> ReportePageSupport.sortBy(f -> ((CorteMargen) f.get("s")).getTotalUtilidad(), ascending);
+            case "margen" -> ReportePageSupport.sortBy(f -> ((CorteMargen) f.get("s")).getMargenPromedio(), ascending);
             default -> null;
         };
         if (comparator != null) {

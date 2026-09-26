@@ -5,7 +5,7 @@ import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import Models.Clients;
+import Models.Clientes;
 import Services.ClientService;
 
 import java.time.LocalDate;
@@ -74,10 +74,10 @@ class ClientesReportesPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void textFilterRoundTripNarrowsToOneFixture() {
-        Clients cliente = null;
+        Clientes cliente = null;
         String marker = "IT-T20-Filtro-" + UUID.randomUUID();
         try {
-            cliente = new Clients();
+            cliente = new Clientes();
             cliente.setName(marker);
             cliente.setAddress("Barrio IT-T20");
             cliente.setProvincia("1");

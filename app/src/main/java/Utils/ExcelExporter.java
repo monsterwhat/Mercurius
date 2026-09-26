@@ -9,9 +9,9 @@ import Models.Resumen.ResumenFactura;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
-import Models.ProfitMarginHistory;
-import Models.ProfitMarginSnapshot;
-import Models.StockAlert;
+import Models.HistorialMargen;
+import Models.CorteMargen;
+import Models.AlertaStock;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -282,7 +282,7 @@ public class ExcelExporter {
     }
     
     @Nonnull
-    public File exportStockAlertsToExcel(@Nonnull List<StockAlert> stockAlerts, @Nonnull String filePath) throws IOException {
+    public File exportStockAlertsToExcel(@Nonnull List<AlertaStock> stockAlerts, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Alertas de Stock");
 
@@ -292,7 +292,7 @@ public class ExcelExporter {
         createHeaderRow(sheet, headers);
 
         int rowNum = 1;
-        for (StockAlert alert : stockAlerts) {
+        for (AlertaStock alert : stockAlerts) {
             Row row = sheet.createRow(rowNum++);
 
             row.createCell(0).setCellValue(alert.getId());
@@ -314,7 +314,7 @@ public class ExcelExporter {
     }
 
     @Nonnull
-    public File exportProfitMarginHistoryToExcel(@Nonnull List<ProfitMarginHistory> marginHistory, @Nonnull String filePath) throws IOException {
+    public File exportProfitMarginHistoryToExcel(@Nonnull List<HistorialMargen> marginHistory, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Historial Márgenes");
 
@@ -323,7 +323,7 @@ public class ExcelExporter {
         createHeaderRow(sheet, headers);
 
         int rowNum = 1;
-        for (ProfitMarginHistory history : marginHistory) {
+        for (HistorialMargen history : marginHistory) {
             Row row = sheet.createRow(rowNum++);
 
             row.createCell(0).setCellValue((long) history.getId());
@@ -344,7 +344,7 @@ public class ExcelExporter {
     }
 
     @Nonnull
-    public File exportProfitMarginSnapshotsToExcel(@Nonnull List<ProfitMarginSnapshot> marginSnapshots, @Nonnull String filePath) throws IOException {
+    public File exportProfitMarginSnapshotsToExcel(@Nonnull List<CorteMargen> marginSnapshots, @Nonnull String filePath) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Snapshots Márgenes");
 
@@ -353,7 +353,7 @@ public class ExcelExporter {
         createHeaderRow(sheet, headers);
 
         int rowNum = 1;
-        for (ProfitMarginSnapshot snapshot : marginSnapshots) {
+        for (CorteMargen snapshot : marginSnapshots) {
             Row row = sheet.createRow(rowNum++);
 
             row.createCell(0).setCellValue(snapshot.getId());

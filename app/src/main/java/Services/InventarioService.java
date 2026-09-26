@@ -3,7 +3,7 @@ package Services;
 import Models.Articulos.ArticuloStock; 
 import Models.Inventario;
 import Models.ReportesFamiliasYDepartamentos;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;

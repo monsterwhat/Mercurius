@@ -9,7 +9,7 @@ import jakarta.inject.Inject;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import Models.Clients;
+import Models.Clientes;
 import Models.PuntosTransaccion;
 import Services.ClientService;
 import Services.LoyaltyService;
@@ -121,7 +121,7 @@ class LoyaltyAdminPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void seededPointsReflectInTopTableWithTierBadge() {
-        Clients cliente = null;
+        Clientes cliente = null;
         try {
             cliente = seedClientWithPoints("IT-T25 Top " + UUID.randomUUID(), 50);
 
@@ -152,7 +152,7 @@ class LoyaltyAdminPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void drawerShowsSummaryCardAndPaginatesSeededHistory() {
-        Clients cliente = null;
+        Clientes cliente = null;
         List<PuntosTransaccion> sembradas = new ArrayList<>();
         try {
             cliente = seedClientWithPoints("IT-T25 Drawer " + UUID.randomUUID(), 50);
@@ -289,8 +289,8 @@ class LoyaltyAdminPageTest extends support.ContextPathIsolation {
         return spec;
     }
 
-    private Clients seedClientWithPoints(String name, double points) {
-        Clients cliente = new Clients();
+    private Clientes seedClientWithPoints(String name, double points) {
+        Clientes cliente = new Clientes();
         cliente.setName(name);
         cliente.setAddress("Barrio IT-T25");
         cliente.setProvincia("1");
@@ -311,7 +311,7 @@ class LoyaltyAdminPageTest extends support.ContextPathIsolation {
         return cliente;
     }
 
-    private PuntosTransaccion seedTransaccion(Clients cliente, String descripcion, Date fecha) {
+    private PuntosTransaccion seedTransaccion(Clientes cliente, String descripcion, Date fecha) {
         PuntosTransaccion transaccion = new PuntosTransaccion();
         transaccion.setCliente(cliente);
         transaccion.setTipoTransaccion("earn");

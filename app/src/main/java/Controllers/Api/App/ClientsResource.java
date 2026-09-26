@@ -1,7 +1,7 @@
 package Controllers.Api.App;
 
 import Models.ClienteActividad;
-import Models.Clients;
+import Models.Clientes;
 import Models.DTO.ApiResponse;
 import Models.DTO.ClientsDTO;
 import Models.DTO.ClientsDetailDTO;
@@ -134,8 +134,8 @@ public class ClientsResource {
                 // Delegate to ClientService.searchByName exactly like the legacy
                 // filter path does; it returns the FULL match list (no paging),
                 // so pagination happens in memory over its result.
-                List<Clients> matches = clientService.searchByName(q.trim());
-                List<Clients> safeMatches = (matches != null) ? matches : List.of();
+                List<Clientes> matches = clientService.searchByName(q.trim());
+                List<Clientes> safeMatches = (matches != null) ? matches : List.of();
 
                 List<ClientsDTO> dtos = safeMatches.stream().map(this::toDTO).toList();
                 List<ClientsDTO> data = paginate(dtos, page, size);
@@ -168,7 +168,7 @@ public class ClientsResource {
     })
     public Response get(@PathParam("code") @Parameter(description = "Client code") int code) {
         try {
-            Clients client = clientService.find(code);
+            Clientes client = clientService.find(code);
             if (client == null) {
                 return notFound(code);
             }
@@ -222,7 +222,7 @@ public class ClientsResource {
                         .build();
             }
 
-            Clients client = new Clients();
+            Clientes client = new Clientes();
             applyScalars(client, payload);
             client.setStatus(true); // parity: createClient() always enables new clients
             replaceActividades(client, payload.getActividades());
@@ -271,7 +271,7 @@ public class ClientsResource {
                 return badRequest(validationError);
             }
 
-            Clients client = clientService.find(code);
+            Clientes client = clientService.find(code);
             if (client == null) {
                 return notFound(code);
             }
@@ -308,7 +308,7 @@ public class ClientsResource {
     })
     public Response delete(@PathParam("code") @Parameter(description = "Client code") int code) {
         try {
-            Clients client = clientService.find(code);
+            Clientes client = clientService.find(code);
             if (client == null) {
                 return notFound(code);
             }
@@ -398,7 +398,7 @@ public class ClientsResource {
         @APIResponse(responseCode = "404", description = "Unknown code")
     })
     public Response formEditar(@PathParam("code") int code) {
-        Clients client = clientService.find(code);
+        Clientes client = clientService.find(code);
         if (client == null) {
             return notFound(code);
         }
@@ -462,7 +462,7 @@ public class ClientsResource {
     /**
      * Distinct zone codes already used by clients (self-building directory
      * so users pick instead of memorizing numbers). There is no zone
-     * catalog entity; zones are bare ints on Clients.
+     * catalog entity; zones are bare ints on Clientes.
      */
     @GET
     @Path("/zonas")
@@ -470,7 +470,7 @@ public class ClientsResource {
     @Operation(summary = "List zone codes in use with client counts")
     public Response zonasEnUso() {
         Map<Integer, Long> counts = new java.util.TreeMap<>();
-        for (Clients c : orEmpty(clientService.listAll())) {
+        for (Clientes c : orEmpty(clientService.listAll())) {
             counts.merge(c.getZoneCode(), 1L, Long::sum);
         }
         List<Map<String, Object>> data = new ArrayList<>();
@@ -583,7 +583,7 @@ public class ClientsResource {
      * stored data; blank names are rejected upstream. Trade-off: explicit
      * null-clearing of a field is not supported through this endpoint.
      */
-    private static void applyScalars(@Nonnull Clients target, @Nonnull ClientsDetailDTO dto) {
+    private static void applyScalars(@Nonnull Clientes target, @Nonnull ClientsDetailDTO dto) {
         if (dto.getName() != null) {
             target.setName(dto.getName().trim());
         }
@@ -638,7 +638,7 @@ public class ClientsResource {
      * same list instance) as required for cascade=ALL + orphanRemoval=true to
      * track removals correctly under Hibernate.
      */
-    private static void replaceActividades(@Nonnull Clients client,
+    private static void replaceActividades(@Nonnull Clientes client,
                                            @Nullable List<ClientsDetailDTO.ActividadInfo> actividades) {
         client.getActividades().clear();
         if (actividades == null) {
@@ -673,7 +673,7 @@ public class ClientsResource {
     }
 
     /** Row mapping for lists: identity, contact, loyalty points and status. */
-    private ClientsDTO toDTO(Clients client) {
+    private ClientsDTO toDTO(Clientes client) {
         return new ClientsDTO(client.getCode(), client.getName(), client.getAddress(),
                 client.getIdType(), client.getIdNumber(), client.getEmail(),
                 client.getPhoneNumber(), client.isTaxpayer(), client.getPuntosAcumulados(),
@@ -685,8 +685,8 @@ public class ClientsResource {
      * loyalty points state and flattened relations (usuario, actividades).
      * Must run inside a transaction: actividades is a LAZY collection.
      */
-    private ClientsDetailDTO toDetailDTO(Clients client) {
-        Models.Users usuario = client.getUsuario();
+    private ClientsDetailDTO toDetailDTO(Clientes client) {
+        Models.Usuarios usuario = client.getUsuario();
         List<ClientsDetailDTO.ActividadInfo> actividades = new ArrayList<>();
         if (client.getActividades() != null) {
             for (ClienteActividad actividad : client.getActividades()) {
@@ -799,7 +799,7 @@ public class ClientsResource {
      */
     private Response handleFormMutationResult(@Nonnull Response result,
                                               @Nonnull String modo,
-                                              @Nullable Clients cliente,
+                                              @Nullable Clientes cliente,
                                               @Nonnull String redirectUrl) {
         if (!isHxRequest()) {
             return result;
@@ -821,7 +821,7 @@ public class ClientsResource {
         return redisplayForm(modo, cliente, null, mensaje, severity, mensaje);
     }
 
-    private Response redisplayForm(@Nonnull String modo, @Nullable Clients cliente,
+    private Response redisplayForm(@Nonnull String modo, @Nullable Clientes cliente,
                                    @Nullable String errorNombre, @Nullable String errorGeneral,
                                    @Nullable String toastSeverity, @Nullable String toastMessage) {
         return Response.status(Response.Status.BAD_REQUEST)
@@ -831,7 +831,7 @@ public class ClientsResource {
                 .build();
     }
 
-    private TemplateInstance formInstance(@Nonnull String modo, @Nullable Clients cliente,
+    private TemplateInstance formInstance(@Nonnull String modo, @Nullable Clientes cliente,
                                           @Nullable String errorNombre, @Nullable String errorGeneral,
                                           @Nullable String toastSeverity, @Nullable String toastMessage) {
         String birthDateIso = null;
@@ -851,7 +851,7 @@ public class ClientsResource {
 
     private TemplateInstance renderFullPage() {
         TableModel model = buildTableModel(1, 20, null, "asc", null);
-        List<Clients> todos = orEmpty(clientService.listAll());
+        List<Clientes> todos = orEmpty(clientService.listAll());
         long activos = todos.stream().filter(c -> c.getStatus() != null && c.getStatus()).count();
         return pageIndex
                 .data("tablaClientes", model.asMap())
@@ -874,9 +874,9 @@ public class ClientsResource {
 
     private TableModel buildTableModel(int page, int size, @Nullable String sort,
                                        @Nullable String dir, @Nullable String q) {
-        List<Clients> filas;
+        List<Clientes> filas;
         if (q != null && !q.isBlank()) {
-            List<Clients> matches = clientService.searchByName(q.trim());
+            List<Clientes> matches = clientService.searchByName(q.trim());
             filas = new ArrayList<>(matches != null ? matches : List.of());
         } else {
             filas = new ArrayList<>(orEmpty(clientService.listAll()));
@@ -913,24 +913,24 @@ public class ClientsResource {
         return list == null ? List.of() : list;
     }
 
-    private static void sortClients(@Nonnull List<Clients> rows, @Nullable String sort,
+    private static void sortClients(@Nonnull List<Clientes> rows, @Nullable String sort,
                                     @Nullable String dir) {
         if (rows.isEmpty() || sort == null || sort.isBlank()) {
             return;
         }
-        Comparator<Clients> cmp = switch (sort) {
-            case "code" -> Comparator.comparingInt(Clients::getCode);
-            case "name" -> Comparator.comparing(Clients::getName,
+        Comparator<Clientes> cmp = switch (sort) {
+            case "code" -> Comparator.comparingInt(Clientes::getCode);
+            case "name" -> Comparator.comparing(Clientes::getName,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "address" -> Comparator.comparing(Clients::getAddress,
+            case "address" -> Comparator.comparing(Clientes::getAddress,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "email" -> Comparator.comparing(Clients::getEmail,
+            case "email" -> Comparator.comparing(Clientes::getEmail,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "idNumber" -> Comparator.comparing(Clients::getIdNumber,
+            case "idNumber" -> Comparator.comparing(Clientes::getIdNumber,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "phoneNumber" -> Comparator.comparing(Clients::getPhoneNumber,
+            case "phoneNumber" -> Comparator.comparing(Clientes::getPhoneNumber,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "status" -> Comparator.comparing(Clients::getStatus,
+            case "status" -> Comparator.comparing(Clientes::getStatus,
                     Comparator.nullsLast(Comparator.naturalOrder()));
             default -> null;
         };

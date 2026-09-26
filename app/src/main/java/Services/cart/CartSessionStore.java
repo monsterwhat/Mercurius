@@ -1,7 +1,7 @@
 package Services.cart;
 
 import Models.Articulos.Carrito.CartSessionContext;
-import Models.PagoEntry;
+import Models.EntradaPago;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -57,7 +57,7 @@ public class CartSessionStore {
         private volatile @Nullable String authorizedBy;
 
         /** Payment entries staged via POST /payment-entries (mirrors the JSF pagos list). */
-        private volatile @Nonnull List<PagoEntry> pagos = new ArrayList<>();
+        private volatile @Nonnull List<EntradaPago> pagos = new ArrayList<>();
 
         public @Nonnull CartSessionContext getCartContext() {
             return cartContext;
@@ -87,11 +87,11 @@ public class CartSessionStore {
             this.authorizedBy = authorizedBy;
         }
 
-        public @Nonnull List<PagoEntry> getPagos() {
+        public @Nonnull List<EntradaPago> getPagos() {
             return pagos;
         }
 
-        public void setPagos(@Nonnull List<PagoEntry> pagos) {
+        public void setPagos(@Nonnull List<EntradaPago> pagos) {
             this.pagos = new ArrayList<>(pagos);
         }
     }

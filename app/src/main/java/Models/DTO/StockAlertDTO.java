@@ -4,7 +4,7 @@ import jakarta.annotation.Nullable;
 import java.util.Date;
 
 /**
- * Read-side view of a stock alert (entity {@code Models.StockAlert}) for the
+ * Read-side view of a stock alert (entity {@code Models.AlertaStock}) for the
  * Alertas de Stock report page.
  *
  * Mapping notes (entity -> DTO):

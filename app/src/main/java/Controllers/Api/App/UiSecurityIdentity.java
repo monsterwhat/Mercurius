@@ -21,7 +21,7 @@ import jakarta.inject.Inject;
  *
  * <p><b>Role semantics (parity with the legacy JSF navbar):</b> the six role
  * tokens {@code admin, facturacion, inventario, usuario, tributacion,
- * registro} are exactly the {@code Users.groupName} substring tokens checked
+ * registro} are exactly the {@code Usuarios.groupName} substring tokens checked
  * by {@code Controllers.SessionController#isFacturacion...isAdmin} (lines
  * 141-187). The T12 identity provider maps group names through
  * {@code Services.auth.UserRoleMapper}, which grants an admin identity all

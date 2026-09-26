@@ -4,7 +4,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Maps the free-text {@code Users.groupName} column to Quarkus security roles,
+ * Maps the free-text {@code Usuarios.groupName} column to Quarkus security roles,
  * preserving the exact observable behavior of the legacy hand-rolled checks in
  * {@code Controllers.SessionController#isFacturation/isInventarios/isUsuarios/
  * isTributacion/isRegistros/isAdmin} (lines 141-187).
@@ -45,7 +45,7 @@ public final class UserRoleMapper {
     }
 
     /**
-     * Maps a raw {@code Users.groupName} value to the Quarkus role set.
+     * Maps a raw {@code Usuarios.groupName} value to the Quarkus role set.
      *
      * @param groupName raw database value, e.g. {@code "admin"},
      *                  {@code "facturacion,usuario"} or the JSF

@@ -1,7 +1,7 @@
 package Controllers;
 
 import Services.QuickActionsService;
-import Models.UserShortcut;
+import Models.AtajoUsuario;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
@@ -24,7 +24,7 @@ public class QuickActionsController {
     @Nonnull
     public Response getUserShortcuts(@PathParam("username") @Nonnull String username) {
         try {
-            List<UserShortcut> shortcuts = quickActionsService.getUserShortcuts(username);
+            List<AtajoUsuario> shortcuts = quickActionsService.getUserShortcuts(username);
             return Response.ok(shortcuts).build();
         } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -37,7 +37,7 @@ public class QuickActionsController {
     @Nonnull
     public Response getFavoriteActions(@PathParam("username") @Nonnull String username) {
         try {
-            List<UserShortcut> favorites = quickActionsService.getFavoriteActions(username);
+            List<AtajoUsuario> favorites = quickActionsService.getFavoriteActions(username);
             return Response.ok(favorites).build();
         } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -52,7 +52,7 @@ public class QuickActionsController {
             @PathParam("username") @Nonnull String username,
             @QueryParam("limit") @DefaultValue("5") int limit) {
         try {
-            List<UserShortcut> mostUsed = quickActionsService.getMostUsedActions(username, limit);
+            List<AtajoUsuario> mostUsed = quickActionsService.getMostUsedActions(username, limit);
             return Response.ok(mostUsed).build();
         } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -63,9 +63,9 @@ public class QuickActionsController {
     @POST
     @Path("/shortcuts")
     @Nonnull
-    public Response addShortcut(@Nonnull UserShortcut shortcut) {
+    public Response addShortcut(@Nonnull AtajoUsuario shortcut) {
         try {
-            UserShortcut created = quickActionsService.addShortcut(shortcut);
+            AtajoUsuario created = quickActionsService.addShortcut(shortcut);
             return Response.ok(created).build();
         } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -78,7 +78,7 @@ public class QuickActionsController {
     @Nonnull
     public Response toggleFavorite(@PathParam("id") @Nonnull Long id) {
         try {
-            UserShortcut updated = quickActionsService.toggleFavorite(id);
+            AtajoUsuario updated = quickActionsService.toggleFavorite(id);
             return Response.ok(updated).build();
         } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)

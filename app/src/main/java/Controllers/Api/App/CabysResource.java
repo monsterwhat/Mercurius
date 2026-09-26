@@ -325,7 +325,7 @@ public class CabysResource {
         Response result = update(codigo,
                 new CabysDTO(codigo, descripcionLimpia, null, null, null, estadoLimpio));
         if (isHxRequest() && result.getStatus() == Response.Status.OK.getStatusCode()) {
-            return hxRedirect("/Mercurius/app/cabys");
+            return hxRedirect("/api/app/cabys/table");
         }
         return result;
     }
@@ -356,7 +356,7 @@ public class CabysResource {
             cabysService.saveAllDB(catalogo);
             LOG.infof("catalogo CABYS imported: %d codes | user=" + usuario, catalogo.size());
             if (isHxRequest()) {
-                return hxRedirect("/Mercurius/app/cabys");
+            return hxRedirect("/api/app/cabys/table");
             }
             return Response.ok(ApiResponse.ok(Map.of("importados", catalogo.size()))).build();
         } catch (Exception e) {

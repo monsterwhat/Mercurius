@@ -5,7 +5,7 @@ import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 
 import java.util.UUID;
@@ -71,13 +71,13 @@ class UsuariosReportesPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void rowCountMatchesDirectServiceCallAndNeverLeaksHashes() throws Exception {
-        Users seeded = null;
+        Usuarios seeded = null;
         String username = "IT-T20-User-" + UUID.randomUUID().toString().substring(0, 8);
         try {
             // LoginService.create() overrides GService.create without inheriting
             // its @Transactional binding, so the persist needs an active
             // transaction (UsersResource supplies one in production).
-            seeded = new Users();
+            seeded = new Usuarios();
             seeded.setUsername(username);
             seeded.setPassword("IT-T20-plain-password");
             seeded.setGroupName("registro");

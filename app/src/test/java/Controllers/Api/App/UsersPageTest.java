@@ -15,7 +15,7 @@ import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -132,7 +132,7 @@ class UsersPageTest extends support.ContextPathIsolation {
                 .statusCode(201)
                 .body("data.username", equalTo(marker));
 
-        Users creado = loginService.findByUsername(marker);
+        Usuarios creado = loginService.findByUsername(marker);
         assertNotNull(creado, "the JSON create must persist the user");
 
         authed(session)
@@ -149,7 +149,7 @@ class UsersPageTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .body("data.status", equalTo(false));
 
-        Users archived = loginService.find(creado.getId());
+        Usuarios archived = loginService.find(creado.getId());
         assertNotNull(archived);
         assertFalse(archived.getStatus(), "DELETE must soft-disable the user");
 
@@ -185,12 +185,12 @@ class UsersPageTest extends support.ContextPathIsolation {
                     .statusCode(200)
                     .header("HX-Redirect", equalTo("/api/app/users/table"));
 
-            Users creado = loginService.findByUsername(marker);
+            Usuarios creado = loginService.findByUsername(marker);
             assertNotNull(creado, "the HTMX form twin must persist the user");
             assertFalse(creado.getGroupName().isEmpty());
             loginService.delete(creado);
         } finally {
-            Users leftover = loginService.findByUsername(marker);
+            Usuarios leftover = loginService.findByUsername(marker);
             if (leftover != null) {
                 loginService.delete(leftover);
             }
@@ -223,7 +223,7 @@ class UsersPageTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(201);
 
-        Users creado = loginService.findByUsername(marker);
+        Usuarios creado = loginService.findByUsername(marker);
         assertNotNull(creado);
         try {
             authed(session)
@@ -236,7 +236,7 @@ class UsersPageTest extends support.ContextPathIsolation {
                     .body(containsString("hx-swap-oob"))
                     .body(containsString(marker));
         } finally {
-            Users archived = loginService.find(creado.getId());
+            Usuarios archived = loginService.find(creado.getId());
             loginService.delete(archived != null ? archived : creado);
         }
     }

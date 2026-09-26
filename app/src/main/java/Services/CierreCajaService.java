@@ -1,7 +1,7 @@
 package Services;
 
 import Models.CierreCaja;
-import Models.Users;
+import Models.Usuarios;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -28,7 +28,7 @@ public class CierreCajaService extends GService<CierreCaja> {
     public void init() {
     }
 
-    public @Nullable CierreCaja findSesionAbierta(@Nonnull Users usuario) {
+    public @Nullable CierreCaja findSesionAbierta(@Nonnull Usuarios usuario) {
         try {
             TypedQuery<CierreCaja> query = em.createQuery(
                 "SELECT c FROM CierreCaja c WHERE c.usuario = :usuario AND c.estado = 'abierto'",
@@ -45,7 +45,7 @@ public class CierreCajaService extends GService<CierreCaja> {
         }
     }
 
-    public @Nullable List<CierreCaja> listHistorial(@Nonnull Users usuario) {
+    public @Nullable List<CierreCaja> listHistorial(@Nonnull Usuarios usuario) {
         try {
             TypedQuery<CierreCaja> query = em.createQuery(
                 "SELECT c FROM CierreCaja c WHERE c.usuario = :usuario ORDER BY c.fechaApertura DESC",
@@ -59,7 +59,7 @@ public class CierreCajaService extends GService<CierreCaja> {
         }
     }
 
-    public @Nullable List<CierreCaja> listHistorialPorFecha(@Nonnull Users usuario, @Nonnull Date desde, @Nonnull Date hasta) {
+    public @Nullable List<CierreCaja> listHistorialPorFecha(@Nonnull Usuarios usuario, @Nonnull Date desde, @Nonnull Date hasta) {
         try {
             TypedQuery<CierreCaja> query = em.createQuery(
                 "SELECT c FROM CierreCaja c WHERE c.usuario = :usuario AND c.fechaApertura BETWEEN :desde AND :hasta ORDER BY c.fechaApertura DESC",

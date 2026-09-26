@@ -14,7 +14,7 @@ import Models.Departamento;
 import Models.DTO.ApiResponse;
 import Models.DTO.StockAlertConfigDTO;
 import Models.DTO.StockAlertDTO;
-import Models.StockAlert;
+import Models.AlertaStock;
 import Services.ArticulosService;
 import Services.StockAlertService;
 import io.quarkus.qute.Location;
@@ -40,7 +40,7 @@ import jakarta.ws.rs.core.Response;
 
 /**
  * Threshold-configuration surface for the stock-alert engine — plan task T33
- * (StockAlert CONFIG portion of the Qute/HTMX migration).
+ * (AlertaStock CONFIG portion of the Qute/HTMX migration).
  *
  * <p>{@link StockAlertService} manages thresholds at two levels and nothing
  * else (see the note in {@code AppSettingsDTO}: there is NO global settings
@@ -269,10 +269,10 @@ public class StockAlertConfigResource {
             return guard;
         }
         try {
-            List<StockAlert> activas = stockAlertService.getActiveStockAlerts();
+            List<AlertaStock> activas = stockAlertService.getActiveStockAlerts();
             List<StockAlertDTO> datos = new ArrayList<>();
             if (activas != null) {
-                for (StockAlert alerta : activas) {
+                for (AlertaStock alerta : activas) {
                     datos.add(aDTO(alerta));
                 }
             }
@@ -334,10 +334,10 @@ public class StockAlertConfigResource {
             // Triggered-alerts snapshot table (kit data-table, slot mode).
             int paginaSegura = Math.max(page, 1);
             int tamanoSeguro = Math.min(Math.max(size, 1), 100);
-            List<StockAlert> activas = stockAlertService.getActiveStockAlerts();
+            List<AlertaStock> activas = stockAlertService.getActiveStockAlerts();
             List<Map<String, Object>> filas = new ArrayList<>();
             if (activas != null) {
-                for (StockAlert alerta : activas) {
+                for (AlertaStock alerta : activas) {
                     filas.add(fila(alerta));
                 }
             }
@@ -430,7 +430,7 @@ public class StockAlertConfigResource {
     }
 
     /** Read-side mapping onto the pre-existing StockAlertDTO contract. */
-    private static StockAlertDTO aDTO(@Nonnull StockAlert alerta) {
+    private static StockAlertDTO aDTO(@Nonnull AlertaStock alerta) {
         Articulos articulo = alerta.getArticulo();
         Departamento departamento = alerta.getDepartamento();
         return new StockAlertDTO(
@@ -477,7 +477,7 @@ public class StockAlertConfigResource {
     }
 
     /** Display row for the read-only triggered-alerts table. */
-    private static Map<String, Object> fila(@Nonnull StockAlert alerta) {
+    private static Map<String, Object> fila(@Nonnull AlertaStock alerta) {
         Articulos articulo = alerta.getArticulo();
         Map<String, Object> fila = new LinkedHashMap<>();
         fila.put("tipo", etiquetaTipo(alerta.getTipoAlerta()));

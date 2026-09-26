@@ -1,9 +1,6 @@
 package Controllers;
 
-import io.quarkus.qute.Location;
-import io.quarkus.qute.Template;
 import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
@@ -24,11 +21,6 @@ public class FallbackResource {
 
     @Inject
     SecurityIdentity identity;
-
-    @Inject
-    @Nonnull
-    @Location("pages/error/404")
-    Template pagina404;
 
     @Context
     UriInfo uriInfo;
@@ -65,11 +57,10 @@ public class FallbackResource {
         if (anonymous) {
             return Response.seeOther(URI.create("/login")).build();
         }
-        String html = pagina404.data("ruta", requestPath).render();
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(html)
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
-                .build();
+        // Signed-in operator on a stale link: bounce to the dashboard rather
+        // than render a dead end. Same contract as NotFoundExceptionMapper, so
+        // both not-found entry points answer identically.
+        return Response.seeOther(URI.create("/Mercurius/app")).build();
     }
 
     @GET

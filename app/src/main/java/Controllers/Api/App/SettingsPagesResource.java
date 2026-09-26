@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.ConfiguracionMargen;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
@@ -29,7 +29,7 @@ import Services.ConfiguracionMargenService;
  * Qute/HTMX app surface:
  *
  * <ul>
- *   <li>{@code GET /app/aplicacion} — first-run wizard + AppSettings
+ *   <li>{@code GET /app/aplicacion} — first-run wizard + ConfiguracionAplicacion
  *       (legacy {@code secured/pages/Aplicacion/index.xhtml}).</li>
  *   <li>{@code GET /app/backups} — backup admin (legacy
  *       {@code secured/pages/Ajustes/Backups/index.xhtml}).</li>
@@ -83,7 +83,7 @@ public class SettingsPagesResource {
 
     private Response render(@Nonnull String titulo, @Nonnull String modo) {
         try {
-            AppSettings settings = backupService.getSettings();
+            ConfiguracionAplicacion settings = backupService.getSettings();
             Map<String, Object> model = new LinkedHashMap<>();
             model.put("titulo", titulo);
             model.put("modo", modo);
@@ -115,7 +115,7 @@ public class SettingsPagesResource {
      * Credential/key fields (correo password, certificado .p12, Hacienda
      * API key/encryption key, Fides auth password) are never carried.
      */
-    private static AppSettingsDTO toDTO(@Nonnull AppSettings s) {
+    private static AppSettingsDTO toDTO(@Nonnull ConfiguracionAplicacion s) {
         return new AppSettingsDTO(
                 s.getId(),
                 s.getNombrePerfil(),
@@ -173,7 +173,7 @@ public class SettingsPagesResource {
      * {@code mysqldumpResuelto=false} (resolvePgDump() is private), matching
      * {@code SettingsResource.toBackupStatusDTO()}.
      */
-    private static BackupStatusDTO toBackupStatusDTO(@Nullable AppSettings settings) {
+    private static BackupStatusDTO toBackupStatusDTO(@Nullable ConfiguracionAplicacion settings) {
         if (settings == null) {
             return new BackupStatusDTO(null, false, false);
         }

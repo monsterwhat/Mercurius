@@ -30,7 +30,7 @@ import java.util.List;
  * Fides must be running and configured with a user that has Hacienda credentials
  * set up via {@code POST /api/v1/credentials}. The tenant must be registered.
  * <p>
- * Configuration is read from the database {@link Models.AppSettings} entity
+ * Configuration is read from the database {@link Models.ConfiguracionAplicacion} entity
  * (fields prefixed {@code fides*}) via {@link AppSettingsService}.
  */
 @Named
@@ -124,9 +124,9 @@ public class FidesApiService {
     }
 
     // ── Config loader ──────────────────────────────────────────────────
-    /** Load Fides configuration from the database AppSettings entity. */
+    /** Load Fides configuration from the database ConfiguracionAplicacion entity. */
     private void loadConfig() {
-        Models.AppSettings settings = appSettingsService.returnCurrent();
+        Models.ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         if (settings != null) {
             fidesApiUrl = settings.getFidesApiUrl() != null ? settings.getFidesApiUrl() : "http://localhost:8080";
             fidesAuthEmail = settings.getFidesAuthEmail() != null ? settings.getFidesAuthEmail() : "";

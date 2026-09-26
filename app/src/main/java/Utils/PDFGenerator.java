@@ -4,18 +4,18 @@ import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import Services.DirectoryService;
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Promocion;
-import Models.Clients;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.Detalles.LineaDetalle;
 import Models.Enums.Tipo_CodigoImpuesto;
 import Models.ReportesFamiliasYDepartamentos;
-import Models.StockAlert;
-import Models.PagoEntry;
-import Models.ProfitMarginSnapshot;
-import Models.Users;
+import Models.AlertaStock;
+import Models.EntradaPago;
+import Models.CorteMargen;
+import Models.Usuarios;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
@@ -64,7 +64,7 @@ public class PDFGenerator {
     @Inject
     DirectoryService dirService;
 
-    public void generarPDFTiqueteElectronico(@Nonnull ComprobantesEmitidos tiqueteElectronico, @Nonnull AppSettings settings, @Nonnull List<ArticuloCarrito> carrito, @Nonnull Clients cliente, @Nonnull Users user, @Nonnull BigDecimal pago, @Nonnull BigDecimal vuelto, @Nullable List<PagoEntry> pagos) {
+    public void generarPDFTiqueteElectronico(@Nonnull ComprobantesEmitidos tiqueteElectronico, @Nonnull ConfiguracionAplicacion settings, @Nonnull List<ArticuloCarrito> carrito, @Nonnull Clientes cliente, @Nonnull Usuarios user, @Nonnull BigDecimal pago, @Nonnull BigDecimal vuelto, @Nullable List<EntradaPago> pagos) {
         // PDF generation logic here
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -83,7 +83,7 @@ public class PDFGenerator {
 
     }
 
-    private Document addContentToDocument(ByteArrayOutputStream baos, AppSettings settings, ComprobantesEmitidos tiqueteElectronico, Clients cliente, Users user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto, @Nullable List<PagoEntry> pagos) throws DocumentException {
+    private Document addContentToDocument(ByteArrayOutputStream baos, ConfiguracionAplicacion settings, ComprobantesEmitidos tiqueteElectronico, Clientes cliente, Usuarios user, List<ArticuloCarrito> carrito, BigDecimal pago, BigDecimal vuelto, @Nullable List<EntradaPago> pagos) throws DocumentException {
         Document document = new Document(new Rectangle(200f, 600f), 5, 5, 5, 5);
         PdfWriter.getInstance(document, baos);
         document.add(new Meta("charset", "UTF-8"));
@@ -308,9 +308,9 @@ public class PDFGenerator {
         paymentTable.setWidthPercentage(100);
         BigDecimal sumaMostrada = BigDecimal.ZERO;
         if (pagos != null && !pagos.isEmpty()) {
-            for (PagoEntry pe : pagos) {
+            for (EntradaPago pe : pagos) {
                 if (pe.getMonto() == null || pe.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
-                String label = PagoEntry.metodoPagoLabel(pe.getMetodoPago()) + ":";
+                String label = EntradaPago.metodoPagoLabel(pe.getMetodoPago()) + ":";
                 PdfPCell labelCell = new PdfPCell(new Phrase(label, font));
                 labelCell.setBorder(PdfPCell.NO_BORDER);
                 labelCell.setHorizontalAlignment(Element.ALIGN_LEFT);
@@ -652,7 +652,7 @@ public class PDFGenerator {
     }
 
     @Nullable
-    public File generarPDFStockAlerts(@Nonnull List<StockAlert> stockAlerts) {
+    public File generarPDFStockAlerts(@Nonnull List<AlertaStock> stockAlerts) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         File pdfFile = null;
 
@@ -684,7 +684,7 @@ public class PDFGenerator {
             reportTable.addCell(new Phrase("Cant. Actual", font));
             reportTable.addCell(new Phrase("Estado", font));
 
-            for (StockAlert alert : stockAlerts) {
+            for (AlertaStock alert : stockAlerts) {
                 reportTable.addCell(new Phrase(String.valueOf(alert.getId()), font));
                 reportTable.addCell(new Phrase(alert.getArticulo() != null ? alert.getArticulo().getNombre() : "", font));
                 reportTable.addCell(new Phrase(alert.getTipoAlerta() != null ? alert.getTipoAlerta() : "", font));
@@ -708,7 +708,7 @@ public class PDFGenerator {
     }
 
     @Nullable
-    public File generarPDFProfitMarginSnapshots(@Nonnull List<ProfitMarginSnapshot> marginSnapshots) {
+    public File generarPDFProfitMarginSnapshots(@Nonnull List<CorteMargen> marginSnapshots) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         File pdfFile = null;
 
@@ -740,7 +740,7 @@ public class PDFGenerator {
             reportTable.addCell(new Phrase("% Margen", font));
             reportTable.addCell(new Phrase("Total Ventas", font));
 
-            for (ProfitMarginSnapshot snapshot : marginSnapshots) {
+            for (CorteMargen snapshot : marginSnapshots) {
                 reportTable.addCell(new Phrase(snapshot.getFechaSnapshot() != null ? dateFormat.format(snapshot.getFechaSnapshot()) : "", font));
                 reportTable.addCell(new Phrase(snapshot.getDepartamento() != null ? snapshot.getDepartamento() : "", font));
                 reportTable.addCell(new Phrase(snapshot.getFamilia() != null ? snapshot.getFamilia() : "", font));

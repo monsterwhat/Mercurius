@@ -12,7 +12,7 @@ import lombok.Data;
 @Entity
 @Table(name = "ApiClients")
 @Data
-public class ApiClients {
+public class ClientesApi {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,10 +43,10 @@ public class ApiClients {
     @Column(name = "name", length = 128)
     private String name; // Friendly name for admin identification
 
-    public ApiClients() {
+    public ClientesApi() {
     }
 
-    public ApiClients(int id, String clientId, String clientSecret, String scopes,
+    public ClientesApi(int id, String clientId, String clientSecret, String scopes,
                       int rateLimitPerMin, int rateLimitPerHour, boolean status,
                       Date createdAt, String name) {
         this.id = id;

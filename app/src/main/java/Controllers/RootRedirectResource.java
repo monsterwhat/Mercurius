@@ -3,9 +3,6 @@ package Controllers;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
-import jakarta.annotation.Nonnull;
-import jakarta.inject.Inject;
-import io.quarkus.security.identity.SecurityIdentity;
 import java.net.URI;
 
 /**
@@ -15,20 +12,19 @@ import java.net.URI;
  * targets are emitted as-is (no prefix is added), so unprefixed targets 404.
  * Bare "/" itself never reaches this resource (outside the app router) —
  * see RootLoginRedirectRoute for that hop.
- * Unauthenticated users hitting /app are bounced to /login by
- * quarkus.http.auth.form automatically, so this single hop covers both cases.
+ *
+ * <p>Every hop answers a single seeOther to the dashboard, for anonymous and
+ * authenticated callers alike: "/" and "/app" are permitted by the public
+ * permission policy precisely so THIS resource runs (otherwise form auth
+ * answers its own 302 challenge first). An anonymous visitor is then bounced
+ * to /login by the still-secured /app/* policy, carrying the
+ * quarkus-redirect-location cookie, so the deep link is replayed after login
+ * — the same bounce-back contract the login journey asserts.
  */
 @Path("/")
 public class RootRedirectResource {
 
-    @Inject
-    @Nonnull
-    SecurityIdentity identity;
-
     private Response redirectToApp() {
-        if (identity.isAnonymous()) {
-            return Response.seeOther(URI.create("/Mercurius/login")).build();
-        }
         return Response.seeOther(URI.create("/Mercurius/app/dashboard")).build();
     }
 

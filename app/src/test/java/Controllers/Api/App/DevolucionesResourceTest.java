@@ -559,12 +559,12 @@ class DevolucionesResourceTest extends support.ContextPathIsolation {
         return emitidosService.createAndReturn(comprobante);
     }
 
-    /** Ensures ONE active AppSettings row so the NC pipeline can run. */
+    /** Ensures ONE active ConfiguracionAplicacion row so the NC pipeline can run. */
     private void seedAppSettings() {
         if (appSettingsService.returnCurrent() != null) {
             return;
         }
-        Models.AppSettings settings = new Models.AppSettings();
+        Models.ConfiguracionAplicacion settings = new Models.ConfiguracionAplicacion();
         settings.setEstatus(Boolean.TRUE);
         settings.setIdentificacion("310112345678");
         settings.setCodigoSucursal("001");

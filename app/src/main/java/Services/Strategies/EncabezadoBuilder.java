@@ -2,8 +2,8 @@ package Services.Strategies;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import Models.AppSettings;
-import Models.Clients;
+import Models.ConfiguracionAplicacion;
+import Models.Clientes;
 import Models.Encabezado.*;
 import Models.Encabezado.CorreoElectronicoEmisor;
 import Models.Encabezado.CorreoElectronicoReceptor;
@@ -26,7 +26,7 @@ public final class EncabezadoBuilder {
      * Sets the common preamble fields on a new Encabezado.
      * Does NOT touch CondicionVenta or its validation — those are strategy-specific.
      */
-    public static void initEncabezado(AppSettings appSettings, Encabezado encabezado, String codigoDocumento) {
+    public static void initEncabezado(ConfiguracionAplicacion appSettings, Encabezado encabezado, String codigoDocumento) {
         encabezado.setCodigoActividadEmisor(appSettings.getCodigoActividad());
         encabezado.setProveedorSistemas(appSettings.getProvedor());
         encabezado.setNumeroConsecutivo("");
@@ -35,10 +35,10 @@ public final class EncabezadoBuilder {
     }
 
     /**
-     * Builds a complete Emisor from AppSettings with up to 4 emails, persists it,
+     * Builds a complete Emisor from ConfiguracionAplicacion with up to 4 emails, persists it,
      * and returns it. Used by all strategies (FE, TE, NC, ND, FCE, FEE, REP).
      */
-    public static Emisor buildEmisor(AppSettings appSettings, EmisorService emisorService) {
+    public static Emisor buildEmisor(ConfiguracionAplicacion appSettings, EmisorService emisorService) {
         Emisor emisor = new Emisor();
         emisor.setNombre(appSettings.getNombre());
 
@@ -80,7 +80,7 @@ public final class EncabezadoBuilder {
      * (DIMEX, NITE) go through IdentificacionReceptor with the proper Tipo;
      * unknown idTypes fall back to IdentificacionExtranjero.
      */
-    public static Receptor buildReceptor(Clients selectedClient) {
+    public static Receptor buildReceptor(Clientes selectedClient) {
         Receptor receptor = new Receptor();
         receptor.setNombre(selectedClient.getName());
         receptor.setNombreComercial(selectedClient.getName());

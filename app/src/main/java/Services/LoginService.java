@@ -1,6 +1,6 @@
 package Services;
 
-import Models.Users;
+import Models.Usuarios;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -20,7 +20,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
  */
 @Named
 @ApplicationScoped
-public class LoginService extends GService<Users> {
+public class LoginService extends GService<Usuarios> {
 
     private static final Logger LOG = Logger.getLogger(LoginService.class);
 
@@ -28,8 +28,8 @@ public class LoginService extends GService<Users> {
     private static final int BCRYPT_COST = 12;
 
     @Override
-    protected Class<Users> getEntityClass() {
-        return Users.class;
+    protected Class<Usuarios> getEntityClass() {
+        return Usuarios.class;
     }
 
     @PostConstruct
@@ -77,9 +77,9 @@ public class LoginService extends GService<Users> {
         }
     }
 
-    public Users authenticate(String username, String password) {
+    public Usuarios authenticate(String username, String password) {
         try {
-            Users user = getSession(username);
+            Usuarios user = getSession(username);
             if (user != null && verifyPassword(password, user.getPassword())) {
                 return user;
             }
@@ -90,12 +90,12 @@ public class LoginService extends GService<Users> {
         }
     }
 
-    public Users findByUsername(String username) {
+    public Usuarios findByUsername(String username) {
         try {
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username AND u.status = true", Users.class);
+            TypedQuery<Usuarios> query = em.createQuery("SELECT u FROM Usuarios u WHERE u.username = :username AND u.status = true", Usuarios.class);
             query.setParameter("username", username);
 
-            List<Users> resultList = query.getResultList();
+            List<Usuarios> resultList = query.getResultList();
 
             if (!resultList.isEmpty()) {
                 return resultList.get(0);
@@ -108,7 +108,7 @@ public class LoginService extends GService<Users> {
         }
     }
 
-    public Users getSession(String username) {
+    public Usuarios getSession(String username) {
         return findByUsername(username);
     }
 
@@ -117,9 +117,9 @@ public class LoginService extends GService<Users> {
         try {
 
             String username = "Admin";
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
+            TypedQuery<Usuarios> query = em.createQuery("SELECT u FROM Usuarios u WHERE u.username = :username", Usuarios.class);
             query.setParameter("username", username);
-            Users existingUser = null;
+            Usuarios existingUser = null;
 
             try {
                 existingUser = query.getSingleResult();
@@ -137,7 +137,7 @@ public class LoginService extends GService<Users> {
                 }
 
             } catch (NoResultException e) {
-                Users user = new Users();
+                Usuarios user = new Usuarios();
                 user.setUsername(username);
                 // Hash the admin password with a secure default
                 String defaultPassword = "Mercurius@2024!";
@@ -156,7 +156,7 @@ public class LoginService extends GService<Users> {
     }
 
     @Override
-    public void create(Users entity) {
+    public void create(Usuarios entity) {
         try {
             // Hash the password before storing
             var unHashedPassword = entity.getPassword();
@@ -169,7 +169,7 @@ public class LoginService extends GService<Users> {
     }
 
     @Override
-    public void delete(Users entity) {
+    public void delete(Usuarios entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -187,7 +187,7 @@ public class LoginService extends GService<Users> {
     }
 
     @Transactional
-    public void softDelete(Users entity) {
+    public void softDelete(Usuarios entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -207,9 +207,9 @@ public class LoginService extends GService<Users> {
 
     public boolean usernameExists(String name) {
         try {
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
+            TypedQuery<Usuarios> query = em.createQuery("SELECT u FROM Usuarios u WHERE u.username = :username", Usuarios.class);
             query.setParameter("username", name);
-            List<Users> existingUser = query.getResultList();
+            List<Usuarios> existingUser = query.getResultList();
 
             return !existingUser.isEmpty();
 
@@ -219,13 +219,13 @@ public class LoginService extends GService<Users> {
         }
     }
 
-    public void updateUsername(Users currentUser, String newUsername) {
+    public void updateUsername(Usuarios currentUser, String newUsername) {
         try {
             if (em.contains(currentUser)) {
                 currentUser.setUsername(newUsername);
                 em.merge(currentUser);
             } else {
-                Users foundUser = em.find(getEntityClass(), currentUser.getId());
+                Usuarios foundUser = em.find(getEntityClass(), currentUser.getId());
 
                 if (foundUser != null) {
                     foundUser.setUsername(newUsername);
@@ -238,13 +238,13 @@ public class LoginService extends GService<Users> {
         }
     }
 
-    public void updateEmail(Users currentUser, String newEmail) {
+    public void updateEmail(Usuarios currentUser, String newEmail) {
         try {
             if (em.contains(currentUser)) {
                 currentUser.setEmail(newEmail);
                 em.merge(currentUser);
             } else {
-                Users foundUser = em.find(getEntityClass(), currentUser.getId());
+                Usuarios foundUser = em.find(getEntityClass(), currentUser.getId());
 
                 if (foundUser != null) {
                     foundUser.setEmail(newEmail);
@@ -256,13 +256,13 @@ public class LoginService extends GService<Users> {
         }
     }
 
-    public void updatePassword(Users currentUser, String newPassword) {
+    public void updatePassword(Usuarios currentUser, String newPassword) {
         try {
             if (em.contains(currentUser)) {
                 currentUser.setPassword(hashPassword(newPassword));
                 em.merge(currentUser);
             } else {
-                Users foundUser = em.find(getEntityClass(), currentUser.getId());
+                Usuarios foundUser = em.find(getEntityClass(), currentUser.getId());
 
                 if (foundUser != null) {
                     foundUser.setPassword(hashPassword(newPassword));

@@ -1,6 +1,6 @@
 package Services;
 
-import Models.UserShortcut;
+import Models.AtajoUsuario;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -22,38 +22,38 @@ public class QuickActionsService {
     EntityManager entityManager;
 
     @Transactional(TxType.SUPPORTS)
-    public @Nonnull List<UserShortcut> getUserShortcuts(@Nonnull String username) {
+    public @Nonnull List<AtajoUsuario> getUserShortcuts(@Nonnull String username) {
         return entityManager.createQuery(
-            "SELECT s FROM UserShortcut s WHERE s.username = :username ORDER BY s.displayOrder, s.usageCount DESC",
-            UserShortcut.class
+            "SELECT s FROM AtajoUsuario s WHERE s.username = :username ORDER BY s.displayOrder, s.usageCount DESC",
+            AtajoUsuario.class
         ).setParameter("username", username)
          .getResultList();
     }
 
     @Transactional(TxType.SUPPORTS)
-    public @Nonnull List<UserShortcut> getFavoriteActions(@Nonnull String username) {
+    public @Nonnull List<AtajoUsuario> getFavoriteActions(@Nonnull String username) {
         return entityManager.createQuery(
-            "SELECT s FROM UserShortcut s WHERE s.username = :username AND s.isFavorite = true ORDER BY s.displayOrder",
-            UserShortcut.class
+            "SELECT s FROM AtajoUsuario s WHERE s.username = :username AND s.isFavorite = true ORDER BY s.displayOrder",
+            AtajoUsuario.class
         ).setParameter("username", username)
          .getResultList();
     }
 
     @Transactional(TxType.SUPPORTS)
-    public List<UserShortcut> getMostUsedActions(String username, int limit) {
+    public List<AtajoUsuario> getMostUsedActions(String username, int limit) {
         return entityManager.createQuery(
-            "SELECT s FROM UserShortcut s WHERE s.username = :username ORDER BY s.usageCount DESC",
-            UserShortcut.class
+            "SELECT s FROM AtajoUsuario s WHERE s.username = :username ORDER BY s.usageCount DESC",
+            AtajoUsuario.class
         ).setParameter("username", username)
          .setMaxResults(limit)
          .getResultList();
     }
 
     @Transactional
-    public UserShortcut addShortcut(UserShortcut shortcut) {
-        UserShortcut existing = entityManager.createQuery(
-            "SELECT s FROM UserShortcut s WHERE s.username = :username AND s.actionKey = :actionKey",
-            UserShortcut.class
+    public AtajoUsuario addShortcut(AtajoUsuario shortcut) {
+        AtajoUsuario existing = entityManager.createQuery(
+            "SELECT s FROM AtajoUsuario s WHERE s.username = :username AND s.actionKey = :actionKey",
+            AtajoUsuario.class
         ).setParameter("username", shortcut.getUsername())
          .setParameter("actionKey", shortcut.getActionKey())
          .getResultStream().findFirst().orElse(null);
@@ -70,8 +70,8 @@ public class QuickActionsService {
     }
 
     @Transactional
-    public UserShortcut toggleFavorite(Long shortcutId) {
-        UserShortcut shortcut = entityManager.find(UserShortcut.class, shortcutId);
+    public AtajoUsuario toggleFavorite(Long shortcutId) {
+        AtajoUsuario shortcut = entityManager.find(AtajoUsuario.class, shortcutId);
         if (shortcut != null) {
             shortcut.setIsFavorite(!shortcut.getIsFavorite());
             entityManager.merge(shortcut);
@@ -81,7 +81,7 @@ public class QuickActionsService {
 
     @Transactional
     public void incrementUsage(Long shortcutId) {
-        UserShortcut shortcut = entityManager.find(UserShortcut.class, shortcutId);
+        AtajoUsuario shortcut = entityManager.find(AtajoUsuario.class, shortcutId);
         if (shortcut != null) {
             shortcut.setUsageCount(shortcut.getUsageCount() + 1);
             shortcut.setLastUsed(new Date());
@@ -91,7 +91,7 @@ public class QuickActionsService {
 
     @Transactional
     public void deleteShortcut(Long shortcutId) {
-        UserShortcut shortcut = entityManager.find(UserShortcut.class, shortcutId);
+        AtajoUsuario shortcut = entityManager.find(AtajoUsuario.class, shortcutId);
         if (shortcut != null) {
             entityManager.remove(shortcut);
         }
@@ -111,15 +111,15 @@ public class QuickActionsService {
         };
 
         for (String[] def : defaults) {
-            UserShortcut existing = entityManager.createQuery(
-                "SELECT s FROM UserShortcut s WHERE s.username = :username AND s.actionKey = :actionKey",
-                UserShortcut.class
+            AtajoUsuario existing = entityManager.createQuery(
+                "SELECT s FROM AtajoUsuario s WHERE s.username = :username AND s.actionKey = :actionKey",
+                AtajoUsuario.class
             ).setParameter("username", username)
              .setParameter("actionKey", def[0])
              .getResultStream().findFirst().orElse(null);
 
             if (existing == null) {
-                UserShortcut shortcut = new UserShortcut();
+                AtajoUsuario shortcut = new AtajoUsuario();
                 shortcut.setUsername(username);
                 shortcut.setActionKey(def[0]);
                 shortcut.setActionLabel(def[1]);
@@ -137,7 +137,7 @@ public class QuickActionsService {
     @Transactional
     public void reorderShortcuts(String username, List<Long> shortcutIds) {
         for (int i = 0; i < shortcutIds.size(); i++) {
-            UserShortcut shortcut = entityManager.find(UserShortcut.class, shortcutIds.get(i));
+            AtajoUsuario shortcut = entityManager.find(AtajoUsuario.class, shortcutIds.get(i));
             if (shortcut != null && shortcut.getUsername().equals(username)) {
                 shortcut.setDisplayOrder(i);
                 entityManager.merge(shortcut);

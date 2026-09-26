@@ -1,7 +1,7 @@
 package Services;
 
 import Models.Articulos.Carrito.ArticuloCarrito;
-import Models.Clients;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.Detalles.CodigoComercial;
 import Models.Detalles.Descuento;
@@ -29,10 +29,10 @@ import Models.Enums.Tipo_CondicionVenta;
 import Models.Enums.Tipo_MedioPago;
 import Models.Enums.Tipo_Codigo_Descuento;
 import Models.Enums.Tipo_TarifaIVA;
-import Models.PagoEntry;
-import Models.AppSettings;
+import Models.EntradaPago;
+import Models.ConfiguracionAplicacion;
 import Models.Articulos.Promocion;
-import Models.Users;
+import Models.Usuarios;
 import Services.Facturas.EncabezadoService;
 import Services.Facturas.DetalleServicioService;
 import Services.Facturas.ResumenFacturaService;
@@ -69,10 +69,10 @@ import Services.AppSettingsService;
 import Services.ConsecutivoEmitidoService;
 import Services.Strategies.DocumentoStrategy;
 import Services.Strategies.DocumentoStrategyFactory;
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.Articulos.Carrito.ArticuloCarrito;
-import Models.Clients;
-import Models.Users;
+import Models.Clientes;
+import Models.Usuarios;
 
 @Named("comprobanteService")
 @ApplicationScoped
@@ -133,9 +133,9 @@ public class ComprobanteService implements Serializable {
     }
 
     @jakarta.transaction.Transactional
-    public @Nullable CrearComprobanteResult crearComprobante(@Nonnull AppSettings appSettings, @Nonnull List<ArticuloCarrito> carrito,
-                                                    @Nullable Clients selectedClient, @Nullable Clients cliente, @Nonnull Users currentUser,
-                                                    @Nonnull DocumentoStrategy strategy, @Nonnull List<PagoEntry> pagos) {
+    public @Nullable CrearComprobanteResult crearComprobante(@Nonnull ConfiguracionAplicacion appSettings, @Nonnull List<ArticuloCarrito> carrito,
+                                                    @Nullable Clientes selectedClient, @Nullable Clientes cliente, @Nonnull Usuarios currentUser,
+                                                    @Nonnull DocumentoStrategy strategy, @Nonnull List<EntradaPago> pagos) {
         CrearComprobanteResult result = new CrearComprobanteResult();
         result.haciendaEnviado = false;
         
@@ -156,7 +156,7 @@ public class ComprobanteService implements Serializable {
             encabezado.setNumeroConsecutivo(numeroConsecutivo);
 
             List<MedioPago> medioPagoList = new ArrayList<>();
-            for (PagoEntry entry : pagos) {
+            for (EntradaPago entry : pagos) {
                 if (entry.getMonto() == null || entry.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
                 MedioPago medio = new MedioPago();
                 medio.setMedioPago(entry.getMetodoPago());
@@ -209,7 +209,7 @@ public class ComprobanteService implements Serializable {
             List<MedioPagoR> mediosPagoResumen = new ArrayList<>();
             BigDecimal sumaPagos = BigDecimal.ZERO;
             int pagoCount = 0;
-            for (PagoEntry entry : pagos) {
+            for (EntradaPago entry : pagos) {
                 if (entry.getMonto() == null || entry.getMonto().compareTo(BigDecimal.ZERO) <= 0) continue;
                 MedioPagoR medioR = new MedioPagoR();
                 medioR.setTipoMedioPago(entry.getMetodoPago());
@@ -307,7 +307,7 @@ public class ComprobanteService implements Serializable {
      */
     public boolean enviarComprobanteAHacienda(ComprobantesEmitidos comprobante) {
         try {
-            AppSettings appSettings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null) {
                 LOG.warn("No hay configuracion de Hacienda para enviar comprobante"
                     + " | source=ComprobanteService.enviarComprobanteAHacienda()");
@@ -322,7 +322,7 @@ public class ComprobanteService implements Serializable {
             }
 
             // ── Route through HaciendaServiceFacade ────────────────────────
-            // The facade checks AppSettings.useFides and chooses the active provider:
+            // The facade checks ConfiguracionAplicacion.useFides and chooses the active provider:
             //   Fides API   → FidesApiService (auth → create → sign → submit → poll)
             //   Direct Hacienda → XML build → sign → HaciendaApiService.submitAndWait
             // ──────────────────────────────────────────────────────────────
@@ -518,7 +518,7 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
      */
     public static BigDecimal calcularTotalIVADevuelto(
             @Nonnull List<ArticuloCarrito> carrito,
-            @Nonnull List<PagoEntry> pagos) {
+            @Nonnull List<EntradaPago> pagos) {
         boolean paidByCard = pagos.stream()
                 .anyMatch(p -> "02".equals(p.getMetodoPago()));
         if (!paidByCard) return BigDecimal.ZERO;
@@ -729,7 +729,7 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
 
     }
 
-    public String generateMensajeReceptorXml(AppSettings settings, String clave, String numeroCedulaEmisor,
+    public String generateMensajeReceptorXml(ConfiguracionAplicacion settings, String clave, String numeroCedulaEmisor,
                                               String numeroCedulaReceptor,
                                               LocalDateTime fechaEmisionDoc, int codigoMensaje, String detalleMensaje,
                                               BigDecimal montoTotalImpuesto, BigDecimal totalFactura,
@@ -781,14 +781,14 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                    .replace("'", "&apos;");
     }
 
-    public void enviarFacturaACliente(ComprobantesEmitidos tiqueteElectronico, Clients cliente, Users user, BigDecimal pago, BigDecimal vuelto, List<PagoEntry> pagos) {
+    public void enviarFacturaACliente(ComprobantesEmitidos tiqueteElectronico, Clientes cliente, Usuarios user, BigDecimal pago, BigDecimal vuelto, List<EntradaPago> pagos) {
         try {
             if (cliente == null || cliente.getEmail() == null || cliente.getEmail().isEmpty()) {
                 LOG.info("Cliente sin email, no se envia factura: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo() + " | source=ComprobanteService.enviarFacturaACliente()");
                 return;
             }
 
-            AppSettings settings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
             if (settings == null) {
                 LOG.warn("No hay configuracion de Hacienda para enviar factura | source=ComprobanteService.enviarFacturaACliente()");
                 return;

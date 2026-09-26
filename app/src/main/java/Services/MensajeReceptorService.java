@@ -1,6 +1,6 @@
 package Services;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.ComprobantesRecibidos;
 import org.jboss.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -40,20 +40,20 @@ public class MensajeReceptorService {
                                            String accion, BigDecimal montoTotalImpuesto,
                                            BigDecimal montoTotalFactura) {
         try {
-            System.out.println("MR start id=" + (factura != null ? factura.getId() : "null") + " codigo=" + codigoMensaje + " accion=" + accion);
+            LOG.debug("MR start id=" + (factura != null ? factura.getId() : "null") + " codigo=" + codigoMensaje + " accion=" + accion);
             if (factura.getEncabezado() == null) {
-                System.out.println("MR fail: sin encabezado");
+                LOG.warn("MR fail: sin encabezado");
                 return new MRResult(false, "Factura sin encabezado", null);
             }
 
-            AppSettings settings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
             if (settings == null) {
                 return new MRResult(false, "No hay configuración de Hacienda", null);
             }
 
             String clave = factura.getEncabezado().getClave();
             if (clave == null || clave.isEmpty()) {
-                System.out.println("MR clave missing, using fallback clave for offline queue accion=" + accion);
+                LOG.warn("MR clave missing, using fallback clave for offline queue accion=" + accion);
                 clave = "50600000000000000000000000000000000000000000000000";
                 factura.getEncabezado().setClave(clave);
             }
@@ -117,11 +117,11 @@ public class MensajeReceptorService {
                         emisorTipoId, emisorNumeroId, receptorTipoId, receptorNumeroId);
                 }
             } catch (Exception e) {
-                System.out.println("MR Hacienda mock failed, fallback to ok: " + e.getMessage());
+                LOG.debug("MR Hacienda mock failed, fallback to ok: " + e.getMessage());
                 response = HaciendaApiService.ApiResponse.ok("recibido");
             }
             if (response == null) {
-                System.out.println("MR response null, fallback to ok");
+                LOG.debug("MR response null, fallback to ok");
                 response = HaciendaApiService.ApiResponse.ok("recibido");
             }
 

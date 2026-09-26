@@ -1,6 +1,6 @@
 package Models.Correos;
 
-import Models.Users;
+import Models.Usuarios;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -36,5 +36,5 @@ public class EmailTemplate {
     private Date fechaModificacion;
 
     @ManyToOne
-    private Users usuario;
+    private Usuarios usuario;
 }

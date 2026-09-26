@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import Models.AppSettings;
-import Models.Clients;
+import Models.ConfiguracionAplicacion;
+import Models.Clientes;
 import Models.PuntosTransaccion;
 import Services.AppSettingsService;
 import Services.ClientService;
@@ -39,7 +39,7 @@ import Services.LoyaltyService;
  * with the legacy fixed limit of 10), all-clients table
  * ({@link ClientService#listAll()} + legacy global-filter field coverage) and
  * a per-client points-history dialog fragment
- * ({@link LoyaltyService#getCustomerPointsHistory(Clients)}). The header stats
+ * ({@link LoyaltyService#getCustomerPointsHistory(Clientes)}). The header stats
  * mirror the legacy cards (top size, cashback %, inactivity months).</p>
  *
  * <p>The legacy "Procesar Expiración" button is a MUTATION
@@ -90,14 +90,14 @@ public class LoyaltyReportesResource {
             @QueryParam("dir") @DefaultValue("asc") @Nullable String dir,
             @QueryParam("q") @Nullable String q) {
 
-        List<Clients> todos = filterAndSort(orEmpty(clientService.listAll()), sort, dir, q);
+        List<Clientes> todos = filterAndSort(orEmpty(clientService.listAll()), sort, dir, q);
 
         int current = ReportePageSupport.clampPage(page);
         int pageSize = ReportePageSupport.clampSize(size);
         long total = todos.size();
         int totalPages = ReportePageSupport.totalPages(total, pageSize);
 
-        AppSettings settings = appSettingsService.returnCurrent();
+        ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
 
         Map<String, Object> model = ReportePageSupport.model(
                 "topClientes", orEmpty(loyaltyService.getTopLoyaltyCustomers(TOP_LIMIT)),
@@ -133,7 +133,7 @@ public class LoyaltyReportesResource {
     @GET
     @Path("/{codigo}/historial")
     public Response historial(@PathParam("codigo") int codigo) {
-        Clients cliente = clientService.find(codigo);
+        Clientes cliente = clientService.find(codigo);
         List<PuntosTransaccion> historial = cliente == null
                 ? List.of()
                 : orEmpty(loyaltyService.getCustomerPointsHistory(cliente));
@@ -176,25 +176,25 @@ public class LoyaltyReportesResource {
     }
 
     /** Legacy globalFilterFunction coverage: name, email, idNumber, puntos. */
-    private static @Nonnull List<Clients> filterAndSort(
-            @Nonnull List<Clients> all,
+    private static @Nonnull List<Clientes> filterAndSort(
+            @Nonnull List<Clientes> all,
             @Nullable String sort, @Nullable String dir, @Nullable String q) {
 
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
-        List<Clients> result = new ArrayList<>();
-        for (Clients c : all) {
+        List<Clientes> result = new ArrayList<>();
+        for (Clientes c : all) {
             if (needle.isEmpty() || matches(c, needle)) {
                 result.add(c);
             }
         }
 
         boolean ascending = !ReportePageSupport.isDescending(dir);
-        Comparator<Clients> comparator = switch (sort == null ? "" : sort) {
-            case "nombre" -> ReportePageSupport.sortBy(Clients::getName, ascending);
-            case "email" -> ReportePageSupport.sortBy(Clients::getEmail, ascending);
-            case "telefono" -> ReportePageSupport.sortBy(Clients::getPhoneNumber, ascending);
-            case "puntos" -> ReportePageSupport.sortBy(Clients::getPuntosAcumulados, ascending);
-            case "ultimacompra" -> ReportePageSupport.sortBy(Clients::getLastPurchaseDate, ascending);
+        Comparator<Clientes> comparator = switch (sort == null ? "" : sort) {
+            case "nombre" -> ReportePageSupport.sortBy(Clientes::getName, ascending);
+            case "email" -> ReportePageSupport.sortBy(Clientes::getEmail, ascending);
+            case "telefono" -> ReportePageSupport.sortBy(Clientes::getPhoneNumber, ascending);
+            case "puntos" -> ReportePageSupport.sortBy(Clientes::getPuntosAcumulados, ascending);
+            case "ultimacompra" -> ReportePageSupport.sortBy(Clientes::getLastPurchaseDate, ascending);
             default -> null;
         };
         if (comparator != null) {
@@ -203,7 +203,7 @@ public class LoyaltyReportesResource {
         return result;
     }
 
-    private static boolean matches(@Nonnull Clients c, @Nonnull String needle) {
+    private static boolean matches(@Nonnull Clientes c, @Nonnull String needle) {
         return contains(c.getName(), needle)
                 || contains(c.getEmail(), needle)
                 || contains(c.getIdNumber(), needle)

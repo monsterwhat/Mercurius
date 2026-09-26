@@ -104,6 +104,7 @@ class SettingsPageTest extends AppBase {
                 .data("settings", settings)
                 .data("backup", backup)
                 .data("backupLog", java.util.Collections.emptyList())
+                .data("backupRutaEfectiva", "/tmp/mercurius-backups")
                 .data("baseUrl", "/api/app/settings")
                 .data("configuracionMargen", configuracionMargen)
                 .data("margenHistorial", java.util.Collections.emptyList())
@@ -225,6 +226,10 @@ class SettingsPageTest extends AppBase {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void backupTriggerDevuelveFormaBackupStatusDTO() {
+        // El trigger ejecuta un pg_dump real; si el binario cliente no está en
+        // este entorno la llamada no puedeRespond 200 y la prueba se omite.
+        support.PgDumpAvailability.assumeAvailable();
+
         Map<String, String> jar = csrfJar();
         given()
                 .cookies(jar)

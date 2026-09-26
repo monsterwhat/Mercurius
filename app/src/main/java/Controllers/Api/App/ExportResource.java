@@ -1,7 +1,7 @@
 package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
-import Models.ProfitMarginSnapshot;
+import Models.CorteMargen;
 import Models.ReportesFamiliasYDepartamentos;
 import Services.ArticulosService;
 import Services.DepartamentoService;
@@ -12,6 +12,7 @@ import Services.StockAlertService;
 import Utils.ReportExporter;
 import com.lowagie.text.DocumentException;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -56,11 +57,17 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *   <li>{@code reportes-departamentos} → "Ventas por Departamento" workbook (xlsx)</li>
  * </ul>
  *
- * <p>Once T15 enables the declarative policies, every path under
- * {@code /api/app/*} requires an authenticated user; until then this resource
- * relies on the same dormant auth block as the rest of the /api/app surface.</p>
+ * <p>This resource carries its OWN authorization gate
+ * ({@code @RolesAllowed({"admin","registro"})}) instead of depending on the HTTP
+ * permission policy. That matters because the policy no longer blanket-covers
+ * {@code /api/app/*}: it enumerates the real sub-APIs so an unknown path can
+ * 404 as JSON, and this resource must therefore never rely on a prefix it is
+ * not named after. {@code registro} is the role the export buttons check in the
+ * templates, and {@code admin} is listed explicitly as in every other
+ * {@code @RolesAllowed} of this surface (51 sites).</p>
  */
 @Path("/api/app/export")
+@RolesAllowed({"admin", "registro"})
 @Produces(MediaType.APPLICATION_OCTET_STREAM)
 @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 @Tag(name = "App - Export")
@@ -192,7 +199,7 @@ public class ExportResource {
      * snapshots for the last 30 days (null name = all departments/families).
      */
     @Nonnull
-    private List<ProfitMarginSnapshot> marginSnapshotsLast30Days() {
+    private List<CorteMargen> marginSnapshotsLast30Days() {
         Date endDate = new Date();
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, -30);

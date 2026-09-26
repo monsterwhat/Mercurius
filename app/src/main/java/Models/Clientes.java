@@ -27,7 +27,7 @@ import lombok.ToString;
 @Entity
 @Table(name = "Clients")
 @Data
-public class Clients {
+public class Clientes {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) 
     private int code; // Codigo (INT)
     
@@ -102,7 +102,7 @@ public class Clients {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario; //Referencia a quien creo el cliente
+    private Usuarios usuario; //Referencia a quien creo el cliente
 
     // Client authentication fields (for Mercatus marketplace self-registration)
     @Nullable @Column(length = 255)
@@ -114,10 +114,10 @@ public class Clients {
     @Nullable @Column(name = "token_expiry")
     private Date tokenExpiry; // Refresh token expiration date
 
-    public Clients() {
+    public Clientes() {
     }
 
-    public Clients(int code, String name, String address, String email, Date birthDate, String idType, String idNumber, double discount, String phoneNumber, boolean taxpayer, int zoneCode, Boolean status, Users usuario) {
+    public Clientes(int code, String name, String address, String email, Date birthDate, String idType, String idNumber, double discount, String phoneNumber, boolean taxpayer, int zoneCode, Boolean status, Usuarios usuario) {
         this.code = code;
         this.name = name;
         this.address = address;

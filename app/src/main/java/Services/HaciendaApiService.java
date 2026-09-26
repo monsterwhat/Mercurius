@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 
 @Named
 @ApplicationScoped
@@ -36,7 +36,7 @@ public class HaciendaApiService {
 
     private String getCallbackUrl() {
         try {
-            AppSettings settings = certificateService.getActiveSettings();
+            ConfiguracionAplicacion settings = certificateService.getActiveSettings();
             if (settings != null && settings.getHaciendaCallbackUrl() != null
                     && !settings.getHaciendaCallbackUrl().isEmpty()) {
                 return settings.getHaciendaCallbackUrl();
@@ -139,7 +139,7 @@ public class HaciendaApiService {
         return "production".equalsIgnoreCase(environment) ? "api-prod" : "api-stag";
     }
 
-    private String buildIdpUsername(AppSettings settings) {
+    private String buildIdpUsername(ConfiguracionAplicacion settings) {
         if (settings == null) return null;
         String tipoId = settings.getTipoIdentificacion();
         String idNumber = settings.getIdentificacion();
@@ -186,7 +186,7 @@ public class HaciendaApiService {
 
         // ── 3. Full ROPC authentication ──────────────────────────────────────
         try {
-            AppSettings settings = certificateService.getActiveSettings();
+            ConfiguracionAplicacion settings = certificateService.getActiveSettings();
             if (settings == null) {
                 TokenResponse error = new TokenResponse();
                 error.error = "No active settings configured";

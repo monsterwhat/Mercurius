@@ -3,8 +3,8 @@ package Services;
 import Models.Articulos.Articulos;
 import Models.Departamento;
 import Models.Familia;
-import Models.ProfitMarginHistory;
-import Models.ProfitMarginSnapshot;
+import Models.HistorialMargen;
+import Models.CorteMargen;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -26,14 +26,14 @@ import java.util.stream.Collectors;
  */
 @Named
 @ApplicationScoped
-public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
+public class ProfitAnalysisService extends GService<HistorialMargen> {
 
     @Inject @Nonnull
     private EntityManager em;
 
     @Override
-    protected Class<ProfitMarginHistory> getEntityClass() {
-        return ProfitMarginHistory.class;
+    protected Class<HistorialMargen> getEntityClass() {
+        return HistorialMargen.class;
     }
 
     /**
@@ -82,14 +82,14 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
         Date endOfDay = cal.getTime();
 
         // Check if already exists for today
-        String jpql = "SELECT pmh FROM ProfitMarginHistory pmh WHERE pmh.articulo.codigo = :articuloId AND pmh.fecha >= :startOfDay AND pmh.fecha < :endOfDay";
-        TypedQuery<ProfitMarginHistory> query = em.createQuery(jpql, ProfitMarginHistory.class)
+        String jpql = "SELECT pmh FROM HistorialMargen pmh WHERE pmh.articulo.codigo = :articuloId AND pmh.fecha >= :startOfDay AND pmh.fecha < :endOfDay";
+        TypedQuery<HistorialMargen> query = em.createQuery(jpql, HistorialMargen.class)
                 .setParameter("articuloId", articulo.getCodigo())
                 .setParameter("startOfDay", startOfDay)
                 .setParameter("endOfDay", endOfDay);
 
         try {
-            ProfitMarginHistory existing = query.getSingleResult();
+            HistorialMargen existing = query.getSingleResult();
             // Update existing record
             existing.setCantidadVendida(existing.getCantidadVendida() + cantidadVendida);
             existing.setTotalIngresos(existing.getTotalIngresos().add(
@@ -97,7 +97,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
             em.merge(existing);
         } catch (NoResultException e) {
             // Create new record
-            ProfitMarginHistory history = new ProfitMarginHistory();
+            HistorialMargen history = new HistorialMargen();
             history.setArticulo(articulo);
             history.setFecha(startOfDay);
             history.setPrecioCosto(articulo.getLastPrecio().getPrecioCostoSinIVA());
@@ -122,7 +122,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
     public void createDailySnapshot(@Nonnull Date snapshotDate) {
         // Get all departments with their profit margins
         String deptJpql = "SELECT a.departamento.nombre, AVG(pmh.margenReal), SUM(pmh.totalIngresos), SUM(pmh.totalIngresos * pmh.margenReal / 100), COUNT(pmh.id) " +
-                        "FROM ProfitMarginHistory pmh " +
+                        "FROM HistorialMargen pmh " +
                         "JOIN pmh.articulo a " +
                         "JOIN a.departamento d " +
                         "WHERE pmh.fecha = :snapshotDate " +
@@ -141,7 +141,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
             BigDecimal totalUtilidad = (BigDecimal) result[3];
             Long cantidadArticulos = (Long) result[4];
             
-            ProfitMarginSnapshot snapshot = new ProfitMarginSnapshot();
+            CorteMargen snapshot = new CorteMargen();
             snapshot.setFechaSnapshot(snapshotDate);
             snapshot.setDepartamento(departamento);
             snapshot.setMargenPromedio(margenPromedio);
@@ -154,7 +154,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
         
         // Get all families with their profit margins
         String familyJpql = "SELECT a.familia.nombre, AVG(pmh.margenReal), SUM(pmh.totalIngresos), SUM(pmh.totalIngresos * pmh.margenReal / 100), COUNT(pmh.id) " +
-                           "FROM ProfitMarginHistory pmh " +
+                           "FROM HistorialMargen pmh " +
                            "JOIN pmh.articulo a " +
                            "JOIN a.familia f " +
                            "WHERE pmh.fecha = :snapshotDate " +
@@ -173,7 +173,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
             BigDecimal totalUtilidad = (BigDecimal) result[3];
             Long cantidadArticulos = (Long) result[4];
             
-            ProfitMarginSnapshot snapshot = new ProfitMarginSnapshot();
+            CorteMargen snapshot = new CorteMargen();
             snapshot.setFechaSnapshot(snapshotDate);
             snapshot.setFamilia(familia);
             snapshot.setMargenPromedio(margenPromedio);
@@ -189,9 +189,9 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
      * Get profit margin history for an article within date range
      */
     @Transactional(TxType.SUPPORTS)
-    public @Nonnull List<ProfitMarginHistory> getArticleMarginHistory(@Nonnull Articulos articulo, @Nonnull Date startDate, @Nonnull Date endDate) {
-        String jpql = "SELECT pmh FROM ProfitMarginHistory pmh WHERE pmh.articulo.codigo = :articuloId AND pmh.fecha BETWEEN :startDate AND :endDate ORDER BY pmh.fecha DESC";
-        TypedQuery<ProfitMarginHistory> query = em.createQuery(jpql, ProfitMarginHistory.class)
+    public @Nonnull List<HistorialMargen> getArticleMarginHistory(@Nonnull Articulos articulo, @Nonnull Date startDate, @Nonnull Date endDate) {
+        String jpql = "SELECT pmh FROM HistorialMargen pmh WHERE pmh.articulo.codigo = :articuloId AND pmh.fecha BETWEEN :startDate AND :endDate ORDER BY pmh.fecha DESC";
+        TypedQuery<HistorialMargen> query = em.createQuery(jpql, HistorialMargen.class)
                 .setParameter("articuloId", articulo.getCodigo())
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate);
@@ -202,15 +202,15 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
      * Get profit margin trend for department or family
      */
     @Transactional(TxType.SUPPORTS)
-    public @Nonnull List<ProfitMarginSnapshot> getMarginTrend(@Nonnull String name, @Nonnull String type, @Nonnull Date startDate, @Nonnull Date endDate) {
+    public @Nonnull List<CorteMargen> getMarginTrend(@Nonnull String name, @Nonnull String type, @Nonnull Date startDate, @Nonnull Date endDate) {
         String jpql;
         if ("department".equals(type)) {
-            jpql = "SELECT pms FROM ProfitMarginSnapshot pms WHERE pms.departamento = :name AND pms.fechaSnapshot BETWEEN :startDate AND :endDate ORDER BY pms.fechaSnapshot DESC";
+            jpql = "SELECT pms FROM CorteMargen pms WHERE pms.departamento = :name AND pms.fechaSnapshot BETWEEN :startDate AND :endDate ORDER BY pms.fechaSnapshot DESC";
         } else {
-            jpql = "SELECT pms FROM ProfitMarginSnapshot pms WHERE pms.familia = :name AND pms.fechaSnapshot BETWEEN :startDate AND :endDate ORDER BY pms.fechaSnapshot DESC";
+            jpql = "SELECT pms FROM CorteMargen pms WHERE pms.familia = :name AND pms.fechaSnapshot BETWEEN :startDate AND :endDate ORDER BY pms.fechaSnapshot DESC";
         }
         
-        TypedQuery<ProfitMarginSnapshot> query = em.createQuery(jpql, ProfitMarginSnapshot.class)
+        TypedQuery<CorteMargen> query = em.createQuery(jpql, CorteMargen.class)
                 .setParameter("name", name)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate);
@@ -223,7 +223,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
     @Transactional(TxType.SUPPORTS)
     public @Nonnull List<Articulos> getTopProfitMarginArticles(int limit, @Nonnull Date startDate, @Nonnull Date endDate) {
         String jpql = "SELECT a FROM Articulos a WHERE a.codigo IN " +
-                "(SELECT pmh.articulo.codigo FROM ProfitMarginHistory pmh " +
+                "(SELECT pmh.articulo.codigo FROM HistorialMargen pmh " +
                 "WHERE pmh.fecha BETWEEN :startDate AND :endDate " +
                 "ORDER BY pmh.margenReal DESC)";
         TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
@@ -239,7 +239,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
     @Transactional(TxType.SUPPORTS)
     public @Nonnull List<Articulos> getWorstProfitMarginArticles(int limit, @Nonnull Date startDate, @Nonnull Date endDate) {
         String jpql = "SELECT a FROM Articulos a WHERE a.codigo IN " +
-                "(SELECT pmh.articulo.codigo FROM ProfitMarginHistory pmh " +
+                "(SELECT pmh.articulo.codigo FROM HistorialMargen pmh " +
                 "WHERE pmh.fecha BETWEEN :startDate AND :endDate AND pmh.margenReal > 0 " +
                 "ORDER BY pmh.margenReal ASC)";
         TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class)
@@ -254,7 +254,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
      */
     @Transactional(TxType.SUPPORTS)
     public @Nonnull BigDecimal getAverageProfitMargin(@Nonnull Date startDate, @Nonnull Date endDate) {
-        String jpql = "SELECT AVG(pmh.margenReal) FROM ProfitMarginHistory pmh WHERE pmh.fecha BETWEEN :startDate AND :endDate";
+        String jpql = "SELECT AVG(pmh.margenReal) FROM HistorialMargen pmh WHERE pmh.fecha BETWEEN :startDate AND :endDate";
         TypedQuery<Double> query = em.createQuery(jpql, Double.class)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate);
@@ -272,7 +272,7 @@ public class ProfitAnalysisService extends GService<ProfitMarginHistory> {
      */
     @Transactional(TxType.SUPPORTS)
     public @Nonnull Map<String, BigDecimal> getDepartmentMarginComparison(@Nonnull Date startDate, @Nonnull Date endDate) {
-        String jpql = "SELECT pms.departamento, AVG(pms.margenPromedio) FROM ProfitMarginSnapshot pms WHERE pms.departamento IS NOT NULL AND pms.fechaSnapshot BETWEEN :startDate AND :endDate GROUP BY pms.departamento ORDER BY AVG(pms.margenPromedio) DESC";
+        String jpql = "SELECT pms.departamento, AVG(pms.margenPromedio) FROM CorteMargen pms WHERE pms.departamento IS NOT NULL AND pms.fechaSnapshot BETWEEN :startDate AND :endDate GROUP BY pms.departamento ORDER BY AVG(pms.margenPromedio) DESC";
         TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate);

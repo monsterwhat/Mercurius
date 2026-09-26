@@ -9,7 +9,7 @@ import Models.DTO.FamiliaDTO;
 import Models.DTO.PagedResponse;
 import Models.Enums.Tipo_SoftDelete;
 import Models.Familia;
-import Models.Users;
+import Models.Usuarios;
 import Services.DepartamentoMetricoService;
 import Services.DepartamentoService;
 import Services.FamiliaService;
@@ -1150,7 +1150,7 @@ public class CategoriaResource {
     }
 
     private static String usernameDe(Object o) {
-        Users u = o instanceof Departamento d ? d.getUsuario() : ((Familia) o).getUsuario();
+        Usuarios u = o instanceof Departamento d ? d.getUsuario() : ((Familia) o).getUsuario();
         return u != null ? u.getUsername() : null;
     }
 
@@ -1230,11 +1230,11 @@ public class CategoriaResource {
     // ── Current-user resolution (SessionController.getCurrentUser parity) ──
 
     /**
-     * Resolves the authenticated {@link Users} row the way the legacy
+     * Resolves the authenticated {@link Usuarios} row the way the legacy
      * SessionController did, through the T12 identity provider's principal.
      * Returns null for anonymous/system contexts (alertas accepts null).
      */
-    private Users currentUser() {
+    private Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

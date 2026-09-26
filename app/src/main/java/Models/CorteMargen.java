@@ -13,7 +13,7 @@ import jakarta.persistence.*;
 @Entity
 @Data
 @Table(name = "profit_margin_snapshots")
-public class ProfitMarginSnapshot implements Serializable {
+public class CorteMargen implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,7 +45,7 @@ public class ProfitMarginSnapshot implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaCreacion;
     
-    public ProfitMarginSnapshot() {
+    public CorteMargen() {
         this.fechaCreacion = new Date();
     }
 }

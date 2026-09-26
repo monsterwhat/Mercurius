@@ -1,6 +1,6 @@
 package Services;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Utils.EncryptionUtil;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.annotation.Nonnull;
@@ -18,16 +18,16 @@ import jakarta.transaction.Transactional;
 
 @Named
 @ApplicationScoped
-public class AppSettingsService extends GService<AppSettings> {
+public class AppSettingsService extends GService<ConfiguracionAplicacion> {
 
     private static final org.jboss.logging.Logger LOG = org.jboss.logging.Logger.getLogger(AppSettingsService.class);
 
     @Override
-    protected @Nonnull Class<AppSettings> getEntityClass() {
-        return AppSettings.class;
+    protected @Nonnull Class<ConfiguracionAplicacion> getEntityClass() {
+        return ConfiguracionAplicacion.class;
     }
          
-    public void disable(@Nonnull AppSettings entity) {
+    public void disable(@Nonnull ConfiguracionAplicacion entity) {
         try {
             if (!em.contains(entity)) {
                 Object id = em.getEntityManagerFactory().getPersistenceUnitUtil().getIdentifier(entity);
@@ -47,9 +47,9 @@ public class AppSettingsService extends GService<AppSettings> {
         }
     }
      
-    public @Nullable AppSettings returnCurrent() {
+    public @Nullable ConfiguracionAplicacion returnCurrent() {
         try {
-            TypedQuery<AppSettings> query = em.createQuery("SELECT a FROM AppSettings a WHERE a.estatus = true", getEntityClass());
+            TypedQuery<ConfiguracionAplicacion> query = em.createQuery("SELECT a FROM ConfiguracionAplicacion a WHERE a.estatus = true", getEntityClass());
             query.setMaxResults(1);
             return query.getSingleResult();
         } catch (NoResultException e) {
@@ -66,15 +66,15 @@ public class AppSettingsService extends GService<AppSettings> {
      * only if the table is completely empty.
      */
     @Transactional
-    public @Nonnull AppSettings findOrCreateCurrent() {
-        AppSettings current = returnCurrent();
+    public @Nonnull ConfiguracionAplicacion findOrCreateCurrent() {
+        ConfiguracionAplicacion current = returnCurrent();
         if (current != null) {
             return current;
         }
 
         try {
-            TypedQuery<AppSettings> query = em.createQuery(
-                "SELECT a FROM AppSettings a ORDER BY a.Id DESC", getEntityClass());
+            TypedQuery<ConfiguracionAplicacion> query = em.createQuery(
+                "SELECT a FROM ConfiguracionAplicacion a ORDER BY a.Id DESC", getEntityClass());
             query.setMaxResults(1);
             current = query.getSingleResult();
             current.setEstatus(true);
@@ -85,7 +85,7 @@ public class AppSettingsService extends GService<AppSettings> {
             LOG.warn("failed to find fallback app settings", e);
         }
 
-        current = new AppSettings();
+        current = new ConfiguracionAplicacion();
         current.setEstatus(true);
         em.persist(current);
         return current;
@@ -93,7 +93,7 @@ public class AppSettingsService extends GService<AppSettings> {
 
     @Transactional
     public String getOrCreateAuthSessionKey() {
-        AppSettings s = findOrCreateCurrent();
+        ConfiguracionAplicacion s = findOrCreateCurrent();
         if (s.getAuthSessionKey() != null && !s.getAuthSessionKey().isEmpty() && s.getAuthSessionKey().length() >= 32) {
             return s.getAuthSessionKey();
         }
@@ -106,7 +106,7 @@ public class AppSettingsService extends GService<AppSettings> {
 
     @Transactional
     public String getOrCreateHaciendaEncryptionKey() {
-        AppSettings s = findOrCreateCurrent();
+        ConfiguracionAplicacion s = findOrCreateCurrent();
         if (s.getHaciendaEncryptionKey() != null && !s.getHaciendaEncryptionKey().isEmpty() && s.getHaciendaEncryptionKey().length() >= 32) {
             return s.getHaciendaEncryptionKey();
         }
@@ -119,7 +119,7 @@ public class AppSettingsService extends GService<AppSettings> {
 
     @Transactional
     public boolean rotateAuthSessionKey() {
-        AppSettings s = returnCurrent();
+        ConfiguracionAplicacion s = returnCurrent();
         if (s == null) return false;
         String newKey = EncryptionUtil.generateKey();
         s.setAuthSessionKey(newKey);

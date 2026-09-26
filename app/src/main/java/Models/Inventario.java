@@ -44,7 +44,7 @@ public class Inventario implements Serializable {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario; //Referencia a quien realizo el ajuste
+    private Usuarios usuario; //Referencia a quien realizo el ajuste
         
     private BigDecimal cantidad;
     

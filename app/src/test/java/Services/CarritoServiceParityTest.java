@@ -8,9 +8,9 @@ import Models.Articulos.Carrito.CartOperationResult.Severity;
 import Models.Articulos.Carrito.CartOperationResult.Status;
 import Models.Articulos.Carrito.CartSessionContext;
 import Models.Articulos.Promocion;
-import Models.Clients;
-import Models.PagoEntry;
-import Models.Users;
+import Models.Clientes;
+import Models.EntradaPago;
+import Models.Usuarios;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -86,12 +86,12 @@ class CarritoServiceParityTest {
 
     private CartSessionContext ctx;
 
-    private Users cajero;
+    private Usuarios cajero;
 
     @BeforeEach
     void setUp() {
         ctx = new CartSessionContext();
-        cajero = new Users();
+        cajero = new Usuarios();
         cajero.setUsername("cajero1");
     }
 
@@ -345,12 +345,12 @@ class CarritoServiceParityTest {
 
     @Test
     void calcularVuelto_pagoEnMultiplesFormas_sumaEntradasYTruncaAColones() {
-        // Dos PagoEntry (efectivo + SINPE) como en el diálogo de pago legado:
+        // Dos EntradaPago (efectivo + SINPE) como en el diálogo de pago legado:
         // totalPagado es la suma de las entradas.
-        PagoEntry efectivo = new PagoEntry();
+        EntradaPago efectivo = new EntradaPago();
         efectivo.setMetodoPago("01");
         efectivo.setMonto(new BigDecimal("300"));
-        PagoEntry sinpe = new PagoEntry();
+        EntradaPago sinpe = new EntradaPago();
         sinpe.setMetodoPago("04");
         sinpe.setMonto(new BigDecimal("175.25"));
         ctx.setTotalPagado(efectivo.getMonto().add(sinpe.getMonto()));
@@ -474,7 +474,7 @@ class CarritoServiceParityTest {
         Articulos art1 = articulo(19L, "Harina");
         ArticuloCarrito linea = item(art1, new BigDecimal("2"), new BigDecimal("100"));
         ctx.getCarrito().add(linea);
-        Clients cliente = new Clients();
+        Clientes cliente = new Clientes();
         cliente.setName("Juan Pérez");
         ctx.setSelectedClient(cliente);
         ctx.setCodigoBarra("99");

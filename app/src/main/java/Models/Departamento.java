@@ -31,7 +31,7 @@ public class Departamento {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario; //Referencia a quien creo el departamento
+    private Usuarios usuario; //Referencia a quien creo el departamento
     
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -40,7 +40,7 @@ public class Departamento {
     public Departamento() {
     }
 
-    public Departamento(int id, String nombre, Boolean status, Users usuario) {
+    public Departamento(int id, String nombre, Boolean status, Usuarios usuario) {
         this.id = id;
         this.nombre = nombre;
         this.status = status;

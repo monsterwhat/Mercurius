@@ -8,7 +8,7 @@ import Models.DTO.OrdenCompraLineaDTO;
 import Models.DTO.PagedResponse;
 import Models.OrdenCompra;
 import Models.OrdenCompraDetalle;
-import Models.Users;
+import Models.Usuarios;
 import Services.ArticulosService;
 import Services.DepartamentoService;
 import Services.LoginService;
@@ -888,7 +888,12 @@ public class OrdenCompraResource {
             // If detached, re-fetch via service within same Tx
             OrdenCompra fresh = ordenCompraService.find(orden.getId());
             if (fresh != null && fresh.getDetalles() != null) {
-                try { fresh.getDetalles().size(); } catch (Exception ex) {}
+                try {
+                    fresh.getDetalles().size();
+                } catch (Exception ignored) {
+                    // Ignorado a propósito: sonda de mejor esfuerzo para inicializar la
+                    // colección LAZY; si sigue detached, el clear posterior lo maneja.
+                }
                 actuales = fresh.getDetalles();
                 orden.setDetalles(actuales);
             }
@@ -917,9 +922,9 @@ public class OrdenCompraResource {
         return (orden == null || !orden.isStatus()) ? null : orden;
     }
 
-    /** Resolves the authenticated Users row (LoyaltyResource pattern). */
+    /** Resolves the authenticated Usuarios row (LoyaltyResource pattern). */
     @Nullable
-    private Users currentUser() {
+    private Usuarios currentUser() {
         if (securityIdentity == null || securityIdentity.isAnonymous()
                 || securityIdentity.getPrincipal() == null) {
             return null;
@@ -1209,7 +1214,7 @@ public class OrdenCompraResource {
                 lineas.add(toLineaDTO(detalle));
             }
         }
-        Users usuario = orden.getUsuario();
+        Usuarios usuario = orden.getUsuario();
         return new OrdenCompraDetailDTO(orden.getId(), orden.getNumeroOrden(),
                 orden.getProveedor() != null ? orden.getProveedor().getId() : null,
                 orden.getProveedor() != null ? orden.getProveedor().getNombre() : null,

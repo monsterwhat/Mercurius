@@ -51,7 +51,7 @@ class SmokeSeedTest {
     @Transactional
     void seededAdminUserCountIsOne() {
         Long count = em.createQuery(
-                "SELECT COUNT(u) FROM Users u WHERE u.username = 'admin'", Long.class)
+                "SELECT COUNT(u) FROM Usuarios u WHERE u.username = 'admin'", Long.class)
                 .getSingleResult();
         assertEquals(1L, count, "import-test.sql must seed exactly one 'admin' user");
     }

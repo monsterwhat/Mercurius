@@ -60,7 +60,7 @@ public class OrdenCompra {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario;
+    private Usuarios usuario;
 
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)

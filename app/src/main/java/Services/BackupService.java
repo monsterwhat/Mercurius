@@ -1,6 +1,6 @@
 package Services;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import org.jboss.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -62,7 +62,7 @@ public class BackupService implements Serializable {
 
     public boolean ejecutarBackup() {
         try {
-            AppSettings settings = appSettingsService.findOrCreateCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) {
                                 LOG.warn("No se encontró configuración activa para ejecutar backup" + " | source=" + "BackupService.ejecutarBackup()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return false;
@@ -128,7 +128,7 @@ public class BackupService implements Serializable {
 
     public void limpiarBackupsViejos() {
         try {
-            AppSettings settings = appSettingsService.findOrCreateCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return;
 
             String backupRuta = settings.getBackupRuta();
@@ -167,7 +167,7 @@ public class BackupService implements Serializable {
     public @Nonnull List<String> listarBackups() {
         List<String> result = new ArrayList<>();
         try {
-            AppSettings settings = appSettingsService.findOrCreateCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return result;
 
             String backupRuta = settings.getBackupRuta();
@@ -200,7 +200,7 @@ public class BackupService implements Serializable {
 
     public @Nonnull String getTamanioBackup(@Nonnull String filename) {
         try {
-            AppSettings settings = appSettingsService.findOrCreateCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return "0 B";
 
             String backupRuta = settings.getBackupRuta();
@@ -218,7 +218,7 @@ public class BackupService implements Serializable {
 
     public @Nullable Path getBackupFilePath(@Nonnull String filename) {
         try {
-            AppSettings settings = appSettingsService.findOrCreateCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
             if (settings == null) return null;
             String backupRuta = settings.getBackupRuta();
             if (backupRuta == null || backupRuta.isBlank()) return null;
@@ -232,11 +232,11 @@ public class BackupService implements Serializable {
         return null;
     }
 
-    public @Nullable AppSettings getSettings() {
+    public @Nullable ConfiguracionAplicacion getSettings() {
         return appSettingsService.findOrCreateCurrent();
     }
 
-    public void saveSettings(@Nonnull AppSettings settings) {
+    public void saveSettings(@Nonnull ConfiguracionAplicacion settings) {
         appSettingsService.update(settings);
     }
 
@@ -250,7 +250,7 @@ public class BackupService implements Serializable {
 
     public @Nonnull String rutaEfectiva() {
         try {
-            AppSettings settings = appSettingsService.findOrCreateCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
             if (settings != null && settings.getBackupRuta() != null
                     && !settings.getBackupRuta().isBlank()) {
                 return settings.getBackupRuta();
@@ -271,7 +271,7 @@ public class BackupService implements Serializable {
             mainDir = System.getProperty("user.home") + File.separator + "Documents";
         }
 
-        AppSettings settings = appSettingsService.findOrCreateCurrent();
+        ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
         String profileName = (settings != null && settings.getNombrePerfil() != null)
             ? settings.getNombrePerfil() : "default";
 

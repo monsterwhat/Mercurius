@@ -7,14 +7,14 @@ import java.time.LocalDateTime;
 
 /**
  * Operational application settings for the views under META-INF/resources/secured/pages/Aplicacion/**
- * and META-INF/resources/secured/pages/Ajustes/**. Mirrors Models.AppSettings field by field,
+ * and META-INF/resources/secured/pages/Ajustes/**. Mirrors Models.ConfiguracionAplicacion field by field,
  * EXCEPT the secret credentials, which are deliberately omitted per security policy:
  * contrasenaCorreo, certificado (.p12 keystore bytes), certificadoPassword, haciendaApiKey,
  * haciendaEncryptionKey and fidesAuthPassword. Consumers needing those must go through the
  * entity-bound controllers, never through this DTO.
  *
  * The nested {@link PrevalidationModeInfo} mirrors Models.Validacion.PrevalidationConfig
- * (the DB-stored pre-validation mode), which is not part of AppSettings itself.
+ * (the DB-stored pre-validation mode), which is not part of ConfiguracionAplicacion itself.
  *
  * Note: stock alert thresholds have no global setting to expose; they are per-article values
  * (Articulos.diasStockSeguridad / estadoAlertas) computed by StockAlertService.
@@ -645,7 +645,7 @@ public class AppSettingsDTO {
     }
 
     /**
-     * Null-safe convenience mirroring Models.AppSettings.isUseFides().
+     * Null-safe convenience mirroring Models.ConfiguracionAplicacion.isUseFides().
      */
     public boolean isUseFides() {
         return useFides != null && useFides;

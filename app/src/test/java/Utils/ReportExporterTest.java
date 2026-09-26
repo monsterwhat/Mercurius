@@ -8,9 +8,9 @@ import Models.Cabys;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
-import Models.ProfitMarginSnapshot;
-import Models.StockAlert;
-import Models.Users;
+import Models.CorteMargen;
+import Models.AlertaStock;
+import Models.Usuarios;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -37,8 +37,8 @@ class ReportExporterTest {
 
     // ── fixtures ─────────────────────────────────────────────────────────────
 
-    private static Users user(String name) {
-        Users u = new Users();
+    private static Usuarios user(String name) {
+        Usuarios u = new Usuarios();
         u.setUsername(name);
         return u;
     }
@@ -85,8 +85,8 @@ class ReportExporterTest {
         return inv;
     }
 
-    private static StockAlert alerta(int id) {
-        StockAlert alert = new StockAlert();
+    private static AlertaStock alerta(int id) {
+        AlertaStock alert = new AlertaStock();
         alert.setId(id);
         alert.setArticulo(articulo("Leche Entera 1L"));
         alert.setTipoAlerta("low_stock");
@@ -102,8 +102,8 @@ class ReportExporterTest {
         return alert;
     }
 
-    private static ProfitMarginSnapshot snapshot(int id) {
-        ProfitMarginSnapshot s = new ProfitMarginSnapshot();
+    private static CorteMargen snapshot(int id) {
+        CorteMargen s = new CorteMargen();
         s.setId(id);
         s.setFechaSnapshot(new Date(1756000000000L));
         s.setDepartamento("Bebidas");

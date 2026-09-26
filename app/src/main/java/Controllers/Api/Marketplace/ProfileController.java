@@ -1,6 +1,6 @@
 package Controllers.Api.Marketplace;
 
-import Models.Clients;
+import Models.Clientes;
 import Models.DTO.ProfileDTO;
 import Models.DTO.UpdateProfileRequest;
 import Services.ClientService;
@@ -38,7 +38,7 @@ public class ProfileController {
     public Response getProfile() {
         try {
             int clientCode = getClientCode();
-            Clients client = clientService.find(clientCode);
+            Clientes client = clientService.find(clientCode);
             if (client == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity("{\"error\":\"Cliente no encontrado\"}")
@@ -58,7 +58,7 @@ public class ProfileController {
     public Response updateProfile(@Nonnull UpdateProfileRequest request) {
         try {
             int clientCode = getClientCode();
-            Clients client = clientService.find(clientCode);
+            Clientes client = clientService.find(clientCode);
             if (client == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity("{\"error\":\"Cliente no encontrado\"}")
@@ -83,7 +83,7 @@ public class ProfileController {
     }
 
     @Nonnull
-    private static ProfileDTO toProfileDTO(@Nonnull Clients client) {
+    private static ProfileDTO toProfileDTO(@Nonnull Clientes client) {
         ProfileDTO dto = new ProfileDTO();
         dto.setCode(client.getCode());
         dto.setName(client.getName());

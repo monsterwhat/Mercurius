@@ -1,10 +1,10 @@
 package Controllers.Api.App;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.DTO.ApiResponse;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
-import Models.Users;
+import Models.Usuarios;
 import Services.AppSettingsService;
 import Services.BackupService;
 import Services.LoginService;
@@ -103,7 +103,7 @@ public class SettingsResource {
     })
     public Response current() {
         try {
-            AppSettings settings = settingsService.returnCurrent();
+            ConfiguracionAplicacion settings = settingsService.returnCurrent();
             if (settings == null) {
                 return noActiveSettings();
             }
@@ -151,7 +151,7 @@ public class SettingsResource {
                         .build();
             }
 
-            AppSettings settings = settingsService.returnCurrent();
+            ConfiguracionAplicacion settings = settingsService.returnCurrent();
             if (settings == null) {
                 return noActiveSettings();
             }
@@ -213,7 +213,7 @@ public class SettingsResource {
         try {
             // Same lookup BackupController.loadSettings() uses; may create the
             // row when the table is empty — identical to legacy behavior.
-            AppSettings settings = backupService.getSettings();
+            ConfiguracionAplicacion settings = backupService.getSettings();
             return Response.ok(ApiResponse.ok(toBackupStatusDTO(settings))).build();
         } catch (Exception e) {
             LOG.warn("Error reading backup status", e);
@@ -320,11 +320,11 @@ public class SettingsResource {
     }
 
     /**
-     * Resolves the authenticated Users row for audit attribution, mirroring
+     * Resolves the authenticated Usuarios row for audit attribution, mirroring
      * legacy currentSession.getCurrentUser(); null when anonymous/unknown.
      */
     @Nullable
-    private Users currentUserOrNull() {
+    private Usuarios currentUserOrNull() {
         if (!sessionValid() || securityIdentity.getPrincipal() == null) {
             return null;
         }
@@ -332,12 +332,12 @@ public class SettingsResource {
     }
 
     /**
-     * Manual mapper: AppSettings → AppSettingsDTO, field by field. Secret
+     * Manual mapper: ConfiguracionAplicacion → AppSettingsDTO, field by field. Secret
      * fields (contrasenaCorreo, certificado, certificadoPassword,
      * haciendaApiKey, haciendaEncryptionKey, fidesAuthPassword) are NEVER read
      * here — the DTO does not carry them.
      */
-    private static AppSettingsDTO toDTO(@Nonnull AppSettings s) {
+    private static AppSettingsDTO toDTO(@Nonnull ConfiguracionAplicacion s) {
         return new AppSettingsDTO(
                 s.getId(),
                 s.getNombrePerfil(),
@@ -401,7 +401,7 @@ public class SettingsResource {
      * investigates, whereas a wrong "resolved" would hide broken backups.
      * Revisit once BackupService exposes resolution state publicly.</p>
      */
-    private static BackupStatusDTO toBackupStatusDTO(@Nullable AppSettings settings) {
+    private static BackupStatusDTO toBackupStatusDTO(@Nullable ConfiguracionAplicacion settings) {
         if (settings == null) {
             return new BackupStatusDTO(null, false, false);
         }

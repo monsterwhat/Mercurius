@@ -6,9 +6,9 @@ import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Carrito.CartOperationResult;
 import Models.Articulos.Carrito.CartSessionContext;
 import Models.Articulos.Promocion;
-import Models.Clients;
+import Models.Clientes;
 import Models.Inventario;
-import Models.Users;
+import Models.Usuarios;
 import Services.InventarioService; 
 import Utils.CarritoCalculations; 
 import org.jboss.logging.Logger;
@@ -107,7 +107,7 @@ public class CarritoService implements Serializable {
         }
     }
 
-    public void removeArticulo(@Nonnull CartSessionContext ctx, @Nonnull ArticuloCarrito articulo, @Nonnull Users currentUser) {
+    public void removeArticulo(@Nonnull CartSessionContext ctx, @Nonnull ArticuloCarrito articulo, @Nonnull Usuarios currentUser) {
         try {
             if (ctx.getCarrito() != null) {
                 Iterator<ArticuloCarrito> iterator = ctx.getCarrito().iterator();
@@ -369,7 +369,7 @@ public class CarritoService implements Serializable {
         return CarritoCalculations.calculateTotalImpuesto(ctx.getCarrito());
     }
 
-    public void ajustarInventario(@Nonnull CartSessionContext ctx, @Nonnull Users currentUser) {
+    public void ajustarInventario(@Nonnull CartSessionContext ctx, @Nonnull Usuarios currentUser) {
         try {
             for (ArticuloCarrito articulo : ctx.getCarrito()) {
                 var Articulo = articulo;
@@ -407,7 +407,7 @@ public class CarritoService implements Serializable {
         }
     }
  
-    public @Nullable CartOperationResult cancel(@Nonnull CartSessionContext ctx, @Nonnull Users currentUser) {
+    public @Nullable CartOperationResult cancel(@Nonnull CartSessionContext ctx, @Nonnull Usuarios currentUser) {
         try {
             String cajero = currentUser.getUsername();
             StringBuilder antesBuilder = new StringBuilder();
@@ -452,7 +452,7 @@ public class CarritoService implements Serializable {
             ctx.setResetFlag(!ctx.isResetFlag());
             ctx.setCodigoBarra("");
             ctx.setCantidadArticulo(BigDecimal.ONE);
-            ctx.setSelectedClient(new Clients());
+            ctx.setSelectedClient(new Clientes());
             ctx.setCarrito(new ArrayList<>());
 
             return CartOperationResult.script(CartOperationResult.Status.CANCELADO, "window.close();");

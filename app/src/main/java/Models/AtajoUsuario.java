@@ -8,7 +8,7 @@ import lombok.Data;
 @Entity
 @Table(name = "user_shortcuts")
 @Data
-public class UserShortcut implements Serializable {
+public class AtajoUsuario implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -5,7 +5,7 @@ import io.quarkus.test.security.TestSecurity;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import Models.Clients;
+import Models.Clientes;
 import Models.PuntosTransaccion;
 import Services.ClientService;
 import Services.LoyaltyService;
@@ -61,13 +61,13 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
         }
     }
 
-    private void cleanupCliente(Clients cliente) throws Exception {
+    private void cleanupCliente(Clientes cliente) throws Exception {
         if (cliente == null || cliente.getCode() <= 0) {
             return;
         }
         utx.begin();
         try {
-            Clients managed = clientService.find(cliente.getCode());
+            Clientes managed = clientService.find(cliente.getCode());
             if (managed != null) {
                 clientService.delete(managed);
             }
@@ -92,7 +92,7 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void historyFragmentRendersSeededTransaction() throws Exception {
-        Clients cliente = null;
+        Clientes cliente = null;
         PuntosTransaccion transaccion = null;
         try {
             cliente = seedClientWithPoints("IT-T20-Loyal-" + UUID.randomUUID(), 50);
@@ -127,7 +127,7 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
     @Test
     @TestSecurity(user = "admin", roles = {"admin"})
     void rowCountMatchesDirectServiceCalls() throws Exception {
-        Clients cliente = null;
+        Clientes cliente = null;
         try {
             cliente = seedClientWithPoints("IT-T20-Top-" + UUID.randomUUID(), 25);
 
@@ -141,8 +141,8 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
             int topRows = html.split("loyalty-top-tabla", -1).length - 1 > 0
                     ? countSection(html, "loyalty-top-tabla", "loyalty-tabla-container")
                     : 0;
-            List<Clients> top = loyaltyService.getTopLoyaltyCustomers(10);
-            final Clients seededCliente = cliente;
+            List<Clientes> top = loyaltyService.getTopLoyaltyCustomers(10);
+            final Clientes seededCliente = cliente;
             assertTrue(top.stream().anyMatch(c -> c.getCode() == seededCliente.getCode()),
                     "client with points must appear in the top table");
             assertEquals(top.size(), topRows,
@@ -159,8 +159,8 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
         }
     }
 
-    private Clients seedClientWithPoints(String name, double points) {
-        Clients cliente = new Clients();
+    private Clientes seedClientWithPoints(String name, double points) {
+        Clientes cliente = new Clientes();
         cliente.setName(name);
         cliente.setAddress("Barrio IT-T20");
         cliente.setProvincia("1");

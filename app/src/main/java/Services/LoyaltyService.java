@@ -1,9 +1,9 @@
 package Services;
 
-import Models.AppSettings;
-import Models.Clients;
+import Models.ConfiguracionAplicacion;
+import Models.Clientes;
 import Models.PuntosTransaccion;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -52,8 +52,8 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      * Earn points for a customer from a purchase
      */
     @Transactional
-    public void earnPoints(@Nonnull Clients client, @Nonnull BigDecimal purchaseAmount, @Nullable String facturaId, @Nonnull Users currentUser) {
-        AppSettings settings = appSettingsService.returnCurrent();
+    public void earnPoints(@Nonnull Clientes client, @Nonnull BigDecimal purchaseAmount, @Nullable String facturaId, @Nonnull Usuarios currentUser) {
+        ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         if (settings == null || settings.getCashbackPercentage() == null) {
             return;
         }
@@ -88,7 +88,7 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      */
     @Transactional
     @Nonnull
-    public BigDecimal redeemPoints(@Nonnull Clients client, @Nonnull BigDecimal pointsToRedeem) {
+    public BigDecimal redeemPoints(@Nonnull Clientes client, @Nonnull BigDecimal pointsToRedeem) {
         if (pointsToRedeem.compareTo(client.getPuntosAcumulados()) > 0) {
             return BigDecimal.ZERO; // Cannot redeem more than available
         }
@@ -116,7 +116,7 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      */
     @Transactional
     public void checkAndExpireInactivePoints() {
-        AppSettings settings = appSettingsService.returnCurrent();
+        ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         if (settings == null || settings.getPuntosInactivityMonths() == null) {
             return;
         }
@@ -127,12 +127,12 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
         Date inactivityDate = cal.getTime();
 
         // Find inactive customers
-        String jpql = "SELECT c FROM Clients c WHERE c.lastPurchaseDate < :inactivityDate AND c.statusPuntos = 'active'";
-        TypedQuery<Clients> query = em.createQuery(jpql, Clients.class)
+        String jpql = "SELECT c FROM Clientes c WHERE c.lastPurchaseDate < :inactivityDate AND c.statusPuntos = 'active'";
+        TypedQuery<Clientes> query = em.createQuery(jpql, Clientes.class)
                 .setParameter("inactivityDate", inactivityDate);
-        List<Clients> inactiveCustomers = query.getResultList();
+        List<Clientes> inactiveCustomers = query.getResultList();
 
-        for (Clients client : inactiveCustomers) {
+        for (Clientes client : inactiveCustomers) {
             // Expire points
             BigDecimal expiredPoints = client.getPuntosAcumulados();
             client.setPuntosAcumulados(BigDecimal.ZERO);
@@ -155,7 +155,7 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      * Get customer's point transaction history
      */
     @Nonnull
-    public List<PuntosTransaccion> getCustomerPointsHistory(@Nonnull Clients client) {
+    public List<PuntosTransaccion> getCustomerPointsHistory(@Nonnull Clientes client) {
         String jpql = "SELECT pt FROM PuntosTransaccion pt WHERE pt.cliente.code = :clientId ORDER BY pt.fechaCreacion DESC";
         TypedQuery<PuntosTransaccion> query = em.createQuery(jpql, PuntosTransaccion.class)
                 .setParameter("clientId", client.getCode());
@@ -166,9 +166,9 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      * Get customers with highest points balances
      */
     @Nonnull
-    public List<Clients> getTopLoyaltyCustomers(int limit) {
-        String jpql = "SELECT c FROM Clients c WHERE c.puntosAcumulados > 0 ORDER BY c.puntosAcumulados DESC";
-        TypedQuery<Clients> query = em.createQuery(jpql, Clients.class)
+    public List<Clientes> getTopLoyaltyCustomers(int limit) {
+        String jpql = "SELECT c FROM Clientes c WHERE c.puntosAcumulados > 0 ORDER BY c.puntosAcumulados DESC";
+        TypedQuery<Clientes> query = em.createQuery(jpql, Clientes.class)
                 .setMaxResults(limit);
         return query.getResultList();
     }
@@ -177,7 +177,7 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
      * Get available points balance for a customer
      */
     @Nonnull
-    public BigDecimal getAvailablePoints(@Nonnull Clients client) {
+    public BigDecimal getAvailablePoints(@Nonnull Clientes client) {
         if (client.getPuntosAcumulados() == null) {
             return BigDecimal.ZERO;
         }

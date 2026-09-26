@@ -1,7 +1,7 @@
 package Services;
 
 import Models.Cabys;
-import Models.Clients;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Services.HaciendaServiceFacade;
 import Models.Detalles.DetalleServicio;
@@ -196,7 +196,7 @@ public class ComprobantesEmitidosCorrectionService {
         if (facturaOriginal.getEncabezado().getReceptor() != null) {
             String nombre = facturaOriginal.getEncabezado().getReceptor().getNombre();
             if (nombre != null) {
-                List<Clients> clients = clientService.searchByName(nombre);
+                List<Clientes> clients = clientService.searchByName(nombre);
                 if (clients != null && !clients.isEmpty()) {
                     nc.setCliente(clients.get(0));
                 }

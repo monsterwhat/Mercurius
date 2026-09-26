@@ -22,7 +22,7 @@ import io.quarkus.security.identity.AuthenticationRequestContext;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.security.identity.request.UsernamePasswordAuthenticationRequest;
 import io.smallrye.mutiny.Uni;
-import Models.Users;
+import Models.Usuarios;
 import Services.auth.SessionAuthAdapter;
 
 /**
@@ -54,11 +54,11 @@ class MercuriusIdentityProviderTest {
     @InjectMocks
     private MercuriusIdentityProvider provider;
 
-    private Users activeUser;
+    private Usuarios activeUser;
 
     @BeforeEach
     void setUp() {
-        activeUser = new Users();
+        activeUser = new Usuarios();
         activeUser.setUsername("admin");
         activeUser.setPassword(BCRYPT_HASH);
         activeUser.setGroupName("admin");
@@ -102,7 +102,7 @@ class MercuriusIdentityProviderTest {
 
     @Test
     void singleRoleUserGetsExactlyItsMappedRole() {
-        Users vendedor = new Users();
+        Usuarios vendedor = new Usuarios();
         vendedor.setUsername("vendedor1");
         vendedor.setPassword(BCRYPT_HASH);
         vendedor.setGroupName("facturacion");

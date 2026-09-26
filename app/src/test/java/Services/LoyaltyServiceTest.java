@@ -14,17 +14,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import Models.AppSettings;
-import Models.Clients;
+import Models.ConfiguracionAplicacion;
+import Models.Clientes;
 import Models.PuntosTransaccion;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.persistence.EntityManager;
 
 /**
  * Plain-Mockito unit tests for {@link LoyaltyService} pure logic (T6).
  * <p>
  * No Quarkus boot: the EntityManager, ClientService and AppSettingsService
- * collaborators are mocked; Clients/AppSettings/PuntosTransaccion are real
+ * collaborators are mocked; Clientes/ConfiguracionAplicacion/PuntosTransaccion are real
  * Lombok POJOs. Covers:
  * <ul>
  *   <li>calculatePointsEarned boundary table (0%, 100%, 13.5%, HALF_UP rounding at 4dp)</li>
@@ -93,7 +93,7 @@ class LoyaltyServiceTest {
 
     @Test
     void redeemPoints_successDeductsBalanceAndReturnsRedeemedAmount() {
-        Clients client = new Clients();
+        Clientes client = new Clientes();
         client.setPuntosAcumulados(new BigDecimal("100"));
 
         BigDecimal redeemed = service.redeemPoints(client, new BigDecimal("40"));
@@ -113,7 +113,7 @@ class LoyaltyServiceTest {
 
     @Test
     void redeemPoints_insufficientBalanceGuardReturnsZeroWithoutSideEffects() {
-        Clients client = new Clients();
+        Clientes client = new Clientes();
         client.setPuntosAcumulados(new BigDecimal("10"));
 
         BigDecimal redeemed = service.redeemPoints(client, new BigDecimal("50"));
@@ -125,7 +125,7 @@ class LoyaltyServiceTest {
 
     @Test
     void redeemPoints_exactBalanceBoundaryRedeemsEverything() {
-        Clients client = new Clients();
+        Clientes client = new Clientes();
         client.setPuntosAcumulados(new BigDecimal("25.50"));
 
         BigDecimal redeemed = service.redeemPoints(client, new BigDecimal("25.50"));
@@ -139,9 +139,9 @@ class LoyaltyServiceTest {
     @Test
     void earnPoints_nullSettingsReturnsEarlyWithoutPersistence() {
         when(appSettingsService.returnCurrent()).thenReturn(null);
-        Clients client = new Clients();
+        Clientes client = new Clientes();
 
-        service.earnPoints(client, new BigDecimal("1000"), "F-001", new Users());
+        service.earnPoints(client, new BigDecimal("1000"), "F-001", new Usuarios());
 
         assertThat(client.getPuntosAcumulados()).isNull();
         assertThat(client.getStatusPuntos()).isNull();
@@ -150,12 +150,12 @@ class LoyaltyServiceTest {
 
     @Test
     void earnPoints_nullCashbackPercentageReturnsEarlyWithoutPersistence() {
-        AppSettings settings = new AppSettings();
+        ConfiguracionAplicacion settings = new ConfiguracionAplicacion();
         settings.setCashbackPercentage(null);
         when(appSettingsService.returnCurrent()).thenReturn(settings);
-        Clients client = new Clients();
+        Clientes client = new Clientes();
 
-        service.earnPoints(client, new BigDecimal("1000"), null, new Users());
+        service.earnPoints(client, new BigDecimal("1000"), null, new Usuarios());
 
         assertThat(client.getPuntosAcumulados()).isNull();
         assertThat(client.getStatusPuntos()).isNull();
@@ -164,14 +164,14 @@ class LoyaltyServiceTest {
 
     @Test
     void earnPoints_successAccumulatesPointsAndPersistsTransaction() {
-        AppSettings settings = new AppSettings();
+        ConfiguracionAplicacion settings = new ConfiguracionAplicacion();
         settings.setCashbackPercentage(new BigDecimal("13.5"));
         when(appSettingsService.returnCurrent()).thenReturn(settings);
 
-        Clients client = new Clients();
+        Clientes client = new Clientes();
         client.setPuntosAcumulados(new BigDecimal("100"));
 
-        service.earnPoints(client, new BigDecimal("1000"), "F-123", new Users());
+        service.earnPoints(client, new BigDecimal("1000"), "F-123", new Usuarios());
 
         assertThat(client.getPuntosAcumulados()).isEqualByComparingTo(new BigDecimal("235"));
         assertThat(client.getStatusPuntos()).isEqualTo("active");
@@ -190,13 +190,13 @@ class LoyaltyServiceTest {
 
     @Test
     void earnPoints_legacyClientWithNullBalanceStartsFromZero() {
-        AppSettings settings = new AppSettings();
+        ConfiguracionAplicacion settings = new ConfiguracionAplicacion();
         settings.setCashbackPercentage(new BigDecimal("100"));
         when(appSettingsService.returnCurrent()).thenReturn(settings);
 
-        Clients client = new Clients(); // puntosAcumulados left NULL (legacy row)
+        Clientes client = new Clientes(); // puntosAcumulados left NULL (legacy row)
 
-        service.earnPoints(client, new BigDecimal("250"), null, new Users());
+        service.earnPoints(client, new BigDecimal("250"), null, new Usuarios());
 
         assertThat(client.getPuntosAcumulados()).isEqualByComparingTo(new BigDecimal("250"));
         ArgumentCaptor<PuntosTransaccion> captor = ArgumentCaptor.forClass(PuntosTransaccion.class);
@@ -208,14 +208,14 @@ class LoyaltyServiceTest {
 
     @Test
     void getAvailablePoints_nullBalanceIsSafeAndReturnsZero() {
-        Clients client = new Clients(); // legacy clients may have NULL puntosAcumulados
+        Clientes client = new Clientes(); // legacy clients may have NULL puntosAcumulados
 
         assertThat(service.getAvailablePoints(client)).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     @Test
     void getAvailablePoints_positiveBalanceReturnedAsIs() {
-        Clients client = new Clients();
+        Clientes client = new Clientes();
         client.setPuntosAcumulados(new BigDecimal("75.25"));
 
         assertThat(service.getAvailablePoints(client)).isEqualByComparingTo(new BigDecimal("75.25"));

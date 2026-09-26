@@ -2,7 +2,7 @@ package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
 import Models.DTO.UsersDTO;
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -51,7 +51,7 @@ public class PerfilPagesResource {
     @GET
     public Response index() {
         try {
-            Users user = currentUser();
+            Usuarios user = currentUser();
             if (user == null) {
                 return Response.status(Response.Status.UNAUTHORIZED)
                         .entity(ApiResponse.error("UNAUTHORIZED", "No autenticado"))
@@ -72,7 +72,7 @@ public class PerfilPagesResource {
         }
     }
 
-    private Users currentUser() {
+    private Usuarios currentUser() {
         if (identity == null || identity.isAnonymous()) {
             return null;
         }
@@ -83,7 +83,7 @@ public class PerfilPagesResource {
         return loginService.findByUsername(principal);
     }
 
-    private static UsersDTO toDTO(Users user) {
+    private static UsersDTO toDTO(Usuarios user) {
         return new UsersDTO(user.getId(), user.getUsername(), user.getEmail(),
                 user.getGroupName(), user.getStatus());
     }
