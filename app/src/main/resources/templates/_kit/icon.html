@@ -1,0 +1,54 @@
+{!
+  _kit/icon - the ONLY way to render an icon (W1 foundation).
+
+  Replaces the three pre-W1 systems: FontAwesome markup that never rendered
+  (FontAwesome was never a declared dependency), numeric HTML entities used as
+  button glyphs (&#9998; pencil, &#9211;, &#8635;, ...), and raw emoji whose
+  glyph varied per operating system.
+
+  SOURCE OF TRUTH: web/icons.js (icon-name -> inline SVG). This template
+  deliberately contains NO path data; it emits a marker that the bundle
+  hydrates (icons.js installIconHydration -> hydrateIcons). Consequences:
+    - zero HTTP requests, zero icon dependency, one canonical definition;
+    - icons render once the bundle executes; htmx-swapped icons are covered by
+      a MutationObserver;
+    - an unknown key renders nothing and logs ONE console warning naming the
+      valid keys (and marks the element data-icon-missing), so typos surface
+      immediately instead of leaving an invisible gap.
+
+  PARAMS
+    name  String - REQUIRED. Key in web/icons.js PATHS.
+    label String - OPTIONAL. Accessible name when the icon stands alone with
+                    no visible text. Renders role="img" + aria-label + title.
+                    OMIT it when the icon sits inside a control that already
+                    carries text or its own aria-label — then the icon is
+                    decorative and gets aria-hidden="true".
+    size  String - OPTIONAL. small | medium | large. Default: inherit (1.25em,
+                    scales with the surrounding font size).
+
+  ICON-ONLY BUTTONS: put the accessible name on the BUTTON, not here.
+
+      <button class="button is-small" aria-label="Editar articulo"
+              hx-get="..." hx-target="#editar-articulo-body" hx-swap="innerHTML">
+          {#include _kit/icon name="edit" /}
+      </button>
+
+  TEXT + ICON (preferred for anything not in a dense table):
+
+      <button class="button is-primary">
+          {#include _kit/icon name="plus" /}
+          <span>Crear Articulo</span>
+      </button>
+
+  VALID KEYS (web/icons.js PATHS)
+    plus minus check close
+    edit eye trash power arrow-right arrow-left refresh
+    search filter download upload print send
+    user lock money cart barcode package file chart gauge clock
+    alert info
+
+  RESPONSIVE: no page-specific rules. `.mi-icon` is sized in em, so it tracks
+  the control's font size at every breakpoint.
+!}
+{@java.lang.String name}
+<span class="mi-icon{#if size??} is-{size}{/if}" data-icon="{name}"{#if label??} role="img" aria-label="{label}" title="{label}"{#else} aria-hidden="true"{/if}></span>

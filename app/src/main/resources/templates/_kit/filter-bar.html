@@ -1,0 +1,72 @@
+{!
+  _kit/filter-bar - the ONE filter surface (W1).
+
+  REPLACES the per-page filter constructions: `div.filters-section` +
+  `div.filters-row` + `div.filter-group` (headers.css), bare `div.box` filter
+  forms on the ~21 report pages, `div.field.is-horizontal` on margenes /
+  estacionalidad / stock-alert-config, and the `field.has-addons` search rows
+  that each table fragment hand-rolled.
+
+  LAYOUT
+    [ filter-grid: auto-fit minmax(200px, 1fr) ]   [ filter-actions: right ]
+    Wraps to a column at <=768px; the grid drops to 2 columns then 1.
+
+  PARAMS
+    id       String - OPTIONAL. DOM id; put it on the <form> so
+                       `hx-include="closest form"` works from any control.
+    method   String - OPTIONAL. "get" (default) or "post".
+    action   String - OPTIONAL. form action; only meaningful with method="post".
+    id_field String - OPTIONAL. DOM id of a hidden input that carries the
+                       active view key, so a filtered board can post back into
+                       the same view.
+
+  SLOTS
+    default  - the filter controls. Rendered inside .filter-grid.
+    {#actions} - Filtrar / Limpiar / Exportar. Default is empty.
+
+  FIELD SHAPE (stable across the app)
+    <div class="field">
+      <label class="label" for="{id}">Departamento</label>
+      <div class="control">
+        <div class="select is-fullwidth">
+          <select id="{id}" name="departamento" hx-get="..." hx-trigger="change"
+                  hx-target="#reporte-tabla" hx-swap="outerHTML">
+            ...
+          </select>
+        </div>
+      </div>
+    </div>
+
+  LIVE FILTERING
+    Two sanctioned patterns, pick per field and keep it consistent within a page:
+    a) declarative - the control carries hx-get/hx-target/hx-swap itself and
+       there is no submit button (the current report-page behaviour);
+    b) explicit - controls are inert and `Filtrar` submits.
+    Do not mix both on one page.
+
+  EXAMPLE (declarative, no submit)
+    {#include _kit/filter-bar id="filtros-recibos" /}
+      <div class="field">
+        <label class="label" for="recibos-q">Buscar</label>
+        <div class="control has-icons-left">
+          <input class="input" id="recibos-q" name="q" type="search"
+                 placeholder="Buscar recibos..." autocomplete="off"
+                 hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/tabla"
+                 hx-trigger="keyup changed delay:300ms"
+                 hx-target="#recibos-tablero" hx-swap="outerHTML"/>
+          <span class="icon is-small is-left">{#include _kit/icon name="search" /}</span>
+        </div>
+      </div>
+    {/include}
+
+  RESPONSIVE: 200px min columns, 2 columns at 481-768px, 1 column at 480px;
+  .filter-actions buttons become full width at 480px.
+!}
+<section class="filter-bar"{#if id??} id="{id}"{/if}>
+    <form class="filter-grid" method="{method ?: 'get'}"{#if action??} action="{action}"{/if}>
+        {#insert}{/insert}
+    </form>
+    <div class="filter-actions">
+        {#insert actions}{/insert}
+    </div>
+</section>

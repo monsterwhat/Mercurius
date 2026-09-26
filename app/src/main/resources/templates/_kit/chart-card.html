@@ -1,0 +1,76 @@
+{!
+  _kit/chart-card - the ONE chart frame (W1).
+
+  REPLACES the three hand-rolled chart containers:
+    - the dashboard's `<div class="box">` + `<p class="title is-5">` +
+      `<div style="height:300px">` + `<canvas>` pair (ventas por hora, tendency
+      semanal);
+    - the report pages' `<div class="box mt-4">` + `<p class="title is-5">` +
+      `<div style="width:100%;overflow-x:auto">` + 900x320 canvas
+      (tendencias, rendimiento, pronosticos).
+
+  Chart.js is the only sanctioned implementation. Do not hand-draw on a canvas:
+  the three existing hand-rolled charts are migrated in W4.
+
+  PARAMS
+    title    String - REQUIRED. Also becomes the canvas aria-label.
+    subtitle String - OPTIONAL. Second line, e.g. the active date range.
+    size     String - OPTIONAL. "short" (220px) | default (300px) | "tall"
+                       (420px). Sets the --chart-height token.
+    canvasId String - OPTIONAL. DOM id of the canvas. When supplied and no
+                       {#body} is given, a <canvas> is rendered for you.
+    height   String - OPTIONAL. Explicit CSS length, overrides `size`
+                       (e.g. "360px"). Escape hatch, prefer `size`.
+
+  SLOTS
+    {#actions} - header controls (a range selector, an export button).
+    {#body}    - overrides the default canvas. Use for a legend row, an empty
+                  state, or a server-rendered fallback table.
+
+  INITIALISING FROM THE PAGE SCRIPT
+  The bundle publishes a factory with the shared defaults already applied
+  (web/chart-config.js -> window.MercuriusCharts). Pages supply labels,
+  datasets, type and an optional options override - never fonts, grid colours,
+  tooltips or locale:
+
+      const c = MercuriusCharts.create('grafica-ventas-hora', {
+          type: 'bar',
+          labels: hourly.labels,
+          datasets: [{ label: 'Ventas (colones)', data: hourly.ventas }]
+      });
+
+  Number and currency formatting come from the same module:
+  MercuriusCharts.number(n), MercuriusCharts.currency(n), MercuriusCharts.date(v)
+  (es-CR / CRC). Do not call toLocaleString() in page scripts.
+
+  RESPONSIVE BEHAVIOUR
+  Chart.js `responsive: true` + `maintainAspectRatio: false` is set globally, so
+  the canvas fills .chart-body. The card is a flex column with
+  `height: 100%`, which makes charts equal-height when two sit side by side in
+  a `columns` block at >=769px. Below that they stack and each takes
+  --chart-height.
+
+  ACCESSIBILITY
+  A canvas is opaque to screen readers, so the title is emitted as
+  aria-label plus a text fallback inside the canvas. Any chart that carries
+  information not present elsewhere on the page MUST also ship a table
+  (the report pages already do) - the canvas is the visual, the table is the
+  accessible truth.
+!}
+{@java.lang.String title}
+<figure class="chart-card{#if size??} is-{size}{/if}"{#if height??} style="--chart-height: {height}"{/if}>
+    <figcaption class="chart-header">
+        <p class="chart-title">{title}</p>
+        {#if subtitle??}<p class="chart-subtitle">{subtitle}</p>{/if}
+        {#insert actions}{/insert}
+    </figcaption>
+    <div class="chart-body">
+        {#insert body}
+            {#if canvasId??}
+            <canvas id="{canvasId}" role="img" aria-label="{title}">
+                Su navegador no soporta canvas.
+            </canvas>
+            {/if}
+        {/insert}
+    </div>
+</figure>

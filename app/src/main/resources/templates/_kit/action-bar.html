@@ -1,0 +1,63 @@
+{!
+  _kit/action-bar - the ONE result-count / page-actions strip (W1).
+
+  REPLACES the two ad-hoc strips in use today:
+    - `div.actions-bar` + `div.actions-group` (headers.css), used by articulo
+      and categoria pages to park a title on the left and buttons on the right;
+    - `div.level` + `div.level-left` + `div.level-right > div.buttons`, which
+      every report page and the detail views used for the same job;
+    - the standalone `span.tag.is-medium.is-info` "Total {totalGeneral}" chips
+      on the report pages.
+
+  PARAMS
+    count      Object - OPTIONAL. Result count rendered inside .action-count.
+    countLabel String - OPTIONAL. Prefix for the count, e.g. "Articulos".
+                         Default: "resultados".
+    id         String - OPTIONAL. DOM id, for the polling age label
+                         (`data-poll-age` targets an element by id).
+
+  SLOTS
+    {#left}   - overrides the count. Default renders count/countLabel.
+    {#actions}- the controls. Default is empty.
+
+  POLLING AGE
+    Pair it with the shared polling helper (web/index.js kitPolling) by giving
+    the count element an id and pointing the polling container at it:
+
+        <div hx-get="..." hx-trigger="every 30s" hx-swap="innerHTML"
+             data-poll data-poll-age="#inventario-edad">
+          {#include _kit/action-bar count=activosCount countLabel="Ajustes" /}
+        </div>
+        <span id="inventario-edad" class="action-count"></span>
+
+    The helper then writes "Actualizado hace 12 s" instead of silently polling.
+
+  EXAMPLE
+    {#include _kit/action-bar count=modelo.total countLabel="Articulos" /}
+      {#actions}
+        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+          <input type="hidden" name="csrf-token" value="{inject:csrf.token}"/>
+          <input type="hidden" name="dataset" value="articulos"/>
+          <input type="hidden" name="type" value="xlsx"/>
+          <button class="button is-success" type="submit">Exportar Excel</button>
+        </form>
+        {#include _kit/modal id="crear-articulo" title="Crear Articulo"
+             triggerLabel="Crear Articulo" triggerClass="is-primary"
+             bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
+      {/actions}
+    {/include}
+
+  RESPONSIVE: stacks vertically at <=768px; .action-buttons buttons go
+  full-width at 480px. Export stays a plain browser POST (never HTMX) so the
+  Content-Disposition download works.
+!}
+<section class="action-bar"{#if id??} id="{id}"{/if}>
+    <div class="action-count" id="{id ? id + '-count' : ''}">
+        {#insert left}
+            {#if count??}<strong>{count}</strong> {countLabel ?: 'resultados'}{/if}
+        {/insert}
+    </div>
+    <div class="action-buttons">
+        {#insert actions}{/insert}
+    </div>
+</section>
