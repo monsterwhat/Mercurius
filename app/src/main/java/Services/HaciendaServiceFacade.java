@@ -1,6 +1,6 @@
 package Services;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.ComprobantesEmitidos;
 import Models.Encabezado.Encabezado;
 import Services.Strategies.DocumentoStrategy;
@@ -15,7 +15,7 @@ import org.jboss.logging.Logger;
 
 /**
  * Facade that routes electronic invoice operations to either the Fides API
- * or the direct Hacienda API based on the {@link AppSettings#useFides} flag.
+ * or the direct Hacienda API based on the {@link ConfiguracionAplicacion#useFides} flag.
  * <p>
  * Only one provider is active at a time. The old direct Hacienda code paths
  * are fully preserved as the fallback when Fides is disabled.
@@ -95,13 +95,13 @@ public class HaciendaServiceFacade {
 
     // ── Configuration ────────────────────────────────────────────────────
 
-    /** Returns true when Fides mode is active in AppSettings. */
+    /** Returns true when Fides mode is active in ConfiguracionAplicacion. */
     public boolean isFidesEnabled() {
         try {
-            AppSettings settings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
             return settings != null && settings.isUseFides();
         } catch (RuntimeException e) {
-            LOG.warn("Failed to read AppSettings for Fides flag", e);
+            LOG.warn("Failed to read ConfiguracionAplicacion for Fides flag", e);
             return false;
         }
     }
@@ -163,7 +163,7 @@ public class HaciendaServiceFacade {
 
     private @Nonnull SubmitResult submitViaFides(@Nonnull ComprobantesEmitidos comprobante) {
         try {
-            AppSettings appSettings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null) {
                 return SubmitResult.error("No hay configuracion para enviar comprobante");
             }
@@ -190,7 +190,7 @@ public class HaciendaServiceFacade {
      * the Fides API InvoiceData DTO.
      */
     private FidesApiService.InvoiceData buildInvoiceData(
-            @Nonnull ComprobantesEmitidos comprobante, @Nonnull AppSettings appSettings) {
+            @Nonnull ComprobantesEmitidos comprobante, @Nonnull ConfiguracionAplicacion appSettings) {
         FidesApiService.InvoiceData data = new FidesApiService.InvoiceData();
 
         data.issuerTaxId = appSettings.getIdentificacion();
@@ -238,7 +238,7 @@ public class HaciendaServiceFacade {
 
     private @Nonnull SubmitResult submitViaDirectHacienda(@Nonnull ComprobantesEmitidos comprobante) {
         try {
-            AppSettings appSettings = appSettingsService.returnCurrent();
+            ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null) {
                 return SubmitResult.error("No hay configuracion de Hacienda");
             }

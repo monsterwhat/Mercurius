@@ -1,6 +1,6 @@
 package Controllers.Api.Marketplace;
 
-import Models.Clients;
+import Models.Clientes;
 import Models.DTO.AuthResponse;
 import Models.DTO.LoginRequest;
 import Models.DTO.RegisterRequest;
@@ -108,7 +108,7 @@ public class AuthController {
                         .build();
             }
             int clientCode = Integer.parseInt(securityContext.getUserPrincipal().getName());
-            Clients client = clientAuthService.findByCode(clientCode);
+            Clientes client = clientAuthService.findByCode(clientCode);
             if (client == null) {
                 return Response.status(Response.Status.NOT_FOUND)
                         .entity("{\"error\":\"Cliente no encontrado\"}")

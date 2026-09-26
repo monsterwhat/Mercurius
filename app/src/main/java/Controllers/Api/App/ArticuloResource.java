@@ -15,7 +15,7 @@ import Models.Enums.Tipo_Codigo_Descuento;
 import Models.Enums.TipoRefrigeracion;
 import Models.Familia;
 import Models.ProductoExoneracion;
-import Models.Users;
+import Models.Usuarios;
 import Services.ArticuloCarritoService;
 import Services.ArticuloPrecioService;
 import Services.ArticulosService;
@@ -956,7 +956,7 @@ public class ArticuloResource {
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             return false;
         }
-        Users authUser = loginService.findByUsername(username.trim());
+        Usuarios authUser = loginService.findByUsername(username.trim());
         if (authUser == null) {
                         LOG.info("Intento con usuario inexistente: " + username + " | source=" + "ArticuloResource.isSupervisorAuthorized()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
             return false;
@@ -1943,11 +1943,11 @@ public class ArticuloResource {
     // ── Current-user resolution (SessionController.getCurrentUser parity) ──
 
     /**
-     * Resolves the authenticated {@link Users} row through the T12 identity
+     * Resolves the authenticated {@link Usuarios} row through the T12 identity
      * provider's principal. Returns null for anonymous/system contexts
      * (alertas accepts null).
      */
-    private Users currentUser() {
+    private Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

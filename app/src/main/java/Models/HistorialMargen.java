@@ -14,7 +14,7 @@ import lombok.Data;
 @Entity
 @Data
 @Table(name = "profit_margin_history")
-public class ProfitMarginHistory implements Serializable {
+public class HistorialMargen implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,7 +53,7 @@ public class ProfitMarginHistory implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date fechaCreacion;
     
-    public ProfitMarginHistory() {
+    public HistorialMargen() {
         this.fechaCreacion = new Date();
     }
     

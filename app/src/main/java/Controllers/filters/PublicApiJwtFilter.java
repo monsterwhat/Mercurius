@@ -1,6 +1,6 @@
 package Controllers.filters;
 
-import Models.ApiClients;
+import Models.ClientesApi;
 import Services.ApiClientsService;
 import Services.JwtTokenUtil;
 import Utils.RateLimiter;
@@ -123,7 +123,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
             requestContext.setProperty("tokenType", "api_access");
 
             // Check rate limits for API clients
-            ApiClients client = apiClientsService.findByClientId(clientId);
+            ClientesApi client = apiClientsService.findByClientId(clientId);
             if (client != null) {
                 Long retryAfter = rateLimiter.checkRateLimit(clientId, client.getRateLimitPerMin(), client.getRateLimitPerHour());
                 if (retryAfter != null) {

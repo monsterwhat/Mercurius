@@ -1,6 +1,6 @@
 package Services;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,7 +33,7 @@ public class DirectoryService {
 
     @Nonnull
     public String getCurrentProfileName() {
-        AppSettings settings = appSettingsService.returnCurrent();
+        ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         return (settings != null && settings.getNombrePerfil() != null)
                 ? settings.getNombrePerfil() : "default";
     }

@@ -28,7 +28,7 @@ public class CierreCaja implements Serializable {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", nullable = false)
-    private Users usuario;
+    private Usuarios usuario;
 
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)

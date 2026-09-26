@@ -1,7 +1,7 @@
 package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 import io.quarkus.security.identity.SecurityIdentity;
 import io.quarkus.vertx.http.runtime.security.FormAuthenticationMechanism;
@@ -56,7 +56,7 @@ public class AppAuthResource {
     private static final Logger LOG = Logger.getLogger(AppAuthResource.class);
 
     /**
-     * Role tokens derived from {@link Users#getGroupName()} substrings,
+     * Role tokens derived from {@link Usuarios#getGroupName()} substrings,
      * mirroring SessionController's checks ({@code groupName.contains(token)});
      * a group containing "admin" implies every other role.
      */
@@ -97,7 +97,7 @@ public class AppAuthResource {
             // delegating persistence concerns to LoginService (findByUsername
             // already filters status = true; the explicit check below keeps the
             // disabled-user contract obvious and null-safe).
-            Users authUser = loginService.findByUsername(username);
+            Usuarios authUser = loginService.findByUsername(username);
             if (authUser == null) {
                 LOG.info("failed to supervisor authorize");
                 return invalidCredentials();
@@ -183,7 +183,7 @@ public class AppAuthResource {
      * Derives the role list from the user's groupName using the same substring
      * semantics as SessionController ("admin" implies every other role).
      */
-    private List<String> deriveRoles(@Nonnull Users user) {
+    private List<String> deriveRoles(@Nonnull Usuarios user) {
         String groupName = user.getGroupName() == null ? "" : user.getGroupName().toLowerCase();
         boolean isAdmin = groupName.contains("admin");
         List<String> roles = new ArrayList<>(ROLE_TOKENS.size());

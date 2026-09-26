@@ -9,7 +9,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import Models.ComprobantesEmitidos;
-import Models.Users;
+import Models.Usuarios;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,7 +32,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
     private EntityManager em;
     
     @Nonnull
-    public BigDecimal getTodaySales(@Nonnull Users user) {
+    public BigDecimal getTodaySales(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -59,7 +59,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         }
     }
     
-    public int getTransactionCount(@Nonnull Users user) {
+    public int getTransactionCount(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -85,7 +85,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
         }
     }
     
-    public int getItemsSold(@Nonnull Users user) {
+    public int getItemsSold(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -114,7 +114,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
     }
     
     @Nullable
-    public ComprobantesEmitidos getLastTransaction(@Nonnull Users user) {
+    public ComprobantesEmitidos getLastTransaction(@Nonnull Usuarios user) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +
@@ -138,7 +138,7 @@ public class DashboardService extends GService<ComprobantesEmitidos> {
     }
     
     @Nullable
-    public List<ComprobantesEmitidos> getRecentSales(@Nonnull Users user, int limit) {
+    public List<ComprobantesEmitidos> getRecentSales(@Nonnull Usuarios user, int limit) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
                 "SELECT f FROM ComprobantesEmitidos f " +

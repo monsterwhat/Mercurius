@@ -5,9 +5,9 @@ import Models.Articulos.Articulos;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
-import Models.ProfitMarginSnapshot;
+import Models.CorteMargen;
 import Models.ReportesFamiliasYDepartamentos;
-import Models.StockAlert;
+import Models.AlertaStock;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Font;
@@ -246,13 +246,13 @@ public final class ReportExporter {
      * null fallbacks as ExcelExporter.exportStockAlertsToExcel().
      */
     @Nonnull
-    public static byte[] exportStockAlertsExcel(@Nonnull List<StockAlert> stockAlerts) throws IOException {
+    public static byte[] exportStockAlertsExcel(@Nonnull List<AlertaStock> stockAlerts) throws IOException {
         String[] headers = {"ID", "Artículo", "Código", "Tipo Alerta", "Cantidad Actual",
                           "Cantidad Mínima", "Sugerido Reordenar", "Departamento",
                           "Estado", "Fecha Creación", "Fecha Resolución", "Notas"};
 
         List<Object[]> rows = new ArrayList<>(stockAlerts.size());
-        for (StockAlert alert : stockAlerts) {
+        for (AlertaStock alert : stockAlerts) {
             rows.add(new Object[]{
                 alert.getId(),
                 alert.getArticulo() != null ? alert.getArticulo().getNombre() : "",
@@ -277,12 +277,12 @@ public final class ReportExporter {
      * null fallbacks as ExcelExporter.exportProfitMarginSnapshotsToExcel().
      */
     @Nonnull
-    public static byte[] exportProfitMarginSnapshotsExcel(@Nonnull List<ProfitMarginSnapshot> marginSnapshots) throws IOException {
+    public static byte[] exportProfitMarginSnapshotsExcel(@Nonnull List<CorteMargen> marginSnapshots) throws IOException {
         String[] headers = {"ID", "Fecha", "Departamento", "Familia", "% Margen Promedio",
                           "Total Utilidad", "Total Ventas", "Cant. Artículos"};
 
         List<Object[]> rows = new ArrayList<>(marginSnapshots.size());
-        for (ProfitMarginSnapshot snapshot : marginSnapshots) {
+        for (CorteMargen snapshot : marginSnapshots) {
             rows.add(new Object[]{
                 snapshot.getId(),
                 snapshot.getFechaSnapshot() != null ? snapshot.getFechaSnapshot().toString() : "",

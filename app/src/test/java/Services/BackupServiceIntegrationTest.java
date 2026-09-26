@@ -3,11 +3,12 @@ package Services;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import support.PgDumpAvailability;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -88,7 +89,13 @@ class BackupServiceIntegrationTest {
 
     @Test
     void ejecutarBackupProducesNonEmptyGzippedPlainSqlDumpWithPgDumpMarker() throws IOException {
-        AppSettings settings = appSettingsService.findOrCreateCurrent();
+        // Precondición: el binario cliente pg_dump debe existir. Los binarios
+        // servidor y cliente se distribuyen por separado, así que un entorno
+        // con la base de pruebas funcional puede no traerlo; en ese caso la
+        // prueba se omite en vez de reportar un falso rojo.
+        PgDumpAvailability.assumeAvailable();
+
+        ConfiguracionAplicacion settings = appSettingsService.findOrCreateCurrent();
         assertNotNull(settings, "findOrCreateCurrent debe devolver una fila activa");
         settings.setBackupRuta(tempDir.toString());
         appSettingsService.update(settings);

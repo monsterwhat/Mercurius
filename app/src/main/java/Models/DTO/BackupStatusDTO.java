@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
  * Services.BackupService expone públicamente:
  *
  * - backupUltimoEjecutado: fecha del último backup exitoso
- *   (AppSettings.backupUltimoEjecutado, actualizado por BackupService.ejecutarBackup()).
+ *   (ConfiguracionAplicacion.backupUltimoEjecutado, actualizado por BackupService.ejecutarBackup()).
  * - backupHabilitado: bandera de programación automática
- *   (AppSettings.backupHabilitado, consumida por ProgramadorTareas.ejecutarBackupProgramado()).
+ *   (ConfiguracionAplicacion.backupHabilitado, consumida por ProgramadorTareas.ejecutarBackupProgramado()).
  * - mysqldumpResuelto: true si BackupService.resolvePgDump() encontró una ruta
  *   concreta al ejecutable pg_dump; false si cayó al fallback por defecto.
  *   El nombre del campo se conserva por estabilidad de la superficie JSON

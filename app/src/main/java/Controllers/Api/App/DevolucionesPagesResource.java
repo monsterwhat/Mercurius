@@ -165,7 +165,7 @@ public class DevolucionesPagesResource {
     private List<Map<String, Object>> buscar(@Nonnull String tipo, @Nonnull String criterio) {
         List<ComprobantesEmitidos> source = new ArrayList<>();
         if ("cliente".equals(tipo)) {
-            List<Models.Clients> clients = clientService.searchByName(criterio);
+            List<Models.Clientes> clients = clientService.searchByName(criterio);
             if (clients == null || clients.isEmpty()) {
                 return Collections.emptyList();
             }

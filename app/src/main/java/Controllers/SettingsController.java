@@ -1,6 +1,6 @@
 package Controllers;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Services.AppSettingsService;
 import Services.EmailService;
 import Services.HaciendaCertificateService;
@@ -62,13 +62,13 @@ public class SettingsController implements Serializable {
     private static final Logger LOG = Logger.getLogger(SettingsController.class);
 
     @Nullable
-    private List<AppSettings> currentSettingsList;
+    private List<ConfiguracionAplicacion> currentSettingsList;
     @Nullable
-    private AppSettings currentSettings;
+    private ConfiguracionAplicacion currentSettings;
     @Nullable
-    private AppSettings newSettings;
+    private ConfiguracionAplicacion newSettings;
     @Nullable
-    private AppSettings selectedSettings;
+    private ConfiguracionAplicacion selectedSettings;
     @Nullable
     private Boolean hasValidProfile;
     @Nullable
@@ -118,7 +118,7 @@ public class SettingsController implements Serializable {
         currentSettingsList = settingsService.listAll();
         currentSettings = settingsService.returnCurrent();
         if (currentSettings == null) {
-            currentSettings = new AppSettings(); 
+            currentSettings = new ConfiguracionAplicacion(); 
         }  
         loadHaciendaStatus();
         seleccionar();
@@ -260,7 +260,7 @@ public class SettingsController implements Serializable {
     }
 
     public void createNewSettings() {
-        newSettings = new AppSettings();
+        newSettings = new ConfiguracionAplicacion();
     }
 
     public void saveInitSettings() {
@@ -462,7 +462,7 @@ public class SettingsController implements Serializable {
         tipoCambioController.recargar();
     }
 
-    private void addMessage(Object severity, String summary, String detail) {              LOG.warn(detail + " | user=" + String.valueOf(currentSession != null && currentSession.getCurrentUser() != null ? (Models.Users) currentSession.getCurrentUser() : null) + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+    private void addMessage(Object severity, String summary, String detail) {              LOG.warn(detail + " | user=" + String.valueOf(currentSession != null && currentSession.getCurrentUser() != null ? (Models.Usuarios) currentSession.getCurrentUser() : null) + " | source=" + "SettingsController" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
     }
 
     public void saveProfile() {

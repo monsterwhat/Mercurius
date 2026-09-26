@@ -10,7 +10,7 @@ import java.util.List;
  * Mirrors the scalar fields of Models.Articulos.Promocion.
  * Relations are flattened: articulosCarrito -> pares {codigo, nombre},
  * usuario -> usuarioId + usuarioUsername.
- * Nested entities (ArticuloCarrito, Articulos, Users) are intentionally excluded.
+ * Nested entities (ArticuloCarrito, Articulos, Usuarios) are intentionally excluded.
  */
 public class PromocionDTO {
 

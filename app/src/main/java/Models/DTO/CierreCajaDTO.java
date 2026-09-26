@@ -8,7 +8,7 @@ import java.util.Date;
  * Cierre de caja view for caja reports and dashboards.
  * Mirrors the scalar fields of Models.CierreCaja.
  * Relations are flattened: usuario -> usuarioId + usuarioUsername.
- * Nested entities (Users) are intentionally excluded.
+ * Nested entities (Usuarios) are intentionally excluded.
  */
 public class CierreCajaDTO {
 

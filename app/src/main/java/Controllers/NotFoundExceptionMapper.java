@@ -1,9 +1,6 @@
 package Controllers;
 
-import io.quarkus.qute.Location;
-import io.quarkus.qute.Template;
 import io.quarkus.security.identity.SecurityIdentity;
-import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Context;
@@ -18,8 +15,14 @@ import org.jboss.resteasy.reactive.server.ServerExceptionMapper;
 /**
  * Auto-404: any unmatched JAX-RS path (no @Path) is mapped here.
  * - /api/* -> JSON 404 (so API clients / tests keep proper 404 envelope)
- * - otherwise if anonymous -> 302 to /Mercurius/login (so deep-links/logged-out bookmarks land on login)
- * - otherwise authenticated -> 302 to /Mercurius/app (dashboard landing, avoids dead blank 404)
+ * - anonymous -> 303 to /Mercurius/login (so deep-links/logged-out bookmarks land on login)
+ * - authenticated -> 303 to /Mercurius/app (dashboard landing)
+ *
+ * <p>Both browser outcomes are redirects rather than a rendered 404 body: a
+ * logged-out bookmark belongs on the login page, and a stale link typed by a
+ * signed-in operator belongs on the dashboard instead of a dead page. The
+ * /api/* branch keeps a real JSON 404 so API clients can distinguish
+ * "no such resource" from a navigation.
  */
 @Provider
 @jakarta.enterprise.context.ApplicationScoped
@@ -27,11 +30,6 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
 
     @Inject
     SecurityIdentity identity;
-
-    @Inject
-    @Nonnull
-    @Location("pages/error/404")
-    Template pagina404;
 
     @Context
     UriInfo uriInfo;
@@ -54,11 +52,7 @@ public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundExceptio
         if (anonymous) {
             return Response.seeOther(URI.create("/Mercurius/login")).build();
         }
-        String html = pagina404.data("ruta", "/" + normalized).render();
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(html)
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
-                .build();
+        return Response.seeOther(URI.create("/Mercurius/app")).build();
     }
 
     @ServerExceptionMapper

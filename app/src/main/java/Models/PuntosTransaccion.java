@@ -21,7 +21,7 @@ public class PuntosTransaccion implements Serializable {
     
     @ManyToOne
     @JoinColumn(name = "cliente_id")
-    private Clients cliente;
+    private Clientes cliente;
     
     @Column(name = "tipo_transaccion")
     private String tipoTransaccion; // 'earn', 'redeem', 'expire'

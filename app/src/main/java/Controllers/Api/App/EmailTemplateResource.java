@@ -5,7 +5,7 @@ import Models.DTO.ApiResponse;
 import Models.DTO.EmailTemplateDTO;
 import Models.DTO.PagedResponse;
 import Models.Correos.EmailTemplateTipo;
-import Models.Users;
+import Models.Usuarios;
 import Services.Correos.EmailTemplateService;
 import Services.LoginService;
 import Utils.DiffUtils;
@@ -69,7 +69,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       templates), with the legacy audit texts preserved verbatim.</li>
  *   <li>The legacy {@code usuario} attribution ({@code currentSession
  *       .getCurrentUser()}) is preserved by resolving the form-auth principal
- *       back to a {@link Users} row through {@link LoginService#findByUsername};
+ *       back to a {@link Usuarios} row through {@link LoginService#findByUsername};
  *       the JSF {@code SessionController} itself must never be injected into
  *       JAX-RS resources (see {@link AppAuthResource}). While auth is dormant
  *       the identity is anonymous and the attribution stays null.</li>
@@ -940,11 +940,11 @@ public class EmailTemplateResource {
      * Parity with {@code currentSession.getCurrentUser()} on creation, resolved
      * WITHOUT touching the JSF {@code SessionController} (never injectable into
      * JAX-RS): the authenticated principal name is mapped back to its
-     * {@link Users} row via {@link LoginService#findByUsername}. Returns
+     * {@link Usuarios} row via {@link LoginService#findByUsername}. Returns
      * {@code null} while auth is dormant (anonymous identity).
      */
     @Nullable
-    private Users resolveCurrentUser() {
+    private Usuarios resolveCurrentUser() {
         if (securityIdentity == null || securityIdentity.isAnonymous()
                 || securityIdentity.getPrincipal() == null) {
             return null;

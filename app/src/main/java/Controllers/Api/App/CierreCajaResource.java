@@ -4,7 +4,7 @@ import Models.CierreCaja;
 import Models.DTO.ApiResponse;
 import Models.DTO.CierreCajaDTO;
 import Models.DTO.PagedResponse;
-import Models.Users;
+import Models.Usuarios;
 import Services.CierreCajaService;
 import Services.LoginService;
 import io.quarkus.qute.Location;
@@ -154,7 +154,7 @@ public class CierreCajaResource {
     })
     public Response summary() {
         try {
-            Users usuario = currentUserOrNull();
+            Usuarios usuario = currentUserOrNull();
             if (usuario == null) {
                 return unauthorized();
             }
@@ -187,7 +187,7 @@ public class CierreCajaResource {
     })
     public Response open(@Nullable OpenRequest request) {
         try {
-            Users usuario = currentUserOrNull();
+            Usuarios usuario = currentUserOrNull();
             if (usuario == null) {
                 return unauthorized();
             }
@@ -238,7 +238,7 @@ public class CierreCajaResource {
     })
     public Response close(@Nullable CloseRequest request) {
         try {
-            Users usuario = currentUserOrNull();
+            Usuarios usuario = currentUserOrNull();
             if (usuario == null) {
                 return unauthorized();
             }
@@ -318,7 +318,7 @@ public class CierreCajaResource {
         page = Math.max(page, 0);
 
         try {
-            Users usuario = currentUserOrNull();
+            Usuarios usuario = currentUserOrNull();
             if (usuario == null) {
                 return unauthorized();
             }
@@ -360,7 +360,7 @@ public class CierreCajaResource {
             @QueryParam("sort") @Nullable String sort,
             @QueryParam("dir") @DefaultValue("asc") String dir) {
         try {
-            Users usuario = currentUserOrNull();
+            Usuarios usuario = currentUserOrNull();
             if (usuario == null) {
                 return unauthorized();
             }
@@ -467,9 +467,9 @@ public class CierreCajaResource {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    /** Resolves the authenticated Users row; null when anonymous/unknown. */
+    /** Resolves the authenticated Usuarios row; null when anonymous/unknown. */
     @Nullable
-    private Users currentUserOrNull() {
+    private Usuarios currentUserOrNull() {
         if (securityIdentity == null || securityIdentity.isAnonymous()
                 || securityIdentity.getPrincipal() == null) {
             return null;
@@ -485,7 +485,7 @@ public class CierreCajaResource {
 
     /** Manual mapper: CierreCaja → CierreCajaDTO (usuario flattened). */
     private static CierreCajaDTO toDTO(@Nonnull CierreCaja cc) {
-        Users usuario = cc.getUsuario();
+        Usuarios usuario = cc.getUsuario();
         return new CierreCajaDTO(
                 cc.getId(),
                 usuario != null ? usuario.getId() : null,
@@ -531,20 +531,20 @@ public class CierreCajaResource {
     private Response estadoOk(@Nullable String errorGeneral,
                               @Nullable String toastSeverity,
                               @Nullable String toastMessage) {
-        Users usuario = currentUserOrNull();
+        Usuarios usuario = currentUserOrNull();
         return htmlOk(estadoInstance(usuario, errorGeneral, toastSeverity, toastMessage));
     }
 
     /** Estado-caja fragment redisplayed with the given status + error toast. */
     private Response estadoError(int status, @Nullable String mensaje) {
-        Users usuario = currentUserOrNull();
+        Usuarios usuario = currentUserOrNull();
         return Response.status(status)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
                 .entity(estadoInstance(usuario, mensaje, "error", mensaje).render())
                 .build();
     }
 
-    private TemplateInstance estadoInstance(@Nullable Users usuario,
+    private TemplateInstance estadoInstance(@Nullable Usuarios usuario,
                                             @Nullable String errorGeneral,
                                             @Nullable String toastSeverity,
                                             @Nullable String toastMessage) {
@@ -570,7 +570,7 @@ public class CierreCajaResource {
      * convertDateTime outputs).
      */
     @Nullable
-    private Map<String, Object> sesionView(@Nullable Users usuario) {
+    private Map<String, Object> sesionView(@Nullable Usuarios usuario) {
         if (usuario == null) {
             return null;
         }
@@ -593,7 +593,7 @@ public class CierreCajaResource {
      * the legacy f:convertDateTime/f:convertNumber output). Default order is
      * the service order (fechaApertura DESC); sorting is in-memory.
      */
-    private Map<String, Object> tablaModel(@Nonnull Users usuario, int page, int size,
+    private Map<String, Object> tablaModel(@Nonnull Usuarios usuario, int page, int size,
                                            @Nullable String sort, @Nonnull String dir) {
         List<CierreCaja> historial = new ArrayList<>(orEmpty(cierreCajaService.listHistorial(usuario)));
 

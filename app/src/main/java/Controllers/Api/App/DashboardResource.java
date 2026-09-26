@@ -15,7 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import Models.DTO.ApiResponse;
-import Models.Users;
+import Models.Usuarios;
 import Services.DashboardMetricsService;
 import Services.DashboardService;
 import Services.LoginService;
@@ -109,7 +109,7 @@ public class DashboardResource {
     @GET
     @Transactional
     public Response pagina() {
-        Users user = currentUser();
+        Usuarios user = currentUser();
         boolean esKpi = securityIdentity.hasRole("admin") || securityIdentity.hasRole("facturacion");
         boolean esInventario = securityIdentity.hasRole("admin") || securityIdentity.hasRole("inventario");
 
@@ -226,7 +226,7 @@ public class DashboardResource {
     // ════════════════════════════════════════════════════════════════════
 
     @Nonnull
-    private List<Map<String, Object>> construirHourly(@Nullable Users user) {
+    private List<Map<String, Object>> construirHourly(@Nullable Usuarios user) {
         List<Map<String, Object>> puntos = new ArrayList<>();
         List<DashboardMetricsService.HourlySales> distribucion = user != null
                 ? dashboardMetricsService.getHourlySalesDistribution(user, LocalDate.now())
@@ -260,7 +260,7 @@ public class DashboardResource {
     }
 
     @Nonnull
-    private List<Map<String, Object>> construirWeekly(@Nullable Users user) {
+    private List<Map<String, Object>> construirWeekly(@Nullable Usuarios user) {
         List<Map<String, Object>> puntos = new ArrayList<>();
         List<DashboardMetricsService.DailySales> desglose = user != null
                 ? dashboardMetricsService.getWeeklySalesBreakdown(user)
@@ -277,7 +277,7 @@ public class DashboardResource {
     }
 
     @Nonnull
-    private Map<String, Object> construirKpi(@Nullable Users user) {
+    private Map<String, Object> construirKpi(@Nullable Usuarios user) {
         Map<String, Object> data = new LinkedHashMap<>();
         BigDecimal hoy = BigDecimal.ZERO;
         BigDecimal ayer = BigDecimal.ZERO;
@@ -341,7 +341,7 @@ public class DashboardResource {
      * "Factura {consecutivo} - {total} colones a las {HH:mm}" or the empty-state text.
      */
     @Nonnull
-    private String ultimaTransaccionDisplay(@Nullable Users user) {
+    private String ultimaTransaccionDisplay(@Nullable Usuarios user) {
         if (user == null) {
             return "No hay transacciones hoy";
         }
@@ -362,7 +362,7 @@ public class DashboardResource {
     }
 
     @Nullable
-    private Users currentUser() {
+    private Usuarios currentUser() {
         if (securityIdentity.isAnonymous() || securityIdentity.getPrincipal() == null) {
             return null;
         }

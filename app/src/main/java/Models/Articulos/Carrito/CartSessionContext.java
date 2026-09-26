@@ -1,6 +1,6 @@
 package Models.Articulos.Carrito;
 
-import Models.Clients;
+import Models.Clientes;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.Dependent;
@@ -29,7 +29,7 @@ public class CartSessionContext implements Serializable {
 
     // --- Cliente y captura de artículos ---
     @Nullable
-    private Clients selectedClient;
+    private Clientes selectedClient;
     @Nonnull
     private BigDecimal cantidadArticulo = BigDecimal.ONE;
     @Nullable

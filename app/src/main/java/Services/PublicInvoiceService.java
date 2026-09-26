@@ -1,7 +1,7 @@
 package Services;
 
 import Models.CierreCaja;
-import Models.Clients;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import Models.NotaCredito;
@@ -219,13 +219,13 @@ public class PublicInvoiceService {
     // ────────────────────────────────────────────────────────────────────
 
     /**
-     * Returns suppliers. In this system, suppliers are stored as Clients
+     * Returns suppliers. In this system, suppliers are stored as Clientes
      * (via ComprobantesRecibidos). Returns all clients; the controller
      * can filter by role or by having received invoices.
      *
      * @param page page number (1-based), null for all
      * @param pageSize items per page, null for default
-     * @return map with "data" (List of Clients) and "total" (Long count)
+     * @return map with "data" (List of Clientes) and "total" (Long count)
      */
     @Nonnull
     public Map<String, Object> getSuppliers(@Nullable Integer page, @Nullable Integer pageSize) {
@@ -233,12 +233,12 @@ public class PublicInvoiceService {
         try {
             if (page != null && pageSize != null) {
                 int offset = (page - 1) * pageSize;
-                List<Clients> data = clientService.listPage(offset, pageSize);
+                List<Clientes> data = clientService.listPage(offset, pageSize);
                 Long total = clientService.count();
                 result.put("data", data);
                 result.put("total", total);
             } else {
-                List<Clients> data = clientService.listAll();
+                List<Clientes> data = clientService.listAll();
                 result.put("data", data);
                 result.put("total", (long) data.size());
             }

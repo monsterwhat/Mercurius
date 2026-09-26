@@ -35,8 +35,8 @@ public class ClientsDetailDTO {
     @Nullable private BigDecimal puntosAcumulados; //Customer loyalty points
     @Nullable private Date lastPurchaseDate; //Date of last purchase for activity tracking
     @Nullable private String statusPuntos; //Status of points: 'active', 'inactive', 'expired'
-    @Nullable private Long usuarioId; // Flattened: Clients.usuario.id
-    @Nullable private String usuarioNombre; // Flattened: Clients.usuario.username
+    @Nullable private Long usuarioId; // Flattened: Clientes.usuario.id
+    @Nullable private String usuarioNombre; // Flattened: Clientes.usuario.username
     private List<ActividadInfo> actividades = new ArrayList<>(); // Flattened: Códigos de actividad económica CIIU4 del cliente ante Hacienda
 
     public ClientsDetailDTO() {

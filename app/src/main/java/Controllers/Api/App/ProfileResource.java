@@ -2,7 +2,7 @@ package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
 import Models.DTO.UsersDTO;
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
@@ -58,7 +58,7 @@ public class ProfileResource {
 
     @GET
     public Response getProfile() {
-        Users user = currentUser();
+        Usuarios user = currentUser();
         if (user == null) {
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(ApiResponse.error("UNAUTHORIZED", "No autenticado"))
@@ -72,7 +72,7 @@ public class ProfileResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
     public Response changeNombre(@FormParam("nuevoNombre") String nuevoNombre) {
-        Users user = currentUser();
+        Usuarios user = currentUser();
         if (user == null) {
             return unauthorized();
         }
@@ -96,7 +96,7 @@ public class ProfileResource {
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Transactional
     public Response changeEmail(@FormParam("nuevoEmail") String nuevoEmail) {
-        Users user = currentUser();
+        Usuarios user = currentUser();
         if (user == null) {
             return unauthorized();
         }
@@ -119,7 +119,7 @@ public class ProfileResource {
     public Response changePassword(@FormParam("currentPassword") String currentPassword,
                                    @FormParam("newPassword") String newPassword,
                                    @FormParam("confirmPassword") String confirmPassword) {
-        Users user = currentUser();
+        Usuarios user = currentUser();
         if (user == null) {
             return unauthorized();
         }
@@ -142,7 +142,7 @@ public class ProfileResource {
 
     // ── Helpers ─────────────────────────────────────────────────────
 
-    private Users currentUser() {
+    private Usuarios currentUser() {
         if (identity == null || identity.isAnonymous()) {
             return null;
         }
@@ -180,7 +180,7 @@ public class ProfileResource {
                 .build();
     }
 
-    private Response okOrRedirect(@Nonnull Users user) {
+    private Response okOrRedirect(@Nonnull Usuarios user) {
         if (isHxRequest()) {
             return Response.status(Response.Status.OK)
                     .header("HX-Redirect", "/app/perfil")
@@ -189,7 +189,7 @@ public class ProfileResource {
         return Response.ok(ApiResponse.ok(toDTO(user))).build();
     }
 
-    private static UsersDTO toDTO(Users user) {
+    private static UsersDTO toDTO(Usuarios user) {
         return new UsersDTO(user.getId(), user.getUsername(), user.getEmail(),
                 user.getGroupName(), user.getStatus());
     }

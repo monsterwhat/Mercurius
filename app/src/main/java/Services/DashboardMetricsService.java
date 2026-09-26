@@ -1,7 +1,7 @@
 package Services;
 
 import Models.ComprobantesEmitidos;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -27,7 +27,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getTodaySales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getTodaySales(@Nonnull Users user) {
+    public BigDecimal getTodaySales(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -56,7 +56,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getYesterdaySales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getYesterdaySales(@Nonnull Users user) {
+    public BigDecimal getYesterdaySales(@Nonnull Usuarios user) {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         LocalDateTime startOfDay = yesterday.atStartOfDay();
         LocalDateTime endOfDay = yesterday.atTime(23, 59, 59);
@@ -85,7 +85,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getWeekSales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getWeekSales(@Nonnull Users user) {
+    public BigDecimal getWeekSales(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDate weekAgo = today.minusDays(7);
         LocalDateTime startOfPeriod = weekAgo.atStartOfDay();
@@ -115,7 +115,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getMonthSales")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getMonthSales(@Nonnull Users user) {
+    public BigDecimal getMonthSales(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDate monthAgo = today.minusDays(30);
         LocalDateTime startOfPeriod = monthAgo.atStartOfDay();
@@ -144,7 +144,7 @@ public class DashboardMetricsService {
 
 @CacheResult(cacheName = "analytics-getTodayTransactions")
     @Transactional(Transactional.TxType.SUPPORTS)
-    public int getTodayTransactions(@Nonnull Users user) {
+    public int getTodayTransactions(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(23, 59, 59);
@@ -172,7 +172,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getAverageTicket")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public BigDecimal getAverageTicket(@Nonnull Users user, int days) {
+    public BigDecimal getAverageTicket(@Nonnull Usuarios user, int days) {
         LocalDate today = LocalDate.now();
         LocalDate periodAgo = today.minusDays(days);
         LocalDateTime startOfPeriod = periodAgo.atStartOfDay();
@@ -218,7 +218,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getTopSellingProducts")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public List<TopProduct> getTopSellingProducts(@Nonnull Users user, int limit) {
+    public List<TopProduct> getTopSellingProducts(@Nonnull Usuarios user, int limit) {
         LocalDate today = LocalDate.now();
         LocalDate weekAgo = today.minusDays(7);
         LocalDateTime startOfPeriod = weekAgo.atStartOfDay();
@@ -254,7 +254,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getHourlySalesDistribution")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public List<HourlySales> getHourlySalesDistribution(@Nonnull Users user, @Nonnull LocalDate date) {
+    public List<HourlySales> getHourlySalesDistribution(@Nonnull Usuarios user, @Nonnull LocalDate date) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime endOfDay = date.atTime(23, 59, 59);
 
@@ -290,7 +290,7 @@ public class DashboardMetricsService {
 @CacheResult(cacheName = "analytics-getWeeklySalesBreakdown")
     @Transactional(Transactional.TxType.SUPPORTS)
     @Nonnull
-    public List<DailySales> getWeeklySalesBreakdown(@Nonnull Users user) {
+    public List<DailySales> getWeeklySalesBreakdown(@Nonnull Usuarios user) {
         LocalDate today = LocalDate.now();
         List<DailySales> dailySalesList = new ArrayList<>();
 
@@ -338,7 +338,7 @@ public class DashboardMetricsService {
 
 @CacheResult(cacheName = "analytics-getKPIs")
     @Nonnull
-    public DashboardKPI getKPIs(@Nonnull Users user) {
+    public DashboardKPI getKPIs(@Nonnull Usuarios user) {
         BigDecimal todaySales = getTodaySales(user);
         BigDecimal yesterdaySales = getYesterdaySales(user);
         BigDecimal weekSales = getWeekSales(user);

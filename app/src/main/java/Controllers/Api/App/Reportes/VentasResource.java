@@ -9,7 +9,7 @@ import java.util.Map;
 
 import Models.ComprobantesEmitidos;
 import Models.Detalles.LineaDetalle;
-import Models.Users;
+import Models.Usuarios;
 import Services.ComprobantesEmitidosService;
 import Services.UserService;
 import io.quarkus.qute.Location;
@@ -36,7 +36,7 @@ import jakarta.ws.rs.core.Response;
  *
  * <p>Backed DIRECTLY by the existing services (no HTTP self-calls):
  * {@link UserService#listAll()} fills the cashier filter and
- * {@link ComprobantesEmitidosService#listAllEmitidosBy(Users, Date, Date)}
+ * {@link ComprobantesEmitidosService#listAllEmitidosBy(Usuarios, Date, Date)}
  * feeds the flattened {@link LineaDetalle} table — exactly what
  * {@code ReportesDiariosController.cargarVentasPorCajero()} did for the JSF
  * view. The legacy "Cargar Reportes" postback becomes a plain GET with query
@@ -89,7 +89,7 @@ public class VentasResource {
 
         // Cashier dropdown (legacy f:selectItems over usuarios).
         List<Map<String, Object>> usuarios = new ArrayList<>();
-        for (Users u : userService.listAll()) {
+        for (Usuarios u : userService.listAll()) {
             usuarios.add(Tablas.fila("id", u.getId(), "username", u.getUsername()));
         }
 
@@ -102,7 +102,7 @@ public class VentasResource {
                 && inicio != null && fin != null;
 
         if (consultaCompleta) {
-            Users cajero = userService.find(Long.valueOf(usuario.trim()));
+            Usuarios cajero = userService.find(Long.valueOf(usuario.trim()));
             if (cajero != null) {
                 total = BigDecimal.ZERO;
                 List<ComprobantesEmitidos> comprobantes =

@@ -1,7 +1,7 @@
 package Services.Strategies;
 
-import Models.AppSettings;
-import Models.Clients;
+import Models.ConfiguracionAplicacion;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.Encabezado.Encabezado;
 import jakarta.annotation.Nonnull;
@@ -87,5 +87,5 @@ public interface DocumentoStrategy {
      * Builds an Encabezado tailored to this document type.
      * For TE the receptor is optional; for FE/ND/NC it is required.
      */
-    Encabezado buildEncabezado(AppSettings appSettings, Clients selectedClient);
+    Encabezado buildEncabezado(ConfiguracionAplicacion appSettings, Clientes selectedClient);
 }

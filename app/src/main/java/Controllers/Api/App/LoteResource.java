@@ -5,7 +5,7 @@ import Models.DTO.ApiResponse;
 import Models.DTO.LoteDTO;
 import Models.DTO.PagedResponse;
 import Models.Lote;
-import Models.Users;
+import Models.Usuarios;
 import Services.ArticulosService;
 import Services.LoginService;
 import Services.LoteService;
@@ -362,7 +362,7 @@ public class LoteResource {
         List<Lote> out = new ArrayList<>();
         for (Lote lote : source) {
             Articulos articulo = lote.getArticulo();
-            Users usuario = lote.getUsuario();
+            Usuarios usuario = lote.getUsuario();
             if (matches(lote.getNumeroLote(), needle)
                     || (articulo != null && matches(articulo.getNombre(), needle))
                     || (articulo != null && String.valueOf(articulo.getCodigo()).contains(needle))
@@ -427,7 +427,7 @@ public class LoteResource {
     @Nonnull
     private static LoteDTO toDTO(@Nonnull Lote lote) {
         Articulos articulo = lote.getArticulo();
-        Users usuario = lote.getUsuario();
+        Usuarios usuario = lote.getUsuario();
         return new LoteDTO(
                 lote.getId(),
                 articulo != null ? articulo.getCodigo() : null,
@@ -496,12 +496,12 @@ public class LoteResource {
     }
 
     /**
-     * Resolves the authenticated {@link Users} row for audit alertas; null
+     * Resolves the authenticated {@link Usuarios} row for audit alertas; null
      * for anonymous/system contexts (alertas accepts null, mirroring the
      * legacy null-session branches).
      */
     @Nullable
-    private Users currentUser() {
+    private Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

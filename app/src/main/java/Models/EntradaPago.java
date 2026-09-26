@@ -6,7 +6,7 @@ import lombok.Data;
 
 /** A single payment method entry (code + amount) for split payment support */
 @Data
-public class PagoEntry {
+public class EntradaPago {
     @Nonnull
     private String metodoPago = "01";
     @Nonnull

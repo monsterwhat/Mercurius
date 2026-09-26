@@ -4,7 +4,7 @@ import Models.Articulos.Articulos;
 import Models.DTO.ApiResponse;
 import Models.DTO.PagedResponse;
 import Models.Inventario;
-import Models.Users;
+import Models.Usuarios;
 import Services.ArticulosService;
 import Services.InventarioService;
 import Services.LoginService;
@@ -500,7 +500,7 @@ public class InventarioResource {
             if (seleccionado.getArticulo() == null) {
                 return approvalFailure(seleccionado, modo, "warn", MSG_ARTICULO_INVALIDO);
             }
-            Users usuario = currentUser();
+            Usuarios usuario = currentUser();
             if (usuario == null) {
                 return approvalFailure(seleccionado, modo, "error",
                         "Sesion invalida");
@@ -1235,7 +1235,7 @@ public class InventarioResource {
         List<Inventario> out = new ArrayList<>();
         for (Inventario m : source) {
             Articulos articulo = m.getArticulo();
-            Users usuario = m.getUsuario();
+            Usuarios usuario = m.getUsuario();
             if (String.valueOf(m.getCodigo()).contains(needle)
                     || (articulo != null && matches(articulo.getNombre(), needle))
                     || (articulo != null && matches(articulo.getCodigoBarra(), needle))
@@ -1299,7 +1299,7 @@ public class InventarioResource {
 
     private static InventarioDTO toDTO(@Nonnull Inventario m) {
         Articulos articulo = m.getArticulo();
-        Users usuario = m.getUsuario();
+        Usuarios usuario = m.getUsuario();
         return new InventarioDTO(
                 m.getCodigo(),
                 articulo != null ? articulo.getCodigo() : null,
@@ -1319,11 +1319,11 @@ public class InventarioResource {
     // ── Current-user resolution (SessionController.getCurrentUser parity) ──
 
     /**
-     * Resolves the authenticated {@link Users} row through the T12 identity
+     * Resolves the authenticated {@link Usuarios} row through the T12 identity
      * provider's principal; null for anonymous/system contexts (alertas
      * accepts null, mirroring the legacy null-session branches).
      */
-    private Users currentUser() {
+    private Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

@@ -28,6 +28,6 @@ public class Familia {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario; //Referencia a quien creo la familia
+    private Usuarios usuario; //Referencia a quien creo la familia
     
 }

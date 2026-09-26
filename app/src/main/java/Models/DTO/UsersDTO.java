@@ -3,7 +3,7 @@ package Models.DTO;
 import jakarta.annotation.Nullable;
 
 /**
- * Read-side view of a system user (entity {@code Models.Users}) for the
+ * Read-side view of a system user (entity {@code Models.Usuarios}) for the
  * Usuarios administration pages.
  *
  * SECURITY: the password hash field is intentionally excluded from this DTO.

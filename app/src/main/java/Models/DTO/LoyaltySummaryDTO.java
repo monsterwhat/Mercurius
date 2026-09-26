@@ -12,8 +12,8 @@ import java.util.Date;
  */
 public class LoyaltySummaryDTO {
 
-    private int clienteCode; // Clients.code
-    private String clienteNombre; // Clients.name
+    private int clienteCode; // Clientes.code
+    private String clienteNombre; // Clientes.name
     @Nullable private BigDecimal puntosAcumulados; // Customer loyalty points
     @Nullable private String statusPuntos; // Status of points: 'active', 'inactive', 'expired'
     @Nullable private Date lastPurchaseDate; // Date of last purchase for activity tracking

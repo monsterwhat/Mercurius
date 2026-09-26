@@ -896,11 +896,11 @@ public class RecibosResource {
     }
 
     /**
-     * Resolves the authenticated {@link Models.Users} row through the T12
+     * Resolves the authenticated {@link Models.Usuarios} row through the T12
      * identity provider's principal; null for anonymous/system contexts
      * (alertas accepts null, mirroring the legacy null-session branches).
      */
-    private @Nullable Models.Users currentUser() {
+    private @Nullable Models.Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

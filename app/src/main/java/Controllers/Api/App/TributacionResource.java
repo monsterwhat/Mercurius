@@ -721,7 +721,7 @@ public class TributacionResource {
         if (facturaRechazada.getEncabezado().getReceptor() != null) {
             String receptorNombre = facturaRechazada.getEncabezado().getReceptor().getNombre();
             if (receptorNombre != null) {
-                List<Models.Clients> clients = clientService.searchByName(receptorNombre);
+                List<Models.Clientes> clients = clientService.searchByName(receptorNombre);
                 if (clients != null && !clients.isEmpty()) {
                     notaCredito.setCliente(clients.get(0));
                 }
@@ -810,11 +810,11 @@ public class TributacionResource {
     }
 
     /**
-     * Resolves the authenticated {@link Models.Users} row through the T12
+     * Resolves the authenticated {@link Models.Usuarios} row through the T12
      * identity provider's principal (SessionController.getCurrentUser parity);
      * null for anonymous/system contexts (alertas accepts null).
      */
-    private Models.Users currentUser() {
+    private Models.Usuarios currentUser() {
         try {
             if (identity.isAnonymous() || identity.getPrincipal() == null) {
                 return null;

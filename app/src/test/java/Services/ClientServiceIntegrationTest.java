@@ -3,7 +3,7 @@ package Services;
 import io.quarkus.test.TestTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import Models.Clients;
+import Models.Clientes;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -49,11 +49,11 @@ class ClientServiceIntegrationTest {
      */
     @Test
     void createFindUpdateDeleteRoundTrip() {
-        Clients created = createClient("IT Cliente Roundtrip", "IT-201110100");
+        Clientes created = createClient("IT Cliente Roundtrip", "IT-201110100");
         int code = created.getCode();
         assertTrue(code > 0, "IDENTITY insert must assign the code immediately");
 
-        Clients found = clientService.find(code);
+        Clientes found = clientService.find(code);
         assertNotNull(found);
         assertEquals("IT Cliente Roundtrip", found.getName());
         assertEquals("IT-201110100", found.getIdNumber());
@@ -66,7 +66,7 @@ class ClientServiceIntegrationTest {
         found.setPhoneNumber("7000-7000");
         clientService.update(found);
 
-        Clients updated = clientService.find(code);
+        Clientes updated = clientService.find(code);
         assertNotNull(updated);
         assertEquals("it-roundtrip-updated@mercurius.local", updated.getEmail());
         assertEquals("7000-7000", updated.getPhoneNumber());
@@ -85,16 +85,16 @@ class ClientServiceIntegrationTest {
         createClient("IT Cliente Pagina B", "IT-301110002");
         createClient("IT Cliente Pagina C", "IT-301110003");
 
-        List<Clients> hits = clientService.searchByName("pagina b");
+        List<Clientes> hits = clientService.searchByName("pagina b");
         assertNotNull(hits);
         assertEquals(1, hits.size(), "exactly one fixture matches 'pagina b'");
         assertEquals("IT Cliente Pagina B", hits.get(0).getName());
 
-        List<Clients> upperCaseHits = clientService.searchByName("PAGINA");
+        List<Clientes> upperCaseHits = clientService.searchByName("PAGINA");
         assertNotNull(upperCaseHits);
         assertEquals(3, upperCaseHits.size(), "case-insensitive match over all three fixtures");
 
-        List<Clients> misses = clientService.searchByName("zz-inexistente-it");
+        List<Clientes> misses = clientService.searchByName("zz-inexistente-it");
         assertNotNull(misses);
         assertTrue(misses.isEmpty(), "no fixture nor seeded row matches this fragment");
     }
@@ -135,7 +135,7 @@ class ClientServiceIntegrationTest {
         assertEquals(Math.min(2, Math.max(0, total - 2)), clientService.listPage(2, 2).size(),
                 "second page caps at pageSize (GService.listPage = setFirstResult + setMaxResults)");
 
-        List<Clients> beyondLast = clientService.listPage(total + 100, 10);
+        List<Clientes> beyondLast = clientService.listPage(total + 100, 10);
         assertNotNull(beyondLast, "paging past the end must return a list, not throw");
         assertTrue(beyondLast.isEmpty(), "offset beyond last row yields an empty page");
 
@@ -163,10 +163,10 @@ class ClientServiceIntegrationTest {
 
     // ------------------------------------------------------------------
     // Programmatic fixture helper — satisfies every NOT NULL column of
-    // Models/Clients (discount/taxpayer/zoneCode primitives included).
+    // Models/Clientes (discount/taxpayer/zoneCode primitives included).
     // ------------------------------------------------------------------
-    private Clients createClient(String name, String idNumber) {
-        Clients client = new Clients();
+    private Clientes createClient(String name, String idNumber) {
+        Clientes client = new Clientes();
         client.setName(name);
         client.setAddress("Barrio IT, San José");
         client.setProvincia("1"); // column length = 1

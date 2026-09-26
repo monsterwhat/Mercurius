@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import Models.Clients;
+import Models.Clientes;
 import Services.ClientService;
 
 /**
@@ -66,7 +66,7 @@ public class ClientesReportesResource {
             @QueryParam("dir") @DefaultValue("asc") @Nullable String dir,
             @QueryParam("q") @Nullable String q) {
 
-        List<Clients> rows = filterAndSort(orEmpty(clientService.listAll()), sort, dir, q);
+        List<Clientes> rows = filterAndSort(orEmpty(clientService.listAll()), sort, dir, q);
 
         int current = ReportePageSupport.clampPage(page);
         int pageSize = ReportePageSupport.clampSize(size);
@@ -119,27 +119,27 @@ public class ClientesReportesResource {
      * Legacy ReportesClientesController.getClientesFiltrados(): name, email
      * and idNumber contains-match.
      */
-    private static @Nonnull List<Clients> filterAndSort(
-            @Nonnull List<Clients> all,
+    private static @Nonnull List<Clientes> filterAndSort(
+            @Nonnull List<Clientes> all,
             @Nullable String sort, @Nullable String dir, @Nullable String q) {
 
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
-        List<Clients> result = new ArrayList<>();
-        for (Clients c : all) {
+        List<Clientes> result = new ArrayList<>();
+        for (Clientes c : all) {
             if (needle.isEmpty() || matches(c, needle)) {
                 result.add(c);
             }
         }
 
         boolean ascending = !ReportePageSupport.isDescending(dir);
-        Comparator<Clients> comparator = switch (sort == null ? "" : sort) {
-            case "nombre" -> ReportePageSupport.sortBy(Clients::getName, ascending);
-            case "direccion" -> ReportePageSupport.sortBy(Clients::getAddress, ascending);
-            case "email" -> ReportePageSupport.sortBy(Clients::getEmail, ascending);
-            case "cedula" -> ReportePageSupport.sortBy(Clients::getIdNumber, ascending);
-            case "telefono" -> ReportePageSupport.sortBy(Clients::getPhoneNumber, ascending);
-            case "ultimacompra" -> ReportePageSupport.sortBy(Clients::getLastPurchaseDate, ascending);
-            case "puntos" -> ReportePageSupport.sortBy(Clients::getPuntosAcumulados, ascending);
+        Comparator<Clientes> comparator = switch (sort == null ? "" : sort) {
+            case "nombre" -> ReportePageSupport.sortBy(Clientes::getName, ascending);
+            case "direccion" -> ReportePageSupport.sortBy(Clientes::getAddress, ascending);
+            case "email" -> ReportePageSupport.sortBy(Clientes::getEmail, ascending);
+            case "cedula" -> ReportePageSupport.sortBy(Clientes::getIdNumber, ascending);
+            case "telefono" -> ReportePageSupport.sortBy(Clientes::getPhoneNumber, ascending);
+            case "ultimacompra" -> ReportePageSupport.sortBy(Clientes::getLastPurchaseDate, ascending);
+            case "puntos" -> ReportePageSupport.sortBy(Clientes::getPuntosAcumulados, ascending);
             default -> null;
         };
         if (comparator != null) {
@@ -148,7 +148,7 @@ public class ClientesReportesResource {
         return result;
     }
 
-    private static boolean matches(@Nonnull Clients c, @Nonnull String needle) {
+    private static boolean matches(@Nonnull Clientes c, @Nonnull String needle) {
         return contains(c.getName(), needle)
                 || contains(c.getEmail(), needle)
                 || contains(c.getIdNumber(), needle);

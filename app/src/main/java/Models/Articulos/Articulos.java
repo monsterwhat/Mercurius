@@ -4,7 +4,7 @@ import Models.Cabys;
 import Models.Departamento;
 import Models.Enums.TipoRefrigeracion;
 import Models.Familia;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import java.io.Serializable;
@@ -118,7 +118,7 @@ public class Articulos implements Serializable {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario; //Referencia a quien creo el Articulo
+    private Usuarios usuario; //Referencia a quien creo el Articulo
 
     @PrePersist
     protected void onCreate() {

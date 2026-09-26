@@ -6,7 +6,7 @@ import java.util.Date;
 
 /**
  * Lightweight client row for lists/tables: identity, contact, loyalty points balance and status.
- * Mirrors the scalar fields of Models.Clients used by the Clientes list views.
+ * Mirrors the scalar fields of Models.Clientes used by the Clientes list views.
  * Relations, credentials and deprecated fields are intentionally excluded.
  */
 public class ClientsDTO {

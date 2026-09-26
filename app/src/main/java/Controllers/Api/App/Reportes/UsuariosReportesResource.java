@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 
 /**
@@ -67,7 +67,7 @@ public class UsuariosReportesResource {
             @QueryParam("dir") @DefaultValue("asc") @Nullable String dir,
             @QueryParam("q") @Nullable String q) {
 
-        List<Users> rows = filterAndSort(orEmpty(loginService.listAll()), sort, dir, q);
+        List<Usuarios> rows = filterAndSort(orEmpty(loginService.listAll()), sort, dir, q);
 
         int current = ReportePageSupport.clampPage(page);
         int pageSize = ReportePageSupport.clampSize(size);
@@ -109,23 +109,23 @@ public class UsuariosReportesResource {
     }
 
     /** Legacy globalFilterFunction coverage: username + groupName. */
-    private static @Nonnull List<Users> filterAndSort(
-            @Nonnull List<Users> all,
+    private static @Nonnull List<Usuarios> filterAndSort(
+            @Nonnull List<Usuarios> all,
             @Nullable String sort, @Nullable String dir, @Nullable String q) {
 
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
-        List<Users> result = new ArrayList<>();
-        for (Users u : all) {
+        List<Usuarios> result = new ArrayList<>();
+        for (Usuarios u : all) {
             if (needle.isEmpty() || matches(u, needle)) {
                 result.add(u);
             }
         }
 
         boolean ascending = !ReportePageSupport.isDescending(dir);
-        Comparator<Users> comparator = switch (sort == null ? "" : sort) {
-            case "username" -> ReportePageSupport.sortBy(Users::getUsername, ascending);
-            case "permisos" -> ReportePageSupport.sortBy(Users::getGroupName, ascending);
-            case "activo" -> ReportePageSupport.sortBy(Users::getStatus, ascending);
+        Comparator<Usuarios> comparator = switch (sort == null ? "" : sort) {
+            case "username" -> ReportePageSupport.sortBy(Usuarios::getUsername, ascending);
+            case "permisos" -> ReportePageSupport.sortBy(Usuarios::getGroupName, ascending);
+            case "activo" -> ReportePageSupport.sortBy(Usuarios::getStatus, ascending);
             default -> null;
         };
         if (comparator != null) {
@@ -134,7 +134,7 @@ public class UsuariosReportesResource {
         return result;
     }
 
-    private static boolean matches(@Nonnull Users u, @Nonnull String needle) {
+    private static boolean matches(@Nonnull Usuarios u, @Nonnull String needle) {
         return contains(u.getUsername(), needle)
                 || contains(u.getGroupName(), needle);
     }

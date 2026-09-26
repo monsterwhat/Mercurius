@@ -10,7 +10,7 @@ import org.jboss.logging.Logger;
 /**
  * In-memory sliding window rate limiter per API client.
  * Uses Caffeine cache for efficient, automatic eviction.
- * Rate limits are configured per-client in the ApiClients entity.
+ * Rate limits are configured per-client in the ClientesApi entity.
  */
 @ApplicationScoped
 public class RateLimiter {
@@ -42,8 +42,8 @@ public class RateLimiter {
      * Check if a request from the given client is within rate limits.
      *
      * @param clientId        the API client identifier
-     * @param limitPerMin     per-minute limit (from ApiClients entity)
-     * @param limitPerHour    per-hour limit (from ApiClients entity)
+     * @param limitPerMin     per-minute limit (from ClientesApi entity)
+     * @param limitPerHour    per-hour limit (from ClientesApi entity)
      * @return null if allowed, or the number of seconds until the minute window resets if denied
      */
     public java.lang.Long checkRateLimit(String clientId, int limitPerMin, int limitPerHour) {

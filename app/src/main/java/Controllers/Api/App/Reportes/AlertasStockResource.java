@@ -7,8 +7,8 @@ import java.util.Map;
 
 import Models.Departamento;
 import Models.Familia;
-import Models.ReorderSuggestion;
-import Models.StockAlert;
+import Models.SugerenciaReposicion;
+import Models.AlertaStock;
 import Services.DepartamentoService;
 import Services.FamiliaService;
 import Services.StockAlertService;
@@ -44,7 +44,7 @@ import jakarta.ws.rs.core.Response;
  *
  * <p>READ-ONLY by design: the legacy acknowledge/resolve/check actions are
  * mutations and stay with the legacy controller until plan task T33 ports the
- * full StockAlert module. The export button posts the T17-registered
+ * full AlertaStock module. The export button posts the T17-registered
  * {@code stock-alerts} dataset to {@code POST /api/app/export}.</p>
  */
 @Path("/app/reportes/inventario/alertas")
@@ -96,12 +96,12 @@ public class AlertasStockResource {
 
         List<Map<String, Object>> filas = new ArrayList<>();
         if ("sugerencias".equals(vista)) {
-            List<ReorderSuggestion> sugerencias =
+            List<SugerenciaReposicion> sugerencias =
                     prioridad != null && !prioridad.isBlank()
                             ? stockAlertService.getReorderSuggestionsByPriority(prioridad.trim())
                             : stockAlertService.getAllReorderSuggestions();
             if (sugerencias != null) {
-                for (ReorderSuggestion sugerencia : sugerencias) {
+                for (SugerenciaReposicion sugerencia : sugerencias) {
                     filas.add(Tablas.fila(
                             "articulo", sugerencia.getArticulo() != null
                                     ? sugerencia.getArticulo().getNombre() : "-",
@@ -118,9 +118,9 @@ public class AlertasStockResource {
                 }
             }
         } else {
-            List<StockAlert> alertas = stockAlertService.getActiveStockAlerts();
+            List<AlertaStock> alertas = stockAlertService.getActiveStockAlerts();
             if (alertas != null) {
-                for (StockAlert alerta : alertas) {
+                for (AlertaStock alerta : alertas) {
                     filas.add(toFila(alerta));
                 }
             }
@@ -130,10 +130,10 @@ public class AlertasStockResource {
         if (departamento != null && !departamento.isBlank() && "alertas".equals(vista)) {
             Departamento depto = departamentoService.findByName(departamento.trim());
             if (depto != null) {
-                List<StockAlert> filtradas = stockAlertService.getStockAlertsByDepartment(depto);
+                List<AlertaStock> filtradas = stockAlertService.getStockAlertsByDepartment(depto);
                 filas.clear();
                 if (filtradas != null) {
-                    for (StockAlert alerta : filtradas) {
+                    for (AlertaStock alerta : filtradas) {
                         filas.add(toFila(alerta));
                     }
                 }
@@ -153,7 +153,7 @@ public class AlertasStockResource {
         int sinStock = valor(estadisticas, "out_of_stock");
         int stockBajo = valor(estadisticas, "low_stock");
         int sugerenciasCount = valor(estadisticas, "reorder_suggestion");
-        List<StockAlert> alertasActivas = stockAlertService.getActiveStockAlerts();
+        List<AlertaStock> alertasActivas = stockAlertService.getActiveStockAlerts();
         int totalAlertas = alertasActivas != null ? alertasActivas.size() : 0;
 
         List<String> nombresDepartamentos = new ArrayList<>();
@@ -203,7 +203,7 @@ public class AlertasStockResource {
 
     /** Read-side mapping identical in spirit to the pre-existing StockAlertDTO. */
     @Nonnull
-    private static Map<String, Object> toFila(@Nonnull StockAlert alerta) {
+    private static Map<String, Object> toFila(@Nonnull AlertaStock alerta) {
         return Tablas.fila(
                 "tipo", etiquetaTipo(alerta.getTipoAlerta()),
                 "articulo", alerta.getArticulo() != null

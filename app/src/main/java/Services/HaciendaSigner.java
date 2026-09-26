@@ -1,6 +1,6 @@
 package Services;
 
-import Models.Users;
+import Models.Usuarios;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;

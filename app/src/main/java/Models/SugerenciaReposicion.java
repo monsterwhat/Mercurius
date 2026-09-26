@@ -14,7 +14,7 @@ import lombok.Data;
 @Entity
 @Data
 @Table(name = "reorder_suggestions")
-public class ReorderSuggestion implements Serializable {
+public class SugerenciaReposicion implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,7 +57,7 @@ public class ReorderSuggestion implements Serializable {
     @Column(name = "notas")
     private String notas;
     
-    public ReorderSuggestion() {
+    public SugerenciaReposicion() {
         this.fechaCreacion = new Date();
         this.diasSinStock = 0;
     }

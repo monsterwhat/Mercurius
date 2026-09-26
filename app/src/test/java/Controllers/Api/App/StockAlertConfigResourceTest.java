@@ -17,7 +17,7 @@ import jakarta.transaction.UserTransaction;
 import java.util.HashMap;
 import java.util.Map;
 import Models.Articulos.Articulos;
-import Models.StockAlert;
+import Models.AlertaStock;
 import Services.ArticulosService;
 import Services.StockAlertService;
 import org.junit.jupiter.api.Test;
@@ -78,7 +78,7 @@ class StockAlertConfigResourceTest {
         try {
             utx.begin();
             if (idAlerta != null) {
-                StockAlert alerta = em.find(StockAlert.class, idAlerta);
+                AlertaStock alerta = em.find(AlertaStock.class, idAlerta);
                 if (alerta != null) {
                     em.remove(alerta);
                 }
@@ -209,7 +209,7 @@ class StockAlertConfigResourceTest {
     void triggeredReflejaAlertasSembradas() {
         Articulos articulo = sembrarArticulo(String.valueOf(System.nanoTime()));
         Long codigo = articulo.getCodigo();
-        StockAlert alerta = new StockAlert();
+        AlertaStock alerta = new AlertaStock();
         alerta.setArticulo(articulo);
         alerta.setTipoAlerta("low_stock");
         alerta.setCantidadActual(2);

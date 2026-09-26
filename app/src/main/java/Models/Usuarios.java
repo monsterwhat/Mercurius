@@ -15,7 +15,7 @@ import lombok.Data;
 @Data
 @Table(name = "Users",
         uniqueConstraints = @UniqueConstraint(columnNames = {"username"}))
-public class Users implements Serializable{
+public class Usuarios implements Serializable{
     
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -1,6 +1,6 @@
 package Controllers;
 
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
@@ -39,7 +39,7 @@ public class SessionController implements Serializable{
     
     @NotEmpty @Nonnull private String username;
     @NotEmpty @Nonnull private String password;
-    @Nullable private Users currentUser;
+    @Nullable private Usuarios currentUser;
     
     @Nullable private String newUsername;
     @Nullable private String currentPassword;
@@ -88,7 +88,7 @@ public class SessionController implements Serializable{
             ec = httpRequest;
             
             // Register logout alert before destroying session
-            Users userToLog = getCurrentUser();
+            Usuarios userToLog = getCurrentUser();
             
             // Invalidate session FIRST to prevent session fixation
             httpRequest.getSession().invalidate();
@@ -188,7 +188,7 @@ public class SessionController implements Serializable{
     private boolean processAuthentication(){
         try {
             // Custom authentication that integrates with Quarkus Security
-            Users user = loginService.findByUsername(username);
+            Usuarios user = loginService.findByUsername(username);
             if (user != null && loginService.verifyPassword(password, user.getPassword())) {
                 currentUser = user;
                 // Set the user in the HTTP session so SecurityFilter can verify authentication
@@ -306,14 +306,14 @@ public class SessionController implements Serializable{
     }
     
     @Nullable
-    public Users getCurrentUser() {
+    public Usuarios getCurrentUser() {
         return currentUser;
     }
 
     @Nullable
-    public Users authorizeAction(@Nonnull String username, @Nonnull String password) {
+    public Usuarios authorizeAction(@Nonnull String username, @Nonnull String password) {
         try {
-            Users authUser = loginService.findByUsername(username);
+            Usuarios authUser = loginService.findByUsername(username);
             if (authUser == null) {
                 LOG.info("failed to authorize action()");
                 return null;

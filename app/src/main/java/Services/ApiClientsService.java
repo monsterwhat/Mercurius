@@ -1,6 +1,6 @@
 package Services;
 
-import Models.ApiClients;
+import Models.ClientesApi;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
@@ -20,13 +20,13 @@ import java.util.List;
  */
 @Named
 @ApplicationScoped
-public class ApiClientsService extends GService<ApiClients> {
+public class ApiClientsService extends GService<ClientesApi> {
 
     private static final Logger LOG = Logger.getLogger(ApiClientsService.class);
 
     @Override
-    protected @Nonnull Class<ApiClients> getEntityClass() {
-        return ApiClients.class;
+    protected @Nonnull Class<ClientesApi> getEntityClass() {
+        return ClientesApi.class;
     }
 
     @PostConstruct
@@ -34,7 +34,7 @@ public class ApiClientsService extends GService<ApiClients> {
     public void init() {
         try {
             if (count() == 0) {
-                ApiClients defaultClient = new ApiClients();
+                ClientesApi defaultClient = new ClientesApi();
                 defaultClient.setClientId("mercurius-frontend");
                 String plainSecret = "dev-secret-do-not-use-in-production";
                 defaultClient.setClientSecret(
@@ -56,13 +56,13 @@ public class ApiClientsService extends GService<ApiClients> {
     /**
      * Find API client by client_id (the public identifier, not the DB id).
      */
-    public ApiClients findByClientId(String clientId) {
+    public ClientesApi findByClientId(String clientId) {
         try {
-            TypedQuery<ApiClients> query = em.createQuery(
-                "SELECT a FROM ApiClients a WHERE a.clientId = :clientId AND a.status = true",
-                ApiClients.class);
+            TypedQuery<ClientesApi> query = em.createQuery(
+                "SELECT a FROM ClientesApi a WHERE a.clientId = :clientId AND a.status = true",
+                ClientesApi.class);
             query.setParameter("clientId", clientId);
-            List<ApiClients> results = query.getResultList();
+            List<ClientesApi> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (RuntimeException e) {
                         LOG.warn("Error finding ApiClient by clientId: " + e.getMessage() + " | source=" + "ApiClientsService.findByClientId()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
@@ -73,14 +73,14 @@ public class ApiClientsService extends GService<ApiClients> {
     /**
      * Find all active API clients.
      */
-    public List<ApiClients> findActive() {
+    public List<ClientesApi> findActive() {
         try {
-            TypedQuery<ApiClients> query = em.createQuery(
-                "SELECT a FROM ApiClients a WHERE a.status = true",
-                ApiClients.class);
+            TypedQuery<ClientesApi> query = em.createQuery(
+                "SELECT a FROM ClientesApi a WHERE a.status = true",
+                ClientesApi.class);
             return query.getResultList();
         } catch (RuntimeException e) {
-                        LOG.warn("Error listing active ApiClients: " + e.getMessage() + " | source=" + "ApiClientsService.findActive()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error listing active ClientesApi: " + e.getMessage() + " | source=" + "ApiClientsService.findActive()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             return Collections.emptyList();
         }
     }

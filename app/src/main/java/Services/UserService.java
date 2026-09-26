@@ -3,7 +3,7 @@ package Services;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -20,20 +20,20 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
  */
 @Named
 @ApplicationScoped
-public class UserService extends GService<Users> {
+public class UserService extends GService<Usuarios> {
 
     private static final Logger LOG = Logger.getLogger(UserService.class);
 
     private static final int BCRYPT_COST = 12;
 
     @Override
-    protected Class<Users> getEntityClass() {
-        return Users.class;
+    protected Class<Usuarios> getEntityClass() {
+        return Usuarios.class;
     }
 
     @Override
     @Transactional
-    public void create(@Nonnull Users entity) {
+    public void create(@Nonnull Usuarios entity) {
         try {
             // Hash the password before storing
             if (entity.getPassword() != null && entity.getPassword().length() < 50) {
@@ -56,10 +56,10 @@ public class UserService extends GService<Users> {
     }
 
     @Override
-    public void update(@Nonnull Users entity) {
+    public void update(@Nonnull Usuarios entity) {
         try {
             // Get the existing user to check if password changed
-            Users existingUser = em.find(Users.class, entity.getId());
+            Usuarios existingUser = em.find(Usuarios.class, entity.getId());
             if (existingUser != null && entity.getPassword() != null) {
                 // If password is plain text (length < 50), hash it
                 if (entity.getPassword().length() < 50 || !entity.getPassword().startsWith("$2")) {
@@ -77,7 +77,7 @@ public class UserService extends GService<Users> {
     }
 
     @Override
-    public void delete(@Nonnull Users entity) {
+    public void delete(@Nonnull Usuarios entity) {
         try {
             if (!em.contains(entity)) {
                 entity = em.find(getEntityClass(), entity.getId());
@@ -107,9 +107,9 @@ public class UserService extends GService<Users> {
 
     public boolean usernameExists(@Nonnull String username) {
         try {
-            TypedQuery<Users> query = em.createQuery("SELECT u FROM Users u WHERE u.username = :username", Users.class);
+            TypedQuery<Usuarios> query = em.createQuery("SELECT u FROM Usuarios u WHERE u.username = :username", Usuarios.class);
             query.setParameter("username", username);
-            List<Users> existingUser = query.getResultList();
+            List<Usuarios> existingUser = query.getResultList();
 
             return !existingUser.isEmpty();
 

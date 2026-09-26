@@ -1,6 +1,6 @@
 package Controllers.Api.Accounting;
 
-import Models.Clients;
+import Models.Clientes;
 import Models.DTO.ApiResponse;
 import Models.DTO.PagedResponse;
 import Services.PublicInvoiceService;
@@ -21,7 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 /**
  * Accounting suppliers endpoints.
  * Read-only: provides supplier information for accounting.
- * In this system, suppliers are stored as Clients.
+ * In this system, suppliers are stored as Clientes.
  */
 @Path("/api/v1/accounting/suppliers")
 @Produces(MediaType.APPLICATION_JSON)
@@ -54,7 +54,7 @@ public class SuppliersController {
             Map<String, Object> result = publicInvoiceService.getSuppliers(page + 1, size);
 
             @SuppressWarnings("unchecked")
-            List<Clients> data = (List<Clients>) result.getOrDefault("data", List.of());
+            List<Clientes> data = (List<Clientes>) result.getOrDefault("data", List.of());
             Long total = (Long) result.getOrDefault("total", 0L);
 
             List<SupplierDTO> dtos = data.stream()
@@ -85,9 +85,9 @@ public class SuppliersController {
             Map<String, Object> result = publicInvoiceService.getSuppliers(null, null);
 
             @SuppressWarnings("unchecked")
-            List<Clients> data = (List<Clients>) result.getOrDefault("data", List.of());
+            List<Clientes> data = (List<Clientes>) result.getOrDefault("data", List.of());
 
-            Optional<Clients> supplier = data.stream()
+            Optional<Clientes> supplier = data.stream()
                     .filter(c -> c.getCode() == id)
                     .findFirst();
 
@@ -105,7 +105,7 @@ public class SuppliersController {
         }
     }
 
-    private SupplierDTO toDTO(Clients client) {
+    private SupplierDTO toDTO(Clientes client) {
         SupplierDTO dto = new SupplierDTO();
         dto.id = client.getCode();
         dto.nombre = client.getName();

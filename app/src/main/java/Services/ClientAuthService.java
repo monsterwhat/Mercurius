@@ -1,6 +1,6 @@
 package Services;
 
-import Models.Clients;
+import Models.Clientes;
 import Models.DTO.AuthResponse;
 import Models.DTO.LoginRequest;
 import Models.DTO.RegisterRequest;
@@ -62,7 +62,7 @@ public class ClientAuthService {
         }
 
         // Create client entity
-        Clients client = new Clients();
+        Clientes client = new Clientes();
         client.setName(request.getName().trim());
         client.setEmail(request.getEmail().trim().toLowerCase());
         client.setPassword(hashPassword(request.getPassword()));
@@ -97,7 +97,7 @@ public class ClientAuthService {
      */
     @Nonnull
     public AuthResponse login(@Nonnull LoginRequest request) {
-        Clients client = findByEmail(request.getEmail().trim().toLowerCase());
+        Clientes client = findByEmail(request.getEmail().trim().toLowerCase());
         if (client == null) {
             throw new IllegalArgumentException("Credenciales inválidas");
         }
@@ -127,7 +127,7 @@ public class ClientAuthService {
     @Transactional
     @Nonnull
     public AuthResponse refreshAccessToken(@Nonnull String refreshToken) {
-        Clients client = findByRefreshToken(refreshToken);
+        Clientes client = findByRefreshToken(refreshToken);
         if (client == null) {
             throw new IllegalArgumentException("Token de actualización inválido");
         }
@@ -150,7 +150,7 @@ public class ClientAuthService {
      * Retrieves a client by their database code.
      */
     @Nullable
-    public Clients findByCode(int clientCode) {
+    public Clientes findByCode(int clientCode) {
         return clientService.find(clientCode);
     }
 
@@ -159,7 +159,7 @@ public class ClientAuthService {
      */
     @Transactional
     @Nonnull
-    AuthResponse buildAuthResponse(@Nonnull Clients client) {
+    AuthResponse buildAuthResponse(@Nonnull Clientes client) {
         String accessToken = jwtTokenUtil.generateAccessToken(client.getCode());
         String refreshToken = jwtTokenUtil.generateRefreshToken();
         Date refreshExpiry = jwtTokenUtil.getRefreshTokenExpiry();
@@ -183,12 +183,12 @@ public class ClientAuthService {
      * Finds a client by email address.
      */
     @Nullable
-    Clients findByEmail(@Nonnull String email) {
+    Clientes findByEmail(@Nonnull String email) {
         try {
-            TypedQuery<Clients> query = clientService.em.createQuery(
-                    "SELECT c FROM Clients c WHERE LOWER(c.email) = :email", Clients.class);
+            TypedQuery<Clientes> query = clientService.em.createQuery(
+                    "SELECT c FROM Clientes c WHERE LOWER(c.email) = :email", Clientes.class);
             query.setParameter("email", email.toLowerCase());
-            List<Clients> results = query.getResultList();
+            List<Clientes> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
             LOG.warn("Error finding client by email", e);
@@ -200,12 +200,12 @@ public class ClientAuthService {
      * Finds a client by refresh token.
      */
     @Nullable
-    Clients findByRefreshToken(@Nonnull String refreshToken) {
+    Clientes findByRefreshToken(@Nonnull String refreshToken) {
         try {
-            TypedQuery<Clients> query = clientService.em.createQuery(
-                    "SELECT c FROM Clients c WHERE c.refreshToken = :token", Clients.class);
+            TypedQuery<Clientes> query = clientService.em.createQuery(
+                    "SELECT c FROM Clientes c WHERE c.refreshToken = :token", Clientes.class);
             query.setParameter("token", refreshToken);
-            List<Clients> results = query.getResultList();
+            List<Clientes> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {
             LOG.warn("Error finding client by refresh token", e);

@@ -3,7 +3,7 @@ package Controllers.Api.App;
 import Models.DTO.ApiResponse;
 import Models.DTO.PagedResponse;
 import Models.DTO.UsersDTO;
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 import Services.auth.UserRoleMapper;
 import Utils.DiffUtils;
@@ -181,7 +181,7 @@ public class UsersResource {
                         .build();
             }
 
-            Users user = new Users();
+            Usuarios user = new Usuarios();
             user.setUsername(request.username.trim());
             // Raw password on purpose: LoginService.create() hashes it with
             // BCrypt (cost 12) BEFORE persist â€” identical to the legacy flow.
@@ -233,7 +233,7 @@ public class UsersResource {
                         .build();
             }
 
-            Users user = loginService.find(id);
+            Usuarios user = loginService.find(id);
             if (user == null) {
                 return notFound(id);
             }
@@ -275,12 +275,12 @@ public class UsersResource {
     })
     public Response delete(@PathParam("id") @Parameter(description = "User ID") Long id) {
         try {
-            Users user = loginService.find(id);
+            Usuarios user = loginService.find(id);
             if (user == null) {
                 return notFound(id);
             }
 
-            // Parity: users are never hard-deleted (Clients.usuario and other
+            // Parity: users are never hard-deleted (Clientes.usuario and other
             // rows reference them); LoginService.softDelete flips status=false,
             // which findByUsername already filters out.
             String antes = DiffUtils.snapshotEntity(user);
@@ -297,7 +297,7 @@ public class UsersResource {
                         "Se cambio el estado del usuario: " + user.getUsername()));
             }
 
-            Users updated = loginService.find(id);
+            Usuarios updated = loginService.find(id);
             return Response.ok(ApiResponse.ok(toDTO(updated != null ? updated : user))).build();
         } catch (Exception e) {
             LOG.warn("Error deleting user " + id, e);
@@ -344,7 +344,7 @@ public class UsersResource {
                         .build();
             }
 
-            Users user = loginService.find(id);
+            Usuarios user = loginService.find(id);
             if (user == null) {
                 return notFound(id);
             }
@@ -433,7 +433,7 @@ public class UsersResource {
         @APIResponse(responseCode = "404", description = "Unknown id")
     })
     public Response formEditar(@PathParam("id") Long id) {
-        Users user = loginService.find(id);
+        Usuarios user = loginService.find(id);
         if (user == null) {
             return notFound(id);
         }
@@ -529,7 +529,7 @@ public class UsersResource {
             @PathParam("id") Long id,
             @FormParam("groupName") @Nullable List<String> groupName) {
         try {
-            Users user = loginService.find(id);
+            Usuarios user = loginService.find(id);
             if (user == null) {
                 return notFound(id);
             }
@@ -577,7 +577,7 @@ public class UsersResource {
     /**
      * Read-side mapping ONLY â€” {@link UsersDTO} excludes the password hash by design.
      */
-    private static UsersDTO toDTO(Users user) {
+    private static UsersDTO toDTO(Usuarios user) {
         return new UsersDTO(user.getId(), user.getUsername(), user.getEmail(),
                 user.getGroupName(), user.getStatus());
     }
@@ -667,7 +667,7 @@ public class UsersResource {
 
     private Response handleFormMutationResult(@Nonnull Response result,
                                               @Nonnull String modo,
-                                              @Nullable Users usuario,
+                                              @Nullable Usuarios usuario,
                                               @Nullable String errorUsuario,
                                               @Nullable String errorPassword,
                                               @Nonnull String redirectUrl) {
@@ -686,7 +686,7 @@ public class UsersResource {
         return redisplayForm(modo, usuario, errorUsuario, errorPassword, null, mensaje, "error", mensaje);
     }
 
-    private Response redisplayForm(@Nonnull String modo, @Nullable Users usuario,
+    private Response redisplayForm(@Nonnull String modo, @Nullable Usuarios usuario,
                                    @Nullable String errorUsuario, @Nullable String errorPassword,
                                    @Nullable String errorPermisos, @Nullable String errorGeneral,
                                    @Nullable String toastSeverity, @Nullable String toastMessage) {
@@ -698,7 +698,7 @@ public class UsersResource {
                 .build();
     }
 
-    private TemplateInstance formInstance(@Nonnull String modo, @Nullable Users usuario,
+    private TemplateInstance formInstance(@Nonnull String modo, @Nullable Usuarios usuario,
                                           @Nullable String errorUsuario,
                                           @Nullable String errorPassword,
                                           @Nullable String errorGeneral,
@@ -736,7 +736,7 @@ public class UsersResource {
 
     public Map<String, Object> fullPageModel(@Nullable String estado) {
         TableModel model = buildTableModel(1, 20, null, "asc", null, estado);
-        List<Users> todos = new ArrayList<>(loginService.listAll());
+        List<Usuarios> todos = new ArrayList<>(loginService.listAll());
         long activos = todos.stream().filter(u -> u.getStatus() != null && u.getStatus()).count();
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("tablaUsuarios", model.asMap());
@@ -763,7 +763,7 @@ public class UsersResource {
     private TableModel buildTableModel(int page, int size, @Nullable String sort,
                                        @Nullable String dir, @Nullable String q,
                                        @Nullable String estado) {
-        List<Users> filas = new ArrayList<>(loginService.listAll());
+        List<Usuarios> filas = new ArrayList<>(loginService.listAll());
         if (estado != null && !estado.isBlank()) {
             String filtro = estado.trim().toLowerCase(Locale.ROOT);
             if ("activo".equals(filtro)) {
@@ -804,7 +804,7 @@ public class UsersResource {
                 filtros, q);
     }
 
-    private static boolean matchesFilter(@Nonnull Users user, @Nonnull String needle) {
+    private static boolean matchesFilter(@Nonnull Usuarios user, @Nonnull String needle) {
         return containsIgnoreCase(user.getUsername(), needle)
                 || containsIgnoreCase(user.getEmail(), needle)
                 || containsIgnoreCase(user.getGroupName(), needle);
@@ -814,21 +814,21 @@ public class UsersResource {
         return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
     }
 
-    private static void sortUsers(@Nonnull List<Users> rows, @Nullable String sort,
+    private static void sortUsers(@Nonnull List<Usuarios> rows, @Nullable String sort,
                                   @Nullable String dir) {
         if (rows.isEmpty() || sort == null || sort.isBlank()) {
             return;
         }
-        Comparator<Users> cmp = switch (sort) {
-            case "id" -> Comparator.comparing(Users::getId,
+        Comparator<Usuarios> cmp = switch (sort) {
+            case "id" -> Comparator.comparing(Usuarios::getId,
                     Comparator.nullsLast(Comparator.naturalOrder()));
-            case "username" -> Comparator.comparing(Users::getUsername,
+            case "username" -> Comparator.comparing(Usuarios::getUsername,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "email" -> Comparator.comparing(Users::getEmail,
+            case "email" -> Comparator.comparing(Usuarios::getEmail,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "groupName" -> Comparator.comparing(Users::getGroupName,
+            case "groupName" -> Comparator.comparing(Usuarios::getGroupName,
                     Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
-            case "status" -> Comparator.comparing(Users::getStatus,
+            case "status" -> Comparator.comparing(Usuarios::getStatus,
                     Comparator.nullsLast(Comparator.naturalOrder()));
             default -> null;
         };

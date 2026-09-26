@@ -49,7 +49,7 @@ public class Lote implements Serializable {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id")
-    private Users usuario;
+    private Usuarios usuario;
 
     @Column(length = 100)
     private String notas;

@@ -1,6 +1,6 @@
 package Services.auth;
 
-import Models.Users;
+import Models.Usuarios;
 import Services.LoginService;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -28,7 +28,7 @@ public class SessionAuthAdapter {
 
     @ActivateRequestContext
     @Nullable
-    public Users findByUsername(@Nonnull String username) {
+    public Usuarios findByUsername(@Nonnull String username) {
         return loginService.findByUsername(username);
     }
 
@@ -39,7 +39,7 @@ public class SessionAuthAdapter {
 
     @ActivateRequestContext
     @Transactional
-    public void updatePassword(@Nonnull Users user, @Nonnull String newPassword) {
+    public void updatePassword(@Nonnull Usuarios user, @Nonnull String newPassword) {
         loginService.updatePassword(user, newPassword);
     }
 }

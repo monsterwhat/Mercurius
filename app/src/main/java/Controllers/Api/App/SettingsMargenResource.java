@@ -2,7 +2,7 @@ package Controllers.Api.App;
 
 import Models.ConfiguracionMargen;
 import Models.DTO.ApiResponse;
-import Models.Users;
+import Models.Usuarios;
 import Services.ConfiguracionMargenService;
 import Services.LoginService;
 import Utils.DiffUtils;
@@ -121,7 +121,7 @@ public class SettingsMargenResource {
     }
 
     @Nullable
-    private Users currentUserOrNull() {
+    private Usuarios currentUserOrNull() {
         try {
             if (securityIdentity == null || securityIdentity.isAnonymous()
                     || securityIdentity.getPrincipal() == null) {

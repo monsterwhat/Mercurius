@@ -5,7 +5,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -68,7 +68,7 @@ class AppSettingsServiceIntegrationTest {
      * never escapes: later classes still see their committed rows.
      */
     private void clearSettingsTable() {
-        em.createQuery("DELETE FROM AppSettings").executeUpdate();
+        em.createQuery("DELETE FROM ConfiguracionAplicacion").executeUpdate();
     }
 
     /**
@@ -77,12 +77,12 @@ class AppSettingsServiceIntegrationTest {
      */
     @Test
     void createFindUpdateDeleteRoundTrip() {
-        AppSettings created = buildSettings("IT Perfil Roundtrip");
+        ConfiguracionAplicacion created = buildSettings("IT Perfil Roundtrip");
         appSettingsService.create(created);
         int id = created.getId();
         assertTrue(id > 0, "IDENTITY insert must assign the Id immediately");
 
-        AppSettings found = appSettingsService.find(id);
+        ConfiguracionAplicacion found = appSettingsService.find(id);
         assertNotNull(found);
         assertEquals("IT Perfil Roundtrip", found.getNombrePerfil());
         assertEquals("it.perfil.roundtrip@mercurius.local", found.getCorreoElectronico());
@@ -95,7 +95,7 @@ class AppSettingsServiceIntegrationTest {
         found.setNombreNegocio("Negocio IT Editado");
         appSettingsService.update(found);
 
-        AppSettings updated = appSettingsService.find(id);
+        ConfiguracionAplicacion updated = appSettingsService.find(id);
         assertNotNull(updated);
         assertEquals("it-updated@mercurius.local", updated.getCorreoElectronico());
         assertEquals("Negocio IT Editado", updated.getNombreNegocio());
@@ -114,10 +114,10 @@ class AppSettingsServiceIntegrationTest {
         assertNull(appSettingsService.returnCurrent(),
                 "table starts empty inside this rolled-back transaction");
 
-        AppSettings creada = buildSettings("IT Perfil Current");
+        ConfiguracionAplicacion creada = buildSettings("IT Perfil Current");
         appSettingsService.create(creada);
 
-        AppSettings current = appSettingsService.returnCurrent();
+        ConfiguracionAplicacion current = appSettingsService.returnCurrent();
         assertNotNull(current);
         assertEquals(creada.getId(), current.getId());
 
@@ -132,16 +132,16 @@ class AppSettingsServiceIntegrationTest {
      */
     @Test
     void disableKeepsRowButFlagsInactive() {
-        AppSettings creada = buildSettings("IT Perfil Disable");
+        ConfiguracionAplicacion creada = buildSettings("IT Perfil Disable");
         appSettingsService.create(creada);
 
         appSettingsService.disable(creada); // managed instance: safe disable() path
 
-        AppSettings reloaded = appSettingsService.find(creada.getId());
+        ConfiguracionAplicacion reloaded = appSettingsService.find(creada.getId());
         assertNotNull(reloaded, "disable keeps the row");
         assertEquals(Boolean.FALSE, reloaded.getEstatus(), "estatus flag must flip");
 
-        List<AppSettings> all = appSettingsService.listAll();
+        List<ConfiguracionAplicacion> all = appSettingsService.listAll();
         assertTrue(all.stream().anyMatch(s -> s.getId() == creada.getId()),
                 "disabled row still appears in listAll()");
     }
@@ -156,12 +156,12 @@ class AppSettingsServiceIntegrationTest {
         assertTrue(appSettingsService.listAll().isEmpty(),
                 "precondition: empty table inside this transaction");
 
-        AppSettings primera = appSettingsService.findOrCreateCurrent();
+        ConfiguracionAplicacion primera = appSettingsService.findOrCreateCurrent();
         assertNotNull(primera);
         assertTrue(primera.getId() > 0);
         assertEquals(Boolean.TRUE, primera.getEstatus());
 
-        AppSettings segunda = appSettingsService.findOrCreateCurrent();
+        ConfiguracionAplicacion segunda = appSettingsService.findOrCreateCurrent();
         assertNotNull(segunda);
         assertEquals(primera.getId(), segunda.getId(),
                 "second call must reuse the existing active row");
@@ -184,7 +184,7 @@ class AppSettingsServiceIntegrationTest {
         assertEquals(2, appSettingsService.listPage(0, 2).size());
         assertEquals(1, appSettingsService.listPage(2, 2).size());
 
-        List<AppSettings> beyondLast = appSettingsService.listPage(total + 100, 10);
+        List<ConfiguracionAplicacion> beyondLast = appSettingsService.listPage(total + 100, 10);
         assertNotNull(beyondLast, "paging past the end must return a list, not throw");
         assertTrue(beyondLast.isEmpty(), "offset beyond last row yields an empty page");
 
@@ -201,11 +201,11 @@ class AppSettingsServiceIntegrationTest {
      */
     @Test
     void duplicateNombrePerfilSurfacesPersistenceExceptionViaEntityManager() {
-        AppSettings original = buildSettings("IT Perfil Duplicable");
+        ConfiguracionAplicacion original = buildSettings("IT Perfil Duplicable");
         appSettingsService.create(original);
         assertNotNull(original);
 
-        AppSettings duplicado = buildSettings("IT Perfil Duplicable"); // mismo NombrePerfil
+        ConfiguracionAplicacion duplicado = buildSettings("IT Perfil Duplicable"); // mismo NombrePerfil
         try {
             em.persist(duplicado);
             em.flush();
@@ -224,11 +224,11 @@ class AppSettingsServiceIntegrationTest {
      */
     @Test
     void serviceCreateDuplicateNombrePerfilSwallowsException() {
-        AppSettings original = buildSettings("IT Perfil Tragable");
+        ConfiguracionAplicacion original = buildSettings("IT Perfil Tragable");
         appSettingsService.create(original);
         assertNotNull(original);
 
-        AppSettings duplicado = buildSettings("IT Perfil Tragable"); // mismo NombrePerfil
+        ConfiguracionAplicacion duplicado = buildSettings("IT Perfil Tragable"); // mismo NombrePerfil
         assertDoesNotThrow(() -> appSettingsService.create(duplicado),
                 "service contract swallows PersistenceException (alert recorded instead)");
         // Deliberately no further DB access here — see class javadoc.
@@ -238,8 +238,8 @@ class AppSettingsServiceIntegrationTest {
     // Programmatic fixture helper — satisfies primitive completedSteps and
     // leaves estatus TRUE like the production wizard does on first setup.
     // ------------------------------------------------------------------
-    private AppSettings buildSettings(String nombrePerfil) {
-        AppSettings settings = new AppSettings();
+    private ConfiguracionAplicacion buildSettings(String nombrePerfil) {
+        ConfiguracionAplicacion settings = new ConfiguracionAplicacion();
         settings.setNombrePerfil(nombrePerfil);
         settings.setEstatus(Boolean.TRUE);
         settings.setCompletedSteps(2);

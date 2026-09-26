@@ -270,7 +270,7 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
                 .thenReturn(HaciendaApiService.ApiResponse.ok("recibido"));
     }
 
-    /** Ensures an active AppSettings row exists (MR flow guard parity). */
+    /** Ensures an active ConfiguracionAplicacion row exists (MR flow guard parity). */
     private void seedAppSettings() {
         if (appSettingsService.returnCurrent() == null) {
             appSettingsService.findOrCreateCurrent();

@@ -1,6 +1,6 @@
 package Controllers.Api;
 
-import Models.ApiClients;
+import Models.ClientesApi;
 import Models.DTO.ApiResponse;
 import Services.ApiClientsService;
 import Services.JwtTokenUtil;
@@ -68,7 +68,7 @@ public class OAuthController {
                     .build();
         }
 
-        ApiClients client = apiClientsService.findByClientId(clientId);
+        ClientesApi client = apiClientsService.findByClientId(clientId);
         if (client == null) {
             LOG.debug("OAuth token request failed: unknown client_id");
             return Response.status(Response.Status.UNAUTHORIZED)

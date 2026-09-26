@@ -9,7 +9,7 @@ import java.util.Date;
  * Mirrors the scalar fields of Models.Lote.
  * Relations are flattened: articulo -> articuloCodigo + articuloNombre,
  * usuario -> usuarioId + usuarioUsername.
- * Nested entities (Articulos, Users) are intentionally excluded.
+ * Nested entities (Articulos, Usuarios) are intentionally excluded.
  */
 public class LoteDTO {
 

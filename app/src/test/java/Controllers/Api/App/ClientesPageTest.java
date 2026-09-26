@@ -15,7 +15,7 @@ import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
-import Models.Clients;
+import Models.Clientes;
 import Services.ClientService;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -68,8 +68,8 @@ class ClientesPageTest extends support.ContextPathIsolation {
         return spec;
     }
 
-    private Clients seedCliente(String nombre) {
-        Clients cliente = new Clients();
+    private Clientes seedCliente(String nombre) {
+        Clientes cliente = new Clientes();
         cliente.setName(nombre);
         cliente.setEmail(nombre.replace(" ", "") + "@mercurius.local");
         cliente.setAddress("Barrio W4B");
@@ -118,7 +118,7 @@ class ClientesPageTest extends support.ContextPathIsolation {
     void searchFilterRoundTripNarrowsToFixture() {
         Map<String, String> session = adminSession();
         String marker = "W4B Cliente " + System.nanoTime();
-        Clients cliente = seedCliente(marker);
+        Clientes cliente = seedCliente(marker);
         try {
             authed(session)
                     .header("HX-Request", "true")
@@ -161,7 +161,7 @@ class ClientesPageTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .body("data.status", equalTo(false));
 
-        Clients archived = clientService.find(code);
+        Clientes archived = clientService.find(code);
         assertNotNull(archived);
         assertFalse(archived.getStatus(), "DELETE must archive (soft-disable) the client");
 
@@ -223,7 +223,7 @@ class ClientesPageTest extends support.ContextPathIsolation {
     void hxDeleteReturnsRefreshedTableFragment() {
         Map<String, String> session = adminSession();
         String marker = "W4B HXDel " + System.nanoTime();
-        Clients cliente = seedCliente(marker);
+        Clientes cliente = seedCliente(marker);
         try {
             authed(session)
                     .header("HX-Request", "true")
@@ -235,7 +235,7 @@ class ClientesPageTest extends support.ContextPathIsolation {
                     .body(containsString("hx-swap-oob"))
                     .body(containsString("fue archivado"));
         } finally {
-            Clients archived = clientService.find(cliente.getCode());
+            Clientes archived = clientService.find(cliente.getCode());
             clientService.delete(archived != null ? archived : cliente);
         }
     }

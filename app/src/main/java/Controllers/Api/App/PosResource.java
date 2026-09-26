@@ -1,16 +1,16 @@
 package Controllers.Api.App;
 
-import Models.AppSettings;
+import Models.ConfiguracionAplicacion;
 import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
 import Models.Articulos.Carrito.CartOperationResult;
 import Models.Articulos.Carrito.CartSessionContext;
-import Models.Clients;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.DTO.ApiResponse;
-import Models.PagoEntry;
+import Models.EntradaPago;
 import Models.TipoCambio;
-import Models.Users;
+import Models.Usuarios;
 import Services.AppSettingsService;
 import Services.ArticulosService;
 import Services.CarritoService;
@@ -101,7 +101,7 @@ public class PosResource {
         for (String code : List.of("01", "02", "03", "04", "05", "06", "07", "08", "10", "99")) {
             Map<String, Object> metodo = new LinkedHashMap<>();
             metodo.put("codigo", code);
-            metodo.put("etiqueta", PagoEntry.metodoPagoLabel(code));
+            metodo.put("etiqueta", EntradaPago.metodoPagoLabel(code));
             metodos.add(metodo);
         }
         return metodos;
@@ -289,7 +289,7 @@ public class PosResource {
 
     /**
      * Removes the first cart line matching the article code, delegating to
-     * {@link CarritoService#removeArticulo(CartSessionContext, ArticuloCarrito, Users)}
+     * {@link CarritoService#removeArticulo(CartSessionContext, ArticuloCarrito, Usuarios)}
      * (which also re-processes promotions), like CrearTiqueteController.removeArticulo.
      */
     @DELETE
@@ -300,7 +300,7 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
-        Users currentUser = loginService.findByUsername(username);
+        Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
@@ -340,7 +340,7 @@ public class PosResource {
         if (request == null || request.clientCode == null) {
             return badRequest("VALIDATION_ERROR", "clientCode es requerido");
         }
-        Clients cliente = clientService.find(request.clientCode);
+        Clientes cliente = clientService.find(request.clientCode);
         if (cliente == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(ApiResponse.error("CLIENTE_NO_ENCONTRADO",
@@ -371,7 +371,7 @@ public class PosResource {
     @POST
     @Path("/payment-entries")
     @Operation(summary = "Stage payment entries and compute change (delegates to CarritoService.calcularVuelto)")
-    public Response paymentEntries(@Nullable List<PagoEntry> pagos) {
+    public Response paymentEntries(@Nullable List<EntradaPago> pagos) {
         String username = currentUsername();
         if (username == null) {
             return unauthenticated();
@@ -386,7 +386,7 @@ public class PosResource {
 
         // calcularVuelto() prelude: total paid across entries lands on the ctx.
         BigDecimal total = BigDecimal.ZERO;
-        for (PagoEntry pago : pagos) {
+        for (EntradaPago pago : pagos) {
             if (pago.getMonto() != null) {
                 total = total.add(pago.getMonto());
             }
@@ -448,12 +448,12 @@ public class PosResource {
      * which streams the generated PDF bytes as application/octet-stream.</p>
      */
     private Response doFacturar(@Nonnull String tipoDocumento,
-            @Nullable List<PagoEntry> pagosParam, @Nullable BigDecimal puntosParam) {
+            @Nullable List<EntradaPago> pagosParam, @Nullable BigDecimal puntosParam) {
         String username = currentUsername();
         if (username == null) {
             return unauthenticated();
         }
-        Users currentUser = loginService.findByUsername(username);
+        Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
@@ -472,7 +472,7 @@ public class PosResource {
 
         // 2. Settings gate (controller lines 443-446). Delta vs the controller's
         //    NPE-on-null: an explicit envelope instead (see evidence notes).
-        AppSettings settings = appSettingsService.returnCurrent();
+        ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         if (settings == null) {
             return Response.status(Response.Status.SERVICE_UNAVAILABLE)
                     .entity(ApiResponse.error("NO_SETTINGS",
@@ -498,7 +498,7 @@ public class PosResource {
 
         // 4. Strategy + receptor requirement (controller lines 447-455).
         DocumentoStrategy strategy = strategyFactory.forCode(tipoDocumento);
-        Clients cliente = ctx.getSelectedClient();
+        Clientes cliente = ctx.getSelectedClient();
         boolean clienteValido = cliente != null && cliente.getCode() != 0;
         if (strategy.requiresReceptor() && !clienteValido) {
             return badRequest("CLIENTE_REQUERIDO",
@@ -530,10 +530,10 @@ public class PosResource {
         // 6. Payments: parameter wins over staged entries; empty falls back to
         //    a single efectivo entry for the fresh cart total (controller lines
         //    459-465, with the documented fresh-total delta).
-        List<PagoEntry> pagos = pagosParam != null && !pagosParam.isEmpty()
+        List<EntradaPago> pagos = pagosParam != null && !pagosParam.isEmpty()
                 ? pagosParam : entry.getPagos();
         if (pagos == null || pagos.isEmpty()) {
-            PagoEntry fallback = new PagoEntry();
+            EntradaPago fallback = new EntradaPago();
             fallback.setMetodoPago("01");
             fallback.setMonto(carritoService.calculateTotalCarrito(ctx));
             pagos = List.of(fallback);
@@ -541,7 +541,7 @@ public class PosResource {
 
         // 7. Payment sufficiency (verificarPago parity): compute change first.
         BigDecimal totalPagado = BigDecimal.ZERO;
-        for (PagoEntry pago : pagos) {
+        for (EntradaPago pago : pagos) {
             if (pago.getMonto() != null) {
                 totalPagado = totalPagado.add(pago.getMonto());
             }
@@ -616,7 +616,7 @@ public class PosResource {
                     comprobante,
                     settings,
                     ctx.getCarrito(),
-                    cliente != null ? cliente : new Clients(),
+                    cliente != null ? cliente : new Clientes(),
                     currentUser,
                     ctx.getPago(),
                     ctx.getVuelto(),
@@ -673,7 +673,7 @@ public class PosResource {
 
     /**
      * Cancels the whole sale, delegating to
-     * {@link CarritoService#cancel(CartSessionContext, Users)} exactly like
+     * {@link CarritoService#cancel(CartSessionContext, Usuarios)} exactly like
      * CrearTiqueteController.cancel(). As REST session hygiene it additionally
      * drops staged payments, any supervisor authorization and the staged
      * payment/change fields (the JSF world got this for free from the view
@@ -687,7 +687,7 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
-        Users currentUser = loginService.findByUsername(username);
+        Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
@@ -749,7 +749,7 @@ public class PosResource {
             // Same delegation chain as AppAuthResource.supervisorAuthorize():
             // findByUsername filters status=true; explicit checks keep the
             // disabled-user contract obvious and null-safe.
-            Users authUser = loginService.findByUsername(supervisor);
+            Usuarios authUser = loginService.findByUsername(supervisor);
             if (authUser == null) {
                                 LOG.info("Intento con usuario inexistente: " + supervisor + " | source=" + "PosResource.overrideAuthorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 return invalidCredentials();
@@ -860,7 +860,7 @@ public class PosResource {
     /**
      * Quantity +/- control. Positive deltas grow the line; a delta that
      * reaches zero or below delegates to
-     * {@link CarritoService#removeArticulo(CartSessionContext, ArticuloCarrito, Users)}
+     * {@link CarritoService#removeArticulo(CartSessionContext, ArticuloCarrito, Usuarios)}
      * (full removal parity). Otherwise the row cantidad is adjusted in place
      * and {@link CarritoService#verificarPromocionesCarrito(CartSessionContext)}
      * re-processes promotions over the mutated cart — controller-level
@@ -883,7 +883,7 @@ public class PosResource {
                     panelModel(username, message("VALIDATION_ERROR", "error",
                             "Delta inválido", null))).render());
         }
-        Users currentUser = loginService.findByUsername(username);
+        Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
@@ -927,7 +927,7 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
-        Users currentUser = loginService.findByUsername(username);
+        Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
@@ -965,7 +965,7 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
-        Users currentUser = loginService.findByUsername(username);
+        Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
@@ -996,17 +996,17 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
-        List<Clients> matches;
+        List<Clientes> matches;
         if (q == null || q.isBlank()) {
-            List<Clients> firstPage = clientService.listPage(0, TYPEAHEAD_LIMIT);
+            List<Clientes> firstPage = clientService.listPage(0, TYPEAHEAD_LIMIT);
             matches = firstPage != null ? firstPage : List.of();
         } else {
-            List<Clients> found = clientService.searchByName(q.trim());
+            List<Clientes> found = clientService.searchByName(q.trim());
             matches = found == null ? List.of()
                     : found.subList(0, Math.min(found.size(), TYPEAHEAD_LIMIT));
         }
         List<ClientSummary> hits = new ArrayList<>();
-        for (Clients cliente : matches) {
+        for (Clientes cliente : matches) {
             ClientSummary summary = new ClientSummary();
             summary.code = cliente.getCode();
             summary.name = cliente.getName();
@@ -1058,7 +1058,7 @@ public class PosResource {
                     panelModel(username, message("VALIDATION_ERROR", "error",
                             "clientCode es requerido", null))).render());
         }
-        Clients cliente = clientService.find(clientCode);
+        Clientes cliente = clientService.find(clientCode);
         if (cliente == null) {
             return htmlOk(cartPanelTemplate.data("panel",
                     panelModel(username, message("CLIENTE_NO_ENCONTRADO", "error",
@@ -1145,7 +1145,7 @@ public class PosResource {
             return unauthenticated();
         }
         CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
-        Clients cliente = ctx.getSelectedClient();
+        Clientes cliente = ctx.getSelectedClient();
         if (cliente == null || cliente.getCode() == 0) {
             return badRequest("PUNTOS_SIN_CLIENTE",
                     "Debe seleccionar un cliente para usar puntos.");
@@ -1176,7 +1176,7 @@ public class PosResource {
             return unauthenticated();
         }
         CartSessionContext ctx = cartSessionStore.getOrCreate(username).getCartContext();
-        Clients cliente = ctx.getSelectedClient();
+        Clientes cliente = ctx.getSelectedClient();
         if (cliente == null || cliente.getCode() == 0) {
             return htmlOk(cartPanelTemplate.data("panel",
                     panelModel(username, message("PUNTOS_SIN_CLIENTE", "error",
@@ -1236,7 +1236,7 @@ public class PosResource {
 
     /**
      * Form twin of {@link #paymentEntries}: zips the metodoPago[]/monto[]
-     * arrays into {@link PagoEntry} rows, stages them via the SAME logic
+     * arrays into {@link EntradaPago} rows, stages them via the SAME logic
      * (entry.setPagos + totals onto ctx + calcularVuelto) and re-renders the
      * payment dialog with the server-computed split totals.
      */
@@ -1252,7 +1252,7 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
-        List<PagoEntry> pagos = zipPagos(metodos, montos);
+        List<EntradaPago> pagos = zipPagos(metodos, montos);
         if (pagos.isEmpty()) {
             return htmlOk(paymentDialogTemplate.data("dialog",
                     dialogModel(username, message("VALIDATION_ERROR", "error",
@@ -1288,7 +1288,7 @@ public class PosResource {
             errorGeneral = "Usuario o contraseña incorrectos";
         } else {
             try {
-                Users authUser = loginService.findByUsername(supervisor);
+                Usuarios authUser = loginService.findByUsername(supervisor);
                 if (authUser == null || !Boolean.TRUE.equals(authUser.getStatus())
                         || !loginService.verifyPassword(password, authUser.getPassword())) {
                                         LOG.info("Intento fallido de autorización de: " + supervisor + " | source=" + "PosResource.overrideAuthorizeForm()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
@@ -1343,7 +1343,7 @@ public class PosResource {
         }
         String documento = tipoDocumento == null || tipoDocumento.isBlank()
                 ? "04" : tipoDocumento.trim();
-        List<PagoEntry> pagos = zipPagos(metodos, montos);
+        List<EntradaPago> pagos = zipPagos(metodos, montos);
         BigDecimal puntosParam = puntos == null || puntos.isBlank() ? null : parseDecimal(puntos);
 
         Response result = doFacturar(documento, pagos.isEmpty() ? null : pagos, puntosParam);
@@ -1366,7 +1366,7 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
-        Users currentUser = loginService.findByUsername(username);
+        Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
@@ -1422,7 +1422,7 @@ public class PosResource {
         panel.put("hasOverrides", hasOverridesInCarrito(ctx));
         panel.put("authorizedBy", entry.getAuthorizedBy());
 
-        Clients cliente = ctx.getSelectedClient();
+        Clientes cliente = ctx.getSelectedClient();
         boolean clienteValido = cliente != null && cliente.getCode() != 0;
         panel.put("clienteCode", clienteValido ? cliente.getCode() : null);
         panel.put("clienteName", clienteValido ? cliente.getName() : null);
@@ -1438,7 +1438,7 @@ public class PosResource {
         CartSessionContext ctx = entry.getCartContext();
 
         List<Map<String, Object>> filas = new ArrayList<>();
-        for (PagoEntry pago : entry.getPagos()) {
+        for (EntradaPago pago : entry.getPagos()) {
             Map<String, Object> fila = new LinkedHashMap<>();
             fila.put("metodoPago", pago.getMetodoPago());
             fila.put("monto", pago.getMonto());
@@ -1509,17 +1509,17 @@ public class PosResource {
     /** Typeahead hits shared by the JSON feed and the picker fragment. */
     @Nonnull
     private List<Map<String, Object>> typeaheadHits(@Nullable String q) {
-        List<Clients> matches;
+        List<Clientes> matches;
         if (q == null || q.isBlank()) {
-            List<Clients> firstPage = clientService.listPage(0, TYPEAHEAD_LIMIT);
+            List<Clientes> firstPage = clientService.listPage(0, TYPEAHEAD_LIMIT);
             matches = firstPage != null ? firstPage : List.of();
         } else {
-            List<Clients> found = clientService.searchByName(q.trim());
+            List<Clientes> found = clientService.searchByName(q.trim());
             matches = found == null ? List.of()
                     : found.subList(0, Math.min(found.size(), TYPEAHEAD_LIMIT));
         }
         List<Map<String, Object>> hits = new ArrayList<>();
-        for (Clients cliente : matches) {
+        for (Clientes cliente : matches) {
             Map<String, Object> hit = new LinkedHashMap<>();
             hit.put("code", cliente.getCode());
             hit.put("name", cliente.getName());
@@ -1586,13 +1586,13 @@ public class PosResource {
     }
 
     /** Shared staging of payment entries (JSON + form twins). */
-    private void stagePagos(@Nonnull String username, @Nonnull List<PagoEntry> pagos) {
+    private void stagePagos(@Nonnull String username, @Nonnull List<EntradaPago> pagos) {
         CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
         CartSessionContext ctx = entry.getCartContext();
         entry.setPagos(pagos);
 
         BigDecimal total = BigDecimal.ZERO;
-        for (PagoEntry pago : pagos) {
+        for (EntradaPago pago : pagos) {
             if (pago.getMonto() != null) {
                 total = total.add(pago.getMonto());
             }
@@ -1603,18 +1603,18 @@ public class PosResource {
         carritoService.calcularVuelto(ctx, BigDecimal.ZERO);
     }
 
-    private static @Nonnull List<PagoEntry> zipPagos(
+    private static @Nonnull List<EntradaPago> zipPagos(
             @Nullable List<String> metodos, @Nullable List<String> montos) {
         if (metodos == null || metodos.isEmpty()) {
             return List.of();
         }
-        List<PagoEntry> pagos = new ArrayList<>();
+        List<EntradaPago> pagos = new ArrayList<>();
         for (int i = 0; i < metodos.size(); i++) {
             String metodo = metodos.get(i);
             if (metodo == null || metodo.isBlank()) {
                 continue;
             }
-            PagoEntry pago = new PagoEntry();
+            EntradaPago pago = new EntradaPago();
             pago.setMetodoPago(metodo.trim());
             pago.setMonto(montos != null && i < montos.size()
                     ? parseDecimal(montos.get(i)) : BigDecimal.ZERO);
@@ -1793,7 +1793,7 @@ public class PosResource {
      * private there and this task forbids editing existing files): groupName
      * substring tokens, admin implies every other role.
      */
-    private static @Nonnull List<String> deriveRoles(@Nonnull Users user) {
+    private static @Nonnull List<String> deriveRoles(@Nonnull Usuarios user) {
         String groupName = user.getGroupName() == null ? "" : user.getGroupName().toLowerCase();
         boolean isAdmin = groupName.contains("admin");
         List<String> roles = new ArrayList<>(ROLE_TOKENS.size());
@@ -1834,7 +1834,7 @@ public class PosResource {
         /** Hacienda document code; defaults to TE ("04"). */
         public @Nullable String tipoDocumento;
         /** Optional inline payments; otherwise the staged /payment-entries win. */
-        public @Nullable List<PagoEntry> pagos;
+        public @Nullable List<EntradaPago> pagos;
         /** Points to redeem (1 punto = ₡1), clamped to the client balance. */
         public @Nullable BigDecimal puntosARedimir;
     }

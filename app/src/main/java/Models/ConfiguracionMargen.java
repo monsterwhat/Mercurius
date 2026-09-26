@@ -1,6 +1,6 @@
 package Models;
 
-import Models.Users;
+import Models.Usuarios;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -46,7 +46,7 @@ public class ConfiguracionMargen {
     @Nullable
     @ManyToOne
     @JoinColumn(name = "usuario_id")
-    private Users usuario;
+    private Usuarios usuario;
 
     @PrePersist
     protected void onCreate() {

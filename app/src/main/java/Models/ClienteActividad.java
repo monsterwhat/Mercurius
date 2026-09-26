@@ -37,12 +37,12 @@ public class ClienteActividad {
     @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "cliente_code", nullable = false)
-    private Clients cliente;
+    private Clientes cliente;
 
     public ClienteActividad() {
     }
 
-    public ClienteActividad(String codigo, String descripcion, Clients cliente) {
+    public ClienteActividad(String codigo, String descripcion, Clientes cliente) {
         this.codigo = codigo;
         this.descripcion = descripcion;
         this.cliente = cliente;

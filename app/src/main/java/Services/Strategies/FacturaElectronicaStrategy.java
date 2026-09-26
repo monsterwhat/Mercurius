@@ -1,7 +1,7 @@
 package Services.Strategies;
 
-import Models.AppSettings;
-import Models.Clients;
+import Models.ConfiguracionAplicacion;
+import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.Jaxb.FE.FacturaElectronicaDocumento;
 import Models.Encabezado.*;
@@ -85,7 +85,7 @@ public class FacturaElectronicaStrategy implements DocumentoStrategy {
     }
 
     @Override
-    public Encabezado buildEncabezado(AppSettings appSettings, Clients selectedClient) {
+    public Encabezado buildEncabezado(ConfiguracionAplicacion appSettings, Clientes selectedClient) {
         if (Objects.equals(appSettings.getEstatus(), Boolean.FALSE)) return null;
 
         try {

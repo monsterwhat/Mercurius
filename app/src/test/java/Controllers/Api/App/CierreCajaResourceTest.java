@@ -25,7 +25,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import Models.CierreCaja;
-import Models.Users;
+import Models.Usuarios;
 import Services.CierreCajaService;
 import Services.LoginService;
 import org.junit.jupiter.api.Tag;
@@ -133,8 +133,8 @@ class CierreCajaResourceTest {
 
     // ── seeding helpers ──────────────────────────────────────────────────
 
-    private Users adminUser() {
-        Users admin = loginService.findByUsername(SEED_USER);
+    private Usuarios adminUser() {
+        Usuarios admin = loginService.findByUsername(SEED_USER);
         assertNotNull(admin, "seeded admin user must exist");
         return admin;
     }

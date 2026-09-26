@@ -5,9 +5,9 @@ import jakarta.annotation.Nullable;
 import Models.Articulos.Articulos;
 import Models.Departamento;
 import Models.Inventario;
-import Models.ReorderSuggestion;
-import Models.StockAlert;
-import Models.Users;
+import Models.SugerenciaReposicion;
+import Models.AlertaStock;
+import Models.Usuarios;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Named
 @ApplicationScoped
-public class StockAlertService extends GService<StockAlert> {
+public class StockAlertService extends GService<AlertaStock> {
 
     @Inject @Nonnull
     private EntityManager em;
@@ -36,8 +36,8 @@ public class StockAlertService extends GService<StockAlert> {
     private InventarioService inventarioService;
 
     @Override
-    protected Class<StockAlert> getEntityClass() {
-        return StockAlert.class;
+    protected Class<AlertaStock> getEntityClass() {
+        return AlertaStock.class;
     }
 
     /**
@@ -120,7 +120,7 @@ public class StockAlertService extends GService<StockAlert> {
             // Check if stock is below optimal level
             if (currentStock < optimalStock && articulo.getEstadoAlertas()) {
                 // Deduplication: skip if an active alert already exists for this article
-                String checkJpql = "SELECT COUNT(sa) FROM StockAlert sa WHERE sa.articulo = :articulo AND sa.estado = 'active'";
+                String checkJpql = "SELECT COUNT(sa) FROM AlertaStock sa WHERE sa.articulo = :articulo AND sa.estado = 'active'";
                 Long existingCount = em.createQuery(checkJpql, Long.class)
                         .setParameter("articulo", articulo)
                         .getSingleResult();
@@ -137,7 +137,7 @@ public class StockAlertService extends GService<StockAlert> {
                 }
 
                 // Create stock alert
-                StockAlert alert = new StockAlert();
+                AlertaStock alert = new AlertaStock();
                 alert.setArticulo(articulo);
                 alert.setTipoAlerta(alertType);
                 alert.setCantidadActual(currentStock);
@@ -265,7 +265,7 @@ public class StockAlertService extends GService<StockAlert> {
         }
 
         // Create reorder suggestion
-        ReorderSuggestion suggestion = new ReorderSuggestion();
+        SugerenciaReposicion suggestion = new SugerenciaReposicion();
         suggestion.setArticulo(articulo);
         suggestion.setDepartamento(articulo.getDepartamento());
         suggestion.setCantidadSugerida(reorderQuantity);
@@ -283,9 +283,9 @@ public class StockAlertService extends GService<StockAlert> {
      */
     @Transactional(TxType.SUPPORTS)
     @Nonnull
-    public List<StockAlert> getActiveStockAlerts() {
-        String jpql = "SELECT sa FROM StockAlert sa WHERE sa.estado = 'active' ORDER BY sa.fechaCreacion DESC";
-        TypedQuery<StockAlert> query = em.createQuery(jpql, StockAlert.class);
+    public List<AlertaStock> getActiveStockAlerts() {
+        String jpql = "SELECT sa FROM AlertaStock sa WHERE sa.estado = 'active' ORDER BY sa.fechaCreacion DESC";
+        TypedQuery<AlertaStock> query = em.createQuery(jpql, AlertaStock.class);
         return query.getResultList();
     }
 
@@ -294,9 +294,9 @@ public class StockAlertService extends GService<StockAlert> {
      */
     @Transactional(TxType.SUPPORTS)
     @Nonnull
-    public List<ReorderSuggestion> getAllReorderSuggestions() {
-        String jpql = "SELECT rs FROM ReorderSuggestion rs ORDER BY rs.prioridad DESC, rs.fechaCreacion DESC";
-        TypedQuery<ReorderSuggestion> query = em.createQuery(jpql, ReorderSuggestion.class);
+    public List<SugerenciaReposicion> getAllReorderSuggestions() {
+        String jpql = "SELECT rs FROM SugerenciaReposicion rs ORDER BY rs.prioridad DESC, rs.fechaCreacion DESC";
+        TypedQuery<SugerenciaReposicion> query = em.createQuery(jpql, SugerenciaReposicion.class);
         return query.getResultList();
     }
 
@@ -305,9 +305,9 @@ public class StockAlertService extends GService<StockAlert> {
      */
     @Transactional(TxType.SUPPORTS)
     @Nonnull
-    public List<ReorderSuggestion> getReorderSuggestionsByPriority(@Nonnull String priority) {
-        String jpql = "SELECT rs FROM ReorderSuggestion rs WHERE rs.prioridad = :priority ORDER BY rs.fechaCreacion DESC";
-        TypedQuery<ReorderSuggestion> query = em.createQuery(jpql, ReorderSuggestion.class)
+    public List<SugerenciaReposicion> getReorderSuggestionsByPriority(@Nonnull String priority) {
+        String jpql = "SELECT rs FROM SugerenciaReposicion rs WHERE rs.prioridad = :priority ORDER BY rs.fechaCreacion DESC";
+        TypedQuery<SugerenciaReposicion> query = em.createQuery(jpql, SugerenciaReposicion.class)
                 .setParameter("priority", priority);
         return query.getResultList();
     }
@@ -316,7 +316,7 @@ public class StockAlertService extends GService<StockAlert> {
      * Acknowledge a stock alert
      */
     @Transactional
-    public void acknowledgeStockAlert(@Nonnull StockAlert alert, @Nonnull Users user, @Nonnull String notes) {
+    public void acknowledgeStockAlert(@Nonnull AlertaStock alert, @Nonnull Usuarios user, @Nonnull String notes) {
         alert.setEstado("acknowledged");
         alert.setFechaResolucion(new Date());
         alert.setUsuarioResolucion(user);
@@ -328,7 +328,7 @@ public class StockAlertService extends GService<StockAlert> {
      * Resolve a stock alert
      */
     @Transactional
-    public void resolveStockAlert(@Nonnull StockAlert alert, @Nonnull Users user, @Nonnull String notes) {
+    public void resolveStockAlert(@Nonnull AlertaStock alert, @Nonnull Usuarios user, @Nonnull String notes) {
         alert.setEstado("resolved");
         alert.setFechaResolucion(new Date());
         alert.setUsuarioResolucion(user);
@@ -341,9 +341,9 @@ public class StockAlertService extends GService<StockAlert> {
      */
     @Transactional(TxType.SUPPORTS)
     @Nonnull
-    public List<StockAlert> getStockAlertsByDepartment(@Nonnull Departamento departamento) {
-        String jpql = "SELECT sa FROM StockAlert sa WHERE sa.departamento = :departamento AND sa.estado = 'active' ORDER BY sa.fechaCreacion DESC";
-        TypedQuery<StockAlert> query = em.createQuery(jpql, StockAlert.class)
+    public List<AlertaStock> getStockAlertsByDepartment(@Nonnull Departamento departamento) {
+        String jpql = "SELECT sa FROM AlertaStock sa WHERE sa.departamento = :departamento AND sa.estado = 'active' ORDER BY sa.fechaCreacion DESC";
+        TypedQuery<AlertaStock> query = em.createQuery(jpql, AlertaStock.class)
                 .setParameter("departamento", departamento);
         return query.getResultList();
     }
@@ -356,7 +356,7 @@ public class StockAlertService extends GService<StockAlert> {
     public Map<String, Integer> getAlertStatistics() {
         Map<String, Integer> stats = new HashMap<>();
         
-        String jpql = "SELECT sa.tipoAlerta, COUNT(sa) FROM StockAlert sa " +
+        String jpql = "SELECT sa.tipoAlerta, COUNT(sa) FROM AlertaStock sa " +
                      "WHERE sa.fechaCreacion >= :startDate GROUP BY sa.tipoAlerta";
         
         Calendar cal = Calendar.getInstance();
