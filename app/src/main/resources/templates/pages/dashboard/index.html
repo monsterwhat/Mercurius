@@ -78,8 +78,8 @@
         </div>
 
         <div id="panel-graficas" class="columns is-multiline mb-5"
-             data-root="/Mercurius"
-             data-base="/Mercurius/app/dashboard/data">
+             data-root="{config:['quarkus.http.root-path']}"
+             data-base="{config:['quarkus.http.root-path']}/app/dashboard/data">
             <div class="column is-12-tablet is-6-desktop">
                 <div class="box">
                     <p class="title is-5 has-text-centered">Ventas por Hora</p>

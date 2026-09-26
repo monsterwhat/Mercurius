@@ -16,7 +16,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Buscar artículo..."
-                   hx-get="/Mercurius/api/app/articulos/formularios/promociones/articulos"
+                   hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/articulos"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#selector-articulos-fragmento" hx-swap="outerHTML"
                    hx-include="this"/>

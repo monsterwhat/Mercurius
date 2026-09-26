@@ -28,7 +28,7 @@
                       class="is-family-monospace has-text-weight-bold is-size-4"
                       style="color:white"
                       title="{proximoEnvioDisplay}"
-                      hx-get="/Mercurius/api/app/tributacion/consultas/countdown"
+                      hx-get="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/countdown"
                       hx-trigger="every 5s"
                       hx-swap="outerHTML">{proximoEnvioDisplay} — {countdownDisplay}</span>
             </p>
@@ -61,7 +61,7 @@
 
         <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
             <button type="button" class="button is-info"
-                    hx-post="/Mercurius/api/app/tributacion/consultas/enviar-pendientes"
+                    hx-post="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/enviar-pendientes"
                     hx-confirm="¿Enviar las facturas pendientes a Hacienda?"
                     {#if contadorPendientes == 0}disabled{/if}>
                 Enviar Facturas Pendientes
@@ -121,7 +121,7 @@
                         <td><span class="tag is-danger">Rechazada</span></td>
                         <td>
                             <button type="button" class="button is-primary is-small"
-                                    hx-post="/Mercurius/api/app/tributacion/consultas/{f.id}/corregir"
+                                    hx-post="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/{f.id}/corregir"
                                     hx-confirm="¿Crear nota de crédito y preparar la corrección de {f.consecutivo}?">
                                 Corregir
                             </button>

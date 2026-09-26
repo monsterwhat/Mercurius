@@ -30,7 +30,7 @@
         </div>
         <div class="box is-shadowless" style="padding:0.75rem">
             <form id="recibos-upload-forma"
-                  hx-post="/Mercurius/api/app/facturas-recibidas/upload"
+                  hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/upload"
                   hx-encoding="multipart/form-data"
                   hx-target="#upload-resultado-recibos" hx-swap="innerHTML">
                 <div class="field">

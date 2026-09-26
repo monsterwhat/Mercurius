@@ -62,7 +62,7 @@
                     {#include _kit/modal id="crear-familia" title="Crear Familia" triggerLabel="Crear Familia" triggerClass="is-success"
                          bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
-                    <form method="post" action="/Mercurius/api/app/export">
+                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="familias"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -90,7 +90,7 @@
                     {#include _kit/modal id="crear-departamento" title="Crear Departamento" triggerLabel="Crear Departamento" triggerClass="is-success"
                          bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
-                    <form method="post" action="/Mercurius/api/app/export">
+                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="departamentos"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -105,6 +105,46 @@
         {!$1!}
         {#include _kit/modal id="editar-departamento" title="Editar Departamento" triggerClass="is-hidden"
              bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
+        </div>
+
+        {! ── Ranking de Rendimiento de Proveedores ─────────────── !
+            Parity with the legacy supplier scoreboard: precomputed chips/bars
+            from renderFullPage (metricasFilas + totals). !}
+        <div class="mt-5">
+            <h2 class="title is-4" style="margin-bottom:0">Ranking de Rendimiento de Proveedores</h2>
+            <p class="subtitle is-6 has-text-grey">Proveedores: {metricasTotalProveedores} · Score promedio: {metricasScorePromedio} · Compras totales: {metricasComprasTotales}</p>
+            {#if metricasFilas?? && metricasFilas.size() > 0}
+            <div class="table-container">
+            <table class="table is-striped is-fullwidth">
+                <thead>
+                    <tr>
+                        <th>Proveedor</th>
+                        <th class="has-text-right">Score</th>
+                        <th>Rendimiento</th>
+                        <th class="has-text-right">Facturas</th>
+                        <th class="has-text-right">Pagadas</th>
+                        <th class="has-text-right">Monto total</th>
+                        <th class="has-text-right">A tiempo %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for fila in metricasFilas}
+                    <tr>
+                        <td>{fila.proveedor}</td>
+                        <td class="has-text-right">{fila.score}</td>
+                        <td><progress class="progress {fila.barColor}" value="{fila.score}" max="100">{fila.score}</progress></td>
+                        <td class="has-text-right">{fila.facturas}</td>
+                        <td class="has-text-right">{fila.pagadas}</td>
+                        <td class="has-text-right">{fila.montoTotal}</td>
+                        <td class="has-text-right">{fila.onTime}</td>
+                    </tr>
+                    {/for}
+                </tbody>
+            </table>
+            </div>
+            {#else}
+            <p class="has-text-grey">Aún no hay métricas de proveedores.</p>
+            {/if}
         </div>
     </section>
 

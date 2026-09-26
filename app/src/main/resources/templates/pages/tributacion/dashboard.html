@@ -61,7 +61,7 @@
 
             <div class="buttons is-centered" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
                 <button type="button" class="button is-info"
-                        hx-get="/Mercurius{baseUrl}"
+                        hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                         hx-target="#tributacion-kpis" hx-swap="innerHTML">
                     Actualizar Dashboard
                 </button>

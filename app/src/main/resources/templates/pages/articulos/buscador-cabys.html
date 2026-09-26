@@ -14,7 +14,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" autocomplete="off"
                    placeholder="Buscar por descripción..."
-                   hx-get="/Mercurius/api/app/articulos/cabys"
+                   hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#buscador-cabys-fragmento" hx-swap="outerHTML"
                    hx-include="this"/>

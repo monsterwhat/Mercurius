@@ -25,7 +25,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{q}" autocomplete="off"
                    placeholder="Buscar órdenes..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
             <span class="icon is-small is-left">&#128269;</span>
@@ -48,23 +48,23 @@
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small is-info" title="Ver detalles"
                                 aria-haspopup="dialog" data-kit-open="detalle-orden"
-                                hx-get="/Mercurius/api/app/ordenes/{fila.id}/detalle"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/detalle"
                                 hx-target="#detalle-orden-body" hx-swap="innerHTML">&#128065;</button>
                         {#if fila.puedeEditar}
                         <button type="button" class="button is-small is-success" title="Editar orden"
                                 aria-haspopup="dialog" data-kit-open="editar-orden"
-                                hx-get="/Mercurius/api/app/ordenes/formularios/{fila.id}"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/formularios/{fila.id}"
                                 hx-target="#editar-orden-body" hx-swap="innerHTML">&#9998;</button>
                         {/if}
                         {#if fila.puedeCambiarEstado}
                         <button type="button" class="button is-small is-warning" title="Cambiar estado"
                                 aria-haspopup="dialog" data-kit-open="estado-orden"
-                                hx-get="/Mercurius/api/app/ordenes/{fila.id}/estado"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/estado"
                                 hx-target="#estado-orden-body" hx-swap="innerHTML">&#8594;</button>
                         {/if}
                         {#if fila.puedeEliminar}
                         <button type="button" class="button is-small is-danger" title="Eliminar orden"
-                                hx-delete="/Mercurius/api/app/ordenes/{fila.id}"
+                                hx-delete="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}"
                                 hx-confirm="¿Está seguro de eliminar esta orden?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">&#128465;</button>
                         {/if}

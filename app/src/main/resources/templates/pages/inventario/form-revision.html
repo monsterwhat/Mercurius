@@ -32,7 +32,7 @@
         <strong>{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</strong>
     </div>
 
-    <form hx-post="/Mercurius/api/app/inventario/ajustes/{ajuste.codigo}/aprobar"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{ajuste.codigo}/aprobar"
           hx-target="#revision-ajuste-body" hx-swap="innerHTML">
         <div class="field">
             <label class="label" for="revision-cantidad">Cantidad *</label>

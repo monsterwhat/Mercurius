@@ -56,7 +56,7 @@
                     </div>
                 </div>
                 <button type="button" class="button is-warning"
-                        hx-get="/Mercurius{baseUrl}"
+                        hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                         hx-include="#busqueda-form"
                         hx-target="#resultados" hx-swap="innerHTML">
                     Buscar
@@ -84,7 +84,7 @@
                         <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td class="has-text-centered">
                             <button type="button" class="button is-warning is-small"
-                                    hx-get="/Mercurius/api/app/devoluciones/{f.id}/lineas"
+                                    hx-get="{config:['quarkus.http.root-path']}/api/app/devoluciones/{f.id}/lineas"
                                     hx-target="#devolucion-panel" hx-swap="innerHTML">
                                 Seleccionar
                             </button>

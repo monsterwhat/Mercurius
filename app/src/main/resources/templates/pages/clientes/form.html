@@ -12,7 +12,7 @@
 
   Model:
     modo          String - "crear" | "editar"
-    cliente       Object - Models.Clients when editar, null when crear
+    cliente       Object - Models.Clientes when editar, null when crear
     birthDateIso  String - cliente.birthDate as yyyy-MM-dd (null when crear;
                     pre-formatted server-side so the template stays dumb)
     errorNombre   String - blank-name error (legacy requiredMessage parity)
@@ -23,10 +23,10 @@
 !}
 <div id="forma-cliente">
     {#if modo == 'editar' && cliente??}
-    <form hx-put="/Mercurius/api/app/clientes/{cliente.code}"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/clientes/{cliente.code}"
           hx-target="#forma-cliente" hx-swap="outerHTML">
     {#else}
-    <form hx-post="/Mercurius/api/app/clientes"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/clientes"
           hx-target="#forma-cliente" hx-swap="outerHTML">
     {/if}
         <div class="field">
@@ -230,7 +230,7 @@
                 var msg = document.getElementById('buscar-cedula-msg');
                 var tipos = {'01': 'Cédula Física', '02': 'Cédula Jurídica', '03': 'DIMEX', '04': 'NITE'};
                 if (msg) { msg.textContent = ' …buscando'; }
-                fetch('/Mercurius/api/app/clientes/lookup?cedula=' + encodeURIComponent(cedulaInput.value))
+                fetch('{config:['quarkus.http.root-path']}/api/app/clientes/lookup?cedula=' + encodeURIComponent(cedulaInput.value))
                     .then(function (r) { return r.json(); })
                     .then(function (env) {
                         var d = env.data || {};
@@ -268,7 +268,7 @@
         }
         var zonas = document.getElementById('zonas-list');
         if (zonas) {
-            fetch('/Mercurius/api/app/clientes/zonas')
+            fetch('{config:['quarkus.http.root-path']}/api/app/clientes/zonas')
                 .then(function (r) { return r.json(); })
                 .then(function (env) {
                     (env.data || []).forEach(function (z) {

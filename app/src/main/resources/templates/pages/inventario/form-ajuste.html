@@ -10,7 +10,7 @@
   "Personalizado..." option that reveals a free-text input (Alpine toggle).
 !}
 <div class="box is-shadowless">
-    <form hx-post="/Mercurius/api/app/inventario/ajustes"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes"
           hx-target="#crear-ajuste-body" hx-swap="innerHTML">
         <div class="field">
             <label class="label" for="ajuste-articulo-display">Artículo *</label>
@@ -19,7 +19,7 @@
                        placeholder="Busque y seleccione un artículo"/>
                 <button type="button" class="button is-link"
                         aria-haspopup="dialog" data-kit-open="selector-articulo-ajuste"
-                        hx-get="/Mercurius/api/app/articulos/formularios/ajuste/articulos"
+                        hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/ajuste/articulos"
                         hx-target="#selector-articulo-ajuste-body" hx-swap="innerHTML">Buscar</button>
             </div>
             <input type="hidden" id="ajuste-articulo-id" name="articuloId"/>

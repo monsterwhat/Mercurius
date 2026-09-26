@@ -28,13 +28,13 @@
         </div>
 
         <div class="box">
-            <form method="get" action="/Mercurius{baseUrl}" id="clientes-filtros">
+            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="clientes-filtros">
                 <div class="field">
                     <label class="label" for="clientes-q">Buscar clientes…</label>
                     <input class="input" type="text" id="clientes-q" name="q"
                            value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Nombre, correo, cédula…"
-                           hx-get="/Mercurius{baseUrl}"
+                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#clientes-tabla-container" hx-swap="innerHTML"/>
@@ -70,7 +70,7 @@
                         <td>
                             <button type="button" class="button is-small is-success" title="Editar cliente"
                                     aria-haspopup="dialog" data-kit-open="editar-cliente"
-                                    hx-get="/Mercurius/api/app/clientes/formularios/{c.code}"
+                                    hx-get="{config:['quarkus.http.root-path']}/api/app/clientes/formularios/{c.code}"
                                     hx-target="#editar-cliente-body" hx-swap="innerHTML">&#9998;</button>
                         </td>
                     </tr>

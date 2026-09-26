@@ -22,7 +22,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Buscar promociones..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-include="#tab-{modelo.id}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
@@ -47,10 +47,10 @@
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small is-success" title="Editar promoción"
                                 aria-haspopup="dialog" data-kit-open="editar-promocion"
-                                hx-get="/Mercurius/api/app/articulos/formularios/promociones/{promocion.id}"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/{promocion.id}"
                                 hx-target="#editar-promocion-body" hx-swap="innerHTML">&#9998;</button>
                         <button type="button" class="button is-small is-warning" title="Eliminar promoción"
-                                hx-delete="/Mercurius/api/app/articulos/promociones/{promocion.id}"
+                                hx-delete="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
                                 hx-confirm="¿Eliminar la promoción {promocion.nombre}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
                     </div>

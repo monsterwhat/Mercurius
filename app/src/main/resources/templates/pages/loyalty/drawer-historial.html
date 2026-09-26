@@ -89,14 +89,14 @@
         <div class="level-right buttons" style="margin-bottom:0">
             {#if paginaAnterior >= 0}
             <button type="button" class="button is-small"
-                    hx-get="/Mercurius/api/app/loyalty/{resumen.clienteCode}/view?page={paginaAnterior}&size={size}"
+                    hx-get="{config:['quarkus.http.root-path']}/api/app/loyalty/{resumen.clienteCode}/view?page={paginaAnterior}&size={size}"
                     hx-target="#drawer-historial" hx-swap="outerHTML">&larr; Anterior</button>
             {#else}
             <button type="button" class="button is-small" disabled>&larr; Anterior</button>
             {/if}
             {#if paginaSiguiente >= 0}
             <button type="button" class="button is-small"
-                    hx-get="/Mercurius/api/app/loyalty/{resumen.clienteCode}/view?page={paginaSiguiente}&size={size}"
+                    hx-get="{config:['quarkus.http.root-path']}/api/app/loyalty/{resumen.clienteCode}/view?page={paginaSiguiente}&size={size}"
                     hx-target="#drawer-historial" hx-swap="outerHTML">Siguiente &rarr;</button>
             {#else}
             <button type="button" class="button is-small" disabled>Siguiente &rarr;</button>

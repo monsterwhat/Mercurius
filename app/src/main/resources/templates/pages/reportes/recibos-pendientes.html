@@ -15,18 +15,18 @@
         <div class="notification is-light">
             Este reporte es de solo lectura. Para marcar como pagados, procesar o
             activar/desactivar los recibos,
-            <a href="/Mercurius/app/recibos?bucket=todas">ir a Recibos</a>
+            <a href="{config:['quarkus.http.root-path']}/app/recibos?bucket=todas">ir a Recibos</a>
             (pestañas Todas / Pagadas / Procesadas).
         </div>
 
         <div class="box">
-            <form method="get" action="/Mercurius{baseUrl}" id="recibos-pendientes-filtros">
+            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="recibos-pendientes-filtros">
                 <div class="field">
                     <label class="label" for="recibos-pendientes-q">Búsqueda general</label>
                     <input class="input" type="text" id="recibos-pendientes-q" name="q"
                            value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Consecutivo, emisor, condición, fecha…"
-                           hx-get="/Mercurius{baseUrl}"
+                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#recibos-pendientes-tabla-container" hx-swap="innerHTML"/>

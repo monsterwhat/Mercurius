@@ -26,12 +26,12 @@
 !}
 <div id="forma-promocion">
     {#if modo == 'editar' && promocion??}
-    <form hx-put="/Mercurius/api/app/articulos/promociones/{promocion.id}"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
           hx-target="#forma-promocion" hx-swap="outerHTML"
           x-data="{ inicio: '{#if promocion.fechaInicio??}{promocion.fechaInicio.format('yyyy-MM-dd')}{/if}',
                     fin: '{#if promocion.fechaFin??}{promocion.fechaFin.format('yyyy-MM-dd')}{/if}' }">
     {#else}
-    <form hx-post="/Mercurius/api/app/articulos/promociones"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/promociones"
           hx-target="#forma-promocion" hx-swap="outerHTML"
           x-data="{ inicio: '', fin: '' }">
     {/if}
@@ -71,7 +71,7 @@
             {/for}
             <button type="button" class="button is-primary is-small"
                     aria-haspopup="dialog" data-kit-open="selector-articulo-promo"
-                    hx-get="/Mercurius/api/app/articulos/formularios/promociones/articulos"
+                    hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/articulos"
                     hx-target="#selector-articulo-promo-body" hx-swap="innerHTML">Agregar Producto</button>
         </div>
 

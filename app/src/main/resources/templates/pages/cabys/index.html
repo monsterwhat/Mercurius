@@ -43,7 +43,7 @@
         <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
             {#if canImport}
                     <button type="button" class="button is-warning"
-                            hx-post="/Mercurius/api/app/cabys/import"
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/cabys/import"
                             hx-target="#tabla-cabys"
                             hx-swap="outerHTML"
                             hx-disabled-elt="this"

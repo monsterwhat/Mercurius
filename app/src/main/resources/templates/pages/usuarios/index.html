@@ -37,17 +37,17 @@
             {! Stat cards — click to filter the table by status !}
             <div class="stats-grid">
                 <a class="stat-card {#if filtroEstado == null}active{/if}" style="color:inherit"
-                   href="/Mercurius/app/usuarios">
+                   href="{config:['quarkus.http.root-path']}/app/usuarios">
                     <span class="stat-number">{usuariosTotal ?: 0}</span>
                     <span class="stat-label">Total</span>
                 </a>
                 <a class="stat-card {#if filtroEstado == 'activo'}active{/if}" style="color:inherit"
-                   href="/Mercurius/app/usuarios?estado=activo">
+                   href="{config:['quarkus.http.root-path']}/app/usuarios?estado=activo">
                     <span class="stat-number">{usuariosActivosCount ?: 0}</span>
                     <span class="stat-label">Activos</span>
                 </a>
                 <a class="stat-card {#if filtroEstado == 'inactivo'}active{/if}" style="color:inherit"
-                   href="/Mercurius/app/usuarios?estado=inactivo">
+                   href="{config:['quarkus.http.root-path']}/app/usuarios?estado=inactivo">
                     <span class="stat-number">{usuariosInactivosCount ?: 0}</span>
                     <span class="stat-label">Inactivos</span>
                 </a>

@@ -17,7 +17,7 @@
 
   Model:
     modo           String - "crear" | "editar"
-    usuario        Object - Models.Users when editar, null when crear
+    usuario        Object - Models.Usuarios when editar, null when crear
     (the create form is only served to admins — GET /formularios/nuevo is
     @RolesAllowed("admin") — so the "Administrativo" checkbox needs no
     per-request gate, unlike the legacy rendered="#{SessionController.admin}")
@@ -31,10 +31,10 @@
 !}
 <div id="forma-usuario">
     {#if modo == 'editar' && usuario??}
-    <form hx-put="/Mercurius/api/app/users/{usuario.id}/permisos"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}/permisos"
           hx-target="#forma-usuario" hx-swap="outerHTML">
     {#else}
-    <form hx-post="/Mercurius/api/app/users"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/users"
           hx-target="#forma-usuario" hx-swap="outerHTML">
     {/if}
         <div class="field">

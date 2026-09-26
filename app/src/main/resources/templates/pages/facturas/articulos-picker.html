@@ -19,7 +19,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{picker.q}" autocomplete="off"
                    placeholder="Buscar por nombre, código o código de barras..."
-                   hx-get="/Mercurius/api/app/pos/articulos-picker"
+                   hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker"
                    hx-trigger="keyup changed delay:250ms"
                    hx-target="#articulos-picker-fragmento" hx-swap="outerHTML"
                    hx-include="this"/>
@@ -57,7 +57,7 @@
                     <input class="input is-small" type="number" name="cantidad" min="1" step="1" value="1"
                            style="width:5rem"/>
                     <button type="button" class="button is-small is-primary js-pick-articulo"
-                            hx-post="/Mercurius/api/app/pos/articulo-add-form"
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/pos/articulo-add-form"
                             hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">
                         Agregar</button>
                 </form>

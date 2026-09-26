@@ -7,15 +7,17 @@
   must stay self-contained (Quarkus form auth redirects unauthenticated users
   here directly).
 
-  Path facts (quarkus.http.root-path=/Mercurius, Quarkus 3.36.2):
-  - Form POST endpoint registered by FormAuthenticationMechanism lives at
-    /Mercurius/j_security_check (app router mounted under the root path;
-    mechanism matches normalizedPath().endsWith("/j_security_check")).
+  Path facts (Quarkus 3.36.2):
+  - The FormAuthenticationMechanism's POST endpoint is the context-relative
+    "j_security_check" (the app router is mounted under quarkus.http.root-path;
+    the mechanism matches normalizedPath().endsWith("/j_security_check")). The
+    form action below is deliberately RELATIVE so it resolves against the
+    deployment root without this template knowing what that root is.
   - Logo is inlined as a base64 data URI via fragments/logo-img
     (plain META-INF static files are challenged pre-auth; only the
     web-bundler output is public, so no URL-based logo can load here).
-  Both absolute-from-site-root URLs are hardcoded for determinism; see
-  .omo/evidence/t14/implementation-notes.md for the full decision record.
+  W2: nothing on this page hard-codes the deployment root. See
+  .omo/evidence/t14/implementation-notes.md for the original decision record.
 ============================================================================ -->
 <html lang="es">
 <head>
@@ -44,7 +46,7 @@
                             </div>
 
                             {! Rendered only when Quarkus form auth redirects back to
-                               /Mercurius/login?error after failed credentials. !}
+                               {config:['quarkus.http.root-path']}/login?error after failed credentials. !}
                             {#if error}
                             <div class="notification is-danger is-light" role="alert">
                                 <strong>Usuario o contraseña incorrectos.</strong>

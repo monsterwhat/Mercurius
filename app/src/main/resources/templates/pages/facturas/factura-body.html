@@ -35,7 +35,7 @@
         <div class="column is-5">
             {! Barcode capture: Enter posts and redraws the sale panel. !}
             <form id="forma-escaneo" class="box" style="margin-bottom:0.75rem"
-                  hx-post="/Mercurius/api/app/pos/scan-form"
+                  hx-post="{config:['quarkus.http.root-path']}/api/app/pos/scan-form"
                   hx-target="#cart-panel" hx-swap="outerHTML">
                 <label class="label is-small" for="barcode-input">Código de barras</label>
                 <div class="field has-addons" style="margin-bottom:0.25rem">
@@ -51,7 +51,7 @@
                         <button type="button" class="button is-medium is-light" aria-haspopup="dialog"
                                 title="Buscar y agregar un artículo"
                                 data-kit-open="modal-articulos"
-                                hx-get="/Mercurius/api/app/pos/articulos-picker?q="
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker?q="
                                 hx-target="#modal-articulos-body" hx-swap="innerHTML">&#128270; Buscar</button>
                     </div>
                 </div>
@@ -154,7 +154,7 @@
                     out.textContent = '\u00a0';
                     return;
                 }
-                fetch('/Mercurius/api/app/pos/puntos-preview?puntos=' + encodeURIComponent(valor))
+                fetch('{config:['quarkus.http.root-path']}/api/app/pos/puntos-preview?puntos=' + encodeURIComponent(valor))
                     .then(function (r) {
                         return r.json();
                     })

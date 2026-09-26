@@ -21,10 +21,10 @@
 !}
 <div id="forma-articulo">
     {#if modo == 'editar' && articulo??}
-    <form hx-put="/Mercurius/api/app/articulos/{articulo.codigo}"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}"
           hx-target="#forma-articulo" hx-swap="outerHTML">
     {#else}
-    <form hx-post="/Mercurius/api/app/articulos"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/articulos"
           hx-target="#forma-articulo" hx-swap="outerHTML">
     {/if}
         <div class="field">
@@ -47,7 +47,7 @@
                        value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
                 <button type="button" class="button is-link"
                         aria-haspopup="dialog" data-kit-open="buscador-cabys"
-                        hx-get="/Mercurius/api/app/articulos/cabys?q="
+                        hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys?q="
                         hx-target="#buscador-cabys-body" hx-swap="innerHTML">Buscar</button>
             </div>
         </div>
@@ -219,7 +219,7 @@
                     if (!nombre || !nombre.trim()) {
                         return;
                     }
-                    var url = '/Mercurius/api/app/categorias/' + (esDepartamento ? 'departamentos' : 'familias');
+                    var url = '{config:['quarkus.http.root-path']}/api/app/categorias/' + (esDepartamento ? 'departamentos' : 'familias');
                     var body = new URLSearchParams();
                     body.append('nombre', nombre.trim());
                     fetch(url, {

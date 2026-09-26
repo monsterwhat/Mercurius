@@ -36,7 +36,7 @@
         <p class="subtitle is-7">Artículo pendiente de procesamiento</p>
     </div>
 
-    <form hx-post="/Mercurius/api/app/articulos/{articulo.codigo}/revision"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/revision"
           hx-target="#forma-revision" hx-swap="outerHTML">
         <input type="hidden" name="modo" value="{modoRapido}"/>
 
@@ -81,7 +81,7 @@
                        value="{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
                 <button type="button" class="button is-link"
                         aria-haspopup="dialog" data-kit-open="buscador-cabys"
-                        hx-get="/Mercurius/api/app/articulos/cabys?q="
+                        hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys?q="
                         hx-target="#buscador-cabys-body" hx-swap="innerHTML">Seleccionar Código CABYS</button>
             </div>
         </div>
@@ -167,7 +167,7 @@
 
         <div class="buttons is-centered mt-4">
             <button class="button is-warning is-rounded" type="button"
-                    hx-post="/Mercurius/api/app/articulos/{articulo.codigo}/revision/saltar"
+                    hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/revision/saltar"
                     hx-target="#forma-revision" hx-swap="outerHTML">
                 Saltar
             </button>

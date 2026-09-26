@@ -16,7 +16,7 @@
     toastSeverity / toastMessage    - OOB toast (nullable)
 !}
 <div id="forma-estado">
-    <form hx-put="/Mercurius/api/app/ordenes/{orden.id}/estado"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}/estado"
           hx-target="#forma-estado" hx-swap="outerHTML">
         <div class="columns is-multiline">
             <div class="column is-12">

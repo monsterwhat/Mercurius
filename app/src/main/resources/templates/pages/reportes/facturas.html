@@ -12,12 +12,12 @@
         <h1 class="title is-3">Facturas Emitidas</h1>
 
         <div class="box">
-            <form method="get" action="/Mercurius{baseUrl}" id="facturas-filtros">
+            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="facturas-filtros">
                 <div class="field">
                     <label class="label" for="facturas-q">Búsqueda general</label>
                     <input class="input" type="text" id="facturas-q" name="q" value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Consecutivo, emisor, condición, fecha…"
-                           hx-get="/Mercurius{baseUrl}"
+                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#facturas-tabla-container" hx-swap="innerHTML"/>

@@ -79,7 +79,7 @@
                         {#include _kit/modal id="crear-articulo" title="Crear Artículo" triggerLabel="Crear Artículo" triggerClass="is-primary"
                              bodyUrl="/api/app/articulos/formularios/articulos/nueva"}{/include}
                         {#if canExport}
-                        <form method="post" action="/Mercurius/api/app/export">
+                        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
@@ -104,7 +104,7 @@
                 </div>
                 <div class="level-right">
                     {#if canExport}
-                    <form method="post" action="/Mercurius/api/app/export">
+                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -125,7 +125,7 @@
                 </div>
                 <div class="level-right">
                     {#if canExport}
-                    <form method="post" action="/Mercurius/api/app/export">
+                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="articulos"/>
                         <input type="hidden" name="type" value="xlsx"/>
@@ -149,7 +149,7 @@
                         {#include _kit/modal id="revision-rapida" title="Procesado Rápido" triggerLabel="Procesado Rápido" triggerClass="is-warning"
                              bodyUrl="/api/app/articulos/revision/siguiente"}{/include}
                         {#if canExport}
-                        <form method="post" action="/Mercurius/api/app/export">
+                        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="articulos"/>
                             <input type="hidden" name="type" value="xlsx"/>
@@ -177,7 +177,7 @@
                         {#include _kit/modal id="crear-promocion" title="Crear Promoción" triggerLabel="Crear Promoción" triggerClass="is-primary"
                              bodyUrl="/api/app/articulos/formularios/promociones/nueva"}{/include}
                         {#if canExport}
-                        <form method="post" action="/Mercurius/api/app/export">
+                        <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                             <input type="hidden" name="dataset" value="promociones"/>
                             <input type="hidden" name="type" value="xlsx"/>

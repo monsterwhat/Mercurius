@@ -19,7 +19,8 @@
                                   (the REPORT rendering belongs to T19).
 
   CSRF is inherited from layout.html body hx-headers; root-path prefixing is
-  the kit's job (/Mercurius everywhere).
+  applied from configuration ({config:['quarkus.http.root-path']}), so this
+  template never hard-codes the deployment root.
 !}
 {#include layout}
     {#title}{titulo} | Mercurius{/title}
@@ -75,20 +76,20 @@
                                name="articulo" inputmode="numeric"
                                placeholder="Código del artículo"
                                value="{articuloCodigoInput}"
-                               hx-get="/Mercurius{baseUrl}"
+                               hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                                hx-trigger="keyup changed delay:300ms"
                                hx-target="#alerta-config-forma" hx-swap="outerHTML"/>
                     </div>
                     <div class="control">
                         <button class="button is-info" type="button"
-                                hx-get="/Mercurius{baseUrl}"
+                                hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                                 hx-include="#input-articulo"
                                 hx-target="#alerta-config-forma" hx-swap="outerHTML">Cargar</button>
                     </div>
                 </div>
 
                 {#if cargado && umbral?? && umbral.articuloCodigo??}
-                <form hx-put="/Mercurius/api/app/stock-alert-config?articulo={umbral.articuloCodigo}"
+                <form hx-put="{config:['quarkus.http.root-path']}/api/app/stock-alert-config?articulo={umbral.articuloCodigo}"
                       hx-target="#alerta-config-forma" hx-swap="outerHTML">
                     <input type="hidden" name="estadoAlertasPresente" value="1"/>
                     <div class="field">

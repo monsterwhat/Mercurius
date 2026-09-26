@@ -35,7 +35,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Busqueda general de todos los campos"
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
             <span class="icon is-small is-left">&#128269;</span>
@@ -57,10 +57,10 @@
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small is-success" title="Editar plantilla"
                                 aria-haspopup="dialog" data-kit-open="editar-plantilla"
-                                hx-get="/Mercurius/api/app/email-templates/formularios/{plantilla.id}"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/email-templates/formularios/{plantilla.id}"
                                 hx-target="#editar-plantilla-body" hx-swap="innerHTML">&#9998;</button>
                         <button type="button" class="button is-small is-danger" title="Eliminar plantilla"
-                                hx-delete="/Mercurius/api/app/email-templates/{plantilla.id}"
+                                hx-delete="{config:['quarkus.http.root-path']}/api/app/email-templates/{plantilla.id}"
                                 hx-confirm="¿Eliminar la plantilla {plantilla.nombre}? Esta acción no se puede deshacer."
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">&#128465;</button>
                     </div>

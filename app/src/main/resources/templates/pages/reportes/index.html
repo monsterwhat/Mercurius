@@ -40,15 +40,15 @@
                         </div>
                         <div class="column">
                             <div class="buttons">
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">Movimientos</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">Facturación de Artículos</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">Ventas por Familia</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">Ventas por Departamento</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/facturas" title="Lista completa de facturas emitidas">Todas las Facturas</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">Tendencias de Ventas</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">Productos Destacados</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">Estacionalidad</a>
-                                <a class="button is-info is-fullwidth" href="/Mercurius/app/tributacion/declaracion" title="Resumen de impuestos por período">Resumen de Impuestos</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">Movimientos</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">Facturación de Artículos</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">Ventas por Familia</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">Ventas por Departamento</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/facturas" title="Lista completa de facturas emitidas">Todas las Facturas</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">Tendencias de Ventas</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">Productos Destacados</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">Estacionalidad</a>
+                                <a class="button is-info is-fullwidth" href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion" title="Resumen de impuestos por período">Resumen de Impuestos</a>
                             </div>
                         </div>
                     </div>
@@ -66,13 +66,13 @@
                         </div>
                         <div class="column">
                             <div class="buttons">
-                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/recibos" title="Lista completa de recibos generados">Todos los Recibos</a>
-                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/reportes/recibos/pendientes" title="Recibos pendientes de pago">Recibos Pendientes</a>
-                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/reportes/recibos/vencidos" title="Recibos vencidos">Recibos Vencidos</a>
-                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/reportes/correos" title="Configuración de envío automático de reportes">Reportes por Email</a>
-                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">Plantillas de Correo</a>
+                                <a class="button is-primary is-fullwidth" href="{config:['quarkus.http.root-path']}/app/recibos" title="Lista completa de recibos generados">Todos los Recibos</a>
+                                <a class="button is-primary is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/pendientes" title="Recibos pendientes de pago">Recibos Pendientes</a>
+                                <a class="button is-primary is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/vencidos" title="Recibos vencidos">Recibos Vencidos</a>
+                                <a class="button is-primary is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/correos" title="Configuración de envío automático de reportes">Reportes por Email</a>
+                                <a class="button is-primary is-fullwidth" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">Plantillas de Correo</a>
                                 {#if inject:securityIdentity.hasRole('admin')}
-                                <a class="button is-primary is-fullwidth" href="/Mercurius/app/registros/log" title="Registros internos del sistema">Registros Internos</a>
+                                <a class="button is-primary is-fullwidth" href="{config:['quarkus.http.root-path']}/app/registros/log" title="Registros internos del sistema">Registros Internos</a>
                                 {/if}
                             </div>
                         </div>
@@ -91,19 +91,19 @@
                         </div>
                         <div class="column">
                             <div class="buttons">
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/articulos" title="Catálogo completo de artículos">Artículos</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/resumen" title="Estado general del inventario">Resumen de Inventario</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/categorias" title="Reporte de artículos por departamento">Departamentos</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/categorias" title="Reporte de artículos por familia">Familias</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/inventarios" title="Historial de inventarios realizados">Inventarios</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">Generar Etiquetas</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">Márgenes de Utilidad</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">Alertas de Stock</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">Pronósticos de Stock</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">Mermas y Perdidas</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/reportes/inventario/precios" title="Histórico de precios de artículos">Historico de Precios</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/api/app/ordenes/table" title="Órdenes de compra a proveedores">Órdenes de Compra</a>
-                                <a class="button is-danger is-fullwidth" href="/Mercurius/app/categorias" title="Métricas de rendimiento de proveedores">Scorecard de Proveedores</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/articulos" title="Catálogo completo de artículos">Artículos</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen" title="Estado general del inventario">Resumen de Inventario</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por departamento">Departamentos</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por familia">Familias</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/inventarios" title="Historial de inventarios realizados">Inventarios</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">Generar Etiquetas</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">Márgenes de Utilidad</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">Alertas de Stock</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">Pronósticos de Stock</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">Mermas y Perdidas</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios" title="Histórico de precios de artículos">Historico de Precios</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/api/app/ordenes/table" title="Órdenes de compra a proveedores">Órdenes de Compra</a>
+                                <a class="button is-danger is-fullwidth" href="{config:['quarkus.http.root-path']}/app/categorias" title="Métricas de rendimiento de proveedores">Scorecard de Proveedores</a>
                             </div>
                         </div>
                     </div>
@@ -121,9 +121,9 @@
                         </div>
                         <div class="column">
                             <div class="buttons">
-                                <a class="button is-warning is-fullwidth" href="/Mercurius/app/reportes/usuarios" title="Información detallada de usuarios del sistema">Usuarios Detallados</a>
-                                <a class="button is-warning is-fullwidth" href="/Mercurius/app/reportes/clientes" title="Reporte de clientes registrados">Clientes</a>
-                                <a class="button is-warning is-fullwidth" href="/Mercurius/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">Puntos y Recompensas</a>
+                                <a class="button is-warning is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/usuarios" title="Información detallada de usuarios del sistema">Usuarios Detallados</a>
+                                <a class="button is-warning is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" title="Reporte de clientes registrados">Clientes</a>
+                                <a class="button is-warning is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">Puntos y Recompensas</a>
                             </div>
                         </div>
                     </div>

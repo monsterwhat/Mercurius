@@ -35,10 +35,38 @@
 
             {! Stat cards — polled so approvals made elsewhere stay fresh !}
             <div id="inventario-badges"
-                 hx-get="/Mercurius/api/app/inventario/badges"
+                 hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/badges"
                  hx-trigger="every 30s" hx-swap="innerHTML">
                 {#include pages/inventario/badges badges=badges /}
             </div>
+        </div>
+
+        {! ── Subir XML (subirFacturas.xhtml parity: uploadController → Parser).
+            hx-encoding="multipart/form-data" POST with progress bar; the
+            upload-resultado fragment surfaces parser errors. ── !}
+        <div class="level mt-5">
+            <div class="level-left">
+                <h2 class="title is-4" style="margin-bottom:0">Subir Facturas Electrónicas</h2>
+            </div>
+        </div>
+        <div class="box is-shadowless" style="padding:0.75rem">
+            <form id="inventario-upload-forma"
+                  hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/upload"
+                  hx-encoding="multipart/form-data"
+                  hx-target="#inventario-upload-resultado" hx-swap="innerHTML">
+                <div class="field">
+                    <label class="label" for="inventario-upload-archivos">Archivos XML de facturas electrónicas v4.4</label>
+                    <div class="control">
+                        <input class="input" type="file" id="inventario-upload-archivos"
+                               name="files" accept=".xml" multiple required/>
+                    </div>
+                </div>
+                <progress id="inventario-upload-progreso" class="progress is-primary" value="0" max="100">0%</progress>
+                <div class="field">
+                    <button class="button is-primary" type="submit">Procesar Facturas</button>
+                </div>
+            </form>
+            <div id="inventario-upload-resultado"></div>
         </div>
 
         {! ── Ajustes Activos ──────────────────────────────────────── !}
@@ -52,7 +80,7 @@
                     {#include _kit/modal id="crear-ajuste" title="Crear Ajuste" triggerLabel="Crear Ajuste" triggerClass="is-success"
                          bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
-                    <form method="post" action="/Mercurius/api/app/export">
+                    <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="inventario"/>
                         <input type="hidden" name="type" value="pdf"/>

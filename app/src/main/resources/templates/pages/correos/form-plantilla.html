@@ -25,10 +25,10 @@
 !}
 <div id="forma-plantilla">
     {#if modo == 'editar' && plantilla??}
-    <form hx-put="/Mercurius/api/app/email-templates/{plantilla.id}"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/email-templates/{plantilla.id}"
           hx-target="#forma-plantilla" hx-swap="outerHTML">
     {#else}
-    <form hx-post="/Mercurius/api/app/email-templates"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/email-templates"
           hx-target="#forma-plantilla" hx-swap="outerHTML">
     {/if}
         <div class="field">
