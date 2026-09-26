@@ -23,13 +23,13 @@
         </div>
 
         <div class="box">
-            <form method="get" action="/Mercurius{baseUrl}" id="usuarios-filtros">
+            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="usuarios-filtros">
                 <div class="field">
                     <label class="label" for="usuarios-q">Búsqueda general</label>
                     <input class="input" type="text" id="usuarios-q" name="q"
                            value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Nombre de usuario, permisos…"
-                           hx-get="/Mercurius{baseUrl}"
+                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#usuarios-tabla-container" hx-swap="innerHTML"/>

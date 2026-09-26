@@ -39,7 +39,7 @@
         </div>
     </div>
 
-    <form hx-post="/Mercurius/api/app/inventario/ajustes/{ajuste.codigo}/aprobar"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{ajuste.codigo}/aprobar"
           hx-target="#rapido-inventario-body" hx-swap="innerHTML">
         <input type="hidden" name="modo" value="rapido"/>
         <div class="field">
@@ -60,7 +60,7 @@
         <div class="buttons is-centered mt-4">
             <button class="button is-success is-medium" type="submit">Procesar y Siguiente</button>
             <button class="button is-warning" type="button"
-                    hx-post="/Mercurius/api/app/inventario/ajustes/{ajuste.codigo}/omitir"
+                    hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{ajuste.codigo}/omitir"
                     hx-target="#rapido-inventario-body" hx-swap="innerHTML">Omitir</button>
             <button class="button" type="button" data-kit-close>Cerrar</button>
         </div>

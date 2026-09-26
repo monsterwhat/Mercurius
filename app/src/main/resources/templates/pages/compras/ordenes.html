@@ -35,37 +35,37 @@
         <div class="stats-grid" style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem">
             <a class="box has-text-centered stat-card {#if estadoActivo == null}active{/if}"
                style="min-width:7rem;text-decoration:none;color:inherit"
-               href="/Mercurius/api/app/ordenes/table">
+               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table">
                 <span class="title is-4" style="display:block">{ordenesTotal ?: 0}</span>
                 <span class="subtitle is-6">Todas</span>
             </a>
             <a class="box has-text-centered stat-card {#if estadoActivo == 'BORRADOR'}active{/if}"
                style="min-width:7rem;text-decoration:none;color:inherit"
-               href="/Mercurius/api/app/ordenes/table?estado=BORRADOR">
+               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=BORRADOR">
                 <span class="title is-4" style="display:block">{countBorrador ?: 0}</span>
                 <span class="subtitle is-6">Borrador</span>
             </a>
             <a class="box has-text-centered stat-card {#if estadoActivo == 'ENVIADA'}active{/if}"
                style="min-width:7rem;text-decoration:none;color:inherit"
-               href="/Mercurius/api/app/ordenes/table?estado=ENVIADA">
+               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=ENVIADA">
                 <span class="title is-4" style="display:block">{countEnviada ?: 0}</span>
                 <span class="subtitle is-6">Enviadas</span>
             </a>
             <a class="box has-text-centered stat-card {#if estadoActivo == 'CONFIRMADA'}active{/if}"
                style="min-width:7rem;text-decoration:none;color:inherit"
-               href="/Mercurius/api/app/ordenes/table?estado=CONFIRMADA">
+               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=CONFIRMADA">
                 <span class="title is-4" style="display:block">{countConfirmada ?: 0}</span>
                 <span class="subtitle is-6">Confirmadas</span>
             </a>
             <a class="box has-text-centered stat-card {#if estadoActivo == 'RECIBIDA'}active{/if}"
                style="min-width:7rem;text-decoration:none;color:inherit"
-               href="/Mercurius/api/app/ordenes/table?estado=RECIBIDA">
+               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=RECIBIDA">
                 <span class="title is-4" style="display:block">{countRecibida ?: 0}</span>
                 <span class="subtitle is-6">Recibidas</span>
             </a>
             <a class="box has-text-centered stat-card {#if estadoActivo == 'FACTURADA'}active{/if}"
                style="min-width:7rem;text-decoration:none;color:inherit"
-               href="/Mercurius/api/app/ordenes/table?estado=FACTURADA">
+               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=FACTURADA">
                 <span class="title is-4" style="display:block">{countFacturada ?: 0}</span>
                 <span class="subtitle is-6">Facturadas</span>
             </a>

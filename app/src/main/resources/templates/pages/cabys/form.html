@@ -15,7 +15,7 @@
     toastMessage  String        - OOB toast text (nullable)
 !}
 <div id="forma-cabys">
-    <form hx-put="/Mercurius/api/app/cabys/{cabys.codigo}"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/cabys/{cabys.codigo}"
           hx-target="#forma-cabys" hx-swap="outerHTML">
         <div class="field">
             <label class="label" for="cabys-codigo">Código:</label>

@@ -48,7 +48,7 @@
                         </td>
                         <td>
                             <button type="button" class="button is-small is-info"
-                                    hx-get="/Mercurius{baseUrl}/{c.code}/historial"
+                                    hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
                                     hx-target="#loyalty-historial-body"
                                     onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
                         </td>
@@ -61,13 +61,13 @@
         <h2 class="title is-5 mt-5">Todos los Clientes</h2>
 
         <div class="box">
-            <form method="get" action="/Mercurius{baseUrl}" id="loyalty-filtros">
+            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="loyalty-filtros">
                 <div class="field">
                     <label class="label" for="loyalty-q">Búsqueda general</label>
                     <input class="input" type="text" id="loyalty-q" name="q"
                            value="{#if filtros.q??}{filtros.q}{/if}"
                            placeholder="Nombre, correo, cédula, puntos…"
-                           hx-get="/Mercurius{baseUrl}"
+                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-include="closest form"
                            hx-target="#loyalty-tabla-container" hx-swap="innerHTML"/>
@@ -90,7 +90,7 @@
                         <td>{#if c.lastPurchaseDate??}{{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}}{/if}</td>
                         <td>
                             <button type="button" class="button is-small is-info"
-                                    hx-get="/Mercurius{baseUrl}/{c.code}/historial"
+                                    hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
                                     hx-target="#loyalty-historial-body"
                                     onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
                         </td>

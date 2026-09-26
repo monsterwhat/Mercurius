@@ -16,7 +16,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Buscar departamentos..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-include="#tab-departamentos"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
@@ -42,10 +42,10 @@
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small is-success" title="Editar departamento"
                                 aria-haspopup="dialog" data-kit-open="editar-departamento"
-                                hx-get="/Mercurius/api/app/categorias/formularios/departamento/{departamento.id}"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/categorias/formularios/departamento/{departamento.id}"
                                 hx-target="#editar-departamento-body" hx-swap="innerHTML">&#9998;</button>
                         <button type="button" class="button is-small is-warning" title="Cambiar estado"
-                                hx-delete="/Mercurius/api/app/categorias/departamentos/{departamento.id}"
+                                hx-delete="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos/{departamento.id}"
                                 hx-confirm="¿Cambiar el estado del departamento {departamento.nombre}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
                     </div>

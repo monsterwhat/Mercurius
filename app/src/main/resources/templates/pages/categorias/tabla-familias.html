@@ -32,7 +32,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Buscar familias..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-include="#tab-familias"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
@@ -53,10 +53,10 @@
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small is-success" title="Editar familia"
                                 aria-haspopup="dialog" data-kit-open="editar-familia"
-                                hx-get="/Mercurius/api/app/categorias/formularios/familia/{familia.id}"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/categorias/formularios/familia/{familia.id}"
                                 hx-target="#editar-familia-body" hx-swap="innerHTML">&#9998;</button>
                         <button type="button" class="button is-small is-warning" title="Cambiar estado"
-                                hx-delete="/Mercurius/api/app/categorias/familias/{familia.id}"
+                                hx-delete="{config:['quarkus.http.root-path']}/api/app/categorias/familias/{familia.id}"
                                 hx-confirm="¿Cambiar el estado de la familia {familia.nombre}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
                     </div>

@@ -22,7 +22,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{q}" autocomplete="off"
                    placeholder="Buscar códigos CAByS..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
             <span class="icon is-small is-left">&#128269;</span>

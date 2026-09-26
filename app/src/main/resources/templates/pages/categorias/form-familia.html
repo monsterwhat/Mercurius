@@ -16,10 +16,10 @@
 !}
 <div id="forma-familia">
     {#if modo == 'editar' && familia??}
-    <form hx-put="/Mercurius/api/app/categorias/familias/{familia.id}"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/categorias/familias/{familia.id}"
           hx-target="#forma-familia" hx-swap="outerHTML">
     {#else}
-    <form hx-post="/Mercurius/api/app/categorias/familias"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/categorias/familias"
           hx-target="#forma-familia" hx-swap="outerHTML">
     {/if}
         <div class="field">

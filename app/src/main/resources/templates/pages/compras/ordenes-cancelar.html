@@ -13,7 +13,7 @@
     toastSeverity / toastMessage    - OOB toast (nullable)
 !}
 <div id="forma-cancelar">
-    <form hx-post="/Mercurius/api/app/ordenes/{orden.id}/cancelar"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}/cancelar"
           hx-target="#forma-cancelar" hx-swap="outerHTML">
         <div class="columns is-multiline">
             <div class="column is-12">

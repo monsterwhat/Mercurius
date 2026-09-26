@@ -44,7 +44,7 @@
                         <td>{a.modificado}</td>
                         <td class="has-text-centered">
                             <a class="button is-small is-info"
-                               href="/Mercurius/app/registros/log/descargar?archivo={a.nombre}">
+                               href="{config:['quarkus.http.root-path']}/app/registros/log/descargar?archivo={a.nombre}">
                                 Descargar</a>
                         </td>
                     </tr>

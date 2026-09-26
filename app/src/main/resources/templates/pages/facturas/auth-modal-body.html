@@ -41,7 +41,7 @@
         </div>
         <div class="field">
             <button type="button" class="button is-warning is-fullwidth"
-                    hx-post="/Mercurius/api/app/pos/override-authorize-form"
+                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/override-authorize-form"
                     hx-include="#forma-autorizacion"
                     hx-target="#modal-autorizacion-body" hx-swap="outerHTML">Autorizar</button>
         </div>

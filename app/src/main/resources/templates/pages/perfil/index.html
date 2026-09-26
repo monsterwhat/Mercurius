@@ -46,7 +46,7 @@
         {! ── Cambiar nombre de usuario ───────────────────────────── !}
         <div class="box">
             <h2 class="title is-5">Cambiar nombre de usuario</h2>
-            <form hx-put="/Mercurius/api/app/perfil/nombre"
+            <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/nombre"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
                 <div class="field">
@@ -62,7 +62,7 @@
         {! ── Cambiar correo electronico ──────────────────────────── !}
         <div class="box">
             <h2 class="title is-5">Cambiar correo electronico</h2>
-            <form hx-put="/Mercurius/api/app/perfil/email"
+            <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/email"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
                 <div class="field">
@@ -78,7 +78,7 @@
         {! ── Cambiar contrasena ──────────────────────────────────── !}
         <div class="box">
             <h2 class="title is-5">Cambiar contrasena</h2>
-            <form hx-put="/Mercurius/api/app/perfil/password"
+            <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/password"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
                 <div class="field">

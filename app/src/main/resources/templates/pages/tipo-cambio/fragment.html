@@ -65,7 +65,7 @@
                 <div class="buttons">
                     <button class="button is-primary is-rounded" type="button"
                             data-tc-actualizar
-                            hx-post="/Mercurius/app/tipo-cambio/actualizar"
+                            hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/actualizar"
                             hx-target="#modal-tipo-cambio-body"
                             hx-swap="innerHTML">
                         <span class="icon"><i class="fas fa-sync-alt"></i></span>
@@ -87,7 +87,7 @@
 
     <div class="box">
         <p class="heading">Tasa manual del dólar</p>
-        <form hx-post="/Mercurius/app/tipo-cambio/manual"
+        <form hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/manual"
               hx-target="#modal-tipo-cambio-body" hx-swap="innerHTML">
             <div class="columns is-mobile">
                 <div class="column">
@@ -124,7 +124,7 @@
                             @click="tcHistorialOpen = false"></button>
                 </header>
                 <section class="modal-card-body" id="tc-historial-body"
-                         hx-get="/Mercurius/app/tipo-cambio/historial"
+                         hx-get="{config:['quarkus.http.root-path']}/app/tipo-cambio/historial"
                          hx-trigger="load"
                          hx-swap="innerHTML">
                     <p class="has-text-grey">Cargando historial&hellip;</p>

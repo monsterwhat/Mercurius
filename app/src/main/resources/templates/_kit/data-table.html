@@ -64,8 +64,20 @@
                 {#for col in headers}
                     {#if col.key??}
                     <th scope="col" {#if col.key == sortKey}{#if sortDir == 'desc'}aria-sort="descending"{#else}aria-sort="ascending"{/if}{/if}>
-                        <!-- literal /Mercurius: the quarkus.http.root-path config key is absent from runtime config and 500s on render -->
-                        <a href="/Mercurius{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+                        <!--
+                          W2 (root-path normalization): the deployment root is read
+                          from configuration via {config:['quarkus.http.root-path']},
+                          never hard-coded. quarkus.http.root-path IS declared in
+                          application.properties, so the previous comment here
+                          ("absent from runtime config and 500s on render") was
+                          STALE and has been removed.
+
+                          Do not inline the resolved value, and do not reintroduce
+                          a hard-coded root path: the whole point is that the kit
+                          owns root-path resolution so templates never learn the
+                          deployment context. Pinned by RootPathNormalizationTest.
+                        -->
+                        <a href="{config:['quarkus.http.root-path']}{baseUrl}?sort={col.key}&dir={#if col.key == sortKey && sortDir == 'asc'}desc{#else}asc{/if}{#if page??}&page={page}{/if}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
                            title="Ordenar por {col.label}" data-kit-sort="{col.key}">{col.label}</a>
                         {#if col.key == sortKey}{#if sortDir == 'desc'}<span aria-hidden="true">▼</span>{#else}<span aria-hidden="true">▲</span>{/if}{/if}
                     </th>

@@ -16,9 +16,9 @@
                        SERVER decides the window so this template stays
                        arithmetic-free. When absent only prev/next render.
     baseUrl    String   - context-path-relative endpoint, e.g.
-                       "/app/articulos". The /Mercurius
-                       prefix is added HERE (same convention as
-                       fragments/navbar.html) - callers must NOT pre-prefix.
+                       "/app/articulos". The deployment root is read from
+                       configuration ({config:['quarkus.http.root-path']}) and
+                       prepended HERE - callers must NOT pre-prefix it.
     params     Map<String,Object> - OPTIONAL extra query params preserved
                        on every emitted href (filters, sort, dir...).
                        Values must already be URL-safe: no encoding is
@@ -40,7 +40,7 @@
 
     {#if page > 1}
     <a class="pagination-previous" rel="prev"
-       href="/Mercurius{baseUrl}?page={page - 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+       href="{config:['quarkus.http.root-path']}{baseUrl}?page={page - 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
        data-kit-page="{page - 1}">Anterior</a>
     {#else}
     <button class="pagination-previous" type="button" disabled>Anterior</button>
@@ -48,7 +48,7 @@
 
     {#if page < totalPages}
     <a class="pagination-next" rel="next"
-       href="/Mercurius{baseUrl}?page={page + 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
+       href="{config:['quarkus.http.root-path']}{baseUrl}?page={page + 1}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}"
        data-kit-page="{page + 1}">Siguiente</a>
     {#else}
     <button class="pagination-next" type="button" disabled>Siguiente</button>
@@ -59,10 +59,10 @@
         {#for num in pages}
             {#if num == page}
             <li><a class="pagination-link is-current" aria-current="page"
-                   href="/Mercurius{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
+                   href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
             {#else}
             <li><a class="pagination-link"
-                   href="/Mercurius{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
+                   href="{config:['quarkus.http.root-path']}{baseUrl}?page={num}{#if size??}&size={size}{/if}{#if params??}{#for p in params.entrySet()}&{p.key}={p.value}{/for}{/if}">{num}</a></li>
             {/if}
         {/for}
     </ul>

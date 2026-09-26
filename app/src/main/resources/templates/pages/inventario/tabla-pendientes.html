@@ -11,7 +11,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Buscar movimientos pendientes..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
             <span class="icon is-small is-left">&#128269;</span>
@@ -32,10 +32,10 @@
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small is-warning" title="Procesar movimiento"
                                 aria-haspopup="dialog" data-kit-open="revision-ajuste"
-                                hx-get="/Mercurius/api/app/inventario/formularios/revision/{movimiento.codigo}"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/revision/{movimiento.codigo}"
                                 hx-target="#revision-ajuste-body" hx-swap="innerHTML">Procesar</button>
                         <button type="button" class="button is-small is-danger" title="Rechazar movimiento"
-                                hx-post="/Mercurius/api/app/inventario/ajustes/{movimiento.codigo}/rechazar"
+                                hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{movimiento.codigo}/rechazar"
                                 hx-confirm="¿Rechazar el movimiento {movimiento.codigo}? Quedará inactivo."
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">&#10007;</button>
                     </div>

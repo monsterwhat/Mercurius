@@ -28,10 +28,10 @@
 !}
 <div id="forma-orden">
     {#if modo == 'editar' && orden??}
-    <form hx-put="/Mercurius/api/app/ordenes/{orden.id}"
+    <form hx-put="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}"
           hx-target="#forma-orden" hx-swap="outerHTML">
     {#else}
-    <form hx-post="/Mercurius/api/app/ordenes"
+    <form hx-post="{config:['quarkus.http.root-path']}/api/app/ordenes"
           hx-target="#forma-orden" hx-swap="outerHTML">
     {/if}
         {#if modo == 'editar' && orden??}
@@ -102,7 +102,7 @@
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
                     <input class="input js-articulo-nombre" type="text" autocomplete="off"
                            placeholder="Buscar artÃ­culo..." value="{#if linea.nombre??}{linea.nombre}{/if}"
-                           hx-get="/Mercurius/api/app/ordenes/articulos"
+                           hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
                            hx-trigger="keyup changed delay:300ms"
                            hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
                     <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30"></div>
@@ -133,7 +133,7 @@
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
                     <input class="input js-articulo-nombre" type="text" autocomplete="off"
                            placeholder="Buscar artÃ­culo..."
-                           hx-get="/Mercurius/api/app/ordenes/articulos"
+                           hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
                            hx-trigger="keyup changed delay:300ms"
                            hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
                     <div class="js-articulo-resultados box is-shadowless" style="position:absolute;z-index:30"></div>

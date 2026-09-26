@@ -10,7 +10,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
                    placeholder="Buscar movimientos inactivos..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
             <span class="icon is-small is-left">&#128269;</span>
@@ -30,7 +30,7 @@
                 <td class="has-text-centered">
                     <button type="button" class="button is-small is-info" title="Ver detalles"
                             aria-haspopup="dialog" data-kit-open="detalles-ajuste"
-                            hx-get="/Mercurius/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
+                            hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/ajuste/{movimiento.codigo}/detalles"
                             hx-target="#detalles-ajuste-body" hx-swap="innerHTML">&#128065;</button>
                 </td>
             </tr>

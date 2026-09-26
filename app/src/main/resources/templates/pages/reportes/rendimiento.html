@@ -35,7 +35,7 @@
 
         <div class="box">
             <form method="get"
-                  action="/Mercurius{baseUrl}"
+                  action="{config:['quarkus.http.root-path']}{baseUrl}"
                   class="columns is-multiline is-vcentered is-mobile">
                 <input type="hidden" name="seccion" value="{seccion}"/>
                 <div class="column is-narrow field">
@@ -76,7 +76,7 @@
             <p class="title is-5">Ventas por Departamento</p>
             <div style="width:100%; overflow-x:auto;">
             <canvas id="grafica-rendimiento" width="900" height="320" style="max-width:100%; height:auto; display:block;"
-                    data-root="/Mercurius"
+                    data-root="{config:['quarkus.http.root-path']}"
                     data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
                 Su navegador no soporta canvas.
             </canvas>

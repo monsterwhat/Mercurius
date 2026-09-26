@@ -85,21 +85,21 @@
                 <form class="is-inline" style="display:inline">
                     <input type="hidden" name="delta" value="-1"/>
                     <button type="button" class="button is-small" aria-label="Restar uno"
-                            hx-post="/Mercurius/api/app/pos/item/{item.codigo}/qty-form"
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-form"
                             hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">&minus;</button>
                 </form>
                 <form class="is-inline" style="display:inline">
                     <input type="number" name="cantidad" step="any" min="0"
                            value="{item.cantidad}" class="input is-small has-text-centered"
                            aria-label="Cantidad del artículo" style="width:4.5rem"
-                           hx-post="/Mercurius/api/app/pos/item/{item.codigo}/qty-set-form"
+                           hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-set-form"
                            hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML"
                            hx-trigger="change"/>
                 </form>
                 <form class="is-inline" style="display:inline">
                     <input type="hidden" name="delta" value="1"/>
                     <button type="button" class="button is-small" aria-label="Sumar uno"
-                            hx-post="/Mercurius/api/app/pos/item/{item.codigo}/qty-form"
+                            hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/qty-form"
                             hx-include="closest form" hx-target="#cart-panel" hx-swap="outerHTML">+</button>
                 </form>
             </td>
@@ -108,7 +108,7 @@
             <td class="has-text-centered">
                 <button type="button" class="button is-small is-danger" aria-label="Quitar artículo"
                         title="Quitar del carrito"
-                        hx-post="/Mercurius/api/app/pos/item/{item.codigo}/remove-form"
+                        hx-post="{config:['quarkus.http.root-path']}/api/app/pos/item/{item.codigo}/remove-form"
                         hx-target="#cart-panel" hx-swap="outerHTML">&times;</button>
             </td>
         </tr>
@@ -137,14 +137,14 @@
         </div>
         <div class="control">
             <button type="button" class="button is-small is-link"
-                    hx-post="/Mercurius/api/app/pos/puntos-form" hx-include="#forma-puntos"
+                    hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form" hx-include="#forma-puntos"
                     hx-target="#cart-panel" hx-swap="outerHTML">Aplicar puntos</button>
         </div>
         <div class="control">
             <form style="display:inline">
                 <input type="hidden" name="puntosARedimir" value="0"/>
                 <button type="button" class="button is-small"
-                        hx-post="/Mercurius/api/app/pos/puntos-form" hx-include="closest form"
+                        hx-post="{config:['quarkus.http.root-path']}/api/app/pos/puntos-form" hx-include="closest form"
                         hx-target="#cart-panel" hx-swap="outerHTML">Quitar</button>
             </form>
         </div>
@@ -166,11 +166,11 @@
 
     <div class="buttons" style="margin-bottom:0">
         <button type="button" id="btn-facturar" class="button is-success"
-                hx-post="/Mercurius/api/app/pos/facturar-form"
+                hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
                 hx-include="#forma-tipo-documento"
                 hx-target="#facturar-resultado" hx-swap="innerHTML">&#128196; Facturar</button>
         <button type="button" id="btn-cancelar" class="button is-danger is-light"
-                hx-post="/Mercurius/api/app/pos/cancel-form"
+                hx-post="{config:['quarkus.http.root-path']}/api/app/pos/cancel-form"
                 hx-confirm="¿Cancelar la venta actual?"
                 hx-target="#cart-panel" hx-swap="outerHTML">Cancelar venta</button>
     </div>

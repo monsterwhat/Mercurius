@@ -60,18 +60,18 @@
         </div>
         <div class="level-right">
             <button type="button" class="button is-small is-link"
-                    hx-get="/Mercurius/api/app/facturas-recibidas/{d.id}/prevalidacion"
+                    hx-get="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/prevalidacion"
                     hx-target="#prevalidacion-panel" hx-swap="innerHTML">Refrescar</button>
         </div>
     </div>
     <div id="prevalidacion-panel"
-         hx-get="/Mercurius/api/app/facturas-recibidas/{d.id}/prevalidacion"
+         hx-get="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/prevalidacion"
          hx-trigger="revealed" hx-swap="innerHTML"></div>
 
     {! ── Líneas (revisión + corrección CAByS + aceptación parcial) ───── !}
     <hr/>
     <form id="recibidas-lineas-forma"
-          hx-post="/Mercurius/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+          hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
           hx-target="#detalle-factura-body" hx-swap="innerHTML">
         <input type="hidden" name="codigoMensaje" value="2"/>
         <table class="table is-fullwidth is-striped is-narrow">
@@ -98,7 +98,7 @@
                         <input class="input is-small" type="text" style="min-width:9rem"
                                name="codigoCabys-{linea.id}" value="{#if linea.codigoCabys??}{linea.codigoCabys}{/if}"
                                title="Corregir código CAByS (13 dígitos)"
-                               hx-put="/Mercurius/api/app/facturas-recibidas/{d.id}/lineas/{linea.id}"
+                               hx-put="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/lineas/{linea.id}"
                                hx-trigger="change" hx-target="#detalle-factura-body" hx-swap="innerHTML"/>
                     </td>
                     <td class="has-text-right">{#if linea.cantidad??}{linea.cantidad}{#else}&mdash;{/if}</td>
@@ -118,13 +118,13 @@
 
     {! ── Mensaje Receptor: aceptar / rechazar (legacy parity) ────────── !}
     <div class="buttons mt-2">
-        <form hx-post="/Mercurius/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+        <form hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
               hx-target="#detalle-factura-body" hx-swap="innerHTML">
             <input type="hidden" name="codigoMensaje" value="1"/>
             <button class="button is-success" type="submit"
                     hx-confirm="¿Aceptar la factura y enviar el Mensaje Receptor a Hacienda?">Aceptar Factura</button>
         </form>
-        <form hx-post="/Mercurius/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
+        <form hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/mensaje-receptor"
               hx-target="#detalle-factura-body" hx-swap="innerHTML">
             <input type="hidden" name="codigoMensaje" value="3"/>
             <button class="button is-danger" type="submit"

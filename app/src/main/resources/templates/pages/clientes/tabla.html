@@ -5,7 +5,7 @@
   single source of truth for the markup (T18 pattern).
 
   Model (identical contract to pages/categorias/tabla-*.html):
-    modelo Map - id, baseUrl, columnas(label/key), filas(Models.Clients),
+    modelo Map - id, baseUrl, columnas(label/key), filas(Models.Clientes),
                  sortKey, sortDir, page, size, total, totalPages, paginas,
                  filtros(reserved keys excluded), q
     q      String - current search text (round-tripped into the input)
@@ -22,7 +22,7 @@
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{q}" autocomplete="off"
                    placeholder="Buscar clientes..."
-                   hx-get="/Mercurius{modelo.baseUrl}"
+                   hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#{modelo.id}" hx-swap="outerHTML"/>
             <span class="icon is-small is-left">&#128269;</span>
@@ -46,10 +46,10 @@
                     <div class="buttons is-centered" style="margin:0">
                         <button type="button" class="button is-small is-success" title="Editar cliente"
                                 aria-haspopup="dialog" data-kit-open="editar-cliente"
-                                hx-get="/Mercurius/api/app/clientes/formularios/{cliente.code}"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/clientes/formularios/{cliente.code}"
                                 hx-target="#editar-cliente-body" hx-swap="innerHTML">&#9998;</button>
                         <button type="button" class="button is-small is-warning" title="Cambiar estado"
-                                hx-delete="/Mercurius/api/app/clientes/{cliente.code}"
+                                hx-delete="{config:['quarkus.http.root-path']}/api/app/clientes/{cliente.code}"
                                 hx-confirm="¿Cambiar el estado del cliente {cliente.name}?"
                                 hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
                     </div>

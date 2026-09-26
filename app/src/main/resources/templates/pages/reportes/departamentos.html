@@ -11,7 +11,7 @@
 
         <div class="box">
             <form method="get"
-                  action="/Mercurius{baseUrl}"
+                  action="{config:['quarkus.http.root-path']}{baseUrl}"
                   class="columns is-multiline is-vcentered is-mobile">
                 <div class="column is-narrow field">
                     <label class="label" for="desde">Desde</label>
@@ -42,7 +42,7 @@
         {#include pages/reportes/_tablas/departamentos /}
 
         <div class="buttons mt-4">
-            <form method="post" action="/Mercurius/api/app/export">
+            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="reportes-departamentos"/>
                 <input type="hidden" name="type" value="xlsx"/>

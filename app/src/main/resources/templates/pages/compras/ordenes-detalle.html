@@ -106,12 +106,12 @@
     <div class="buttons is-centered mt-4">
         {#if orden.puedeRecibir}
         <button class="button is-success" type="button"
-                hx-put="/Mercurius/api/app/ordenes/{orden.id}/recibir"
+                hx-put="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}/recibir"
                 hx-swap="none">&#10003; Marcar como Recibida</button>
         {/if}
         {#if orden.puedeCancelar}
         <button class="button is-danger" type="button" aria-haspopup="dialog" data-kit-open="cancelar-orden"
-                hx-get="/Mercurius/api/app/ordenes/{orden.id}/cancelar"
+                hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}/cancelar"
                 hx-target="#cancelar-orden-body" hx-swap="innerHTML">&times; Cancelar Orden</button>
         {/if}
         <button class="button" type="button" data-kit-close>Cerrar</button>

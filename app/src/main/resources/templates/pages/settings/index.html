@@ -54,11 +54,18 @@
     backups          status card + trigger button + whitelisted scheduling
                      quartet (editable)
 
-  CSRF is inherited from layout.html body hx-headers. Root-path prefixing
-  uses the LITERAL /Mercurius prefix (repo-wide page-template convention;
-  same rationale as fragments/navbar.html: quarkus.http.root-path is
-  build-time-fixed and absent from the runtime config namespace outside dev
-  mode, so {config:} expressions risk TemplateException on packaged runs).
+  CSRF is inherited from layout.html body hx-headers.
+
+  ROOT PATH (W2): every URL below is prefixed with
+  {config:['quarkus.http.root-path']}, never a hard-coded literal. The previous
+  version of this comment claimed the opposite - that quarkus.http.root-path is
+  "build-time-fixed and absent from the runtime config namespace outside dev
+  mode, so {config:} expressions risk TemplateException on packaged runs". That
+  claim was STALE: quarkus.http.root-path is declared in application.properties
+  and resolves at render time, and pages that already used the {config:} form
+  (pages/recibos/*) render fine. The whole codebase was hard-coded on the
+  strength of that stale note; W2 reversed it. Pinned by
+  RootPathNormalizationTest.
   Alpine braces ALWAYS carry a space after "{" (Qute golden rule); script
   braces open before whitespace.
 !}
@@ -175,7 +182,7 @@
             <div class="buttons">
                 <button class="button is-primary is-rounded" type="button"
                         data-json-save
-                        hx-put="/Mercurius{baseUrl}"
+                        hx-put="{config:['quarkus.http.root-path']}{baseUrl}"
                         hx-include="#ajustes-forma"
                         hx-target="#ajustes-forma" hx-swap="outerHTML">
                     Confirmar y Guardar</button>
@@ -193,7 +200,7 @@
 
     {! ── Single save form: every editable control lives inside ── !}
     <form id="ajustes-forma" data-json-save
-          hx-put="/Mercurius{baseUrl}"
+          hx-put="{config:['quarkus.http.root-path']}{baseUrl}"
           hx-target="#ajustes-forma" hx-swap="outerHTML">
 
         {! ── Grupo: correo (legacy wizard Correo step + rejection notifications) ── !}
@@ -246,7 +253,7 @@
         {! ── Backups mode: status card + trigger + scheduling + log (hidden on /aplicacion) ── !}
         {#if modo != 'aplicacion'}
         {! ── Grupo: backups (legacy Ajustes/Backups page) ── !}
-        <div class="backups-header">
+        <div class="backups-header" id="backup-status-card">
             <p class="title is-3 has-text-centered">Respaldos de Base de Datos</p>
             <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Copias de seguridad programadas y bajo demanda</p>
             <div class="level" style="justify-content:center;gap:2.5rem">
@@ -271,7 +278,7 @@
 
             <div class="field">
                 <button class="button is-success" type="button" data-json-save
-                        hx-post="/Mercurius{baseUrl}/backup-trigger"
+                        hx-post="{config:['quarkus.http.root-path']}{baseUrl}/backup-trigger"
                         hx-disabled-elt="this"
                         hx-on::before-request="this.classList.add('is-loading')"
                         hx-on::after-request="this.classList.remove('is-loading')">
@@ -351,7 +358,7 @@
                         <td class="has-text-right">{#if entrada.tamano??}{entrada.tamano}{#else}&mdash;{/if}</td>
                         <td class="has-text-centered">
                             <a class="button is-small is-info"
-                               href="/Mercurius/api/app/settings/backup-descargar?archivo={entrada.archivo}">
+                               href="{config:['quarkus.http.root-path']}/api/app/settings/backup-descargar?archivo={entrada.archivo}">
                                 Descargar</a>
                         </td>
                     </tr>
@@ -367,7 +374,7 @@
                     <code style="word-break:break-all">{backupRutaEfectiva}</code>
                 </p>
                 <button class="button is-success is-medium" type="button" data-json-save
-                        hx-post="/Mercurius{baseUrl}/backup-trigger"
+                        hx-post="{config:['quarkus.http.root-path']}{baseUrl}/backup-trigger"
                         hx-disabled-elt="this"
                         hx-on::before-request="this.classList.add('is-loading')"
                         hx-on::after-request="this.classList.remove('is-loading'); event.detail.successful && window.location.reload()">
@@ -446,7 +453,7 @@
                 <div class="column is-one-fifth"><p class="heading">Buffer de reorden</p><p>30 días</p></div>
             </div>
             <a class="button is-link is-light"
-               href="/Mercurius/api/app/stock-alert-config/pagina">
+               href="{config:['quarkus.http.root-path']}/api/app/stock-alert-config/pagina">
                 Configurar umbrales por artículo</a>
         </div>
 
@@ -459,7 +466,7 @@
                 en el historial.
             </p>
 
-            <form hx-post="/Mercurius/api/app/settings/margen"
+            <form hx-post="{config:['quarkus.http.root-path']}/api/app/settings/margen"
                   hx-target="#margen-resultado" hx-swap="innerHTML">
                 <div class="columns">
                     <div class="column is-one-third">
