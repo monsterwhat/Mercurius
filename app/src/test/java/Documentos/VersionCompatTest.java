@@ -1,5 +1,6 @@
 package Documentos;
 
+import Models.ComprobantesRecibidos;
 import Utils.ComprobanteFactory;
 import org.junit.jupiter.api.Test;
 
@@ -8,6 +9,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import support.FacturasReales;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -185,5 +187,37 @@ class VersionCompatTest {
         // Until implemented, Parser currently stores schemaVersion on entity (setSchemaVersion)
         // without branching — this test locks that the fixtures expose the intended branch inputs.
         assertTrue(true, "Branching expectation documented: schemaVersion drives MedioPago source selection");
+    }
+
+    @Test
+    void detectVersionMapsEveryRealFixture() throws Exception {
+        for (String nombre : FacturasReales.nombres("43")) {
+            assertEquals("4.3", ComprobanteFactory.detectVersion(
+                    new ByteArrayInputStream(FacturasReales.bytes(nombre))),
+                    "la factura real " + nombre + " debe detectarse como 4.3");
+        }
+        for (String nombre : FacturasReales.nombres("44")) {
+            assertEquals("4.4", ComprobanteFactory.detectVersion(
+                    new ByteArrayInputStream(FacturasReales.bytes(nombre))),
+                    "la factura real " + nombre + " debe detectarse como 4.4");
+        }
+    }
+
+    @Test
+    void everyRealFixtureIsAcceptedAndStampedWithItsSchemaVersion() throws Exception {
+        for (String nombre : FacturasReales.nombres("43")) {
+            ComprobantesRecibidos doc = ComprobanteFactory.createComprobanteRecibido(
+                    new ByteArrayInputStream(FacturasReales.bytes(nombre)));
+            assertNotNull(doc, "la factura real " + nombre + " debe producir una entidad");
+            assertEquals("4.3", doc.getSchemaVersion(),
+                    "la factura real " + nombre + " debe quedar marcada como 4.3");
+        }
+        for (String nombre : FacturasReales.nombres("44")) {
+            ComprobantesRecibidos doc = ComprobanteFactory.createComprobanteRecibido(
+                    new ByteArrayInputStream(FacturasReales.bytes(nombre)));
+            assertNotNull(doc, "la factura real " + nombre + " debe producir una entidad");
+            assertEquals("4.4", doc.getSchemaVersion(),
+                    "la factura real " + nombre + " debe quedar marcada como 4.4");
+        }
     }
 }

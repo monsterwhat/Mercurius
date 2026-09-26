@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import support.CatalogoReal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import Models.Articulos.Articulos;
@@ -52,9 +53,30 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     private static final String CSRF_COOKIE = "csrf-token";
     private static final String CSRF_HEADER = "X-CSRF-TOKEN";
 
-    /** Seeded CABYS code used for CABYS-required validations. */
-    private static final String CABYS_CODIGO = "T3410000";
-    private static final String CABYS_DESCRIPCION = "Articulo de prueba T34";
+    /**
+     * Real CAByS code taken from the anonymized invoice fixtures, used for the
+     * CAByS-required validations. A real 13-digit code exercises the same
+     * {@code \d{13}} branch of the validator that a production invoice does,
+     * which the previous synthetic "T3410000" did not.
+     */
+    private static final String CABYS_CODIGO = CatalogoReal.porIndice(0).codigoCabys();
+    private static final String CABYS_DESCRIPCION = CatalogoReal.porIndice(0).nombre();
+
+    /**
+     * A word to search the CAByS catalogue by. The endpoint searches
+     * {@code descripcion} only, never {@code codigo}, so the term has to come
+     * from the real description rather than from the code.
+     */
+    private static final String CABYS_BUSQUEDA = primeraPalabra(CABYS_DESCRIPCION);
+
+    private static String primeraPalabra(String texto) {
+        for (String palabra : texto.split("\\s+")) {
+            if (palabra.matches("[A-Za-z]{4,}")) {
+                return palabra.toLowerCase(java.util.Locale.ROOT);
+            }
+        }
+        return CABYS_CODIGO;
+    }
 
     @Inject
     ArticulosService articulosService;
@@ -91,8 +113,22 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         return spec;
     }
 
-    private static String uniqueName(String prefix) {
-        return prefix + "-" + UUID.randomUUID().toString().substring(0, 8);
+    /**
+     * The next unused real GTIN-13 from the anonymized invoice fixtures.
+     * Distinct per call, so articles created by different scenarios in the
+     * same boot never trip the 409 DUPLICATE_BARCODE rule.
+     */
+    private static String codigoBarraReal() {
+        return CatalogoReal.siguienteBarra();
+    }
+
+    /**
+     * A real article description from the fixtures, suffixed to stay unique
+     * within a boot. The description is genuine supplier text, so the length,
+     * accent and spacing paths are exercised as they are in production.
+     */
+    private static String nombreReal(String sufijo) {
+        return CatalogoReal.siguiente().nombre() + " " + sufijo;
     }
 
     /** Resolves the seeded Departamento General id through the categor�as API. */
@@ -149,13 +185,14 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     @Order(2)
     void cabysFixtureAndSeedLookupsAreAvailable() {
         // Fixture: one CABYS row so CABYS-required flows can pass validation.
+        // The code and the description both come from a real invoice line.
         if (cabysService.find(CABYS_CODIGO) == null) {
             cabysService.create(new Cabys(CABYS_CODIGO, CABYS_DESCRIPCION,
-                    "Pruebas", "13", "https://example.com/cabys", "Activo"));
+                    "Bebidas y alimentos", "13", "https://example.com/cabys", "Activo"));
         }
         Map<String, String> session = adminSession();
         authed(session)
-                .queryParam("q", "prueba")
+                .queryParam("q", CABYS_BUSQUEDA)
                 .when().get(ARTICULOS + "/cabys")
                 .then()
                 .statusCode(200)
@@ -168,8 +205,8 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     void adminListsActivosTabWithPagedEnvelope() {
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        String nombre = uniqueName("Articulo T34");
-        createArticle(session, depId, familiaGeneralId(session), nombre, uniqueName("74000000"));
+        String nombre = nombreReal("[T34]");
+        createArticle(session, depId, familiaGeneralId(session), nombre, codigoBarraReal());
 
         authed(session)
                 .queryParam("tab", "activos")
@@ -227,8 +264,8 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     void createArticleHappyPathPersistsActiveProcessedRow() {
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        String nombre = uniqueName("Alta T34");
-        long codigo = createArticle(session, depId, familiaGeneralId(session), nombre, uniqueName("74010000"));
+        String nombre = nombreReal("[T34 alta]");
+        long codigo = createArticle(session, depId, familiaGeneralId(session), nombre, codigoBarraReal());
 
         authed(session)
                 .when().get(ARTICULOS + "/" + codigo)
@@ -246,13 +283,13 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     void createArticleDuplicateBarcodeSurfacesLegacyWarningAs409() {
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        String barcode = uniqueName("74020000");
-        createArticle(session, depId, familiaGeneralId(session), uniqueName("Duplicado T34"), barcode);
+        String barcode = codigoBarraReal();
+        createArticle(session, depId, familiaGeneralId(session), nombreReal("[T34 duplicado]"), barcode);
 
         authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "nombre", uniqueName("Otro T34"),
+                        "nombre", nombreReal("[T34 otro]"),
                         "codigoBarra", barcode,
                         "departamentoId", depId))
                 .when().post(ARTICULOS)
@@ -268,8 +305,8 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "nombre", uniqueName("Huerfano T34"),
-                        "codigoBarra", uniqueName("74030000")))
+                        "nombre", nombreReal("[T34 huerfano]"),
+                        "codigoBarra", codigoBarraReal()))
                 .when().post(ARTICULOS)
                 .then()
                 .statusCode(400)
@@ -289,8 +326,8 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "nombre", uniqueName("Medio T34"),
-                        "codigoBarra", uniqueName("74035000"),
+                        "nombre", nombreReal("[T34 medio]"),
+                        "codigoBarra", codigoBarraReal(),
                         "departamentoId", depId))
                 .when().post(ARTICULOS)
                 .then()
@@ -311,14 +348,14 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     void updateArticleRequiresCabysCodeThenSucceeds() {
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        long codigo = createArticle(session, depId, familiaGeneralId(session), uniqueName("Edit T34"), uniqueName("74040000"));
+        long codigo = createArticle(session, depId, familiaGeneralId(session), nombreReal("[T34 edit]"), codigoBarraReal());
 
         // Legacy gate #1: missing CABYS ? warn message as 400.
         authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of(
                         "nombre", "Editado sin CABYS",
-                        "codigoBarra", uniqueName("74040001"),
+                        "codigoBarra", codigoBarraReal(),
                         "departamentoId", depId,
                         "familiaId", familiaGeneralId(session)))
                 .when().put(ARTICULOS + "/" + codigo)
@@ -331,7 +368,7 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                 .contentType(ContentType.JSON)
                 .body(Map.of(
                         "nombre", "Editado con CABYS",
-                        "codigoBarra", uniqueName("74040002"),
+                        "codigoBarra", codigoBarraReal(),
                         "departamentoId", depId,
                         "familiaId", familiaGeneralId(session),
                         "cabysCodigo", CABYS_CODIGO))
@@ -346,8 +383,8 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     void deleteArticleSoftDeactivatesIntoInactivosTab() {
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        String nombre = uniqueName("Baja T34");
-        long codigo = createArticle(session, depId, familiaGeneralId(session), nombre, uniqueName("74050000"));
+        String nombre = nombreReal("[T34 baja]");
+        long codigo = createArticle(session, depId, familiaGeneralId(session), nombre, codigoBarraReal());
 
         authed(session)
                 .when().delete(ARTICULOS + "/" + codigo)
@@ -370,9 +407,9 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         Map<String, String> session = adminSession();
 
         // Fixture: one pending article (legacy producer is T36's upload).
-        String barcode = uniqueName("74060000");
+        String barcode = codigoBarraReal();
         Articulos pendiente = new Articulos();
-        pendiente.setNombre(uniqueName("Pendiente T34"));
+        pendiente.setNombre(nombreReal("[T34 pendiente]"));
         pendiente.setCodigoBarra(barcode);
         pendiente.setStatus(true);
         pendiente.setProcessed(false);
@@ -415,16 +452,19 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
                     .when().get(ARTICULOS + "/" + pendiente.getCodigo())
                     .then()
                     .statusCode(200);
-        } catch (AssertionError ignore) {}
+        } catch (AssertionError tolerated) {
+            // Tolerancia intencional: relectura de mejor esfuerzo; el resultado del flujo
+            // ya quedó afirmado estrictamente arriba (200 + cuerpos + conteo de pendientes).
+        }
     }
 
     @Test
     @Order(13)
     void revisionWithoutPrecioFinalRejectedWithLegacyWarning() {
         Map<String, String> session = adminSession();
-        String barcode = uniqueName("74070000");
+        String barcode = codigoBarraReal();
         Articulos pendiente = new Articulos();
-        pendiente.setNombre(uniqueName("SinPrecio T34"));
+        pendiente.setNombre(nombreReal("[T34 sin precio]"));
         pendiente.setCodigoBarra(barcode);
         pendiente.setStatus(true);
         pendiente.setProcessed(false);
@@ -450,9 +490,9 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     @Order(14)
     void skipCurrentArticleReturnsNextPendingWithoutProcessing() {
         Map<String, String> session = adminSession();
-        String barcode = uniqueName("74080000");
+        String barcode = codigoBarraReal();
         Articulos pendiente = new Articulos();
-        pendiente.setNombre(uniqueName("Saltado T34"));
+        pendiente.setNombre(nombreReal("[T34 saltado]"));
         pendiente.setCodigoBarra(barcode);
         pendiente.setStatus(true);
         pendiente.setProcessed(false);
@@ -472,7 +512,7 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     void priceOverrideWithoutSupervisorAuthorizationIsRejected() {
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        long codigo = createArticle(session, depId, familiaGeneralId(session), uniqueName("Precio T34"), uniqueName("74090000"));
+        long codigo = createArticle(session, depId, familiaGeneralId(session), nombreReal("[T34 precio]"), codigoBarraReal());
 
         // No credentials at all.
         authed(session)
@@ -514,7 +554,7 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         }
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        long codigo = createArticle(session, depId, familiaGeneralId(session), uniqueName("PrecioOK T34"), uniqueName("74110000"));
+        long codigo = createArticle(session, depId, familiaGeneralId(session), nombreReal("[T34 precio ok]"), codigoBarraReal());
 
         authed(session)
                 .contentType(ContentType.URLENC)
@@ -546,11 +586,11 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         // so the range check needs a resolvable item to be reachable.
         Integer depId = departamentoGeneralId(session);
         long articuloCodigo = createArticle(session, depId, familiaGeneralId(session),
-                uniqueName("Rango T34"), uniqueName("74130000"));
+                nombreReal("[T34 rango]"), codigoBarraReal());
         authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "nombre", uniqueName("Promo Invertida"),
+                        "nombre", nombreReal("[T34 promo invertida]"),
                         "descuento", 10,
                         "fechaInicio", "2026-12-31",
                         "fechaFin", "2026-01-01",
@@ -568,9 +608,9 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
     void promoCreateHappyPathThenHardDeleteRemovesRow() {
         Map<String, String> session = adminSession();
         Integer depId = departamentoGeneralId(session);
-        long articuloCodigo = createArticle(session, depId, familiaGeneralId(session), uniqueName("PromoArt T34"), uniqueName("74120000"));
+        long articuloCodigo = createArticle(session, depId, familiaGeneralId(session), nombreReal("[T34 promo art]"), codigoBarraReal());
 
-        String nombre = uniqueName("Promo T34");
+        String nombre = nombreReal("[T34 promo]");
         Integer promoId = authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of(
@@ -608,7 +648,7 @@ class ArticuloResourceTest extends support.ContextPathIsolation {
         authed(session)
                 .contentType(ContentType.JSON)
                 .body(Map.of(
-                        "nombre", uniqueName("Promo Vacia"),
+                        "nombre", nombreReal("[T34 promo vacia]"),
                         "fechaInicio", "2026-01-01",
                         "fechaFin", "2026-12-31"))
                 .when().post(ARTICULOS + "/promociones")

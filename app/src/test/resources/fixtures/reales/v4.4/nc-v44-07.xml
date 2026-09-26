@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NotaCreditoElectronica
+	xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica https://www.hacienda.go.cr/ATV/ComprobanteElectronico/docs/esquemas/2016/v4.3/NotaCreditoElectronica_V4.3.xsd"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Clave>50624041900310010000400100001030001200007000863284</Clave>
+			<ProveedorSistemas>3100100004</ProveedorSistemas>
+	<CodigoActividadEmisor>512210</CodigoActividadEmisor>
+	<NumeroConsecutivo>00100001030001200007</NumeroConsecutivo>
+	<FechaEmision>2024-04-19T12:21:15-06:00</FechaEmision>
+	<Emisor>
+		<Nombre>Distribuidora La Prueba S.A.</Nombre>
+		<Identificacion>
+			<Tipo>02</Tipo>
+			<Numero>3100100004</Numero>
+		</Identificacion>
+		<NombreComercial>Distribuidora La Prueba S.A.</NombreComercial>
+		<Ubicacion>
+			<Provincia>4</Provincia>
+			<Canton>08</Canton>
+			<Distrito>03</Distrito>
+			<Barrio>BARRIO 08</Barrio>
+			<OtrasSenas>DOSCIENTOS CINCUENTA METROS AL SUR DE LA PLANTA, PROVINCIA DE PRUEBA</OtrasSenas>
+		</Ubicacion>
+		<Telefono>
+			<CodigoPais>506</CodigoPais>
+			<NumTelefono>20005557</NumTelefono>
+		</Telefono>
+		<CorreoElectronico>facturacion.4@proveedor-prueba.test</CorreoElectronico>
+	</Emisor>
+	<Receptor>
+		<Nombre>PERSONA FISICA PRUEBA DOS</Nombre>
+		<Identificacion>
+			<Tipo>01</Tipo>
+			<Numero>100100002</Numero>
+		</Identificacion>
+		<Ubicacion>
+			<Provincia>5</Provincia>
+			<Canton>03</Canton>
+			<Distrito>09</Distrito>
+			<OtrasSenas>CIENTO METROS AL NORTE DEL BANCO, RUTA INTERMEDIA</OtrasSenas>
+		</Ubicacion>
+		<Telefono>
+			<CodigoPais>506</CodigoPais>
+			<NumTelefono>20006668</NumTelefono>
+		</Telefono>
+		<CorreoElectronico>facturacion.2@proveedor-prueba.test</CorreoElectronico>
+	</Receptor>
+	<CondicionVenta>02</CondicionVenta>
+	<PlazoCredito>14</PlazoCredito>
+	
+	<DetalleServicio>
+		<LineaDetalle>
+			<NumeroLinea>1</NumeroLinea>
+			<CodigoCABYS>2449001000000</CodigoCABYS>
+			<CodigoComercial>
+				<Tipo>03</Tipo>
+				<Codigo>764009006042</Codigo>
+			</CodigoComercial>
+			<Cantidad>1.000</Cantidad>
+			<UnidadMedida>Otros</UnidadMedida>
+			<UnidadMedidaComercial>BOT</UnidadMedidaComercial>
+			<Detalle>MIRINDA PIA 3L PET</Detalle>
+			<PrecioUnitario>1475.23000</PrecioUnitario>
+			<MontoTotal>1475.23000</MontoTotal>
+			<Descuento>
+				<MontoDescuento>44.26000</MontoDescuento><CodigoDescuento>01</CodigoDescuento>
+				<NaturalezaDescuento>Descuento comercial</NaturalezaDescuento>
+			</Descuento>
+			<SubTotal>1430.97000</SubTotal><BaseImponible>1430.97000</BaseImponible>
+			<Impuesto>
+				<Codigo>01</Codigo>
+				<CodigoTarifaIVA>08</CodigoTarifaIVA>
+				<Tarifa>13.00</Tarifa>
+				<Monto>186.03000</Monto>
+			</Impuesto>
+			<ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>186.03000</ImpuestoNeto>
+			<MontoTotalLinea>1617.00000</MontoTotalLinea>
+		</LineaDetalle>
+		<LineaDetalle>
+			<NumeroLinea>2</NumeroLinea>
+			<CodigoCABYS>2143900019900</CodigoCABYS>
+			<CodigoComercial>
+				<Tipo>03</Tipo>
+				<Codigo>764009048684</Codigo>
+			</CodigoComercial>
+			<Cantidad>1.000</Cantidad>
+			<UnidadMedida>Otros</UnidadMedida>
+			<UnidadMedidaComercial>BOT</UnidadMedidaComercial>
+			<Detalle>TROPICAL MANGO 2500ML PET</Detalle>
+			<PrecioUnitario>1106.41000</PrecioUnitario>
+			<MontoTotal>1106.41000</MontoTotal>
+			<Descuento>
+				<MontoDescuento>33.19000</MontoDescuento><CodigoDescuento>01</CodigoDescuento>
+				<NaturalezaDescuento>Descuento comercial</NaturalezaDescuento>
+			</Descuento>
+			<SubTotal>1073.22000</SubTotal><BaseImponible>1073.22000</BaseImponible>
+			<Impuesto>
+				<Codigo>01</Codigo>
+				<CodigoTarifaIVA>08</CodigoTarifaIVA>
+				<Tarifa>13.00</Tarifa>
+				<Monto>139.52000</Monto>
+			</Impuesto>
+			<ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>139.52000</ImpuestoNeto>
+			<MontoTotalLinea>1212.74000</MontoTotalLinea>
+		</LineaDetalle>
+	</DetalleServicio>
+	<ResumenFactura>
+		<CodigoTipoMoneda>
+			<CodigoMoneda>CRC</CodigoMoneda>
+			<TipoCambio>1.00000</TipoCambio>
+		</CodigoTipoMoneda>
+		<TotalServGravados>0.00000</TotalServGravados>
+		<TotalServExentos>0.00000</TotalServExentos>
+		<TotalServExonerado>0.00000</TotalServExonerado>
+		<TotalMercanciasGravadas>2581.64000</TotalMercanciasGravadas>
+		<TotalMercanciasExentas>0.00000</TotalMercanciasExentas>
+		<TotalMercExonerada>0.00000</TotalMercExonerada>
+		<TotalGravado>2581.64000</TotalGravado>
+		<TotalExento>0.00000</TotalExento>
+		<TotalExonerado>0.00000</TotalExonerado>
+		<TotalVenta>2581.64000</TotalVenta>
+		<TotalDescuentos>77.45000</TotalDescuentos>
+		<TotalVentaNeta>2504.19000</TotalVentaNeta>
+		<TotalImpuesto>325.55000</TotalImpuesto>
+		<TotalIVADevuelto>0.00000</TotalIVADevuelto>
+		<TotalOtrosCargos>0.00000</TotalOtrosCargos>
+		<TotalComprobante>2829.74000</TotalComprobante>
+	</ResumenFactura>
+	<InformacionReferencia>
+		<TipoDocIR>01</TipoDocIR>
+		<Numero>00100001010009179251</Numero>
+		<FechaEmisionIR>2024-04-18T21:22:38</FechaEmisionIR>
+		<Codigo>99</Codigo>
+		<Razon>1602624939</Razon>
+	</InformacionReferencia>
+	
+</NotaCreditoElectronica>

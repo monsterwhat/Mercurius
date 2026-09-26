@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?><FacturaElectronica xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
+  <Clave>50624041500310010000600100001010001200010000748962</Clave>
+			<ProveedorSistemas>3100100006</ProveedorSistemas>
+  <CodigoActividadEmisor>512209</CodigoActividadEmisor>
+  <NumeroConsecutivo>00100001010001200010</NumeroConsecutivo>
+  <FechaEmision>2024-04-15T12:31:08.061528</FechaEmision>
+  <Emisor>
+    <Nombre>Distribuidora Regional del Sur S.R.L.</Nombre>
+    <Identificacion>
+      <Tipo>02</Tipo>
+      <Numero>3100100006</Numero>
+    </Identificacion>
+    <NombreComercial>Distribuidora Regional del Sur S.R.L.</NombreComercial>
+    <Ubicacion>
+      <Provincia>1</Provincia>
+      <Canton>08</Canton>
+      <Distrito>01</Distrito>
+      <Barrio>BARRIO 03</Barrio>
+      <OtrasSenas>TRESCIENTOS METROS AL OESTE, EDIFICIO RESIDENCIAL, PISO 9B</OtrasSenas>
+    </Ubicacion>
+    <Telefono>
+      <CodigoPais>506</CodigoPais>
+      <NumTelefono>70010001</NumTelefono>
+    </Telefono>
+    
+    <CorreoElectronico>facturacion.6@proveedor-prueba.test</CorreoElectronico>
+  </Emisor>
+  <Receptor>
+    <Nombre>PERSONA FISICA PRUEBA DOS</Nombre>
+    <Identificacion>
+      <Tipo>01</Tipo>
+      <Numero>100100002</Numero>
+    </Identificacion>
+    
+    <CorreoElectronico>facturacion.2@proveedor-prueba.test</CorreoElectronico>
+  </Receptor>
+  <CondicionVenta>01</CondicionVenta>
+  <PlazoCredito>0</PlazoCredito>
+  
+  <DetalleServicio>
+    <LineaDetalle>
+      <NumeroLinea>1</NumeroLinea>
+      <CodigoCABYS>2502000000200</CodigoCABYS>
+      <CodigoComercial>
+        <Tipo>01</Tipo>
+        <Codigo>801520A</Codigo>
+      </CodigoComercial>
+      <Cantidad>10.000</Cantidad>
+      <UnidadMedida>Unid</UnidadMedida>
+      <Detalle>S20 AZUL</Detalle>
+      <PrecioUnitario>1000.00000</PrecioUnitario>
+      <MontoTotal>10000.00000</MontoTotal>
+      <SubTotal>10000.00000</SubTotal><BaseImponible>10000.00000</BaseImponible>
+      <Impuesto>
+        <Codigo>01</Codigo>
+        <CodigoTarifaIVA>01</CodigoTarifaIVA>
+        <Tarifa>0.00</Tarifa>
+        <Monto>0.00000</Monto>
+      </Impuesto>
+      <ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>0.00000</ImpuestoNeto>
+      <MontoTotalLinea>10000.00000</MontoTotalLinea>
+    </LineaDetalle>
+    <LineaDetalle>
+      <NumeroLinea>2</NumeroLinea>
+      <CodigoCABYS>2502000000200</CodigoCABYS>
+      <CodigoComercial>
+        <Tipo>01</Tipo>
+        <Codigo>800520R</Codigo>
+      </CodigoComercial>
+      <Cantidad>10.000</Cantidad>
+      <UnidadMedida>Unid</UnidadMedida>
+      <Detalle>S20 ROJO</Detalle>
+      <PrecioUnitario>1000.00000</PrecioUnitario>
+      <MontoTotal>10000.00000</MontoTotal>
+      <SubTotal>10000.00000</SubTotal><BaseImponible>10000.00000</BaseImponible>
+      <Impuesto>
+        <Codigo>01</Codigo>
+        <CodigoTarifaIVA>01</CodigoTarifaIVA>
+        <Tarifa>0.00</Tarifa>
+        <Monto>0.00000</Monto>
+      </Impuesto>
+      <ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>0.00000</ImpuestoNeto>
+      <MontoTotalLinea>10000.00000</MontoTotalLinea>
+    </LineaDetalle>
+  </DetalleServicio>
+  <ResumenFactura>
+    <CodigoTipoMoneda>
+      <CodigoMoneda>CRC</CodigoMoneda>
+      <TipoCambio>1.00000</TipoCambio>
+    </CodigoTipoMoneda>
+    <TotalServGravados>0.00000</TotalServGravados>
+    <TotalServExentos>0.00000</TotalServExentos>
+    <TotalMercanciasGravadas>20000.00000</TotalMercanciasGravadas>
+    <TotalMercanciasExentas>0.00000</TotalMercanciasExentas>
+    <TotalGravado>20000.00000</TotalGravado>
+    <TotalExento>0.00000</TotalExento>
+    <TotalVenta>20000.00000</TotalVenta>
+    <TotalDescuentos>0.00000</TotalDescuentos>
+    <TotalVentaNeta>20000.00000</TotalVentaNeta>
+    <TotalImpuesto>0.00000</TotalImpuesto>
+    <TotalComprobante>20000.00000</TotalComprobante>
+  </ResumenFactura>
+</FacturaElectronica>

@@ -37,6 +37,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import support.CatalogoReal;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
@@ -159,7 +160,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
     /** Exempt (0% IVA) article so rendered totals equal the price verbatim. */
     private Articulos seedExemptArticulo(String barcode, String precioConUtilidad) {
         Articulos articulo = new Articulos();
-        articulo.setNombre("Placeholder real " + uniqueSuffix());
+        articulo.setNombre(nombreReal("[real]"));
         articulo.setCodigoBarra(barcode);
         articulo.setUnidadMedida("Unidad");
         articulo.setUnidadMedidaComercial("Unidad");
@@ -243,6 +244,15 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
 
     // ── Scenarios ───────────────────────────────────────────────────────
 
+    /** Next unused real GTIN-13 taken from the anonymized invoice fixtures. */
+    private static String codigoBarraReal() {
+        return CatalogoReal.siguienteBarra();
+    }
+
+    /** Real supplier article description, suffixed to stay unique within a boot. */
+    private static String nombreReal(String sufijo) {
+        return CatalogoReal.siguiente().nombre() + " " + sufijo;
+    }
     @Test
     @Order(1)
     void anonymousPageRequestIsChallengedToLogin() {
@@ -316,7 +326,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
     void scanFormAddsLineAndRedrawsPanel() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1500");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1500");
 
         authed(session)
                 .contentType(ContentType.URLENC)
@@ -361,7 +371,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
     void qtyFormPlusGrowsAndMinusToZeroRemovesViaRemoveArticulo() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "700");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "700");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -398,7 +408,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
     void qtyFormInvalidDeltaIsRejectedInFragment() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "100");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "100");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -415,7 +425,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
     void removeFormDeletesLineAndUnknownCodeReportsError() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "900");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "900");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -561,7 +571,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
         cartSessionStore.remove("admin");
         Clientes cliente = seedCliente(new BigDecimal("30"));
         selectClient(session, cliente.getCode());
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1000");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -610,7 +620,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
     void paymentDialogRendersRowsAndServerComputedTotalsAfterStaging() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1356");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1356");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -659,7 +669,7 @@ class PosFacturaTemplateTest extends support.ContextPathIsolation {
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1000");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -687,7 +697,7 @@ authed(session)
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "800");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "800");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -706,7 +716,7 @@ authed(session)
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1000");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -746,7 +756,7 @@ authed(session)
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1000");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
         Clientes cliente = seedCliente(new BigDecimal("50"));
 
         scanBarcode(session, articulo.getCodigoBarra());
@@ -788,7 +798,7 @@ authed(session)
     void cancelFormReturnsFreshEmptyPanel() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "450");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "450");
         scanBarcode(session, articulo.getCodigoBarra());
 
         authed(session)
@@ -812,7 +822,7 @@ authed(session)
     void isolationPhase1AdminScansIntoOwnPanel() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        isolationAdminItem = seedExemptArticulo("T37" + uniqueSuffix(), "111");
+        isolationAdminItem = seedExemptArticulo(codigoBarraReal(), "111");
 
         scanBarcode(session, isolationAdminItem.getCodigoBarra());
 
@@ -829,7 +839,7 @@ authed(session)
     void isolationPhase2Cashier2PanelNeverShowsAdminLine() {
         seedCashier2User();
         cartSessionStore.remove("cashier2");
-        isolationCashierItem = seedExemptArticulo("T37" + uniqueSuffix(), "222");
+        isolationCashierItem = seedExemptArticulo(codigoBarraReal(), "222");
 
         Map<String, String> jar = testIdentityJar();
         testAuthed(jar)

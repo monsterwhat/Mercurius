@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica FacturaElectronica_V4.3.xsd">
+  <Clave>50624041600040010090000100001010000700002000109709</Clave>
+  <CodigoActividad>512209</CodigoActividad>
+  <NumeroConsecutivo>00100001010000700002</NumeroConsecutivo>
+  <FechaEmision>2024-04-16T11:45:50-06:00</FechaEmision>
+  <Emisor>
+    <Nombre>PERSONA FISICA PRUEBA UNO</Nombre>
+    <Identificacion>
+      <Tipo>01</Tipo>
+      <Numero>400100001</Numero>
+    </Identificacion>
+    <Ubicacion>
+      <Provincia>4</Provincia>
+      <Canton>01</Canton>
+      <Distrito>01</Distrito>
+      <Barrio>02</Barrio>
+      <OtrasSenas>PROVINCIA DE PRUEBA, ZONA FRANCA, PARQUE INDUSTRIAL</OtrasSenas>
+    </Ubicacion>
+    <Telefono>
+      <CodigoPais>506</CodigoPais>
+      <NumTelefono>80001113</NumTelefono>
+    </Telefono>
+    <CorreoElectronico>facturacion.1@proveedor-prueba.test</CorreoElectronico>
+  </Emisor>
+  <Receptor>
+    <Nombre>PERSONA FISICA PRUEBA DOS</Nombre>
+    <Identificacion>
+      <Tipo>01</Tipo>
+      <Numero>100100002</Numero>
+    </Identificacion>
+    <NombreComercial>SUPER EL PRADO</NombreComercial>
+    <Telefono>
+      <CodigoPais>506</CodigoPais>
+      <NumTelefono>20002224</NumTelefono>
+    </Telefono>
+    <CorreoElectronico>facturacion.2@proveedor-prueba.test</CorreoElectronico>
+  </Receptor>
+  <CondicionVenta>02</CondicionVenta>
+  <PlazoCredito>21</PlazoCredito>
+  <MedioPago>01</MedioPago>
+  <DetalleServicio>
+    <LineaDetalle>
+      <NumeroLinea>1</NumeroLinea>
+      <Codigo>2509000009900</Codigo>
+      <CodigoComercial>
+        <Tipo>04</Tipo>
+        <Codigo>R13</Codigo>
+      </CodigoComercial>
+      <Cantidad>2.000</Cantidad>
+      <UnidadMedida>g</UnidadMedida>
+      <Detalle>FLOR DEL TABACO MINI PURITO NATURAL 1*25</Detalle>
+      <PrecioUnitario>7500.00000</PrecioUnitario>
+      <MontoTotal>15000.00000</MontoTotal>
+      <SubTotal>15000.00000</SubTotal>
+      <Impuesto>
+        <Codigo>01</Codigo>
+        <CodigoTarifa>08</CodigoTarifa>
+        <Tarifa>13.00</Tarifa>
+        <Monto>1950.00000</Monto>
+      </Impuesto>
+      <MontoTotalLinea>16950.00000</MontoTotalLinea>
+    </LineaDetalle>
+    <LineaDetalle>
+      <NumeroLinea>2</NumeroLinea>
+      <Codigo>2509000009900</Codigo>
+      <CodigoComercial>
+        <Tipo>04</Tipo>
+        <Codigo>R28</Codigo>
+      </CodigoComercial>
+      <Cantidad>2.000</Cantidad>
+      <UnidadMedida>g</UnidadMedida>
+      <Detalle>MINI PURITO VAINILLA 1X25</Detalle>
+      <PrecioUnitario>7500.00000</PrecioUnitario>
+      <MontoTotal>15000.00000</MontoTotal>
+      <SubTotal>15000.00000</SubTotal>
+      <Impuesto>
+        <Codigo>01</Codigo>
+        <CodigoTarifa>08</CodigoTarifa>
+        <Tarifa>13.00</Tarifa>
+        <Monto>1950.00000</Monto>
+      </Impuesto>
+      <MontoTotalLinea>16950.00000</MontoTotalLinea>
+    </LineaDetalle>
+  </DetalleServicio>
+  <ResumenFactura>
+    <CodigoTipoMoneda>
+      <CodigoMoneda>CRC</CodigoMoneda>
+      <TipoCambio>1.00000</TipoCambio>
+    </CodigoTipoMoneda>
+    <TotalServGravados>0.00000</TotalServGravados>
+    <TotalServExentos>0.00000</TotalServExentos>
+    <TotalServExonerado>0.00000</TotalServExonerado>
+    <TotalMercanciasGravadas>30000.00000</TotalMercanciasGravadas>
+    <TotalMercanciasExentas>0.00000</TotalMercanciasExentas>
+    <TotalMercExonerada>0.00000</TotalMercExonerada>
+    <TotalGravado>30000.00000</TotalGravado>
+    <TotalExento>0.00000</TotalExento>
+    <TotalExonerado>0.00000</TotalExonerado>
+    <TotalVenta>30000.00000</TotalVenta>
+    <TotalVentaNeta>30000.00000</TotalVentaNeta>
+    <TotalImpuesto>3900.00000</TotalImpuesto>
+    <TotalComprobante>33900.00000</TotalComprobante>
+  </ResumenFactura>
+  <Otros>
+    <OtroTexto>Generado por: www.comprobanteselectronicoscr.com</OtroTexto>
+  </Otros>
+</FacturaElectronica>

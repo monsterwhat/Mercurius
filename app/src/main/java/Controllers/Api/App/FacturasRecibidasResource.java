@@ -1343,13 +1343,92 @@ public class FacturasRecibidasResource {
             return new UploadFileResult(fileName, true, "Archivo procesado por el parser");
         } catch (IOException | RuntimeException e) {
                         LOG.warn("Archivo: " + fileName + " - Error: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=FacturasRecibidasResource.processSingleFile() | antes=" + String.valueOf(e.getMessage()) + " | despues=" + String.valueOf((Object) null));
-            return new UploadFileResult(fileName, false, "Error al procesar el archivo XML: " + e.getMessage());
+            return importarProductosDeFacturaRechazada(contenido, fileName, username, e.getMessage());
         } finally {
             AsyncUserContext.clear();
         }
     }
 
+    /**
+     * Imports the articles and the stock of an invoice the strict parser refused.
+     *
+     * <p>A document that fails the Hacienda XSD gate still carries usable product
+     * data, so the products are imported anyway: the document is re-parsed without
+     * the schema gate, stored flagged as rejected (so the user can see why, cannot
+     * silently re-upload the same file, and the manual /procesar step will not run
+     * a second time over the same stock), and its line items are turned into
+     * articles plus inventory movements exactly as the manual step does.
+     *
+     * @return a failed result whose message states that the products were imported
+     */
+    private @Nonnull UploadFileResult importarProductosDeFacturaRechazada(
+            @Nonnull byte[] contenido, @Nonnull String fileName,
+            @Nonnull String username, @Nullable String motivo) {
+        try {
+            AsyncUserContext.setCurrentUser(username);
+            parser.parseXML(new ByteArrayInputStream(contenido), false);
 
+            String consecutivo = extractConsecutivoDe(contenido);
+            ComprobantesRecibidos factura = null;
+            // GService.listAll() devuelve una lista vacia si la consulta lanza
+            // PersistenceException, y la ingesta corre en un hilo asincrono, asi
+            // que la fila recien guardada puede no ser visible todavia. Se
+            // reintenta un poco antes de admitir que no se pudo localizar.
+            for (int intento = 0; intento < 15 && factura == null; intento++) {
+                if (consecutivo != null && !consecutivo.isBlank()) {
+                    factura = recibidosService.listAll().stream()
+                            .filter(c -> c.getEncabezado() != null
+                                    && consecutivo.equals(c.getEncabezado().getNumeroConsecutivo()))
+                            .findFirst().orElse(null);
+                }
+                if (factura == null) {
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
+            if (factura == null) {
+                return new UploadFileResult(fileName, false,
+                        "Factura rechazada (" + motivo + ") y no se pudieron importar sus articulos");
+            }
+
+            // Flag it: rejected, but already turned into stock, so neither the
+            // duplicate guard nor the manual /procesar step runs it again.
+            factura.setStatus(Boolean.FALSE);
+            factura.setProcessed(Boolean.TRUE);
+            factura.setPrevalidationErrors("Factura rechazada por validacion de esquema: " + motivo);
+            factura.setUser(username);
+            recibidosService.update(factura);
+
+            procesarArticulos(factura, currentUser());
+            LOG.info("Factura rechazada " + consecutivo
+                    + " importada igual a articulos e inventario | user=" + username
+                    + " | source=FacturasRecibidasResource.importarProductosDeFacturaRechazada()");
+            return new UploadFileResult(fileName, false,
+                    "Factura rechazada (" + motivo + "). Se importaron de todos modos sus articulos"
+                            + " e inventario; la factura quedo marcada para revisión y no debe volver a subirse");
+        } catch (RuntimeException e2) {
+            LOG.warn("No se pudieron importar los articulos de " + fileName + ": " + e2.getMessage()
+                    + " | source=FacturasRecibidasResource.importarProductosDeFacturaRechazada()", e2);
+            return new UploadFileResult(fileName, false,
+                    "Error al procesar el archivo XML: " + motivo);
+        } finally {
+            AsyncUserContext.clear();
+        }
+    }
+
+    /** Best-effort NumeroConsecutivo lookup used only to find the just-parsed row. */
+    @Nullable
+    private static String extractConsecutivoDe(@Nonnull byte[] contenido) {
+        String xml = new String(contenido, java.nio.charset.StandardCharsets.UTF_8);
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("<NumeroConsecutivo>(\\d{1,20})</NumeroConsecutivo>")
+                .matcher(xml);
+        return m.find() ? m.group(1) : null;
+    }
 
     /**
      * Cheap structural gate BEFORE the parser runs so malformed documents get
