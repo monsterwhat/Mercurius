@@ -1,0 +1,68 @@
+{!
+  _kit/page-header - ONE page header for the whole application (W1).
+
+  REPLACES (do not reintroduce):
+    - the twelve module gradient banners: .articulos-header, .categorias-header,
+      .inventario-header, .cabys-header, .recibos-header, .correos-header,
+      .usuarios-header, .registros-header, .backups-header, .clientes-header,
+      .tributacion-header, .caja-header (the last one is an inline <style> in
+      pages/caja/index.html);
+    - the reportes hub's colored .header-bar strips;
+    - bare <h1 class="title is-3"> + <p class="subtitle"> headings.
+
+  The header does not know which module it belongs to. A page picks at most
+  one Bulma semantic accent; module-specific gradients are gone.
+
+  PARAMS
+    title    String - REQUIRED. Visible page title.
+    eyebrow  String - OPTIONAL. Small uppercase kicker above the title
+                       ("Inventario", "Tributacion", ...).
+    subtitle String - OPTIONAL. One line of supporting copy.
+    variant  String - OPTIONAL. "compact" for dense boards (tighter padding,
+                       smaller title). Anything else = default.
+    accent   String - OPTIONAL. One of primary | info | success | warning |
+                       danger | link. Renders the `page-header-accent` variant
+                       with that semantic colour. Use sparingly: reserve it for
+                       pages whose whole surface is one workflow (POS, wizard).
+
+  SLOTS
+    {#actions} - controls aligned right on >=768px, full-width stacked below.
+                 Default is empty (a header with no actions is valid).
+    {#metrics} - optional .metric-strip rendered under a hairline inside the
+                 header. Default is empty.
+
+  TYPOGRAPHY CONTRACT (see docs/ui-kit.md 3.4)
+    .page-eyebrow   -> .is-size-7, uppercase, letterspaced
+    .page-title     -> title is-3
+    .page-subtitle  -> subtitle
+  No page may override those sizes with inline styles.
+
+  ACCESSIBILITY
+    The <header> wraps an <h1 class="page-title">: exactly one h1 per page.
+    Pages that embed this inside another landmark must not add a second h1.
+
+  EXAMPLE
+    {#include _kit/page-header title="Articulos"
+         eyebrow="Inventario"
+         subtitle="Administre los articulos del inventario" /}
+      {#actions}
+        {#include _kit/modal id="crear-articulo" title="Crear Articulo"
+             triggerLabel="Crear Articulo" triggerClass="is-primary"
+             bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
+      {/actions}
+    {/include}
+!}
+{@java.lang.String title}
+<header class="page-header{#if variant??} page-header-{variant}{/if}{#if accent??} page-header-accent is-{accent}{/if}">
+    <div class="page-header-content">
+        <div class="page-header-text">
+            {#if eyebrow??}<p class="page-eyebrow">{eyebrow}</p>{/if}
+            <h1 class="title is-3 page-title">{title}</h1>
+            {#if subtitle??}<p class="subtitle is-6 page-subtitle">{subtitle}</p>{/if}
+        </div>
+        <div class="page-header-actions">
+            {#insert actions}{/insert}
+        </div>
+    </div>
+    {#insert metrics}{/insert}
+</header>

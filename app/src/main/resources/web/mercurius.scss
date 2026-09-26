@@ -1,0 +1,560 @@
+// =============================================================================
+// Mercurius design-system layer (W1 foundation — ADDITIVE).
+//
+// Layer order enforced by web/index.scss:
+//     Bulma  ->  Mercurius tokens  ->  Mercurius components  ->  page exceptions
+//
+// SCOPE RULE FOR W1
+// -----------------
+// This file only ADDS. It deliberately does not delete or restyle any selector
+// that already exists in index.scss (the ported legacy layers). Concretely it
+// does NOT redefine .stat-card, .actions-bar, .filters-section, .tab-content-card,
+// .grid-view, .articulo-card, .empty-state, .loading-overlay, .nav-cards, the
+// twelve *-header gradient classes, or the .ui-* PrimeFaces leftovers. Those
+// keep rendering exactly as they do today; pages migrate onto the new
+// primitives in W5 and the legacy selectors are deleted in W6 once a
+// repo-wide grep proves zero references.
+//
+// The one exception is .status-chip: the base class already exists in
+// index.scss, so this file only ADDS semantic colour modifiers
+// (.is-success/.is-warning/.is-info/.is-danger/.is-neutral) alongside it. The
+// legacy .status-processed/.status-active/... aliases are untouched until W6.
+//
+// Colour discipline: every colour is a Bulma custom property. No hex literals,
+// no new palette. Dark mode therefore follows Bulma's scheme variables for
+// free.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 3.1 Spacing
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-space-1: .25rem;
+    --mercurius-space-2: .5rem;
+    --mercurius-space-3: .75rem;
+    --mercurius-space-4: 1rem;
+    --mercurius-space-5: 1.5rem;
+    --mercurius-space-6: 2rem;
+    --mercurius-space-7: 3rem;
+}
+
+// -----------------------------------------------------------------------------
+// 3.2 Radius
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-radius-sm: .375rem;
+    --mercurius-radius-md: .75rem;
+    --mercurius-radius-lg: 1rem;
+    --mercurius-radius-pill: 9999px;
+}
+
+// -----------------------------------------------------------------------------
+// 3.3 Elevation — three levels only
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-shadow-none: none;
+    --mercurius-shadow-subtle: 0 1px 2px rgba(0, 0, 0, .06);
+    --mercurius-shadow-raised: 0 4px 12px rgba(0, 0, 0, .10);
+}
+
+// -----------------------------------------------------------------------------
+// Semantic accents — module headers must NOT invent their own colour.
+// A page picks one of the six Bulma semantics; that is the whole vocabulary.
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-accent-primary: var(--bulma-primary);
+    --mercurius-accent-info: var(--bulma-info);
+    --mercurius-accent-success: var(--bulma-success);
+    --mercurius-accent-warning: var(--bulma-warning);
+    --mercurius-accent-danger: var(--bulma-danger);
+    --mercurius-accent-link: var(--bulma-link);
+
+    --mercurius-surface: var(--bulma-scheme-main);
+    --mercurius-surface-alt: var(--bulma-scheme-main-bis);
+    --mercurius-border: var(--bulma-border);
+}
+
+// =============================================================================
+// 4. PageHeader — ONE component replaces 12 gradient banners, the reportes
+//    hub's colored header-bars, and the bare <h1 class="title is-3"> headings.
+// =============================================================================
+.page-header {
+    background: var(--bulma-scheme-main-bis);
+    border: 1px solid var(--mercurius-border);
+    border-radius: var(--mercurius-radius-lg);
+    box-shadow: var(--mercurius-shadow-subtle);
+    margin-bottom: var(--mercurius-space-5);
+    overflow: hidden;
+}
+
+.page-header-content {
+    align-items: flex-start;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mercurius-space-4);
+    justify-content: space-between;
+    padding: var(--mercurius-space-5);
+}
+
+.page-header-text {
+    min-width: 0;
+}
+
+.page-eyebrow {
+    color: var(--bulma-text-light);
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    margin-bottom: var(--mercurius-space-1);
+    text-transform: uppercase;
+}
+
+.page-header .page-title {
+    margin-bottom: var(--mercurius-space-1);
+}
+
+.page-header .page-subtitle {
+    color: var(--bulma-text-light);
+    margin-bottom: 0;
+}
+
+.page-header-actions {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mercurius-space-2);
+}
+
+// Compact: for dense boards where the header must not eat vertical space.
+.page-header-compact .page-header-content {
+    padding: var(--mercurius-space-3) var(--mercurius-space-4);
+}
+
+.page-header-compact .page-header .page-title {
+    font-size: 1.5rem;
+}
+
+// Accent: a single semantic colour, never a module gradient.
+.page-header-accent {
+    background: var(--mercurius-accent-primary);
+    border-color: transparent;
+    color: #fff;
+}
+
+.page-header-accent .page-eyebrow,
+.page-header-accent .page-subtitle {
+    color: rgba(255, 255, 255, .85);
+}
+
+.page-header-accent .page-title {
+    color: #fff;
+}
+
+.page-header-accent.is-primary { background: var(--mercurius-accent-primary); }
+.page-header-accent.is-info { background: var(--mercurius-accent-info); }
+.page-header-accent.is-success { background: var(--mercurius-accent-success); }
+.page-header-accent.is-warning { background: var(--mercurius-accent-warning); }
+.page-header-accent.is-danger { background: var(--mercurius-accent-danger); }
+.page-header-accent.is-link { background: var(--mercurius-accent-link); }
+
+.page-header-accent .button:not(.is-light):not(.is-white) {
+    border-color: transparent;
+}
+
+// =============================================================================
+// 5. MetricCard — ONE component replaces the three stat-card usages
+//    (Alpine tab buttons, filter <a> links, counter tiles).
+// =============================================================================
+.metric-strip {
+    display: grid;
+    gap: var(--mercurius-space-3);
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.metric-card {
+    background: var(--mercurius-surface);
+    border: 1px solid var(--mercurius-border);
+    border-radius: var(--mercurius-radius-md);
+    box-shadow: var(--mercurius-shadow-subtle);
+    color: var(--bulma-text);
+    display: flex;
+    flex-direction: column;
+    gap: var(--mercurius-space-1);
+    padding: var(--mercurius-space-4);
+    text-align: center;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.metric-label {
+    color: var(--bulma-text-light);
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    order: 1;
+    text-transform: uppercase;
+}
+
+.metric-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.1;
+    order: 2;
+}
+
+.metric-detail {
+    color: var(--bulma-text-light);
+    font-size: .75rem;
+    order: 3;
+}
+
+.metric-card.is-interactive {
+    cursor: pointer;
+}
+
+.metric-card.is-interactive:hover {
+    border-color: var(--bulma-primary);
+    box-shadow: var(--mercurius-shadow-raised);
+    transform: translateY(-2px);
+}
+
+.metric-card.is-active {
+    border-color: var(--bulma-primary);
+    border-width: 2px;
+    box-shadow: var(--mercurius-shadow-raised);
+}
+
+.metric-card.is-active .metric-label {
+    color: var(--bulma-primary);
+}
+
+a.metric-card {
+    display: flex;
+    text-decoration: none;
+}
+
+button.metric-card {
+    font: inherit;
+    width: 100%;
+}
+
+// =============================================================================
+// 6. ViewTabs — ONE visual tab system. Replaces Alpine x-show tab bars,
+//    .nav-card pills, .tabs.is-boxed and the ?vista= / ?seccion= variants.
+//    The state mechanism (Alpine vs server) is a caller decision; the visuals
+//    are identical either way.
+// =============================================================================
+.view-tabs {
+    border-bottom: 1px solid var(--mercurius-border);
+    display: flex;
+    gap: var(--mercurius-space-1);
+    margin-bottom: var(--mercurius-space-4);
+    overflow-x: auto;
+    padding-bottom: 0;
+    scrollbar-width: thin;
+}
+
+.view-tab {
+    align-items: center;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    border-radius: var(--mercurius-radius-sm) var(--mercurius-radius-sm) 0 0;
+    color: var(--bulma-text);
+    display: inline-flex;
+    gap: var(--mercurius-space-2);
+    margin-bottom: -1px;
+    padding: var(--mercurius-space-2) var(--mercurius-space-4);
+    white-space: nowrap;
+}
+
+.view-tab:hover {
+    background: var(--bulma-scheme-main-ter);
+    color: var(--bulma-primary);
+    text-decoration: none;
+}
+
+.view-tab.is-active {
+    background: var(--mercurius-surface);
+    border-color: var(--mercurius-border);
+    color: var(--bulma-primary);
+    font-weight: 600;
+}
+
+.view-tab-count {
+    background: var(--bulma-scheme-main-ter);
+    border-radius: var(--mercurius-radius-pill);
+    color: var(--bulma-text-light);
+    font-size: .7rem;
+    font-weight: 700;
+    min-width: 1.5rem;
+    padding: 0 .4rem;
+    text-align: center;
+}
+
+.view-tab.is-active .view-tab-count {
+    background: var(--bulma-primary);
+    color: #fff;
+}
+
+// =============================================================================
+// 7. FilterBar / ActionBar
+// =============================================================================
+.filter-bar,
+.action-bar {
+    align-items: flex-end;
+    background: var(--mercurius-surface);
+    border: 1px solid var(--mercurius-border);
+    border-radius: var(--mercurius-radius-md);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mercurius-space-3);
+    justify-content: space-between;
+    margin-bottom: var(--mercurius-space-4);
+    padding: var(--mercurius-space-4);
+}
+
+.filter-grid {
+    display: grid;
+    flex: 1 1 20rem;
+    gap: var(--mercurius-space-3);
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.filter-actions,
+.action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mercurius-space-2);
+}
+
+.action-count {
+    color: var(--bulma-text-light);
+    font-size: .875rem;
+}
+
+.action-count strong {
+    color: var(--bulma-text);
+}
+
+// =============================================================================
+// 12. Surface — the replacement for ad-hoc .box / .card / custom panel combos.
+//    Bulma's .box may sit underneath, but templates should emit these names.
+// =============================================================================
+.surface {
+    background: var(--mercurius-surface);
+    border: 1px solid var(--mercurius-border);
+    border-radius: var(--mercurius-radius-md);
+    box-shadow: var(--mercurius-shadow-subtle);
+    margin-bottom: var(--mercurius-space-4);
+}
+
+.surface-header {
+    align-items: center;
+    border-bottom: 1px solid var(--mercurius-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mercurius-space-3);
+    justify-content: space-between;
+    padding: var(--mercurius-space-4);
+}
+
+.surface-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.surface-subtitle {
+    color: var(--bulma-text-light);
+    font-size: .875rem;
+    margin: 0;
+}
+
+.surface-header > .tag {
+    margin-left: auto;
+}
+
+.surface-body {
+    padding: var(--mercurius-space-4);
+}
+
+.surface-body.is-flush {
+    padding: 0;
+}
+
+.surface-footer {
+    align-items: center;
+    border-top: 1px solid var(--mercurius-border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--mercurius-space-2);
+    justify-content: flex-end;
+    padding: var(--mercurius-space-3) var(--mercurius-space-4);
+}
+
+// =============================================================================
+// 13. ChartCard — every chart gets the same frame. Height is a token so the
+//     dashboard and the report charts line up.
+// =============================================================================
+.chart-card {
+    --chart-height: 300px;
+    background: var(--mercurius-surface);
+    border: 1px solid var(--mercurius-border);
+    border-radius: var(--mercurius-radius-md);
+    box-shadow: var(--mercurius-shadow-subtle);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chart-header {
+    border-bottom: 1px solid var(--mercurius-border);
+    padding: var(--mercurius-space-4);
+}
+
+.chart-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.chart-subtitle {
+    color: var(--bulma-text-light);
+    font-size: .8rem;
+    margin: 0;
+}
+
+.chart-body {
+    flex: 1 1 auto;
+    min-height: var(--chart-height);
+    padding: var(--mercurius-space-4);
+    position: relative;
+}
+
+.chart-body > canvas {
+    height: 100% !important;
+    width: 100% !important;
+}
+
+.chart-card.is-tall { --chart-height: 420px; }
+.chart-card.is-short { --chart-height: 220px; }
+
+// =============================================================================
+// 9. Icon — sized in em so it tracks the surrounding font size, and coloured by
+//    currentColor so Bulma button colours apply with no extra rules.
+// =============================================================================
+.mi-icon {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 1.25em;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: -.2em;
+    width: 1.25em;
+}
+
+.mi-icon-svg {
+    height: 100%;
+    stroke: currentColor;
+    width: 100%;
+}
+
+.mi-icon.is-small { font-size: .8em; }
+.mi-icon.is-medium { font-size: 1.15em; }
+.mi-icon.is-large { font-size: 1.6em; }
+
+// =============================================================================
+// 11. StatusChip — semantic colour modifiers. The base .status-chip class
+//     already ships in index.scss and is intentionally NOT redefined here;
+//     only the .is-* modifiers below are new. W6 drops the legacy
+//     .status-processed/.status-active/... aliases.
+// =============================================================================
+.status-chip.is-neutral {
+    background: var(--bulma-scheme-main-ter) !important;
+    color: var(--bulma-text) !important;
+}
+
+.status-chip.is-success { background: var(--bulma-success) !important; color: #fff !important; }
+.status-chip.is-warning { background: var(--bulma-warning) !important; color: #fff !important; }
+.status-chip.is-info { background: var(--bulma-info) !important; color: #fff !important; }
+.status-chip.is-danger { background: var(--bulma-danger) !important; color: #fff !important; }
+
+// =============================================================================
+// 26. Accessibility baseline for the new primitives
+// =============================================================================
+a.metric-card:focus-visible,
+button.metric-card:focus-visible,
+.view-tab:focus-visible {
+    outline: 2px solid var(--bulma-primary);
+    outline-offset: 2px;
+}
+
+// =============================================================================
+// 21. Responsive
+// =============================================================================
+@media screen and (max-width: 768px) {
+    .metric-strip {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filter-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filter-bar,
+    .action-bar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .filter-actions,
+    .action-buttons {
+        justify-content: flex-end;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    .page-header-content {
+        flex-direction: column;
+        padding: var(--mercurius-space-4);
+    }
+
+    .page-header-actions {
+        width: 100%;
+    }
+
+    .page-header-actions .button {
+        flex: 1 1 100%;
+    }
+
+    .metric-strip,
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .view-tab {
+        padding: var(--mercurius-space-2) var(--mercurius-space-3);
+    }
+
+    .filter-actions,
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .filter-actions .button,
+    .action-buttons .button {
+        width: 100%;
+    }
+
+    .surface-body,
+    .surface-header,
+    .chart-header,
+    .chart-body {
+        padding: var(--mercurius-space-3);
+    }
+
+    .modal-card {
+        margin: var(--mercurius-space-2);
+        width: calc(100vw - 1rem);
+    }
+}

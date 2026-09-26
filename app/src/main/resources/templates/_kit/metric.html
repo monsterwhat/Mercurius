@@ -1,0 +1,107 @@
+{!
+  _kit/metric - ONE metric card for all KPI / stat / counter / tab usages (W1).
+
+  REPLACES the three pre-W1 stat-card implementations that shared one CSS block
+  but had three different markups:
+    1. <button class="stat-card" :class="{'active': tab===...}">  (Alpine tabs)
+    2. <a class="box has-text-centered stat-card">                  (filter links)
+    3. <button class="box has-text-centered" style="border:none">   (counter tiles)
+  They are now the same component with different semantics.
+
+  ELEMENT SELECTION (exactly one branch fires)
+    href        given -> <a class="metric-card is-interactive">
+    interactive true  -> <button type="button" class="metric-card is-interactive">
+    neither             -> <div class="metric-card">   (passive KPI)
+
+  IMPLEMENTATION NOTE - the two rules that bite here, and what they cost
+    RULE 1 - this app's Qute is STRICT: referencing a key that is not in the
+      data map throws `Key "x" not found in the template data map`. A bare
+      {#if optional} is therefore a RUNTIME ERROR, not a falsy test. Every
+      optional must be probed with the safe expression first:
+          {#if optional??}{#if optional} … {/if}{/if}
+      This is why every pre-existing template in templates/ guards optionals.
+    RULE 2 - {#else} binds to the INNERMOST open block, not the one you meant.
+      Branching with
+          {#if href??}{#else}{#if interactive??}{#if interactive}…{#else}<div>
+          …{/if}{/if}{/if}
+      leaves the {#if interactive??} block with NO else branch, so when
+      `interactive` is absent the whole inner region is skipped and the passive
+      <div> branch renders as an EMPTY STRING. Confirmed by dumping the render
+      output, and pinned by metricRendersPassiveCardByDefault.
+    Together they force three explicit branches, so the inner spans appear
+    three times. That duplication is deliberate: a component whose job is
+    picking its own root element reads better as three complete elements than as
+    one element stitched together from fragments, and it removes any dependence
+    on which block an {#else} would bind to.
+    Do NOT "simplify" this back into {#else if} or a bare {#if interactive}.
+
+  PARAMS
+    label       String - REQUIRED. Uppercase caption. Rendered first.
+    value       Object - REQUIRED. The number/text. Rendered second, .metric-value.
+    detail      String - OPTIONAL. Sub-line under the value ("+8 esta semana",
+                          "+4.2% vs ayer", "12 alertas"). Rendered third.
+    href        String - OPTIONAL. Makes the card a link.
+    interactive Boolean- OPTIONAL. Makes the card a <button> for Alpine /
+                          click handlers.
+    active      Boolean- OPTIONAL. Renders .is-active (selected view / filter).
+    id          String - OPTIONAL. DOM id, needed when Alpine binds to it.
+
+  COUNT IN THE LABEL
+  Put a count in the label text when the card is a view switcher, so the tab and
+  the KPI say the same thing:
+
+      {#include _kit/metric label="Activos" value=activosCount
+           interactive=true active=(tab == 'activos') /}
+
+  ALPINE
+  `interactive` renders a real <button>, so Alpine attributes belong on the
+  button. Because the fragment cannot take arbitrary attributes, prefer the
+  slot-free pattern below when you need binding, and reserve `interactive` for
+  plain onclick handlers:
+
+      <nav x-data="{ tab: 'activos' }" class="metric-strip">
+          <button type="button" class="metric-card is-interactive"
+                  :class="{ 'is-active': tab === 'activos' }"
+                  @click="tab = 'activos'">
+              <span class="metric-label">Activos</span>
+              <span class="metric-value">{activosCount}</span>
+          </button>
+      </nav>
+
+  ACCESSIBILITY
+    - A <button> card already has an accessible name: .metric-label is real text,
+      not an attribute. Prefer that over aria-label.
+    - An <a> card is a link: it belongs in navigation, and `active` should be
+      accompanied by aria-current="page" on the caller.
+    - .metric-value uses a font-size token, NOT Bulma's .title classes, so it
+      stays visually distinct from .page-title / .surface-title. Do not add
+      `title is-3` to it (that would import .title's margins).
+
+  RESPONSIVE
+    .metric-strip is auto-fit minmax(180px, 1fr): 4-5 across on desktop,
+    2 columns 481-768px, 1 column at 480px. No per-page rules.
+!}
+{@java.lang.String label}
+{@java.lang.Object value}
+{#if href??}<a class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}" href="{href}"{#if id??} id="{id}"{/if}>
+<span class="metric-label">{label}</span>
+<span class="metric-value">{value}</span>
+{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+</a>
+{#else}{#if interactive??}{#if interactive}<button type="button" class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
+<span class="metric-label">{label}</span>
+<span class="metric-value">{value}</span>
+{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+</button>
+{#else}<div class="metric-card{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
+<span class="metric-label">{label}</span>
+<span class="metric-value">{value}</span>
+{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+</div>
+{/if}
+{#else}<div class="metric-card{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
+<span class="metric-label">{label}</span>
+<span class="metric-value">{value}</span>
+{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+</div>
+{/if}{/if}

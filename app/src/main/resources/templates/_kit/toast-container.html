@@ -1,0 +1,48 @@
+{!
+  _kit/toast-container - the ONE toast mount point (W1).
+
+  EXTRACTED VERBATIM from layout.html (the markup is byte-identical, so
+  rendering does not change). It also exists as a second, hand-copied copy in
+  pages/facturas/factura-standalone.html, which does not include layout.html
+  because the POS opens in its own browser window. That copy is left untouched
+  in W1 and folded in during W6.
+
+  WHY A FRAGMENT AND NOT A PARTIAL
+  The inline style carries the positioning. It cannot move into
+  web/mercurius.scss without changing specificity relationships against the
+  Bulma .notification rules, and the POS copy must stay in sync with it. One
+  include, one definition.
+
+  DATA CONTRACT (unchanged)
+    "toasts" - optional list of {severity, message}. When absent the safe
+    expression yields null and nothing renders, so pages that pass no toasts
+    pay nothing. See fragments/toasts.html for the severity vocabulary
+    (error -> is-danger, warn -> is-warning, success -> is-success, else
+    is-info) and _kit/toast-item.html for HTMX-swapped toasts.
+
+  WHO APPENDS TO IT
+    - Server render: a resource passes `toasts` in the data model.
+    - HTMX swap: any response fragment wraps the include in an out-of-band
+      swap. This is how every mutation in the app reports success:
+
+          <div hx-swap-oob="beforeend:#toast-container">
+              {#include _kit/toast-item severity=result.severity
+                   message=result.message /}
+          </div>
+
+  Do not add a second container, and do not reposition it per page.
+
+  ACCESSIBILITY
+    aria-live="polite" + aria-atomic="false" so appended notifications are
+    announced without re-reading the whole stack. Toasts are role="alert"
+    (assertive) at the item level, which is correct for error/success outcomes
+    but means a burst of toasts will interrupt - keep them one at a time.
+    Every toast auto-dismisses after 5s and carries a .delete button
+    (aria-label="Cerrar notificacion").
+!}
+<div id="toast-container" aria-live="polite" aria-atomic="false"
+     style="position: fixed; top: 1rem; right: 1rem; z-index: 1000; width: min(22rem, calc(100vw - 2rem)); max-width: 22rem;">
+    {#if toasts??}
+        {#include fragments/toasts /}
+    {/if}
+</div>

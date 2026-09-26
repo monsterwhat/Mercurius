@@ -8,6 +8,19 @@
 //
 // NOTE: the legacy files under META-INF/resources/resources/css/ stay in place
 // until the JSF decommission wave; this module is their new-world copy.
+//
+// The W1 design-system layer (./mercurius.scss) is NOT imported here. It is
+// pulled in from web/index.js AFTER this module, so the effective order is
+//     Bulma -> legacy layers -> Mercurius tokens + components
+// which lets the new primitives win over the legacy selectors they will
+// eventually replace.
+//
+// Do NOT re-add it as a sass @import: dart-sass emits a deprecation warning for
+// @import of a partial, and the mvnpm/esbuild sass plugin used by
+// quarkus-web-bundler fails the whole bundle on that warning
+// (BundlingException: EsBuild Bundling failed, no diagnostic). Importing the
+// partial from JS avoids the sass plugin entirely. Verified against
+// quarkus-web-bundler 2.3.3 on JDK 25.
 // =============================================================================
 
 // Framework: Bulma 1.0.4 (resolved from the org.mvnpm:bulma artifact)

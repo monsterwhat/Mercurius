@@ -1,0 +1,67 @@
+{!
+  _kit/surface - the ONE panel container (W1).
+
+  REPLACES the ad-hoc panel combinations found across the app: bare
+  `<div class="box">`, `<div class="box is-shadowless">`, `<div class="card">`
+  with a hand-rolled `.header-bar`, `<article class="message is-*">`, and the
+  `div.box[data-group=...]` groups on the settings page.
+
+  Bulma's `.box` may still sit underneath for backwards compatibility, but
+  templates should emit these semantic names so spacing, border and elevation
+  come from one place.
+
+  PARAMS
+    title    String - OPTIONAL. Rendered as .surface-title (a heading, so the
+                       page keeps a sane outline).
+    subtitle String - OPTIONAL. Rendered as .surface-subtitle under the title.
+    flush    Boolean- OPTIONAL. true removes body padding, for a surface whose
+                       body is a full-bleed table or grid.
+    id       String - OPTIONAL. DOM id. REQUIRED when the surface is an HTMX
+                       swap target (hx-target).
+
+  SLOTS
+    {#actions} - controls in the header, right-aligned.
+    {#body}    - the content. Default is empty.
+    {#footer}  - a footer strip, right-aligned by default. Use for
+                  Cancelar / Confirmar pairs.
+
+  TYPED HEADINGS
+    Pass `title` and the component emits <h2 class="surface-title">. Nested
+    surfaces should not re-declare the level - if a page needs an h3, render
+    the title yourself in the {#actions}... no: render the surface without
+    `title` and put your own heading in {#body}. Do not fight the component.
+
+  EXAMPLE
+    {#include _kit/surface id="prevalidacion-panel" title="Pre-validacion" /}
+      {#actions}<span class="tag is-warning ml-2">2 advertencias</span>{/actions}
+      {#body}
+        <p class="subtitle is-6">Sin errores de pre-validacion.</p>
+      {/body}
+      {#footer}
+        <button class="button is-primary" type="submit">Aceptar factura</button>
+      {/footer}
+    {/include}
+
+  ACCESSIBILITY
+    A surface is a <section>, so give it an accessible name when it is not
+    already labelled by surrounding context (the `title` heading does that).
+    Focus order stays DOM order: header actions, then body, then footer.
+
+  RESPONSIVE: header/footer wrap; body padding steps down 1rem -> .75rem at
+  480px. No page-specific rules.
+!}
+<section class="surface"{#if id??} id="{id}"{/if}{#if title??} aria-label="{title}"{/if}>
+    {#if title??}
+    <header class="surface-header">
+        <div>
+            <h2 class="surface-title">{title}</h2>
+            {#if subtitle??}<p class="surface-subtitle">{subtitle}</p>{/if}
+        </div>
+        {#insert actions}{/insert}
+    </header>
+    {/if}
+    <div class="surface-body{#if flush??}{#if flush} is-flush{/if}{/if}">
+        {#insert body}{/insert}
+    </div>
+    {#insert footer}{/insert}
+</section>

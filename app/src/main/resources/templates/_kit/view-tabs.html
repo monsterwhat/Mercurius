@@ -1,0 +1,103 @@
+{!
+  _kit/view-tabs - ONE visual tab system (W1).
+
+  REPLACES the four pre-W1 mechanisms that all tried to be tabs:
+    1. Alpine `x-show` + `.stat-card` button bars (articulos, categorias,
+       inventario, tributacion dashboard, consultas);
+    2. `.nav-card` pill buttons + `?seccion=` (tendencias, rendimiento,
+       pronosticos, merma, alertas);
+    3. `.tabs.is-boxed` (reportes/margenes);
+    4. bare `?vista=` links styled ad hoc (reportes/resumen).
+
+  The visual component is now identical everywhere. Only the STATE MECHANISM
+  differs, and that is a caller decision:
+    - server-driven view -> anchors with a query param (the common case);
+    - purely local view  -> Alpine `x-show` panels, tabs declared in the slot.
+
+  PARAMS
+    ariaLabel String - REQUIRED. Names the navigation landmark, e.g.
+                       "Vistas de articulos", "Consultas de facturas".
+    tabs      List   - OPTIONAL. Data mode. One Map per tab exposing:
+                         key     String - stable value written into the query
+                                         param (?key=activos).
+                         label   String - visible text.
+                         href    String - OPTIONAL. When present the tab
+                                         renders as <a>. When absent it
+                                         renders as <button type="button">.
+                         count   Object - OPTIONAL. Rendered in a
+                                         .view-tab-count pill.
+                         active  Boolean- OPTIONAL. Renders .is-active and,
+                                         for anchors, aria-current="page".
+    id        String - OPTIONAL. DOM id on the <nav>, for Alpine binding.
+
+  SLOT MODE (no `tabs` param)
+    Anything placed in {#tabs} renders inside the <nav> verbatim. Use it when
+    the tab set is driven by Alpine rather than a server-rendered list:
+
+        <div x-data="{ tab: 'activos' }">
+          {#include _kit/view-tabs ariaLabel="Vistas de articulos" /}
+            {#tabs}
+              <a class="view-tab" :class="{ 'is-active': tab === 'activos' }"
+                 href="?tab=activos">Activos</a>
+              <a class="view-tab" :class="{ 'is-active': tab === 'inactivos' }"
+                 href="?tab=inactivos">Inactivos</a>
+            {/tabs}
+          {/include}
+          <div x-show="tab === 'activos'">...</div>
+        </div>
+
+  DATA-MODE EXAMPLE (server-driven, the default for every board)
+
+        {#include _kit/view-tabs id="articulos-vistas"
+             ariaLabel="Vistas de articulos"
+             tabs=vistas /}
+
+    with, server-side, vistas = List.of(
+        Map.of("key","activos",  "label","Activos",   "href","?tab=activos",
+               "count", activosCount,  "active", "activos".equals(tab)),
+        Map.of("key","inactivos","label","Inactivos", "href","?tab=inactivos",
+               "count", inactivosCount, "active", "inactivos".equals(tab)))
+
+  SERVER CONTRACT
+    Views stay server-controlled: the tab href carries the view key as a query
+    param, the resource reads it, and it decides both the data and which entry
+    comes back with active=true. Nothing about the tab bar is client state.
+
+  ACCESSIBILITY
+    - These are NAVIGATION, not a widget: the element is <nav> with an
+      aria-label, and anchors carry aria-current="page" when active. Do NOT put
+      role="tablist"/role="tab" here - there are no tabpanels and the content is
+      server-rendered, so the ARIA tab pattern would be a lie.
+    - If a future surface genuinely swaps panels in place with the keyboard, use
+      the ARIA pattern properly there: role="tablist" on the container,
+      role="tab" + aria-selected on each tab, role="tabpanel" + aria-labelledby
+      on the panel, and arrow-key roving tabindex. That is a documented
+      exception, not the default.
+    - .view-tabs scrolls horizontally on narrow viewports, so tabs stay
+      reachable instead of wrapping into a tall block.
+
+  RESPONSIVE: auto horizontal scroll <=768px, reduced padding <=480px. Each tab
+  keeps white-space:nowrap so counts never wrap.
+!}
+{@java.lang.String ariaLabel}
+<nav class="view-tabs" role="navigation" aria-label="{ariaLabel}"{#if id??} id="{id}"{/if}>
+    {#if tabs??}
+        {#for tab in tabs}
+            {#if tab.href??}
+            <a class="view-tab{#if tab.active??}{#if tab.active} is-active{/if}{/if}" href="{tab.href}"
+               data-view="{tab.key}"{#if tab.active??}{#if tab.active} aria-current="page"{/if}{/if}>
+                <span>{tab.label}</span>
+                {#if tab.count??}<span class="view-tab-count">{tab.count}</span>{/if}
+            </a>
+            {#else}
+            <button type="button" class="view-tab{#if tab.active??}{#if tab.active} is-active{/if}{/if}"
+                    data-view="{tab.key}"{#if tab.active??}{#if tab.active} aria-current="page"{/if}{/if}>
+                <span>{tab.label}</span>
+                {#if tab.count??}<span class="view-tab-count">{tab.count}</span>{/if}
+            </button>
+            {/if}
+        {/for}
+    {#else}
+        {#insert tabs}{/insert}
+    {/if}
+</nav>
