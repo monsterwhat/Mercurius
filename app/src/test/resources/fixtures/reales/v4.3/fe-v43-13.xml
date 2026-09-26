@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FacturaElectronica xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica_V.4.3.xsd">
+   <Clave>50624041600310010090001100067010000700013000104093</Clave>
+   <CodigoActividad>154101</CodigoActividad>
+   <NumeroConsecutivo>01100067010000700013</NumeroConsecutivo>
+   <FechaEmision>2024-04-16T11:50:43</FechaEmision>
+   <Emisor>
+      <Nombre>Panificadora del Sur S.A.</Nombre>
+      <Identificacion>
+         <Tipo>02</Tipo>
+         <Numero>3100100008</Numero>
+      </Identificacion>
+      <NombreComercial>Panificadora del Sur S.A.</NombreComercial>
+      <Ubicacion>
+         <Provincia>4</Provincia>
+         <Canton>03</Canton>
+         <Distrito>06</Distrito>
+         <Barrio>06</Barrio>
+         <OtrasSenas>DEL CRUCE DE LA PRINCIPAL CUATROCIENTOS METROS AL ESTE, ZONA INDUSTRIAL, MODULO 1</OtrasSenas>
+      </Ubicacion>
+      <Telefono>
+         <CodigoPais>506</CodigoPais>
+         <NumTelefono>20012223</NumTelefono>
+      </Telefono>
+      <CorreoElectronico>facturacion.8@proveedor-prueba.test</CorreoElectronico>
+   </Emisor>
+   <Receptor>
+      <Nombre>PERSONA FISICA PRUEBA DOS</Nombre>
+      <Identificacion>
+         <Tipo>03</Tipo>
+         <Numero>10000100009</Numero>
+      </Identificacion>
+      <NombreComercial>SUPER EL PRADO</NombreComercial>
+      <Ubicacion>
+         <Provincia>5</Provincia>
+         <Canton>03</Canton>
+         <Distrito>09</Distrito>
+         <Barrio>01</Barrio>
+         <OtrasSenas>CINCO CUADRAS AL NORTE DE LA PLAZA PRINCIPAL</OtrasSenas>
+      </Ubicacion>
+      <Telefono>
+         <CodigoPais>506</CodigoPais>
+         <NumTelefono>20002224</NumTelefono>
+      </Telefono>
+      <CorreoElectronico>facturacion.2@proveedor-prueba.test</CorreoElectronico>
+   </Receptor>
+   <CondicionVenta>01</CondicionVenta>
+   <PlazoCredito>0</PlazoCredito>
+   <MedioPago>01</MedioPago>
+   <DetalleServicio>
+      <LineaDetalle>
+         <NumeroLinea>1</NumeroLinea>
+         <Codigo>2349002011400</Codigo>
+         <CodigoComercial>
+            <Tipo>04</Tipo>
+            <Codigo>505891</Codigo>
+         </CodigoComercial>
+         <CodigoComercial>
+            <Tipo>03</Tipo>
+            <Codigo>757528013479</Codigo>
+         </CodigoComercial>
+         <Cantidad>6</Cantidad>
+         <UnidadMedida>Unid</UnidadMedida>
+         <UnidadMedidaComercial>Pieza</UnidadMedidaComercial>
+         <Detalle>Takis Fuego ES 1p 56g FLOW BAR</Detalle>
+         <PrecioUnitario>331.86</PrecioUnitario>
+         <MontoTotal>1991.16</MontoTotal>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <SubTotal>1991.16</SubTotal>
+         <Impuesto>
+            <Codigo>01</Codigo>
+            <CodigoTarifa>08</CodigoTarifa>
+            <Tarifa>13</Tarifa>
+            <Monto>258.85</Monto>
+         </Impuesto>
+         <ImpuestoNeto>258.85</ImpuestoNeto>
+         <MontoTotalLinea>2250.01</MontoTotalLinea>
+      </LineaDetalle>
+      <LineaDetalle>
+         <NumeroLinea>2</NumeroLinea>
+         <Codigo>2349002011400</Codigo>
+         <CodigoComercial>
+            <Tipo>04</Tipo>
+            <Codigo>505893</Codigo>
+         </CodigoComercial>
+         <CodigoComercial>
+            <Tipo>03</Tipo>
+            <Codigo>757528029050</Codigo>
+         </CodigoComercial>
+         <Cantidad>6</Cantidad>
+         <UnidadMedida>Unid</UnidadMedida>
+         <UnidadMedidaComercial>Pieza</UnidadMedidaComercial>
+         <Detalle>Takis Xplosion ES 1p 56g FLOW BAR</Detalle>
+         <PrecioUnitario>331.86</PrecioUnitario>
+         <MontoTotal>1991.16</MontoTotal>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <SubTotal>1991.16</SubTotal>
+         <Impuesto>
+            <Codigo>01</Codigo>
+            <CodigoTarifa>08</CodigoTarifa>
+            <Tarifa>13</Tarifa>
+            <Monto>258.85</Monto>
+         </Impuesto>
+         <ImpuestoNeto>258.85</ImpuestoNeto>
+         <MontoTotalLinea>2250.01</MontoTotalLinea>
+      </LineaDetalle>
+      <LineaDetalle>
+         <NumeroLinea>3</NumeroLinea>
+         <Codigo>2349002011400</Codigo>
+         <CodigoComercial>
+            <Tipo>04</Tipo>
+            <Codigo>128544</Codigo>
+         </CodigoComercial>
+         <CodigoComercial>
+            <Tipo>03</Tipo>
+            <Codigo>757528048686</Codigo>
+         </CodigoComercial>
+         <Cantidad>6</Cantidad>
+         <UnidadMedida>Unid</UnidadMedida>
+         <UnidadMedidaComercial>Pieza</UnidadMedidaComercial>
+         <Detalle>Big Mix Fuego 1p 40g FLOW BAR EXP</Detalle>
+         <PrecioUnitario>331.86</PrecioUnitario>
+         <MontoTotal>1991.16</MontoTotal>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <SubTotal>1991.16</SubTotal>
+         <Impuesto>
+            <Codigo>01</Codigo>
+            <CodigoTarifa>08</CodigoTarifa>
+            <Tarifa>13</Tarifa>
+            <Monto>258.85</Monto>
+         </Impuesto>
+         <ImpuestoNeto>258.85</ImpuestoNeto>
+         <MontoTotalLinea>2250.01</MontoTotalLinea>
+      </LineaDetalle>
+      <LineaDetalle>
+         <NumeroLinea>4</NumeroLinea>
+         <Codigo>2349002011400</Codigo>
+         <CodigoComercial>
+            <Tipo>04</Tipo>
+            <Codigo>128942</Codigo>
+         </CodigoComercial>
+         <CodigoComercial>
+            <Tipo>03</Tipo>
+            <Codigo>757528049850</Codigo>
+         </CodigoComercial>
+         <Cantidad>6</Cantidad>
+         <UnidadMedida>Unid</UnidadMedida>
+         <UnidadMedidaComercial>Pieza</UnidadMedidaComercial>
+         <Detalle>Takis Blue Heat 1p 56g FLOW BAR EXP</Detalle>
+         <PrecioUnitario>331.86</PrecioUnitario>
+         <MontoTotal>1991.16</MontoTotal>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0.00</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <Descuento>
+            <MontoDescuento>0</MontoDescuento>
+            <NaturalezaDescuento>Descuento de Venta</NaturalezaDescuento>
+         </Descuento>
+         <SubTotal>1991.16</SubTotal>
+         <Impuesto>
+            <Codigo>01</Codigo>
+            <CodigoTarifa>08</CodigoTarifa>
+            <Tarifa>13</Tarifa>
+            <Monto>258.85</Monto>
+         </Impuesto>
+         <ImpuestoNeto>258.85</ImpuestoNeto>
+         <MontoTotalLinea>2250.01</MontoTotalLinea>
+      </LineaDetalle>
+   </DetalleServicio>
+   <ResumenFactura>
+      <CodigoTipoMoneda>
+         <CodigoMoneda>CRC</CodigoMoneda>
+         <TipoCambio>1</TipoCambio>
+      </CodigoTipoMoneda>
+      <TotalServGravados>0</TotalServGravados>
+      <TotalServExentos>0</TotalServExentos>
+      <TotalServExonerado>0</TotalServExonerado>
+      <TotalMercanciasGravadas>7964.64</TotalMercanciasGravadas>
+      <TotalMercanciasExentas>0.00</TotalMercanciasExentas>
+      <TotalMercExonerada>0.00</TotalMercExonerada>
+      <TotalGravado>7964.64</TotalGravado>
+      <TotalExento>0.00</TotalExento>
+      <TotalExonerado>0.00</TotalExonerado>
+      <TotalVenta>7964.64</TotalVenta>
+      <TotalDescuentos>0.00</TotalDescuentos>
+      <TotalVentaNeta>7964.64</TotalVentaNeta>
+      <TotalImpuesto>1035.40</TotalImpuesto>
+      <TotalComprobante>9000.04</TotalComprobante>
+   </ResumenFactura>
+   
+</FacturaElectronica>

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NotaCreditoElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/notaCreditoElectronica https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.3/NotaCreditoElectronica_V4.3.xsd">
+  <Clave>50624041300310010001500100056030001200019000716492</Clave>
+			<ProveedorSistemas>3100100015</ProveedorSistemas>
+  <CodigoActividadEmisor>512201</CodigoActividadEmisor>
+  <NumeroConsecutivo>00100056030001200019</NumeroConsecutivo>
+  <FechaEmision>2024-04-13T00:00:00</FechaEmision>
+  <Emisor>
+    <Nombre>Comercial de la Pampa S.A.</Nombre>
+    <Identificacion>
+      <Tipo>02</Tipo>
+      <Numero>3100100015</Numero>
+    </Identificacion>
+    <NombreComercial>Comercial de la Pampa S.A.</NombreComercial>
+    <Ubicacion>
+      <Provincia>5</Provincia>
+      <Canton>03</Canton>
+      <Distrito>01</Distrito>
+      <Barrio>BARRIO 36</Barrio>
+      <OtrasSenas>DISTRITO DE PRUEBA, RUTA NACIONAL INTERMEDIA</OtrasSenas>
+    </Ubicacion>
+    <Telefono>
+      <CodigoPais>506</CodigoPais>
+      <NumTelefono>20015556</NumTelefono>
+    </Telefono>
+    
+    <CorreoElectronico>facturacion.10@proveedor-prueba.test</CorreoElectronico>
+  </Emisor>
+  <Receptor>
+    <Nombre>PERSONA FISICA PRUEBA DOS</Nombre>
+    <Identificacion>
+      <Tipo>01</Tipo>
+      <Numero>100100002</Numero>
+    </Identificacion>
+    <Ubicacion>
+      <Provincia>5</Provincia>
+      <Canton>03</Canton>
+      <Distrito>09</Distrito>
+      <Barrio>BARRIO 15</Barrio>
+      <OtrasSenas>CIENTO METROS AL NORTE DEL HOTEL, RUTA PRINCIPAL</OtrasSenas>
+    </Ubicacion>
+    <Telefono>
+      <CodigoPais>506</CodigoPais>
+      <NumTelefono>20016667</NumTelefono>
+    </Telefono>
+    <CorreoElectronico>facturacion.2@proveedor-prueba.test</CorreoElectronico>
+  </Receptor>
+  <CondicionVenta>02</CondicionVenta>
+  <PlazoCredito>7</PlazoCredito>
+  
+  <DetalleServicio>
+    <LineaDetalle>
+      <NumeroLinea>1</NumeroLinea>
+      <CodigoCABYS>2391200000100</CodigoCABYS>
+      <CodigoComercial>
+        <Tipo>04</Tipo>
+        <Codigo>20500049</Codigo>
+      </CodigoComercial>
+      <CodigoComercial>
+        <Tipo>03</Tipo>
+        <Codigo>760861000037</Codigo>
+      </CodigoComercial>
+      <Cantidad>2.000</Cantidad>
+      <UnidadMedida>Unid</UnidadMedida>
+      <Detalle>NESTLE PRESTO CAFE INST. 50GR * 24</Detalle>
+      <PrecioUnitario>1478.00</PrecioUnitario>
+      <MontoTotal>2956.00</MontoTotal>
+      <Descuento>
+        <MontoDescuento>0.00</MontoDescuento><CodigoDescuento>01</CodigoDescuento>
+        <NaturalezaDescuento>Descuento Comercial</NaturalezaDescuento>
+      </Descuento>
+      <SubTotal>2956.00</SubTotal><BaseImponible>2956.00</BaseImponible>
+      <Impuesto>
+        <Codigo>01</Codigo>
+        <CodigoTarifaIVA>08</CodigoTarifaIVA>
+        <Tarifa>13.00</Tarifa>
+        <Monto>384.28</Monto>
+      </Impuesto>
+      <ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>384.28</ImpuestoNeto>
+      <MontoTotalLinea>3340.28</MontoTotalLinea>
+    </LineaDetalle>
+    <LineaDetalle>
+      <NumeroLinea>2</NumeroLinea>
+      <CodigoCABYS>2391200000100</CodigoCABYS>
+      <CodigoComercial>
+        <Tipo>04</Tipo>
+        <Codigo>20600184</Codigo>
+      </CodigoComercial>
+      <CodigoComercial>
+        <Tipo>03</Tipo>
+        <Codigo>7501058656971</Codigo>
+      </CodigoComercial>
+      <Cantidad>1.000</Cantidad>
+      <UnidadMedida>Unid</UnidadMedida>
+      <Detalle>NESTLE NESCAFE CAFE CLASICO INT. 3EN1 DISP/12 20GR*8</Detalle>
+      <PrecioUnitario>2215.00</PrecioUnitario>
+      <MontoTotal>2215.00</MontoTotal>
+      <Descuento>
+        <MontoDescuento>0.00</MontoDescuento><CodigoDescuento>01</CodigoDescuento>
+        <NaturalezaDescuento>Descuento Comercial</NaturalezaDescuento>
+      </Descuento>
+      <SubTotal>2215.00</SubTotal><BaseImponible>2215.00</BaseImponible>
+      <Impuesto>
+        <Codigo>01</Codigo>
+        <CodigoTarifaIVA>08</CodigoTarifaIVA>
+        <Tarifa>13.00</Tarifa>
+        <Monto>287.95</Monto>
+      </Impuesto>
+      <ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>287.95</ImpuestoNeto>
+      <MontoTotalLinea>2502.95</MontoTotalLinea>
+    </LineaDetalle>
+  </DetalleServicio>
+  <ResumenFactura>
+    <CodigoTipoMoneda>
+      <CodigoMoneda>CRC</CodigoMoneda>
+      <TipoCambio>1</TipoCambio>
+    </CodigoTipoMoneda>
+    <TotalServGravados>0.00</TotalServGravados>
+    <TotalServExentos>0.00</TotalServExentos>
+    <TotalMercanciasGravadas>5171.00</TotalMercanciasGravadas>
+    <TotalMercanciasExentas>0.00</TotalMercanciasExentas>
+    <TotalGravado>5171.00</TotalGravado>
+    <TotalExento>0.00</TotalExento>
+    <TotalExonerado>0.00</TotalExonerado>
+    <TotalVenta>5171.00</TotalVenta>
+    <TotalDescuentos>0.00</TotalDescuentos>
+    <TotalVentaNeta>5171.00</TotalVentaNeta>
+    <TotalImpuesto>672.23</TotalImpuesto>
+    <TotalIVADevuelto>0.00</TotalIVADevuelto>
+    <TotalComprobante>5843.23</TotalComprobante>
+  </ResumenFactura>
+  <InformacionReferencia>
+    <TipoDocIR>01</TipoDocIR>
+    <Numero>50612042400310010001500100001010000292497000103971</Numero>
+    <FechaEmisionIR>2024-04-12T07:10:37</FechaEmisionIR>
+    <Codigo>01</Codigo>
+    <Razon>Nota Crédito</Razon>
+  </InformacionReferencia>
+  <Otros>
+    <OtroTexto>Cargado de FR</OtroTexto>
+  </Otros>
+</NotaCreditoElectronica>

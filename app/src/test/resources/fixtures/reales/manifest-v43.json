@@ -1,0 +1,182 @@
+﻿[
+    {
+        "fixture":  "fe-v43-01.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "000401920953-FE-00100001010000005912.xml",
+        "emisorRuc":  "400100001",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700001"
+    },
+    {
+        "fixture":  "fe-v43-02.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "000401920953-FE-00100001010000006049.xml",
+        "emisorRuc":  "400100001",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700002"
+    },
+    {
+        "fixture":  "fc-v43-03.xml",
+        "kind":  "FC",
+        "sourceKind":  "FC",
+        "sourceFile":  "003004045002-FC-40300391010000014262.xml",
+        "emisorRuc":  "3000100003",
+        "receptorRuc":  "100100002",
+        "consecutive":  "40300391010000700003"
+    },
+    {
+        "fixture":  "nc-v43-04.xml",
+        "kind":  "NC",
+        "sourceKind":  "NC",
+        "sourceFile":  "003004045002-NC-40300391030000005209.xml",
+        "emisorRuc":  "3000100003",
+        "receptorRuc":  "100100002",
+        "consecutive":  "40300391030000700004"
+    },
+    {
+        "fixture":  "fe-v43-05.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "003101295868-FE-00100001010009179251.xml",
+        "emisorRuc":  "3100100004",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700005"
+    },
+    {
+        "fixture":  "fe-v43-06.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "003101295868-FE-00100001010009179255.xml",
+        "emisorRuc":  "3100100004",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700006"
+    },
+    {
+        "fixture":  "nc-v43-07.xml",
+        "kind":  "NC",
+        "sourceKind":  "NC",
+        "sourceFile":  "003101295868-NC-00100001030001899206.xml",
+        "emisorRuc":  "3100100004",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001030000700007"
+    },
+    {
+        "fixture":  "fe-v43-08.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "20240422203335_50617042400310100771600109600010000000676151024006_310100771619_CR.310100771619_CI.104550334.xml",
+        "emisorRuc":  "3100100005",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00109600010000700008"
+    },
+    {
+        "fixture":  "fe-v43-09.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "20240422203335_50617042400310100771600109600010000000676151024006_310100771619_CR.310100771619_CI.104550334-2.xml",
+        "emisorRuc":  "3100100005",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00109600010000700009"
+    },
+    {
+        "fixture":  "fe-v43-10.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "50615042400310283069800100001010000034772180327878.xml",
+        "emisorRuc":  "3100100006",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700010"
+    },
+    {
+        "fixture":  "fe-v43-11.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "50620042400310137322000300001010000273348191194893.xml",
+        "emisorRuc":  "3100100007",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00300001010000700011"
+    },
+    {
+        "fixture":  "fe-v43-12.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "50622042400310283069800100001010000035111111029818.xml",
+        "emisorRuc":  "3100100006",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700012"
+    },
+    {
+        "fixture":  "fe-v43-13.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "DOC-1-13560.xml",
+        "emisorRuc":  "3100100008",
+        "receptorRuc":  "10000100009",
+        "consecutive":  "01100067010000700013"
+    },
+    {
+        "fixture":  "fe-v43-14.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "DOC-1-3691047.xml",
+        "emisorRuc":  "3100100010",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100014010000700014"
+    },
+    {
+        "fixture":  "fe-v43-15.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "Factura_XML_3101500983_104550334_00100001010000424915.xml",
+        "emisorRuc":  "3100100011",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700015"
+    },
+    {
+        "fixture":  "fe-v43-16.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "FacturaElectronica-50616042400310100873980001070010000029208306070312.xml",
+        "emisorRuc":  "3100100012",
+        "receptorRuc":  "100100002",
+        "consecutive":  "80001070010000700016"
+    },
+    {
+        "fixture":  "fe-v43-17.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "FE-50619042400310128378800100001010000604130194432990.xml",
+        "emisorRuc":  "3100100013",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100001010000700017"
+    },
+    {
+        "fixture":  "fe-v43-18.xml",
+        "kind":  "FE",
+        "sourceKind":  "FE",
+        "sourceFile":  "Firmado_50618042400310135759100100022010000012004100012004.xml",
+        "emisorRuc":  "3100100014",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100022010000700018"
+    },
+    {
+        "fixture":  "nc-v43-19.xml",
+        "kind":  "NC",
+        "sourceKind":  "NC",
+        "sourceFile":  "NotaCredito_XML_3101225197_104550334_00100056030000002725.xml",
+        "emisorRuc":  "3100100015",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100056030000700019"
+    },
+    {
+        "fixture":  "nc-v43-20.xml",
+        "kind":  "NC",
+        "sourceKind":  "NC",
+        "sourceFile":  "NotaCredito_XML_3101225197_104550334_00100056030000002725-2.xml",
+        "emisorRuc":  "3100100015",
+        "receptorRuc":  "100100002",
+        "consecutive":  "00100056030000700020"
+    }
+]

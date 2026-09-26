@@ -33,6 +33,7 @@ import Services.LoginService;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import support.CatalogoReal;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
@@ -114,7 +115,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
 
     private Articulos seedArticulo(String barcode) {
         Articulos articulo = new Articulos();
-        articulo.setNombre("Placeholder real " + uniqueSuffix());
+        articulo.setNombre(nombreReal("[real]"));
         articulo.setCodigoBarra(barcode);
         articulo.setUnidadMedida("Unidad");
         articulo.setUnidadMedidaComercial("Unidad");
@@ -154,6 +155,15 @@ class InventarioResourceTest extends support.ContextPathIsolation {
 
     // ── Scenarios ───────────────────────────────────────────────────────
 
+    /** Next unused real GTIN-13 taken from the anonymized invoice fixtures. */
+    private static String codigoBarraReal() {
+        return CatalogoReal.siguienteBarra();
+    }
+
+    /** Real supplier article description, suffixed to stay unique within a boot. */
+    private static String nombreReal(String sufijo) {
+        return CatalogoReal.siguiente().nombre() + " " + sufijo;
+    }
     @Test
     @Order(1)
     void unauthenticatedListIsRedirectedToLogin() {
@@ -168,7 +178,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(2)
     void adminListsActivosWithPagedEnvelopeAndSeededRow() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
         Inventario movimiento = seedMovimiento(articulo, BigDecimal.valueOf(3), true);
 
         authed(session)
@@ -192,7 +202,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(3)
     void pendientesTabListsOnlyUnprocessedMovements() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
         Inventario pendiente = seedMovimiento(articulo, BigDecimal.ONE, false);
 
         authed(session)
@@ -208,7 +218,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(4)
     void adjustmentDetailReturnsDtoAndUnknownCodeIs404() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
         Inventario movimiento = seedMovimiento(articulo, BigDecimal.TEN, true);
 
         authed(session)
@@ -231,7 +241,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(5)
     void stockEndpointWrapsBothServiceCalculations() {
         Map<String, String> session = adminSession();
-        String barcode = "T37-STOCK-" + uniqueSuffix();
+        String barcode = codigoBarraReal();
         Articulos articulo = seedArticulo(barcode);
         Inventario entrada = new Inventario();
         entrada.setArticulo(articulo);
@@ -265,7 +275,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(6)
     void createAjusteHappyPathPersistsProcessedMovementAndUpdatesStock() {
         Map<String, String> session = adminSession();
-        String barcode = "T37-STOCK-" + uniqueSuffix();
+        String barcode = codigoBarraReal();
         Articulos articulo = seedArticulo(barcode);
 
         authed(session)
@@ -286,7 +296,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(7)
     void createAjusteFormTwinBehavesLikeJsonPath() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
 
         authed(session)
                 .contentType(ContentType.URLENC)
@@ -370,7 +380,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(11)
     void approveAppliesQuantityToStockWithLegacyStamps() {
         Map<String, String> session = adminSession();
-        String barcode = "T37-STOCK-" + uniqueSuffix();
+        String barcode = codigoBarraReal();
         Articulos articulo = seedArticulo(barcode);
         Inventario pendiente = seedMovimiento(articulo, BigDecimal.valueOf(5), false);
 
@@ -396,7 +406,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(12)
     void quickProcessApproveContinuesWizardWithNextPendingOrFinishes() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
         Inventario unico = seedMovimiento(articulo, BigDecimal.TWO, false);
 
         Response wizard = authed(session)
@@ -428,7 +438,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(13)
     void omitirIsAuditOnlyAndKeepsMovementPending() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
         Inventario pendiente = seedMovimiento(articulo, BigDecimal.ONE, false);
 
         authed(session)
@@ -447,7 +457,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(14)
     void rechazarSoftDeletesTheMovementOutOfActivos() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
         Inventario movimiento = seedMovimiento(articulo, BigDecimal.valueOf(9), true);
 
         authed(session)
@@ -465,7 +475,7 @@ class InventarioResourceTest extends support.ContextPathIsolation {
     @Order(15)
     void reabrirUndoesProcessingLikeLegacyUnprocess() {
         Map<String, String> session = adminSession();
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix());
+        Articulos articulo = seedArticulo(codigoBarraReal());
         Inventario movimiento = seedMovimiento(articulo, BigDecimal.valueOf(8), true);
 
         authed(session)

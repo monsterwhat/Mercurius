@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?><FacturaElectronica xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica"><Clave>50624042000310010000700300001010001200011000718793</Clave>
+			<ProveedorSistemas>3100100007</ProveedorSistemas>
+<CodigoActividadEmisor>523901</CodigoActividadEmisor>
+<NumeroConsecutivo>00300001010001200011</NumeroConsecutivo>
+<FechaEmision>2024-04-20T16:09:32</FechaEmision>
+<Emisor>
+<Nombre>COMERCIAL DEL VALLE DE COSTA RICA SOCIEDAD ANONIMA</Nombre>
+<Identificacion>
+<Tipo>02</Tipo>
+<Numero>3100100007</Numero>
+</Identificacion>
+<NombreComercial>Comercial del Valle de Costa Rica, S.A.</NombreComercial>
+<Ubicacion>
+<Provincia>5</Provincia>
+<Canton>01</Canton>
+<Distrito>01</Distrito>
+<Barrio>BARRIO 04</Barrio>
+<OtrasSenas>COMPLEJO COMERCIAL, BODEGA 5E, PABELLON INDUSTRIAL</OtrasSenas>
+</Ubicacion>
+<Telefono>
+<CodigoPais>506</CodigoPais>
+<NumTelefono>20011112</NumTelefono>
+</Telefono>
+
+<CorreoElectronico>facturacion.7@proveedor-prueba.test</CorreoElectronico>
+</Emisor>
+<Receptor>
+<Nombre>SUPER EL PRADO</Nombre>
+<Identificacion>
+<Tipo>01</Tipo>
+<Numero>100100002</Numero>
+</Identificacion>
+<NombreComercial>SUPER EL PRADO</NombreComercial>
+<CorreoElectronico>facturacion.2@proveedor-prueba.test</CorreoElectronico>
+</Receptor>
+<CondicionVenta>01</CondicionVenta>
+
+
+<DetalleServicio>
+<LineaDetalle>
+<NumeroLinea>1</NumeroLinea>
+<CodigoCABYS>2139400000200</CodigoCABYS>
+<CodigoComercial>
+<Tipo>04</Tipo>
+<Codigo>60974.1</Codigo>
+</CodigoComercial>
+<Cantidad>36.0</Cantidad>
+<UnidadMedida>Otros</UnidadMedida>
+<UnidadMedidaComercial>UN</UnidadMedidaComercial>
+<Detalle>Zibas Papa MielMostaza 23g 144s</Detalle>
+<PrecioUnitario>184.36583</PrecioUnitario>
+<MontoTotal>6637.16988</MontoTotal>
+<SubTotal>6637.16988</SubTotal><BaseImponible>6637.16988</BaseImponible>
+<Impuesto><Codigo>01</Codigo>
+<CodigoTarifaIVA>08</CodigoTarifaIVA>
+<Tarifa>13.0</Tarifa>
+<Monto>862.83</Monto>
+</Impuesto>
+<ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>0.0</ImpuestoNeto>
+<MontoTotalLinea>7499.99988</MontoTotalLinea>
+</LineaDetalle>
+<LineaDetalle>
+<NumeroLinea>2</NumeroLinea>
+<CodigoCABYS>2314000990400</CodigoCABYS>
+<CodigoComercial>
+<Tipo>04</Tipo>
+<Codigo>61256.7</Codigo>
+</CodigoComercial>
+<Cantidad>24.0</Cantidad>
+<UnidadMedida>Otros</UnidadMedida>
+<UnidadMedidaComercial>UN</UnidadMedidaComercial>
+<Detalle>Taqueritos QuesoFusion 34g 288s</Detalle>
+<PrecioUnitario>147.4925</PrecioUnitario>
+<MontoTotal>3539.82</MontoTotal>
+<SubTotal>3539.82</SubTotal><BaseImponible>3539.82</BaseImponible>
+<Impuesto>
+<Codigo>01</Codigo>
+<CodigoTarifaIVA>08</CodigoTarifaIVA>
+<Tarifa>13.0</Tarifa>
+<Monto>460.18</Monto>
+</Impuesto>
+<ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>0.0</ImpuestoNeto>
+<MontoTotalLinea>4000.0</MontoTotalLinea>
+</LineaDetalle>
+<LineaDetalle>
+<NumeroLinea>3</NumeroLinea>
+<CodigoCABYS>2314000990400</CodigoCABYS>
+<CodigoComercial>
+<Tipo>04</Tipo>
+<Codigo>61273.4</Codigo>
+</CodigoComercial>
+<Cantidad>36.0</Cantidad>
+<UnidadMedida>Otros</UnidadMedida>
+<UnidadMedidaComercial>UN</UnidadMedidaComercial>
+<Detalle>Ranchitas Nacho Queso 25g 144s</Detalle>
+<PrecioUnitario>110.61944</PrecioUnitario>
+<MontoTotal>3982.29984</MontoTotal>
+<SubTotal>3982.29984</SubTotal><BaseImponible>3982.29984</BaseImponible>
+<Impuesto>
+<Codigo>01</Codigo>
+<CodigoTarifaIVA>08</CodigoTarifaIVA>
+<Tarifa>13.0</Tarifa>
+<Monto>517.7</Monto>
+</Impuesto>
+<ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>0.0</ImpuestoNeto>
+<MontoTotalLinea>4499.99984</MontoTotalLinea>
+</LineaDetalle>
+<LineaDetalle>
+<NumeroLinea>4</NumeroLinea>
+<CodigoCABYS>2314000990400</CodigoCABYS>
+<CodigoComercial><Tipo>04</Tipo>
+<Codigo>61274.1</Codigo>
+</CodigoComercial>
+<Cantidad>36.0</Cantidad>
+<UnidadMedida>Otros</UnidadMedida>
+<UnidadMedidaComercial>UN</UnidadMedidaComercial>
+<Detalle>Ranchitas Nacho Excitante 25g 144s</Detalle>
+<PrecioUnitario>110.61944</PrecioUnitario>
+<MontoTotal>3982.29984</MontoTotal>
+<SubTotal>3982.29984</SubTotal><BaseImponible>3982.29984</BaseImponible>
+<Impuesto><Codigo>01</Codigo>
+<CodigoTarifaIVA>08</CodigoTarifaIVA>
+<Tarifa>13.0</Tarifa>
+<Monto>517.7</Monto>
+</Impuesto>
+<ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>0.0</ImpuestoNeto>
+<MontoTotalLinea>4499.99984</MontoTotalLinea>
+</LineaDetalle>
+<LineaDetalle>
+<NumeroLinea>5</NumeroLinea>
+<CodigoCABYS>2314000990400</CodigoCABYS>
+<CodigoComercial>
+<Tipo>04</Tipo>
+<Codigo>65644.8</Codigo>
+</CodigoComercial>
+<Cantidad>6.0</Cantidad>
+<UnidadMedida>Otros</UnidadMedida>
+<UnidadMedidaComercial>UN</UnidadMedidaComercial>
+<Detalle>2pk RanchQue/RanchExcit 12s</Detalle>
+<PrecioUnitario>1327.43333</PrecioUnitario>
+<MontoTotal>7964.59998</MontoTotal>
+<SubTotal>7964.59998</SubTotal><BaseImponible>7964.59998</BaseImponible>
+<Impuesto>
+<Codigo>01</Codigo>
+<CodigoTarifaIVA>08</CodigoTarifaIVA>
+<Tarifa>13.0</Tarifa>
+<Monto>1035.4</Monto>
+</Impuesto>
+<ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>0.0</ImpuestoNeto>
+<MontoTotalLinea>8999.99998</MontoTotalLinea>
+</LineaDetalle>
+</DetalleServicio>
+<ResumenFactura>
+<CodigoTipoMoneda>
+<CodigoMoneda>CRC</CodigoMoneda>
+<TipoCambio>1.0</TipoCambio>
+</CodigoTipoMoneda>
+<TotalServGravados>0.0</TotalServGravados>
+<TotalServExentos>0.0</TotalServExentos>
+<TotalServExonerado>0.0</TotalServExonerado>
+<TotalMercanciasGravadas>26106.18954</TotalMercanciasGravadas>
+<TotalMercanciasExentas>0.0</TotalMercanciasExentas>
+<TotalMercExonerada>0.0</TotalMercExonerada>
+<TotalGravado>26106.18954</TotalGravado>
+<TotalExento>0.0</TotalExento>
+<TotalExonerado>0.0</TotalExonerado>
+<TotalVenta>26106.18954</TotalVenta>
+<TotalDescuentos>0.0</TotalDescuentos>
+<TotalVentaNeta>26106.18954</TotalVentaNeta>
+<TotalImpuesto>3393.81</TotalImpuesto>
+<TotalIVADevuelto>0.0</TotalIVADevuelto>
+<TotalOtrosCargos>0.0</TotalOtrosCargos>
+<TotalComprobante>29499.99954</TotalComprobante>
+</ResumenFactura>
+<Otros>
+<OtroTexto codigo="DireccionSucursal">5|01|01|04|COMPLEJO COMERCIAL, BODEGA 5E, PABELLON INDUSTRIAL</OtroTexto>
+<OtroTexto codigo="CodigoInternoDeCliente">4445135428</OtroTexto>
+<OtroTexto codigo="emisor_provincia">PROVINCIA DE PRUEBA</OtroTexto>
+<OtroTexto codigo="emisor_canton">CANTON DE PRUEBA</OtroTexto>
+<OtroTexto codigo="emisor_distrito">DISTRITO DE PRUEBA</OtroTexto>
+<OtroTexto codigo="emisor_barrio">BARRIO DE PRUEBA</OtroTexto>
+<OtroTexto codigo="receptor_provincia"></OtroTexto>
+<OtroTexto codigo="receptor_canton"></OtroTexto>
+<OtroTexto codigo="receptor_distrito"></OtroTexto>
+<OtroTexto codigo="receptor_barrio"></OtroTexto>
+<OtroTexto codigo="flag_operacion">PRODUCCION</OtroTexto>
+<OtroTexto codigo="exoneracion"></OtroTexto>
+<OtroTexto codigo="tipocambiodia">0</OtroTexto>
+</Otros>
+</FacturaElectronica>

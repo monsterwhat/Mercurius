@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<NotaCreditoElectronica
+	xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaCreditoElectronica" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaCreditoElectronica https://www.hacienda.go.cr/ATV/ComprobanteElectronico/docs/esquemas/2016/v4.3/NotaCreditoElectronica_V4.3.xsd"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<Clave>50624041900300010090040300391030000700004000105883</Clave>
+	<CodigoActividad>152002</CodigoActividad>
+	<NumeroConsecutivo>40300391030000700004</NumeroConsecutivo>
+	<FechaEmision>2024-04-19T00:00:00-06:00</FechaEmision>
+	<Emisor>
+		<Nombre>COOPERATIVA DE PRODUCTORES DE LECHE DEL VALLE R.L.</Nombre>
+		<Identificacion>
+			<Tipo>02</Tipo>
+			<Numero>3000100003</Numero>
+		</Identificacion>
+		<NombreComercial>COOPERATIVA DE PRODUCTORES DE LECHE DEL VALLE R.L.</NombreComercial>
+		<Ubicacion>
+			<Provincia>2</Provincia>
+			<Canton>01</Canton>
+			<Distrito>02</Distrito>
+			<Barrio>19</Barrio>
+			<OtrasSenas>AEROPUERTO INTERNACIONAL, AUTOPISTA PRINCIPAL KM 7 AL OESTE</OtrasSenas>
+		</Ubicacion>
+		<Telefono>
+			<CodigoPais>506</CodigoPais>
+			<NumTelefono>20003335</NumTelefono>
+		</Telefono>
+		<Fax>
+			<CodigoPais>506</CodigoPais>
+			<NumTelefono>20004446</NumTelefono>
+		</Fax>
+		<CorreoElectronico>facturacion.3@proveedor-prueba.test</CorreoElectronico>
+	</Emisor>
+	<Receptor>
+		<Nombre>PERSONA FISICA PRUEBA DOS</Nombre>
+		<Identificacion>
+			<Tipo>01</Tipo>
+			<Numero>100100002</Numero>
+		</Identificacion>
+		<NombreComercial>EL PRADO</NombreComercial>
+		<Telefono>
+			<CodigoPais>506</CodigoPais>
+			<NumTelefono>20002224</NumTelefono>
+		</Telefono>
+		<CorreoElectronico>facturacion.2@proveedor-prueba.test</CorreoElectronico>
+	</Receptor>
+	<CondicionVenta>01</CondicionVenta>
+	<PlazoCredito>0dias</PlazoCredito>
+	<MedioPago>99</MedioPago>
+	<DetalleServicio>
+		<LineaDetalle>
+			<NumeroLinea>1</NumeroLinea>
+			<Codigo>2223099030100</Codigo>
+			<CodigoComercial>
+				<Tipo>01</Tipo>
+				<Codigo>15001517</Codigo>
+			</CodigoComercial>
+			<Cantidad>1.000</Cantidad>
+			<UnidadMedida>Unid</UnidadMedida>
+			<UnidadMedidaComercial>UN</UnidadMedidaComercial>
+			<Detalle>NATILLA DELACTOMY 400G DP</Detalle>
+			<PrecioUnitario>1258.00000</PrecioUnitario>
+			<MontoTotal>1258.00000</MontoTotal>
+			<SubTotal>1258.00000</SubTotal>
+			<Impuesto>
+				<Codigo>01</Codigo>
+				<CodigoTarifa>08</CodigoTarifa>
+				<Tarifa>13.00</Tarifa>
+				<Monto>163.54000</Monto>
+			</Impuesto>
+			<ImpuestoNeto>163.54000</ImpuestoNeto>
+			<MontoTotalLinea>1421.54000</MontoTotalLinea>
+		</LineaDetalle>
+		<LineaDetalle>
+			<NumeroLinea>2</NumeroLinea>
+			<Codigo>2223099030200</Codigo>
+			<CodigoComercial>
+				<Tipo>01</Tipo>
+				<Codigo>15000783</Codigo>
+			</CodigoComercial>
+			<Cantidad>1.000</Cantidad>
+			<UnidadMedida>Unid</UnidadMedida>
+			<UnidadMedidaComercial>UN</UnidadMedidaComercial>
+			<Detalle>NAT ZARCERO 500 GRS-SAL</Detalle>
+			<PrecioUnitario>1257.00000</PrecioUnitario>
+			<MontoTotal>1257.00000</MontoTotal>
+			<SubTotal>1257.00000</SubTotal>
+			<Impuesto>
+				<Codigo>01</Codigo>
+				<CodigoTarifa>02</CodigoTarifa>
+				<Tarifa>1.00</Tarifa>
+				<Monto>12.57000</Monto>
+			</Impuesto>
+			<ImpuestoNeto>12.57000</ImpuestoNeto>
+			<MontoTotalLinea>1269.57000</MontoTotalLinea>
+		</LineaDetalle>
+	</DetalleServicio>
+	<ResumenFactura>
+		<CodigoTipoMoneda>
+			<CodigoMoneda>CRC</CodigoMoneda>
+			<TipoCambio>1.00000</TipoCambio>
+		</CodigoTipoMoneda>
+		<TotalServGravados>0.00000</TotalServGravados>
+		<TotalServExentos>0.00000</TotalServExentos>
+		<TotalServExonerado>0.00000</TotalServExonerado>
+		<TotalMercanciasGravadas>2515.00000</TotalMercanciasGravadas>
+		<TotalMercanciasExentas>0.00000</TotalMercanciasExentas>
+		<TotalMercExonerada>0.00000</TotalMercExonerada>
+		<TotalGravado>2515.00000</TotalGravado>
+		<TotalExento>0.00000</TotalExento>
+		<TotalExonerado>0.00000</TotalExonerado>
+		<TotalVenta>2515.00000</TotalVenta>
+		<TotalVentaNeta>2515.00000</TotalVentaNeta>
+		<TotalImpuesto>176.11000</TotalImpuesto>
+		<TotalOtrosCargos>0.00000</TotalOtrosCargos>
+		<TotalComprobante>2691.11000</TotalComprobante>
+	</ResumenFactura>
+	<InformacionReferencia>
+		<TipoDoc>01</TipoDoc>
+		<Numero>40300391010000012588_40300391010000013494_</Numero>
+		<FechaEmision>2024-03-01T00:00:00</FechaEmision>
+		<Codigo>01</Codigo>
+		<Razon>Devolucion de producto</Razon>
+	</InformacionReferencia>
+	
+</NotaCreditoElectronica>

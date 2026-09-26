@@ -1083,12 +1083,40 @@ public class Parser {
      * IO/Jackson errors (which get the generic log before rethrowing) and callers
      * surface a real failure instead of the previous false "successfully processed".
      */
+    /** Returns the first candidate that is present and non-blank, else null. */
+    @Nullable
+    private static String firstText(@Nullable String... candidates) {
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.isBlank()) {
+                return candidate.trim();
+            }
+        }
+        return null;
+    }
+
     private static final class XmlParseException extends RuntimeException {
         XmlParseException(String message) { super(message); }
     }
 
     @Transactional
     public void parseXML(@Nonnull InputStream inputStream) {
+        parseXML(inputStream, true);
+    }
+
+    /**
+     * Parses a document, optionally skipping the Hacienda XSD gate.
+     *
+     * <p>With {@code validarXsd = false} the document is still parsed and
+     * persisted with the same field extraction, but a schema violation no longer
+     * aborts the parse. That is how the received-invoice upload keeps the
+     * products of a document it could not accept: the caller re-parses leniently
+     * after the strict attempt failed, then flags the stored invoice as rejected
+     * so it is visible, is not re-uploaded, and is not processed twice.
+     *
+     * @param validarXsd false to import a document that does not satisfy the schema
+     */
+    @Transactional
+    public void parseXML(@Nonnull InputStream inputStream, boolean validarXsd) {
         InputStream is = inputStream;
         if (!is.markSupported()) {
             is = new BufferedInputStream(is);
@@ -1116,7 +1144,7 @@ public class Parser {
                 XmlMapper xmlMapper = new XmlMapper();
                 JsonNode rootNode = xmlMapper.readTree(xmlContent.toString());
                 String namespace = extractNamespaceFromString(xmlContent.toString());
-                if (namespace != null && haciendaXsdValidator != null) {
+                if (validarXsd && namespace != null && haciendaXsdValidator != null) {
                     Schema schema = haciendaXsdValidator.getSchemaForNamespace(namespace);
                     if (schema != null) {
                         HaciendaXsdValidator.ValidationResult vr = haciendaXsdValidator.validate(xmlContent.toString(), namespace);
@@ -1143,6 +1171,14 @@ public class Parser {
                 String numeroConsecutivo = extractNumeroConsecutivo(rootNode);
                 String clave = rootNode.path(documentType).path("Clave").asText();
                 if (clave.isEmpty()) clave = rootNode.path("Clave").asText();
+
+                // ProveedorSistemas is required by the v4.4 schema at the root
+                // level, and lived inside the Encabezado wrapper in the v4.3
+                // producer shape, so both positions are probed.
+                String proveedorSistemas = firstText(
+                        rootNode.path(documentType).path("ProveedorSistemas").asText(null),
+                        rootNode.path("Encabezado").path("ProveedorSistemas").asText(null),
+                        rootNode.path("ProveedorSistemas").asText(null));
 
 
                 String schemaVersion = null;
@@ -1258,6 +1294,9 @@ public class Parser {
                 }
                 encabezado.setMedioPago(medioPago);
                 encabezado.setClave(clave);
+                if (proveedorSistemas != null) {
+                    encabezado.setProveedorSistemas(proveedorSistemas);
+                }
                 encabezado.setCodigoDocumento(codigoDocumento);
 
                 Emisor persistedEmisor = emisorService.createIfNotExist(emisor);

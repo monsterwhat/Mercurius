@@ -37,6 +37,7 @@ import Services.cart.CartSessionStore;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import support.CatalogoReal;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
@@ -161,7 +162,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     /** Article whose effective price is {@code precioConUtilidad} at 13% IVA. */
     private Articulos seedArticulo(String barcode, String precioConUtilidad) {
         Articulos articulo = new Articulos();
-        articulo.setNombre("Placeholder real " + uniqueSuffix());
+        articulo.setNombre(nombreReal("[real]"));
         articulo.setCodigoBarra(barcode);
         articulo.setUnidadMedida("Unidad");
         articulo.setUnidadMedidaComercial("Unidad");
@@ -184,7 +185,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     /** Exempt (0% IVA) article so totals equal the effective price verbatim. */
     private Articulos seedExemptArticulo(String barcode, String precioConUtilidad) {
         Articulos articulo = new Articulos();
-        articulo.setNombre("Placeholder real " + uniqueSuffix());
+        articulo.setNombre(nombreReal("[real]"));
         articulo.setCodigoBarra(barcode);
         articulo.setUnidadMedida("Unidad");
         articulo.setUnidadMedidaComercial("Unidad");
@@ -255,6 +256,15 @@ class PosResourceTest extends support.ContextPathIsolation {
 
     // ── Scenarios ───────────────────────────────────────────────────────
 
+    /** Next unused real GTIN-13 taken from the anonymized invoice fixtures. */
+    private static String codigoBarraReal() {
+        return CatalogoReal.siguienteBarra();
+    }
+
+    /** Real supplier article description, suffixed to stay unique within a boot. */
+    private static String nombreReal(String sufijo) {
+        return CatalogoReal.siguiente().nombre() + " " + sufijo;
+    }
     @Test
     @Order(1)
     void unauthenticatedCartSurfacesApi401Envelope() {
@@ -291,7 +301,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
         // 13% IVA article: total = precioConUtilidad × 1.13 × cantidad.
-        Articulos articulo = seedArticulo("T37" + uniqueSuffix(), "1200");
+        Articulos articulo = seedArticulo(codigoBarraReal(), "1200");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -343,7 +353,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void scanInvalidCantidadIsRejected() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "500");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "500");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -382,7 +392,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void addByArticuloIdMergesQuantities() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "300");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "300");
 
         for (int i = 0; i < 2; i++) {
             authed(session)
@@ -414,7 +424,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void deleteItemRemovesLineAndUnknownCodeYields404() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "700");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "700");
         authed(session)
                 .contentType(ContentType.JSON)
                 .body("{\"codigoBarra\":\"" + articulo.getCodigoBarra() + "\"}")
@@ -474,7 +484,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void paymentEntriesStageAndComputeVuelto() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1356");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1356");
         authed(session)
                 .contentType(ContentType.JSON)
                 .body("{\"codigoBarra\":\"" + articulo.getCodigoBarra() + "\"}")
@@ -505,7 +515,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void isolationPhase1AdminScansIntoOwnCart() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        isolationAdminItem = seedExemptArticulo("T37" + uniqueSuffix(), "111");
+        isolationAdminItem = seedExemptArticulo(codigoBarraReal(), "111");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -529,7 +539,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void isolationPhase2Cashier2SeesOnlyOwnLine() {
         seedCashier2User();
         cartSessionStore.remove("cashier2");
-        isolationCashierItem = seedExemptArticulo("T37" + uniqueSuffix(), "222");
+        isolationCashierItem = seedExemptArticulo(codigoBarraReal(), "222");
 
         Map<String, String> jar = testIdentityJar();
         testAuthed(jar)
@@ -577,7 +587,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1000");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -608,7 +618,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1000");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -655,7 +665,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "1000");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
 
         // Supervisor-priced line (₡500 instead of ₡1000).
         authed(session)
@@ -715,7 +725,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void cancelClearsCartPaymentsAndOverrideState() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo("T37" + uniqueSuffix(), "800");
+        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "800");
 
         authed(session)
                 .contentType(ContentType.JSON)
