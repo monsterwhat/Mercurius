@@ -42,7 +42,8 @@ import org.w3c.dom.ls.LSResourceResolver;
 public class HaciendaXsdValidator {
 
     private static final String OFFICIAL_DIR = "/xsd/v4.4/";
-    private static final String OVERLAY_DIR = "/xsd/overlay/v4.4-202611/";
+    /** The overlay was removed once Hacienda published the 2026-04-22 revision. */
+    private static final String OVERLAY_DIR = OFFICIAL_DIR;
 
     private static final Logger LOG = Logger.getLogger(HaciendaXsdValidator.class);
 
