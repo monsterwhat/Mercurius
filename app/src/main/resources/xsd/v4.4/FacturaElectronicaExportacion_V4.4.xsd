@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaExportacion" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:vc="http://www.w3.org/2007/XMLSchema-versioning" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" targetNamespace="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronicaExportacion" elementFormDefault="qualified" attributeFormDefault="unqualified" version="4.4" vc:minVersion="1.1">
 	<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="../../xmldsig-core-schema.xsd"/>
 	<xs:element name="FacturaElectronicaExportacion">
@@ -767,7 +767,7 @@ se obtiene de la sumatoria de los campos “Subtotal”, “Impuesto Neto”.</x
 							</xs:element>
 							<xs:element name="OtroContenido" minOccurs="0" maxOccurs="unbounded">
 								<xs:annotation>
-									<xs:documentation>Elemento opcional que se puede utilizar para almacenar contenido estructurado.</xs:documentation>
+									<xs:documentation>Elemento opcional que se puede utilizar para almacenar texto.</xs:documentation>
 								</xs:annotation>
 								<xs:complexType>
 									<xs:simpleContent>
@@ -788,11 +788,6 @@ se obtiene de la sumatoria de los campos “Subtotal”, “Impuesto Neto”.</x
 			</xs:sequence>
 		</xs:complexType>
 	</xs:element>
-	<xs:simpleType name="CorreoElectronicoReceptor">
-		<xs:restriction base="xs:string">
-			<xs:maxLength value="160"/>
-		</xs:restriction>
-	</xs:simpleType>
 	<xs:complexType name="EmisorType">
 		<xs:sequence>
 			<xs:element name="Nombre" nillable="false">
@@ -884,10 +879,17 @@ alcohólicas, suministrado por la Dirección General de Aduanas</xs:documentatio
 				</xs:simpleType>
 			</xs:element>
 			<xs:element name="Telefono" type="TelefonoType" minOccurs="0"/>
-			<xs:element name="CorreoElectronico" type="CorreoElectronicoReceptor" minOccurs="0" maxOccurs="unbounded">
+			<xs:element name="CorreoElectronico" minOccurs="0">
 				<xs:annotation>
-					<xs:documentation>Correo(s) electrónico(s) del receptor</xs:documentation>
+					<xs:documentation>Este campo será de condición obligatoria, cuando el cliente lo requiera. Debe cumplir con la siguiente estructura: 
+ \s*\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*\s*
+</xs:documentation>
 				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="160"/>
+					</xs:restriction>
+				</xs:simpleType>
 			</xs:element>
 		</xs:sequence>
 	</xs:complexType>
@@ -1500,22 +1502,12 @@ Además, cuando se seleccione el código 04, 08, 09 y 10 de la nota 16 en “Tip
 						<xs:enumeration value="VUV"/>
 						<xs:enumeration value="WST"/>
 						<xs:enumeration value="XAF"/>
-						<xs:enumeration value="XAG"/>
-						<xs:enumeration value="XAU"/>
-						<xs:enumeration value="XBA"/>
-						<xs:enumeration value="XBB"/>
-						<xs:enumeration value="XBC"/>
-						<xs:enumeration value="XBD"/>
 						<xs:enumeration value="XCD"/>
 						<xs:enumeration value="XDR"/>
 						<xs:enumeration value="XOF"/>
-						<xs:enumeration value="XPD"/>
 						<xs:enumeration value="XPF"/>
-						<xs:enumeration value="XPT"/>
 						<xs:enumeration value="XSU"/>
-						<xs:enumeration value="XTS"/>
 						<xs:enumeration value="XUA"/>
-						<xs:enumeration value="XXX"/>
 						<xs:enumeration value="YER"/>
 						<xs:enumeration value="ZAR"/>
 						<xs:enumeration value="ZMW"/>
@@ -2544,21 +2536,6 @@ Además, cuando se seleccione el código 04, 08, 09 y 10 de la nota 16 en “Tip
 			<xs:enumeration value="12">
 				<xs:annotation>
 					<xs:documentation>Crédito por exoneración posterior a la facturación</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="13">
-				<xs:annotation>
-					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="14">
-				<xs:annotation>
-					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
-				</xs:annotation>
-			</xs:enumeration>
-			<xs:enumeration value="15">
-				<xs:annotation>
-					<xs:documentation>Ajuste contable al período que corresponda</xs:documentation>
 				</xs:annotation>
 			</xs:enumeration>
 			<xs:enumeration value="99">

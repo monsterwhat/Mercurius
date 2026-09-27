@@ -14,9 +14,9 @@ public enum Tipo_CodigosReferencia {
     NOTA_DEBITO_FINANCIERA("10","Nota de Debito Financiera"),
     PROVEEDOR_NO_DOMICILIADO("11","Proveedor no domiciliado"),
     CREDITO_POR_EXONERACION_POSTERIOR("12","Credito por exoneracion posterior a la facturacion"),
-    AJUSTE_CONTABLE_PERIODO_1("13","Ajuste contable al período que corresponda"),
-    AJUSTE_CONTABLE_PERIODO_2("14","Ajuste contable al período que corresponda"),
-    AJUSTE_CONTABLE_PERIODO_3("15","Ajuste contable al período que corresponda"),
+    ANULA_DOCUMENTO_REFERENCIA_ERROR_MATERIAL("13","Anula documento de referencia por error material"),
+    CORRIGE_MONTO_ERROR_MATERIAL("14","Corrige monto por error material"),
+    SUSTITUYE_COMPROBANTE_ERROR_MATERIAL("15","Sustituye comprobante electrónico por error material"),
     COMPROBANTE_ELECTRONICO_RECHAZADO("16","Comprobante electrónico rechazado"),
     APLICACION_PAGO_REP("17","Aplicación de pago en Recibo Electrónico de Pago"),
     OTROS("99", "Otros");
