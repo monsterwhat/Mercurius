@@ -558,3 +558,23 @@ button.metric-card:focus-visible,
         width: calc(100vw - 1rem);
     }
 }
+
+// ── Navbar en pantallas angostas ───────────────────────────────────────────
+// Bulma colapsa .navbar-menu a display:none por debajo de 1024px y solo lo
+// muestra cuando el burger anade la clase .is-active. Ese toggle lo activa un
+// manejador vanilla en fragments/navbar.html; si el burger no se pulsa (o el
+// manejador no llega a adjuntarse tras un re-render), la barra queda con el logo
+// y el burger pero SIN NINGUN BOTON, que es exactamente lo que se reporto.
+//
+// Decision: los items se muestran siempre en vez de depender del burger.
+// El burger sigue visible, pero deja de ser la unica via de acceso.
+@media screen and (max-width: 1023px) {
+  .navbar.is-black .navbar-menu {
+    display: block;
+  }
+
+  .navbar.is-black .navbar-menu .navbar-item,
+  .navbar.is-black .navbar-menu .navbar-link {
+    color: var(--bulma-black-invert-l, #fff);
+  }
+}

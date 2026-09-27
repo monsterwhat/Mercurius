@@ -384,7 +384,7 @@ public class PDFGenerator {
         autorizacion.setAlignment(Element.ALIGN_CENTER);
         document.add(autorizacion);
 
-        // QR code for Hacienda V4.4 — encode the 50-digit Clave
+        // QR code for Hacienda V4.4 — encode the 50-character Clave
         String clave = tiqueteElectronico.getHaciendaClave();
         if (clave != null && !clave.isBlank()) {
             try {

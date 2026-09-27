@@ -930,7 +930,9 @@ public class DevolucionesResource {
                 ncResumen.setTotalDesgloseImpuestos(desgloseList);
             }
 
-            InformacionReferencia ref = InformacionReferencia.from(facturaSeleccionada, "01", motivo);
+            InformacionReferencia ref = InformacionReferencia.from(facturaSeleccionada,
+                    Models.Enums.Tipo_CodigosReferencia.ANULA_DOCUMENTO_REFERENCIA,
+                    motivo, ncStrategy.getCodigoDocumento());
             List<InformacionReferencia> referencias = new ArrayList<>();
             referencias.add(ref);
 

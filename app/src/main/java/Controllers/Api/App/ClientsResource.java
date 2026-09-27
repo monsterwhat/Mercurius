@@ -416,6 +416,17 @@ public class ClientsResource {
     @Operation(summary = "Lookup nombre by cédula (Gometa, form prefill)")
     public Response lookupCedula(@QueryParam("cedula") @Nullable String cedula) {
         String digits = cedula == null ? "" : cedula.replaceAll("\\D", "");
+        // The Registro Nacional now issues alphanumeric tax IDs for legal persons
+        // (e.g. 3-101-A00001) and Anexos v4.4 accepts them in
+        // Identificacion/Numero. Gometa only indexes numeric cédulas, so stripping
+        // the letters would query a *different* tax ID and prefill the form with
+        // someone else's name. A non-numeric cédula therefore skips the lookup.
+        if (cedula != null && !digits.equals(cedula.trim())) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("ok", false);
+            data.put("mensaje", "La consulta por cédula solo admite cédulas numéricas");
+            return Response.ok(ApiResponse.ok(data)).build();
+        }
         if (digits.length() < 9 || digits.length() > 12) {
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("ok", false);

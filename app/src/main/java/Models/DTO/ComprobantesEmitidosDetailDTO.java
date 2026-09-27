@@ -18,8 +18,8 @@ public class ComprobantesEmitidosDetailDTO {
 
     // ---- Identificacion del comprobante (Models.ComprobantesEmitidos) ----
     private Long id; // ComprobantesEmitidos.id
-    @Nullable private String clave; // Encabezado.clave (clave numerica de 50 digitos del comprobante)
-    @Nullable private String haciendaClave; // ComprobantesEmitidos.haciendaClave (clave numerica asignada por Hacienda)
+    @Nullable private String clave; // Encabezado.clave (clave de 50 caracteres; alfanumerica desde v4.4 si el emisor es persona juridica)
+    @Nullable private String haciendaClave; // ComprobantesEmitidos.haciendaClave (misma clave, ya enviada a Hacienda)
     @Nullable private String haciendaEstado; // ComprobantesEmitidos.haciendaEstado
     @Nullable private LocalDateTime haciendaFechaEnvio; // ComprobantesEmitidos.haciendaFechaEnvio
     @Nullable private LocalDateTime haciendaFechaRespuesta; // ComprobantesEmitidos.haciendaFechaRespuesta
