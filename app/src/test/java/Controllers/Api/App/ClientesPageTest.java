@@ -95,6 +95,8 @@ class ClientesPageTest extends support.ContextPathIsolation {
                 .body(containsString("<html"))
                 .body(containsString("Gestión de Clientes"))
                 .body(containsString("data-kit-table"))
+                .body(containsString(">Usuarios<"))
+                .body(containsString("/api/app/clientes/table\""))
                 .body(containsString("id=\"tabla-clientes\""))
                 .body(containsString("toast-container"));
     }
