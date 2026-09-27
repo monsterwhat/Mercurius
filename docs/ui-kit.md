@@ -282,7 +282,7 @@ Container `aria-live="polite"`; each item `role="alert"` with a `.delete` button
 
 ## 8. Shared JS behaviour — `web/index.js`
 
-Installed once at bundle start, guarded by window flags. All three are **additive**: no page needs a markup change until W5.
+Installed once at bundle start, guarded by window flags. All four are **additive**: three need no markup change until W5; `kitPopup()` is opt-in and the navbar already uses it.
 
 ### 8.1 `kitBridge()` — `data-kit-open` / `data-kit-close`
 
@@ -319,6 +319,33 @@ Opt in on any polling container:
 Behaviour: stamps `data-poll-last` on every successful swap; repaints the age label once per second (`Actualizado ahora` / `Actualizado hace 12 s`); and on `visibilitychange` → visible, issues an immediate catch-up refresh if the interval has already elapsed. htmx still owns the interval and still tears it down in `cleanUpElement` when the element is removed — this helper adds visibility handling and the age label, nothing more.
 
 **5-second polling is only permitted where operationally necessary** (the Tributacion countdown). 30s for slower state such as inventory badges. A hidden tab must not hammer a Hacienda-facing endpoint.
+
+### 8.4 `kitPopup()` — named-window launcher
+
+Opt in on any link that must open a **named popup window** instead of a tab:
+
+```html
+<a class="button is-dark"
+   href="/Mercurius/app/pos/standalone"
+   target="_blank"
+   rel="noopener"
+   data-kit-popup="nuevaFactura"
+   data-kit-popup-features="popup=yes,width=1280,height=800,left=120,top=80"
+   aria-haspopup="dialog">Nueva Factura</a>
+```
+
+`data-kit-popup` is the window name (reused, so a second activation raises the window already open instead of spawning another). `data-kit-popup-features` is the verbatim `window.open` feature string. The **URL comes from the link's own `href`** — never from a second attribute — so the deployment root is resolved in exactly one place (`{config:['quarkus.http.root-path']}`, W2 in §12) and the launcher cannot get a root wrong.
+
+| Activation | Result |
+| --- | --- |
+| Plain left click | `window.open` in the named window with the requested geometry; default prevented, so **this tab does not navigate** |
+| Keyboard (`Enter` on the focused link) | Same as a left click — the browser dispatches the same primary click, carrying the user activation a popup blocker needs |
+| Ctrl/Cmd/Shift+click, middle-click | Browser default. The user asked for *their* tab/window, so the helper does not intercept and this page is never navigated away |
+| Popup blocked (`window.open` → `null`) | Default deliberately **not** prevented: the anchor follows its own `href`, and `rel="noopener"` makes that a **new tab**, so the page the user was working in is not replaced. With JavaScript off this is the only path, and it is the same one |
+
+Keep `target="_blank"`. It is what makes the blocked-popup fallback land in a new tab instead of this one. Keep `rel="noopener"` too: it severs `window.opener` (no reverse tabnabbing) for that fallback tab. Keep the real `href` too: it is the no-JS path, the blocked-popup fallback, and what modified-clicks follow. Do not add `role="button"` — the control is genuinely a link, and that is what lets AT and the browser offer "open in new tab".
+
+Replaces the per-page `onclick="window.open(...); return false;"` the POS launcher used to carry. That form ran on every activation, so a Ctrl+click was hijacked into a popup, and `return false` made a blocked popup a dead button.
 
 ---
 

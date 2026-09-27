@@ -4,11 +4,25 @@
   (pages/facturas/factura-standalone.html). Extracted so both render identical
   markup without letting the copies drift.
 
+  Classic "Emitir Factura" vertical sequence, in this order:
+    1. centered "Crear Factura - {usuario}" header + tipo-cambio badge
+    2. Tipo de Factura + Cliente row
+    3. Cantidad + código de barras row (scan form)
+    4. scrollable cart (pages/facturas/cart-panel include)
+    5. facturar outcome (#facturar-resultado)
+
   Model keys (same as the legacy full page, supplied by PosPageResource):
     panel       Map - cart-panel model (see cart-panel.html header)
     badge       Map - {disponible,venta,compra,fecha} tipo-cambio badge
     usuario     String - authenticated cashier
     authInicial Map - {exito:false,errorGeneral:null,panelHtml:null}
+
+  Live values stay in the cart panel: #cart-panel is the hx-target of every POS
+  mutation twin (scan / qty / remove / client / puntos / facturar / cancel), so
+  the selected client, the Descuento / I.V.A. / TOTAL rows and the action
+  buttons are re-rendered server-side on every swap. Only stateless controls
+  (document type, scan fields, picker triggers) live in this fragment, so
+  nothing here can go stale between swaps.
 
   This fragment assumes the wrapping page provides: the web bundle
   ({#bundle /} -> htmx + alpine + bulma) and, for HTMX/CSRF, a <body> carrying
@@ -16,52 +30,19 @@
   that attribute itself because it does not include layout.html.
 !}
 <section class="section" style="padding-top:1rem" id="pos-page">
-    <div class="level">
-        <div class="level-left">
-            <div>
-                <p class="title is-3" style="margin-bottom:0">Facturación POS</p>
-                <p class="subtitle is-6 has-text-grey">Cajero: {usuario}</p>
-            </div>
-        </div>
-        <div class="level-right">
-            <span id="badge-tipo-cambio" class="tag is-info is-medium"
-                  title="Tipo de cambio de venta (dólar)">
-                {#if badge.disponible}&#36;1 = &#8353;{badge.venta}{#else}&#8353; tipo de cambio N/D{/if}
-            </span>
-        </div>
+    <div class="has-text-centered" style="margin-bottom:1rem">
+        <h1 class="title is-3" id="pos-titulo" style="margin-bottom:0.35rem">Crear Factura - {usuario}</h1>
+        <span id="badge-tipo-cambio" class="tag is-info is-medium"
+              title="Tipo de cambio de venta (dólar)">
+            {#if badge.disponible}&#36;1 = &#8353;{badge.venta}{#else}&#8353; tipo de cambio N/D{/if}
+        </span>
     </div>
 
-    <div class="columns">
-        <div class="column is-5">
-            {! Barcode capture: Enter posts and redraws the sale panel. !}
-            <form id="forma-escaneo" class="box" style="margin-bottom:0.75rem"
-                  hx-post="{config:['quarkus.http.root-path']}/api/app/pos/scan-form"
-                  hx-target="#cart-panel" hx-swap="outerHTML">
-                <label class="label is-small" for="barcode-input">Código de barras</label>
-                <div class="field has-addons" style="margin-bottom:0.25rem">
-                    <div class="control is-expanded">
-                        <input class="input is-medium" type="text" id="barcode-input"
-                               name="codigoBarra" value="" autocomplete="off" autofocus
-                               placeholder="Escanee o digite y presione Enter"/>
-                    </div>
-                    <div class="control">
-                        <button type="submit" class="button is-medium is-primary">Agregar</button>
-                    </div>
-                    <div class="control">
-                        <button type="button" class="button is-medium is-light" aria-haspopup="dialog"
-                                title="Buscar y agregar un artículo"
-                                data-kit-open="modal-articulos"
-                                hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker?q="
-                                hx-target="#modal-articulos-body" hx-swap="innerHTML">&#128270; Buscar</button>
-                    </div>
-                </div>
-                <input type="hidden" name="cantidad" value="1"/>
-                <p class="help has-text-grey">El lector envía Enter solo; la cantidad por defecto es 1.</p>
-            </form>
-
-            <div class="box" style="padding:0.75rem">
+    <div class="box" style="margin-bottom:0.75rem;padding-top:0.75rem;padding-bottom:0.75rem">
+        <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
+            <div class="column is-6">
                 <form id="forma-tipo-documento" class="field" style="margin-bottom:0">
-                    <label class="label is-small" for="select-tipo-documento">Documento</label>
+                    <label class="label is-small" for="select-tipo-documento">Tipo de Factura</label>
                     <div class="control select is-fullwidth is-small">
                         <select id="select-tipo-documento" name="tipoDocumento">
                             <option value="04" selected>Tiquete Electrónico</option>
@@ -71,15 +52,69 @@
                     </div>
                 </form>
             </div>
-
-            {! Facturar outcome (PDF link / error envelope) swaps here. !}
-            <div id="facturar-resultado"></div>
-        </div>
-
-        <div class="column is-7">
-            {#include pages/facturas/cart-panel panel=panel /}
+            <div class="column is-6">
+                <span class="label is-small" id="label-cliente">Cliente</span>
+                <div class="field has-addons" style="margin-bottom:0">
+                    <div class="control is-expanded is-static has-text-grey is-size-7"
+                         style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                        Opcional &mdash; el cliente asignado se muestra en el carrito
+                    </div>
+                    <div class="control">
+                        <button type="button" class="button is-medium is-link" aria-haspopup="dialog"
+                                title="Buscar y asignar un cliente"
+                                data-kit-open="modal-cliente"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/pos/client-picker?q="
+                                hx-target="#modal-cliente-body" hx-swap="innerHTML">&#128269; Cliente</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
+    {! Barcode capture: Enter posts (cantidad + codigoBarra) and redraws the
+       sale panel. The article picker button rides the same row. !}
+    <form id="forma-escaneo" class="box" style="margin-bottom:0.75rem"
+          hx-post="{config:['quarkus.http.root-path']}/api/app/pos/scan-form"
+          hx-target="#cart-panel" hx-swap="outerHTML">
+        <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
+            <div class="column is-2">
+                <label class="label is-small" for="cantidad-input">Cantidad</label>
+                <input class="input is-medium has-text-centered" type="number" id="cantidad-input"
+                       name="cantidad" value="1" min="0" step="any" autocomplete="off"/>
+            </div>
+            <div class="column is-7">
+                <label class="label is-small" for="barcode-input">Código de barras</label>
+                <input class="input is-medium" type="text" id="barcode-input"
+                       name="codigoBarra" value="" autocomplete="off" autofocus
+                       placeholder="Escanee o digite y presione Enter"/>
+            </div>
+            <div class="column is-3">
+                <div class="field is-grouped" style="margin-bottom:0">
+                    <p class="control is-expanded">
+                        <button type="submit" class="button is-medium is-primary is-fullwidth">Agregar</button>
+                    </p>
+                    <p class="control">
+                        <button type="button" class="button is-medium is-light" aria-haspopup="dialog"
+                                title="Buscar y agregar un artículo"
+                                data-kit-open="modal-articulos"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker?q="
+                                hx-target="#modal-articulos-body" hx-swap="innerHTML">&#128270; Buscar</button>
+                    </p>
+                </div>
+            </div>
+        </div>
+        <p class="help has-text-grey">El lector envía Enter solo; la cantidad por defecto es 1.</p>
+    </form>
+
+    {! Classic scrollable cart. The include is the single source of truth for
+       the markup, so every mutation endpoint and row form keeps working; the
+       wrapper only supplies the scroll viewport. !}
+    <div style="max-height:28rem;overflow-y:auto;margin-bottom:0.75rem">
+        {#include pages/facturas/cart-panel panel=panel /}
+    </div>
+
+    {! Facturar outcome (PDF link / error envelope) swaps here. !}
+    <div id="facturar-resultado"></div>
 </section>
 
 {! Payment dialog: kit modal shell, body loaded/re-rendered from
@@ -93,7 +128,7 @@
      triggerClass="is-hidden" bodyUrl="/api/app/pos/client-picker?q="}{/include}
 
 {! Article picker: kit modal shell over the search-as-you-type fragment. The
-   "Buscar" button beside Agregar opens it via data-kit-open + its own hx-get
+   "Buscar" button on the scan row opens it via data-kit-open + its own hx-get
    (T18 bridge pattern, same as the client picker). !}
 {#include _kit/modal id="modal-articulos" title="Buscar y Agregar Artículo" triggerClass="is-hidden"
      bodyUrl="/api/app/pos/articulos-picker?q="}{/include}

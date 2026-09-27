@@ -15,6 +15,11 @@
     POST /api/app/pos/override-authorize-form       (OOB refresh on success)
     POST /api/app/pos/cancel-form
 
+  Classic POS closing order lives here (it cannot move to factura-body.html:
+  every mutation above re-renders this fragment, so totals and actions must be
+  re-rendered with it or they would go stale): Descuento -> I.V.A. -> TOTAL
+  (plus the puntos row), then Cancelar before Facturar.
+
   Model ("panel" bound key, Map):
     items            List  - {codigo,nombre,cantidad,precioEfectivo,totalLinea,promo,precioPersonalizado}
     vacio            bool
@@ -117,11 +122,14 @@
     </table>
     </div>
 
+    {! Classic closing sequence: Descuento -> I.V.A. -> (puntos) -> TOTAL
+       (the TOTAL row is the level block right below, id #pos-total-carrito).
+       The redundant "Subtotal" row is gone: it repeated totalCarrito, which
+       the TOTAL row already shows. !}
     <table class="table is-narrow is-fullwidth is-borderless">
         <tbody>
-        <tr><td>Subtotal</td><td class="has-text-right">{panel.totalCarrito}</td></tr>
-        <tr><td>Descuentos</td><td class="has-text-right">{panel.totalDescuento}</td></tr>
-        <tr><td>Impuesto</td><td class="has-text-right">{panel.totalImpuesto}</td></tr>
+        <tr><td>Descuento</td><td class="has-text-right">{panel.totalDescuento}</td></tr>
+        <tr><td>I.V.A.</td><td class="has-text-right">{panel.totalImpuesto}</td></tr>
         {#if panel.descuentoPuntos?? && panel.descuentoPuntos > 0}
         <tr><td>Puntos redimidos</td><td class="has-text-right">&minus;{panel.descuentoPuntos}</td></tr>
         {/if}
@@ -165,13 +173,13 @@
     </div>
 
     <div class="buttons" style="margin-bottom:0">
-        <button type="button" id="btn-facturar" class="button is-success"
-                hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
-                hx-include="#forma-tipo-documento"
-                hx-target="#facturar-resultado" hx-swap="innerHTML">&#128196; Facturar</button>
         <button type="button" id="btn-cancelar" class="button is-danger is-light"
                 hx-post="{config:['quarkus.http.root-path']}/api/app/pos/cancel-form"
                 hx-confirm="¿Cancelar la venta actual?"
                 hx-target="#cart-panel" hx-swap="outerHTML">Cancelar venta</button>
+        <button type="button" id="btn-facturar" class="button is-success"
+                hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
+                hx-include="#forma-tipo-documento"
+                hx-target="#facturar-resultado" hx-swap="innerHTML">&#128196; Facturar</button>
     </div>
 </div>
