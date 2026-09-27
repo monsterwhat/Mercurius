@@ -20,11 +20,15 @@
   identically to the legacy isAdmin()-augmented checks.
 
   LINKS: now point to real /app/* routes (W4 pages landed). href is the live
-  navigation; data-planned-route kept for reference.
+  navigation; data-planned-route kept for reference. "Nueva Factura" is the one
+  exception to "href is the navigation": it also carries data-kit-popup so it
+  opens in a named window (see the launcher note at the item).
 
-  ROOT PATH (W2): every href / hx-* / window.open target below is prefixed with
+  ROOT PATH (W2): every href / hx-* below is prefixed with
   {config:['quarkus.http.root-path']}. Templates never hard-code the deployment
-  root, so the app can be mounted anywhere by changing one property. Pinned by
+  root, so the app can be mounted anywhere by changing one property. The POS
+  popup is covered by the same rule: kitPopup() takes its URL from that href,
+  so it has no second place to get a root wrong. Pinned by
   RootPathNormalizationTest.
 !}
 <nav class="navbar is-black" role="navigation" aria-label="main navigation">
@@ -45,12 +49,25 @@
         <div class="navbar-end">
 
             {! token: facturacion - legacy: commandLink openNewFactura (icon-only receipt button) !}
+            {!
+              The POS opens in a NAMED window, not a tab. The anchor declares the
+              window name as data-kit-popup and its geometry as
+              data-kit-popup-features; kitPopup() in web/index.js performs the
+              launch. Markup only, no inline handler, so this is one shared
+              implementation (docs/ui-kit.md 8.4) rather than a copy per navbar.
+              Accessibility/styling contract: it stays a real link with a real
+              href, target="_blank", and rel="noopener", so the no-JS path, the blocked-popup
+              fallback and "open in new tab" all keep working, and it keeps the
+              Bulma .button.is-dark classes the navbar has always used.
+            !}
             {#if inject:securityIdentity.hasRole('facturacion')}
             <div class="navbar-item">
                 <a class="button is-dark"
                    href="{config:['quarkus.http.root-path']}/app/pos/standalone"
-                   rel="noopener" data-planned-route="/app/facturas/nueva"
-                   onclick="window.open('{config:['quarkus.http.root-path']}/app/pos/standalone', 'nuevaFactura', 'popup=yes,width=1280,height=800,left=120,top=80'); return false;">Nueva Factura</a>
+                   target="_blank" rel="noopener" data-planned-route="/app/facturas/nueva"
+                   data-kit-popup="nuevaFactura"
+                   data-kit-popup-features="popup=yes,width=1280,height=800,left=120,top=80"
+                   aria-haspopup="dialog">Nueva Factura</a>
             </div>
             {/if}
 

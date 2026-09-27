@@ -229,12 +229,74 @@ function kitPolling() {
     }, 1000);
 }
 
+/**
+ * kitPopup() - the shared launcher for links that open a NAMED browser window.
+ *
+ * Opt-in contract (additive; the two attributes are the only markup needed):
+ *
+ *   <a class="button is-dark"
+ *      href="/Mercurius/app/pos/standalone"
+ *      target="_blank"
+ *      rel="noopener"
+ *      data-kit-popup="nuevaFactura"
+ *      data-kit-popup-features="popup=yes,width=1280,height=800,left=120,top=80">
+ *     Nueva Factura
+ *   </a>
+ *
+ * The URL is read from the link's OWN href, so the deployment root stays
+ * resolved in exactly one place - {config:['quarkus.http.root-path']} in the
+ * template - and this helper never has to know about it.
+ *
+ * Behaviour, and the reason for each branch:
+ *   - Only a plain primary click is intercepted. Ctrl/Cmd/Shift+click and
+ *     middle-click keep the browser default, so the user gets the tab or
+ *     window THEY asked for and this page is never navigated away from.
+ *   - Keyboard activation (Enter on a focused link) dispatches the very same
+ *     primary click, so it opens the popup too - and it carries the user
+ *     activation a popup blocker needs in order to allow it.
+ *   - The named target is reused, so a second click raises the POS window
+ *     that is already open instead of spawning another one.
+ *   - window.open returning null means a blocker ate the popup. There the
+ *     default is deliberately NOT prevented: the anchor follows its own href
+ *     in a new tab because of target="_blank", so even the
+ *     fallback never replaces the page the user was working in. With
+ *     JavaScript off this is the only path, and it is the same one.
+ */
+function kitPopup() {
+    if (window.mercuriusPopupReady) {
+        return;
+    }
+    window.mercuriusPopupReady = true;
+
+    document.body.addEventListener('click', function (e) {
+        var link = e.target.closest('[data-kit-popup]');
+        if (!link || e.defaultPrevented) {
+            return;
+        }
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) {
+            return;
+        }
+        var url = link.href || link.getAttribute('href');
+        if (!url) {
+            return;
+        }
+        var popup = window.open(url,
+            link.getAttribute('data-kit-popup'),
+            link.getAttribute('data-kit-popup-features') || '');
+        if (popup) {
+            e.preventDefault();
+            popup.focus();
+        }
+    });
+}
+
 function boot() {
     applyChartDefaults();
     installIconHydration();
     kitBridge();
     kitUploadProgress();
     kitPolling();
+    kitPopup();
 }
 
 if (document.readyState === 'loading') {
