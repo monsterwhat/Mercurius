@@ -20,9 +20,11 @@ import Models.ConfiguracionAplicacion;
 import Models.ConfiguracionMargen;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
+import Models.Sucursal;
 import Services.AppSettingsService;
 import Services.BackupService;
 import Services.ConfiguracionMargenService;
+import Services.SucursalService;
 
 /**
  * HTML pages of the consolidated application-settings module for the NEW
@@ -42,6 +44,10 @@ import Services.ConfiguracionMargenService;
  * the JSON twin {@link SettingsResource} ({@code /api/app/settings}); this
  * class only renders HTML, mirroring the ArticulosPagesResource /
  * ArticuloResource split.
+ *
+ * <p>Its data contract also carries {@code sucursales} (List&lt;Models.Sucursal&gt;)
+ * and {@code sucursalSeleccionadaId}, the branch/terminal registry the initial
+ * setup selects from.</p>
  */
 @Path("/app")
 @Produces(MediaType.TEXT_HTML)
@@ -63,6 +69,10 @@ public class SettingsPagesResource {
     @Inject
     @Nonnull
     ConfiguracionMargenService margenService;
+
+    @Inject
+    @Nonnull
+    SucursalService sucursalService;
 
     @Inject
     @Nonnull
@@ -92,6 +102,21 @@ public class SettingsPagesResource {
             model.put("backupLog", toBackupLog(backupService.listarBackups()));
             model.put("backupRutaEfectiva", backupService.rutaEfectiva());
             model.put("baseUrl", BASE_URL);
+
+            // Registro de sucursales y terminales del asistente: la lista para
+            // el selector y el id de la fila que esta seleccionada hoy. Es
+            // best-effort a proposito: que el registro falle no puede dejar sin
+            // pagina los ajustes que si se pudieron leer.
+            try {
+                sucursalService.asegurarPorDefecto();
+                model.put("sucursales", sucursalService.listar());
+                Sucursal seleccionada = sucursalService.seleccionada();
+                model.put("sucursalSeleccionadaId", seleccionada == null ? null : seleccionada.getId());
+            } catch (RuntimeException e) {
+                LOG.warn("No se pudo leer el registro de sucursales", e);
+                model.put("sucursales", java.util.List.of());
+                model.put("sucursalSeleccionadaId", null);
+            }
 
             ConfiguracionMargen configMargen = margenService.findOrCreateDefault();
             model.put("configuracionMargen", configMargen);

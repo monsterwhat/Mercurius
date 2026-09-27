@@ -14,6 +14,10 @@
                                                backupRetencionDias, backupRuta.
     POST {root}/api/app/settings/backup-trigger -> JSON ApiResponse(BackupStatusDTO)
     GET  {root}/api/app/settings/backup-status  -> JSON ApiResponse(BackupStatusDTO)
+    GET  {root}/api/app/settings/sucursales    -> registro de sucursales/terminales
+    POST {root}/api/app/settings/sucursales    -> registra (y selecciona) un punto de venta
+    POST {root}/api/app/settings/sucursales/seleccionar -> deja ese par como el que emite
+    POST {root}/api/app/settings/sucursales/activo     -> activa/desactiva una fila
 
   SAVE WIRING ("hx-post PUT payload"): the single form #ajustes-forma issues
   hx-put against the whitelist endpoint; the wizard's final step re-issues the
@@ -38,6 +42,18 @@
                                 mysqldumpResuelto}
     baseUrl  String           - context-relative "/api/app/settings"
                                (reserved for future HX fragment swaps)
+    sucursales  List<Models.Sucursal> - registro de puntos de venta
+                               (codigo/nombre de sucursal y terminal, activo)
+    sucursalSeleccionadaId  Long        - id de la fila que esta en uso; null
+                               si el par global no esta registrado. Both keys
+                               are optional (?# safe expressions) so a render
+                               without them still produces the page.
+
+  BRANCH/TERMINAL: the only way to tell points of sale apart is the
+  Models.Sucursal registry rendered here. "Usar" copies the chosen pair into
+  settings.codigoSucursal/codigoTerminal, which is what the emission reads to
+  build NumeroConsecutivo; the global counter is untouched. With a single
+  registered row the pair stays 001/001, the value emissions already default to.
 
   FIELD-GROUP MAP (data-group markers asserted by SettingsPageTest):
     general-negocio  legacy wizard "Tributacion"+"CurrentSettings" panels
@@ -53,6 +69,8 @@
                      select, no backing setting exists yet)
     backups          status card + trigger button + whitelisted scheduling
                      quartet (editable)
+    sucursales       branch/terminal registry: listing, selection and
+                     registration of points of sale (editable)
 
   CSRF is inherited from layout.html body hx-headers.
 
@@ -179,6 +197,48 @@
                 editables (notificaciones y respaldos) al mismo endpoint de
                 ajustes usado por las secciones de abajo.
             </p>
+
+            {! ── Seleccion del punto de venta (rama/terminal) antes de confirmar ── !}
+            <div class="box" id="asistente-sucursal" data-group="sucursal-asistente">
+                <p class="heading">Sucursal y terminal que emiten</p>
+                {#if sucursales?? && sucursales.size() > 0}
+                <form id="sucursal-seleccion-forma" data-json-save
+                      hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/seleccionar"
+                      hx-target="#sucursal-seleccion-forma" hx-swap="outerHTML"
+                      hx-on::after-request="if (event.detail.successful) window.location.reload()">
+                    <div class="field">
+                        <div class="select">
+                            <select name="id" aria-label="Sucursal y terminal">
+                                {#for s in sucursales}
+                                <option value="{s.id}"
+                                        {#if sucursalSeleccionadaId?? && s.id == sucursalSeleccionadaId}selected{/if}
+                                        {#if !s.activo}disabled{/if}>
+                                    {s.codigoSucursal} — {s.nombreSucursal ?: 'Sin nombre'} /
+                                    {s.codigoTerminal} — {s.nombreTerminal ?: 'Sin nombre'}
+                                    {#if s.activo}(activo){#else}(inactivo){/if}
+                                </option>
+                                {/for}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <button class="button is-primary is-small" type="submit">Usar este punto de venta</button>
+                    </div>
+                </form>
+                <p class="help has-text-grey">
+                    El par elegido se guarda como sucursal y terminal de la
+                    configuración, que es lo que se imprime en el consecutivo de
+                    cada comprobante. La numeración de cada punto de venta
+                    continúa donde se quedó. Las filas inactivas no se pueden
+                    elegir.
+                </p>
+                {#else}
+                <p class="help has-text-grey">
+                    Todavía no hay sucursales registradas en esta configuración.
+                </p>
+                {/if}
+            </div>
+
             <div class="buttons">
                 <button class="button is-primary is-rounded" type="button"
                         data-json-save
@@ -197,6 +257,113 @@
                     :disabled="paso === 4">Siguiente &rarr;</button>
         </div>
     </div>
+
+    {! ── Registro de sucursales y terminales: va FUERA de #ajustes-forma a
+         proposito, porque sus formularios propios no pueden anidarse dentro de
+         otro <form> (el parser HTML descarta el <form> interno y htmx se
+         queda sin elemento al que colgar el hx-post). ── !}
+    {#if modo != 'backups'}
+    <div class="box mb-5" data-group="sucursales">
+        <p class="title is-5">Sucursales y Terminales</p>
+        <p class="subtitle is-6 has-text-grey">
+            Registro de puntos de venta. El código de sucursal usa 3 dígitos y el
+            de terminal 5, el mismo formato con el que se imprime el consecutivo
+            de cada comprobante.
+        </p>
+
+        {#if sucursales?? && sucursales.size() > 0}
+        <div class="table-container">
+        <table class="table is-striped is-fullwidth">
+            <thead>
+                <tr>
+                    <th>Sucursal</th>
+                    <th>Terminal</th>
+                    <th>Estado</th>
+                    <th class="has-text-right">Punto de venta</th>
+                </tr>
+            </thead>
+            <tbody>
+                {#for s in sucursales}
+                <tr>
+                    <td>{s.codigoSucursal} — {s.nombreSucursal ?: 'Sin nombre'}</td>
+                    <td>{s.codigoTerminal} — {s.nombreTerminal ?: 'Sin nombre'}</td>
+                    <td>
+                        <span class="tag {#if s.activo}is-success{#else}is-warning{/if}">
+                            {#if s.activo}Activo{#else}Inactivo{/if}</span>
+                    </td>
+                    <td class="has-text-right">
+                        {#if sucursalSeleccionadaId?? && s.id == sucursalSeleccionadaId}
+                        <span class="tag is-link">En uso</span>
+                        {#else}
+                        <span class="has-text-grey is-size-7">Se elige arriba</span>
+                        {/if}
+                        <form hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales/activo"
+                              hx-on::after-request="if (event.detail.successful) window.location.reload()"
+                              data-json-save>
+                            <input type="hidden" name="id" value="{s.id}"/>
+                            <input type="hidden" name="activo" value="{#if s.activo}false{#else}true{/if}"/>
+                            <button class="button is-small" type="submit">
+                                {#if s.activo}Desactivar{#else}Activar{/if}</button>
+                        </form>
+                    </td>
+                </tr>
+                {/for}
+            </tbody>
+        </table>
+        </div>
+        {#else}
+        <p class="help has-text-grey">
+            Todavía no hay sucursales registradas en esta configuración.
+        </p>
+        {/if}
+
+        <hr/>
+
+        <p class="title is-6">Registrar un punto de venta</p>
+        <form hx-post="{config:['quarkus.http.root-path']}{baseUrl}/sucursales"
+              hx-on::after-request="if (event.detail.successful) window.location.reload()"
+              data-json-save>
+            <div class="columns is-multiline">
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="sucursal-codigo">Código de sucursal</label>
+                        <input id="sucursal-codigo" class="input" type="text" name="codigoSucursal"
+                               maxlength="3" inputmode="numeric" required="required"
+                               placeholder="001" value=""/>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="sucursal-nombre">Nombre de la sucursal</label>
+                        <input id="sucursal-nombre" class="input" type="text" name="nombreSucursal"
+                               maxlength="120" placeholder="Sucursal principal" value=""/>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="terminal-codigo">Código de terminal</label>
+                        <input id="terminal-codigo" class="input" type="text" name="codigoTerminal"
+                               maxlength="5" inputmode="numeric" required="required"
+                               placeholder="00001" value=""/>
+                    </div>
+                </div>
+                <div class="column is-one-quarter">
+                    <div class="field">
+                        <label class="label" for="terminal-nombre">Nombre del terminal</label>
+                        <input id="terminal-nombre" class="input" type="text" name="nombreTerminal"
+                               maxlength="120" placeholder="Terminal principal" value=""/>
+                    </div>
+                </div>
+            </div>
+            <div class="field">
+                <button class="button is-primary" type="submit">Registrar y usar</button>
+                <p class="help has-text-grey">
+                    El punto de venta registrado queda seleccionado para emitir.
+                </p>
+            </div>
+        </form>
+    </div>
+    {/if}
 
     {! ── Single save form: every editable control lives inside ── !}
     <form id="ajustes-forma" data-json-save
@@ -622,12 +789,15 @@
             }
             var url = elt.getAttribute('hx-post') || elt.getAttribute('hx-put') || '';
             var esTrigger = url.indexOf('backup-trigger') !== -1;
+            var esSucursal = url.indexOf('/sucursales') !== -1;
             var severidad = 'is-danger';
             var mensaje = 'No se pudo contactar al servidor';
             if (evt.detail.successful && datos && datos.data) {
                 severidad = 'is-success';
                 if (esTrigger) {
                     mensaje = 'Backup completado correctamente';
+                } else if (esSucursal) {
+                    mensaje = 'Punto de venta actualizado';
                 } else {
                     mensaje = 'Configuración guardada';
                 }

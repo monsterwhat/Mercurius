@@ -70,11 +70,15 @@ public class ConfiguracionAplicacion {
 
     private Integer ultimoConsecutivo; //Last consecutive number used for invoices
     
+    // Par de sucursal/terminal que opera ahora. Lo escribe unicamente
+    // Services.SucursalService.seleccionar() desde el registro Models.Sucursal
+    // (3 digitos de sucursal, 5 de terminal); con el registro vacio se
+    // conservan los valores por defecto "001"/"001" que ya usaba la emision.
     @Nullable @Column(length = 3)
     private String codigoSucursal; //Branch code for Hacienda (e.g., "001")
     
-    @Nullable @Column(length = 3)
-    private String codigoTerminal; //Terminal code for Hacienda (e.g., "001")
+    @Nullable @Column(length = 5)
+    private String codigoTerminal; //Terminal code for Hacienda (e.g., "001" o "00001")
     
     @Nullable @Column(length = 2)
     private String tipoDocumento; //Hacienda document type: "01"=FE, "04"=TE (default)
