@@ -70,6 +70,14 @@ public class LineaDetalleService extends GService<LineaDetalle>  {
     public void update(@Nonnull LineaDetalle entity) {
         try {
             em.merge(entity);
+            // Flush immediately. merge() only schedules the change; callers that
+            // re-read the graph through ComprobantesRecibidosService
+            // .findByIdWithDetails() hit em.refresh(), which DISCARDS pending
+            // in-memory state and reloads from the database. Without this flush
+            // the refresh throws the update away and the transaction commits
+            // nothing - the line-correction PUT then answers 200 having changed
+            // no row. See FacturasRecibidasResource.doCorregirLinea.
+            em.flush();
         } catch (PersistenceException e) {
                         LOG.warn("Error updating entity: " + e.getMessage() + " | source=" + "LineaDetalleService.update()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
         }
