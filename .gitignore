@@ -536,3 +536,6 @@ modified.txt
 # --- Repo hygiene (logs / build / deps) ---
 logs/
 sessions/
+
+# tooling de opencode, no es parte del proyecto
+.opencode/package-lock.json
