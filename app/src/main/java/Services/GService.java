@@ -26,15 +26,71 @@ public abstract class GService<T> implements Serializable{
 
     protected abstract @Nonnull Class<T> getEntityClass();
 
+    /**
+     * Best-effort listing: every row of {@code T}, or an EMPTY list if the query fails.
+     *
+     * <p><strong>The empty result is ambiguous on purpose and must be treated as such.</strong>
+     * A caller cannot tell "this table has no rows" apart from "the query blew up", so any
+     * caller that reads emptiness as authoritative (rendering it to a UI, counting it, or
+     * looking up a row that is expected to exist) is silently wrong on a transient
+     * PersistenceException. That is not hypothetical: it hid a failed re-read of a
+     * just-inserted invoice row behind an empty stream and made the lookup "fail".
+     *
+     * <p>This leniency is kept so the existing {@code listAll()} callers (page/report/table
+     * renderers, {@code @PostConstruct} initialisers) keep their current behaviour. Failures
+     * are now logged at ERROR with the throwable, so they are never silent again.
+     *
+     * <p>Callers that cannot treat empty as authoritative MUST use
+     * {@link #listAllOrThrow()} instead.
+     *
+     * @return every row of {@code T}, or an empty list if the query failed
+     * @see #listAllOrThrow()
+     */
     @Transactional(TxType.SUPPORTS)
     public @Nonnull List<T> listAll() {
         try {
-            TypedQuery<T> query = em.createQuery("SELECT e FROM " + getEntityClass().getSimpleName() + " e", getEntityClass());
-            return query.getResultList();
+            return queryAll();
         } catch (PersistenceException e) {
-                        LOG.warn("Error listing " + getEntityClass().getSimpleName() + ": " + e.getMessage() + " | source=" + "GService.listAll()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            LOG.error("Error listing " + getEntityClass().getSimpleName() + " in GService.listAll()"
+                    + "; returning an EMPTY list, so callers cannot distinguish 'no rows' from 'query failed'"
+                    + " - use listAllOrThrow() where that distinction matters"
+                    + " | source=GService.listAll() | despues=" + e.getMessage(), e);
             return Collections.emptyList();
         }
+    }
+
+    /**
+     * Fail-fast listing: same query as {@link #listAll()}, but a failed query is NOT
+     * flattened into an empty list - the {@link PersistenceException} propagates to the
+     * caller.
+     *
+     * <p>Use this whenever an empty result would be wrong: re-reading a row that must
+     * exist, feeding a calculation, or serving data where "nothing configured" and "the
+     * query failed" must not look identical. Either let it propagate (Quarkus maps it to a
+     * 5xx) or catch it and produce a deliberate fallback.
+     *
+     * @return every row of {@code T}; never empty because of a failure
+     * @throws jakarta.persistence.PersistenceException if the query fails
+     * @see #listAll()
+     */
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<T> listAllOrThrow() {
+        return queryAll();
+    }
+
+    /**
+     * Shared JPQL execution for {@link #listAll()} / {@link #listAllOrThrow()}.
+     *
+     * <p>The entity name is still resolved from {@code getEntityClass().getSimpleName()}.
+     * It is left as-is deliberately: the metamodel-based alternative
+     * ({@code em.getMetamodel().entity(getEntityClass()).getName()}) throws
+     * {@link IllegalArgumentException} - not {@link PersistenceException} - for a class
+     * that is not a managed entity, so moving it in front of the {@code catch} would turn a
+     * lenient call into a hard failure and change the contract of every existing caller.
+     */
+    private @Nonnull List<T> queryAll() {
+        TypedQuery<T> query = em.createQuery("SELECT e FROM " + getEntityClass().getSimpleName() + " e", getEntityClass());
+        return query.getResultList();
     }
 
     @Transactional
