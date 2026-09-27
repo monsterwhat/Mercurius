@@ -577,4 +577,20 @@ button.metric-card:focus-visible,
   .navbar.is-black .navbar-menu .navbar-link {
     color: var(--bulma-black-invert-l, #fff);
   }
+
+  // Bulma keeps desktop dropdown panels absolutely positioned and hidden until
+  // hover/focus; touch screens cannot hover, so expand these entries inline.
+  .navbar.is-black .navbar-item.has-dropdown .navbar-dropdown {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    display: block;
+    padding: 0 0 .5rem 1rem;
+    position: static;
+  }
+
+  .navbar.is-black .navbar-divider {
+    background: var(--bulma-border);
+    display: block;
+  }
 }

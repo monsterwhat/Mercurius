@@ -325,7 +325,7 @@ public class ClientsResource {
             // (ui-kit §7 update="table region"); JSON callers keep the exact
             // envelope below.
             if (isHxRequest()) {
-                return htmlOk(tableInstance(1, 20, null, "asc", null, "warn",
+                return htmlOk(tableInstance(1, 20, null, "asc", null, null, "warn",
                         "El cliente " + client.getName() + " fue archivado"));
             }
 
@@ -364,12 +364,13 @@ public class ClientsResource {
             @QueryParam("size") @DefaultValue("20") int size,
             @QueryParam("sort") @Nullable String sort,
             @QueryParam("dir") @DefaultValue("asc") String dir,
-            @QueryParam("q") @Nullable String q) {
+            @QueryParam("q") @Nullable String q,
+            @QueryParam("estado") @Nullable String estado) {
         try {
             if (isHxRequest()) {
-                return htmlOk(tableInstance(page, size, sort, dir, q, null, null));
+                return htmlOk(tableInstance(page, size, sort, dir, q, estado, null, null));
             }
-            return htmlOk(renderFullPage());
+            return htmlOk(renderFullPage(estado));
         } catch (Exception e) {
             LOG.warn("Error renderizando la página de clientes", e);
             return Response.serverError()
@@ -860,22 +861,25 @@ public class ClientsResource {
                 .data("toastMessage", toastMessage);
     }
 
-    private TemplateInstance renderFullPage() {
-        TableModel model = buildTableModel(1, 20, null, "asc", null);
+    private TemplateInstance renderFullPage(@Nullable String estado) {
+        TableModel model = buildTableModel(1, 20, null, "asc", null, estado);
         List<Clientes> todos = orEmpty(clientService.listAll());
         long activos = todos.stream().filter(c -> c.getStatus() != null && c.getStatus()).count();
         return pageIndex
                 .data("tablaClientes", model.asMap())
                 .data("clientesTotal", model.total())
                 .data("clientesActivosCount", activos)
-                .data("clientesInactivosCount", todos.size() - activos);
+                .data("clientesInactivosCount", todos.size() - activos)
+                .data("filtroEstado", estado != null && !estado.isBlank()
+                        ? estado.trim().toLowerCase(java.util.Locale.ROOT) : null);
     }
 
     private TemplateInstance tableInstance(int page, int size, @Nullable String sort,
                                            @Nullable String dir, @Nullable String q,
+                                           @Nullable String estado,
                                            @Nullable String toastSeverity,
                                            @Nullable String toastMessage) {
-        TableModel model = buildTableModel(page, size, sort, dir, q);
+        TableModel model = buildTableModel(page, size, sort, dir, q, estado);
         return tablaPage
                 .data("modelo", model.asMap())
                 .data("q", model.q())
@@ -884,13 +888,22 @@ public class ClientsResource {
     }
 
     private TableModel buildTableModel(int page, int size, @Nullable String sort,
-                                       @Nullable String dir, @Nullable String q) {
+                                       @Nullable String dir, @Nullable String q,
+                                       @Nullable String estado) {
         List<Clientes> filas;
         if (q != null && !q.isBlank()) {
             List<Clientes> matches = clientService.searchByName(q.trim());
             filas = new ArrayList<>(matches != null ? matches : List.of());
         } else {
             filas = new ArrayList<>(orEmpty(clientService.listAll()));
+        }
+        if (estado != null && !estado.isBlank()) {
+            String filtro = estado.trim().toLowerCase(java.util.Locale.ROOT);
+            if ("activo".equals(filtro)) {
+                filas.removeIf(cliente -> cliente.getStatus() == null || !cliente.getStatus());
+            } else if ("inactivo".equals(filtro)) {
+                filas.removeIf(cliente -> cliente.getStatus() != null && cliente.getStatus());
+            }
         }
         sortClients(filas, sort, dir);
 
@@ -912,6 +925,9 @@ public class ClientsResource {
         Map<String, Object> filtros = new LinkedHashMap<>();
         if (q != null && !q.isBlank()) {
             filtros.put("q", q.trim());
+        }
+        if (estado != null && !estado.isBlank()) {
+            filtros.put("estado", estado.trim());
         }
 
         return new TableModel("tabla-clientes", "/api/app/clientes/table", columnas, filas,

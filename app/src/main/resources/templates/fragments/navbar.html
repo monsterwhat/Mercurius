@@ -42,10 +42,6 @@
     </div>
 
     <div id="navbarMenu" class="navbar-menu">
-        <div class="navbar-start">
-            <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app" data-planned-route="/app">Inicio</a>
-        </div>
-
         <div class="navbar-end">
 
             {! token: facturacion - legacy: commandLink openNewFactura (icon-only receipt button) !}
@@ -81,7 +77,13 @@
 
             {! token: usuario - legacy: plain "Usuarios" item (gated here per T11 six-token mandate) !}
             {#if inject:securityIdentity.hasRole('usuario')}
-            <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/usuarios" data-planned-route="/app/usuarios">Usuarios</a>
+            <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link">Usuarios</a>
+                <div class="navbar-dropdown">
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/usuarios" data-planned-route="/app/usuarios">Usuarios</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/clientes/table" data-planned-route="/api/app/clientes/table">Clientes</a>
+                </div>
+            </div>
             {/if}
 
             {! token: tributacion - legacy: "Tributacion" dropdown !}
