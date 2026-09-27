@@ -31,6 +31,7 @@ import Models.Enums.Tipo_Codigo_Descuento;
 import Models.Enums.Tipo_TarifaIVA;
 import Models.EntradaPago;
 import Models.ConfiguracionAplicacion;
+import Models.EnvioFueraLinea;
 import Models.Articulos.Promocion;
 import Models.Usuarios;
 import Services.Facturas.EncabezadoService;
@@ -135,10 +136,25 @@ public class ComprobanteService implements Serializable {
     @Inject
     private @Nonnull ProductoExoneracionService productoExoneracionService;
 
+    @Inject
+    private @Nonnull SustitucionComprobanteService sustitucionComprobanteService;
+
+    @Inject
+    private @Nonnull EnvioFueraLineaService envioFueraLineaService;
+
     public static class CrearComprobanteResult {
         public ComprobantesEmitidos comprobante;
         public boolean haciendaEnviado;
         public String haciendaMensaje;
+        /**
+         * DOCUMENTED WIDENING (additive, source-compatible): true when the
+         * document was signed but not transmitted and now lives in the
+         * {@link Models.EnvioFueraLinea} outbox awaiting automatic transmission
+         * under Art. 21 ¶3. It separates "not submitted, will be retried" from
+         * "submitted and rejected" for API callers; {@link #haciendaEnviado}
+         * keeps its original meaning and stays false either way.
+         */
+        public boolean pendienteEnvio;
     }
 
     @jakarta.transaction.Transactional
@@ -147,6 +163,7 @@ public class ComprobanteService implements Serializable {
                                                     @Nonnull DocumentoStrategy strategy, @Nonnull List<EntradaPago> pagos) {
         CrearComprobanteResult result = new CrearComprobanteResult();
         result.haciendaEnviado = false;
+        result.pendienteEnvio = false;
         
         try {
             String tipoDocumento = strategy.getCodigoDocumento();
@@ -159,6 +176,19 @@ public class ComprobanteService implements Serializable {
                 sucursal, terminal,
                 tipoDocumento != null ? tipoDocumento : "04",
                 consecutivo);
+
+            // Art. 21 ¶3 (Ley 6828): si el XML firmado no puede enviarse por
+            // falta de conectividad, debe generarse y firmarse en el momento de
+            // la venta y enviarse a más tardar dos días hábiles después, con
+            // Situacion = 3. La situacion va incrustada en la clave (posición 42),
+            // así que hay que decidirla ANTES de generar la clave: por eso el
+            // sondeo de conectividad va aquí y no después del envío.
+            // El sondeo falla abierto (devuelve true ante cualquier error), de modo
+            // que un falso negativo no degrada la ruta normal a situacion 3.
+            boolean hayConectividad = envioFueraLineaService.hayConectividadConHacienda();
+            String situacion = hayConectividad
+                ? EnvioFueraLineaService.SITUACION_NORMAL
+                : EnvioFueraLineaService.SITUACION_FUERA_LINEA;
 
             // Use strategy to build the type-specific encabezado
             Encabezado encabezado = strategy.buildEncabezado(appSettings, selectedClient);
@@ -184,7 +214,7 @@ public class ComprobanteService implements Serializable {
             String clave = haciendaSigner.generateInvoiceKey(
                 appSettings.getIdentificacion(),
                 numeroConsecutivo,
-                "1",
+                situacion,
                 encabezado.getFechaEmision().toLocalDate()
             );
             encabezado.setClave(clave);
@@ -276,13 +306,42 @@ public class ComprobanteService implements Serializable {
             // Persist the comprobante first
             comprobantesEmitidosService.createAndReturn(tiqueteElectronico);
 
-            // Attempt immediate send to Hacienda per CR 2176 §5.6
-            // On failure the comprobante stays PENDIENTE and the 48h batch scheduler retries
-            result.haciendaEnviado = enviarComprobanteAHacienda(tiqueteElectronico);
-            if (result.haciendaEnviado) {
-                result.haciendaMensaje = "Comprobante creado y enviado a Hacienda";
+            // Art. 21 ¶3 — two outcomes, one of them new:
+            //  · Hacienda is unreachable (sondeo negativo): no se intenta el envío
+            //    inmediato, el comprobante ya está firmado con situacion 3 y se
+            //    encola con su XML firmado para transmitirlo dentro de dos días hábiles.
+            //  · Hacienda es alcanzable: se mantiene la ruta original (situacion 1,
+            //    envío inmediato). Si ese envío falla, el XML firmado se encola igual
+            //    para que el documento no se pierda y quede bajo el mismo plazo legal;
+            //    antes quedaba en haciendaEstado='ENVIADO' sin estarlo, es decir, un
+            //    falso éxito que además sacaba la fila de los lotes de 48 h.
+            if (!hayConectividad) {
+                EnvioFueraLinea encolado = registrarPendienteDeEnvio(
+                    tiqueteElectronico, tipoDocumento, sucursal, terminal, situacion,
+                    EnvioFueraLineaService.ORIGEN_OFFLINE_SITUACION_3);
+                result.haciendaEnviado = false;
+                result.pendienteEnvio = encolado != null;
+                result.haciendaMensaje = encolado != null
+                    ? "Comprobante creado y firmado con situacion 3 (sin conexión a Hacienda). "
+                        + "Se enviará automáticamente antes del " + encolado.getVencimiento()
+                        + " (Art. 21 párr. 3, Ley 6828)."
+                    : "Comprobante creado y firmado con situacion 3, pero NO se pudo encolar para envío. "
+                        + "Requiere envío manual a Hacienda antes de dos días hábiles (Art. 21 párr. 3).";
             } else {
-                result.haciendaMensaje = "Comprobante creado - pendiente de envío a Hacienda";
+                result.haciendaEnviado = enviarComprobanteAHacienda(tiqueteElectronico);
+                if (result.haciendaEnviado) {
+                    result.haciendaMensaje = "Comprobante creado y enviado a Hacienda";
+                } else {
+                    EnvioFueraLinea encolado = registrarPendienteDeEnvio(
+                        tiqueteElectronico, tipoDocumento, sucursal, terminal, situacion,
+                        EnvioFueraLineaService.ORIGEN_FALLO_ENVIO_INMEDIATO);
+                    result.pendienteEnvio = encolado != null;
+                    result.haciendaMensaje = encolado != null
+                        ? "Comprobante creado pero NO enviado a Hacienda. Se reintentará automáticamente "
+                            + "antes del " + encolado.getVencimiento() + " (Art. 21 párr. 3, Ley 6828)."
+                        : "Comprobante creado pero NO enviado a Hacienda y sin cola de reintento. "
+                            + "Requiere envío manual (Art. 21 párr. 3, Ley 6828).";
+                }
             }
             
             // Add loyalty points for the sale if client exists
@@ -310,11 +369,32 @@ public class ComprobanteService implements Serializable {
     /**
      * Sends a comprobante to Hacienda and returns whether it was accepted.
      * <p>
-     * On failure the comprobante remains PENDIENTE and the 48h batch scheduler
-     * will retry. On success the estado is updated to ACEPTADO and the method
-     * returns true.
+     * On success the estado is updated to ACEPTADO and the method returns true.
+     * <p>
+     * On failure the document is put back in PENDIENTE — not ENVIADO. The
+     * pre-submission "ENVIADO" stamp is optimistic bookkeeping for the async
+     * Hacienda response; leaving it behind when the send did not happen is a
+     * false success, and it also removed the row from
+     * {@code findFacturasPendientesEnvio()} (which filters on 'PENDIENTE'), so
+     * neither the 48h batch nor any operator would pick it up again. The caller
+     * additionally enqueues the signed payload in
+     * {@link Models.EnvioFueraLinea} so the Art. 21 ¶3 two-business-day window
+     * is tracked explicitly.
      */
     public boolean enviarComprobanteAHacienda(ComprobantesEmitidos comprobante) {
+        // Preflight FUERA del try, igual que el de la cédula del Mensaje Receptor:
+        // un documento con el bloque de referencia incompleto no puede ir a
+        // Hacienda (nota 9 del XSD v4.4, códigos 13/15 obligatorios desde el
+        // 2026-11-01) y es preferible que el operador reciba la causa. El
+        // comprobante queda como estaba (no se envía) y se avisa por log.
+        try {
+            sustitucionComprobanteService.validarParejaAntesDeEnvio(comprobante);
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Envío bloqueado: " + e.getMessage()
+                + " | source=ComprobanteService.enviarComprobanteAHacienda()"
+                + " | despues=comprobante no enviado, queda pendiente de regularizar");
+            return false;
+        }
         try {
             ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null) {
@@ -360,6 +440,10 @@ public class ComprobanteService implements Serializable {
                     + " | source=ComprobanteService.enviarComprobanteAHacienda()");
                 return true;
             } else {
+                // Un rechazo de Hacienda (validación de fondo) no se reintenta solo:
+                // se conserva el motivo y el estado RECHAZADO para que el operador lo
+                // regule. Un fallo de conectividad, en cambio, sí se reencola (lo
+                // hace el llamador de crearComprobante con el XML firmado).
                 if (comprobante.getEncabezado() != null) {
                     comprobante.getEncabezado().setEstado("RECHAZADO");
                     comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
@@ -371,10 +455,83 @@ public class ComprobanteService implements Serializable {
                 return false;
             }
         } catch (RuntimeException e) {
+            // Excepción de transporte/firma: el documento NO llegó a enviarse, así que
+            // se revierte el sello optimista de ENVIADO a PENDIENTE. Con ENVIADO la
+            // fila desaparecía de findFacturasPendientesEnvio() y nadie la volvía a
+            // intentar. El reencolado con el XML firmado lo hace el llamador.
+            degradarEnvioAPendiente(comprobante);
+            comprobantesEmitidosService.update(comprobante);
             LOG.warn("Error al enviar comprobante a Hacienda: " + e.getMessage()
                 + " | source=ComprobanteService.enviarComprobanteAHacienda()"
-                + " | despues=" + e.getMessage());
+                + " | despues=" + e.getMessage()
+                + " | comprobante vuelve a PENDIENTE y queda encolado para Art. 21 párr. 3");
             return false;
+        }
+    }
+
+    /**
+     * Reverts the optimistic ENVIADO stamp after a transport failure so the
+     * document returns to the PENDIENTE pool that the 48h batch scans.
+     */
+    private void degradarEnvioAPendiente(@Nonnull ComprobantesEmitidos comprobante) {
+        if ("ACEPTADO".equals(comprobante.getHaciendaEstado())) {
+            return;
+        }
+        comprobante.setHaciendaEstado("PENDIENTE");
+        if (comprobante.getEncabezado() != null
+            && !"RECHAZADO".equals(comprobante.getEncabezado().getEstado())) {
+            comprobante.getEncabezado().setEstado("PENDIENTE");
+        }
+    }
+
+    /**
+     * Signs the document at the point of sale and hands the signed bytes to the
+     * {@link Models.EnvioFueraLinea} outbox, which owns the Art. 21 ¶3
+     * two-business-day transmission window.
+     *
+     * <p>The signed payload is the legally relevant artefact, so it must be
+     * produced here — the submission path
+     * ({@link #enviarComprobanteAHacienda(comprobante)}) signs internally and
+     * discards the result. Re-signing on the way out is not an option: the
+     * signature covers the bytes, so a re-marshalled document would no longer
+     * match the one Hacienda is asked to accept for that clave.
+     *
+     * <p>Every failure is logged and swallowed. This runs after the comprobante
+     * is already persisted, and losing the queued copy must never turn a saved
+     * sale into a thrown exception that makes the caller believe nothing was
+     * written.
+     *
+     * @return the queued row, or {@code null} when it could not be signed/queued
+     */
+    private @Nullable EnvioFueraLinea registrarPendienteDeEnvio(
+            @Nonnull ComprobantesEmitidos comprobante, @Nonnull String tipoDocumento,
+            @Nonnull String sucursal, @Nonnull String terminal, @Nonnull String situacion,
+            @Nonnull String origen) {
+        try {
+            DocumentoStrategy strategyElegida = strategyFactory.forCode(tipoDocumento);
+            String xml = strategyElegida.buildXml(comprobante);
+            if (xml == null || xml.isBlank()) {
+                LOG.warn("No se generó XML para encolar el envío diferido"
+                    + " | source=ComprobanteService.registrarPendienteDeEnvio()"
+                    + " | despues=el comprobante sigue PENDIENTE y el lote de 48h lo reintentará");
+                return null;
+            }
+            HaciendaSigner.SignResult firmado = haciendaSigner.signXml(xml);
+            if (!firmado.success || firmado.signedXml == null || firmado.signedXml.isBlank()) {
+                LOG.warn("No se pudo firmar el XML para encolar el envío diferido: "
+                    + (firmado.errorMessage != null ? firmado.errorMessage : "sin detalle")
+                    + " | source=ComprobanteService.registrarPendienteDeEnvio()"
+                    + " | despues=queda PENDIENTE; sin firma no hay documento que diferir");
+                return null;
+            }
+            return envioFueraLineaService.registrarDocumentoFirmado(
+                comprobante, tipoDocumento, sucursal, terminal, situacion,
+                firmado.signedXml, origen);
+        } catch (jakarta.xml.bind.JAXBException | RuntimeException e) {
+            LOG.warn("Error encolando el envío diferido: " + e.getMessage()
+                + " | source=ComprobanteService.registrarPendienteDeEnvio()"
+                + " | despues=el comprobante queda PENDIENTE y el lote de 48h lo reintentará");
+            return null;
         }
     }
 
