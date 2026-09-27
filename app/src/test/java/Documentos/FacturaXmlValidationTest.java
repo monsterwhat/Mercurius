@@ -61,21 +61,25 @@ class FacturaXmlValidationTest {
         f.setAccessible(true);
         f.set(signer, realValidator);
 
+        // Party/product values are the real ones (emisor, CAByS and product
+        // from fixtures/reales/v4.4/fe-v44-13.xml; the receptor pair is
+        // fe-v44-17.xml's own emisor reused as the buyer); the element
+        // structure is untouched, this test only signs strings.
         validXml = """
             <?xml version="1.0" encoding="UTF-8"?>
             <FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
-                <Clave>50626072600031011569830010000001040000000001000000</Clave>
-                <ProveedorSistemas>3101156983</ProveedorSistemas>
-                <CodigoActividadEmisor>464100</CodigoActividadEmisor>
+                <Clave>50626070200310010000800100001040000000001000000000</Clave>
+                <ProveedorSistemas>3100100008</ProveedorSistemas>
+                <CodigoActividadEmisor>154101</CodigoActividadEmisor>
                 <NumeroConsecutivo>00100001040000000001</NumeroConsecutivo>
                 <FechaEmision>2026-07-02T12:00:00</FechaEmision>
-                <Emisor><Nombre>Test Emisor SA</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156983</Numero></Identificacion>
-                    <Ubicacion><Provincia>1</Provincia><Canton>01</Canton><Distrito>01</Distrito><OtrasSenas>Direccion de prueba</OtrasSenas></Ubicacion>
-                    <CorreoElectronico>test@test.com</CorreoElectronico></Emisor>
-                <Receptor><Nombre>Test Emisor SA</Nombre><Identificacion><Tipo>02</Tipo><Numero>3101156984</Numero></Identificacion></Receptor>
+                <Emisor><Nombre>Panificadora del Sur S.A.</Nombre><Identificacion><Tipo>02</Tipo><Numero>3100100008</Numero></Identificacion>
+                    <Ubicacion><Provincia>4</Provincia><Canton>03</Canton><Distrito>06</Distrito><OtrasSenas>DEL CRUCE DE LA PRINCIPAL CUATROCIENTOS METROS AL ESTE, ZONA INDUSTRIAL, MODULO 1</OtrasSenas></Ubicacion>
+                    <CorreoElectronico>facturacion.8@proveedor-prueba.test</CorreoElectronico></Emisor>
+                <Receptor><Nombre>PRODUCTOS DEL VALLE S.A.</Nombre><Identificacion><Tipo>02</Tipo><Numero>3100100013</Numero></Identificacion></Receptor>
                 <CondicionVenta>01</CondicionVenta>
-                <DetalleServicio><LineaDetalle><NumeroLinea>1</NumeroLinea><CodigoCABYS>0111010010010</CodigoCABYS>
-                    <Cantidad>1.000</Cantidad><UnidadMedida>Unid</UnidadMedida><Detalle>Item</Detalle>
+                <DetalleServicio><LineaDetalle><NumeroLinea>1</NumeroLinea><CodigoCABYS>2349002011400</CodigoCABYS>
+                    <Cantidad>1.000</Cantidad><UnidadMedida>Unid</UnidadMedida><Detalle>Takis Fuego ES 1p 56g FLOW BAR</Detalle>
                     <PrecioUnitario>100.00000</PrecioUnitario><MontoTotal>100.00000</MontoTotal><SubTotal>100.00000</SubTotal>
                     <BaseImponible>100.00000</BaseImponible><Impuesto><Codigo>01</Codigo><CodigoTarifaIVA>08</CodigoTarifaIVA><Tarifa>13.00</Tarifa><Monto>13.00000</Monto></Impuesto>
                     <ImpuestoAsumidoEmisorFabrica>0.00000</ImpuestoAsumidoEmisorFabrica><ImpuestoNeto>13.00000</ImpuestoNeto><MontoTotalLinea>113.00000</MontoTotalLinea></LineaDetalle></DetalleServicio>
@@ -98,7 +102,7 @@ class FacturaXmlValidationTest {
             <?xml version="1.0"?>
             <!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]>
             <FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
-                <Clave>50626072600031011569830010000001040000000001000000</Clave>
+                <Clave>50626070200310010000800100001040000000001000000000</Clave>
                 <NumeroConsecutivo>00100001040000000001</NumeroConsecutivo>
                 <Detalle>&xxe;</Detalle>
             </FacturaElectronica>""";
@@ -107,7 +111,7 @@ class FacturaXmlValidationTest {
 
     @Test
     void xxeWithExternalEntityIsRejected() {
-        String xxe = validXml.replace("<Detalle>Item</Detalle>", "<Detalle>&ext;</Detalle>")
+        String xxe = validXml.replace("<Detalle>Takis Fuego ES 1p 56g FLOW BAR</Detalle>", "<Detalle>&ext;</Detalle>")
                 .replace("<FacturaElectronica", "<!DOCTYPE foo [<!ENTITY ext SYSTEM \"http://evil.com\">]><FacturaElectronica");
         try {
             var r = signer.signXml(xxe);
@@ -120,7 +124,7 @@ class FacturaXmlValidationTest {
 
     @Test
     void missingClaveFailsXsdOrSign() {
-        String noClave = validXml.replace("<Clave>50626072600031011569830010000001040000000001000000</Clave>", "");
+        String noClave = validXml.replace("<Clave>50626070200310010000800100001040000000001000000000</Clave>", "");
         var r = signer.signXml(noClave);
         assertNotNull(r);
         assertFalse(r.success, "Missing Clave must fail XSD validation");
@@ -146,7 +150,7 @@ class FacturaXmlValidationTest {
 
     @Test
     void nullNamespaceFails() {
-        String noNs = "<?xml version=\"1.0\"?><FacturaElectronica><Clave>50626072600031011569830010000001040000000001000000</Clave></FacturaElectronica>";
+        String noNs = "<?xml version=\"1.0\"?><FacturaElectronica><Clave>50626070200310010000800100001040000000001000000000</Clave></FacturaElectronica>";
         var r = signer.signXml(noNs);
         assertFalse(r.success);
         assertTrue(r.errorMessage.contains("namespace") || r.errorMessage.contains("No namespace"));
@@ -155,7 +159,7 @@ class FacturaXmlValidationTest {
     @Test
     void largePayloadStillSignsOrFailsWithoutOOM() {
         // Build ~2MB XML by repeating line
-        String line = "<LineaDetalle><NumeroLinea>1</NumeroLinea><CodigoCABYS>0111010010010</CodigoCABYS><Cantidad>1.000</Cantidad><UnidadMedida>Unid</UnidadMedida><Detalle>Item Large Payload Test With Padding To Increase Size Significantly For OOM Check</Detalle><PrecioUnitario>100.00000</PrecioUnitario><MontoTotal>100.00000</MontoTotal><SubTotal>100.00000</SubTotal><BaseImponible>100.00000</BaseImponible><Impuesto><Codigo>01</Codigo><CodigoTarifaIVA>08</CodigoTarifaIVA><Tarifa>13.00</Tarifa><Monto>13.00000</Monto></Impuesto><MontoTotalLinea>113.00000</MontoTotalLinea></LineaDetalle>";
+        String line = "<LineaDetalle><NumeroLinea>1</NumeroLinea><CodigoCABYS>2349002011400</CodigoCABYS><Cantidad>1.000</Cantidad><UnidadMedida>Unid</UnidadMedida><Detalle>Item Large Payload Test With Padding To Increase Size Significantly For OOM Check</Detalle><PrecioUnitario>100.00000</PrecioUnitario><MontoTotal>100.00000</MontoTotal><SubTotal>100.00000</SubTotal><BaseImponible>100.00000</BaseImponible><Impuesto><Codigo>01</Codigo><CodigoTarifaIVA>08</CodigoTarifaIVA><Tarifa>13.00</Tarifa><Monto>13.00000</Monto></Impuesto><MontoTotalLinea>113.00000</MontoTotalLinea></LineaDetalle>";
         StringBuilder sb = new StringBuilder(validXml.substring(0, validXml.indexOf("</DetalleServicio>")));
         for (int i = 0; i < 200; i++) sb.append(line.replace("<NumeroLinea>1</NumeroLinea>", "<NumeroLinea>" + (i+1) + "</NumeroLinea>"));
         sb.append(validXml.substring(validXml.indexOf("</DetalleServicio>")));
@@ -174,9 +178,9 @@ class FacturaXmlValidationTest {
 
     @Test
     void claveMustBe50Digits() {
-        String shortClave = validXml.replace("50626072600031011569830010000001040000000001000000", "5062607260003101156983");
-        assertEquals(50, "50626072600031011569830010000001040000000001000000".length());
-        assertNotEquals(50, "5062607260003101156983".length());
+        String shortClave = validXml.replace("50626070200310010000800100001040000000001000000000", "5062607020031001000");
+        assertEquals(50, "50626070200310010000800100001040000000001000000000".length());
+        assertNotEquals(50, "5062607020031001000".length());
         var r = signer.signXml(shortClave);
         assertNotNull(r);
         assertFalse(r.success, "Short Clave must fail XSD validation (expected 50 digits)");

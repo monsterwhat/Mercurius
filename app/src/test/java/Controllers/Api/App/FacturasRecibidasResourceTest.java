@@ -6,6 +6,7 @@ import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -15,7 +16,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -23,7 +23,11 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
@@ -37,6 +41,7 @@ import jakarta.inject.Inject;
 import Models.Articulos.Articulos;
 import Models.Cabys;
 import Models.ComprobantesRecibidos;
+import Models.Detalles.LineaDetalle;
 import Models.Encabezado.Encabezado;
 import Models.Inventario;
 import Models.Resumen.ResumenFactura;
@@ -49,6 +54,7 @@ import Services.Facturas.LineaDetalleService;
 import Services.HaciendaApiService;
 import Services.HaciendaSigner;
 import Services.InventarioService;
+import support.FacturasReales;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -67,14 +73,28 @@ import org.junit.jupiter.api.Test;
  * the CSRF cookie issued on the login page GET (both documented cookie names
  * accepted defensively).</p>
  *
- * <p><b>Fixture discipline:</b> the committed v4.4 fixtures under
- * {@code src/test/resources/fixtures/recibidos/} are loaded from the
- * classpath and given a UNIQUE NumeroConsecutivo/Clave per scenario before
- * upload, so every test is self-contained and immune to the parser's
- * duplicate-consecutivo skip and to cross-suite rows in the shared %test
- * database. Rows created by a scenario are deleted in its finally block
- * (%test boots drop-and-create, so a failed assertion cannot poison later
- * runs either way).</p>
+ * <p><b>Fixture discipline:</b> the anonymized REAL invoice
+ * {@code fixtures/reales/v4.4/fe-v44-13.xml} is loaded through
+ * {@link support.FacturasReales} and given a UNIQUE
+ * NumeroConsecutivo/Clave per scenario via
+ * {@code conConsecutivoUnico(nombre, semilla)}, so every test is
+ * self-contained and immune to the parser's duplicate-consecutivo skip and to
+ * cross-suite rows in the shared %test database. Its CAByS codes are seeded
+ * ACTIVO first, otherwise pre-validation would report MISSING_CABYS. Rows
+ * created by a scenario are deleted in its finally block (%test boots
+ * drop-and-create, so a failed assertion cannot poison later runs either
+ * way), together with the articles/stock the rejected-import path creates
+ * out of the same line items.</p>
+ *
+ * <p><b>Malformed CAByS:</b> no real invoice carries a bad CAByS, so the
+ * negative scenario takes the real document and corrupts ONE
+ * {@code CodigoCABYS} into {@code "999"}, exactly the way
+ * {@code FacturaUploadIntegrationTest#facturaRechazadaIgualmenteImportaArticulosEInventario}
+ * corrupts the Clave. The 3-digit value violates the official
+ * {@code CodigoCABYS} type (minLength 13), so the parser's strict XSD gate
+ * refuses the document, the resource re-parses it leniently and stores it
+ * flagged as rejected — and the recomputed prevalidation panel flags
+ * INVALID_FORMAT, which is what blocks the Mensaje Receptor.</p>
  *
  * <p>Scenarios (11): valid-fixture upload persists + PASS panel; tampered
  * CAByS flagged INVALID_FORMAT + MR blocked 409 without touching Hacienda;
@@ -91,13 +111,12 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
 
     private static final String BASE = "/Mercurius";
     private static final String API = BASE + "/api/app/facturas-recibidas";
-    /** CAByS code seeded ACTIVO for the valid fixture line. */
-    private static final String CABYS_ACTIVO = "0111010010010";
-    /** Malformed code inside factura-recibida-cabys-invalido.xml. */
+    /** Real anonymized v4.4 factura received (FE) that drives every upload scenario. */
+    private static final String FACTURA_REAL = "fe-v44-13";
+    /** CAByS the four line items of that real invoice reference, seeded ACTIVO. */
+    private static final String CABYS_ACTIVO = "2349002011400";
+    /** Malformed code the tampered scenario corrupts one real line into. */
     private static final String CABYS_INVALIDO = "999";
-    /** Original consecutivo inside the committed fixtures (replaced per test). */
-    private static final String FIXTURE_CONSEC_VALIDA = "00100001040000000036";
-    private static final String FIXTURE_CONSEC_INVALIDA = "00100001040000000037";
 
     @Inject
     ComprobantesRecibidosService recibidosService;
@@ -171,31 +190,32 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
 
     // ── Fixture helpers ─────────────────────────────────────────────────
 
-    /** Loads a committed fixture and re-stamps Clave/Consecutivo uniquely. */
-    private static byte[] fixtureBytes(String ruta, String consecutivoOriginal,
-                                       String consecutivoNuevo, String claveNueva) throws Exception {
-        try (InputStream in = FacturasRecibidasResourceTest.class.getResourceAsStream(ruta)) {
-            assertNotNull(in, "fixture must be on the test classpath: " + ruta);
-            String xml = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-            xml = xml.replace(consecutivoOriginal, consecutivoNuevo);
-            // The Clave only needs to be present and unique per scenario
-            // (exactly 50 digits, matching the committed fixtures).
-            xml = xml.replaceFirst(">\\d{50}<", ">" + claveNueva + "<");
-            return xml.getBytes(StandardCharsets.UTF_8);
-        }
+    /** The 20-digit NumeroConsecutivo of a re-stamped real invoice. */
+    private static String consecutivoDe(String xml) {
+        Matcher m = Pattern.compile("<NumeroConsecutivo>(\\d{20})</NumeroConsecutivo>").matcher(xml);
+        assertTrue(m.find(), "la factura real debe traer NumeroConsecutivo");
+        return m.group(1);
     }
 
     /**
-     * Seeds the ACTIVO CAByS row used by the valid fixture (idempotent:
-     * another lane's suite may have imported the same code in this boot).
+     * Seeds as ACTIVO every CAByS the real invoice's line items reference, so
+     * the panel reports no CABYS issue (idempotent: another lane's suite may
+     * have imported the same code in this boot).
      */
     private void seedCabysActivo() {
-        if (cabysService.find(CABYS_ACTIVO) == null) {
-            Cabys cabys = new Cabys(CABYS_ACTIVO, "T36 - Animales bovinos para reproduccion",
-                    "Bovinos", "0", "https://example.com/cabys/" + CABYS_ACTIVO, "ACTIVO");
-            cabysService.create(cabys);
+        // The line-correction scenario writes CABYS_ACTIVO back, so it has to be
+        // a code this very invoice carries — not a synthetic one.
+        assertThat(FacturasReales.codigosCabys(FACTURA_REAL)).contains(CABYS_ACTIVO);
+        for (String codigo : FacturasReales.codigosCabys(FACTURA_REAL)) {
+            if (cabysService.find(codigo) == null) {
+                Cabys cabys = new Cabys(codigo,
+                        "T36 - CAByS real " + codigo + " (galletas y galletas a base de cereales)",
+                        "Alimentos y bebidas", "13",
+                        "https://www.hacienda.go.cr/cabys/" + codigo, "ACTIVO");
+                cabysService.create(cabys);
+            }
+            assertThat(cabysService.find(codigo)).isNotNull();
         }
-        assertThat(cabysService.find(CABYS_ACTIVO)).isNotNull();
     }
 
     private void subirArchivo(Map<String, String> session, String nombre, byte[] contenido) {
@@ -220,19 +240,60 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
         return null;
     }
 
-    /** Monotonic tail so every scenario uploads a unique consecutivo/clave. */
+    /**
+     * The row a given upload must have produced, polled briefly: the parser
+     * runs inside the upload request, but listAll() answers with an empty list
+     * when its query fails, so the freshly inserted row is not visible on the
+     * very first read.
+     */
+    private ComprobantesRecibidos esperarPorConsecutivo(String consecutivo) {
+        for (int intento = 0; intento < 20; intento++) {
+            ComprobantesRecibidos fila = buscarPorConsecutivo(consecutivo);
+            if (fila != null) {
+                return fila;
+            }
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Monotonic tail so every scenario uploads a unique consecutivo/clave. It
+     * starts at 1; {@code FacturaMensajeReceptorIntegrationTest} uploads the
+     * same fixture from seed 500000, and digitoSeguro is injective per seed, so
+     * the two suites can never land on the same consecutivo.
+     */
     private static final java.util.concurrent.atomic.AtomicInteger SECUENCIA =
             new java.util.concurrent.atomic.AtomicInteger(1);
 
-    private ComprobantesRecibidos subirValidaUnica(Map<String, String> session, String sufijo) throws Exception {
+    /**
+     * The real invoice re-stamped with a consecutive/clave no other scenario of
+     * this boot used. The seed is rolled forward while the consecutive contains
+     * {@code "8888"}: the Mensaje Receptor gate reads that run as a tampered
+     * document, and a real invoice must never trip it by accident.
+     */
+    private static String facturaRealUnica(int semilla) {
+        int n = semilla;
+        String xml = FacturasReales.conConsecutivoUnico(FACTURA_REAL, n);
+        while (consecutivoDe(xml).contains("8888")) {
+            n += 1000;
+            xml = FacturasReales.conConsecutivoUnico(FACTURA_REAL, n);
+        }
+        return xml;
+    }
+
+    /** Uploads the real invoice, re-stamped with a unique consecutivo/clave. */
+    private ComprobantesRecibidos subirValidaUnica(Map<String, String> session, String sufijo) {
         seedCabysActivo();
-        int n = SECUENCIA.getAndIncrement();
-        String consecutivo = "0010000104" + "9999" + String.format("%06d", n);
-        String clave = "5062508250000010100010000000101" + String.format("%019d", 300000 + n);
-        byte[] xml = fixtureBytes("/fixtures/recibidos/factura-recibida-valida.xml",
-                FIXTURE_CONSEC_VALIDA, consecutivo, clave);
-        subirArchivo(session, "valida-" + sufijo + ".xml", xml);
-        ComprobantesRecibidos fila = buscarPorConsecutivo(consecutivo);
+        String xml = facturaRealUnica(SECUENCIA.getAndIncrement());
+        String consecutivo = consecutivoDe(xml);
+        subirArchivo(session, "valida-" + sufijo + ".xml", xml.getBytes(StandardCharsets.UTF_8));
+        ComprobantesRecibidos fila = esperarPorConsecutivo(consecutivo);
         if (fila == null) {
             fila = seedRow(consecutivo, LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("13"), false, false, null);
             fila.setUser("admin");
@@ -240,14 +301,22 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
         return fila;
     }
 
-    private ComprobantesRecibidos subirInvalidaUnica(Map<String, String> session, String sufijo) throws Exception {
-        int n = SECUENCIA.getAndIncrement();
-        String consecutivo = "0010000104" + "8888" + String.format("%06d", n);
-        String clave = "5062508250000010100010000000102" + String.format("%019d", 400000 + n);
-        byte[] xml = fixtureBytes("/fixtures/recibidos/factura-recibida-cabys-invalido.xml",
-                FIXTURE_CONSEC_INVALIDA, consecutivo, clave);
-        subirArchivo(session, "invalida-" + sufijo + ".xml", xml);
-        ComprobantesRecibidos fila = buscarPorConsecutivo(consecutivo);
+    /**
+     * Uploads the real invoice with ONE line's CAByS corrupted into
+     * {@code "999"}: real products and tax math, malformed catalogue code, so
+     * {@code validarCabys} raises INVALID_FORMAT regardless of the strict /
+     * lenient profile.
+     */
+    private ComprobantesRecibidos subirInvalidaUnica(Map<String, String> session, String sufijo) {
+        seedCabysActivo();
+        String xml = facturaRealUnica(SECUENCIA.getAndIncrement())
+                .replaceFirst("<CodigoCABYS>\\d{13}</CodigoCABYS>",
+                        "<CodigoCABYS>" + CABYS_INVALIDO + "</CodigoCABYS>");
+        assertThat(xml).as("la factura real debe llegar con la linea corrupta")
+                .contains("<CodigoCABYS>" + CABYS_INVALIDO + "</CodigoCABYS>");
+        String consecutivo = consecutivoDe(xml);
+        subirArchivo(session, "invalida-" + sufijo + ".xml", xml.getBytes(StandardCharsets.UTF_8));
+        ComprobantesRecibidos fila = esperarPorConsecutivo(consecutivo);
         if (fila == null) {
             fila = seedRow(consecutivo, LocalDateTime.now(), new BigDecimal("100"), new BigDecimal("13"), false, false, null);
             fila.setUser("admin");
@@ -289,6 +358,48 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
         }
     }
 
+    /** Article codes already in the shared database, captured before the scenario. */
+    private Set<Long> articulosPreexistentes() {
+        return articulosService.listAll().stream()
+                .map(Articulos::getCodigo)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Removes the articles and stock movements a scenario produced. Both the
+     * rejected-import path (a real invoice whose CAByS breaks the schema) and
+     * PUT /procesar turn the line items into articles + inventory, and the
+     * shared %test database must not accumulate them. Anything that already
+     * existed is left alone.
+     */
+    private void limpiarArticulosEInventario(List<LineaDetalle> lineas, Set<Long> articulosPrevios) {
+        for (LineaDetalle linea : lineas) {
+            if (linea.getDetalle() == null) {
+                continue;
+            }
+            Articulos articulo = articulosService.findByName(linea.getDetalle());
+            if (articulo == null || articulo.getCodigo() == null
+                    || articulosPrevios.contains(articulo.getCodigo())) {
+                continue;
+            }
+            for (Inventario movimiento : inventarioService.listAll().stream()
+                    .filter(m -> m.getArticulo() != null
+                            && articulo.getCodigo().equals(m.getArticulo().getCodigo()))
+                    .toList()) {
+                inventarioService.delete(movimiento);
+            }
+            articulosService.delete(articulo);
+        }
+    }
+
+    /** Line items of a comprobante, or an empty list when it carries none. */
+    private static List<LineaDetalle> lineasDe(ComprobantesRecibidos fila) {
+        if (fila == null || fila.getDetalles() == null || fila.getDetalles().getLineasDetalle() == null) {
+            return List.of();
+        }
+        return fila.getDetalles().getLineasDetalle();
+    }
+
     // ── 1. Valid upload → persisted + prevalidation PASS panel ─────────
 
     @Test
@@ -318,9 +429,12 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
     void tamperedCabysFixtureIsFlaggedAndBlocksMensajeReceptor() throws Exception {
         Map<String, String> session = adminSession();
         stubHaciendaOk();
+        Set<Long> articulosPrevios = articulosPreexistentes();
         ComprobantesRecibidos fila = null;
+        List<LineaDetalle> lineas = List.of();
         try {
             fila = subirInvalidaUnica(session, "TAM" + uniqueSuffix());
+            lineas = lineasDe(fila);
 
             Response panel = authed(session)
                     .when().get(API + "/" + fila.getId() + "/prevalidacion");
@@ -338,6 +452,7 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
 
             verifyNoInteractions(haciendaApiService);
         } finally {
+            limpiarArticulosEInventario(lineas, articulosPrevios);
             deleteQuietly(fila);
         }
     }
@@ -347,14 +462,30 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
     @Test
     void lineCorrectionPutFixesCabysAndClearsPrevalidationFlag() throws Exception {
         Map<String, String> session = adminSession();
+        Set<Long> articulosPrevios = articulosPreexistentes();
         ComprobantesRecibidos fila = null;
+        List<LineaDetalle> lineas = List.of();
         try {
             fila = subirInvalidaUnica(session, "PUT" + uniqueSuffix());
+            lineas = lineasDe(fila);
             if (fila.getDetalles() == null || fila.getDetalles().getLineasDetalle() == null
                     || fila.getDetalles().getLineasDetalle().isEmpty()) {
                 return;
             }
-            Long lineaId = fila.getDetalles().getLineasDetalle().get(0).getId();
+            // Correct the line that actually carries the malformed code, not
+            // blindly the first one: the scenario gives the invoice its
+            // malformed CAByS on one specific line, and correcting a different
+            // line leaves the panel still reporting INVALID_FORMAT.
+            Long lineaId = null;
+            for (LineaDetalle linea : fila.getDetalles().getLineasDetalle()) {
+                if (!CABYS_ACTIVO.equals(linea.getCodigoCabys())) {
+                    lineaId = linea.getId();
+                    break;
+                }
+            }
+            if (lineaId == null) {
+                lineaId = fila.getDetalles().getLineasDetalle().get(0).getId();
+            }
             assertNotNull(lineaId, "the parsed line must be persisted");
 
             // Wrong-line guard: a foreign lineaId is a clean 404.
@@ -373,23 +504,38 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
                     .then()
                     .statusCode(400);
 
+            // Assert on the PUT's own response, NOT on a re-read through
+            // lineaDetalleService. The test runs inside a transaction whose
+            // persistence context already holds this LineaDetalle (it came from
+            // lineasDe(fila)), so findById() would answer from the first-level
+            // cache - stale by construction, since the PUT commits in its own
+            // transaction. The response body is built in the PUT's transaction
+            // and is the only read here that can actually observe the write.
             authed(session)
                     .contentType(ContentType.URLENC)
                     .formParam("codigoCabys", CABYS_ACTIVO)
                     .when().put(API + "/" + fila.getId() + "/lineas/" + lineaId)
                     .then()
-                    .statusCode(200);
+                    .statusCode(200)
+                    .body("data.codigoCabys", equalTo(CABYS_ACTIVO));
 
-            var lineaCorregida = lineaDetalleService.findById(lineaId);
-            assertThat(lineaCorregida.getCodigoCabys()).isEqualTo(CABYS_ACTIVO);
-
-            authed(session)
+            // Only the CAByS issues are asserted here, not whole-invoice
+            // validity: fe-v44-13 is a real document whose Receptor carries no
+            // CodigoActividadComercial, so the panel always reports
+            // MISSING_CODIGO_ACTIVIDAD_RECEPTOR regardless of what this test
+            // does. Asserting data.isValid would pin the fixture's unrelated
+            // gap instead of the behaviour named by the test.
+            String panel = authed(session)
                     .when().get(API + "/" + fila.getId() + "/prevalidacion")
                     .then()
                     .statusCode(200)
-                    .body("data.isValid", equalTo(true))
-                    .body("data.errorCount", equalTo(0));
+                    .extract().asString();
+            assertFalse(panel.contains("MISSING_CABYS"),
+                    "the corrected CAByS must no longer be reported as missing. Panel: " + panel);
+            assertFalse(panel.contains("INVALID_FORMAT"),
+                    "the corrected CAByS must no longer be reported as malformed. Panel: " + panel);
         } finally {
+            limpiarArticulosEInventario(lineas, articulosPrevios);
             deleteQuietly(fila);
         }
     }
@@ -687,11 +833,14 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
     @Test
     void procesarCreatesArticuloAndInventarioAndFlagsProcessed() throws Exception {
         Map<String, String> session = adminSession();
+        Set<Long> articulosPrevios = articulosPreexistentes();
         ComprobantesRecibidos fila = null;
         Articulos articulo = null;
         List<Inventario> movimientos = List.of();
+        List<LineaDetalle> lineas = List.of();
         try {
             fila = subirValidaUnica(session, "PRC" + uniqueSuffix());
+            lineas = lineasDe(fila);
             if (fila.getDetalles() == null || fila.getDetalles().getLineasDetalle() == null
                     || fila.getDetalles().getLineasDetalle().isEmpty()) {
                 return;
@@ -726,12 +875,10 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
             assertThat(movimientos.get(0).getTipoMovimiento())
                     .isEqualTo("Ingreso Automatico por factura");
         } finally {
-            for (Inventario m : movimientos) {
-                inventarioService.delete(m);
-            }
-            if (articulo != null) {
-                articulosService.delete(articulo);
-            }
+            // The real invoice carries four lines, so /procesar creates one
+            // article + movement per line: clean up all of them, not just the
+            // one the assertions looked at.
+            limpiarArticulosEInventario(lineas, articulosPrevios);
             deleteQuietly(fila);
         }
     }
