@@ -46,3 +46,111 @@ jobs:
           path: app/Mercurius-runner.jar
           if-no-files-found: error
           retention-days: 30
+
+  test:
+    name: Test suite
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+
+    # The suite is NOT self-contained. app/src/main/resources/application.properties
+    # pins the %test datasource to jdbc:postgresql://localhost:5433/mercurius_test and
+    # explicitly disables Dev Services (%test.quarkus.datasource.devservices.enabled=false),
+    # so the database has to be provided here as a service container. Deliberately a
+    # service container rather than a testcontainers/Dev Services opt-in: the properties
+    # file turns Dev Services off for %test and the test job must exercise the same
+    # connection contract the developers use locally.
+    services:
+      postgres:
+        # Pinned to 16 on purpose. The suite has two tests that shell out to the real
+        # pg_dump client and only skip when it is absent (support/PgDumpAvailability).
+        # ubuntu-latest DOES ship postgresql-client, so they run for real here, and
+        # pg_dump refuses to dump a server newer than the client ("server version
+        # mismatch"). ubuntu-24.04 currently carries PG 16, so a 16 service matches.
+        # PG 16 also satisfies the documented PostgreSQL 14+ requirement.
+        image: postgres:16
+        env:
+          # POSTGRES_USER/POSTGRES_PASSWORD create the role AND its password, so no
+          # step has to set it later. This role is a superuser of the container
+          # cluster, which is more permissive than the local dev setup (README
+          # creates a plain role and needs an explicit GRANT) - deliberate, so the
+          # suite can never go red for a permissions-only reason.
+          POSTGRES_USER: mercurius
+          POSTGRES_PASSWORD: 'Mercurius@1!'
+          # The stock image only ever creates ONE database. %test needs mercurius_test;
+          # the app database mercurius is created by a step below.
+          POSTGRES_DB: mercurius_test
+        ports:
+          # Host 5433 -> container 5432. The host side is NOT free choice: the %test
+          # JDBC URL hardcodes localhost:5433.
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U mercurius -d mercurius_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # The Quarkus Web Bundler resolves its JS toolchain from the Node runtime of the
+      # machine, and the build job has always relied on the one baked into the
+      # ubuntu-latest image rather than a setup-node step or a frontend-maven-plugin
+      # (neither exists in app/pom.xml). Same reliance here: augmentation runs during
+      # `mvn test` too. This probe only turns a confusing bundler failure into a
+      # legible one; it installs nothing.
+      - name: Verify Node for the web bundler
+        run: node --version
+
+      # `docker exec` against the service container instead of the runner's psql: it
+      # needs no client on the host, no password (the official image trusts local
+      # socket connections) and no dependency on the port mapping. A stock image
+      # creates only POSTGRES_DB, so the app database is created here.
+      - name: Create the app database (mercurius)
+        run: |
+          docker exec "${{ job.services.postgres.id }}" \
+            psql -v ON_ERROR_STOP=1 -U mercurius -d mercurius_test \
+            -c "CREATE DATABASE mercurius OWNER mercurius;"
+
+      # PostgreSQL 15+ revoked CREATE on schema public from everyone but the owner;
+      # the local setup in README needs this GRANT for Hibernate to build the schema.
+      # Here mercurius already owns both databases, so it is a no-op kept for parity
+      # with the documented setup.
+      - name: Grant public schema access on both databases
+        run: |
+          for db in mercurius mercurius_test; do
+            docker exec "${{ job.services.postgres.id }}" \
+              psql -v ON_ERROR_STOP=1 -U mercurius -d "$db" \
+              -c "GRANT ALL ON SCHEMA public TO mercurius;"
+          done
+
+      # Fails in seconds, with a legible error, if the host port mapping or the
+      # credentials are wrong - instead of after a full Maven download inside the
+      # first Quarkus boot. Uses the host's psql on purpose: localhost:5433 is
+      # exactly what the JVM will dial.
+      - name: Verify the test datasource is reachable on localhost:5433
+        run: |
+          PGPASSWORD='Mercurius@1!' psql \
+            -h localhost -p 5433 -U mercurius -d mercurius_test \
+            -v ON_ERROR_STOP=1 -c "SELECT current_database(), current_user;"
+
+      - name: Test
+        run: mvn -B -ntp test
+
+      - name: Upload surefire reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: surefire-reports
+          path: app/target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
