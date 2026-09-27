@@ -181,6 +181,18 @@ public class SettingsResource {
             if (request.backupRuta != null) {
                 settings.setBackupRuta(request.backupRuta);
             }
+            if (request.proveedorSistemas != null) {
+                String valorProveedor = request.proveedorSistemas.trim();
+                // El XSD oficial limita ProveedorSistemas a 20 caracteres; la
+                // DGT espera la identificacion del proveedor de sistemas.
+                if (!valorProveedor.isEmpty() && valorProveedor.length() > 20) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El proveedor de sistemas no puede superar 20 caracteres."))
+                            .build();
+                }
+                settings.setProvedor(valorProveedor.isEmpty() ? null : valorProveedor);
+            }
 
             settingsService.update(settings);
 
@@ -427,5 +439,13 @@ public class SettingsResource {
         public Integer backupRetencionDias;
         @Nullable
         public String backupRuta;
+        /**
+         * Identificacion del proveedor de sistemas, que el comprobante v4.4
+         * exige como <ProveedorSistemas> nada mas despues de <Clave>. Antes de
+         * exponerlo aqui el campo no era escribible desde ningun sitio, con lo
+         * que getProvedor() devolvia null y el elemento se omitia del XML.
+         */
+        @Nullable
+        public String proveedorSistemas;
     }
 }

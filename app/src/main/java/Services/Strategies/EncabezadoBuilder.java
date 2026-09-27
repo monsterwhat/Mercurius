@@ -2,6 +2,7 @@ package Services.Strategies;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.jboss.logging.Logger;
 import Models.ConfiguracionAplicacion;
 import Models.Clientes;
 import Models.Encabezado.*;
@@ -18,6 +19,8 @@ import java.util.List;
  */
 public final class EncabezadoBuilder {
 
+    private static final Logger LOG = Logger.getLogger(EncabezadoBuilder.class);
+
     private EncabezadoBuilder() {
         // utility class
     }
@@ -28,7 +31,21 @@ public final class EncabezadoBuilder {
      */
     public static void initEncabezado(ConfiguracionAplicacion appSettings, Encabezado encabezado, String codigoDocumento) {
         encabezado.setCodigoActividadEmisor(appSettings.getCodigoActividad());
-        encabezado.setProveedorSistemas(appSettings.getProvedor());
+        // ProveedorSistemas is mandatory in v4.4, immediately after Clave. When
+        // the setting is blank, JAXB omits the element entirely and the emitted
+        // document no longer validates against FacturaElectronica_V4.4.xsd.
+        // A null value stays null on purpose (that is what the schema wants to
+        // be absent) but it is logged loudly, because the omission is otherwise
+        // invisible until Hacienda rejects the invoice. Configurable via
+        // PUT /api/app/settings -> "proveedorSistemas".
+        String sistemasProveedor = appSettings.getProvedor();
+        if (sistemasProveedor == null || sistemasProveedor.isBlank()) {
+            LOG.warn("Proveedor de sistemas sin configurar: el comprobante omitira "
+                    + "<ProveedorSistemas> y no validara contra el esquema v4.4 | "
+                    + "source=EncabezadoBuilder.initEncabezado() | perfil="
+                    + String.valueOf(appSettings.getNombrePerfil()));
+        }
+        encabezado.setProveedorSistemas(sistemasProveedor);
         encabezado.setNumeroConsecutivo("");
         encabezado.setFechaEmision(LocalDateTime.now().withNano(0));
         encabezado.setCodigoDocumento(codigoDocumento);

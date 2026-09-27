@@ -247,6 +247,25 @@
                         <p class="help has-text-grey">Destino de las notificaciones de rechazos.</p>
                     </div>
                 </div>
+                <div class="column is-full">
+                    <div class="field">
+                        <label class="label" for="proveedor-sistemas">Proveedor de sistemas</label>
+                        <div class="control">
+                            <input id="proveedor-sistemas" class="input" type="text"
+                                   name="proveedorSistemas"
+                                   maxlength="20"
+                                   placeholder="Identificacion del proveedor de sistemas"
+                                   value="{settings.provedor}"/>
+                        </div>
+                        <p class="help has-text-grey">
+                            Se emite como <code>&lt;ProveedorSistemas&gt;</code> en cada comprobante
+                            v4.4, y el esquema lo exige justo despues de <code>&lt;Clave&gt;</code>.
+                            Si se deja vacio, JAXB omite el elemento y el comprobante deja de validar
+                            contra <code>FacturaElectronica_V4.4.xsd</code>; el error solo
+                            apareceria despues, al firmar. Maximo 20 caracteres.
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
 
