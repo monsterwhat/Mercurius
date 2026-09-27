@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica FacturaElectronica_V4.4.xsd">
-  <Clave>50624041600040010000100100001010001200002000645522</Clave>
+  <Clave>50624041600040010000100100001010001200002000626709</Clave>
 			<ProveedorSistemas>400100001</ProveedorSistemas>
   <CodigoActividadEmisor>512209</CodigoActividadEmisor>
   <NumeroConsecutivo>00100001010001200002</NumeroConsecutivo>

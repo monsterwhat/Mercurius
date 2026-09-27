@@ -2,7 +2,7 @@
 <FacturaElectronica
 	xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica https://www.hacienda.go.cr/ATV/ComprobanteElectronico/docs/esquemas/2016/v4.3/FacturaElectronica_V4.3.xsd"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<Clave>50624041800310010090000100001010000700005000108318</Clave>
+	<Clave>50624041800310010000400100001010000700005000100005</Clave>
 	<CodigoActividad>512210</CodigoActividad>
 	<NumeroConsecutivo>00100001010000700005</NumeroConsecutivo>
 	<FechaEmision>2024-04-18T21:22:38-06:00</FechaEmision>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <NotaCreditoElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaCreditoElectronica" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaCreditoElectronica https://tribunet.hacienda.go.cr/docs/esquemas/2017/v4.3/NotaCreditoElectronica_V4.3.xsd">
-  <Clave>50624041300310010090000100056030000700019000101643</Clave>
+  <Clave>50624041300310010001500100056030000700019000100019</Clave>
   <CodigoActividad>512201</CodigoActividad>
   <NumeroConsecutivo>00100056030000700019</NumeroConsecutivo>
   <FechaEmision>2024-04-13T00:00:00</FechaEmision>

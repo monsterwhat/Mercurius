@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?><FacturaElectronica xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica">
-  <Clave>50624041500310010090000100001010000700010000105365</Clave>
+  <Clave>50624041500310010000600100001010000700010000100010</Clave>
   <CodigoActividad>512209</CodigoActividad>
   <NumeroConsecutivo>00100001010000700010</NumeroConsecutivo>
   <FechaEmision>2024-04-15T12:31:08.061528</FechaEmision>

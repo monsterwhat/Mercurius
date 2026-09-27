@@ -18,6 +18,10 @@
       - Ubicacion/<Barrio> and <OtrasSenas>
       - Clave (rebuilt, because a real Clave embeds the real RUC in digits 10-21)
       - InformacionReferencia/<Clave> (references a real Clave)
+      - InformacionReferencia/<Razon> and its <OtroTexto>/<OtroContenido>
+        extension fields: digit runs are replaced with shape-preserving
+        synthetic digits, because a real bare 10-digit external reference
+        survived there once. Digit-free prose is kept, it identifies nobody
       - original file names (several embed the RUC)
 
     What is intentionally preserved (the reason this data is valuable):
@@ -26,6 +30,9 @@
       - CodigoComercial Tipo + Codigo  real supplier/buyer item codes
       - UnidadMedida, UnidadMedidaComercial, Cantidad, PrecioUnitario
       - Descuento / Impuesto arithmetic, ResumenFactura totals
+      - InformacionReferencia <Razon> when it carries no digits
+        ("Devolucion de producto", "Nota Credito"): generic phrasing, no
+        identifier, and the realistic input the parser must cope with
       - Real-world irregularities: multiple Descuento per line, absent
         Ubicacion on Receptor, trailing whitespace in <Nombre>, 11-digit
         cedula with Tipo 03, numeric Barrio codes
@@ -411,6 +418,56 @@ function Convert-Otros {
     })
 }
 
+# ---------------------------------------------------------------------------
+# InformacionReferencia is a root-level block whose <Razon> - plus the
+# <OtroTexto>/<OtroContenido> extension fields - is free text. Producers use it
+# to quote a supplier, an order number or a customer reference, and a real bare
+# 10-digit reference survived here once (<Razon>1602624939</Razon>). So every
+# digit run in those fields is a candidate external identifier and gets
+# shape-preserving synthetic digits from the same helper the Otros block uses.
+#
+# Only the digits move. Prose with no digits ("Devolucion de producto", "Nota
+# Credito") is returned untouched: it carries no identifier, and it is the
+# generic phrasing a parser has to cope with, so keeping it preserves the
+# realism of the fixture.
+#
+# The routine is strictly scoped to the InformacionReferencia block, and that
+# scoping is load-bearing. A blanket sweep over <OtroTexto> would also hit
+# ResumenFactura/Otros, where Convert-Otros deliberately KEEPS the numeric
+# geographic prefix of codigo="DireccionSucursal" ("5|01|01|04|<address>").
+# Editing the block in place with lookbehind/lookahead also means the tags and
+# the whitespace between them are never re-emitted, so the v4.3 child names and
+# order survive verbatim and derive-facturas-v44.ps1 can still rename
+# TipoDoc -> TipoDocIR and FechaEmision -> FechaEmisionIR.
+#
+# <Numero> is deliberately excluded: it carries the referenced Clave, which the
+# refClave pass below must see in its original form in order to rebuild it.
+#
+# The block regex requires a real closing tag (the tempered token stops at the
+# first one). A bare <InformacionReferencia/> would therefore match nothing at
+# all and be left alone, instead of a lazy .*? running to end-of-document and
+# digit-shifting every <OtroTexto> in ResumenFactura.
+# ---------------------------------------------------------------------------
+function Convert-InformacionReferencia {
+    param([string]$Xml)
+    $salt = 0
+    $ir = New-Object System.Text.RegularExpressions.Regex(
+        '(?s)(?<=<InformacionReferencia>)(?:(?!</InformacionReferencia>).)*(?=</InformacionReferencia>)')
+    $fld = New-Object System.Text.RegularExpressions.Regex(
+        '<(Razon|OtroTexto|OtroContenido)(?<attrs>\s[^>]*)?>(?<val>[^<]*)<')
+    return $ir.Replace($Xml, [System.Text.RegularExpressions.MatchEvaluator]{
+        param($m)
+        return $fld.Replace($m.Value, [System.Text.RegularExpressions.MatchEvaluator]{
+            param($fm)
+            $val = $fm.Groups['val'].Value
+            if ([string]::IsNullOrWhiteSpace($val) -or $val -notmatch '\d') { return $fm.Value }
+            $salt++
+            $new = New-SyntheticDigits -Value $val -Salt $salt
+            return ('<{0}{1}>{2}<' -f $fm.Groups[1].Value, $fm.Groups['attrs'].Value, $new)
+        })
+    })
+}
+
 Write-Host "transform pass..."
 # ---------------------------------------------------------------------------
 # 7. Per-document transform
@@ -509,6 +566,11 @@ foreach ($d in $docs) {
     # --- Otros extension block: keyed on @codigo, see Convert-Otros ---
     $xml = Convert-Otros $xml
 
+    # --- InformacionReferencia free text: digit runs are potential external
+    #     references, see Convert-InformacionReferencia. Runs before the Clave
+    #     rebuild below, which still needs the original referenced Clave. ---
+    $xml = Convert-InformacionReferencia $xml
+
     # --- Clave, rebuilt in three ordered steps ---
     #
     # A Clave is rebuilt rather than pattern-matched because a real one embeds
@@ -533,12 +595,18 @@ foreach ($d in $docs) {
     #    of an invoice that is not itself in the source set, so a list of known
     #    Claves misses it; matching the shape catches every reference. Date and
     #    consecutivo are preserved, only the embedded RUC is swapped.
-    $refClave = New-Object System.Text.RegularExpressions.Regex('(?<=<[A-Za-z][A-Za-z0-9]*>)(506\d{47})(?=</)')
+    #    The tag is part of the match so the evaluator can skip <Clave>: step 2
+    #    above has already rewritten it, and a second pass would rebuild it from
+    #    the synthetic RUC, leaving a doubly-synthesized RUC in the Clave that
+    #    no longer matches the Emisor's Identificacion.
+    $refClave = New-Object System.Text.RegularExpressions.Regex('(<)([A-Za-z][A-Za-z0-9]*)(>)(506\d{47})(</)')
     $refSeen = @{}
     $xml = $refClave.Replace($xml, [System.Text.RegularExpressions.MatchEvaluator]{
         param($m)
-        $c = $m.Value
-        if ($refSeen.ContainsKey($c)) { return $refSeen[$c] }
+        if ($m.Groups[2].Value -eq 'Clave') { return $m.Value }
+        $open = $m.Groups[1].Value + $m.Groups[2].Value + $m.Groups[3].Value
+        $c = $m.Groups[4].Value
+        if ($refSeen.ContainsKey($c)) { return $open + $refSeen[$c] + $m.Groups[5].Value }
         $embRuc = $c.Substring(9, 12).TrimStart('0')
         if ([string]::IsNullOrEmpty($embRuc)) { $embRuc = '3000000000' }
         $map = $rucMap[$embRuc]
@@ -547,7 +615,7 @@ foreach ($d in $docs) {
         $salt = [Math]::Abs($c.GetHashCode() % 9000) + 1000
         $rebuilt = New-Clave -Yymmdd $c.Substring(3, 6) -Ruc $useRuc -Consecutivo $c.Substring(21, 20) -Salt $salt
         $refSeen[$c] = $rebuilt
-        return $rebuilt
+        return $open + $rebuilt + $m.Groups[5].Value
     })
 
     # ProveedorSistemas is required in v4.4 and absent in v4.3. It is added
