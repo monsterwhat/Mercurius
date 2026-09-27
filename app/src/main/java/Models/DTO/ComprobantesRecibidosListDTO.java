@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class ComprobantesRecibidosListDTO {
 
     private Long id; // ComprobantesRecibidos.id (rowKey)
-    @Nullable private String clave; // Encabezado.clave (clave numerica de 50 digitos del comprobante)
+    @Nullable private String clave; // Encabezado.clave (clave de 50 caracteres; alfanumerica desde v4.4 si el emisor es persona juridica)
     @Nullable private String consecutivo; // Encabezado.numeroConsecutivo
     @Nullable private LocalDateTime fechaEmision; // Encabezado.fechaEmision (bucket Vencidas)
     @Nullable private String emisorNombre; // Encabezado.emisor.nombre (columna "Emisor" del listado de facturas recibidas)

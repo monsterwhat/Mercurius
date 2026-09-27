@@ -190,17 +190,24 @@ public class HaciendaSigner {
     }
 
     /**
-     * Generates a 50-digit Hacienda document key (clave) with:
+     * Generates a 50-character Hacienda document key (clave) with:
      * <ul>
      *   <li>Fecha emisión from the invoice date (not system clock)</li>
      *   <li>7-digit random security code + 1 check digit (módulo 10, per Hacienda spec)</li>
      * </ul>
+     * <p>
+     * Since the 2026-04-22 revision of the v4.4 schemas, {@code ClaveType} is
+     * {@code [a-zA-Z0-9]{50,50}} instead of {@code \d{50,50}}: the Registro
+     * Nacional starts issuing alphanumeric tax IDs for legal persons
+     * (e.g. {@code 3-101-A00001}), so the 12-character emitter identification
+     * segment is no longer digits-only. The other segments stay numeric.
+     * </p>
      *
-     * @param identificationNumber Emisor's ID (cedula jurídica/física)
+     * @param identificationNumber Emisor's ID (cédula jurídica/física, possibly alphanumeric)
      * @param consecutiveNumber   20-digit consecutive (sucursal + terminal + tipo doc + secuencial)
      * @param situation           "1" for normal, "2" for corrige, etc.
      * @param fechaEmision        The invoice's emission date (becomes DDMMYY embedded in clave)
-     * @return 50-digit clave
+     * @return 50-character clave
      */
     public String generateInvoiceKey(String identificationNumber,
                                      String consecutiveNumber,
@@ -212,7 +219,7 @@ public class HaciendaSigner {
         key.append(getDay(fechaEmision));
         key.append(getMonth(fechaEmision));
         key.append(getYear2Digits(fechaEmision));
-        key.append(padLeftZeros(identificationNumber, 12));
+        key.append(padLeftZerosAlphanumeric(identificationNumber, 12));
         key.append(padLeftZeros(consecutiveNumber, 20));
         key.append(situation != null ? situation : "1");
 
@@ -231,6 +238,12 @@ public class HaciendaSigner {
      * Computes the Hacienda check digit (módulo 10 / Luhn variant) for the first 49
      * digits of a document key.  Process right-to-left with alternating weights 2,1.
      * Sum of digits of each product; check digit = (10 - sum%10) % 10.
+     * <p>
+     * Deliberately digits-only: the DGT has not published how the check digit is
+     * derived when the emitter identification segment carries letters, so a
+     * non-digit character is a hard failure rather than a guess. It is raised
+     * loudly instead of emitting a clave whose check digit is invented.
+     * </p>
      */
     public static int calcularDigitoVerificador(String prefix49) {
         if (prefix49 == null || prefix49.length() != 49) {
@@ -242,7 +255,11 @@ public class HaciendaSigner {
         for (int i = prefix49.length() - 1; i >= 0; i--) {
             int digit = Character.getNumericValue(prefix49.charAt(i));
             if (digit < 0 || digit > 9) {
-                throw new IllegalArgumentException("Non-digit character at position " + i);
+                throw new IllegalArgumentException("Non-digit character '" + prefix49.charAt(i)
+                    + "' at position " + i
+                    + ": the módulo 10 check digit is only defined for a digits-only clave. "
+                    + "This is expected for an alphanumeric legal-person ID (cedula 3-101-A00001) "
+                    + "until DGT publishes the check digit rule for ClaveType [a-zA-Z0-9].");
             }
             int product = digit * (weightTwo ? 2 : 1);
             // Sum of digits of the product (e.g. 16 → 1+6 = 7)
@@ -252,28 +269,66 @@ public class HaciendaSigner {
         return (10 - (sum % 10)) % 10;
     }
 
+    /**
+     * Pads a segment that the schema restricts to digits (currently the
+     * {@code NumeroConsecutivo}, {@code \d{20,20}}). Non-digits are dropped.
+     */
     private static String padLeftZeros(String input, int length) {
         if (input == null || input.isEmpty()) {
-            char[] zeros = new char[length];
-            java.util.Arrays.fill(zeros, '0');
-            return new String(zeros);
+            return zeros(length);
         }
         String stripped = input.replaceAll("[^0-9]", "");
         if (stripped.length() != input.length()) {
-            LOG.warn("Clave numeric: non-digit chars stripped from '" + maskInput(input)
-                + "' — clave must be 50-digit numeric per Hacienda spec");
+            LOG.warn("Clave: non-digit chars stripped from '" + maskInput(input)
+                + "' — the consecutive segment must be numeric per NumeroConsecutivoType");
         }
         if (stripped.isEmpty()) {
-            char[] zeros = new char[length];
-            java.util.Arrays.fill(zeros, '0');
-            return new String(zeros);
+            return zeros(length);
         }
         if (stripped.length() >= length) {
             return stripped;
         }
-        char[] zeros = new char[length - stripped.length()];
+        return zeros(length - stripped.length()) + stripped;
+    }
+
+    /**
+     * Pads the 12-character emitter identification segment, which
+     * {@code ClaveType} allows to be alphanumeric ([a-zA-Z0-9]) since the
+     * 2026-04-22 revision of the v4.4 schemas, because the Registro Nacional
+     * starts issuing alphanumeric tax IDs for legal persons (e.g. 3-101-A00001).
+     * <p>
+     * Only the formatting separators are dropped (hyphens, spaces, any other
+     * non-alphanumeric character) — the letters are part of the ID and must
+     * survive into the clave, otherwise the clave would carry a different tax
+     * ID than the one signed in {@code Emisor/Identificacion/Numero}.
+     * {@code 3-101-A00001} therefore becomes {@code 003101A00001}.
+     * </p>
+     */
+    private static String padLeftZerosAlphanumeric(String input, int length) {
+        if (input == null || input.isEmpty()) {
+            return zeros(length);
+        }
+        String stripped = input.replaceAll("[^0-9A-Za-z]", "");
+        if (stripped.length() != input.length()) {
+            LOG.warn("Clave: non-alphanumeric chars stripped from '" + maskInput(input)
+                + "' — the emitter identification segment must be alphanumeric per ClaveType v4.4");
+        }
+        if (stripped.isEmpty()) {
+            return zeros(length);
+        }
+        if (stripped.length() >= length) {
+            LOG.warn("Clave: emitter identification '" + maskInput(input) + "' needs "
+                + stripped.length() + " characters but only " + length
+                + " fit in the clave — the clave will not validate against ClaveType");
+            return stripped;
+        }
+        return zeros(length - stripped.length()) + stripped;
+    }
+
+    private static String zeros(int length) {
+        char[] zeros = new char[length];
         java.util.Arrays.fill(zeros, '0');
-        return new String(zeros) + stripped;
+        return new String(zeros);
     }
 
     /** Masks all but last 4 chars for safe logging (e.g. cédula numbers). */

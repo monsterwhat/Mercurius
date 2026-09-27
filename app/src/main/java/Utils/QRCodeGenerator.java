@@ -13,7 +13,7 @@ import javax.imageio.ImageIO;
 
 /**
  * Generates QR code images for Hacienda V4.4 electronic invoices.
- * The QR code encodes the 50-digit Clave (tax document key) for
+ * The QR code encodes the 50-character Clave (tax document key) for
  * inclusion in the printed PDF receipt.
  */
 public class QRCodeGenerator {
@@ -25,7 +25,7 @@ public class QRCodeGenerator {
     /**
      * Generates a QR code PNG byte array from the given text (the Clave).
      *
-     * @param text The 50-digit Clave to encode
+     * @param text The 50-character Clave to encode
      * @return PNG image bytes ready to embed in a PDF
      * @throws WriterException if the QR code cannot be generated
      * @throws IOException     if the PNG image cannot be written
@@ -41,7 +41,7 @@ public class QRCodeGenerator {
     /**
      * Generates a QR code as a BufferedImage.
      *
-     * @param text The text to encode (usually the 50-digit Clave)
+     * @param text The text to encode (usually the 50-character Clave)
      * @return QR code image
      * @throws WriterException if the QR code cannot be generated
      */

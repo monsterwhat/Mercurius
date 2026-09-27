@@ -1,6 +1,7 @@
 package Models.Referencias;
 
 import Models.ComprobantesEmitidos;
+import Models.Enums.Tipo_CodigosReferencia;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -68,19 +69,27 @@ public class InformacionReferencia {
      * Creates an InformacionReferencia referencing an existing emitted comprobante.
      * Used when issuing NC/ND/REP that refer to a previously issued invoice.
      *
-     * @param original the original ComprobantesEmitidos being referenced
-     * @param codigo   Hacienda reason code (e.g. "01"=devolución, "02"=anulación)
-     * @param razon    human-readable explanation
+     * @param original            the original ComprobantesEmitidos being referenced
+     * @param codigo              Nota 9 code to stamp on the reference
+     * @param razon               human-readable explanation
+     * @param codigoDocumento     CodigoDocumento of the comprobante being emitted, used to
+     *                            reject codes the official schema does not accept there
+     *                            (e.g. 17 outside the Recibo Electrónico de Pago)
      * @return a new InformacionReferencia ready to attach to the NC/ND/REP comprobante
+     * @throws IllegalArgumentException if {@code codigo} is not legal for {@code codigoDocumento}
      */
-    public static InformacionReferencia from(ComprobantesEmitidos original, String codigo, String razon) {
+    public static InformacionReferencia from(@Nonnull ComprobantesEmitidos original,
+                                             @Nonnull Tipo_CodigosReferencia codigo,
+                                             @Nonnull String razon,
+                                             @Nullable String codigoDocumento) {
+        Tipo_CodigosReferencia.validarParaDocumento(codigoDocumento, codigo);
         InformacionReferencia ref = new InformacionReferencia();
         if (original.getEncabezado() != null) {
             ref.setTipoDoc(original.getEncabezado().getCodigoDocumento());
             ref.setNumero(original.getEncabezado().getNumeroConsecutivo());
             ref.setFechaEmision(original.getEncabezado().getFechaEmision());
         }
-        ref.setCodigo(codigo);
+        ref.setCodigo(codigo.getCodigo());
         ref.setRazon(razon);
         return ref;
     }

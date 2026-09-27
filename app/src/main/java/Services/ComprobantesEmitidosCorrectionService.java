@@ -398,9 +398,17 @@ public class ComprobantesEmitidosCorrectionService {
     }
 
     /**
-     * Generates a new valid 50-digit Hacienda clave for the corrected invoice.
+     * Generates a new valid 50-character Hacienda clave for the corrected invoice.
      * Increments the 20-digit consecutive, generates a fresh 7-digit security code,
      * and computes the check digit (módulo 10 / Luhn variant).
+     * <p>
+     * The country+date+identification prefix (positions 1-21) is copied verbatim
+     * from the original clave, so an alphanumeric emitter ID (ClaveType is
+     * [a-zA-Z0-9] since the 2026-04-22 v4.4 revision) survives untouched. The
+     * check digit below is still digits-only, so an alphanumeric ID propagates the
+     * {@link HaciendaSigner#calcularDigitoVerificador} IllegalArgumentException
+     * until DGT publishes the alphanumeric check digit rule.
+     * </p>
      */
     private String generarNuevaClave(ComprobantesEmitidos original) {
         String claveOriginal = original.getHaciendaClave();

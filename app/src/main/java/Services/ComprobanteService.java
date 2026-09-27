@@ -171,7 +171,7 @@ public class ComprobanteService implements Serializable {
             }
             encabezado.setMedioPago(medioPagoList);
             
-            // Generate the Hacienda document key (50-digit clave with check digit)
+            // Generate the Hacienda document key (50-character clave with check digit)
             String clave = haciendaSigner.generateInvoiceKey(
                 appSettings.getIdentificacion(),
                 numeroConsecutivo,

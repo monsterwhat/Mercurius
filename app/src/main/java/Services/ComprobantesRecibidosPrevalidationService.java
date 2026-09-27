@@ -21,6 +21,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import Models.Enums.Tipo_CodigosReferencia;
 import Models.Referencias.InformacionReferencia;
 import org.jboss.logging.Logger;
 
@@ -681,8 +684,13 @@ public class ComprobantesRecibidosPrevalidationService {
      * Validates InformacionReferencia entries for document types that require them.
      *
      * For NC (02) and ND (03): at least one InformacionReferencia is mandatory.
-     * For REP (07): InformacionReferencia is optional but if present, each entry is validated.
+     * For REP (10): InformacionReferencia is optional but if present, each entry is validated.
      * For all present entries: validates tipoDoc, codigo, numero, fechaEmision, and razon.
+     *
+     * <p>El código se contrasta contra el catálogo de la nota 9
+     * ({@link Tipo_CodigosReferencia}) en vez de contra un patrón, porque el
+     * catálogo no es un rango: no existe el 03 y el 17 es exclusivo del Recibo
+     * Electrónico de Pago.
      */
     private void validarInformacionReferencia(@Nullable List<InformacionReferencia> refs, @Nullable String docCode, @Nonnull PrevalidationResult result) {
         if ("02".equals(docCode) || "03".equals(docCode)) {
@@ -698,6 +706,8 @@ public class ComprobantesRecibidosPrevalidationService {
         if (refs == null || refs.isEmpty()) {
             return;
         }
+
+        Set<String> codigos = new HashSet<>();
 
         for (InformacionReferencia ref : refs) {
             String prefix = "informacionReferencia";
@@ -718,11 +728,22 @@ public class ComprobantesRecibidosPrevalidationService {
                     ValidationError.Severity.WARNING));
             } else {
                 String codigo = ref.getCodigo().trim();
-                if (!codigo.matches("0[1-9]|1[0-7]|99")) {
+                codigos.add(codigo);
+                Tipo_CodigosReferencia tipoCodigo = Tipo_CodigosReferencia.fromCodigoOrNull(codigo);
+                if (tipoCodigo == null) {
                     result.addWarning(new ValidationError(
                         ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
                         prefix + ".codigo", "UNKNOWN_CODIGO",
-                        "El código de InformaciónReferencia '" + codigo + "' es desconocido (se esperaba 01-17, 99)",
+                        "El código de InformaciónReferencia '" + codigo
+                                + "' no existe en el catálogo de la nota 9",
+                        ValidationError.Severity.WARNING));
+                } else if (!Tipo_CodigosReferencia.esValidoParaDocumento(docCode, tipoCodigo)) {
+                    result.addWarning(new ValidationError(
+                        ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
+                        prefix + ".codigo", "CODIGO_FUERA_DE_CATALOGO",
+                        "El código de referencia '" + codigo + "' (" + tipoCodigo.getDescripcion()
+                                + ") es de uso exclusivo del Recibo Electrónico de Pago; el esquema "
+                                + "oficial rechaza el documento " + docCode + " si lo lleva",
                         ValidationError.Severity.WARNING));
                 }
             }
@@ -757,5 +778,34 @@ public class ComprobantesRecibidosPrevalidationService {
                     ValidationError.Severity.WARNING));
             }
         }
+
+        validarAnulaPorErrorMaterial(codigos, docCode, result);
+    }
+
+    /**
+     * Bitácora de Ajustes v4.4: el 13 (anula documento de referencia por error
+     * material) sólo tiene sentido sobre una NC o ND que sustituye al documento
+     * original, y esa sustitución se declara con el 15 en el mismo bloque de
+     * códigos de referencia. Un 13 sin 15 se avisa, no se bloquea: puede ser un
+     * comprobante de un proveedor que se equivocó de código.
+     */
+    private void validarAnulaPorErrorMaterial(@Nonnull Set<String> codigos,
+                                              @Nullable String docCode,
+                                              @Nonnull PrevalidationResult result) {
+        if (!"02".equals(docCode) && !"03".equals(docCode)) {
+            return;
+        }
+        if (!codigos.contains(Tipo_CodigosReferencia.ANULA_DOCUMENTO_REFERENCIA_ERROR_MATERIAL.getCodigo())) {
+            return;
+        }
+        if (codigos.contains(Tipo_CodigosReferencia.SUSTITUYE_COMPROBANTE_ERROR_MATERIAL.getCodigo())) {
+            return;
+        }
+        result.addWarning(new ValidationError(
+            ValidationError.Category.valueOf("INFORMACION_REFERENCIA"),
+            "informacionReferencia.codigo", "SUSTITUCION_PENDIENTE",
+            "El código 13 anula por error material, pero no está el 15 (sustituye comprobante "
+                    + "electrónico por error material) en el bloque de códigos de referencia",
+            ValidationError.Severity.WARNING));
     }
 }
