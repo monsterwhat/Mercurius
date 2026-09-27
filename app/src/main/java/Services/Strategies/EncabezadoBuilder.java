@@ -74,10 +74,16 @@ public final class EncabezadoBuilder {
         emisorUbicacion.setOtrasSenas(appSettings.getDireccionCompleta());
         emisor.setUbicacion(emisorUbicacion);
 
-        Telefono emisorTelefono = new Telefono();
-        emisorTelefono.setCodigoPais(appSettings.getCodigoPais());
-        emisorTelefono.setNumeroTelefono(appSettings.getTelefono());
-        emisor.setTelefono(emisorTelefono);
+        // TelefonoType exige CodigoPais y NumTelefono, ambos obligatorios. Sin numero
+        // no se emite <Telefono> (el elemento es minOccurs="0"): emitirlo sin
+        // NumTelefono produce un XML que no valida contra el XSD oficial.
+        String emisorNumTelefono = appSettings.getTelefono();
+        if (emisorNumTelefono != null && !emisorNumTelefono.trim().isEmpty()) {
+            Telefono emisorTelefono = new Telefono();
+            emisorTelefono.setCodigoPais(appSettings.getCodigoPais());
+            emisorTelefono.setNumeroTelefono(emisorNumTelefono);
+            emisor.setTelefono(emisorTelefono);
+        }
 
         List<CorreoElectronicoEmisor> correos = new ArrayList<>();
         addEmailIfPresent(correos, emisor, appSettings.getCorreoElectronicoTributacion());
