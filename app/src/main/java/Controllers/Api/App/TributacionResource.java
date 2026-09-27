@@ -7,13 +7,12 @@ import Models.DTO.DeclaracionIVARowDTO;
 import Models.DTO.HaciendaDashboardDTO;
 import Models.DTO.MensajeReceptorDTO;
 import Models.Encabezado.Encabezado;
-import Models.NotaCredito;
-import Services.ClientService;
+import Services.ComprobantesEmitidosCorrectionService;
 import Services.ComprobantesEmitidosService;
 import Services.ComprobantesRecibidosService;
 import Services.HaciendaServiceFacade;
 import Services.LoginService;
-import Services.NotaCreditoService;
+import Services.SustitucionComprobanteService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -42,6 +41,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -81,13 +81,16 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       summary (the legacy async lambda dereferenced FacesContext off-thread
  *       and its result was unobservable). Message text parity kept.</li>
  *   <li>Correct-rejected ({@link #corregirRechazada}): audit alert +
- *       idempotent automatic credit note via
- *       {@link NotaCreditoService} (skipped when one already exists,
- *       legacy {@code crearNotaCreditoAutomatica} parity) and a
- *       {@code CORREGIR_{id}} token. DEVIATION: the legacy cart pre-cloning
- *       ({@code clonarFacturaACarrito}) needs the POS session cart owned by
- *       T37; this endpoint emits the {@code HX-Trigger: mercurius:corregir}
- *       event with the token instead, and T37's POS will consume it.</li>
+ *       re-emission through {@link ComprobantesEmitidosCorrectionService} and a
+ *       {@code CORREGIR_{id}} token. DELIBERATE DEVIATION from the legacy
+ *       {@code NotaCredito} automatic note: Art. 19 gives a rejected comprobante
+ *       no fiscal validity, so it is not credited — it is replaced by a NEW
+ *       comprobante referencing it with código 16 ("Para efectos tributarios no
+ *       debe realizarse la respectiva nota de crédito"). DEVIATION: the legacy
+ *       cart pre-cloning ({@code clonarFacturaACarrito}) needs the POS session
+ *       cart owned by T37; this endpoint emits the
+ *       {@code HX-Trigger: mercurius:corregir} event with the token instead, and
+ *       T37's POS will consume it.</li>
  *   <li>Declaración D-104 ({@link #declaracionResumen}): period window
  *       [first day 00:00, last day 23:59:59]; ventas/débito from emitidas
  *       resumen.totalVentaNeta/totalImpuesto; compras/crédito from recibidas;
@@ -141,11 +144,15 @@ public class TributacionResource {
 
     @Nonnull
     @Inject
-    ComprobantesRecibidosService recibidosService;
+    ComprobantesEmitidosCorrectionService correctionService;
 
     @Nonnull
     @Inject
-    NotaCreditoService notaCreditoService;
+    SustitucionComprobanteService sustitucionService;
+
+    @Nonnull
+    @Inject
+    ComprobantesRecibidosService recibidosService;
 
     @Nonnull
     @Inject
@@ -158,10 +165,6 @@ public class TributacionResource {
     @Nonnull
     @Inject
     LoginService loginService;
-
-    @Nonnull
-    @Inject
-    ClientService clientService;
 
     @Inject
     @Nonnull
@@ -374,15 +377,31 @@ public class TributacionResource {
 
     /**
      * Correct-rejected action for one RECHAZADO comprobante: writes the audit
-     * alert, creates the automatic credit note when none exists yet and hands
-     * back the {@code CORREGIR_{id}} correction token (HX callers additionally
-     * get the {@code HX-Trigger: mercurius:corregir} event).
+     * alert and hands the document to
+     * {@link ComprobantesEmitidosCorrectionService#corregirFactura}, which
+     * re-emits it as a NEW comprobante referencing the rejected one with código
+     * 16, then returns the {@code CORREGIR_{id}} correction token (HX callers
+     * additionally get the {@code HX-Trigger: mercurius:corregir} event).
+     *
+     * <p><b>No credit note is created, ever.</b> Art. 19: a rejected comprobante
+     * has no fiscal validity, so it is replaced, not credited — "Para efectos
+     * tributarios no debe realizarse la respectiva nota de crédito". The
+     * endpoint is therefore idempotent through the re-emission itself: a second
+     * call finds the existing código 16 replacement
+     * ({@link #existeReemision}) and does
+     * not invoke the corrector again, instead of stacking documents or notes.</p>
+     *
+     * <p><b>La bandera no se deduce de una lectura posterior a la emisión.</b>
+     * {@code reEmitida} sale del id que el corrector devuelve al persistir el
+     * sustituto, o de un sustituto que ya existía: en los dos casos la referencia
+     * de código 16 es un hecho probado dentro de una transacción, no el resultado
+     * de buscar una fila recién insertada desde la misma petición.</p>
      */
     @POST
     @Path("/consultas/{id}/corregir")
-    @Operation(summary = "Correct a rejected comprobante (auto credit note + correction token)")
+    @Operation(summary = "Correct a rejected comprobante (re-emission Art. 19 with código 16 + correction token)")
     @APIResponses({
-        @APIResponse(responseCode = "200", description = "Correction prepared"),
+        @APIResponse(responseCode = "200", description = "Re-emission emitted or already present"),
         @APIResponse(responseCode = "404", description = "Unknown id"),
         @APIResponse(responseCode = "409", description = "Comprobante is not RECHAZADO"),
         @APIResponse(responseCode = "500", description = "Internal server error")
@@ -407,12 +426,51 @@ public class TributacionResource {
             String consecutivo = factura.getEncabezado().getNumeroConsecutivo();
                         LOG.info("Se inició la corrección de la factura rechazada: " + consecutivo + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.corregirRechazada" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
-            boolean notaCreada = crearNotaCreditoAutomatica(factura);
+            // El corrector emite SIEMPRE un comprobante nuevo, así que la guarda de
+            // idempotencia vive aquí: un rechazo ya sustituido no se vuelve a
+            // emitir. Antes esta era la función del "skip" de la nota de crédito.
+            boolean yaReemitida = existeReemision(factura);
+            Optional<Long> idReemision = Optional.empty();
+            if (!yaReemitida) {
+                // El corrector devuelve el id del sustituto que YA persistió. Ese
+                // valor es la prueba de que la re-emisión ocurrió: la respuesta no
+                // depende de re-consultar el bloque de referencias de código 16
+                // justo después de crearlo, que dependería de que la fila ya fuese
+                // visible para esta petición y por eso podía reportar "no emitido"
+                // sobre una re-emisión correcta. Sin id no hay sustituto, y el
+                // intento queda contabilizado igual para no reintentar en bucle.
+                idReemision = correctionService.corregirFactura(factura);
+            }
+            // reEmitida describe la realidad DESPUÉS de la llamada: existe un
+            // comprobante con código 16 que sustituye al rechazado, lo emitiera
+            // esta llamada (id devuelto) o una anterior (sustituto previo). Por eso
+            // las dos ramas mandan true: el sustantivo es la existencia del
+            // sustituto, no quién lo emitió.
+            boolean reemitida = yaReemitida || idReemision.isPresent();
+
+            String mensaje;
+            if (reemitida && !yaReemitida) {
+                mensaje = "El comprobante rechazado no tiene validez fiscal (Art. 19): se emitió un "
+                        + "comprobante nuevo que lo sustituye con el código 16. No se realizó ninguna "
+                        + "nota de crédito. Número original: " + consecutivo;
+            } else if (reemitida) {
+                mensaje = "El comprobante rechazado ya tiene su comprobante sustitutivo (Art. 19, "
+                        + "código 16): no se emitió otro ni se realizó ninguna nota de crédito. "
+                        + "Número original: " + consecutivo;
+            } else {
+                mensaje = "No se pudo emitir automáticamente el comprobante sustitutivo (Art. 19, "
+                        + "código 16). El rechazado no tiene validez fiscal: corrige los datos y "
+                        + "vuelve a reemitirlo, no corresponde nota de crédito. "
+                        + "Número original: " + consecutivo;
+            }
+                        LOG.info("Resultado de la corrección de la factura rechazada: " + consecutivo
+                            + " | reemitida=" + reemitida + " | user=" + String.valueOf(currentUser())
+                            + " | source=" + "TributacionResource.corregirRechazada"
+                            + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             CorregirResult resultado = new CorregirResult("CORREGIR_" + factura.getId(),
-                    notaCreada,
-                    "Se ha creado la nota de crédito y se preparó la corrección de la factura. "
-                            + "Número original: " + consecutivo);
+                    reemitida,
+                    mensaje);
             if (isHxRequest()) {
                 return Response.ok(ApiResponse.ok(resultado))
                         .header("HX-Trigger", "{\"mercurius:corregir\":{\"token\":\""
@@ -694,48 +752,44 @@ public class TributacionResource {
     }
 
     /**
-     * Legacy {@code crearNotaCreditoAutomatica} parity: skip when a note
-     * already exists for the comprobante; otherwise create it with the same
-     * fields (motivo, monto from totalVentaNeta, client from receptor name,
-     * usuario, status, haciendaEstado=PENDIENTE). Returns whether a NEW note
-     * was created.
+     * ¿Existe ya el comprobante que re-emite al rechazado? Art. 19: la
+     * re-emisión es un comprobante NUEVO que referencia al rechazado con el
+     * código 16 "Sustituye comprobante electrónico rechazado", así que esa
+     * referencia —y no un contador— es lo que prueba que el rechazo ya quedó
+     * sustituido.
+     *
+     * <p>La búsqueda cubre el <b>periodo fiscal completo</b> del rechazado, no
+     * sólo su día de emisión. La re-emisión conserva su fecha a propósito —la
+     * clave re-emitida repite las posiciones 4-9 del original y
+     * {@link Services.SustitucionComprobanteService#exigirMismoPeriodo} exige
+     * además que el reemplazo caiga en el mismo periodo fiscal—, así que un
+     * corte por día no puede ser la condición de reconocimiento: si el
+     * sustituto no aparece el día exacto, el endpoint lo reportaría como
+     * "no emitido" aunque ya exista.</p>
+     *
+     * <p>Sólo se calcula aquí la ventana del periodo; el recorrido de los
+     * comprobantes de esa ventana y la lectura de su bloque de referencias
+     * ocurren dentro de la transacción que abre
+     * {@link Services.SustitucionComprobanteService#existeSustitucionPorRechazo}.
+     * Si la fila recién insertada todavía no fuera visible para esta petición,
+     * esta guarda no puede encontrar el sustituto que acaba de crearse, y una
+     * guarda de idempotencia que no encuentra lo emitido permite apilar
+     * documentos.</p>
      */
-    private boolean crearNotaCreditoAutomatica(@Nonnull ComprobantesEmitidos facturaRechazada) {
-        if (facturaRechazada.getResumen() == null || facturaRechazada.getEncabezado() == null) {
+    private boolean existeReemision(@Nonnull ComprobantesEmitidos rechazado) {
+        if (rechazado.getEncabezado() == null
+                || rechazado.getEncabezado().getFechaEmision() == null
+                || rechazado.getEncabezado().getNumeroConsecutivo() == null) {
             return false;
         }
-        List<NotaCredito> existentes = notaCreditoService.listPorComprobante(facturaRechazada.getId());
-        if (existentes != null && !existentes.isEmpty()) {
-                        LOG.info("Nota de crédito ya existe para factura: " + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
-            return false;
-        }
-
-        NotaCredito notaCredito = new NotaCredito();
-        notaCredito.setComprobanteOriginal(facturaRechazada);
-        notaCredito.setFecha(new Date());
-        String motivoRechazo = facturaRechazada.getEncabezado().getMotivoRechazo();
-        notaCredito.setMotivo("Corrección automática por rechazo de Hacienda: "
-                + (motivoRechazo != null ? motivoRechazo : "Sin motivo especificado"));
-        notaCredito.setMontoTotal(facturaRechazada.getResumen().getTotalVentaNeta());
-
-        if (facturaRechazada.getEncabezado().getReceptor() != null) {
-            String receptorNombre = facturaRechazada.getEncabezado().getReceptor().getNombre();
-            if (receptorNombre != null) {
-                List<Models.Clientes> clients = clientService.searchByName(receptorNombre);
-                if (clients != null && !clients.isEmpty()) {
-                    notaCredito.setCliente(clients.get(0));
-                }
-            }
-        }
-
-        notaCredito.setUsuario(currentUser() != null ? currentUser().getUsername() : "system");
-        notaCredito.setStatus(true);
-        notaCredito.setHaciendaEstado("PENDIENTE");
-        notaCreditoService.create(notaCredito);
-
-                LOG.info("Nota de crédito creada automáticamente para factura rechazada: "
-                        + facturaRechazada.getId() + " | user=" + String.valueOf(currentUser()) + " | source=" + "TributacionResource.crearNotaCreditoAutomatica()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
-        return true;
+        LocalDate dia = rechazado.getEncabezado().getFechaEmision().toLocalDate();
+        LocalDate inicioPeriodo = dia.withDayOfMonth(1);
+        LocalDate finPeriodo = dia.withDayOfMonth(dia.lengthOfMonth());
+        return sustitucionService.existeSustitucionPorRechazo(
+                rechazado.getId(),
+                rechazado.getEncabezado().getNumeroConsecutivo(),
+                Date.from(inicioPeriodo.atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                Date.from(finPeriodo.atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant()));
     }
 
     /** MR indicator state derivation (documented in the class javadoc). */
@@ -851,7 +905,7 @@ public class TributacionResource {
                                  String mensaje, String severity) {}
 
     /** Payload of POST /consultas/{id}/corregir. */
-    public record CorregirResult(String token, boolean notaCreditoCreada, String mensaje) {}
+    public record CorregirResult(String token, boolean reEmitida, String mensaje) {}
 
     /** One Mensajes-Receptor tab row: DTO + derived indicator state. */
     public record MensajeReceptorView(MensajeReceptorDTO mensaje, String indicador,

@@ -10,6 +10,18 @@ import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+/**
+ * Mensaje Receptor: la respuesta del obligated tributario a una factura recibida
+ * (1=aceptada, 2=aceptada parcialmente, 3=rechazada).
+ *
+ * <p><b>Este rechazo NO es el rechazo del Art. 19.</b> El Art. 19 del Reglamento
+ * de Comprobantes Electrónicos se refiere al rechazo de la DGT sobre un
+ * comprobante emitido, que obliga al emisor a re-emitirlo y prohíbe la nota de
+ * crédito. El mensaje 3 de aquí es la rechazo del receptor de una factura
+ * recibida y no genera comprobante propio de ningún tipo. Los documentos
+ * emitidos que Hacienda rechaza se re-emiten en
+ * {@link ComprobantesEmitidosCorrectionService} con el código 16 de la nota 9.
+ */
 @Named
 @ApplicationScoped
 public class MensajeReceptorService {

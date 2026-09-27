@@ -27,6 +27,7 @@ import Services.LoginService;
 import Services.NotaCreditoService;
 import Services.Strategies.DocumentoStrategy;
 import Services.Strategies.DocumentoStrategyFactory;
+import Services.SustitucionComprobanteService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -104,6 +105,15 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       for the factura the endpoint answers 409 ALREADY_RETURNED (dispatch
  *       requirement; precedent TributacionResource idempotency via
  *       {@link NotaCreditoService#listPorComprobante}).</li>
+ *   <li>DELIBERATE DEVIATION (no existía en el legacy): una factura
+ *       RECHAZADA por Hacienda devuelve 409 DOCUMENTO_RECHAZADO y no genera
+ *       nada. El Art. 19 del Reglamento de Comprobantes Electrónicos obliga a
+ *       re-emitir el comprobante en vez de emitir la nota de crédito —"Para
+ *       efectos tributarios no debe realizarse la respectiva nota de crédito"—,
+ *       y la re-emisión vive en
+ *       {@link Services.ComprobantesEmitidosCorrectionService} con el código
+ *       16 de la nota 9. La nota de crédito de este recurso queda para las
+ *       devoluciones reales sobre comprobantes aceptados.</li>
  * </ul>
  *
  * <p><b>Authorization:</b> {@code admin} or {@code facturacion}, mirroring the
@@ -170,6 +180,10 @@ public class DevolucionesResource {
     @Nonnull
     @Inject
     LoginService loginService;
+
+    @Nonnull
+    @Inject
+    SustitucionComprobanteService sustitucionComprobanteService;
 
     @Inject
     @Nonnull
@@ -330,6 +344,7 @@ public class DevolucionesResource {
         @APIResponse(responseCode = "200", description = "Selection valid; total computed"),
         @APIResponse(responseCode = "400", description = "Validation failure"),
         @APIResponse(responseCode = "404", description = "Unknown factura"),
+        @APIResponse(responseCode = "409", description = "Factura rejected by Hacienda (Art. 19: re-issue, no credit note)"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response initiate(
@@ -395,7 +410,7 @@ public class DevolucionesResource {
         @APIResponse(responseCode = "400", description = "Validation failure (motivo/lines/quantities)"),
         @APIResponse(responseCode = "401", description = "Invalid supervisor credentials — zero side effects"),
         @APIResponse(responseCode = "404", description = "Unknown factura"),
-        @APIResponse(responseCode = "409", description = "A credit note already exists for this factura"),
+        @APIResponse(responseCode = "409", description = "A credit note already exists, or the factura is rejected by Hacienda"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response authorize(
@@ -662,6 +677,22 @@ public class DevolucionesResource {
             @Nonnull ComprobantesEmitidos factura,
             @Nullable String motivo,
             @Nonnull List<LineaSeleccion> seleccion) {
+        // G0 — DELIBERATE DEVIATION del legacy (no existía). Art. 19 del
+        // Reglamento de Comprobantes Electrónicos: un comprobante RECHAZADO por
+        // Hacienda no tiene validez fiscal y no se corrige con nota de crédito
+        // ("Para efectos tributarios no debe realizarse la respectiva nota de
+        // crédito"); lo que corresponde es re-emitir el comprobante
+        // (ComprobantesEmitidosCorrectionService, código 16 "Sustituye
+        // comprobante electrónico rechazado"). Este módulo sigue siendo la vía
+        // de las devoluciones reales, sólo que sobre comprobantes aceptados.
+        if (sustitucionComprobanteService.fueRechazadoPorHacienda(factura)) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(ApiResponse.error("DOCUMENTO_RECHAZADO",
+                            "La factura fue rechazada por Hacienda y no tiene validez fiscal, "
+                            + "por lo que no admite nota de crédito. Debe reemitirse el comprobante "
+                            + "que la sustituye (Art. 19)."))
+                    .build();
+        }
         if (motivo == null || motivo.trim().isEmpty()) {
             return badRequest("Ingrese el motivo de la devolucion");
         }
@@ -930,6 +961,11 @@ public class DevolucionesResource {
                 ncResumen.setTotalDesgloseImpuestos(desgloseList);
             }
 
+            // Devolución real sobre comprobante aceptado: el código 01 "Anula
+            // documento de referencia" de la nota 9 es el correcto aquí. Para un
+            // rechazo de Hacienda la vía es la re-emisión con código 16
+            // (Art. 19), y el guard de validarGuardias impide llegar hasta aquí
+            // con un documento rechazado.
             InformacionReferencia ref = InformacionReferencia.from(facturaSeleccionada,
                     Models.Enums.Tipo_CodigosReferencia.ANULA_DOCUMENTO_REFERENCIA,
                     motivo, ncStrategy.getCodigoDocumento());
