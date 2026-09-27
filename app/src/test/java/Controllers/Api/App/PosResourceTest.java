@@ -38,6 +38,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import support.CatalogoReal;
+import support.CatalogoReal.ArticuloReal;
 import org.junit.jupiter.api.TestMethodOrder;
 
 /**
@@ -159,11 +160,37 @@ class PosResourceTest extends support.ContextPathIsolation {
         return cabys;
     }
 
+    private static final java.util.concurrent.atomic.AtomicInteger SUFIJOS_BARRAS =
+            new java.util.concurrent.atomic.AtomicInteger();
+
+    /**
+     * The real GTIN with its check digit replaced by a per-call digit.
+     *
+     * <p>{@code CatalogoReal.siguienteProducto()} draws from a static cursor,
+     * and surefire may give each test class its own JVM, so the cursor restarts
+     * and two classes seed the SAME barcode into the shared database. {@code
+     * /scan} then resolves whichever row it finds first, and the cart total
+     * reads the other test's price (observed: an exempt article seeded at 1000
+     * was billed at 1412.50 because another class had stored the same barcode
+     * at 13% IVA).</p>
+     *
+     * <p>Only the 13th digit varies, so the value stays 13 numeric digits.
+     * That matters: suffixing with a non-numeric token instead makes
+     * facturacion fail with a 500, because the barcode is carried into the
+     * emitted comprobante and the numeric parsing downstream rejects it.</p>
+     */
+    private static String codigoBarraAislado(ArticuloReal producto) {
+        String gtin = producto.codigoBarra();
+        String base = gtin.substring(0, Math.min(12, gtin.length()));
+        int digito = Math.floorMod(SUFIJOS_BARRAS.getAndIncrement(), 10);
+        return base + digito;
+    }
+
     /** Article whose effective price is {@code precioConUtilidad} at 13% IVA. */
-    private Articulos seedArticulo(String barcode, String precioConUtilidad) {
+    private Articulos seedArticulo(ArticuloReal producto, String precioConUtilidad) {
         Articulos articulo = new Articulos();
-        articulo.setNombre(nombreReal("[real]"));
-        articulo.setCodigoBarra(barcode);
+        articulo.setNombre(nombreReal(producto, "[real]"));
+        articulo.setCodigoBarra(codigoBarraAislado(producto));
         articulo.setUnidadMedida("Unidad");
         articulo.setUnidadMedidaComercial("Unidad");
         articulo.setStatus(true);
@@ -183,10 +210,10 @@ class PosResourceTest extends support.ContextPathIsolation {
     }
 
     /** Exempt (0% IVA) article so totals equal the effective price verbatim. */
-    private Articulos seedExemptArticulo(String barcode, String precioConUtilidad) {
+    private Articulos seedExemptArticulo(ArticuloReal producto, String precioConUtilidad) {
         Articulos articulo = new Articulos();
-        articulo.setNombre(nombreReal("[real]"));
-        articulo.setCodigoBarra(barcode);
+        articulo.setNombre(nombreReal(producto, "[real]"));
+        articulo.setCodigoBarra(codigoBarraAislado(producto));
         articulo.setUnidadMedida("Unidad");
         articulo.setUnidadMedidaComercial("Unidad");
         articulo.setStatus(true);
@@ -256,18 +283,26 @@ class PosResourceTest extends support.ContextPathIsolation {
 
     // ── Scenarios ───────────────────────────────────────────────────────
 
-    /** Next unused real GTIN-13 taken from the anonymized invoice fixtures. */
-    private static String codigoBarraReal() {
-        return CatalogoReal.siguienteBarra();
+    /**
+     * A real product from the anonymized invoice fixtures, with the GTIN-13
+     * that really belongs to it. The seeded article takes both fields from this
+     * one product: pairing a description with a different product's barcode
+     * would defeat the point of using real data, and consecutive calls still
+     * yield distinct barcodes so the POS articles never collide.
+     */
+    private static ArticuloReal productoReal() {
+        return CatalogoReal.siguienteProducto();
     }
 
     /** Real supplier article description, suffixed to stay unique within a boot. */
-    private static String nombreReal(String sufijo) {
-        return CatalogoReal.siguiente().nombre() + " " + sufijo;
+    private static String nombreReal(ArticuloReal producto, String sufijo) {
+        return producto.nombre() + " " + sufijo;
     }
+
     @Test
     @Order(1)
     void unauthenticatedCartSurfacesApi401Envelope() {
+
         // PosResource is an unannotated REST surface that self-checks the
         // SecurityIdentity and answers with its documented ApiResponse
         // envelope (no HTML redirect for API callers).
@@ -301,7 +336,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
         // 13% IVA article: total = precioConUtilidad × 1.13 × cantidad.
-        Articulos articulo = seedArticulo(codigoBarraReal(), "1200");
+        Articulos articulo = seedArticulo(productoReal(), "1200");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -353,7 +388,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void scanInvalidCantidadIsRejected() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "500");
+        Articulos articulo = seedExemptArticulo(productoReal(), "500");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -392,7 +427,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void addByArticuloIdMergesQuantities() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "300");
+        Articulos articulo = seedExemptArticulo(productoReal(), "300");
 
         for (int i = 0; i < 2; i++) {
             authed(session)
@@ -424,7 +459,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void deleteItemRemovesLineAndUnknownCodeYields404() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "700");
+        Articulos articulo = seedExemptArticulo(productoReal(), "700");
         authed(session)
                 .contentType(ContentType.JSON)
                 .body("{\"codigoBarra\":\"" + articulo.getCodigoBarra() + "\"}")
@@ -484,7 +519,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void paymentEntriesStageAndComputeVuelto() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1356");
+        Articulos articulo = seedExemptArticulo(productoReal(), "1356");
         authed(session)
                 .contentType(ContentType.JSON)
                 .body("{\"codigoBarra\":\"" + articulo.getCodigoBarra() + "\"}")
@@ -515,7 +550,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void isolationPhase1AdminScansIntoOwnCart() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        isolationAdminItem = seedExemptArticulo(codigoBarraReal(), "111");
+        isolationAdminItem = seedExemptArticulo(productoReal(), "111");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -539,7 +574,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void isolationPhase2Cashier2SeesOnlyOwnLine() {
         seedCashier2User();
         cartSessionStore.remove("cashier2");
-        isolationCashierItem = seedExemptArticulo(codigoBarraReal(), "222");
+        isolationCashierItem = seedExemptArticulo(productoReal(), "222");
 
         Map<String, String> jar = testIdentityJar();
         testAuthed(jar)
@@ -587,7 +622,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
+        Articulos articulo = seedExemptArticulo(productoReal(), "1000");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -618,7 +653,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
+        Articulos articulo = seedExemptArticulo(productoReal(), "1000");
 
         authed(session)
                 .contentType(ContentType.JSON)
@@ -665,7 +700,7 @@ class PosResourceTest extends support.ContextPathIsolation {
         ensureAppSettings();
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "1000");
+        Articulos articulo = seedExemptArticulo(productoReal(), "1000");
 
         // Supervisor-priced line (₡500 instead of ₡1000).
         authed(session)
@@ -725,7 +760,7 @@ class PosResourceTest extends support.ContextPathIsolation {
     void cancelClearsCartPaymentsAndOverrideState() {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
-        Articulos articulo = seedExemptArticulo(codigoBarraReal(), "800");
+        Articulos articulo = seedExemptArticulo(productoReal(), "800");
 
         authed(session)
                 .contentType(ContentType.JSON)

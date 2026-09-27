@@ -85,46 +85,55 @@ class XsdModelAlignmentTest {
     }
 
     // ── Entity factory helpers ──────────────────────────────────────────────
+    //
+    // Party and product values are taken verbatim from the anonymized real
+    // invoices in src/test/resources/fixtures/reales/v4.4/ (emisor, CAByS and
+    // product from fe-v44-13.xml; the receptor pair is fe-v44-17.xml's own
+    // emisor reused as the buyer; the referenced document from nc-v44-04.xml),
+    // so the marshalled output is shaped like a real one. The STRUCTURE is
+    // deliberately left untouched: these tests exercise the model -> XML
+    // mapping, not file parsing.
 
     private static Encabezado createEncabezado(boolean isRep, boolean isFec) {
         Encabezado enc = new Encabezado();
-        enc.setClave("50626072600031011569830010000001040000000001000000");
-        enc.setProveedorSistemas("3101156983");
-        enc.setCodigoActividadEmisor(isRep ? null : "123456");
+        // 506 pais + 260702 (2026-07-02) + 003100100008 (RUC padded) + consecutivo + 9 de seguridad
+        enc.setClave("50626070200310010000800100001040000000001000000000");
+        enc.setProveedorSistemas("3100100008");
+        enc.setCodigoActividadEmisor(isRep ? null : "154101");
         enc.setNumeroConsecutivo("00100001040000000001");
         enc.setFechaEmision(LocalDateTime.of(2026, 7, 2, 12, 0, 0));
         enc.setCondicionVenta(isRep ? "09" : "01");
         if (isFec) {
-            enc.setCodigoActividadReceptor("654321");
+            enc.setCodigoActividadReceptor("523901");
         }
 
         Emisor emisor = new Emisor();
-        emisor.setNombre("EMISOR PRUEBA S.A.");
+        emisor.setNombre("Panificadora del Sur S.A.");
         IdentificacionEmisor idEmisor = new IdentificacionEmisor();
         idEmisor.setTipo("02");
-        idEmisor.setNumero("3101156983");
+        idEmisor.setNumero("3100100008");
         emisor.setIdentificacion(idEmisor);
         emisor.setRegistrofiscal8707("123456789012");
-        emisor.setNombreComercial("Mi Negocio S.A.");
+        emisor.setNombreComercial("Panificadora del Sur S.A.");
 
         Ubicacion ubicacion = new Ubicacion();
-        ubicacion.setProvincia("1");
-        ubicacion.setCanton("01");
-        ubicacion.setDistrito("01");
-        ubicacion.setOtrasSenas("Direccion de prueba");
+        ubicacion.setProvincia("4");
+        ubicacion.setCanton("03");
+        ubicacion.setDistrito("06");
+        ubicacion.setOtrasSenas("DEL CRUCE DE LA PRINCIPAL CUATROCIENTOS METROS AL ESTE, ZONA INDUSTRIAL, MODULO 1");
         emisor.setUbicacion(ubicacion);
 
         CorreoElectronicoEmisor email = new CorreoElectronicoEmisor();
-        email.setCorreo("emisor@prueba.com");
+        email.setCorreo("facturacion.8@proveedor-prueba.test");
         emisor.setCorreosElectronicos(List.of(email));
 
         enc.setEmisor(emisor);
 
         Receptor receptor = new Receptor();
-        receptor.setNombre("RECEPTOR PRUEBA S.A.");
+        receptor.setNombre("PRODUCTOS DEL VALLE S.A.");
         IdentificacionReceptor idReceptor = new IdentificacionReceptor();
         idReceptor.setTipo("02");
-        idReceptor.setNumero("3101156984");
+        idReceptor.setNumero("3100100013");
         receptor.setIdentificacion(idReceptor);
         enc.setReceptor(receptor);
 
@@ -140,12 +149,12 @@ class XsdModelAlignmentTest {
         linea.setNumeroLinea(1);
 
         if (!isRep) {
-            linea.setCodigoCabys("1234567890123");
+            linea.setCodigoCabys("2349002011400");
             linea.setCantidad(new BigDecimal("1.000"));
             linea.setUnidadMedida("Unid");
             linea.setPrecioUnitario(new BigDecimal("100.00000"));
         }
-        linea.setDetalle("Item de prueba");
+        linea.setDetalle("Takis Fuego ES 1p 56g FLOW BAR");
         linea.setMontoTotal(new BigDecimal("100.00000"));
         linea.setSubTotal(new BigDecimal("100.00000"));
         if (!isRep && !isFee) {
@@ -190,10 +199,10 @@ class XsdModelAlignmentTest {
     private static List<InformacionReferencia> createInfoReferencia() {
         InformacionReferencia ref = new InformacionReferencia();
         ref.setTipoDoc("01");
-        ref.setNumero("00100001000000000001");
-        ref.setFechaEmision(LocalDateTime.of(2026, 7, 2, 10, 0, 0));
-        ref.setCodigo("13");
-        ref.setRazon("Referencia de prueba");
+        ref.setNumero("40300391010000012588_40300391010000013494_");
+        ref.setFechaEmision(LocalDateTime.of(2024, 3, 1, 0, 0, 0));
+        ref.setCodigo("01");
+        ref.setRazon("Devolucion de producto");
         ref.setTipoDocRefOTRO(null);
         ref.setCodigoReferenciaOTRO(null);
         return List.of(ref);

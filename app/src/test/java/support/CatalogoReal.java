@@ -72,16 +72,12 @@ public final class CatalogoReal {
     private static final Map<String, ArticuloReal> POR_CODIGO = new LinkedHashMap<>();
 
     /**
-     * Hands out a different real product on each call, so tests that need
-     * several articles in one boot get distinct barcodes without hard-coding
-     * indexes. The test database is drop-and-create per boot, so a cursor that
-     * restarts with the JVM is enough to keep barcodes unique.
+     * Hands out a different barcode-owning product on each call, so tests that
+     * need several articles in one boot get distinct barcodes without
+     * hard-coding indexes. The test database is drop-and-create per boot, so a
+     * cursor that restarts with the JVM is enough to keep barcodes unique.
      */
     private static final java.util.concurrent.atomic.AtomicInteger CURSOR =
-            new java.util.concurrent.atomic.AtomicInteger();
-
-    /** Separate cursor over the distinct barcodes; see {@link #barrasDistintas()}. */
-    private static final java.util.concurrent.atomic.AtomicInteger CURSOR_BARRA =
             new java.util.concurrent.atomic.AtomicInteger();
 
     static {
@@ -134,21 +130,8 @@ public final class CatalogoReal {
     }
 
     /**
-     * The next unused real product, cycling when the catalogue is exhausted.
-     * Prefer this over {@link #porIndice(int)} when a test needs a barcode that
-     * no other test in the same boot has already taken.
-     */
-    public static ArticuloReal siguiente() {
-        return porIndice(CURSOR.getAndIncrement());
-    }
-
-    /** Restarts {@link #siguiente()}; only needed if a test needs determinism. */
-    public static void reiniciarCursor() {
-        CURSOR.set(0);
-    }
-
-    /**
-     * The distinct GTIN-13 codes carried by the real line items.
+     * The distinct GTIN-13 codes carried by the real line items, each paired
+     * with the real product that owns it.
      *
      * <p>Note this is much smaller than {@link #todos()}: on a supplier invoice
      * the 13-digit {@code Codigo}/{@code CodigoCABYS} is the CAByS tariff
@@ -156,24 +139,45 @@ public final class CatalogoReal {
      * every OCB cigarette-paper variant in the set). Use this when a test needs
      * a barcode that no other article already holds, because the API rejects a
      * repeated {@code codigoBarra} with 409 DUPLICATE_BARCODE.
+     *
+     * <p>The pairing is by first-seen order, so it is stable: every distinct
+     * barcode maps to exactly one owning product. That is what lets
+     * {@link #siguienteProducto()} hand out a description together with the
+     * barcode that really belongs to it, instead of two unrelated products.
      */
-    public static List<String> barrasDistintas() {
-        List<String> barras = new ArrayList<>();
+    public static List<ArticuloReal> productosPorBarra() {
+        List<ArticuloReal> productos = new ArrayList<>();
+        List<String> barrasVistas = new ArrayList<>();
         for (ArticuloReal a : todos()) {
-            if (!barras.contains(a.codigoBarra())) {
-                barras.add(a.codigoBarra());
+            if (!barrasVistas.contains(a.codigoBarra())) {
+                barrasVistas.add(a.codigoBarra());
+                productos.add(a);
             }
         }
-        return List.copyOf(barras);
+        return List.copyOf(productos);
     }
 
-    /** The next unused distinct GTIN-13; see {@link #barrasDistintas()}. */
-    public static String siguienteBarra() {
-        List<String> barras = barrasDistintas();
-        if (barras.isEmpty()) {
+    /** The bare distinct-GTIN list; see {@link #productosPorBarra()}. */
+    public static List<String> barrasDistintas() {
+        return productosPorBarra().stream().map(ArticuloReal::codigoBarra).toList();
+    }
+
+    /**
+     * The next real product whose GTIN no caller has taken yet, cycling when
+     * the distinct-barcode set is exhausted.
+     *
+     * <p>Prefer this over {@link #porIndice(int)} whenever a test fills both
+     * the {@code nombre} and the {@code codigoBarra} of a new article: the two
+     * fields must describe the SAME product, and only this cursor keeps them
+     * together while still handing out a barcode no other article holds. There
+     * is deliberately no accessor that hands out a bare barcode.
+     */
+    public static ArticuloReal siguienteProducto() {
+        List<ArticuloReal> productos = productosPorBarra();
+        if (productos.isEmpty()) {
             throw new IllegalStateException("no distinct barcodes in the real fixtures");
         }
-        return barras.get(Math.floorMod(CURSOR_BARRA.getAndIncrement(), barras.size()));
+        return productos.get(Math.floorMod(CURSOR.getAndIncrement(), productos.size()));
     }
 
     private static void cargar(String version) {
