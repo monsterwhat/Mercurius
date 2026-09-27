@@ -1,7 +1,7 @@
 package Services;
 
+import Models.Encabezado.MedioPago;
 import Models.Cabys;
-import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Services.HaciendaServiceFacade;
 import Models.Detalles.DetalleServicio;
@@ -9,7 +9,7 @@ import Models.Detalles.LineaDetalle;
 import Models.Detalles.OtroCargo;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.Receptor;
-import Models.NotaCredito;
+import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
@@ -23,13 +23,30 @@ import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Auto-correction service for emitted invoices rejected by Hacienda.
  * Attempts to fix common rejection issues (wrong CAByS, tax calculation, totals)
  * and resend automatically. Tracks attempts to prevent infinite retry loops.
+ *
+ * <p><b>Un rechazo no se corrige con nota de crédito (Art. 19 del Reglamento de
+ * Comprobantes Electrónicos).</b> El comprobante rechazado no tiene validez fiscal
+ * y el emisor debe emitir inmediatamente un comprobante NUEVO que lo referencie;
+ * el reglamento lo dice en términos —"Para efectos tributarios no debe realizarse
+ * la respectiva nota de crédito"— y el material del MH lo confirma: los
+ * comprobantes rechazados no requieren notas de crédito. Este servicio emite
+ * entonces una re-emisión del mismo tipo con el código 16 "Sustituye
+ * comprobante electrónico rechazado" (nota 9 de los XSD oficiales v4.4), que es
+ * exactamente lo que este servicio reemplaza: la nota de crédito interna que se
+ * creaba aquí era una vía fiscalmente incorrecta. La nota de crédito sigue
+ * existiendo para devoluciones reales sobre comprobantes aceptados, en
+ * {@code Controllers.Api.App.DevolucionesResource}, que además se niega a
+ * emitirla contra un documento rechazado.
+ *
+ * @see SustitucionComprobanteService
  */
 @Named
 @ApplicationScoped
@@ -41,13 +58,10 @@ public class ComprobantesEmitidosCorrectionService {
     private @Nonnull ComprobantesEmitidosService comprobantesEmitidosService;
 
     @Inject
-    private @Nonnull NotaCreditoService notaCreditoService;
+    private @Nonnull SustitucionComprobanteService sustitucionComprobanteService;
 
     @Inject
     private @Nonnull CabysService cabysService;
-
-    @Inject
-    private @Nonnull ClientService clientService;
 
     @Inject
     private @Nonnull HaciendaServiceFacade haciendaServiceFacade;
@@ -58,7 +72,7 @@ public class ComprobantesEmitidosCorrectionService {
     // ─── Public API ─────────────────────────────────────────────────
 
     /**
-     * Checks whether a rejected invoice can be auto-corrected.
+     * Checks whether a rejected invoice can be re-emitted (Art. 19).
      * Conditions:
      * - Estado must be RECHAZADO
      * - correctionAttempts must be under the configured max
@@ -84,39 +98,75 @@ public class ComprobantesEmitidosCorrectionService {
     }
 
     /**
-     * Main orchestrator: attempts to fix and resend a rejected invoice.
-     * Increments correctionAttempts even on failure to prevent infinite retries.
+     * Main orchestrator: re-emits a rejected invoice as a NEW document that
+     * references the rejected one (Art. 19, código 16). No credit note is
+     * created — a rejected document has no fiscal validity, so it cannot be
+     * credited, only replaced. Increments correctionAttempts even on failure to
+     * prevent infinite retries.
+     *
+     * <p><b>Devuelve el comprobante REEMPLAZO ya persistido, no una promesa de
+     * él.</b> El id se lee del propio objeto que {@code create()} acaba de
+     * insertar dentro de esta transacción, así que el que llama no tiene que
+     * re-consultar la base para saber si la re-emisión ocurrió: el valor
+     * presente es la prueba, y una consulta posterior no lo es —depende de que
+     * la fila ya sea visible para otra sesión, que es justo lo que no puede
+     * darse por cierto en la misma petición. Todos los caminos en que no se
+     * emite nada (rechazo no automatizable, clave que no se puede generar,
+     * Hacienda que rechaza la re-emisión, excepción) devuelven
+     * {@link Optional#empty()} y nunca un id.
+     *
+     * @return el id del comprobante re-emitido y persistido, o vacío si no se
+     *         emitió ninguno
      */
-    public void corregirFactura(@Nonnull ComprobantesEmitidos factura) {
+    @jakarta.transaction.Transactional
+    public @Nonnull Optional<Long> corregirFactura(@Nonnull ComprobantesEmitidos factura) {
+        // The caller may hand us an entity still attached to ANOTHER session: both
+        // the scheduler and the REST resource invoke this from a worker thread, so
+        // the rejected document's Encabezado.medioPago PersistentCollection stays
+        // owned by the session that loaded it. Persisting the clone then cascades
+        // into a collection belonging to a different session and Hibernate throws
+        // "Illegal attempt to associate a collection with two open sessions",
+        // which made the re-emission fail silently at create(). Re-read the
+        // document inside THIS transaction and use only that instance from here
+        // on; the argument is demoted to a carrier for the id.
+        ComprobantesEmitidos facturaDeEstaSesion = comprobantesEmitidosService.find(factura.getId());
+        if (facturaDeEstaSesion != null) {
+            factura = facturaDeEstaSesion;
+        }
         String clave = factura.getHaciendaClave();
         try {
-                        LOG.info("Iniciando auto-corrección para factura: " + clave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                        LOG.info("Iniciando re-emisión por rechazo para factura: " + clave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             String motivoRechazo = factura.getEncabezado() != null
                 ? factura.getEncabezado().getMotivoRechazo() : null;
 
             Estrategia estrategia = determinarEstrategia(motivoRechazo);
             if (estrategia == Estrategia.NO_AUTOMATIZABLE) {
-                                LOG.info("Auto-corrección no posible para: " + clave + " - motivo: " + motivoRechazo + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                                LOG.info("Re-emisión no posible para: " + clave + " - motivo: " + motivoRechazo + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 incrementarAttempts(factura);
-                return;
+                return Optional.empty();
             }
-
-            // Create internal NotaCredito for the rejected invoice
-            crearNotaCredito(factura);
 
             // Clone and fix the invoice data
             ComprobantesEmitidos nuevaFactura = clonarFactura(factura, estrategia);
 
+            // Art. 19: la re-emisión queda referenciada al rechazado con el código 16
+            // y conserva su periodo fiscal, para que el efecto contable caiga donde
+            // corresponde.
+            aplicarReferenciaReemision(factura, nuevaFactura, motivoRechazo);
+
             // Verify clave is set on the clone
             String nuevaClave = nuevaFactura.getHaciendaClave();
             if (nuevaClave == null || nuevaClave.isEmpty()) {
-                                LOG.warn("No se pudo generar clave para factura corregida" + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                                LOG.warn("No se pudo generar clave para la factura re-emitida" + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
                 incrementarAttempts(factura);
-                return;
+                return Optional.empty();
             }
 
             HaciendaServiceFacade.SubmitResult result = haciendaServiceFacade.submitDocument(nuevaFactura);
+            // Vacío mientras no haya un comprobante emitido Y persistido: sólo se
+            // llena en la rama aceptada y sólo si la inserción produjo id.
+            Optional<Long> idReemision = Optional.empty();
             if (result.success) {
                 nuevaFactura.setHaciendaEstado("ACEPTADO");
                 nuevaFactura.setHaciendaFechaEnvio(LocalDateTime.now());
@@ -126,17 +176,57 @@ public class ComprobantesEmitidosCorrectionService {
                 }
                 comprobantesEmitidosService.create(nuevaFactura);
 
-                                LOG.info("Auto-corrección exitosa: " + clave + " -> nueva clave: " + nuevaClave + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                // create() se traga su propia PersistenceException, así que la
+                // única prueba de que la fila existe es el id que la asignación
+                // dejó en la entidad. Sin id no hay sustituto: se reporta vacío
+                // en vez de dar por buena una re-emisión que nadie persistió.
+                Long idPersistido = nuevaFactura.getId();
+                if (idPersistido == null) {
+                                LOG.warn("La re-emisión de " + clave + " fue aceptada por Hacienda pero no quedó persistida, así que no hay comprobante sustitutivo" + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                } else {
+                                LOG.info("Re-emisión por rechazo aceptada: " + clave + " -> nueva clave: " + nuevaClave + " (código 16, Art. 19; no se emitió nota de crédito)" + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+                    idReemision = Optional.of(idPersistido);
+                }
             } else {
-                                LOG.warn("Hacienda rechazó factura corregida: " + result.errorMessage + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(result.errorMessage));
+                                LOG.warn("Hacienda rechazó la factura re-emitida: " + result.errorMessage + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(result.errorMessage));
             }
 
             incrementarAttempts(factura);
+            return idReemision;
 
         } catch (RuntimeException e) {
-                        LOG.warn("Error en auto-corrección de " + clave + ": " + e.getMessage() + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        LOG.warn("Error en la re-emisión por rechazo de " + clave + ": " + e.getMessage() + " | source=" + "ComprobantesEmitidosCorrectionService.corregirFactura()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             incrementarAttempts(factura);
+            return Optional.empty();
         }
+    }
+
+    /**
+     * Referencia de la re-emisión (Art. 19): código 16 "Sustituye comprobante
+     * electrónico rechazado" apuntando al documento rechazado, y verificación de
+     * que el reemplazo cae en el mismo periodo fiscal que el original —sin eso el
+     * efecto contable de la sustitución quedaría en un periodo distinto al del
+     * documento que se está sustituyendo.
+     *
+     * <p>El documento de referencia conserva la fecha de emisión del rechazado, lo
+     * que además mantiene consistente la fecha que ya viaja en las posiciones 4-9
+     * de la clave re-emitida.</p>
+     */
+    private void aplicarReferenciaReemision(@Nonnull ComprobantesEmitidos original,
+                                            @Nonnull ComprobantesEmitidos reemplazo,
+                                            @Nullable String motivoRechazo) {
+        String codigoDocumentoNuevo = reemplazo.getEncabezado() != null
+            ? reemplazo.getEncabezado().getCodigoDocumento()
+            : (original.getEncabezado() != null ? original.getEncabezado().getCodigoDocumento() : null);
+
+        String razon = motivoRechazo != null && !motivoRechazo.isBlank()
+            ? "Re-emisión por rechazo de Hacienda (Art. 19, código 16). No corresponde nota de crédito. Motivo: " + motivoRechazo
+            : null; // SustitucionComprobanteService pone el texto por defecto y recorta a 180
+
+        InformacionReferencia referencia = sustitucionComprobanteService
+                .referenciaReemisionPorRechazo(original, codigoDocumentoNuevo, razon);
+        reemplazo.setInformacionReferencia(new ArrayList<>(List.of(referencia)));
+        sustitucionComprobanteService.exigirMismoPeriodo(original, reemplazo);
     }
 
     // ─── Strategies ─────────────────────────────────────────────────
@@ -178,43 +268,48 @@ public class ComprobantesEmitidosCorrectionService {
         comprobantesEmitidosService.update(factura);
     }
 
-    private void crearNotaCredito(ComprobantesEmitidos facturaOriginal) {
-        if (facturaOriginal.getResumen() == null || facturaOriginal.getEncabezado() == null) return;
-
-        // Check if NC already exists for this invoice
-        List<NotaCredito> existentes = notaCreditoService.listPorComprobante(facturaOriginal.getId());
-        if (existentes != null && !existentes.isEmpty()) return;
-
-        NotaCredito nc = new NotaCredito();
-        nc.setComprobanteOriginal(facturaOriginal);
-        nc.setFecha(new Date());
-        nc.setMotivo("Auto-corrección por rechazo de Hacienda: "
-            + (facturaOriginal.getEncabezado().getMotivoRechazo() != null
-                ? facturaOriginal.getEncabezado().getMotivoRechazo() : "Sin motivo"));
-        nc.setMontoTotal(facturaOriginal.getResumen().getTotalVentaNeta());
-
-        if (facturaOriginal.getEncabezado().getReceptor() != null) {
-            String nombre = facturaOriginal.getEncabezado().getReceptor().getNombre();
-            if (nombre != null) {
-                List<Clientes> clients = clientService.searchByName(nombre);
-                if (clients != null && !clients.isEmpty()) {
-                    nc.setCliente(clients.get(0));
-                }
-            }
-        }
-
-        nc.setUsuario("system");
-        nc.setStatus(true);
-        nc.setHaciendaEstado("PENDIENTE");
-        nc.setHaciendaClave(facturaOriginal.getHaciendaClave());
-
-        notaCreditoService.create(nc);
-    }
-
     /**
      * Deep-clones a ComprobantesEmitidos and applies fixes per the given strategy.
      * Sets a new haciendaClave on the clone.
+     * <p>
+     * The clone keeps the original's {@code fechaEmision} (and therefore its fiscal
+     * period) on purpose: the re-emitted clave reuses positions 1-21 of the original,
+     * which include the DDMMYY emission date, so changing the date would make the
+     * document contradict its own clave and Hacienda would reject it.
      */
+    /**
+     * Deep-copies the header's payment methods.
+     *
+     * <p>This cannot share the original list. {@code medioPago} is a
+     * {@code @OneToMany} whose collection instance is already bound to the open
+     * persistence session that loaded the rejected document. Handing that same
+     * instance to the clone makes Hibernate persist the new encabezado with a
+     * collection owned by another session:
+     * {@code Illegal attempt to associate a collection with two open sessions:
+     * Collection: [Encabezado.medioPago with owner id '...']}. The entity
+     * creation then fails and the re-emission silently does not happen.
+     * {@code lineasDetalle} and {@code otrosCargos} were already copied this
+     * way; this collection was the one that was missed.</p>
+     */
+    private static java.util.List<MedioPago> clonarMediosPago(
+            java.util.List<MedioPago> original, Encabezado encabezadoNuevo) {
+        if (original == null) {
+            return null;
+        }
+        java.util.List<MedioPago> copia = new java.util.ArrayList<>(original.size());
+        for (MedioPago medio : original) {
+            if (medio == null) {
+                continue;
+            }
+            MedioPago nuevo = new MedioPago();
+            nuevo.setMedioPago(medio.getMedioPago());
+            nuevo.setSchemaVersion(medio.getSchemaVersion());
+            nuevo.setComprobante(encabezadoNuevo);
+            copia.add(nuevo);
+        }
+        return copia;
+    }
+
     private ComprobantesEmitidos clonarFactura(ComprobantesEmitidos original, Estrategia estrategia) {
         ComprobantesEmitidos nueva = new ComprobantesEmitidos();
 
@@ -228,7 +323,7 @@ public class ComprobantesEmitidosCorrectionService {
             encNuevo.setNumeroConsecutivo(encOriginal.getNumeroConsecutivo());
             encNuevo.setClave(encOriginal.getClave());
             encNuevo.setCodigoDocumento(encOriginal.getCodigoDocumento());
-            encNuevo.setMedioPago(encOriginal.getMedioPago());
+            encNuevo.setMedioPago(clonarMediosPago(encOriginal.getMedioPago(), encNuevo));
             encNuevo.setPlazoCredito(encOriginal.getPlazoCredito());
             encNuevo.setCondicionVentaOtros(encOriginal.getCondicionVentaOtros());
             encNuevo.setEmisor(encOriginal.getEmisor());

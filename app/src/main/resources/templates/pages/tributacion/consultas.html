@@ -11,7 +11,11 @@
     - p:tabView (Pendientes/Aceptadas/Rechazadas) → Alpine tab navigation.
     - "Enviar Facturas Pendientes" → hx-post .../enviar-pendientes with
       hx-confirm (HaciendaServiceFacade stubbed in tests; NO real network).
-    - "Corregir" per rejected row → hx-post .../{id}/corregir.
+    - "Reemitir" per rejected row → hx-post .../{id}/corregir. A rejected
+      comprobante has no fiscal validity (Art. 19): the action emits a NEW
+      comprobante referencing it with código 16. It never creates a credit
+      note — "Para efectos tributarios no debe realizarse la respectiva nota
+      de crédito".
 !}
 {#include layout}
     {#title}Consultas de Facturas | Mercurius{/title}
@@ -118,12 +122,13 @@
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
                         <td class="has-text-centered">{f.intentos}</td>
                         <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
-                        <td><span class="tag is-danger">Rechazada</span></td>
+                        <td><span class="tag is-danger" title="Rechazado por Hacienda: no tiene validez fiscal y debe reemitirse (Art. 19). No se realiza nota de crédito.">Rechazada — pendiente de re-emisión</span></td>
                         <td>
                             <button type="button" class="button is-primary is-small"
+                                    title="Art. 19: se emite un comprobante nuevo que referencia el rechazado con el código 16. No corresponde nota de crédito."
                                     hx-post="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/{f.id}/corregir"
-                                    hx-confirm="¿Crear nota de crédito y preparar la corrección de {f.consecutivo}?">
-                                Corregir
+                                    hx-confirm="¿Reemitir {f.consecutivo}? El comprobante rechazado no tiene validez fiscal (Art. 19): se emitirá uno nuevo que lo referencia con el código 16, sin nota de crédito.">
+                                Reemitir
                             </button>
                         </td>
                     </tr>

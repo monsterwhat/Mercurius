@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +23,9 @@ import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +35,7 @@ import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import Models.Encabezado.Encabezado;
 import Models.NotaCredito;
+import Models.Referencias.InformacionReferencia;
 import Models.Resumen.ResumenFactura;
 import Services.ComprobantesEmitidosService;
 import Services.ComprobantesRecibidosService;
@@ -51,13 +56,23 @@ import org.junit.jupiter.api.Test;
  * RecibosReportesPageTest); %test boots drop-and-create so a failed assertion
  * cannot poison later runs.</p>
  *
- * <p>Scenarios (12): dashboard counts vs fixture; dashboard page render;
+ * <p>Scenarios (13): dashboard counts vs fixture; dashboard page render;
  * KPI fragment dual-mode; consultas page markers (every-5s poll span +
  * Alpine tabs); countdown fragment + JSON twin; role matrix (forbidden +
  * unauthenticated); bulk-send happy/mixed through the stubbed facade;
  * bulk-send without pendientes never touches the facade; correct-rejected
- * credit-note idempotency + 404/409 guards; D-104 date-range sums + monthly
+ * re-emission (código 16, no credit note) + 404/409 guards; correct-rejected
+ * on a non-automatable rejection (no sustituto claimed, no facade call);
+ * D-104 date-range
+ * sums + monthly
  * filas + bounds validation; MR deadline indicator states.</p>
+ *
+ * <p>Correct-rejected follows Art. 19: the action re-emits the rejected
+ * comprobante as a NEW document referencing it with código 16 and must NOT
+ * create any NotaCredito — a rejected comprobante has no fiscal validity, so
+ * it is replaced, never credited. The {@code reEmitida} flag is read from the
+ * replacement id the corrector returns, so it cannot be a stale read of a row
+ * it just inserted.</p>
  */
 @QuarkusTest
 @Tag("tributacion")
@@ -284,50 +299,124 @@ class TributacionResourceTest extends support.ContextPathIsolation {
         verifyNoInteractions(haciendaFacade);
     }
 
-    // ── 9. Correct-rejected action ──────────────────────────────────────
+    // ── 9. Correct-rejected action (Art. 19 re-emission) ───────────────
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "tributacion"})
-    void corregirRechazadaCreatesNotaCreditoIdempotently() {
+    void corregirRechazadaReemiteConCodigo16YNoCreaNotaCredito() {
         ComprobantesEmitidos rechazada = null;
         ComprobantesEmitidos activa = null;
         try {
-            rechazada = seedEmitido(consecutivo("CORREC"), "RECHAZADO",
-                    LocalDateTime.now().minusHours(1), "IT28-COR");
+            LocalDateTime fechaEmision = LocalDateTime.now().minusHours(1);
+            rechazada = seedEmitido(consecutivo("CORREC"), "RECHAZADO", fechaEmision,
+                    clave50(consecutivoNumerico("CORREC")));
             rechazada.setResumen(resumen(new BigDecimal("50000"), new BigDecimal("6500"),
                     new BigDecimal("56500")));
+            // El motivo decide la estrategia del corrector; sin una causa
+            // automatizable no habría re-emisión que esperar.
+            rechazada.getEncabezado().setMotivoRechazo("El codigo CABYS del detalle no existe");
             emitidosService.update(rechazada);
             activa = seedEmitido(consecutivo("CORACT"), "ACEPTADO",
-                    LocalDateTime.now().minusHours(2), "IT28-ACT");
+                    LocalDateTime.now().minusHours(2),
+                    clave50(consecutivoNumerico("CORACT")));
+            when(haciendaFacade.submitDocument(any()))
+                    .thenReturn(HaciendaServiceFacade.SubmitResult.accepted());
 
             String token = postCorregir(rechazada.getId())
                     .then()
                     .statusCode(200)
-                    .body("data.notaCreditoCreada", equalTo(true))
+                    .body("data.reEmitida", equalTo(true))
+                    .body("data.mensaje", containsString("no tiene validez fiscal"))
+                    .body("data.mensaje", containsString("código 16"))
                     .extract().jsonPath().getString("data.token");
             assertEquals("CORREGIR_" + rechazada.getId(), token);
 
-            List<NotaCredito> notas = notaCreditoService.listPorComprobante(rechazada.getId());
-            assertEquals(1, notas.size(), "exactly one automatic credit note");
-            assertTrue(notas.get(0).getMotivo().startsWith("Corrección automática por rechazo"),
-                    "legacy motivo text preserved");
+            // Art. 19: el rechazado se SUSTITUYE por un comprobante nuevo que lo
+            // referencia con el código 16; no se le acredita nada.
+            List<ComprobantesEmitidos> reemisiones = reemisionesDe(rechazada);
+            assertEquals(1, reemisiones.size(),
+                    "exactly one NEW comprobante must replace the rejected one");
+            ComprobantesEmitidos reemitida = reemisiones.get(0);
+            assertNotEquals(rechazada.getId(), reemitida.getId(),
+                    "the re-emission is a different document, not the rejected one");
+            assertEquals("16", reemitida.getInformacionReferencia().get(0).getCodigo(),
+                    "the replacement carries código 16 (sustituye rechazado)");
+            assertEquals(rechazada.getEncabezado().getNumeroConsecutivo(),
+                    reemitida.getInformacionReferencia().get(0).getNumero(),
+                    "the código 16 reference points at the rejected consecutivo");
+            assertEquals(fechaEmision.toLocalDate(),
+                    reemitida.getEncabezado().getFechaEmision().toLocalDate(),
+                    "the re-emission stays in the rejected document's fiscal period");
+            assertEquals("ACEPTADO", reemitida.getHaciendaEstado(),
+                    "the re-emission is persisted with Hacienda's verdict");
 
+            List<NotaCredito> notas = notaCreditoService.listPorComprobante(rechazada.getId());
+            assertTrue(notas.isEmpty(),
+                    "Art. 19: a rejected comprobante has no fiscal validity, so it is "
+                            + "replaced and NEVER credited ('no debe realizarse la respectiva "
+                            + "nota de crédito')");
+            assertEquals(Integer.valueOf(1),
+                    emitidosService.find(rechazada.getId()).getCorrectionAttempts(),
+                    "the attempt is counted on the rejected comprobante");
+
+            // Idempotencia: la segunda corrección encuentra el sustituto existente
+            // en vez de apilar documentos (y nunca crea una nota de crédito).
             postCorregir(rechazada.getId())
                     .then()
                     .statusCode(200)
-                    .body("data.notaCreditoCreada", equalTo(false));
-            assertEquals(1, notaCreditoService.listPorComprobante(rechazada.getId()).size(),
-                    "second correction must NOT duplicate the credit note");
+                    .body("data.reEmitida", equalTo(true))
+                    .body("data.mensaje", containsString("ya tiene su comprobante sustitutivo"));
+            assertEquals(1, reemisionesDe(rechazada).size(),
+                    "a second correction must NOT stack a second replacement");
+            assertTrue(notaCreditoService.listPorComprobante(rechazada.getId()).isEmpty(),
+                    "still no credit note after the second correction");
 
             postCorregir(activa.getId()).then().statusCode(409);
             postCorregir(99999999L).then().statusCode(404);
         } finally {
-            List<NotaCredito> huerfanas = rechazada == null
-                    ? List.of() : notaCreditoService.listPorComprobante(rechazada.getId());
-            for (NotaCredito nota : huerfanas) {
-                notaCreditoService.delete(nota);
+            for (ComprobantesEmitidos reemision : rechazada == null
+                    ? List.<ComprobantesEmitidos>of() : reemisionesDe(rechazada)) {
+                ComprobantesEmitidos managed = emitidosService.find(reemision.getId());
+                if (managed != null) {
+                    emitidosService.delete(managed);
+                }
             }
             deleteQuietly(rechazada, activa);
+        }
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin", "tributacion"})
+    void corregirRechazadaSinCausaAutomatizableNoAfirmaSustituto() {
+        ComprobantesEmitidos rechazada = null;
+        try {
+            rechazada = seedEmitido(consecutivo("CORNOA"), "RECHAZADO",
+                    LocalDateTime.now().minusHours(1),
+                    clave50(consecutivoNumerico("CORNOA")));
+            // Un motivo que no encaja en ninguna estrategia automatizable (CAByS,
+            // impuesto, total) no tiene re-emisión que esperar. La respuesta debe
+            // decirlo así: la bandera se deriva del id que el corrector devuelve,
+            // no de buscar después una referencia que nunca se creó.
+            rechazada.getEncabezado().setMotivoRechazo("El comprobante ya fue recibido por el sistema");
+            emitidosService.update(rechazada);
+
+            postCorregir(rechazada.getId())
+                    .then()
+                    .statusCode(200)
+                    .body("data.reEmitida", equalTo(false))
+                    .body("data.mensaje", containsString("No se pudo emitir automáticamente"))
+                    .body("data.mensaje", containsString("no corresponde nota de crédito"));
+
+            assertTrue(reemisionesDe(rechazada).isEmpty(),
+                    "sin causa automatizable no se emite ningún comprobante sustitutivo");
+            assertTrue(notaCreditoService.listPorComprobante(rechazada.getId()).isEmpty(),
+                    "Art. 19: un rechazo sin re-emisión tampoco se acredita");
+            assertEquals(Integer.valueOf(1),
+                    emitidosService.find(rechazada.getId()).getCorrectionAttempts(),
+                    "el intento fallido se cuenta igual para no reintentar indefinidamente");
+            verifyNoInteractions(haciendaFacade);
+        } finally {
+            deleteQuietly(rechazada);
         }
     }
 
@@ -450,6 +539,61 @@ class TributacionResourceTest extends support.ContextPathIsolation {
         String sufijo = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
         String valor = "IT28" + prefijo + sufijo;
         return valor.length() > 20 ? valor.substring(0, 20) : valor;
+    }
+
+    /** Consecutivo numérico único para la clave de 50 posiciones. */
+    private static long consecutivoNumerico(String prefijo) {
+        return (prefijo + UUID.randomUUID().toString().substring(0, 6))
+                .chars().mapToLong(c -> c).reduce(0L, (acc, c) -> acc * 31 + c) % 9_000_000_000L + 1_000L;
+    }
+
+    /**
+     * Clave de 50 dígitos que el corrector puede derivar: país(3) + DDMMYY(6) +
+     * identificación(12) + consecutivo(20) + situación(1) + código(7) + dígito
+     * verificador(1). La re-emisión copia el prefijo 1-21 y recalcula el
+     * consecutivo y el dígito 50, así que el fixture tiene que cumplir el
+     * formato exacto o no habría clave nueva que emitir.
+     */
+    private static String clave50(long consecutivo) {
+        String clave = "506" + "270826" + "310112345678"
+                + String.format("%020d", consecutivo) + "2" + "1234567" + "5";
+        assertEquals(50, clave.length(), "clave must be exactly 50 digits");
+        return clave;
+    }
+
+    /**
+     * Comprobantes que re-emiten al rechazado: los que lo referencian con el
+     * código 16 "Sustituye comprobante electrónico rechazado" (Art. 19). La
+     * re-emisión conserva la fecha de emisión del original, así que se busca en
+     * ese mismo día.
+     */
+    private List<ComprobantesEmitidos> reemisionesDe(ComprobantesEmitidos rechazado) {
+        List<ComprobantesEmitidos> mismaFecha = emitidosService.listByDateRange(
+                Date.from(rechazado.getEncabezado().getFechaEmision().toLocalDate()
+                        .atStartOfDay(ZoneId.systemDefault()).toInstant()),
+                Date.from(rechazado.getEncabezado().getFechaEmision().toLocalDate()
+                        .atTime(23, 59, 59).atZone(ZoneId.systemDefault()).toInstant()));
+        if (mismaFecha == null) {
+            return List.of();
+        }
+        List<ComprobantesEmitidos> reemisiones = new ArrayList<>();
+        for (ComprobantesEmitidos candidato : mismaFecha) {
+            if (candidato.getId().equals(rechazado.getId())) {
+                continue;
+            }
+            List<InformacionReferencia> referencias = candidato.getInformacionReferencia();
+            if (referencias == null) {
+                continue;
+            }
+            for (InformacionReferencia ref : referencias) {
+                if ("16".equals(ref.getCodigo())
+                        && rechazado.getEncabezado().getNumeroConsecutivo().equals(ref.getNumero())) {
+                    reemisiones.add(candidato);
+                    break;
+                }
+            }
+        }
+        return reemisiones;
     }
 
     private ComprobantesEmitidos seedEmitido(String consecutivo, String estado,
