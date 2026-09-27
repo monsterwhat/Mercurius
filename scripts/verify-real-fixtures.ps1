@@ -39,6 +39,23 @@ foreach ($f in Get-ChildItem -LiteralPath $SourceDir -Filter *.xml) {
             $forbidden["free:$v"] = 1
         }
     }
+    # InformacionReferencia is a root-level block of free text: <Razon> and the
+    # <OtroTexto>/<OtroContenido> extension fields are the one place on a
+    # document where a producer can quote a supplier, an order number or a
+    # customer reference in prose. A real bare 10-digit reference survived here
+    # once (<Razon>1602624939</Razon>), so every digit run harvested out of these
+    # fields is treated as a potential external identifier.
+    # Prose that carries no digits ("Devolucion de producto", "Nota Credito") is
+    # deliberately NOT harvested: it is not an identifier, and
+    # substring-matching a common phrase would flag every fixture.
+    # The block is delimited explicitly because <ds:Signature> follows it.
+    foreach ($m in [regex]::Matches($raw, '(?s)<InformacionReferencia>(.*?)</InformacionReferencia>')) {
+        foreach ($fr in [regex]::Matches($m.Groups[1].Value, '<(Razon|OtroTexto|OtroContenido)(?:\s[^>]*)?>([^<]*)<')) {
+            foreach ($dr in [regex]::Matches($fr.Groups[2].Value, '\d+')) {
+                $forbidden["refdigits:" + $dr.Value] = 1
+            }
+        }
+    }
     foreach ($m in [regex]::Matches($raw, '<Nombre>([^<]*)<')) { $forbidden["name:" + $m.Groups[1].Value.Trim()] = 1 }
     foreach ($m in [regex]::Matches($raw, '<Clave>(\d{50})<')) { $forbidden["clave:" + $m.Groups[1].Value] = 1 }
     # person-name fragments: these must never survive anywhere in a fixture
@@ -77,9 +94,39 @@ foreach ($f in $files) {
         $kind = $k.Substring(0, $k.IndexOf(':'))
         $needle = $k.Substring($k.IndexOf(':') + 1)
         if ([string]::IsNullOrWhiteSpace($needle)) { continue }
+        # a 1-5 digit reference cannot be substring-matched against a whole
+        # document without colliding with unrelated numbers, so those are only
+        # ever matched element-scoped, in the pass below
+        if ($kind -eq 'refdigits' -and $needle.Length -lt 6) { continue }
         $hay = if ($kind -eq 'supplier') { $party } else { $txt }
         if ($hay.IndexOf($needle, [System.StringComparison]::OrdinalIgnoreCase) -ge 0) {
             $null = $hits.Add("$($f.Name)  <-  $k = '$needle'")
+        }
+    }
+}
+# Element-scoped pass for the short InformacionReferencia digit runs the
+# document-wide substring scan above deliberately skipped. Each digit run found
+# in an output free-text field is compared for EQUALITY against the harvested
+# short runs, so a 1-2 digit reference is still caught while an unrelated number
+# elsewhere in the document can never be mistaken for one.
+$shortRef = @{}
+foreach ($k in $forbidden.Keys) {
+    if ($k.StartsWith('refdigits:')) {
+        $v = $k.Substring($k.IndexOf(':') + 1)
+        if ($v.Length -lt 6) { $shortRef[$v] = 1 }
+    }
+}
+$irRx   = [regex]'(?s)<InformacionReferencia>(.*?)</InformacionReferencia>'
+$irFld  = [regex]'<(Razon|OtroTexto|OtroContenido)(?:\s[^>]*)?>([^<]*)<'
+foreach ($f in $files) {
+    $txt = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
+    foreach ($m in $irRx.Matches($txt)) {
+        foreach ($fr in $irFld.Matches($m.Groups[1].Value)) {
+            foreach ($dr in [regex]::Matches($fr.Groups[2].Value, '\d{1,5}')) {
+                if ($shortRef.ContainsKey($dr.Value)) {
+                    $null = $hits.Add("$($f.Name)  <-  <$($fr.Groups[1].Value)> still holds the source digit run '$($dr.Value)'")
+                }
+            }
         }
     }
 }
@@ -155,6 +202,27 @@ foreach ($f in $files) {
 }
 if ($bad.Count -eq 0) { Say "  PASS  all Clave are 50 digits starting 506, all Consecutivo 20 digits, all unique" }
 else { $fail++; Say "  FAIL  $($bad.Count):"; $bad | Select-Object -First 10 | ForEach-Object { Say "        $_" } }
+
+# A Clave embeds the issuing RUC in digits 10-21, left-padded to 12. If the
+# generator ever rebuilds a Clave twice (for example a sweep that also matches
+# the document's own <Clave>), the second pass treats the synthetic RUC as real
+# input and produces a doubly-synthesized RUC that no longer matches the
+# Emisor. Nothing above catches that: the Clave is still 50 digits, still
+# starts with 506 and is still unique. Assert the segments agree instead.
+$badRuc = @()
+foreach ($f in $files) {
+    $txt = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
+    $clave = [regex]::Match($txt, '<Clave>(\d{50})</Clave>').Groups[1].Value
+    if (-not $clave) { continue }
+    $emisor = [regex]::Match($txt, '<Emisor>.*?<Identificacion>.*?<Numero>(\d+)</Numero>', 'Singleline').Groups[1].Value
+    if (-not $emisor) { $badRuc += "$($f.Name): no Emisor/Identificacion/Numero found"; continue }
+    $emb = $clave.Substring(9, 12).TrimStart('0')
+    if ($emb -ne $emisor.TrimStart('0')) {
+        $badRuc += "$($f.Name): Clave RUC segment '$emb' != Emisor '$emisor'"
+    }
+}
+if ($badRuc.Count -eq 0) { Say "  PASS  every Clave RUC segment matches its Emisor Identificacion" }
+else { $fail++; Say "  FAIL  $($badRuc.Count) Clave/Emisor mismatches:"; $badRuc | Select-Object -First 10 | ForEach-Object { Say "        $_" } }
 
 # ---------------------------------------------------------------------------
 Say ""

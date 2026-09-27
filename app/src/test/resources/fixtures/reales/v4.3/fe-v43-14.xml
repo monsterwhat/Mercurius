@@ -3,7 +3,7 @@
 	xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-	<Clave>50624041900310010090000100014010000700014000108190</Clave>
+	<Clave>50624041900310010001000100014010000700014000100014</Clave>
 	<CodigoActividad>512211</CodigoActividad>
 	<NumeroConsecutivo>00100014010000700014</NumeroConsecutivo>
 	<FechaEmision>2024-04-19T06:11:27</FechaEmision>

@@ -2,7 +2,7 @@
 <NotaCreditoElectronica
 	xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaCreditoElectronica" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/notaCreditoElectronica https://www.hacienda.go.cr/ATV/ComprobanteElectronico/docs/esquemas/2016/v4.3/NotaCreditoElectronica_V4.3.xsd"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-	<Clave>50624041900310010090000100001030000700007000109633</Clave>
+	<Clave>50624041900310010000400100001030000700007000100007</Clave>
 	<CodigoActividad>512210</CodigoActividad>
 	<NumeroConsecutivo>00100001030000700007</NumeroConsecutivo>
 	<FechaEmision>2024-04-19T12:21:15-06:00</FechaEmision>
@@ -130,7 +130,7 @@
 		<Numero>00100001010009179251</Numero>
 		<FechaEmision>2024-04-18T21:22:38</FechaEmision>
 		<Codigo>99</Codigo>
-		<Razon>1602624939</Razon>
+		<Razon>5046068373</Razon>
 	</InformacionReferencia>
 	
 </NotaCreditoElectronica>

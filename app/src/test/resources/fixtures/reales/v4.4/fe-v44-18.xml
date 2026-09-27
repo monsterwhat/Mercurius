@@ -3,7 +3,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 	xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica">
-	<Clave>50624041800310010001400100022010001200018000820579</Clave>
+	<Clave>50624041800310010001400100022010001200018000641400</Clave>
 			<ProveedorSistemas>3100100014</ProveedorSistemas>
 	<CodigoActividadEmisor>512211</CodigoActividadEmisor>
 	<NumeroConsecutivo>00100022010001200018</NumeroConsecutivo>

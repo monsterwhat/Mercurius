@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><FacturaElectronica xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica"><Clave>50624042000310010000700300001010001200011000718793</Clave>
+<?xml version="1.0" encoding="utf-8"?><FacturaElectronica xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.4/facturaElectronica"><Clave>50624042000310010000700300001010001200011000850736</Clave>
 			<ProveedorSistemas>3100100007</ProveedorSistemas>
 <CodigoActividadEmisor>523901</CodigoActividadEmisor>
 <NumeroConsecutivo>00300001010001200011</NumeroConsecutivo>

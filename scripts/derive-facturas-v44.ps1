@@ -16,17 +16,34 @@
       3. CodigoActividad -> CodigoActividadEmisor   renamed in v4.4
       4. - root MedioPago           required at root in v4.3, relocated into
                                     ResumenFactura in v4.4
-      5. LineaDetalle Codigo -> CodigoCABYS          v4.4 replaced Codigo;
-                                    every real Codigo is already 13 digits
-      6. - LineaDetalle MontoTotal  removed from LineaDetalle in v4.4
-      7. + TipoDocIR, FechaEmisionIR  both REQUIRED in the v4.4
-                                    ResumenFactura and absent in v4.3
-      8. Barrio widened to >= 5     v4.3 types Barrio as PositiveInteger
-                                    ('01'..'36'); v4.4 adds minLength 5
+      5. LineaDetalle Codigo -> CodigoCABYS          v4.4 renamed Codigo and
+                                     requires exactly 13 chars; every real
+                                     Codigo already is
+      6. - LineaDetalle <Impuestos> wrapper  v4.4 drops the wrapper, so
+                                     Impuesto* become direct line children
+      7. LineaDetalle CodigoTarifa -> CodigoTarifaIVA, FactorIVA ->
+                                     FactorCalculoIVA, and the v4.4 line
+                                     requires BaseImponible,
+                                     ImpuestoAsumidoEmisorFabrica and
+                                     ImpuestoNeto
+      8. + Descuento CodigoDescuento   v4.4 requires the code ahead of the
+                                     now-optional NaturalezaDescuento
+      9. InformacionReferencia         v4.4 renames its children
+                                     TipoDoc -> TipoDocIR and
+                                     FechaEmision -> FechaEmisionIR. The
+                                     block is optional at the root; nothing
+                                     is invented when a document has none
+     10. Barrio widened to >= 5        v4.3 types Barrio as PositiveInteger
+                                      ('01'..'36'); v4.4 adds minLength 5
 
-    Like the v4.3 set these fixtures are unsigned, and the official schema
-    mandates ds:Signature, so "valid" here means valid apart from the
-    signature, which is asserted explicitly by verify-real-fixtures.ps1.
+     NOT a v4.4 change: LineaDetalle MontoTotal still exists in
+     FacturaElectronica_V4.4.xsd, positioned immediately before Descuento,
+     and is present in all 253 derived lines. An earlier revision of this
+     header wrongly claimed v4.4 removed it.
+
+     Like the v4.3 set these fixtures are unsigned, and the official schema
+     mandates ds:Signature, so "valid" here means valid apart from the
+     signature, which is asserted explicitly by verify-real-fixtures.ps1.
 #>
 [CmdletBinding()]
 param(

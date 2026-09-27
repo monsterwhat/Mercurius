@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FacturaElectronica xmlns="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://cdn.comprobanteselectronicos.go.cr/xml-schemas/v4.3/facturaElectronica FacturaElectronica_V4.3.xsd">
-  <Clave>50624041600040010090000100001010000700002000109709</Clave>
+  <Clave>50624041600040010000100100001010000700002000100002</Clave>
   <CodigoActividad>512209</CodigoActividad>
   <NumeroConsecutivo>00100001010000700002</NumeroConsecutivo>
   <FechaEmision>2024-04-16T11:45:50-06:00</FechaEmision>
