@@ -51,6 +51,25 @@ public class MensajeReceptorService {
                 return new MRResult(false, "No hay configuración de Hacienda", null);
             }
 
+            // ── Preflight Mensaje Receptor ──────────────────────────────────────
+            // La cédula que se emite como <NumeroCedulaReceptor> es la del obligado
+            // tributario (esta cuenta), no la del emisor de la factura: por eso se
+            // valida settings.getIdentificacion(). MensajeReceptor_V4.4.xsd la
+            // restringe a \d{9,12} (solo dígitos), así que una identificación
+            // alfanumérica no puede validar contra el esquema oficial.
+            // Se valida aquí, antes de consumir el consecutivo y antes de construir
+            // el XML, para no gastar numeración en un envío que no podría validarse
+            // y para que el operador reciba la causa, no un "cvc-datatype-valid" sin contexto.
+            try {
+                ComprobanteService.validarCedulaMensajeReceptor(settings.getIdentificacion());
+            } catch (IllegalArgumentException e) {
+                LOG.warn("MR bloqueado: " + e.getMessage()
+                    + " | source=MensajeReceptorService.enviarMensajeReceptor()"
+                    + " | clave=" + String.valueOf(factura.getEncabezado().getClave())
+                    + " | despues=envio bloqueado, factura queda pendiente");
+                return new MRResult(false, e.getMessage(), null);
+            }
+
             String clave = factura.getEncabezado().getClave();
             if (clave == null || clave.isEmpty()) {
                 LOG.warn("MR clave missing, using fallback clave for offline queue accion=" + accion);

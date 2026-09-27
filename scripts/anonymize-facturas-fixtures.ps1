@@ -42,6 +42,18 @@
     format branches ([01]\d{8,9}, 3\d{9,11}, \d{11,12}) keep selecting the same
     path and the fixture keeps passing for the same reason the original did.
 
+    That shape-preserving trick is only defined for a numeric tax id, so the
+    script REFUSES rather than approximates once one turns up: v4.4 dropped the
+    \d{9,12} restriction from IdentificacionType/Numero (now xs:string,
+    maxLength 20, no pattern) and widened ClaveType from \d{50} to
+    [a-zA-Z0-9]{50}. Substituting digits for an alphanumeric id would emit a
+    plausible-looking wrong value rather than an error, which is the one
+    outcome worth avoiding in a generator that rewrites identifiers. Clave
+    matching itself was widened to the v4.4 class, because there a narrow class
+    means a real Clave is left unscrubbed. See New-SyntheticId, New-Clave and
+    New-SyntheticDigits for the individual refusals.
+
+
 .PARAMETER SourceDir
     Folder of source XML invoices (v4.3, signed).
 
@@ -164,9 +176,23 @@ $AddressMap = [ordered]@{
 # 3. Helper: build a shape-preserving synthetic identifier.
 #    Keeps length and leading-digit class so prevalidation format branches
 #    behave identically to the real value.
+#
+#    v4.4 dropped the \d{9,12} restriction from IdentificacionType/Numero
+#    (FacturaElectronica_V4.4.xsd: xs:string, maxLength 20, no pattern), so the
+#    Registro Nacional may start issuing alphanumeric tax ids such as
+#    3-101-A00001. The digit arithmetic below cannot preserve that form - it
+#    would emit '3-' plus ten synthetic digits, a plausible-looking value that
+#    is neither the real one nor a faithful stand-in. So this refuses instead.
 # ---------------------------------------------------------------------------
 function New-SyntheticId {
     param([string]$Real, [int]$Index)
+    if ($Real -notmatch '^\d+$') {
+        throw ("non-numeric tax id '$Real': v4.4 permits an alphanumeric " +
+               "Identificacion/Numero (maxLength 20, no pattern restriction), " +
+               "and this generator has no rule for pseudonymizing one. " +
+               "Failing rather than emitting synthetic digits that would " +
+               "silently drop the letters. Extend New-SyntheticId deliberately.")
+    }
     $len = $Real.Length
     if ($len -lt 4) { throw "identifier too short to preserve shape: '$Real'" }
     # keep the first two real characters so the leading-digit class survives
@@ -215,7 +241,7 @@ foreach ($d in $docs) {
         # would turn Replace into "replace every zero byte in the document"
         if ($m.Groups[1].Value.Length -ge 6) { $phoneSet[$m.Groups[1].Value] = 1 }
     }
-    foreach ($m in [regex]::Matches($d.Raw, '<Clave>(\d{50})<'))                   { $claveSet[$m.Groups[1].Value] = 1 }
+    foreach ($m in [regex]::Matches($d.Raw, '<Clave>([a-zA-Z0-9]{50})<'))           { $claveSet[$m.Groups[1].Value] = 1 }
 }
 
 $rucMap   = [ordered]@{}
@@ -261,8 +287,22 @@ function Get-YymmddFromRaw { param([string]$Raw)
 # Clave layout, verified against 4 source invoices:
 #   [0..2] 506 country | [3..8] YYMMDD | [9..20] RUC zero-padded to 12
 #   [21..40] consecutivo (20) | [41..49] security (9)   = 50 digits
+#
+# The zero-pad-to-12 RUC segment is a numeric convention, and the v4.3 set this
+# feeds must stay \d{50}. v4.4 widened ClaveType to [a-zA-Z0-9]{50,50}, but no
+# bundled schema states how an alphanumeric RUC is laid out inside a Clave, so
+# padding one here would fabricate a layout. Refuse rather than guess: silently
+# concatenating '3-101-A00001' would still total 50 characters and slip through
+# the length check below while being meaningless as a Clave.
 function New-Clave {
     param([string]$Yymmdd, [string]$Ruc, [string]$Consecutivo, [int]$Salt)
+    if ($Ruc -notmatch '^\d{9,12}$') {
+        throw ("non-numeric or out-of-range tax id '$Ruc': the Clave RUC " +
+               "segment is defined as that id zero-padded to 12, which only " +
+               "holds for 9-12 digits. v4.4 permits an alphanumeric " +
+               "Identificacion/Numero but does not define its Clave " +
+               "segment. Failing rather than guessing a layout.")
+    }
     $segRuc = $Ruc.PadLeft(12, '0')
     if ($segRuc.Length -gt 12) { $segRuc = $segRuc.Substring($segRuc.Length - 12) }
     $segSec = '{0:D9}' -f (100000 + $Salt)
@@ -363,9 +403,24 @@ $OtrosGeographyValue = @{
 }
 
 # replace every digit run with a different digit run of the same length, so a
-# customer code or order number keeps its shape without keeping its value
+# customer code or order number keeps its shape without keeping its value.
+#
+# This shifts digits and leaves letters alone, so it is right for prose and for
+# numeric references but wrong for an alphanumeric identifier: a real
+# Identificacion/Numero quoted in free text would come out as a plausible-looking
+# value with its letters intact and its digits shifted, i.e. corrupted rather
+# than anonymized. None of the bundled v4.4 schemas documents how such an id is
+# laid out inside a reference, so a known tax id found here is a hard stop.
 function New-SyntheticDigits {
     param([string]$Value, [int]$Salt)
+    foreach ($k in $rucSet.Keys) {
+        if ($k.Length -ge 6 -and $Value.Contains($k)) {
+            throw ("free-text value '$Value' quotes the real tax id '$k'. " +
+                   "Digit shifting cannot anonymize an alphanumeric id, and " +
+                   "shifting only its digits would leave a corrupted value " +
+                   "behind. Anonymize this reference explicitly instead.")
+        }
+    }
     return [regex]::Replace($Value, '\d+', {
         param($m)
         $digits = $m.Value
@@ -575,8 +630,14 @@ foreach ($d in $docs) {
     #
     # A Clave is rebuilt rather than pattern-matched because a real one embeds
     # the real RUC in digits 10-21. The sweep is anchored to a full element
-    # value starting at the country code 506; a bare \d{50} would also match
-    # unrelated 50-digit runs and corrupt them.
+    # value starting at the country code 506; a bare 50-character class would
+    # also match unrelated long runs and corrupt them.
+    #
+    # The tail is matched as [a-zA-Z0-9]{47}, the character class v4.4 ClaveType
+    # actually allows, not the narrower \d{47} of v4.3. These are the two steps
+    # that scrub the Clave, so a class that stops matching is a class that leaves
+    # the real Clave - and the real RUC inside it - in the fixture. Widening is a
+    # strict superset: a numeric Clave matches both.
     $yymmdd = Get-YymmddFromRaw $xml
     $rucForClave = if ($emisorRuc) { $emisorRuc } else { '3000000000' }
 
@@ -588,7 +649,7 @@ foreach ($d in $docs) {
     $newClave = New-Clave -Yymmdd $yymmdd -Ruc $rucForClave -Consecutivo $newConsec -Salt $seq
 
     # 2. the document's own Clave
-    $ownClave = New-Object System.Text.RegularExpressions.Regex('(?<=<Clave>)(506\d{47})(?=</Clave>)')
+    $ownClave = New-Object System.Text.RegularExpressions.Regex('(?<=<Clave>)(506[a-zA-Z0-9]{47})(?=</Clave>)')
     $xml = $ownClave.Replace($xml, $newClave)
 
     # 3. Claves cited elsewhere. InformacionReferencia/Numero carries the Clave
@@ -599,7 +660,7 @@ foreach ($d in $docs) {
     #    above has already rewritten it, and a second pass would rebuild it from
     #    the synthetic RUC, leaving a doubly-synthesized RUC in the Clave that
     #    no longer matches the Emisor's Identificacion.
-    $refClave = New-Object System.Text.RegularExpressions.Regex('(<)([A-Za-z][A-Za-z0-9]*)(>)(506\d{47})(</)')
+    $refClave = New-Object System.Text.RegularExpressions.Regex('(<)([A-Za-z][A-Za-z0-9]*)(>)(506[a-zA-Z0-9]{47})(</)')
     $refSeen = @{}
     $xml = $refClave.Replace($xml, [System.Text.RegularExpressions.MatchEvaluator]{
         param($m)
@@ -609,6 +670,13 @@ foreach ($d in $docs) {
         if ($refSeen.ContainsKey($c)) { return $open + $refSeen[$c] + $m.Groups[5].Value }
         $embRuc = $c.Substring(9, 12).TrimStart('0')
         if ([string]::IsNullOrEmpty($embRuc)) { $embRuc = '3000000000' }
+        if ($embRuc -notmatch '^\d+$') {
+            throw ("referenced Clave '$c' carries the non-numeric tax id " +
+                   "'$embRuc' in its RUC segment. The zero-pad-to-12 segment " +
+                   "convention only holds for a numeric id, and no bundled " +
+                   "v4.4 schema defines the alphanumeric one. Failing rather " +
+                   "than emitting a Clave rebuilt on a guessed layout.")
+        }
         $map = $rucMap[$embRuc]
         $useRuc = if ($map) { $map } else { New-SyntheticId -Real $embRuc -Index 900 }
         # stable salt from the Clave itself, so reruns are deterministic

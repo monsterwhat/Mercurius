@@ -216,12 +216,12 @@ public class Parser {
                     return null;
                 }
             }
-            // Parse Telefono si existe
+            // Parse Telefono si existe. <Telefono> es minOccurs="0" y TelefonoType
+            // exige CodigoPais + NumTelefono, asi que un telefono ausente o incompleto
+            // se trata como "no hay telefono" (telefono queda null), igual que en
+            // parseReceptor: no es un fallo de parseo que deba rechazar al emisor.
             if (!emisorNode.path("Telefono").isMissingNode()) {
                 telefono = parseTelefono(emisorNode.path("Telefono"));
-                if (telefono == null) {
-                    return null;
-                }
             }
             Emisor emisor = new Emisor();
             emisor.setNombre(nombre);
@@ -352,14 +352,40 @@ public class Parser {
         }
     }
 
+    /**
+     * TelefonoType del XSD oficial declara CodigoPais y NumTelefono como
+     * xs:integer (CodigoPais con totalDigits=3), ambos obligatorios dentro del
+     * tipo. asText() devuelve "" cuando el nodo falta, y "" no es un entero
+     * valido: persistirlo mas adelante produce <NumTelefono></NumTelefono>, que
+     * no valida contra el XSD. Por eso los vacios se guardan como null, igual
+     * que en parseFax.
+     *
+     * <p>Si NumTelefono viene ausente, la media instancia tampoco es valida
+     * (TelefonoType exige ambos hijos), asi que se devuelve null para
+     * senalar "sin telefono" y que el <Telefono> opcional se omita. Quien
+     * llama trata ese null como ausencia, no como error.</p>
+     */
     @Nullable
     public Telefono parseTelefono(@Nonnull JsonNode telefonoNode) {
         try {
-            String codigoPais = telefonoNode.path("CodigoPais").asText();
-            String numTelefono = telefonoNode.path("NumTelefono").asText();
+            // trim como en parseLineaDetalle: el XML de Hacienda trae texto con
+            // espacios sobrantes y "  " tampoco es un entero valido.
+            String codigoPais = telefonoNode.path("CodigoPais").asText().trim();
+            String numTelefono = telefonoNode.path("NumTelefono").asText().trim();
+
+            if (numTelefono.isEmpty()) {
+                LOG.warn("telefono sin NumTelefono, se omite | source=Parser.parseTelefono() | nodo=" + telefonoNode.toString());
+                return null;
+            }
 
             Telefono telefono = new Telefono();
-            telefono.setCodigoPais(codigoPais);
+
+            if (!codigoPais.isEmpty()) {
+                telefono.setCodigoPais(codigoPais);
+            } else {
+                telefono.setCodigoPais(null);
+            }
+
             telefono.setNumeroTelefono(numTelefono);
 
             return telefono;

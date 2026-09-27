@@ -1,3 +1,39 @@
+> ## ACTUALIZADO 2026-09-26 — leer esto primero
+>
+> Este documento se escribio antes de conseguir los XSD oficiales. **Varias
+> conclusiones quedaron desmentidas.** Los games deauthority correctos son:
+>
+> - **Origen correcto:** `https://www.hacienda.go.cr/docs/<Esquema>_V4.4.xsd`
+>   (los nueve XSD, `Last-Modified: 2026-04-22`).
+> - **Origen obsoleto:** `atv.hacienda.go.cr/.../esquemas/2024/v4.4/`, congelado
+>   desde 2025-09-09. Hacienda migro de ATV a TRIBU-CR el 2025-10-06 y no lo
+>   actualizo. Sigue respondiendo 200, asi que un fetch corriente tiene exito
+>   contra un esquema superado.
+> - Ojo: ese host responde 400 sin cuerpo a los User-Agent de navegador y 200 a
+>   `curl/8.4.0`.
+>
+> Correcciones puntuales:
+>
+> 1. **`ClaveType` ya es `[a-zA-Z0-9]{50,50}`.** La afirmacion de mas abajo de
+>    que "el XSD sigue restringiendo a digitos" era falsa: leimos el juego viejo.
+>    `IdentificacionType/Numero` tambien se abrio (ya no tiene `\d{9,12}`, ahora
+>    `maxLength 20`).
+> 2. **El "overlay" no hizo falta.** No hay divergencia entre el XSD y el
+>    validador en vivo; habia divergencia entre el XSD y el que nos servia.
+>    Se elimino `xsd/overlay/v4.4-202611/`.
+> 3. **El catalogo no es uniforme.** El codigo 17 de la nota 9 existe solo en
+>    `ReciboElectronicoPago_V4.4.xsd`. Un enum plano con 13-17 es incorrecto.
+> 4. **La "excepcion del telefono 911" no es una relajacion.** En v4.3
+>    `NumTelefono` era `xs:integer` con `totalDigits=20`, que ya aceptaba 911.
+>    La revision del 2026-04-22 lo paso a `minInclusive=100`: endurecio el
+>    minimo. Ademas no hay ninguna validacion local de telefono en el proyecto,
+>    de modo que el punto 8 de mas abajo era un no-op.
+> 5. **El digito de control con letras sigue sin resolverse.** El esquema admite
+>    letras pero ninguna fuente consultada dice como se deriva la posicion 50
+>    cuando el segmento del emisor las lleva. Bloquea la emision para una
+>    persona juridica con cedula alfanumerica.
+>
+> El detalle vigente esta en el commit `a44fa5a` y en el issue #3.
 # Investigación: cambios DGT a los Anexos v4.4 con vigencia 2026-11-01
 
 **Fecha de investigación:** 2026-09-26

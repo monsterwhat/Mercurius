@@ -57,7 +57,11 @@ foreach ($f in Get-ChildItem -LiteralPath $SourceDir -Filter *.xml) {
         }
     }
     foreach ($m in [regex]::Matches($raw, '<Nombre>([^<]*)<')) { $forbidden["name:" + $m.Groups[1].Value.Trim()] = 1 }
-    foreach ($m in [regex]::Matches($raw, '<Clave>(\d{50})<')) { $forbidden["clave:" + $m.Groups[1].Value] = 1 }
+    # v4.4 ClaveType is [a-zA-Z0-9]{50,50}, not v4.3's \d{50}. A \d{50} here
+    # would match nothing for an alphanumeric Clave, so the real Clave would
+    # never enter the forbidden set and the leak scan below would report PASS
+    # without ever having looked for it.
+    foreach ($m in [regex]::Matches($raw, '<Clave>([a-zA-Z0-9]{50})<')) { $forbidden["clave:" + $m.Groups[1].Value] = 1 }
     # person-name fragments: these must never survive anywhere in a fixture
     foreach ($t in @('CASCANTE','Cascante','PADILLA','Padilla','FONSECA','Fonseca',
                      'GABRIELA','Gabriela','ANGELES CASCANTE')) {
@@ -186,7 +190,10 @@ Say $line
 $seenClave = @{}; $seenCons = @{}; $bad = @()
 foreach ($f in $files) {
     $txt = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
-    foreach ($m in [regex]::Matches($txt, '<Clave>(\d+)<')) {
+    # [a-zA-Z0-9]+, not \d+: v4.4 ClaveType allows letters, and a \d+ match
+    # would skip every alphanumeric Clave - not length-checked, not uniqueness
+    # -checked, while this group still reported PASS.
+    foreach ($m in [regex]::Matches($txt, '<Clave>([a-zA-Z0-9]+)<')) {
         $c = $m.Groups[1].Value
         if ($c.Length -ne 50) { $bad += "$($f.Name): Clave length $($c.Length)" }
         elseif (-not $c.StartsWith('506')) { $bad += "$($f.Name): Clave country prefix '$($c.Substring(0,3))'" }
@@ -200,22 +207,29 @@ foreach ($f in $files) {
         else { $seenCons[$c] = $f.Name }
     }
 }
-if ($bad.Count -eq 0) { Say "  PASS  all Clave are 50 digits starting 506, all Consecutivo 20 digits, all unique" }
+if ($bad.Count -eq 0) { Say "  PASS  all Clave are 50 characters starting 506, all Consecutivo 20 digits, all unique" }
 else { $fail++; Say "  FAIL  $($bad.Count):"; $bad | Select-Object -First 10 | ForEach-Object { Say "        $_" } }
 
 # A Clave embeds the issuing RUC in digits 10-21, left-padded to 12. If the
 # generator ever rebuilds a Clave twice (for example a sweep that also matches
 # the document's own <Clave>), the second pass treats the synthetic RUC as real
 # input and produces a doubly-synthesized RUC that no longer matches the
-# Emisor. Nothing above catches that: the Clave is still 50 digits, still
+# Emisor. Nothing above catches that: the Clave is still 50 characters, still
 # starts with 506 and is still unique. Assert the segments agree instead.
 $badRuc = @()
 foreach ($f in $files) {
     $txt = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
-    $clave = [regex]::Match($txt, '<Clave>(\d{50})</Clave>').Groups[1].Value
+    $clave = [regex]::Match($txt, '<Clave>([a-zA-Z0-9]{50})</Clave>').Groups[1].Value
     if (-not $clave) { continue }
-    $emisor = [regex]::Match($txt, '<Emisor>.*?<Identificacion>.*?<Numero>(\d+)</Numero>', 'Singleline').Groups[1].Value
+    # [^<]+, not \d+: v4.4 dropped the \d{9,12} restriction from
+    # IdentificacionType/Numero, so \d+ would capture nothing and this would
+    # report a misleading "no Emisor/Identificacion/Numero found" instead.
+    $emisor = [regex]::Match($txt, '<Emisor>.*?<Identificacion>.*?<Numero>([^<]+)</Numero>', 'Singleline').Groups[1].Value
     if (-not $emisor) { $badRuc += "$($f.Name): no Emisor/Identificacion/Numero found"; continue }
+    if ($emisor -notmatch '^\d{9,12}$') {
+        $badRuc += "$($f.Name): Emisor Identificacion/Numero '$emisor' is not 9-12 digits; the Clave RUC segment is only defined as that id zero-padded to 12, so this fixture cannot be checked and the generator must be updated for the alphanumeric form"
+        continue
+    }
     $emb = $clave.Substring(9, 12).TrimStart('0')
     if ($emb -ne $emisor.TrimStart('0')) {
         $badRuc += "$($f.Name): Clave RUC segment '$emb' != Emisor '$emisor'"
@@ -302,6 +316,13 @@ if (Test-Path -LiteralPath $v44Dir) {
     $set44nc.Compile()
 
     $v44 = Get-ChildItem -LiteralPath $v44Dir -Filter *.xml | Sort-Object Name
+    # derive-facturas-v44.ps1 wipes the v4.4 directory and then writes one file
+    # per v4.3 source, so a throw partway through leaves a short set that would
+    # still validate cleanly. Compare the counts.
+    if ($v44.Count -ne $v43.Count) {
+        $fail++
+        Say "  FAIL  v4.4 set has $($v44.Count) file(s) but v4.3 has $($v43.Count); derivation did not finish"
+    }
     $ok = 0; $bad = @()
     foreach ($f in $v44) {
         $txt = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
