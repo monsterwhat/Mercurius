@@ -4,10 +4,12 @@ import Models.ConfiguracionAplicacion;
 import Models.DTO.ApiResponse;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
+import Models.Sucursal;
 import Models.Usuarios;
 import Services.AppSettingsService;
 import Services.BackupService;
 import Services.LoginService;
+import Services.SucursalService;
 import Utils.DiffUtils;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Nonnull;
@@ -16,6 +18,7 @@ import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.FormParam;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
@@ -26,6 +29,10 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.jboss.logging.Logger;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -61,6 +68,12 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * <p>The {@code @RolesAllowed} gate is dormant until the form-cookie auth
  * block is enabled in application.properties (see {@link AppAuthResource}).</p>
  *
+ * <p><b>Registro de sucursales y terminales</b> ({@code /sucursales},
+ * {@code /sucursales/seleccionar}, {@code /sucursales/activo}): el asistente
+ * inicial registra los puntos de venta y elige el que opera. Seleccionar copia
+ * el par a codigoSucursal/codigoTerminal de la configuracion global, que es de
+ * donde la emision arma el NumeroConsecutivo; el contador global no se toca.</p>
+ *
  * <p>All responses follow the {@link ApiResponse} envelope conventions.</p>
  */
 @Path("/api/app/settings")
@@ -83,6 +96,11 @@ public class SettingsResource {
     @Nonnull
     @Inject
     LoginService loginService;
+
+    /** Registro de sucursales y terminales del asistente inicial. */
+    @Nonnull
+    @Inject
+    SucursalService sucursalService;
 
     @Inject
     @Nonnull
@@ -310,6 +328,174 @@ public class SettingsResource {
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error descargando el respaldo"))
                     .build();
+        }
+    }
+
+    // ── Registro de sucursales y terminales ──────────────────────────────
+
+    /**
+     * GET /sucursales — catalogo de puntos de venta del asistente inicial.
+     * Cada fila es un par (sucursal, terminal) con el ancho del consecutivo
+     * (3 y 5 digitos) y su estado activo; {@code seleccionada} marca la fila
+     * que hoy escribio {@code GET /} en codigoSucursal/codigoTerminal.
+     */
+    @GET
+    @Path("/sucursales")
+    @Operation(summary = "Branch/terminal registry used by the initial setup")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Registry listing"),
+        @APIResponse(responseCode = "403", description = "Missing admin role"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response sucursales() {
+        try {
+            sucursalService.asegurarPorDefecto();
+            return Response.ok(ApiResponse.ok(toSucursales(sucursalService.seleccionada()))).build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error leyendo el registro de sucursales", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error consultando las sucursales"))
+                    .build();
+        }
+    }
+
+    /**
+     * POST /sucursales — registra un punto de venta nuevo (form-encoded, el
+     * mismo canal que el resto del asistente). El par no puede repetirse.
+     */
+    @POST
+    @Path("/sucursales")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Operation(summary = "Register a branch/terminal pair in the registry")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Registered; now the selected point of sale"),
+        @APIResponse(responseCode = "400", description = "Invalid code or duplicate pair"),
+        @APIResponse(responseCode = "403", description = "Missing admin role"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response registrarSucursal(@FormParam("codigoSucursal") @Nullable String codigoSucursal,
+                                      @FormParam("nombreSucursal") @Nullable String nombreSucursal,
+                                      @FormParam("codigoTerminal") @Nullable String codigoTerminal,
+                                      @FormParam("nombreTerminal") @Nullable String nombreTerminal) {
+        try {
+            Sucursal registrada = sucursalService.registrar(
+                    codigoSucursal, nombreSucursal, codigoTerminal, nombreTerminal);
+            // Queda lista para operar: registrar y seleccionar son el mismo
+            // gesto desde el asistente.
+            sucursalService.seleccionar(registrada.getId());
+            LOG.info("Configuración actualizada: punto de venta registrado y seleccionado | user="
+                    + String.valueOf(currentUserOrNull()) + " | source=SettingsResource.registrarSucursal()"
+                    + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(registrada)));
+            return Response.ok(ApiResponse.ok(toSucursales(sucursalService.seleccionada()))).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
+                    .build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error registrando la sucursal", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error registrando la sucursal"))
+                    .build();
+        }
+    }
+
+    /**
+     * POST /sucursales/seleccionar — deja ese punto de venta como el que
+     * opera: copia su par a codigoSucursal/codigoTerminal, que es lo que la
+     * emision lee para armar el NumeroConsecutivo. El contador global no se
+     * toca: cada (sucursal, terminal, tipo) ya tiene su propia secuencia.
+     */
+    @POST
+    @Path("/sucursales/seleccionar")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Operation(summary = "Select the branch/terminal that issues documents")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Selected"),
+        @APIResponse(responseCode = "400", description = "Unknown or inactive point of sale"),
+        @APIResponse(responseCode = "403", description = "Missing admin role"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response seleccionarSucursal(@FormParam("id") @Nullable String id) {
+        try {
+            Long registro = parseId(id);
+            Sucursal seleccionada = sucursalService.seleccionar(registro);
+            LOG.info("Configuración actualizada: sucursal seleccionada | user="
+                    + String.valueOf(currentUserOrNull()) + " | source=SettingsResource.seleccionarSucursal()"
+                    + " | despues=" + String.valueOf(DiffUtils.snapshotEntity(seleccionada)));
+            return Response.ok(ApiResponse.ok(toSucursales(seleccionada))).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
+                    .build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error seleccionando la sucursal", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error seleccionando la sucursal"))
+                    .build();
+        }
+    }
+
+    /** Activa o desactiva una fila del registro sin mover la seleccion. */
+    @POST
+    @Path("/sucursales/activo")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Operation(summary = "Activate/deactivate a registry row")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Updated"),
+        @APIResponse(responseCode = "400", description = "Unknown row"),
+        @APIResponse(responseCode = "403", description = "Missing admin role"),
+        @APIResponse(responseCode = "500", description = "Internal server error")
+    })
+    public Response cambiarActivoSucursal(@FormParam("id") @Nullable String id,
+                                          @FormParam("activo") @Nullable String activo) {
+        try {
+            sucursalService.cambiarActivo(parseId(id), "true".equalsIgnoreCase(activo));
+            return Response.ok(ApiResponse.ok(toSucursales(sucursalService.seleccionada()))).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
+                    .build();
+        } catch (RuntimeException e) {
+            LOG.warn("Error cambiando el estado de la sucursal", e);
+            return Response.serverError()
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error cambiando el estado de la sucursal"))
+                    .build();
+        }
+    }
+
+    /**
+     * Proyeccion del registro para el asistente: la lista de puntos de venta y
+     * cual esta seleccionado, ya resuelto contra la configuracion global.
+     */
+    private @Nonnull Map<String, Object> toSucursales(@Nullable Sucursal seleccionada) {
+        List<Map<String, Object>> filas = new ArrayList<>();
+        Long idSeleccionada = seleccionada == null ? null : seleccionada.getId();
+        for (Sucursal fila : sucursalService.listar()) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("id", fila.getId());
+            item.put("codigoSucursal", fila.getCodigoSucursal());
+            item.put("nombreSucursal", fila.getNombreSucursal());
+            item.put("codigoTerminal", fila.getCodigoTerminal());
+            item.put("nombreTerminal", fila.getNombreTerminal());
+            item.put("activo", Boolean.TRUE.equals(fila.getActivo()));
+            item.put("seleccionada", idSeleccionada != null && idSeleccionada.equals(fila.getId()));
+            filas.add(item);
+        }
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("sucursales", filas);
+        cuerpo.put("seleccionada", idSeleccionada);
+        return cuerpo;
+    }
+
+    @Nullable
+    private static Long parseId(@Nullable String id) {
+        if (id == null || id.isBlank() || !id.trim().matches("[0-9]+")) {
+            throw new IllegalArgumentException("Debe indicar el punto de venta del registro.");
+        }
+        try {
+            return Long.valueOf(id.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Debe indicar el punto de venta del registro.");
         }
     }
 
