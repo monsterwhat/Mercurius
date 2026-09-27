@@ -250,7 +250,9 @@ class AppSettingsServiceIntegrationTest {
         settings.setProvincia("1");
         settings.setCorreoElectronico(nombrePerfil.toLowerCase().replace(' ', '.')
                 + "@mercurius.local");
-        settings.setTelefono("8888-0000");
+        // NumTelefono es xs:integer en el XSD oficial: un telefono con guiones
+        // ahora se rechaza al guardar, asi que el fixture usa un entero valido.
+        settings.setTelefono("88888888");
         settings.setCodigoPais("506");
         settings.setCodigoActividad("620101");
         settings.setCashbackPercentage(new BigDecimal("5.00"));

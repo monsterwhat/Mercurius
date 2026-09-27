@@ -80,6 +80,15 @@ public class ComprobanteService implements Serializable {
 
     private static final Logger LOG = Logger.getLogger(ComprobanteService.class);
 
+    /**
+     * Patrón exacto de NumeroCedulaReceptor en MensajeReceptor_V4.4.xsd: \d{9,12}
+     * (solo dígitos). El XSD oficial v4.4 mantiene esta restricción aunque Clave ya sea
+     * [a-zA-Z0-9]{50,50} y el Registro Nacional comience a emitir identificadores
+     * alfanuméricos para personas jurídicas (p.ej. 3-101-A00001).
+     */
+    private static final java.util.regex.Pattern CEDULA_MENSAJE_RECEPTOR =
+        java.util.regex.Pattern.compile("\\d{9,12}");
+
     @Inject
     private @Nonnull HaciendaServiceFacade haciendaServiceFacade;
 
@@ -729,11 +738,45 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
 
     }
 
+    /**
+     * Preflight del Mensaje Receptor: valida la cédula que se enviará como
+     * &lt;NumeroCedulaReceptor&gt; contra el patrón declarado en el XSD oficial.
+     * <p>
+     * No altera lo que se envía a Hacienda ni inventa reglas fiscales: solo convierte un
+     * rechazo opaco del validador ("cvc-datatype-valid" sobre NumeroCedulaReceptor, sin
+     * causa visible) en un error local legible para el operador.
+     *
+     * @param cedula cédula del obligado tributario (quien responde el MR)
+     * @throws IllegalArgumentException con mensaje en español si no cumple \d{9,12}
+     */
+    public static void validarCedulaMensajeReceptor(@Nullable String cedula) {
+        String valor = cedula == null ? "" : cedula.trim();
+        if (valor.isEmpty()) {
+            throw new IllegalArgumentException(
+                "No se puede enviar el Mensaje Receptor: la identificación del obligado tributario está vacía. "
+                + "MensajeReceptor_V4.4.xsd exige <NumeroCedulaReceptor> con el patrón \\d{9,12}. "
+                + "Configure la identificación en PUT /api/app/settings.");
+        }
+        if (!CEDULA_MENSAJE_RECEPTOR.matcher(valor).matches()) {
+            throw new IllegalArgumentException(
+                "No se puede enviar el Mensaje Receptor: la cédula \"" + valor + "\" del obligado tributario no cumple "
+                + "el patrón \\d{9,12} (solo dígitos, de 9 a 12) que exige <NumeroCedulaReceptor> en "
+                + "MensajeReceptor_V4.4.xsd. El esquema v4.4 no admite aquí identificadores alfanuméricos, "
+                + "aunque el Registro Nacional ya los emite para personas jurídicas. "
+                + "Corrija la identificación en PUT /api/app/settings antes de responder la factura.");
+        }
+    }
+
     public String generateMensajeReceptorXml(ConfiguracionAplicacion settings, String clave, String numeroCedulaEmisor,
                                               String numeroCedulaReceptor,
                                               LocalDateTime fechaEmisionDoc, int codigoMensaje, String detalleMensaje,
                                               BigDecimal montoTotalImpuesto, BigDecimal totalFactura,
                                               String numeroConsecutivoReceptor) {
+        // Preflight FUERA del try a propósito: el catch de abajo convierte cualquier
+        // RuntimeException en un null silencioso, y un null se reporta al operador como
+        // "Mensaje Receptor encolado". Que la restricción del esquema falle aquí, con su
+        // causa, es preferible a un envío que nunca podrá validarse.
+        validarCedulaMensajeReceptor(numeroCedulaReceptor);
         try {
             StringBuilder xml = new StringBuilder();
             // NOTE: No XML declaration (<?xml?>) — Hacienda's MR parser rejects it

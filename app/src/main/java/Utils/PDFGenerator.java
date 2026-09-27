@@ -141,7 +141,7 @@ public class PDFGenerator {
         String combinedText = String.join("\n",
                 "Fecha: " + formattedDate,
                 "Consecutivo: " + tiqueteElectronico.getEncabezado().getNumeroConsecutivo(),
-                "Clave numerica: " + tiqueteElectronico.getEncabezado().getClave(),
+                "Clave: " + tiqueteElectronico.getEncabezado().getClave(),
                 "Numero: " + tiqueteElectronico.getId(),
                 "Cliente: " + (cliente != null && cliente.getName() != null ? cliente.getName() : "CLIENTE CONTADO"),
                 "Cajero: " + user.getUsername()

@@ -38,6 +38,7 @@ import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 
+import Models.ConfiguracionAplicacion;
 import Models.Articulos.Articulos;
 import Models.Cabys;
 import Models.ComprobantesRecibidos;
@@ -126,6 +127,9 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
 
     @Inject
     CabysService cabysService;
+
+    /** Cedula valida para <NumeroCedulaReceptor>: 9-12 digitos. */
+    private static final String IDENTIFICACION_PRUEBAS = "3100100008";
 
     @Inject
     AppSettingsService appSettingsService;
@@ -343,6 +347,15 @@ class FacturasRecibidasResourceTest extends support.ContextPathIsolation {
     private void seedAppSettings() {
         if (appSettingsService.returnCurrent() == null) {
             appSettingsService.findOrCreateCurrent();
+        }
+        // El Mensaje Receptor lleva <NumeroCedulaReceptor>, que el XSD oficial
+        // restringe a \d{9,12}. Sin identificacion configurada el envio se
+        // bloquea, asi que el perfil de pruebas necesita una valida.
+        ConfiguracionAplicacion s = appSettingsService.returnCurrent();
+        if (s != null && (s.getIdentificacion() == null || s.getIdentificacion().isBlank())) {
+            s.setIdentificacion(IDENTIFICACION_PRUEBAS);
+            s.setTipoIdentificacion("02");
+            appSettingsService.update(s);
         }
         assertThat(appSettingsService.returnCurrent()).isNotNull();
     }

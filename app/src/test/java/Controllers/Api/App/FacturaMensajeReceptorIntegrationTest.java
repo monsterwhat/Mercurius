@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import Models.ConfiguracionAplicacion;
 import Models.ComprobantesRecibidos;
 import Models.Detalles.LineaDetalle;
 import Models.Encabezado.Encabezado;
@@ -104,7 +105,16 @@ class FacturaMensajeReceptorIntegrationTest extends support.ContextPathIsolation
             }
         }
     }
-    private void seedSettings(){ if(appSettingsService.returnCurrent()==null) appSettingsService.findOrCreateCurrent(); }
+    private void seedSettings(){
+        if(appSettingsService.returnCurrent()==null) appSettingsService.findOrCreateCurrent();
+        // <NumeroCedulaReceptor> exige \d{9,12}; sin identificacion el envio se bloquea.
+        ConfiguracionAplicacion s = appSettingsService.returnCurrent();
+        if (s != null && (s.getIdentificacion() == null || s.getIdentificacion().isBlank())) {
+            s.setIdentificacion("3100100008");
+            s.setTipoIdentificacion("02");
+            appSettingsService.update(s);
+        }
+    }
 
     private void stubOk(){
         when(comprobanteService.generateMensajeReceptorXml(any(),anyString(),anyString(),anyString(),any(),anyInt(),anyString(),any(),any(),anyString())).thenReturn("<MensajeReceptor/>");

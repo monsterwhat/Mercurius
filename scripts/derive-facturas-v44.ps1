@@ -261,18 +261,44 @@ function Convert-ToV44 {
     # 11. The v4.4 set gets its own consecutivo and Clave. A v4.4 re-issuance is
     #     a distinct document, and reusing the v4.3 consecutive would make the
     #     parser's duplicate-consecutivo guard treat the two as one invoice.
+    #     NumeroConsecutivoType is \d{20,20} in both v4.3 and v4.4, so the
+    #     digits-only match here is checked against the schemas, not assumed.
     $x = [regex]::Replace($x, '(?s)(<NumeroConsecutivo>)(\d{12})(\d{8})(</NumeroConsecutivo>)', {
         param($m)
         $tail = ([int]$m.Groups[3].Value + 500000) % 100000000
         $m.Groups[1].Value + $m.Groups[2].Value + ('{0:D8}' -f $tail) + $m.Groups[4].Value
     })
-    if ($x -match '<Clave>(506\d{47})</Clave>') {
+    # Matched as [a-zA-Z0-9]{47}, the class v4.4 ClaveType actually allows. A
+    # narrower class would not fail here, it would skip the rebuild and quietly
+    # leave the v4.3 Clave in the v4.4 fixture - exactly the duplicate this step
+    # exists to prevent.
+    if ($x -match '<Clave>(506[a-zA-Z0-9]{47})</Clave>') {
         $oldClave = $Matches[1]
         $newCons = [regex]::Match($x, '<NumeroConsecutivo>(\d{20})</NumeroConsecutivo>').Groups[1].Value
+        # The RUC segment is that id zero-padded to 12, a convention that only
+        # holds for 9-12 digits. v4.4 dropped the \d{9,12} restriction from
+        # IdentificacionType/Numero (maxLength 20, no pattern), so an
+        # alphanumeric id such as 3-101-A00001 is schema-valid - but no bundled
+        # v4.4 schema states how such an id is laid out inside a Clave, so
+        # padding one here would fabricate the layout.
+        if ($prov -notmatch '^\d{9,12}$') {
+            throw ("$FileName : Emisor/Identificacion/Numero is '$prov', " +
+                   "which is not 9-12 digits. The Clave RUC segment is defined " +
+                   "as that id zero-padded to 12, so it cannot be rebuilt for an " +
+                   "alphanumeric id without knowing the real layout.")
+        }
         $segRuc  = $prov.PadLeft(12, '0')
         if ($segRuc.Length -gt 12) { $segRuc = $segRuc.Substring($segRuc.Length - 12) }
         $salt = 600000 + [Math]::Abs($oldClave.GetHashCode() % 300000)
         $newClave = '506' + $oldClave.Substring(3, 6) + $segRuc + $newCons + ('{0:D9}' -f $salt)
+        # 3 + 6 + 12 + 20 + 9 = 50, and the concatenated form must still satisfy
+        # the v4.4 ClaveType pattern. Assert the schema rather than the arithmetic.
+        if ($newClave -notmatch '^[a-zA-Z0-9]{50}$') {
+            throw ("$FileName : rebuilt Clave '$newClave' is not 50 " +
+                   "alphanumeric characters, so it is invalid against the " +
+                   "v4.4 ClaveType pattern [a-zA-Z0-9]{50,50}. Source Clave " +
+                   "was '$oldClave'.")
+        }
         $x = $x.Replace("<Clave>$oldClave</Clave>", "<Clave>$newClave</Clave>")
     }
 
