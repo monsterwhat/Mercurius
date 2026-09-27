@@ -560,6 +560,7 @@ public class FacturasRecibidasResource {
     @PUT
     @Path("/{id}/lineas/{lineaId}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Transactional
     @Operation(summary = "Correct the CAByS code of one line (line-review PUT)")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Corrected line (fragment when HX-Request)"),
@@ -576,6 +577,7 @@ public class FacturasRecibidasResource {
     @PUT
     @Path("/{id}/lineas/{lineaId}")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Transactional
     @Operation(summary = "Correct the CAByS code of one line from an HTMX form", hidden = true)
     public Response corregirLineaForm(@PathParam("id") long id, @PathParam("lineaId") long lineaId,
                                       @RestForm("codigoCabys") @Nullable String codigoCabys) {
@@ -1370,10 +1372,10 @@ public class FacturasRecibidasResource {
 
             String consecutivo = extractConsecutivoDe(contenido);
             ComprobantesRecibidos factura = null;
-            // GService.listAll() devuelve una lista vacia si la consulta lanza
-            // PersistenceException, y la ingesta corre en un hilo asincrono, asi
-            // que la fila recien guardada puede no ser visible todavia. Se
-            // reintenta un poco antes de admitir que no se pudo localizar.
+            // ComprobantesRecibidosService.listAll() devuelve una lista vacia si la
+            // consulta lanza PersistenceException, y ademas la ingesta corre en un hilo
+            // asincrono, asi que la fila recien guardada puede no ser visible todavia.
+            // Se reintenta un poco antes de admitir que no se pudo localizar.
             for (int intento = 0; intento < 15 && factura == null; intento++) {
                 if (consecutivo != null && !consecutivo.isBlank()) {
                     factura = recibidosService.listAll().stream()
@@ -1411,7 +1413,7 @@ public class FacturasRecibidasResource {
                     "Factura rechazada (" + motivo + "). Se importaron de todos modos sus articulos"
                             + " e inventario; la factura quedo marcada para revisión y no debe volver a subirse");
         } catch (RuntimeException e2) {
-            LOG.warn("No se pudieron importar los articulos de " + fileName + ": " + e2.getMessage()
+            LOG.error("No se pudieron importar los articulos de " + fileName + ": " + e2.getMessage()
                     + " | source=FacturasRecibidasResource.importarProductosDeFacturaRechazada()", e2);
             return new UploadFileResult(fileName, false,
                     "Error al procesar el archivo XML: " + motivo);
