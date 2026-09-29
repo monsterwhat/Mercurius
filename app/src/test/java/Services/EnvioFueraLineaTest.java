@@ -107,8 +107,12 @@ class EnvioFueraLineaTest {
                     .as("vencimiento de una venta del %s", emision.toLocalDate())
                     .isTrue();
             assertThat(vencimiento).isAfter(emision);
-            // Never more than 4 calendar days ahead, even across a full weekend.
-            assertThat(vencimiento).isBefore(emision.plusDays(4));
+            // Nunca mas de 4 dias naturales por delante, aun cruzando un fin
+            // de semana completo. El limite es INCLUSIVO, no estricto: una venta
+            // del jueves vence el lunes siguiente (jue+vie como habiles 1 y 2,
+            // sab+dom saltados), exactamente emision.plusDays(4). La version
+            // anterior usaba isBefore(plusDays(4)) y fallaba en ese limite.
+            assertThat(vencimiento).isBeforeOrEqualTo(emision.plusDays(4));
         }
     }
 
@@ -386,8 +390,12 @@ class EnvioFueraLineaTest {
                 .thenThrow(new IllegalStateException("db caida"));
         assertThatCode(job::reintentarDocumentosPendientes).doesNotThrowAnyException();
 
-        when(envioFueraLineaService.procesarPendientes())
-                .thenThrow(new StackOverflowError());
+        // doThrow, no when: el stub anterior ya hace que procesarPendientes()
+        // lance IllegalStateException, asi que un segundo when(...) invocaria el
+        // metodo y lanzaria ANTES de que thenThrow se ejecute, dejando activo el
+        // stub viejo. doThrow evita la invocacion y reemplaza el stub de verdad.
+        org.mockito.Mockito.doThrow(new StackOverflowError())
+                .when(envioFueraLineaService).procesarPendientes();
         assertThatCode(job::reintentarDocumentosPendientes).doesNotThrowAnyException();
     }
 

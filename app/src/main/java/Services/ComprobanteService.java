@@ -142,6 +142,27 @@ public class ComprobanteService implements Serializable {
     @Inject
     private @Nonnull EnvioFueraLineaService envioFueraLineaService;
 
+    /**
+     * Thrown when the comprobante could not be assembled and persisted.
+     *
+     * <p>Exists so {@link #crearComprobante} can roll back instead of
+     * returning {@code null} from inside its own {@code @Transactional}.</p>
+     *
+     * <p>Why it matters: a {@code @Transactional} method that RETURNS after a
+     * failure COMMITS whatever it already wrote. The old
+     * {@code catch (RuntimeException) { return null; }} therefore persisted
+     * {@code encabezado} + {@code detalles} + {@code resumen} and left no
+     * {@code comprobantes_emitidos} row — an orphaned half-invoice that
+     * {@code PosResource} reported as HTTP 500, and that every retry
+     * multiplied. Rethrowing makes the rollback atomic; the caller still sees
+     * the same 500 envelope, so the HTTP contract is unchanged.</p>
+     */
+    public static class ComprobanteNoCreadoException extends RuntimeException {
+        public ComprobanteNoCreadoException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     public static class CrearComprobanteResult {
         public ComprobantesEmitidos comprobante;
         public boolean haciendaEnviado;
@@ -358,10 +379,21 @@ public class ComprobanteService implements Serializable {
             }
             
             return result;
+        } catch (ComprobanteNoCreadoException e) {
+            // Already the signal we want; rethrow untouched so the transaction
+            // rolls back and nothing double-wraps.
+            throw e;
         } catch (RuntimeException e) {
             LOG.warn("Error al crear comprobante: " + e.getMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
             LOG.warn("Error: " + e.getLocalizedMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
-            return null;
+            // Rethrow, do NOT return null: this method is @Transactional, and a
+            // normal return COMMITS. Returning here left encabezado + detalles +
+            // resumen persisted with no comprobantes_emitidos row (an orphaned
+            // half-invoice) while the caller reported HTTP 500, and each retry
+            // created another one. The caller catches this and maps it back to
+            // the same COMPROBANTE_ERROR 500 it produced before.
+            throw new ComprobanteNoCreadoException(
+                    "No se pudo crear el comprobante: " + e.getMessage(), e);
         }
 
     }
@@ -570,6 +602,12 @@ public class ComprobanteService implements Serializable {
                     try {
                         impuestoPct = new BigDecimal(impuestoStr);
                     } catch (NumberFormatException ignored) {
+                        // Same rule as CarritoService: a non-numeric impuesto in
+                        // the catalog must not silently zero the tax on a fiscal
+                        // document. The 0% stands for this line, but it is loud.
+                        LOG.warn("Impuesto no numerico en CABYS, se usa 0% para la linea: '"
+                                + impuestoStr + "'"
+                                + " | source=ComprobanteService.detallesComprobante()");
                     }
                 }
                 var impuesto = impuestoPct.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
@@ -645,7 +683,14 @@ public class ComprobanteService implements Serializable {
                         item.setResumenFactura(resumen);
                         desgloseList.add(item);
                     } catch (IllegalArgumentException e) {
-                        // Unknown tax rate — skip silently; total tax is still reported in resumen
+                        // An unknown tarifa still drops its desglose line while the
+                        // total tax is reported in resumen, so the desglose no
+                        // longer sums to the total. That is a catalog data problem
+                        // (a rate with no Tipo_TarifaIVA mapping), and on a fiscal
+                        // document it must be visible, not silent.
+                        LOG.warn("Tarifa de IVA sin mapeo, su linea no ira en el desglose: '"
+                                + rateStr + "'"
+                                + " | source=ComprobanteService.resumenComprobante()");
                     }
                 }
                 resumen.setTotalDesgloseImpuestos(desgloseList);
