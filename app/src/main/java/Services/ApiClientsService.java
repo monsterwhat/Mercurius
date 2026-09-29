@@ -4,17 +4,27 @@ import Models.ClientesApi;
 import at.favre.lib.crypto.bcrypt.BCrypt;
 import org.jboss.logging.Logger;
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.TypedQuery;
-import jakarta.transaction.Transactional;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 /**
  * Service for OAuth2 API clients (client_credentials grant type).
+ *
+ * <p><b>No bootstrap seed.</b> This service previously ran a
+ * {@code @PostConstruct} that created a {@code mercurius-frontend} client whose
+ * secret was the literal {@code dev-secret-do-not-use-in-production}, carrying
+ * the {@code mercatus} and {@code accounting} scopes. That ran in every
+ * profile, so any deployment that never provisioned its own client shipped with
+ * a publicly known credential able to mint first-party API tokens.</p>
+ *
+ * <p>Provisioning is now explicit: an administrator creates the first client
+ * through the normal user-management path, which BCrypt-hashes the secret on
+ * the way in. Boot deliberately leaves {@code clientes_api} empty, and an
+ * installation with no client correctly answers 401 on {@code /oauth/token} and
+ * on {@code /api/v1/**} instead of accepting a guessable secret.</p>
  *
  * @author Al
  */
@@ -27,30 +37,6 @@ public class ApiClientsService extends GService<ClientesApi> {
     @Override
     protected @Nonnull Class<ClientesApi> getEntityClass() {
         return ClientesApi.class;
-    }
-
-    @PostConstruct
-    @Transactional
-    public void init() {
-        try {
-            if (count() == 0) {
-                ClientesApi defaultClient = new ClientesApi();
-                defaultClient.setClientId("mercurius-frontend");
-                String plainSecret = "dev-secret-do-not-use-in-production";
-                defaultClient.setClientSecret(
-                    BCrypt.withDefaults().hashToString(12, plainSecret.toCharArray()));
-                defaultClient.setScopes("[\"mercatus\",\"accounting\"]");
-                defaultClient.setRateLimitPerMin(60);
-                defaultClient.setRateLimitPerHour(1000);
-                defaultClient.setStatus(true);
-                defaultClient.setCreatedAt(new Date());
-                defaultClient.setName("Default Dev Client");
-                create(defaultClient);
-                                LOG.info("Default API client 'mercurius-frontend' created" + " | source=" + "ApiClientsService.init()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
-            }
-        } catch (RuntimeException e) {
-                        LOG.warn("Error seeding default API client: " + e.getMessage() + " | source=" + "ApiClientsService.init()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-        }
     }
 
     /**

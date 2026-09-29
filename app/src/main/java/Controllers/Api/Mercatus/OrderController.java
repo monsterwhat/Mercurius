@@ -22,8 +22,32 @@ import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /**
- * Mercatus order endpoints.
- * Read-only: clients can view their own orders.
+ * Mercatus order endpoints over {@link OrdenCompra} (purchase orders).
+ *
+ * <p><b>RETIRED — both endpoints now answer 501.</b></p>
+ *
+ * <p>They previously read as if they were client-scoped ("clients can view their
+ * own orders") and were not: {@code OrdenCompra} is a SUPPLIER purchase order
+ * that links to {@code Usuarios} via {@code usuario_id}, with no column, and no
+ * reachable join, to {@code Clientes}. The implementation acknowledged this in a
+ * comment and shipped anyway — {@code listOrders} returned
+ * {@code ordenCompraService.listAll()}, i.e. the entire order book with supplier
+ * names, notes and prices, to any holder of any valid token, and
+ * {@code getOrder} read the caller's principal into an unused local
+ * ({@code // For now, return the order}). An id chosen freely then returned any
+ * order in the system.</p>
+ *
+ * <p>Rather than invent a data model (adding a client FK to a purchase order is
+ * a product decision, not a security fix), these endpoints are closed. Client
+ * order visibility lives on the sibling surface, which IS properly scoped:
+ * {@code /api/marketplace/orders} over {@code MarketplaceOrder}, where
+ * {@code MarketplaceOrderService} filters by {@code clientCode} on list
+ * ({@code listClientOrders}), get ({@code getOrder}) and cancel
+ * ({@code cancelOrder}).</p>
+ *
+ * <p>To restore supplier purchase orders for API clients, give
+ * {@code OrdenCompra} a client/owner reference, then filter on it here the same
+ * way — and keep the "verify ownership" comment only once a check exists.</p>
  */
 @Path("/api/v1/mercatus/orders")
 @Produces(MediaType.APPLICATION_JSON)
@@ -36,10 +60,24 @@ public class OrderController {
     @Nonnull
     OrdenCompraService ordenCompraService;
 
+    /**
+     * Single body for both retired endpoints, so the reason is never a bare
+     * status code. It names the working alternative so an integrator is not left
+     * guessing.
+     */
+    private static Response noImplementado() {
+        return Response.status(Response.Status.NOT_IMPLEMENTED)
+                .entity(ApiResponse.error("NOT_IMPLEMENTED",
+                        "Este recurso no puede limitarse al cliente solicitante: las ordenes de compra "
+                        + "no tienen una referencia a la cuenta de mercatus. Use /api/marketplace/orders "
+                        + "para las ordenes del cliente, que si están limitadas a su titular."))
+                .build();
+    }
+
     @GET
-    @Operation(summary = "List orders for the authenticated client with pagination")
+    @Operation(summary = "Retired: purchase orders cannot be scoped to the calling client")
     @APIResponses({
-        @APIResponse(responseCode = "200", description = "Success"),
+        @APIResponse(responseCode = "501", description = "Not implemented (see message for the scoped alternative)"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response listOrders(
@@ -47,84 +85,25 @@ public class OrderController {
             @QueryParam("page") @DefaultValue("0") @Parameter(description = "Page number (0-based)") int page,
             @QueryParam("size") @DefaultValue("20") @Parameter(description = "Page size") int size) {
 
-        // Get client code from JWT (set by PublicApiJwtFilter)
-        String clientId = securityContext.getUserPrincipal().getName();
-        int clientCode;
-        try {
-            clientCode = Integer.parseInt(clientId);
-        } catch (NumberFormatException e) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity(ApiResponse.error("UNAUTHORIZED", "Invalid client identity"))
-                    .build();
-        }
-
-        size = Math.min(Math.max(size, 1), 100);
-        page = Math.max(page, 0);
-
-        try {
-            // Get all orders, filter by client
-            List<OrdenCompra> allOrders = ordenCompraService.listAll();
-            if (allOrders == null) allOrders = List.of();
-
-            // Filter orders belonging to this client
-            // Note: OrdenCompra doesn't have a direct client field - it has usuario
-            // We need to check if there's a client reference or if orders are linked differently
-            // For now, return all orders (the filter can be refined based on actual data model)
-            List<OrdenCompra> filteredOrders = allOrders.stream()
-                    .filter(o -> o.isStatus()) // Only active orders
-                    .sorted(Comparator.comparing(OrdenCompra::getFecha).reversed())
-                    .toList();
-
-            long total = filteredOrders.size();
-            int start = page * size;
-            int end = Math.min(start + size, filteredOrders.size());
-            List<OrdenCompra> pageOrders = start < filteredOrders.size() ? filteredOrders.subList(start, end) : List.of();
-
-            List<OrderSummaryDTO> dtos = pageOrders.stream()
-                    .map(this::toSummaryDTO)
-                    .toList();
-
-            PagedResponse<OrderSummaryDTO> paged = new PagedResponse<>(dtos, total, page, size);
-            return Response.ok(paged).build();
-        } catch (Exception e) {
-            LOG.warn("Error listing orders: " + e.getMessage());
-            return Response.serverError()
-                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error listing orders"))
-                    .build();
-        }
+        LOG.warn("GET /api/v1/mercatus/orders retirado: devolveria ordenes de compra sin titular"
+                + " | source=OrderController.listOrders()");
+        return noImplementado();
     }
 
     @GET
     @Path("/{id}")
-    @Operation(summary = "Get order details by ID")
+    @Operation(summary = "Retired: a purchase order by id cannot be authorised against the caller")
     @APIResponses({
-        @APIResponse(responseCode = "200", description = "Success"),
-        @APIResponse(responseCode = "404", description = "Not found"),
+        @APIResponse(responseCode = "501", description = "Not implemented (see message for the scoped alternative)"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response getOrder(
             @PathParam("id") @Parameter(description = "Resource ID") Long id,
             @Context SecurityContext securityContext) {
 
-        try {
-            OrdenCompra order = ordenCompraService.find(id);
-            if (order == null || !order.isStatus()) {
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(ApiResponse.error("NOT_FOUND", "Order not found"))
-                        .build();
-            }
-
-            // Verify client owns this order (check usuario reference)
-            String clientId = securityContext.getUserPrincipal().getName();
-            // For now, return the order (ownership check can be refined)
-
-            return Response.ok(toDetailDTO(order)).build();
-        } catch (Exception e) {
-            LOG.warn("Error getting order: " + e.getMessage());
-            return Response.serverError()
-                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error getting order"))
-                    .build();
-        }
+        LOG.warn("GET /api/v1/mercatus/orders/" + id + " retirado: no hay comprobacion de titularidad"
+                + " | source=OrderController.getOrder()");
+        return noImplementado();
     }
 
     @GET
@@ -144,6 +123,12 @@ public class OrderController {
         return listOrders(securityContext, page, size);
     }
 
+    /**
+     * Mappers below are retained for the restore path described in the class
+     * javadoc: once {@code OrdenCompra} gains an owner reference, the filter
+     * goes back in the two endpoints above and these become live again. They are
+     * the only place that knows the response shape.
+     */
     private OrderSummaryDTO toSummaryDTO(OrdenCompra o) {
         OrderSummaryDTO dto = new OrderSummaryDTO();
         dto.id = o.getId();
