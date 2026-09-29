@@ -6,10 +6,10 @@ import io.quarkus.scheduler.Scheduled;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * T37-prep (plan mercurius-jsf-to-api-migration): per-cashier POS cart session
@@ -28,10 +28,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * (4 hours) are evicted by a scheduled sweep every 30 minutes; any subsequent
  * {@link #getOrCreate} for the same user simply starts a fresh cart.</p>
  *
- * <p>Thread-safety: {@link ConcurrentHashMap} keyed by username; entry fields
- * are volatile and mutated only through small setter methods, mirroring the
- * request-per-thread JAX-RS access pattern (a single cashier's requests may
- * interleave, but each field write is atomic).</p>
+ * <p>Thread-safety: {@link ConcurrentHashMap} keyed by username; the cart lines
+ * ({@code CartSessionContext.carrito}) and the staged payments are
+ * {@code CopyOnWriteArrayList}, so concurrent mutation and iteration neither
+ * lose entries nor throw. Scalar entry fields stay volatile. Sale-level
+ * atomicity (no double invoice) is NOT provided here — it lives in
+ * {@code PosResource.doFacturar}'s per-entry monitor plus the
+ * {@code facturadoComprobanteId} stamp.</p>
  */
 @ApplicationScoped
 public class CartSessionStore {
@@ -56,8 +59,33 @@ public class CartSessionStore {
         /** Supervisor username that authorized price overrides, or null. */
         private volatile @Nullable String authorizedBy;
 
-        /** Payment entries staged via POST /payment-entries (mirrors the JSF pagos list). */
-        private volatile @Nonnull List<EntradaPago> pagos = new ArrayList<>();
+        /**
+         * Payment entries staged via POST /payment-entries (mirrors the JSF pagos list).
+         *
+         * <p>Same thread-safety story as {@code CartSessionContext.carrito}:
+         * CopyOnWriteArrayList so concurrent staging and sale-time reads neither
+         * lose entries nor throw mid-iteration. The {@code volatile} on the
+         * reference is retained so {@link #setPagos} publishes atomically.</p>
+         */
+        private volatile @Nonnull List<EntradaPago> pagos = new CopyOnWriteArrayList<>();
+
+        /**
+         * Idempotency stamp: the database id of the invoice this cart already
+         * produced, or {@code null} when it has not been invoiced yet.
+         *
+         * <p>Set once, immediately after {@code crearComprobante} commits and
+         * before any post-commit side effect (loyalty, PDF, email). A retry —
+         * a PDF failure that answered 500, a client timeout after commit, a
+         * double-clicked submit — finds the stamp and replays the stored
+         * result instead of decrementing stock and numbering a second invoice.
+         * Cleared only when the entry itself is removed (successful sale) or
+         * evicted, so a stamp can never leak into a later, unrelated sale.</p>
+         *
+         * <p>Read and written under {@code synchronized (entry)} in
+         * {@code PosResource.doFacturar}, so two concurrent submits from the
+         * same cashier serialize instead of both invoicing.</p>
+         */
+        private volatile @Nullable Long facturadoComprobanteId;
 
         public @Nonnull CartSessionContext getCartContext() {
             return cartContext;
@@ -92,7 +120,15 @@ public class CartSessionStore {
         }
 
         public void setPagos(@Nonnull List<EntradaPago> pagos) {
-            this.pagos = new ArrayList<>(pagos);
+            this.pagos = new CopyOnWriteArrayList<>(pagos);
+        }
+
+        public @Nullable Long getFacturadoComprobanteId() {
+            return facturadoComprobanteId;
+        }
+
+        public void setFacturadoComprobanteId(@Nullable Long facturadoComprobanteId) {
+            this.facturadoComprobanteId = facturadoComprobanteId;
         }
     }
 
