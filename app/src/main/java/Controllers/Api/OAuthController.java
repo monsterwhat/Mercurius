@@ -83,7 +83,15 @@ public class OAuthController {
                     .build();
         }
 
-        Set<String> grantedScopes = parseScopes(scopeParam, client.getScopes());
+        Set<String> grantedScopes;
+        try {
+            grantedScopes = parseScopes(scopeParam, client.getScopes());
+        } catch (IllegalArgumentException e) {
+            LOG.debug("OAuth token request failed: " + e.getMessage() + " for " + clientId);
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ApiResponse.error("INVALID_SCOPE", e.getMessage()))
+                    .build();
+        }
 
         String accessToken = jwtTokenUtil.generateApiAccessToken(clientId, grantedScopes);
         long expiresIn = 15 * 60;
@@ -98,6 +106,19 @@ public class OAuthController {
         return Response.ok(tokenResponse).build();
     }
 
+    /**
+     * Intersects the requested scopes with the client's allowed scopes.
+     *
+     * <p>No requested scopes means "the client's default", i.e. everything it
+     * is entitled to (RFC 6749 §3.3). But a request naming ONLY scopes the
+     * client does not have is rejected outright: the previous code returned
+     * the full allowed set in that case
+     * ({@code granted.isEmpty() ? allowed : granted}), so asking for
+     * {@code scope=bogus} granted everything — a privilege-escalation-shaped
+     * bug where the least careful request got the most access.</p>
+     *
+     * @throws IllegalArgumentException when none of the requested scopes is allowed
+     */
     private Set<String> parseScopes(String requestedScopes, String allowedScopesJson) {
         Set<String> allowed = parseScopesJson(allowedScopesJson);
         if (requestedScopes == null || requestedScopes.isBlank()) {
@@ -106,7 +127,12 @@ public class OAuthController {
         Set<String> requested = Set.of(requestedScopes.trim().split("\\s+"));
         Set<String> granted = new HashSet<>(requested);
         granted.retainAll(allowed);
-        return granted.isEmpty() ? allowed : granted;
+        if (granted.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "Ninguno de los scopes solicitados esta permitido para este cliente: "
+                            + requestedScopes.trim());
+        }
+        return granted;
     }
 
     private Set<String> parseScopesJson(String scopesJson) {

@@ -156,6 +156,19 @@ public class ClientAuthService {
 
     /**
      * Builds an auth response with fresh tokens for the given client.
+     *
+     * <p>The refresh token is stored as a SHA-256 digest, never raw. A raw
+     * refresh token is a bearer credential: anyone who reads it (backup file,
+     * dump archive, over-broad API read, a future SQLi) can replay it for a
+     * fresh access token for up to 7 days. The digest is not replayable, and
+     * SHA-256 (not BCrypt) is the right tool here: the token is a 128-bit
+     * random UUID, not a human password, so no stretching is needed and the
+     * lookup stays a single indexed equality. The client still receives the
+     * raw token; only the stored copy is digested.</p>
+     *
+     * <p>Migration note: rows written before this change hold raw tokens and
+     * will no longer match — those sessions must log in again. That silent
+     * invalidation is intentional and safer than accepting both formats.</p>
      */
     @Transactional
     @Nonnull
@@ -164,8 +177,8 @@ public class ClientAuthService {
         String refreshToken = jwtTokenUtil.generateRefreshToken();
         Date refreshExpiry = jwtTokenUtil.getRefreshTokenExpiry();
 
-        // Store refresh token in database
-        client.setRefreshToken(refreshToken);
+        // Store refresh token digest in database (never the raw bearer value)
+        client.setRefreshToken(sha256Hex(refreshToken));
         client.setTokenExpiry(refreshExpiry);
         clientService.update(client);
 
@@ -177,6 +190,28 @@ public class ClientAuthService {
         );
 
         return new AuthResponse(accessToken, refreshToken, expiresInSeconds, clientInfo);
+    }
+
+    /**
+     * SHA-256 hex digest for refresh-token storage and lookup.
+     *
+     * <p>MessageDigest is instantiated per call because it is not thread-safe;
+     * SHA-256 is guaranteed present on every JDK, so the catch is defensive
+     * only and fails closed.</p>
+     */
+    @Nonnull
+    static String sha256Hex(@Nonnull String valor) {
+        try {
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(valor.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 no disponible en esta JVM", e);
+        }
     }
 
     /**
@@ -198,13 +233,17 @@ public class ClientAuthService {
 
     /**
      * Finds a client by refresh token.
+     *
+     * <p>The presented raw token is digested before lookup because only
+     * digests are stored (see {@link #buildAuthResponse}). A raw token taken
+     * from a database read therefore matches nothing.</p>
      */
     @Nullable
     Clientes findByRefreshToken(@Nonnull String refreshToken) {
         try {
             TypedQuery<Clientes> query = clientService.em.createQuery(
                     "SELECT c FROM Clientes c WHERE c.refreshToken = :token", Clientes.class);
-            query.setParameter("token", refreshToken);
+            query.setParameter("token", sha256Hex(refreshToken));
             List<Clientes> results = query.getResultList();
             return results.isEmpty() ? null : results.get(0);
         } catch (PersistenceException e) {

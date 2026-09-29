@@ -109,7 +109,12 @@ public class Clientes {
     private String password; // BCrypt-hashed password (null for admin-created clients without marketplace access)
 
     @Nullable @Column(length = 512, name = "refresh_token")
-    private String refreshToken; // Current JWT refresh token
+    /**
+     * SHA-256 hex digest of the current JWT refresh token — never the raw
+     * bearer value (see ClientAuthService.buildAuthResponse). A digest taken
+     * from this column cannot be replayed for a fresh access token.
+     */
+    private String refreshToken;
 
     @Nullable @Column(name = "token_expiry")
     private Date tokenExpiry; // Refresh token expiration date

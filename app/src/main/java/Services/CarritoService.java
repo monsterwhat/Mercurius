@@ -110,14 +110,21 @@ public class CarritoService implements Serializable {
     public void removeArticulo(@Nonnull CartSessionContext ctx, @Nonnull ArticuloCarrito articulo, @Nonnull Usuarios currentUser) {
         try {
             if (ctx.getCarrito() != null) {
-                Iterator<ArticuloCarrito> iterator = ctx.getCarrito().iterator();
-                boolean removed = false;
-                while (iterator.hasNext() && !removed) {
-                    ArticuloCarrito articuloCarrito = iterator.next();
-                    if (articuloCarrito.equals(articulo)) {
+                // Index-based first-match removal, not Iterator.remove(): the
+                // cart lines live in a CopyOnWriteArrayList whose snapshot
+                // iterator throws UnsupportedOperationException on remove().
+                // indexOf + remove(int) keeps the original "first match only"
+                // semantics; the stale-index window (another request mutating
+                // concurrently) falls through to the promotion sweep below.
+                List<ArticuloCarrito> lineas = ctx.getCarrito();
+                int indice = lineas.indexOf(articulo);
+                if (indice >= 0) {
                                                 LOG.info("Cajero " + currentUser.getUsername() + " elimino articulo de carrito" + " | user=" + String.valueOf(currentUser) + " | source=" + "CrearTiqueteController.removeArticulo" + " | antes=" + String.valueOf(articulo.toString()) + " | despues=" + String.valueOf((Object) null));
-                        iterator.remove();
-                        removed = true;
+                    try {
+                        lineas.remove(indice);
+                    } catch (IndexOutOfBoundsException e) {
+                        LOG.debug("La linea ya no estaba al removerla (carrito concurrente)"
+                                + " | source=CarritoService.removeArticulo()");
                     }
                 }
                 procesarPromocionesCarrito(ctx);

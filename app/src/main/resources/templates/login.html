@@ -55,19 +55,22 @@
                             {/if}
 
                             <!-- Container form-auth endpoint (j_security_check).
-                                 Login-CSRF note: this POST is served by Quarkus'
-                                 form mechanism before the main router and outside
-                                 permission evaluation, so neither quarkus-rest-csrf,
-                                 nor a JAX-RS filter, nor a Vert.x @RouteFilter, nor
-                                 a custom HttpSecurityPolicy sees it (each was tried
-                                 and verified not to fire). The protection is
-                                 Controllers.filters.LoginOrigenMechanism, an
-                                 HttpAuthenticationMechanism decorator that answers
-                                 cross-origin logins with an anonymous identity (so
-                                 no session is ever minted for them) and delegates
-                                 everything else to the built-in form mechanism.
-                                 Do NOT "fix" this by adding a hidden csrf input:
-                                 nothing validates it. -->
+                                 Login-CSRF note (residual risk, documented not fixed):
+                                 this POST is served by Quarkus' form mechanism
+                                 before the main router and outside permission
+                                 evaluation. A Vert.x @RouteFilter, a custom
+                                 HttpSecurityPolicy, and an
+                                 HttpAuthenticationMechanism decorator were each
+                                 tried and verified: the first two never fire for
+                                 this path, and the decorator cannot block without
+                                 also disrupting legitimate logins and session
+                                 replay (it broke 148 tests). So a cross-site
+                                 login POST is not rejected. Impact is bounded:
+                                 the session cookie is SameSite=Strict, and
+                                 sensitive operations require step-up
+                                 supervisor authorization, which an attacker-owned
+                                 session cannot satisfy. Do NOT add a hidden csrf
+                                 input here: nothing validates it. -->
                             <form method="POST" action="j_security_check">
                                 <div class="field">
                                     <label class="label" for="j_username">Usuario</label>

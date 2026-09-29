@@ -16,6 +16,7 @@ import Services.ArticulosService;
 import Services.CarritoService;
 import Services.ClientService;
 import Services.ComprobanteService;
+import Services.ComprobantesEmitidosService;
 import Services.DirectoryService;
 import Services.LoyaltyService;
 import Services.LoginService;
@@ -136,8 +137,11 @@ public class PosResource {
     AppSettingsService appSettingsService;
 
     @Nonnull
-    @Inject
-    ComprobanteService comprobanteService;
+@Inject
+ComprobanteService comprobanteService;
+
+@Inject
+ComprobantesEmitidosService comprobantesEmitidosService;
 
     @Nonnull
     @Inject
@@ -453,12 +457,42 @@ public class PosResource {
         if (username == null) {
             return unauthenticated();
         }
+        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        // Serialize one cashier's concurrent submits on their own entry. Without
+        // this, two simultaneous POSTs both pass the idempotency-stamp check
+        // below and both invoice. Only the same user's requests ever contend on
+        // this monitor; other cashiers proceed in parallel. It is held across
+        // the Hacienda call by design — that wait is exactly what makes a
+        // double-click or a retry unable to invoice twice.
+        synchronized (entry) {
+            return doFacturarInterior(tipoDocumento, pagosParam, puntosParam, username, entry);
+        }
+    }
+
+    private Response doFacturarInterior(@Nonnull String tipoDocumento,
+            @Nullable List<EntradaPago> pagosParam, @Nullable BigDecimal puntosParam,
+            @Nonnull String username, @Nonnull CartSessionStore.Entry entry) {
         Usuarios currentUser = loginService.findByUsername(username);
         if (currentUser == null) {
             return userNotProvisioned(username);
         }
 
-        CartSessionStore.Entry entry = cartSessionStore.getOrCreate(username);
+        // Idempotency replay: this cart already produced an invoice. A previous
+        // attempt committed stock + invoice and then answered 500 (PDF missing),
+        // timed out after commit, or was double-submitted — and the cart was
+        // deliberately NOT cleared on those paths. Rebuild that stored result
+        // instead of invoicing again; otherwise every retry numbers a second
+        // invoice and decrements stock a second time.
+        Long yaFacturado = entry.getFacturadoComprobanteId();
+        if (yaFacturado != null) {
+            ComprobantesEmitidos previo = comprobantesEmitidosService.find(yaFacturado);
+            if (previo != null) {
+                return repetirFacturado(username, entry, currentUser, previo);
+            }
+            // Stale stamp (row deleted by hand): drop it and invoice fresh.
+            entry.setFacturadoComprobanteId(null);
+        }
+
         CartSessionContext ctx = entry.getCartContext();
 
         // 1. Price-override gate (controller lines 438-442): overrides need a
@@ -611,6 +645,12 @@ public class PosResource {
         }
         ComprobantesEmitidos comprobante = result.comprobante;
 
+        // Idempotency stamp, set at the commit point: stock and invoice are
+        // persisted from here on. Everything below (loyalty, PDF, email) is a
+        // post-commit side effect that may fail or be retried; stamping FIRST
+        // makes any retry replay the stored invoice instead of duplicating it.
+        entry.setFacturadoComprobanteId(comprobante.getId());
+
         // 9. Loyalty redemption (controller lines 480-491).
         if (cliente != null && cliente.getCode() > 0
                 && descuentoPuntos.compareTo(BigDecimal.ZERO) > 0
@@ -681,6 +721,91 @@ public class PosResource {
         out.haciendaMensaje = result.haciendaMensaje;
         out.totalPagado = totalPagado;
         out.vuelto = vueltoFinal;
+        return Response.ok(ApiResponse.ok(out)).build();
+    }
+
+    /**
+     * Rebuilds the success response for an invoice this cart already produced.
+     *
+     * <p>Reached when {@code doFacturarInterior} finds the idempotency stamp:
+     * stock was decremented and the invoice was numbered on the first attempt,
+     * which then failed visibly (PDF missing → 500), timed out after commit, or
+     * was submitted twice. Re-running the pipeline would duplicate both, so
+     * nothing here touches stock, numbers, loyalty points, or email:</p>
+     * <ul>
+     *   <li>Loyalty redemption is NOT repeated — points were already redeemed
+     *       on the first pass; repeating would double-charge them.</li>
+     *   <li>The customer email is NOT re-sent — it either went out on the first
+     *       pass or failed safely there; a retry must not double-email.</li>
+     *   <li>The PDF IS ensured: if the first attempt left no file, generation
+     *       is retried from the still-staged cart, because a missing PDF is the
+     *       most common reason the first attempt answered 500.</li>
+     * </ul>
+     *
+     * <p>A replay that reaches 200 ends the sale (entry removed) exactly like a
+     * first-pass success. A replay that still has no PDF answers the same
+     * {@code PDF_NO_GENERADO} 500 — now provably without a duplicate invoice
+     * behind it — and keeps the stamp so a later retry can still recover.</p>
+     */
+    private Response repetirFacturado(@Nonnull String username,
+            @Nonnull CartSessionStore.Entry entry, @Nonnull Usuarios currentUser,
+            @Nonnull ComprobantesEmitidos comprobante) {
+        ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
+        if (settings == null) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                    .entity(ApiResponse.error("NO_SETTINGS",
+                            "No hay configuración de la aplicación; configure los datos de emisión"))
+                    .build();
+        }
+        CartSessionContext ctx = entry.getCartContext();
+        Clientes cliente = ctx.getSelectedClient();
+
+        String fileName = "tiqueteElectronico_" + comprobante.getId() + ".pdf";
+        File pdfFile = new File(dirService.getFacturasDirPath(), fileName);
+        if (!pdfFile.isFile()) {
+            try {
+                pdfGenerator.generarPDFTiqueteElectronico(
+                        comprobante,
+                        settings,
+                        ctx.getCarrito(),
+                        cliente != null ? cliente : new Clientes(),
+                        currentUser,
+                        ctx.getPago(),
+                        ctx.getVuelto(),
+                        entry.getPagos()
+                );
+            } catch (RuntimeException e) {
+                LOG.warn("Error regenerando el PDF en reintento para comprobante "
+                        + comprobante.getId() + ": " + e.getMessage()
+                        + " | source=PosResource.repetirFacturado()");
+            }
+        }
+        if (!pdfFile.isFile()) {
+            return Response.serverError()
+                    .entity(ApiResponse.error("PDF_NO_GENERADO",
+                            "El comprobante fue creado pero el PDF no pudo generarse"))
+                    .build();
+        }
+
+        BigDecimal totalPagado = BigDecimal.ZERO;
+        for (EntradaPago pago : entry.getPagos()) {
+            if (pago != null && pago.getMonto() != null) {
+                totalPagado = totalPagado.add(pago.getMonto());
+            }
+        }
+
+        cartSessionStore.remove(username);
+
+        FacturarResult out = new FacturarResult();
+        out.pdfUrl = uriBasePath() + "api/app/pos/facturas/" + fileName;
+        out.comprobanteId = comprobante.getId();
+        out.consecutivo = comprobante.getEncabezado() != null
+                ? comprobante.getEncabezado().getNumeroConsecutivo() : null;
+        out.haciendaEstado = comprobante.getHaciendaEstado();
+        out.haciendaMensaje = "Este comprobante ya había sido creado en un intento anterior; "
+                + "se devuelve el resultado original sin duplicar la factura ni el inventario.";
+        out.totalPagado = totalPagado;
+        out.vuelto = ctx.getVuelto();
         return Response.ok(ApiResponse.ok(out)).build();
     }
 
