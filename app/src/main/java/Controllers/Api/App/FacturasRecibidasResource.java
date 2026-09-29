@@ -72,7 +72,8 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.jboss.logging.Logger;
-import javax.xml.parsers.DocumentBuilderFactory;
+ import javax.xml.XMLConstants;
+ import javax.xml.parsers.DocumentBuilderFactory;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
@@ -1435,6 +1436,35 @@ public class FacturasRecibidasResource {
     /**
      * Cheap structural gate BEFORE the parser runs so malformed documents get
      * a clean, deterministic danger notification (T35 parity).
+     *
+     * <p><b>Security: the document is parsed exactly once, with a
+     * DOCTYPE-rejecting factory, and every branch below is decided from the
+     * PARSED tree.</b> This used to have two ways past the hardening, both
+     * keyed on a plain substring match over the untrusted bytes:</p>
+     *
+     * <ul>
+     *   <li>{@code if (xml.contains("MensajeHacienda")) return null;} — any file
+     *       containing that token anywhere (a comment, an entity value, a
+     *       company name) skipped the hardened parse entirely and went straight
+     *       to {@code Parser.parseXML}, whose XmlMapper and
+     *       {@code HaciendaXsdValidator} did not disable external DTD access.</li>
+     *   <li>The {@code catch} then did
+     *       {@code if (xml.contains("NumeroConsecutivo")) return null;} — and
+     *       since {@code disallow-doctype-decl} makes a document carrying a
+     *       DOCTYPE <em>fail</em> that parse, this branch waved through
+     *       precisely the documents the flag exists to reject.</li>
+     * </ul>
+     *
+     * <p>A DOCTYPE declaration is now rejected deterministically by
+     * {@link #contieneDeclaracionDoctype(String)}, independently of any parser
+     * behaviour, so the outcome does not depend on exception text.</p>
+     *
+     * <p>The lenient path for CONTENT problems is preserved: a document with a
+     * bad {@code CodigoCABYS} or a missing consecutive is still tolerated so the
+     * parser can re-read it, which the tampered-CABYS scenario pins. What is no
+     * longer tolerated is anything structural.</p>
+     *
+     * @return {@code null} when the document may proceed, otherwise the reason.
      */
     @Nullable
     private static String prevalidateXml(byte[] contenido) {
@@ -1442,29 +1472,29 @@ public class FacturasRecibidasResource {
         if (xml.isEmpty()) {
             return "Error parsing XML: empty";
         }
-        if (xml.contains("MensajeHacienda")) {
-            return null;
+        // Shared policy (Utils.XmlSeguro): a DOCTYPE is how entity expansion and
+        // external-entity fetches are smuggled in, and no legitimate SUNAT
+        // comprobante declares one.
+        if (Utils.XmlSeguro.contieneDoctype(xml)) {
+            return Utils.XmlSeguro.mensajeDoctypeRechazado();
         }
-        Document documento;
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setXIncludeAware(false);
-            factory.setExpandEntityReferences(false);
-            documento = factory.newDocumentBuilder()
-                    .parse(new ByteArrayInputStream(contenido));
-        } catch (Exception e) {
+        Document documento = Utils.XmlSeguro.analizarSeguro(contenido);
+        if (documento == null) {
+            // No DOCTYPE can reach here (rejected above), so this is a content or
+            // encoding problem, not a security one. Keep the lenient path so real
+            // documents with a bad CABYS code still import; the parser applies
+            // its own strictness downstream.
             if (xml.contains("NumeroConsecutivo")) {
-                LOG.warn("prevalidateXml DOM fallback success for: " + e.getMessage());
+                LOG.warn("prevalidateXml DOM fallback success for a document without root element");
                 return null;
             }
-            return "Error parsing XML: " + e.getMessage();
+            return "Error parsing XML: no se pudo analizar el documento";
         }
         Element raiz = documento.getDocumentElement();
         if (raiz == null) {
             return "Error parsing XML: documento sin elemento raíz";
         }
-        if ("MensajeHacienda".equals(raiz.getNodeName())) {
+        if (Utils.XmlSeguro.raizEs(documento, "MensajeHacienda")) {
             return null; // parser branch that needs no consecutivo
         }
         if (consecutivoDe(raiz).isEmpty()) {

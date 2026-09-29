@@ -10,6 +10,7 @@ import Utils.DiffUtils;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.security.identity.SecurityIdentity;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -61,9 +62,13 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p>Role model mirrors {@code SessionController.isUsuarios()}: the whole
  * resource requires {@code usuario} OR {@code admin}; creation is additionally
- * restricted to {@code admin}. The {@code @RolesAllowed} gates are dormant
- * until the form-cookie auth block is enabled in application.properties (see
- * {@link AppAuthResource}).</p>
+ * restricted to {@code admin}. These gates are LIVE — form-cookie auth is
+ * enabled in application.properties and {@code RoleMatrixTest} pins the
+ * denials. Read endpoints keep the class-level {@code {admin, usuario}} gate;
+ * every MUTATING endpoint ({@code create}, {@code update}, {@code updateForm},
+ * {@code delete}, {@code updatePermisos}) additionally requires {@code admin}
+ * at method level, because all of them can change another account's roles or
+ * enabled state.</p>
  *
  * <p>All responses follow the {@link ApiResponse}/{@link PagedResponse}
  * envelope conventions. {@link UsersDTO} intentionally omits the password
@@ -97,6 +102,15 @@ public class UsersResource {
     @Nonnull
     @Inject
     LoginService loginService;
+
+    /** Caller identity — the authority for every privileged branch below. */
+    @Inject
+    SecurityIdentity identity;
+
+    /** Bounds password guessing against {@link #changePassword}. */
+    @Nonnull
+    @Inject
+    Utils.IntentosDeCredencial intentosDeCredencial;
 
     /** Request context (quarkus-rest injectable) — source of HX-Request. */
     @Nonnull
@@ -187,7 +201,37 @@ public class UsersResource {
             // BCrypt (cost 12) BEFORE persist â€” identical to the legacy flow.
             user.setPassword(request.password);
             user.setEmail(request.email);
-            user.setGroupName(request.groupName);
+            // Validate the permission tokens on this path too. TOKENS_VALIDOS
+            // was only enforced by the form create and by /{id}/permisos, so
+            // the JSON path stored whatever free text the caller sent and
+            // UserRoleMapper then read it back with substring semantics. Reject
+            // unknown tokens and, for defence in depth, refuse to mint an admin
+            // from a non-admin caller (this method is already admin-gated, so
+            // the guard is redundant today and protective if that widens).
+            List<String> permisosSolicitados = permisosLimpios(
+                    splitGroupName(request.groupName));
+            List<String> groupNamesInvalidos = permisosSolicitados.stream()
+                    .filter(p -> !TOKENS_VALIDOS.contains(p))
+                    .toList();
+            if (!groupNamesInvalidos.isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(ApiResponse.error("VALIDATION_ERROR",
+                                "Permisos inválidos: " + String.join(", ", groupNamesInvalidos)))
+                        .build();
+            }
+            if (permisosSolicitados.isEmpty()) {
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(ApiResponse.error("VALIDATION_ERROR",
+                                "Debe indicar al menos un permiso."))
+                        .build();
+            }
+            if (permisosSolicitados.contains(UserRoleMapper.ROLE_ADMIN) && !isAdmin()) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(ApiResponse.error("FORBIDDEN",
+                                "Solo un administrador puede crear usuarios con permiso de administrador."))
+                        .build();
+            }
+            user.setGroupName(joinGroupNames(permisosSolicitados));
             user.setStatus(true); // parity: createUser() always enables new users
             loginService.create(user);
 
@@ -206,8 +250,9 @@ public class UsersResource {
 
     @PUT
     @Path("/{id}")
+    @RolesAllowed("admin")
     @Transactional
-    @Operation(summary = "Update a user's username/email/status")
+    @Operation(summary = "Update a user's username/email/status (admin only)")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Updated"),
         @APIResponse(responseCode = "400", description = "Validation error"),
@@ -264,8 +309,9 @@ public class UsersResource {
 
     @DELETE
     @Path("/{id}")
+    @RolesAllowed("admin")
     @Transactional
-    @Operation(summary = "Archive (soft-disable) a user")
+    @Operation(summary = "Archive (soft-disable) a user (admin only)")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Archived (status set to false)"),
         @APIResponse(responseCode = "401", description = "Not authenticated"),
@@ -306,25 +352,43 @@ public class UsersResource {
                     .build();
         }
     }
-
+    /**
+     * Changes a user's password after verifying the current one.
+     *
+     * <p><b>Throttled and timing-equalized.</b> This verifies a BCrypt hash for
+     * whatever {@code {id}} the caller names, so unthrottled it was an oracle
+     * for guessing any account's password, Admin included. The not-found branch
+     * also returned without ever invoking BCrypt, so ids could be probed by
+     * response time. {@link IntentosDeCredencial} now bounds attempts per account
+     * and per source address, and the not-found path spends the same cost via
+     * {@link LoginService#verificarContraHashFalso(String)}.</p>
+     *
+     * <p>The correct-current-password requirement is unchanged, so this remains
+     * an oracle rather than a takeover: the throttling bounds how fast the
+     * oracle can be queried.</p>
+     */
     @PUT
     @Path("/{id}/password")
     @Transactional
-    @Operation(summary = "Change a user's password after verifying the current one")
+    @Operation(summary = "Change a user password after verifying the current one")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Password changed"),
-        @APIResponse(responseCode = "400", description = "Guard failure (blank/mismatched/incorrect passwords)"),
-        @APIResponse(responseCode = "401", description = "Not authenticated"),
-        @APIResponse(responseCode = "403", description = "Missing admin/usuario role"),
-        @APIResponse(responseCode = "404", description = "Not found"),
+        @APIResponse(responseCode = "400", description = "Guard failure"),
+        @APIResponse(responseCode = "429", description = "Too many attempts"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response changePassword(
             @PathParam("id") @Parameter(description = "User ID") Long id,
             @Nullable ChangePasswordRequest request) {
+        String objetivo = id != null ? String.valueOf(id) : "desconocido";
+        String direccion = direccionOrigen();
+
+        Long bloqueo = intentosDeCredencial.restanteBloqueo(objetivo, direccion);
+        if (bloqueo != null) {
+            return demasiadosIntentos(bloqueo);
+        }
+
         try {
-            // Guard chain ported VERBATIM from SessionController.changePassword():
-            // blank-new â†’ confirm-match â†’ current-blank â†’ verify-current â†’ update.
             if (request == null || request.newPassword == null || request.newPassword.isBlank()) {
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(ApiResponse.error("VALIDATION_ERROR",
@@ -346,9 +410,14 @@ public class UsersResource {
 
             Usuarios user = loginService.find(id);
             if (user == null) {
+                // Match the cost of the branch below so ids cannot be probed by
+                // response time.
+                loginService.verificarContraHashFalso(request.currentPassword);
+                intentosDeCredencial.registrarFallo(objetivo, direccion);
                 return notFound(id);
             }
             if (!loginService.verifyPassword(request.currentPassword, user.getPassword())) {
+                intentosDeCredencial.registrarFallo(objetivo, direccion);
                 return Response.status(Response.Status.BAD_REQUEST)
                         .entity(ApiResponse.error("VALIDATION_ERROR",
                                 "La contrasena actual es incorrecta."))
@@ -356,17 +425,50 @@ public class UsersResource {
             }
 
             loginService.updatePassword(user, request.newPassword);
+            intentosDeCredencial.registrarExito(objetivo, direccion);
 
-                        LOG.info("Se cambiÃ³ la contraseÃ±a" + " | source=" + "UsersResource.changePassword()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+            LOG.info("Se cambio la contrasena de " + user.getUsername()
+                    + " | source=UsersResource.changePassword()");
 
             return Response.ok(ApiResponse.ok(toDTO(user))).build();
         } catch (Exception e) {
             LOG.warn("Error changing password for user " + id, e);
             return Response.serverError()
-                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error cambiando la contraseÃ±a"))
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error cambiando la contrasena"))
                     .build();
         }
     }
+
+    /**
+     * Best-effort source address for throttling. See
+     * {@code AppAuthResource.direccionOrigen()} for why an unknown address must
+     * not collapse into one shared bucket that an attacker could trip on purpose.
+     */
+    private String direccionOrigen() {
+        try {
+            if (routing != null && routing.request() != null && routing.request().remoteAddress() != null) {
+                String ip = routing.request().remoteAddress().hostAddress();
+                if (ip != null && !ip.isBlank()) {
+                    return ip;
+                }
+            }
+        } catch (RuntimeException e) {
+            LOG.debug("No se pudo determinar la direccion de origen: " + e.getMessage()
+                    + " | source=UsersResource.direccionOrigen()");
+        }
+        return "desconocida";
+    }
+
+    /** 429 with Retry-After, so a client backs off instead of hammering. */
+    private Response demasiadosIntentos(long segundos) {
+        return Response.status(429)
+                .header("Retry-After", String.valueOf(segundos))
+                .entity(ApiResponse.error("TOO_MANY_ATTEMPTS",
+                        "Demasiados intentos. Intentelo de nuevo en "
+                                + (segundos / 60) + " minuto(s)."))
+                .build();
+    }
+
 
     // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -491,6 +593,7 @@ public class UsersResource {
      */
     @PUT
     @Path("/{id}")
+    @RolesAllowed("admin")
     @Transactional
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Operation(summary = "Update a user from an HTMX form", hidden = true)
@@ -519,9 +622,22 @@ public class UsersResource {
      * tokens against {@link UserRoleMapper}'s ROLE_* constants, then persists
      * via the existing service update path. It never touches username/email/
      * status/password; those stay on PUT /{id} and /{id}/password.
+     *
+     * <p><b>ADMIN ONLY.</b> This method grants roles, and {@code admin} is one
+     * of the grantable tokens ({@link #TOKENS_VALIDOS}), so a caller holding
+     * only {@code usuario} could otherwise promote itself to {@code admin}.
+     * {@code TrustedSessionIdentityProvider} re-derives roles from the database
+     * on every request, so a successful self-promotion took effect on the very
+     * next call — a complete vertical escalation from the weakest role.</p>
+     *
+     * <p>The explicit {@code adminToken} check below is deliberate defence in
+     * depth and is NOT a substitute for the annotation: if this method is ever
+     * re-widened by a future refactor, an {@code admin} token in the submitted
+     * set is still refused for any non-admin caller.</p>
      */
     @PUT
     @Path("/{id}/permisos")
+    @RolesAllowed("admin")
     @Transactional
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Operation(summary = "Update a user's permissions (groupName) from an HTMX form", hidden = true)
@@ -547,6 +663,12 @@ public class UsersResource {
                 return redisplayForm("editar", user, null, null,
                         "Los permisos no pueden estar vacíos", null,
                         "error", "Los permisos no pueden estar vacíos");
+            }
+            if (permisos.contains(UserRoleMapper.ROLE_ADMIN) && !isAdmin()) {
+                return Response.status(Response.Status.FORBIDDEN)
+                        .entity(ApiResponse.error("FORBIDDEN",
+                                "Solo un administrador puede otorgar el permiso de administrador."))
+                        .build();
             }
 
             String antes = DiffUtils.snapshotEntity(user);
@@ -653,6 +775,43 @@ public class UsersResource {
             }
         }
         return out;
+    }
+
+    /**
+     * Inverse of {@link #joinGroupNames}: splits the stored
+     * {@code "[admin, usuario]"} form back into its permission tokens so the
+     * JSON create path can run the same {@link #TOKENS_VALIDOS} validation the
+     * form paths already performed. Brackets are optional and whitespace is
+     * trimmed, so a bare {@code "admin"} is accepted too.
+     */
+    @Nonnull
+    private static List<String> splitGroupName(@Nullable String groupName) {
+        if (groupName == null || groupName.isBlank()) {
+            return List.of();
+        }
+        String limpio = groupName.trim();
+        if (limpio.startsWith("[") && limpio.endsWith("]")) {
+            limpio = limpio.substring(1, limpio.length() - 1);
+        }
+        List<String> out = new ArrayList<>();
+        for (String token : limpio.split(",")) {
+            String t = token.trim();
+            if (!t.isEmpty()) {
+                out.add(t);
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Whether the CALLER is an administrator. Mirrors the
+     * {@code !identity.isAnonymous() && identity.hasRole("admin")} convention
+     * used by CategoriaResource/CategoriasPagesResource, and reads the roles
+     * TrustedSessionIdentityProvider re-derives from the database on every
+     * request (never a role echoed back in a request body).
+     */
+    private boolean isAdmin() {
+        return !identity.isAnonymous() && identity.hasRole(UserRoleMapper.ROLE_ADMIN);
     }
 
     /**

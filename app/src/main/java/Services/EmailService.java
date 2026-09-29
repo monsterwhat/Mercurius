@@ -2,6 +2,7 @@ package Services;
 
 import Controllers.Settings.SettingsDirController;
 import Utils.Parsers.Parser;
+import Utils.XmlSeguro;
 import org.jboss.logging.Logger;
 import jakarta.activation.DataHandler;
 import jakarta.activation.DataSource;
@@ -31,7 +32,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -332,35 +336,63 @@ public class EmailService implements Serializable {
                     for (int i = 0; i < multipart.getCount(); i++) {
                         BodyPart part = multipart.getBodyPart(i);
 
-                        // Check if the part is an attachment and if it is an XML file
-                        if (Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) && part.getFileName().endsWith(".xml")) {
-                            hasXmlAttachment = true;
-                            emailsWithXmlAttachments++;
-
-                            MimeBodyPart mimeBodyPart = (MimeBodyPart) part;
-
-                            // Save the XML attachment to the specified directory
-                            File file = new File(directory, mimeBodyPart.getFileName());
-                            mimeBodyPart.saveFile(file); // Save directly to the file
-
-                                                        LOG.info("Saved XML attachment: " + file.getAbsolutePath() + " | source=" + "EmailService.processUnreadXmlAttachments()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
-
-                            // Parse the saved XML file
-                            try (InputStream inputStream = new FileInputStream(file)) {
-                                parser.parseXML(inputStream);
-                                successfullyProcessedFiles++;
-                            } catch (IOException | RuntimeException e) {
-                                                                LOG.warn("Error parsing XML file: " + e.getMessage() + " | source=" + "EmailService.processUnreadXmlAttachments()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-                            }
-
-                            // Mark the message as read
-                            message.setFlag(Flags.Flag.SEEN, true);
-
-                            // Move the message to the "Processed" folder
-                            inbox.copyMessages(new Message[]{message}, processedFolder);
-                            message.setFlag(Flags.Flag.DELETED, true); // Mark for deletion from INBOX
-                            break;
+                        // getFileName() can be null (a MIME part with no
+                        // filename parameter); the old code dereferenced it
+                        // directly and threw an NPE that aborted the whole
+                        // mailbox sweep.
+                        String nombreAdjunto = part.getFileName();
+                        if (nombreAdjunto == null
+                                || !Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())
+                                || !nombreAdjunto.toLowerCase(Locale.ROOT).endsWith(".xml")) {
+                            continue;
                         }
+                        hasXmlAttachment = true;
+                        emailsWithXmlAttachments++;
+
+                        MimeBodyPart mimeBodyPart = (MimeBodyPart) part;
+
+                        // The sender of the e-mail controls this string, so it is
+                        // never used as a path. It used to be handed straight to
+                        // new File(directory, getFileName()), which let a remote
+                        // sender write anywhere the process could reach with
+                        // "../../..." and pick the extension that got it past the
+                        // ".xml" filter. See resolverNombreSeguroAdjunto().
+                        File file = resolverNombreSeguroAdjunto(directory, nombreAdjunto);
+                        if (file == null) {
+                                        LOG.warn("Nombre de adjunto XML rechazado por el remitente: "
+                                        + nombreAdjunto + " | source=EmailService.processUnreadXmlAttachments()");
+                            continue;
+                        }
+                        mimeBodyPart.saveFile(file); // Save directly to the file
+
+                                        LOG.info("Saved XML attachment: " + file.getAbsolutePath() + " | source=" + "EmailService.processUnreadXmlAttachments()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+
+                        // Same hardened gate the upload path uses. This call had
+                        // none, so an e-mailed DOCTYPE reached the parser (and its
+                        // external-entity-capable consumers) unchecked.
+                        byte[] contenido = Files.readAllBytes(file.toPath());
+                        String xml = new String(contenido, StandardCharsets.UTF_8).trim();
+                        if (XmlSeguro.contieneDoctype(xml)) {
+                                        LOG.warn("Adjunto XML con DOCTYPE rechazado: " + file.getName()
+                                        + " | source=EmailService.processUnreadXmlAttachments()");
+                            continue;
+                        }
+
+                        // Parse the saved XML file
+                        try (InputStream inputStream = new FileInputStream(file)) {
+                            parser.parseXML(inputStream);
+                            successfullyProcessedFiles++;
+                        } catch (IOException | RuntimeException e) {
+                                        LOG.warn("Error parsing XML file: " + e.getMessage() + " | source=" + "EmailService.processUnreadXmlAttachments()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+                        }
+
+                        // Mark the message as read
+                        message.setFlag(Flags.Flag.SEEN, true);
+
+                        // Move the message to the "Processed" folder
+                        inbox.copyMessages(new Message[]{message}, processedFolder);
+                        message.setFlag(Flags.Flag.DELETED, true); // Mark for deletion from INBOX
+                        break;
                     }
                 }
 
@@ -383,9 +415,68 @@ public class EmailService implements Serializable {
         } catch (MessagingException | IOException e) {
                         LOG.warn("Error: " + e.getMessage() + " | source=" + "EmailService.sendEmail()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             callback.accept("Encountered an Error: " + e.getLocalizedMessage());
+        }    }
+
+    /**
+     * Turns an e-mail attachment filename into a path INSIDE {@code directorio},
+     * or returns {@code null} if it cannot be done safely.
+     *
+     * <p>The filename is chosen by whoever sent the message. Passing it to
+     * {@code new File(directory, nombre)} lets that sender escape the target
+     * directory with {@code ../} segments and choose the destination extension,
+     * so a remote party could overwrite arbitrary files the service account can
+     * write. Sanitising is therefore mandatory, not cosmetic.</p>
+     *
+     * <p>Three layers, because any one alone is defeatable:</p>
+     * <ol>
+     *   <li>Take the last path segment only, so no separator survives.</li>
+     *   <li>Reject outright if anything remains suspicious ({@code ..}, a
+     *       Windows drive prefix, a NUL, or characters outside a conservative
+     *       allowlist). Names are usually plain, so rejection is cheap.</li>
+     *   <li>Re-verify with {@code getCanonicalPath()} that the result really is
+     *       under the canonical target — belt and braces against any encoding
+     *       trick that survived 1 and 2.</li>
+     * </ol>
+     *
+     * @return the resolved file, or {@code null} to skip this attachment.
+     */
+    @Nullable
+    static File resolverNombreSeguroAdjunto(@Nonnull File directorio,
+                                            @Nonnull String nombreOriginal) {
+        // 1. Strip any directory component the sender embedded.
+        String nombre = nombreOriginal;
+        int ultimoSeparador = Math.max(nombre.lastIndexOf('/'), nombre.lastIndexOf('\\'));
+        if (ultimoSeparador >= 0) {
+            nombre = nombre.substring(ultimoSeparador + 1);
+        }
+        nombre = nombre.trim();
+        if (nombre.isEmpty() || nombre.length() > 200) {
+            return null;
+        }
+        // 2. Reject anything still structurally suspicious.
+        if (nombre.contains("..") || nombre.indexOf('\0') >= 0
+                || nombre.contains(":") || nombre.equals(".") || nombre.equals("..")) {
+            return null;
+        }
+        if (!nombre.matches("[A-Za-z0-9._-]+\\.xml")) {
+            return null;
+        }
+        // 3. Confirm the canonical path really lands inside the target.
+        try {
+            File destino = new File(directorio, nombre);
+            String canonicoDestino = destino.getCanonicalPath();
+            String canonicoBase = directorio.getCanonicalPath();
+            if (!canonicoDestino.startsWith(canonicoBase + File.separator)) {
+                LOG.warn("Adjunto XML descartado: la ruta resuelta sale del directorio destino");
+                return null;
+            }
+            return destino;
+        } catch (IOException e) {
+            LOG.warn("No se pudo resolver la ruta del adjunto XML: " + e.getMessage());
+            return null;
         }
     }
-    
+
     private void processUnreadXmlAttachmentsFallback(String email, String pass, Consumer<String> callback) {
                 LOG.warn("FALLBACK: processUnreadXmlAttachments failed due to circuit breaker or repeated failures" + " | source=" + "EmailService.processUnreadXmlAttachmentsFallback()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
         CompletableFuture.runAsync(() -> callback.accept("Email processing skipped: Service temporarily unavailable due to repeated failures. Will retry on next scheduled run."));

@@ -11,6 +11,8 @@ import org.jboss.logging.Logger;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -116,10 +118,28 @@ public class HaciendaXsdValidator {
     // ── Resource resolver ──────────────────────────────────────────────────
 
     /**
-     * Resolves the {@code ../../xmldsig-core-schema.xsd} import that the
-     * Hacienda XSDs declare, by loading the resource from the classpath.
+     * Serves the {@code ../../xmldsig-core-schema.xsd} import that the Hacienda
+     * XSDs declare, from the classpath — plus the two W3C DTDs that schema's own
+     * DOCTYPE names.
+     *
+     * <p>The DTD entries exist so schema compilation needs no network. The
+     * byte-for-byte W3C {@code xmldsig-core-schema.xsd} declares
+     * {@code <!DOCTYPE schema PUBLIC "-//W3C//DTD XMLSchema 200102//EN"
+     * "http://www.w3.org/2001/XMLSchema.dtd">}, and that DTD in turn references
+     * {@code datatypes.dtd}. Both are vendored under {@code /xsd/dtd/} with
+     * provenance headers (retrieved 2026-09-28, upstream $Ids preserved), and
+     * only those two exact references are served here. Everything else returns
+     * {@code null} (defer to normal resolution).</p>
+     *
+     * <p>Why exact matches and not a general DTD allowance: this resolver runs
+     * during compilation of schemas WE ship, so the only legitimate DTDs are
+     * these two. An allowlist of two keeps a future schema from silently
+     * pulling anything else.</p>
      */
     private static class ClasspathResourceResolver implements LSResourceResolver {
+
+        private static final String W3C_XMLSCHEMA_DTD = "http://www.w3.org/2001/XMLSchema.dtd";
+
         @Override
         public LSInput resolveResource(final String type,
                                        final String namespaceURI,
@@ -135,7 +155,23 @@ public class HaciendaXsdValidator {
                 }
                 LOG.warn("xmldsig-core-schema.xsd not found on classpath");
             }
-            return null; // fall back to default resolution
+            if (W3C_XMLSCHEMA_DTD.equals(systemId)) {
+                InputStream is = HaciendaXsdValidator.class
+                    .getResourceAsStream("/xsd/dtd/XMLSchema.dtd");
+                if (is != null) {
+                    return new SimpleLSInput(publicId, systemId, is);
+                }
+                LOG.warn("vendored XMLSchema.dtd not found on classpath");
+            }
+            if ("datatypes.dtd".equals(systemId)) {
+                InputStream is = HaciendaXsdValidator.class
+                    .getResourceAsStream("/xsd/dtd/datatypes.dtd");
+                if (is != null) {
+                    return new SimpleLSInput(publicId, systemId, is);
+                }
+                LOG.warn("vendored datatypes.dtd not found on classpath");
+            }
+            return null; // defer to normal resolution; the boundaries are ACCESS_EXTERNAL_*
         }
     }
 
@@ -179,6 +215,30 @@ public class HaciendaXsdValidator {
             SchemaFactory factory =
                 SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
             factory.setResourceResolver(new ClasspathResourceResolver());
+            // TRUST BOUNDARY: this compiles a schema WE ship on the classpath,
+            // not attacker input, so the only external reference that can
+            // appear is one the vendored XSD itself declares. The bundled
+            // xmldsig-core-schema.xsd (a W3C document, kept byte-for-byte as
+            // published) carries a DOCTYPE naming
+            // http://www.w3.org/2001/XMLSchema.dtd, and Xerces must be allowed
+            // to read it for the ds:Signature declaration to compile. Blocking
+            // DTD access here broke all seven schemas with
+            // "Cannot resolve the name 'ds:Signature'".
+            //
+            // ACCESS_EXTERNAL_SCHEMA is still set to "", which is the part that
+            // matters at this layer: it stops an <xs:import>/<xs:include> from
+            // being fetched over http/https/file. The Hacienda import of
+            // xmldsig-core-schema.xsd is served by ClasspathResourceResolver
+            // above, which is consulted before this property applies.
+            //
+            // ACCESS_EXTERNAL_DTD is likewise "" now that the two W3C DTDs are
+            // vendored: the resolver serves both locally, so nothing legitimate
+            // needs protocol access here either.
+            //
+            // The DTD restriction belongs on the Validator, not here — see
+            // validate(...), which parses the untrusted uploaded document.
+            setAccessExternal(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            setAccessExternal(factory, XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 
             final InputStream xsdIs = getClass().getResourceAsStream(classpathResource);
             if (xsdIs == null) {
@@ -197,6 +257,30 @@ public class HaciendaXsdValidator {
         } catch (SAXException | RuntimeException e) {
             LOG.error("Failed to compile XSD schema from " + classpathResource, e);
             return null;
+        }
+    }
+
+    /**
+     * Sets an {@code ACCESS_EXTERNAL_*} JAXP property, tolerating
+     * implementations that do not know it.
+     *
+     * <p>Not wrapped in a swallow: the property is the control that stops an
+     * external DTD/schema fetch, so failing to set it is logged loudly and the
+     * {@code *UnrecognizedPropertyException} is allowed to propagate rather than
+     * being quietly absorbed.</p>
+     */
+    private static void setAccessExternal(final Object handler,
+                                           final String property,
+                                           final String value) {
+        try {
+            if (handler instanceof SchemaFactory sf) {
+                sf.setProperty(property, value);
+            } else if (handler instanceof Validator v) {
+                v.setProperty(property, value);
+            }
+        } catch (SAXNotRecognizedException | SAXNotSupportedException e) {
+            LOG.warn("JAXP no reconoce " + property
+                    + "; la validacion queda sin restriccion de acceso externo", e);
         }
     }
 
@@ -544,6 +628,14 @@ public class HaciendaXsdValidator {
 
         try {
             final Validator validator = schema.newValidator();
+            // The instance document is attacker-supplied (an uploaded invoice).
+            // Without this the Validator uses the JDK default SAX configuration,
+            // which resolves external DTDs and entities declared inside that
+            // document — a blind XXE (out-of-band fetch from the server's network
+            // position, or file:// exfiltration). The schemas themselves are
+            // already restricted in createSchema(); this closes the instance side.
+            setAccessExternal(validator, XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            setAccessExternal(validator, XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             validator.validate(
                 new StreamSource(new ByteArrayInputStream(xml.getBytes("UTF-8"))));
             return ValidationResult.ok();

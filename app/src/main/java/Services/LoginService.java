@@ -68,6 +68,46 @@ public class LoginService extends GService<Usuarios> {
         }
     }
 
+    /**
+     * A real BCrypt hash of a value nobody knows, used to spend the same CPU on
+     * the "no such user" path as on the "wrong password" path.
+     *
+     * <p>Cost 12, the same as {@link #BCRYPT_COST}, so the verification below
+     * takes the same time as a real one.</p>
+     */
+    private static final String HASH_COMPARACION = HASH_FALSO();
+
+    private static String HASH_FALSO() {
+        return BCrypt.withDefaults().hashToString(
+                12, "comparacion-que-nadie-conoce-mercurius".toCharArray());
+    }
+
+    /**
+     * Verifies a password against a throwaway hash and always returns false.
+     *
+     * <p>Call this when the account does not exist. Without it the not-found
+     * branch returns without ever touching BCrypt, so it answers in
+     * microseconds while a wrong password costs a full cost-12 verification. That
+     * difference is a reliable username-enumeration oracle measured from the
+     * outside, and it also means the endpoint gives an attacker a fast path for
+     * probing which usernames are real before spending guesses on them.</p>
+     *
+     * <p>The return value is hard-coded {@code false} and the input is discarded,
+     * so this can never accidentally authenticate anyone.</p>
+     */
+    public boolean verificarContraHashFalso(@Nullable String password) {
+        try {
+            BCrypt.verifyer().verify(
+                    (password == null ? "" : password).toCharArray(), HASH_COMPARACION);
+        } catch (RuntimeException e) {
+            // Un hash de comparacion nunca deberia fallar; si lo hace, el coste
+            // de esta llamada ya se pago y el resultado sigue siendo false.
+            LOG.warn("Comparacion contra hash falso fallo: " + e.getMessage()
+                    + " | source=LoginService.verificarContraHashFalso()");
+        }
+        return false;
+    }
+
     private String hashPassword(String password) {
         try {
             return BCrypt.withDefaults().hashToString(BCRYPT_COST, password.toCharArray());

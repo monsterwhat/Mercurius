@@ -67,6 +67,16 @@ public class AppAuthResource {
     @Inject
     LoginService loginService;
 
+    /** Bounds password guessing against {@link #supervisorAuthorize}. */
+    @Nonnull
+    @Inject
+    Utils.IntentosDeCredencial intentosDeCredencial;
+
+    /** Source address for throttling; see {@link #direccionOrigen()}. */
+    @Inject
+    @Nullable
+    io.vertx.ext.web.RoutingContext routing;
+
     @Inject
     @Nonnull
     SecurityIdentity securityIdentity;
@@ -74,6 +84,18 @@ public class AppAuthResource {
     /**
      * Supervisor re-authorization: verifies a second set of credentials for a
      * sensitive action without ending the caller's own session.
+     *
+     * <p><b>Throttled and timing-equalized.</b> This verifies a BCrypt hash for
+     * an <em>arbitrary, caller-supplied</em> username, so unthrottled it is both
+     * a password-guessing oracle and — because the not-found branch returned
+     * without ever invoking BCrypt — a username-enumeration oracle measurable
+     * from outside: not-found answered in microseconds, wrong password after a
+     * full cost-12 verification.</p>
+     *
+     * <p>Both are closed here: {@link IntentosDeCredencial} bounds attempts per
+     * account and per source address, and the not-found path now spends the same
+     * CPU via {@link LoginService#verificarContraHashFalso(String)}. The response
+     * body is identical in every failure case, so it discloses nothing.</p>
      */
     @POST
     @Path("/supervisor-authorize")
@@ -82,6 +104,7 @@ public class AppAuthResource {
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Supervisor credentials verified"),
         @APIResponse(responseCode = "401", description = "Invalid credentials or disabled user"),
+        @APIResponse(responseCode = "429", description = "Too many attempts; retry after the indicated delay"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response supervisorAuthorize(
@@ -92,6 +115,13 @@ public class AppAuthResource {
             return invalidCredentials();
         }
 
+        String direccion = direccionOrigen();
+
+        Long bloqueo = intentosDeCredencial.restanteBloqueo(username, direccion);
+        if (bloqueo != null) {
+            return demasiadosIntentos(bloqueo);
+        }
+
         try {
             // Mirrors SessionController.authorizeAction(): lookup + BCrypt verify,
             // delegating persistence concerns to LoginService (findByUsername
@@ -100,19 +130,27 @@ public class AppAuthResource {
             Usuarios authUser = loginService.findByUsername(username);
             if (authUser == null) {
                 LOG.info("failed to supervisor authorize");
+                // Spend the same BCrypt cost as the wrong-password branch so the
+                // two are indistinguishable by response time.
+                loginService.verificarContraHashFalso(password);
+                intentosDeCredencial.registrarFallo(username, direccion);
                 return invalidCredentials();
             }
 
             if (!Boolean.TRUE.equals(authUser.getStatus())) {
                 LOG.info("failed to supervisor authorize");
+                loginService.verificarContraHashFalso(password);
+                intentosDeCredencial.registrarFallo(username, direccion);
                 return invalidCredentials();
             }
 
             if (!loginService.verifyPassword(password, authUser.getPassword())) {
                 LOG.info("failed to supervisor authorize");
+                intentosDeCredencial.registrarFallo(username, direccion);
                 return invalidCredentials();
             }
 
+            intentosDeCredencial.registrarExito(username, direccion);
             return Response.ok(ApiResponse.ok(
                     new SupervisorAuthorizationDTO(username, deriveRoles(authUser)))).build();
         } catch (RuntimeException e) {
@@ -122,6 +160,41 @@ public class AppAuthResource {
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Error durante la autorización"))
                     .build();
         }
+    }
+
+    /**
+     * Best-effort source address for throttling.
+     *
+     * <p>Falls back to a constant when it cannot be determined. That is
+     * deliberately NOT the empty string: an empty fallback would give every
+     * unknown caller the same bucket, so one attacker could lock every user out
+     * by tripping a shared counter.</p>
+     */
+    private String direccionOrigen() {
+        try {
+            if (routing != null) {
+                String ip = routing.request().remoteAddress() != null
+                        ? routing.request().remoteAddress().hostAddress()
+                        : null;
+                if (ip != null && !ip.isBlank()) {
+                    return ip;
+                }
+            }
+        } catch (RuntimeException e) {
+            LOG.debug("No se pudo determinar la direccion de origen: " + e.getMessage()
+                    + " | source=AppAuthResource.direccionOrigen()");
+        }
+        return "desconocida";
+    }
+
+    /** 429 with Retry-After, so a client backs off instead of hammering. */
+    private Response demasiadosIntentos(long segundos) {
+        return Response.status(429)
+                .header("Retry-After", String.valueOf(segundos))
+                .entity(ApiResponse.error("TOO_MANY_ATTEMPTS",
+                        "Demasiados intentos. Intentelo de nuevo en "
+                                + (segundos / 60) + " minuto(s)."))
+                .build();
     }
 
     /**
