@@ -195,14 +195,24 @@ public class PDFGenerator {
                 try {
                     impuesto = new java.math.BigDecimal(impuestoStr).intValue();
                 } catch (NumberFormatException ignored) {
-                    // Non-integer rate (e.g. 0.5) — default to 0 for PDF letter mapping
+                    // A non-integer rate (e.g. 0.5) cannot map to a letter code,
+                    // so the line prints as-is with the default mapping. The 0
+                    // here only drives the letter lookup, never the amounts —
+                    // but a bad catalog value should still be visible.
+                    LOG.warn("Impuesto no entero en CABYS, el codigo de letra del PDF usara el valor por defecto: '"
+                            + impuestoStr + "'"
+                            + " | source=PDFGenerator.generarPDF()");
                 }
             }
             String codigoLetra = "E";
             try {
                 codigoLetra = Tipo_CodigoImpuesto.getCodigoLetra(impuesto);
             } catch (IllegalArgumentException ignored) {
-                // Unknown rate — default to "E" (exento)
+                // An unmapped rate prints as "E" (exento). Visible, because a
+                // wrong letter on a printed fiscal document misstates the tax
+                // treatment to whoever reads it.
+                LOG.warn("Tasa de impuesto sin codigo de letra, el PDF mostrara E: " + impuesto
+                        + " | source=PDFGenerator.generarPDF()");
             }
 
             // Create and configure the cell for Cantidad
@@ -398,7 +408,12 @@ public class PDFGenerator {
                 claveLabel.setAlignment(Element.ALIGN_CENTER);
                 document.add(claveLabel);
             } catch (WriterException | IOException e) {
-                // QR generation failed — continue without QR
+                // The v4.4 Hacienda PDF carries a QR with the verification URL;
+                // without it the document still prints but loses machine
+                // readability, so a failed QR is warn-worthy, not silent.
+                LOG.warn("No se pudo generar el QR del comprobante, el PDF sale sin QR: "
+                        + e.getMessage()
+                        + " | source=PDFGenerator.generarPDF()");
             }
         }
 

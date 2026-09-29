@@ -93,7 +93,17 @@ Regla: **no editar a mano nada bajo `fixtures/reales/`**. Un cambio manual se pi
 Variables de entorno sensibles (ver `app/src/main/resources/application.properties`):
 
 - **`DB_PASSWORD`** / **`DB_URL`** - Sobrescrituras por entorno de la contraseña y URL JDBC de la base de datos, sin editar `application.properties`.
+- **`MERCATUS_JWT_SECRET`** - Clave de firma HS256. Debe aportar **al menos 32 bytes (256 bits)**; un secreto más corto **impide el arranque** en vez de rellenarse con ceros (rellenar reducía la entropia real y hacía creer que se cumplía el mínimo). Genere una con `openssl rand -base64 32`.
 - **Claves en BD (autogeneradas):** `authSessionKey` y `haciendaEncryptionKey` se generan al primer arranque y se guardan en `appsettings` — no requieren variables de entorno. Rotación vía `AppSettingsService.rotate*` (requiere re-login para `authSessionKey`).
+- **Sin cliente de API sembrado:** el arranque ya **no** crea el cliente `mercurius-frontend` con el secreto `dev-secret-do-not-use-in-production`. Provisiónelo un administrador por la vía normal; una instalación sin clientes responde 401 en `/oauth/token`.
+
+Controles de la aplicación:
+
+- **Familias de token JWT separadas** — cada token lleva `iss`, `aud` y un claim `type` que **se exige al validar**. Un token de marketplace ya no se acepta como token de API; antes sí se aceptaba, y con ello se saltaba el limitador de tasa de `/api/v1/**`.
+- **Limitador de intentos de credenciales** (`Utils.IntentosDeCredencial`, `mercurius.auth.intentos.*`) — acotado por cuenta **y** por dirección de origen, aplicado a `POST /api/app/auth/supervisor-authorize` y `PUT /api/app/users/{id}/password`. Devuelve 429 con `Retry-After`.
+- **Igualación de tiempo** — la rama "usuario no existe" ejecuta igualmente una verificación BCrypt contra un hash de comparación, para que no sea un oráculo de enumeración de usuarios medible por tiempo de respuesta.
+- **XML externo** — `Utils.XmlSeguro` es el único analizador de XML que entra desde fuera (subidas de facturas y adjuntos por correo). Rechaza `DOCTYPE` de forma determinista y desactiva el acceso a DTD/esquemas externos.
+- **Rutas de adjuntos** — el nombre de un adjunto de correo nunca decide la ruta: se reduce al nombre final, se filtra y se verifica con `getCanonicalPath()` que cae dentro del directorio destino.
 
 ## Estándares de Código
 
@@ -108,17 +118,26 @@ Convenciones obligatorias para todo cambio en `app/src` (backend Quarkus + plant
 - **Pruebas contra PostgreSQL local** - Dev Services está deshabilitado (sin Docker): las pruebas arrancan contra `mercurius_test` en `localhost:5433` con login form-cookie real (`admin` / `admin123` sembrado por `import-test.sql`). Ver [Pruebas (Testing)](#pruebas-testing).
 - **Fixtures generadas no se editan a mano** - Nada bajo `app/src/test/resources/fixtures/reales/` se toca a mano: se regeneran con `scripts\anonymize-facturas-fixtures.ps1` + `scripts\derive-facturas-v44.ps1` y se validan con `scripts\verify-real-fixtures.ps1`, que es la puerta (código de salida `0`). Ver [Facturas reales de prueba](#facturas-reales-de-prueba-fixtures-generadas).
 
-### Estado de conformidad (2026-09-26)
+### Estado de conformidad
 
-| Estándar | Estado | Detalle |
-|----------|--------|---------|
-| `@SuppressWarnings` justificados | Conforme | 15 casos en `main`, todos `"unchecked"` en casts inevitables (mapas sin tipo, `Query` crudo, Jackson `Map.class`); 0 en pruebas |
-| Sin `catch` vacíos | Conforme | 4 en `main` revisados: 1 corregido con justificación escrita (`OrdenCompraResource.java:891`), 3 sondas de mejor esfuerzo documentadas (`BackupService`, `GService`, `DbSessionKeyConfigSource`); en pruebas solo limpiezas documentadas (`TributacionResourceTest`) |
-| Dinero con `BigDecimal` | Conforme | Importes en `BigDecimal`; los `double` hallados son días, porcentajes, scores y stock — no dinero |
-| Anotaciones `jakarta.*` | Conforme | 0 imports `javax.*` de Java EE en `main` y pruebas (los restantes son del JDK: `javax.xml`, `javax.crypto`, `javax.imageio`, `javax.swing`) |
-| Dominio en español | Conforme (2026-09-26, verificado) | 10 entidades renombradas: `Users→Usuarios`, `Clients→Clientes`, `ApiClients→ClientesApi`, `AppSettings→ConfiguracionAplicacion`, `StockAlert→AlertaStock`, `ReorderSuggestion→SugerenciaReposicion`, `ProfitMarginHistory→HistorialMargen`, `ProfitMarginSnapshot→CorteMargen`, `UserShortcut→AtajoUsuario`, `PagoEntry→EntradaPago` (148 archivos, JPQL incluido; `@Table`, rutas REST, JSON y plantillas intactos). DTOs/servicios/recursos conservan nombre por compatibilidad de API. Verificado: compila (586+75 archivos, javac 25) y suite en verde (ver [Pruebas](#pruebas)) |
-| Sin `System.out` en `main` | Conforme (2026-09-26) | 6 restos migrados a `LOG` (`MensajeReceptorService`, `FacturasRecibidasResource.java:863`): `warn` para fallos, `debug` para trazas |
-| Aserciones en pruebas | Conforme (2026-09-26) | `ArticuloResourceTest.java:418`: justificación escrita agregada (relectura de mejor esfuerzo, resultado ya afirmado arriba) |
+> **Medido, no estimado.** La tabla anterior (2026-09-26) reportaba cifras que
+> la medición contradecía — en particular "4 `catch` vacíos" cuando hay 19, y
+> "0 `@SuppressWarnings` en pruebas" cuando hay 2. Estas cifras se obtuvieron
+> contando el árbol de fuentes; si una regla se corrige, vuelva a contar y
+> actualice el número aquí en lugar de copiar el anterior.
+
+| Estándar | Estado | Detalle (medido) |
+|----------|--------|------------------|
+| `@SuppressWarnings` justificados | Conforme | 15 en `main`, todos `"unchecked"` en casts inevitables (mapas sin tipo, `Query` crudo, Jackson `Map.class`); **2 en pruebas** (no 0) |
+| Sin `catch` vacíos | Conforme (2026-09-28) | Medidos 19 cuerpos sin sentencias en `main`. **8 se conservan con justificación escrita** (siguiente formato en `Parser`/`ImportacionMasivaService`, cierre de recursos en `AppLauncher`, derivación de clave en `EncryptionUtil`, doble intento de descifrado en `HaciendaCertificateService`, valor por defecto en `PronosticosResource`, sonda LAZY en `OrdenCompraResource:893`). **Los otros 11 se hicieron visibles**: 10 ahora registran `LOG.warn`/`debug` (tasas de impuesto no numéricas en `CarritoService`/`ComprobanteService`/`PDFGenerator`, desglose de tarifa sin mapeo, QR fallido, token Fides, callback de Hacienda, mapa de merma vacío) y `CabysService:67` documenta que su respaldo puede devolverse transitorio. Regla vigente: ningún `catch` sin sentencia ni justificación |
+| Dinero con `BigDecimal` | Conforme | 18 declaraciones `double`/`float` en `main`: días, porcentajes, scores y stock. Ningún importe monetario. Única excepción a vigilar: `Clientes.discount:63` (`double`, ya marcado `DEPRECATED` y nunca aplicado a totales) |
+| Anotaciones `jakarta.*` | Conforme | 0 imports `javax.*` de Java EE en `main` y pruebas (los 64 restantes son del JDK: `javax.xml`, `javax.crypto`, `javax.imageio`, `javax.swing`) |
+| Dominio en español | Conforme | 10 entidades renombradas en 2026-09-26 (148 archivos, JPQL incluido; `@Table`, rutas REST, JSON y plantillas intactos). DTOs/servicios/recursos conservan nombre en inglés por compatibilidad de API |
+| Sin `System.out` en `main` | Conforme | 0 apariciones de `System.out`/`System.err`; 0 `printStackTrace()`; 0 `getStackTrace()` en `main` |
+| XML externo sin acceso | Conforme (2026-09-28) | La política de análisis vive en un solo sitio, `Utils.XmlSeguro`: `disallow-doctype-decl`, `FEATURE_SECURE_PROCESSING` y `ACCESS_EXTERNAL_DTD`/`ACCESS_EXTERNAL_SCHEMA` vacíos. En `HaciendaXsdValidator` esas propiedades se aplican **al `SchemaFactory` y al `Validator`**; el `Validator` es el único punto donde se parsean bytes no confiables. **Los XSD de Hacienda y el `xmldsig-core-schema.xsd` de la W3C se conservan byte a byte tal como se publican** — no se editan. Los dos DTD que ese esquema nombra (`XMLSchema.dtd`, `datatypes.dtd`) están **vendidos como archivos nuevos** en `xsd/dtd/` con cabecera de procedencia (W3C, 2026-09-28) y los sirve el `ClasspathResourceResolver` solo para esas dos referencias exactas: la compilación de esquemas ya no sale a red, demostrable porque con `ACCESS_EXTERNAL_DTD=""` cualquier intento HTTP haría fallar la compilación |
+| Transacciones atómicas | **Parcial** | `ComprobanteService.crearComprobante` y `InventarioService.updateStock` ya no tragan excepciones dentro de `@Transactional` (revisan la tabla). **Pendiente:** `crearComprobante` sigue enviando a Hacienda *dentro* de la transacción que retiene el bloqueo pesimista del consecutivo; el sondeo de conectividad y el `poll` deberían salir de ese límite (ver [Pruebas](#pruebas) y el reporte de auditoría) |
+| Bloqueo de versión | **No conforme** | `@Version` aparece **0** veces en 600 archivos de `main`. No hay bloqueo optimista en el modelo de persistencia; la corrección concurrente depende de `PESSIMISTIC_WRITE` fila a fila |
+| Esquema de base de datos | Conforme (documentado) | Hibernate `update` es el único mecanismo: **no hay Flyway ni Liquibase**, y deliberadamente no existe `db/migration/`. Los cinco scripts que había ahí nunca se ejecutaron (no había dependencia) y todo lo que describían ya estaba en las entidades. El compromiso de `update` en producción está documentado en `application.properties` |
 
 ### Pruebas
 
@@ -134,9 +153,34 @@ Precondiciones (Dev Services está deshabilitado, `%test.quarkus.datasource.devs
 - **PostgreSQL local en el puerto `5433`** con las bases `mercurius` (aplicación) y `mercurius_test` (pruebas), usuario `mercurius` / contraseña `Mercurius@1!` (ver [Instalación](#1-configurar-base-de-datos)).
 - El perfil `%test` usa `drop-and-create` y ejecuta `app/src/test/resources/import-test.sql`, que siembra el usuario **`admin` / `admin123`** (hash BCrypt real) usado por las pruebas de autenticación. No hay que sembrar nada a mano.
 
-Estado actual de este cambio: **821 pruebas en verde, 0 fallos, 0 errores, 2 omitidas**. Antes de las fixtures de facturas reales eran 688; el salto a 821 incluye `fixtures/reales` y tres clases de prueba nuevas. Las 2 omitidas son las de respaldo real, que se saltan solas cuando el binario cliente `pg_dump` no está en el entorno (los binarios servidor y cliente de PostgreSQL se distribuyen por separado); en un runner con `postgresql-client` instalado **sí se ejecutan**.
+Estado medido el **2026-09-28**: **940 pruebas, 940 en verde, 0 fallos, 0 errores, 2 omitidas**.
 
-El CI (`.github/workflows/ci.yml`, job `test`) replica exactamente este contrato con un contenedor de servicio `postgres` en `localhost:5433`, así que un rojo local casi siempre es estado de `mercurius_test`, no código.
+El camino hasta el verde merece registrarse con honestidad. La sesión encontró
+la suite en **883 pruebas con 6 rojos**; los 6 se verificaron como preexistentes
+(`git stash` contra un árbol limpio: mismos 4 fallos + 2 errores, mismos nombres)
+y se corrigieron sin cambiar comportamiento de producción salvo donde el
+comportamiento era el defecto:
+
+- `EnvioFueraLineaTest` (2) — la implementación era correcta en ambos casos; los
+  tests estaban mal. El límite de "nunca más de 4 días naturales" excluía el
+  límite exacto jueves→lunes (Art. 21 ¶3: dos días hábiles), y el segundo stub de
+  Mockito usaba `when(...)` sobre un método ya stubbed, que lanza el stub viejo
+  antes de que `thenThrow` se ejecute (`doThrow().when()` es el idioma correcto).
+- `ImportacionMasivaServiceTest` (4) — dos defectos reales de implementación y
+  dos tests mal escritos. `parsearMonto("1.2.3.4")` se aceptaba en silencio como
+  1234; ahora la agrupación exige grupos de 3 dígitos. `normalizarEncabezado`
+  no igualaba `Código de Barras` con `codigo_barras`; ahora descarta la palabra
+  suelta `de` (verificado: ninguna columna canónica colisiona). Los otros dos
+  eran conteos/índices mal puestos en el propio test (`";;"` son tres campos
+  vacíos, no dos; el índice de columna se busca en la fila de encabezado).
+
+Las 2 omitidas son las de respaldo real, que se saltan solas cuando el binario cliente `pg_dump` no está en el entorno (los binarios servidor y cliente de PostgreSQL se distribuyen por separado); en un runner con `postgresql-client` instalado **sí se ejecutan**.
+
+Esta sesión añadió **57 pruebas** de regresión de seguridad (`UsersResourcePrivilegeEscalationTest`, `IdorOwnershipTest`, `FacturaUploadDoctypeRejectionTest`, `MensajeReceptorServiceResultadoTest`, `ApiClientsBootstrapSeedTest`, `EmailServiceNombreAdjuntoTest`, `JwtTokenUtilTest`, `IntentosDeCredencialTest`): la suite pasó de 883 a 940 pruebas sin introducir un solo rojo nuevo.
+
+> El conteo por métodos `@Test` (717 declarados) **subestima** el total: los `@ParameterizedTest` con fuente de métodos generan muchas invocaciones (`FacturasRealesFixtureTest` son 129 casos). Use el resumen de Surefire, no el conteo estático.
+
+El CI (`.github/workflows/ci.yml`, job `test`) replica exactamente este contrato con un contenedor de servicio `postgres` en `localhost:5433`, así que un rojo local casi siempre es estado de `mercurius_test`, no código. El workflow añade un job `dependency-audit` que falla con cualquier hallazgo HIGH/CRITICAL de OWASP Dependency-Check: **ese job consulta la base de CVE en el momento de ejecutarse**, así que el mismo commit puede estar verde hoy y rojo mañana por un CVE nuevo. No es un fallo del cambio revisado.
 
 **Corregido en esta sesión**
 - Plantilla de ajustes: `{backupRutaEfectiva}` sin supplying (error real de render) y tarjeta `#backup-status-card` ausente.
@@ -156,7 +200,7 @@ El CI (`.github/workflows/ci.yml`, job `test`) replica exactamente este contrato
 - **Java 25** - Última versión de Java con soporte para virtual threads y mejoras de rendimiento
 - **Quarkus 3.36.2** - Framework Java nativo en la nube para alto rendimiento y bajo consumo de memoria
 - **PostgreSQL 18** - Base de datos relacional (único motor soportado)
-- **Hibernate ORM + Panache** - Mapeo objeto-relacional integrado con Quarkus
+- **Hibernate ORM** (JPQL y `EntityManager` a mano) - Mapeo objeto-relacional integrado con Quarkus. **No se usa Panache**: hay 0 imports de `io.quarkus.hibernate.orm.panache` y el artefacto `quarkus-hibernate-orm-panache` no está en `pom.xml`
 - **Quarkus REST (RESTEasy Reactive) + Qute** - APIs REST y plantillas tipadas nativas
 - **Quarkus Security** - Autenticación form-cookie y autorización por roles
 - **Extensiones Quarkus** - REST Client, Mailer, Cache (Caffeine), SmallRye OpenAPI, Fault Tolerance y CSRF (Double Submit Cookie)

@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jboss.logging.Logger;
 
 /**
  * Service for analyzing inventory shrinkage (losses from theft, damage, spoilage, etc.)
@@ -22,6 +23,8 @@ import java.util.Map;
 @Named
 @ApplicationScoped
 public class ShrinkageAnalysisService {
+
+    private static final Logger LOG = Logger.getLogger(ShrinkageAnalysisService.class);
 
     private static final String[] SHRINKAGE_TYPES = {"Merma", "Perdida/Robo", "Vencimiento", "Daño"};
 
@@ -111,7 +114,13 @@ public class ShrinkageAnalysisService {
                 resultMap.put(dept, total != null ? total.abs() : BigDecimal.ZERO);
             }
         } catch (PersistenceException e) {
-            // Return empty map on error
+            // An empty map means "no shrinkage measured", so a database failure
+            // must not pass as one silently: the dashboard would show a clean
+            // zero while the query never ran. The empty map is still returned
+            // (the report renders rather than 500s), but the failure is loud.
+            LOG.warn("No se pudo calcular la merma por departamento; el reporte mostrara cero: "
+                    + e.getMessage()
+                    + " | source=ShrinkageAnalysisService.getShrinkageByDepartment()");
         }
         return resultMap;
     }

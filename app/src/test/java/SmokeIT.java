@@ -11,28 +11,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * T2 smoke verification against the local PostgreSQL test database
  * (localhost:5433/mercurius_test, Dev Services disabled — no Docker).
  *
- * <p><b>File/class-name note:</b> the task mandates this file be
- * {@code SmokeIT.java}, but surefire's default class includes ({@code *Test}
- * patterns) never discover a class named {@code SmokeIT}; the two required
- * checks therefore live in package-private {@code @QuarkusTest} classes whose
- * names satisfy discovery, housed in this mandated file.</p>
- *
- * <p><b>KNOWN BLOCKER (pre-existing T1 defect):</b> the pom's
- * {@code quarkus-tests} surefire execution declares a {@code <configuration>}
- * but NO {@code <goals>} binding, so Maven binds nothing to it and it never
- * runs during the {@code mvn test} lifecycle (verified: only
- * {@code default-test} logs an execution header, while
- * {@code mvn surefire:test@quarkus-tests} discovers and runs these classes
- * green). Meanwhile {@code default-test}'s
- * {@code excludedGroups=io.quarkus.test.junit.QuarkusTest} filters these
- * classes out (surefire's FQCN filter is meta-annotation-aware — a composed
- * annotation workaround was tried and rejected). Net effect: until the
- * execution gains {@code <goals><goal>test</goal></goals>}, these smoke tests
- * are skipped by plain {@code mvn test} (43 tests) and must be invoked via
- * {@code mvn surefire:test@quarkus-tests} (45 tests). Pom edits were
- * explicitly out of scope for T2; the verified one-line fix is documented in
- * .omo/evidence/t2/diag-pom-with-goals.log (45/45 green with the binding
- * added temporarily, then reverted).</p>
+ * <p><b>File/class-name note (corrected 2026-09-28):</b> an earlier comment
+ * claimed surefire's default includes never discover these classes because the
+ * file is named {@code SmokeIT.java}, and documented a "KNOWN BLOCKER" about a
+ * pom execution with no goals. Both claims were wrong: surefire scans compiled
+ * classes, so {@code SmokeSeedTest.class} and {@code SmokePgConnectivityTest.class}
+ * match the default {@code **}/{@code *Test} include regardless of the source
+ * file name, and the pom contains no such execution and no
+ * {@code excludedGroups}. Both classes run and pass in a plain
+ * {@code mvn test} (verified in the surefire reports). The note is kept in this
+ * corrected form so nobody "fixes" the file name and churns the history.</p>
  *
  * <p>Both classes share a single Quarkus boot (identical configuration, no
  * {@code @TestProfile}).</p>

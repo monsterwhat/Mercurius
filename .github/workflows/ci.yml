@@ -154,3 +154,72 @@ jobs:
           path: app/target/surefire-reports/
           if-no-files-found: ignore
           retention-days: 7
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # No dependency scanning existed anywhere in this repo, so a dependency
+      # with a published CVE produced a green build indefinitely. This is a
+      # gate, not a report: it fails the job on a HIGH/CRITICAL finding.
+      #
+      # Two things to know when reading a red run here:
+      #  # The advisory database is fetched at run time, so the SAME commit can
+      #  # go green today and red next week as new CVEs are published. That is
+      #  # correct behaviour for an audit, but it means a red dependency-audit is
+      #  # not necessarily caused by the change under review.
+      #  # nvd-api-key adds rate limit headroom; without it OWASP Dependency-Check
+      #  # can hit the NVD API limit and report "unable to check" for some
+      #  # dependencies rather than "no vulnerabilities".
+      - name: OWASP Dependency-Check (HIGH/CRITICAL gate)
+        uses: dependency-check/Dependency-Check_Action@v4
+        with:
+          project: app/pom.xml
+          format: SARIF
+          fail-on-severity: HIGH
+          output-format: table
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fail on HIGH or CRITICAL findings
+        run: |
+          set -euo pipefail
+          REPORT=app/dependency-check-report.json
+          if [ ! -f "$REPORT" ]; then
+            echo "::error::Dependency-Check produced no report"
+            exit 1
+          fi
+          # Exit non-zero when any HIGH/CRITICAL is present, so the gate does not
+          # depend on the action's own fail-on-severity behaviour.
+          jq -e '
+            [.vulnerabilities // [] | .[]
+             | select((.cvssv3BaseScore // 0) >= 7.0
+               or ((.cvssv2Score // 0) >= 7.0)
+               or ((.cvssv3BaseScore // 0) == 0 and (.cvssv2Score // 0) == 0
+                   and ((.severity // "") | ascii_upcase) == "HIGH"))
+             | {name, severity, cvssv3BaseScore}] as $bad
+            | if ($bad | length) == 0 then 0
+              else ($bad[] | "::error::\(.severity) \(.name) (CVSS \(.cvssv3BaseScore))") | ., 1
+              end
+          ' "$REPORT"
+
+      - name: Upload dependency report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: dependency-check-report
+          path: |
+            app/dependency-check-report.json
+            app/dependency-check-report.sarif
+          if-no-files-found: ignore
+          retention-days: 14
