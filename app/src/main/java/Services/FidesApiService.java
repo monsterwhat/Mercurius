@@ -9,6 +9,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.jboss.logging.Logger;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,6 +37,8 @@ import java.util.List;
 @Named
 @ApplicationScoped
 public class FidesApiService {
+
+    private static final Logger LOG = Logger.getLogger(FidesApiService.class);
 
     private static final int TOKEN_EXPIRY_BUFFER_SECONDS = 30;
 
@@ -266,7 +269,13 @@ public class FidesApiService {
                 }
             }
         } catch (IOException e) {
-            // Fall through to null
+            // Without a token there is no authenticated call to make, so the
+            // method returns null and the caller degrades to the offline queue.
+            // Logged (not silent) because a failing token endpoint means every
+            // Fides submission is queuing, which the operator should know.
+            LOG.warn("No se pudo obtener el token de Fides; las operaciones quedan encoladas: "
+                    + e.getMessage()
+                    + " | source=FidesApiService.obtenerToken()");
         }
         return null;
     }
@@ -408,7 +417,13 @@ public class FidesApiService {
                 return result;
             }
         } catch (IOException e) {
-            // Fall through
+            // A transport failure here is not a Fides rejection: the caller
+            // distinguishes "rejected" (a FidesResponse) from "unknown" (null)
+            // and enqueues the latter. Logged so a dead Fides endpoint is
+            // visible instead of surfacing as unexplained queue growth.
+            LOG.warn("Fallo de transporte contra Fides; el documento queda en estado desconocido: "
+                    + e.getMessage()
+                    + " | source=FidesApiService.checkSubmission()");
         }
         return null;
     }

@@ -134,12 +134,17 @@ public class CarritoService implements Serializable {
                 BigDecimal precio = item.isPromo() ? item.getArticuloConDescuento() : item.getPrecioEfectivo();
                 String impuestoStr = item.getArticulo().getCodigoCabys().getImpuesto();
                 BigDecimal impuestoPct = BigDecimal.ZERO;
-                if (impuestoStr != null && !impuestoStr.isEmpty()) {
-                    try {
-                        impuestoPct = new BigDecimal(impuestoStr);
-                    } catch (NumberFormatException ignored) {
-                    }
-                }
+        if (impuestoStr != null && !impuestoStr.isEmpty()) {
+            try {
+                impuestoPct = new BigDecimal(impuestoStr);
+            } catch (NumberFormatException ignored) {
+                // A CABYS code carrying a non-numeric impuesto must not silently
+                // zero the tax: the cart total would undercharge. Logged so the
+                // bad catalog entry is found and fixed instead of absorbed.
+                LOG.warn("Impuesto no numerico en CABYS, se usa 0% para el articulo: '" + impuestoStr + "'"
+                        + " | source=CarritoService.calcularTotal()");
+            }
+        }
                 precio = precio.add(precio.multiply(impuestoPct.divide(BigDecimal.valueOf(100))));
                 total = total.add(precio.multiply(item.getCantidad()));
             }

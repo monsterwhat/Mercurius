@@ -65,6 +65,15 @@ public class CabysService extends GService<Cabys>{
                 em.persist(fallback);
                 em.flush();
             } catch (Exception e) {
+                // Best effort by design: this well-known CABYS must always be
+                // returned so catalog lookups never null out, even if the
+                // database write failed. The returned entity is then TRANSIENT
+                // (not persisted), so the caller must not assume a later
+                // find() will see it. Loud, because a persist failure here
+                // means the catalog write path is broken.
+                LOG.warn("No se pudo persistir el CABYS de respaldo 0111010010010; "
+                        + "se devuelve transitorio: " + e.getMessage()
+                        + " | source=CabysService.find()");
             }
             return fallback;
         }
