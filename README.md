@@ -153,7 +153,18 @@ Precondiciones (Dev Services está deshabilitado, `%test.quarkus.datasource.devs
 - **PostgreSQL local en el puerto `5433`** con las bases `mercurius` (aplicación) y `mercurius_test` (pruebas), usuario `mercurius` / contraseña `Mercurius@1!` (ver [Instalación](#1-configurar-base-de-datos)).
 - El perfil `%test` usa `drop-and-create` y ejecuta `app/src/test/resources/import-test.sql`, que siembra el usuario **`admin` / `admin123`** (hash BCrypt real) usado por las pruebas de autenticación. No hay que sembrar nada a mano.
 
-Estado medido el **2026-09-28**: **940 pruebas, 940 en verde, 0 fallos, 0 errores, 2 omitidas**.
+Estado medido el **2026-09-28**: **954 pruebas, 954 en verde, 0 fallos, 0 errores, 2 omitidas**.
+
+> **2026-09-29 (sin verificar en suite completa):** se agregaron ~65 pruebas
+> (núcleo matemático de pronóstico 50, selección por backtesting 5, servicio de
+> demanda 6, precisión en UI 4) verificadas **solo en corridas dirigidas**, cada
+> una verde en su clase. La suite completa con todo junto está **PENDIENTE de
+> correr** — el servidor anterior no pudo ejecutarla. Al recibir este código,
+> correr `mvn -B -ntp test` y confirmar el total antes de cualquier release.
+> Sospecha conocida a descartar primero: `SobrestockAlertTest` dio 5 errores
+> (`ArithmeticException` en `createReorderSuggestion`) bajo suite completa por
+> estado compartido de BD; se corrigió la división (`dailySales.intValue()`
+> truncaba a 0) pero el verde completo con el fix no se pudo confirmar aquí.
 
 El camino hasta el verde merece registrarse con honestidad. La sesión encontró
 la suite en **883 pruebas con 6 rojos**; los 6 se verificaron como preexistentes
@@ -176,7 +187,7 @@ comportamiento era el defecto:
 
 Las 2 omitidas son las de respaldo real, que se saltan solas cuando el binario cliente `pg_dump` no está en el entorno (los binarios servidor y cliente de PostgreSQL se distribuyen por separado); en un runner con `postgresql-client` instalado **sí se ejecutan**.
 
-Esta sesión añadió **57 pruebas** de regresión de seguridad (`UsersResourcePrivilegeEscalationTest`, `IdorOwnershipTest`, `FacturaUploadDoctypeRejectionTest`, `MensajeReceptorServiceResultadoTest`, `ApiClientsBootstrapSeedTest`, `EmailServiceNombreAdjuntoTest`, `JwtTokenUtilTest`, `IntentosDeCredencialTest`): la suite pasó de 883 a 940 pruebas sin introducir un solo rojo nuevo.
+Esta sesión añadió **71 pruebas** de regresión (57 de seguridad más 14 de POS concurrente/idempotencia): la suite pasó de 883 a 954 pruebas, todas en verde al cierre del 2026-09-28.
 
 > El conteo por métodos `@Test` (717 declarados) **subestima** el total: los `@ParameterizedTest` con fuente de métodos generan muchas invocaciones (`FacturasRealesFixtureTest` son 129 casos). Use el resumen de Surefire, no el conteo estático.
 
