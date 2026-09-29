@@ -372,7 +372,13 @@ public class StockAlertService extends GService<AlertaStock> {
         if (monthlySales.compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal dailySales = monthlySales.divide(BigDecimal.valueOf(30), 2, RoundingMode.HALF_UP);
             if (dailySales.compareTo(BigDecimal.ZERO) > 0) {
-                diasSinStock = reorderQuantity / dailySales.intValue();
+                // Divide in BigDecimal, THEN truncate: dailySales.intValue() is 0
+                // for anything under 1 unit/day (e.g. 0.03 for a unit a month),
+                // which passed the guard above and divided by zero. Slow sellers
+                // are exactly the articles that reach this branch.
+                diasSinStock = BigDecimal.valueOf(reorderQuantity)
+                        .divide(dailySales, 0, RoundingMode.HALF_UP)
+                        .intValue();
             }
         }
 
