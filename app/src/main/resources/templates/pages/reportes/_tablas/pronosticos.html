@@ -1,6 +1,10 @@
 {!
   _tablas/pronosticos - table-only fragment for HX-Request swaps of the
   Pronósticos de Inventario page (T19). Column set switches with "seccion".
+
+  The last three cells (método elegido, MASE, sesgo) are the forecast
+  accuracy carried per article; an article with no backtesting rows renders
+  the "sin evaluar" / "-" placeholders the resource pre-formats.
 !}
 <div id="reporte-pronosticos-tabla">
     {#include _kit/data-table id="reporte-pronosticos" baseUrl=baseUrl
@@ -25,6 +29,9 @@
             <td>{f.diasRestantes}</td>
             <td><span class="tag {#if f.recomendacion == 'Comprar'}is-danger{#else}{#if f.recomendacion == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.recomendacion}</span></td>
             {/if}
+            <td>{f.metodoElegido}</td>
+            <td>{f.mase}</td>
+            <td>{f.sesgo}</td>
             {/if}
         </tr>
         {/for}
