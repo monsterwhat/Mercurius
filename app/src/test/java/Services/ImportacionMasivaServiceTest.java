@@ -110,8 +110,11 @@ class ImportacionMasivaServiceTest {
         assertThat(filas.get(1)).containsExactly("Empresa; S.A.", "118820456", "info@correo.cr");
         // A short row pads to nothing rather than throwing.
         assertThat(filas.get(2)).containsExactly("Siguiente", "", "");
-        // A fully blank row is still surfaced, so the caller can report it as skipped.
-        assertThat(filas.get(3)).containsExactly("", "");
+        // A fully blank row is still surfaced, so the caller can report it as
+        // skipped. Two delimiters are three empty fields — the same rule every
+        // CSV reader applies (";;".split(";") is ["","",""]) — so the row keeps
+        // the file's column shape instead of a miscounted two.
+        assertThat(filas.get(3)).containsExactly("", "", "");
     }
 
     @Test
@@ -120,7 +123,11 @@ class ImportacionMasivaServiceTest {
         List<List<String>> filas = ImportacionMasivaService.leerCeldas("articulos.xlsx", bytes);
         assertThat(filas).hasSize(2);
         assertThat(filas.get(0)).contains("Nombre", "Precio Costo sin IVA");
-        assertThat(filas.get(1).get(filas.get(1).indexOf("Nombre"))).isEqualTo("Leche entera 1 L");
+        // The column index comes from the HEADER row (0), applied to the data
+        // row (1). Looking the header caption up in the data row always misses
+        // (indexOf returns -1) and .get(-1) throws — which is what this test did
+        // before.
+        assertThat(filas.get(1).get(filas.get(0).indexOf("Nombre"))).isEqualTo("Leche entera 1 L");
         // Numeric cells are rendered locale-independently (dot decimal separator).
         int indicePrecio = filas.get(1).indexOf("1234.56");
         assertThat(indicePrecio).isGreaterThanOrEqualTo(0);

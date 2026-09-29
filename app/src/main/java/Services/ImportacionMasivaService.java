@@ -1403,16 +1403,36 @@ public class ImportacionMasivaService {
         return mapa;
     }
 
-    /** Lowercase, unaccented, alphanumeric-only form of a header caption. */
+    /**
+     * Lowercase, unaccented, alphanumeric-only form of a header caption, with the
+     * standalone word {@code de} dropped.
+     *
+     * <p>The stopword is load-bearing, not cosmetic. Supplier files spell the
+     * column {@code Codigo de Barras} while the canonical column is
+     * {@code Codigo de Barras} itself — and integrators also write
+     * {@code codigo_barras}. Without dropping {@code de}, the first folds to
+     * {@code codigodebarras} and the second to {@code codigobarras}, so the same
+     * column does not match itself across the two spellings and the file is
+     * rejected for a missing required column.</p>
+     *
+     * <p>Collision-checked: no two canonical {@code ImportacionMasivaColumna}
+     * headers fold to the same key with the stopword dropped
+     * ({@code Codigo/Codigo Articulo/Codigo Cabys/Codigo de Barras/Codigo Zona}
+     * stay distinct, as do {@code Unidad de Medida/Unidad de Medida Comercial}).
+     * Only the bare word {@code de} is dropped — {@code del}, {@code la},
+     * {@code el} and any {@code de} inside a longer token are kept, so this
+     * cannot merge two genuinely different headers.</p>
+     */
     @Nonnull
     static String normalizarEncabezado(@Nullable String texto) {
         if (texto == null) {
             return "";
         }
-        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+        String plegado = Normalizer.normalize(texto, Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
-                .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]", "");
+                .toLowerCase(Locale.ROOT);
+        plegado = plegado.replaceAll("\\bde\\b", "");
+        return plegado.replaceAll("[^a-z0-9]", "");
     }
 
     /** Same folding as {@link #normalizarEncabezado}, used for duplicate keys. */
@@ -1528,6 +1548,16 @@ public class ImportacionMasivaService {
             int ocurrencias = s.length() - s.replace(String.valueOf(separador), "").length();
             int decimales = s.length() - pos - 1;
             if (ocurrencias > 1) {
+                // Varios separadores iguales solo pueden ser de agrupacion, y la
+                // agrupacion exige grupos de 3 digitos: "1.234.567" es un millon,
+                // pero "1.2.3.4" esta mal formado y antes se convertia en silencio
+                // en 1234. En importes, convertir un texto mal formado en otra
+                // cantidad es peor que rechazarlo: el error se importa como dato.
+                if (!esAgrupacionValida(s, separador)) {
+                    throw new NumberFormatException(
+                            "agrupacion de miles invalida (los grupos deben ser de 3 digitos): '"
+                                    + original + "'");
+                }
                 normalizado = s.replace(String.valueOf(separador), "");
             } else if (decimales == 1 || decimales == 2) {
                 normalizado = (pos == 0 ? "0" : s.substring(0, pos)) + "." + s.substring(pos + 1);
@@ -1547,6 +1577,30 @@ public class ImportacionMasivaService {
             throw new NumberFormatException("no es un número: '" + original + "'");
         }
         return negativo ? valor.negate() : valor;
+    }
+
+    /**
+     * Whether repeated separators form valid thousand-grouping: a first group of
+     * 1-3 digits followed by groups of exactly 3, e.g. {@code 1.234.567}.
+     *
+     * <p>{@code 1.2.3.4} fails (single-digit groups) and {@code 12.34.567} fails
+     * ("34" is not a full group of 3). Anything that is not grouping-shaped is
+     * rejected rather than silently reinterpreted as a different amount.</p>
+     */
+    private static boolean esAgrupacionValida(@Nonnull String s, char separador) {
+        String[] grupos = s.split("\\" + separador, -1);
+        if (grupos.length < 2) {
+            return false;
+        }
+        if (!grupos[0].matches("[0-9]{1,3}")) {
+            return false;
+        }
+        for (int g = 1; g < grupos.length; g++) {
+            if (!grupos[g].matches("[0-9]{3}")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /** Parses an integer, rejecting decimals and any non-digit content. */

@@ -3,6 +3,7 @@ package Services;
 import Models.ConfiguracionAplicacion;
 import Models.ComprobantesRecibidos;
 import org.jboss.logging.Logger;
+import jakarta.annotation.Nonnull;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -113,18 +114,18 @@ public class MensajeReceptorService {
             );
 
             if (xmlMensaje == null) {
-                factura.setHaciendaMensajeReceptorEstado(accion.toUpperCase());
-                factura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
-                comprobantesRecibidosService.update(factura);
-                return new MRResult(true, "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor encolado.", accion.toUpperCase());
+                // El XML NO se genero: no hay documento que firmar, enviar ni
+                // encolar. Se marcaba como exito ("Mensaje Receptor encolado")
+                // cuando en realidad no ocurrio nada, y el operador veia una
+                // factura como_notificada_ que nunca llego a Hacienda.
+                return pendiente(factura, "No se pudo generar el XML del Mensaje Receptor para la factura.");
             }
 
             HaciendaSigner.SignResult signResult = haciendaSigner.signXml(xmlMensaje);
             if (!signResult.success) {
-                factura.setHaciendaMensajeReceptorEstado(accion.toUpperCase());
-                factura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
-                comprobantesRecibidosService.update(factura);
-                return new MRResult(true, "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor encolado.", accion.toUpperCase());
+                // Fallo de firma XAdES: tampoco hubo envio. Antes se reportaba
+                // como exito por el mismo motivo que el caso anterior.
+                return pendiente(factura, "No se pudo firmar el XML del Mensaje Receptor para la factura.");
             }
 
             String emisorTipoId = settings.getTipoIdentificacion();
@@ -148,12 +149,22 @@ public class MensajeReceptorService {
                         emisorTipoId, emisorNumeroId, receptorTipoId, receptorNumeroId);
                 }
             } catch (Exception e) {
-                LOG.debug("MR Hacienda mock failed, fallback to ok: " + e.getMessage());
-                response = HaciendaApiService.ApiResponse.ok("recibido");
+                // Fallo de transporte contra Hacienda (timeout, TLS, 5xx, fallo
+                // de autenticacion). Antes se fabricaba una respuesta "ok" y la
+                // factura quedaba registrada comonotificada. Ahora es un fallo
+                // real y la factura vuelve a PENDIENTE para poder reintentarse.
+                LOG.warn("MR: fallo de transporte al enviar a Hacienda: " + e.getMessage()
+                    + " | source=MensajeReceptorService.enviarMensajeReceptor()"
+                    + " | clave=" + clave);
+                return pendiente(factura,
+                    "No se pudo comunicar con Hacienda para enviar el Mensaje Receptor: " + e.getMessage());
             }
             if (response == null) {
-                LOG.debug("MR response null, fallback to ok");
-                response = HaciendaApiService.ApiResponse.ok("recibido");
+                LOG.warn("MR: Hacienda devolvio una respuesta nula"
+                    + " | source=MensajeReceptorService.enviarMensajeReceptor()"
+                    + " | clave=" + clave);
+                return pendiente(factura,
+                    "Hacienda no devolvio respuesta al enviar el Mensaje Receptor.");
             }
 
             if (response.isSuccess()) {
@@ -166,19 +177,57 @@ public class MensajeReceptorService {
                 return new MRResult(true,
                     "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor enviado a Hacienda.",
                     accion.toUpperCase());
-            } else {
-                factura.setHaciendaMensajeReceptorEstado(accion.toUpperCase());
-                factura.setHaciendaMensajeReceptorFecha(LocalDateTime.now());
-                comprobantesRecibidosService.update(factura);
-                return new MRResult(true,
-                    "Factura " + accion.toLowerCase() + " correctamente. Mensaje Receptor enviado a Hacienda.",
-                    accion.toUpperCase());
             }
+
+            // Hacienda RECHAZO el Mensaje Receptor. Este era el defecto mas grave
+            // del metodo: las dos ramas del if eran identicas byte a byte, la de
+            // rechazo devolvia MRResult(true, "...enviado a Hacienda.") y sellaba
+            // el estado como si la notificacion hubiera surtido efecto. Ahora el
+            // motivo real de Hacienda se propaga al operador y la factura vuelve a
+            // PENDIENTE, que es el estado que Consultas y el programador de tareas
+            // reconocen como "todavia sin notificar".
+            LOG.warn("MR: Hacienda rechazo el Mensaje Receptor: " + response.errorMessage
+                + " | source=MensajeReceptorService.enviarMensajeReceptor()"
+                + " | clave=" + clave);
+            return pendiente(factura,
+                "Hacienda rechazo el Mensaje Receptor: "
+                    + (response.errorMessage != null ? response.errorMessage : response.responseBody));
 
         } catch (RuntimeException e) {
                         LOG.warn("Error en Mensaje Receptor: " + e.getMessage() + " | source=" + "MensajeReceptorService.enviarMensajeReceptor()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
 
             return new MRResult(false, "Error al procesar Mensaje Receptor: " + e.getMessage(), null);
         }
+    }
+
+    /**
+     * Leaves a received invoice in {@code PENDIENTE} and reports the failure.
+     *
+     * <p>{@code PENDIENTE} is the state Consultas and the scheduler agree on for
+     * "still to notify": {@code ComprobantesRecibidosService} selects
+     * {@code estado IS NULL OR estado = 'PENDIENTE'} to build that list, and
+     * {@code ProgramadorTareas} skips only rows whose state is already set. Using
+     * it here keeps a failed Mensaje Receptor visible and retryable instead of
+     * silently marking the invoice as notified.
+     *
+     * <p>The timestamp is deliberately NOT stamped: {@code
+     * haciendaMensajeReceptorFecha} records when Hacienda actually received the
+     * document, and no document was received.</p>
+     *
+     * <p>Wrapped in its own guard because this runs from the failure branches of
+     * a method that is itself {@code @Transactional}: a persistence problem while
+     * recording the failure must not replace the real cause with a second
+     * exception and hide it from the operator.</p>
+     */
+    private MRResult pendiente(@Nonnull ComprobantesRecibidos factura, @Nonnull String motivo) {
+        try {
+            factura.setHaciendaMensajeReceptorEstado("PENDIENTE");
+            comprobantesRecibidosService.update(factura);
+        } catch (RuntimeException e) {
+            LOG.warn("No se pudo registrar el estado PENDIENTE del Mensaje Receptor: " + e.getMessage()
+                + " | source=MensajeReceptorService.pendiente()"
+                + " | motivoOriginal=" + motivo);
+        }
+        return new MRResult(false, motivo, "PENDIENTE");
     }
 }

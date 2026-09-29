@@ -579,15 +579,30 @@ public class PosResource {
             }
         }
         carritoService.ajustarInventario(ctx, currentUser);
-        ComprobanteService.CrearComprobanteResult result = comprobanteService.crearComprobante(
-                settings,
-                ctx.getCarrito(),
-                cliente,
-                cliente,
-                currentUser,
-                strategy,
-                pagos
-        );
+        ComprobanteService.CrearComprobanteResult result;
+        try {
+            result = comprobanteService.crearComprobante(
+                    settings,
+                    ctx.getCarrito(),
+                    cliente,
+                    cliente,
+                    currentUser,
+                    strategy,
+                    pagos
+            );
+        } catch (ComprobanteService.ComprobanteNoCreadoException e) {
+            // crearComprobante is @Transactional and rethrows on failure so the
+            // half-written encabezado/detalles/resumen roll back atomically
+            // instead of committing an orphaned half-invoice. Map it back to the
+            // exact envelope this path has always returned, so the client
+            // contract (500 COMPROBANTE_ERROR) is unchanged.
+            LOG.warn("No se pudo crear el comprobante (transaccion revertida): " + e.getMessage()
+                    + " | source=PosResource.doFacturar() | despues=" + e.getMessage());
+            return Response.serverError()
+                    .entity(ApiResponse.error("COMPROBANTE_ERROR",
+                            "No se pudo crear el comprobante; revise la bitácora de alertas"))
+                    .build();
+        }
         if (result == null || result.comprobante == null) {
             return Response.serverError()
                     .entity(ApiResponse.error("COMPROBANTE_ERROR",

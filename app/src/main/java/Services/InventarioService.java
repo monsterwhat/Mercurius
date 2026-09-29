@@ -10,6 +10,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
@@ -340,30 +341,66 @@ public class InventarioService extends GService<Inventario> {
         }
     }
     
+    /**
+     * Applies an inventory movement to the running stock of its article.
+     *
+     * <p><b>Atomic and serialized.</b> This is a read-modify-write on a shared
+     * row, so it takes a {@code PESSIMISTIC_WRITE} lock and runs inside a
+     * transaction — the same pattern {@code ConsecutivoEmitidoService} uses for
+     * invoice numbering. Previously this method had no {@code @Transactional},
+     * no lock and no version column, so two concurrent sales of the same article
+     * both read the same {@code stock}, both added their quantity, and the
+     * second write silently discarded the first.</p>
+     *
+     * <p><b>Failures are no longer swallowed.</b> The old
+     * {@code catch (PersistenceException) { LOG.warn(...); }} returned
+     * {@code void}, so a rejected write was indistinguishable from a successful
+     * one and the sale completed with stock never applied. The exception now
+     * propagates and the surrounding transaction rolls back.</p>
+     *
+     * <p><b>First sale of a brand-new barcode.</b> Two transactions can both
+     * find no row and both try to insert. {@code ArticuloStock.codigoBarra}
+     * is now {@code unique}, so the database — not application timing — picks
+     * the winner and the loser fails loudly. That loser is expected to retry
+     * the sale; the previous behaviour let both inserts succeed and split the
+     * article's stock across two rows permanently.</p>
+     */
+    @Transactional
     public void updateStock(Inventario entity) {
-        try {
-            String codigoBarra = entity.getArticulo().getCodigoBarra();
-            // Find the existing stock record by barcode
-            ArticuloStock existingStock = em.createQuery(
-                "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = :barcode", 
-                ArticuloStock.class
-            ).setParameter("barcode", codigoBarra).getResultStream().findFirst().orElse(null);
+        String codigoBarra = entity.getArticulo() != null ? entity.getArticulo().getCodigoBarra() : null;
+        if (codigoBarra == null || codigoBarra.isBlank()) {
+            throw new IllegalArgumentException(
+                    "No se puede actualizar el stock: el movimiento no tiene articulo con codigo de barra.");
+        }
+        BigDecimal cantidad = entity.getCantidad() != null ? entity.getCantidad() : BigDecimal.ZERO;
 
-            if (existingStock != null) {
-                // Update the existing stock record
-                existingStock.setStock(existingStock.getStock().add(entity.getCantidad()));
-                em.merge(existingStock);
-            em.flush();
-            } else {
-                // Create a new stock record
-                ArticuloStock newStock = new ArticuloStock();
-                newStock.setCodigoBarra(codigoBarra);
-                newStock.setStock(entity.getCantidad()); // Set initial stock
-                em.persist(newStock);
-            em.flush();
+        try {
+            TypedQuery<ArticuloStock> query = em.createQuery(
+                    "SELECT a FROM ArticuloStock a WHERE a.codigoBarra = :barcode",
+                    ArticuloStock.class);
+            query.setParameter("barcode", codigoBarra);
+            query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+            query.setMaxResults(1);
+
+            ArticuloStock stock;
+            try {
+                stock = query.getSingleResult();
+                stock.setStock(stock.getStock() == null
+                        ? cantidad
+                        : stock.getStock().add(cantidad));
+            } catch (NoResultException e) {
+                stock = new ArticuloStock();
+                stock.setCodigoBarra(codigoBarra);
+                stock.setStock(cantidad);
             }
+            em.merge(stock);
+            em.flush();
         } catch (PersistenceException e) {
-            LOG.warn("Error updating stock: " + e.getMessage() + " | source=InventarioService.updateStock() | despues=" + e.getMessage());
+            LOG.warn("Error updating stock: " + e.getMessage()
+                    + " | source=InventarioService.updateStock()"
+                    + " | despues=" + e.getMessage());
+            throw new RuntimeException(
+                    "No se pudo actualizar el stock del articulo " + codigoBarra + ": " + e.getMessage(), e);
         }
     }
     

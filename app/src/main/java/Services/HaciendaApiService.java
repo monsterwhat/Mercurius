@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.eclipse.microprofile.faulttolerance.Retry;
 import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,15 +20,42 @@ import java.util.Base64;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import Models.ConfiguracionAplicacion;
+import org.jboss.logging.Logger;
 
 @Named
 @ApplicationScoped
 public class HaciendaApiService {
 
+    private static final Logger LOG = Logger.getLogger(HaciendaApiService.class);
+
     private static final String SANDBOX_BASE_URL = "https://api.comprobanteselectronicos.go.cr/recepcion-sandbox/v1";
     private static final String PRODUCTION_BASE_URL = "https://api.comprobanteselectronicos.go.cr/recepcion/v1";
 
     private final HaciendaCertificateService certificateService;
+
+    /**
+     * Polling budget for {@code GET /recepcion/{clave}} while waiting for a
+     * terminal state.
+     *
+     * <p>Bounded on purpose. {@code submitAndWait} is reached from
+     * {@code ComprobanteService.crearComprobante}, which is
+     * {@code @Transactional} and holds a {@code PESSIMISTIC_WRITE} lock on the
+     * invoice-number row, so every millisecond spent sleeping here is a
+     * millisecond every concurrent sale is blocked behind (the datasource pool
+     * is 20 connections). The previous hardcoded 20 attempts x 3000 ms held
+     * that lock for up to 60 s of pure sleeping.</p>
+     *
+     * <p>Raising these is legitimate for a slow link, but whatever the total,
+     * a send that cannot be confirmed in time is enqueued in
+     * {@code EnvioFueraLinea} and transmitted by the 48 h batch under
+     * Art. 21 ¶3 — the poll is an optimisation, never the durability
+     * mechanism.</p>
+     */
+    @ConfigProperty(name = "mercatus.hacienda.poll.intentos", defaultValue = "8")
+    int pollIntentos;
+
+    @ConfigProperty(name = "mercatus.hacienda.poll.intervalo-ms", defaultValue = "1500")
+    long pollIntervaloMs;
 
     @Inject
     public HaciendaApiService(HaciendaCertificateService certificateService) {
@@ -42,7 +70,13 @@ public class HaciendaApiService {
                 return settings.getHaciendaCallbackUrl();
             }
         } catch (RuntimeException e) {
-            // Log but don't break — callback URL is optional
+            // The callback URL is genuinely optional (TRIBU-CR async
+            // notification), so a settings failure degrades to sending without
+            // it rather than breaking the submission. The comment previously
+            // claimed this was logged; it was not. Now it is.
+            LOG.debug("No se pudo leer la URL de callback de Hacienda; el envio va sin callback: "
+                    + e.getMessage()
+                    + " | source=HaciendaApiService.getCallbackUrl()");
         }
         return "";
     }
@@ -322,9 +356,21 @@ public class HaciendaApiService {
         return result;
     }
 
-    @Retry(maxRetries = 3, delay = 7200000, maxDuration = 14400000)
-    @Fallback(fallbackMethod = "sendInvoiceFallback")
-    public ApiResponse sendInvoice(String clave, String xmlContent, 
+    /**
+     * Performs a single {@code POST /recepcion} attempt.
+     *
+     * <p><b>No {@code @Retry}/{@code @Fallback} here, deliberately.</b> This
+     * method's only caller is {@link #submitAndWait} in this same bean, and a
+     * CDI self-invocation bypasses the fault-tolerance interceptor entirely —
+     * annotations on this method never executed. Combined with
+     * {@code delay = 7200000} (a units error: MicroProfile Fault Tolerance
+     * {@code delay} is MILLISECONDS, so 7 200 000 ms = 2 hours, capped at
+     * 4 hours) that read as a resilience policy while providing none.</p>
+     *
+     * <p>Retries now live on {@link #submitAndWait}, which IS an external
+     * boundary and whose interceptors therefore actually run.</p>
+     */
+    public ApiResponse sendInvoice(String clave, String xmlContent,
                                     String emisorTipoId, String emisorNumeroId,
                                     String receptorTipoId, String receptorNumeroId) {
         try {
@@ -370,7 +416,11 @@ public class HaciendaApiService {
         }
     }
 
-    public ApiResponse sendInvoiceFallback(String clave, String xmlContent, 
+    /**
+     * Retained for callers that referenced the old name. No longer wired as a
+     * fault-tolerance fallback (see {@link #submitAndWaitFallback}).
+     */
+    public ApiResponse sendInvoiceFallback(String clave, String xmlContent,
                                             String emisorTipoId, String emisorNumeroId,
                                             String receptorTipoId, String receptorNumeroId) {
         return ApiResponse.error(503, "No se pudo enviar la factura a Hacienda después de varios intentos. "
@@ -507,8 +557,26 @@ public class HaciendaApiService {
      * Hacienda POST /recepcion returns 202 Accepted — the actual result (ACEPTADO/RECHAZADO)
      * must be obtained by polling GET /recepcion/{clave} until terminal state.
      *
-     * Polling interval: 3s, timeout: 60s.
+     * <p><b>This is the real fault-tolerance boundary.</b> It is called from
+     * {@code HaciendaServiceFacade.submitDocument} and
+     * {@code EnvioFueraLineaService.reintentar} — different beans, so the
+     * interceptors below genuinely execute. The previous
+     * {@code @Retry/@Fallback} sat on {@link #sendInvoice}, whose only caller is
+     * this method in the same bean, so CDI self-invocation meant it never ran
+     * (and its {@code delay = 7200000} was a milliseconds/hours units error
+     * besides).</p>
+     *
+     * <p>{@code delay} and {@code maxDuration} are MILLISECONDS. Three retries
+     * 2 s apart, capped at 30 s total, is sized for a transient network blip.
+     * Anything longer belongs to the {@code EnvioFueraLinea} outbox and its 48 h
+     * batch under Art. 21 ¶3, not to a retry loop that would be holding a
+     * pessimistic lock on the invoice-number row for hours.</p>
+     *
+     * <p>Polling budget comes from {@code mercatus.hacienda.poll.*} — see the
+     * field javadoc for why it is bounded and configurable.</p>
      */
+    @Retry(maxRetries = 3, delay = 2000, maxDuration = 30000)
+    @Fallback(fallbackMethod = "submitAndWaitFallback")
     public ApiResponse submitAndWait(String clave, String xmlContent,
                                       String emisorTipoId, String emisorNumeroId,
                                       String receptorTipoId, String receptorNumeroId) {
@@ -519,12 +587,12 @@ public class HaciendaApiService {
             return sendResult;
         }
 
-        int maxAttempts = 20;
+        int maxAttempts = Math.max(1, pollIntentos);
         int attempt = 0;
 
         while (attempt < maxAttempts) {
             try {
-                Thread.sleep(3000);
+                Thread.sleep(pollIntervaloMs);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return ApiResponse.error(500, "Polling interrupted for " + clave + ": " + e.getMessage());
@@ -552,8 +620,27 @@ public class HaciendaApiService {
             attempt++;
         }
 
-        return ApiResponse.error(408, "Hacienda processing timeout after 60s for clave: " + clave
-            + ". Check status manually via Consultas.");
+        return ApiResponse.error(408, "Hacienda processing timeout after "
+            + ((long) Math.max(1, pollIntentos) * Math.max(0L, pollIntervaloMs) / 1000L)
+            + "s for clave: " + clave
+            + ". The signed document stays queued for automatic transmission under Art. 21 ¶3; "
+            + "check status manually via Consultas.");
+    }
+
+    /**
+     * Fault-tolerance fallback for {@link #submitAndWait}. Reached only after
+     * the retry budget above is exhausted (3 retries, 2 s apart, 30 s cap).
+     *
+     * <p>Returns 503 rather than throwing, so the caller's existing failure
+     * handling takes over: {@code ComprobanteService.enviarComprobanteAHacienda}
+     * degrades the optimistic ENVIADO stamp back to PENDIENTE and enqueues the
+     * signed XML in {@code EnvioFueraLinea} for the 48 h batch.</p>
+     */
+    public ApiResponse submitAndWaitFallback(String clave, String xmlContent,
+                                              String emisorTipoId, String emisorNumeroId,
+                                              String receptorTipoId, String receptorNumeroId) {
+        return ApiResponse.error(503, "No se pudo confirmar el envío a Hacienda después de varios intentos. "
+            + "El comprobante queda encolado para envío automático. Clave: " + clave);
     }
 
     private String readStream(InputStream stream) throws IOException {
