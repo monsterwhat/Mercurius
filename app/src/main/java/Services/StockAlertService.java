@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Service for intelligent stock management and automated reordering
@@ -34,6 +35,29 @@ public class StockAlertService extends GService<AlertaStock> {
 
     @Inject @Nonnull
     private InventarioService inventarioService;
+
+    /**
+     * Overstock threshold as a multiple of the computed optimal stock: an
+     * article alerts when its current stock exceeds
+     * {@code optimal * multiploSobrestock}.
+     *
+     * <p>Default 2. Below ~1.5 the alert fires on normal replenishment cycles
+     * (a fresh purchase routinely lands above optimal); above ~3 it only
+     * catches extreme dead stock. Tunable without redeploy via
+     * {@code mercurius.stock.sobrestock.multiplo}; values below 1 are clamped
+     * to 1 (at 1.0 anything above optimal would alert, which is the low-stock
+     * check's mirror, not an overstock signal).</p>
+     */
+    @ConfigProperty(name = "mercurius.stock.sobrestock.multiplo", defaultValue = "2")
+    int multiploSobrestock;
+
+    /**
+     * Effective overstock multiplier after clamping (see
+     * {@link #evaluarSobrestock}: values below 1 behave as 1).
+     */
+    public int getMultiploSobrestock() {
+        return Math.max(1, multiploSobrestock);
+    }
 
     @Override
     protected Class<AlertaStock> getEntityClass() {
@@ -63,7 +87,7 @@ public class StockAlertService extends GService<AlertaStock> {
 
         List<Inventario> movements = query.getResultList();
         if (movements.isEmpty()) {
-            return articulo.getDiasStockSeguridad() != null ? articulo.getDiasStockSeguridad() * 2 : 14; // Default 2 weeks safety
+            return optimoDeRespaldo(articulo);
         }
 
         // Calculate sales velocity (items sold per day)
@@ -94,6 +118,18 @@ public class StockAlertService extends GService<AlertaStock> {
                 .setScale(0, RoundingMode.HALF_UP);
 
         return optimalStock.intValue();
+    }
+
+    /**
+     * Static optimal estimate used when there is no sales velocity to derive
+     * one from: twice the safety-stock days, or 14 days when that is null too.
+     *
+     * <p>Extracted unchanged from {@link #calculateOptimalStock}'s no-movement
+     * branch so the overstock check can reuse it (see
+     * {@link #evaluarSobrestock}): no behavior change to the low-stock path.</p>
+     */
+    private static int optimoDeRespaldo(@Nonnull Articulos articulo) {
+        return articulo.getDiasStockSeguridad() != null ? articulo.getDiasStockSeguridad() * 2 : 14;
     }
 
     /**
@@ -156,21 +192,97 @@ public class StockAlertService extends GService<AlertaStock> {
                 // Create reorder suggestion
                 createReorderSuggestion(articulo, currentStock, optimalStock);
             }
+
+            // Overstock: current stock far above optimal ties up capital and,
+            // for refrigerated articles, spoilage risk. Same table and lifecycle
+            // as the low-stock family (tipoAlerta 'overstock'), evaluated in the
+            // same pass so all three triggers (post-sale, scheduler, manual)
+            // cover it with no extra full-table scan.
+            evaluarSobrestock(articulo, currentStock, optimalStock);
         }
+    }
+
+    /**
+     * Raises an {@code overstock} alert when the current stock exceeds the
+     * configured multiple of optimal.
+     *
+     * <p>Dedup is per tipoAlerta, deliberately narrower than the low-stock
+     * check above (which suppresses on ANY active alert for the article): stock
+     * cannot be both low and over, but a stale low-stock alert from before a
+     * large purchase must not silence a fresh overstock, and vice versa.</p>
+     *
+     * <p>{@code cantidadMinima} carries the overstock threshold (the maximum
+     * before alerting). The column name says "mínima" because the table was
+     * born for low-stock; for overstock rows it is the trigger maximum, which
+     * is why the UI header reads "Umbral" instead. {@code sugeridoReordenar}
+     * stays null — there is nothing to reorder — and renders as "-".</p>
+     */
+    private void evaluarSobrestock(@Nonnull Articulos articulo,
+                                   @Nonnull Integer currentStock,
+                                   @Nonnull Integer optimalStock) {
+        if (articulo.getEstadoAlertas() == null || !articulo.getEstadoAlertas()) {
+            return;
+        }
+        // Without sales velocity the computed optimal is 0 (0 daily sales x
+        // any horizon), which would make every unit "overstock" — including a
+        // new article's first purchase. Fall back to the static estimate, the
+        // same one calculateOptimalStock uses with no movements at all: dead
+        // stock still alerts against it, but ordinary receipts do not.
+        int optimo = optimalStock != null && optimalStock > 0
+                ? optimalStock
+                : optimoDeRespaldo(articulo);
+        int multiplo = Math.max(1, multiploSobrestock);
+        int umbral = optimo * multiplo;
+        if (currentStock <= umbral) {
+            return;
+        }
+
+        Long existentes = em.createQuery(
+                        "SELECT COUNT(sa) FROM AlertaStock sa WHERE sa.articulo = :articulo "
+                                + "AND sa.tipoAlerta = 'overstock' AND sa.estado = 'active'",
+                        Long.class)
+                .setParameter("articulo", articulo)
+                .getSingleResult();
+        if (existentes != null && existentes > 0) {
+            return;
+        }
+
+        AlertaStock alerta = new AlertaStock();
+        alerta.setArticulo(articulo);
+        alerta.setTipoAlerta("overstock");
+        alerta.setCantidadActual(currentStock);
+        alerta.setCantidadMinima(umbral);
+        alerta.setSugeridoReordenar(null);
+        alerta.setDepartamento(articulo.getDepartamento());
+        alerta.setNotas("Alerta generada automáticamente - Sobrestock: " + currentStock
+                + " unidades frente a un óptimo de " + optimo
+                + " (umbral x" + multiplo + " = " + umbral + ")");
+        em.persist(alerta);
     }
 
     /**
      * Get current stock level for an article
      */
+    /**
+     * Current stock level for an article: the sum of its active movements.
+     *
+     * <p>The SUM is typed {@code BigDecimal} because {@code Inventario.cantidad}
+     * is numeric — typing it {@code Long} (as before) throws
+     * {@code QueryTypeMismatch} for every article that has ANY movement, which
+     * aborted the whole alert sweep past the first stocked article and meant
+     * neither low-stock nor overstock alerts ever fired from real data. Only
+     * articles with zero movements (SUM over nothing → null → 0) ever got
+     * through, which is exactly backwards.</p>
+     */
     private Integer getCurrentStock(Articulos articulo) {
         try {
             String jpql = "SELECT SUM(i.cantidad) FROM Inventario i " +
-                         "WHERE i.articulo.codigo = :articuloId AND i.status = true " +
-                         "GROUP BY i.articulo.codigo";
-            TypedQuery<Long> query = em.createQuery(jpql, Long.class)
+                    "WHERE i.articulo.codigo = :articuloId AND i.status = true " +
+                    "GROUP BY i.articulo.codigo";
+            TypedQuery<BigDecimal> query = em.createQuery(jpql, BigDecimal.class)
                     .setParameter("articuloId", articulo.getCodigo());
 
-            Long result = query.getSingleResult();
+            BigDecimal result = query.getSingleResult();
             return result != null ? result.intValue() : 0;
         } catch (NoResultException e) {
             return 0;

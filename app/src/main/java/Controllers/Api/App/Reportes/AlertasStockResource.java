@@ -152,6 +152,7 @@ public class AlertasStockResource {
         Map<String, Integer> estadisticas = stockAlertService.getAlertStatistics();
         int sinStock = valor(estadisticas, "out_of_stock");
         int stockBajo = valor(estadisticas, "low_stock");
+        int sobrestock = valor(estadisticas, "overstock");
         int sugerenciasCount = valor(estadisticas, "reorder_suggestion");
         List<AlertaStock> alertasActivas = stockAlertService.getActiveStockAlerts();
         int totalAlertas = alertasActivas != null ? alertasActivas.size() : 0;
@@ -190,6 +191,7 @@ public class AlertasStockResource {
         model.put("familias", nombres(nombresFamilias));
         model.put("sinStock", sinStock);
         model.put("stockBajo", stockBajo);
+        model.put("sobrestock", sobrestock);
         model.put("sugerencias", sugerenciasCount);
         model.put("totalAlertas", totalAlertas);
 
@@ -229,6 +231,7 @@ public class AlertasStockResource {
         return switch (tipo) {
             case "out_of_stock" -> "Sin Stock";
             case "low_stock" -> "Stock Bajo";
+            case "overstock" -> "Sobrestock";
             case "reorder_suggestion" -> "Sugerencia";
             default -> tipo;
         };

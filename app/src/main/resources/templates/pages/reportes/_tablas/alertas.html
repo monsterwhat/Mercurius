@@ -18,7 +18,7 @@
             <td>{f.promedioVentasMensual}</td>
             <td>{f.fechaCreacion}</td>
             {#else}
-            <td><span class="tag {#if f.tipo == 'Sin Stock'}is-danger{#else}{#if f.tipo == 'Stock Bajo'}is-warning{#else}is-info{/if}{/if}">{f.tipo}</span></td>
+            <td><span class="tag {#if f.tipo == 'Sin Stock'}is-danger{#else}{#if f.tipo == 'Stock Bajo' || f.tipo == 'Sobrestock'}is-warning{#else}is-info{/if}{/if}">{f.tipo}</span></td>
             <td>{f.articulo}</td>
             <td>{f.codigoBarra}</td>
             <td>{f.cantidadActual}</td>

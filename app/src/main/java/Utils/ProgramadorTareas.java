@@ -762,6 +762,8 @@ String contrasenaCorreo = currentSettings.getContrasenaCorreo();
                 tipo = "Sin Stock";
             } else if ("low_stock".equals(alerta.getTipoAlerta())) {
                 tipo = "Stock Bajo";
+            } else if ("overstock".equals(alerta.getTipoAlerta())) {
+                tipo = "Sobrestock";
             } else {
                 tipo = alerta.getTipoAlerta();
             }

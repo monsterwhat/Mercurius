@@ -23,6 +23,11 @@
                     <span class="stat-number">{stockBajo}</span>
                     <span class="stat-label">Stock Bajo</span>
                 </a>
+                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == 'Sobrestock'}active{/if}" style="color:inherit"
+                   href="?seccion=alertas&tipo=Sobrestock{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
+                    <span class="stat-number">{sobrestock}</span>
+                    <span class="stat-label">Sobrestock</span>
+                </a>
                 <a class="stat-card {#if seccion == 'sugerencias'}active{/if}" style="color:inherit"
                    href="?seccion=sugerencias{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
                     <span class="stat-number">{sugerencias}</span>
