@@ -56,6 +56,10 @@ public class StockAlertConfigDTO {
     /** Reorder buffer: 30 days of sales added on top of the optimal-stock gap. */
     private int bufferReordenDias;
 
+    /** Overstock threshold multiple: alert above {@code optimal * this}.
+     *  Read-only fact from {@code mercurius.stock.sobrestock.multiplo}. */
+    private int multiploSobrestock;
+
     // ── 2. Per-article thresholds (the writable surface) ─────────────────────
 
     /** {@code Articulos.codigo} (PK); null when this DTO carries only the
@@ -84,7 +88,8 @@ public class StockAlertConfigDTO {
 
     public StockAlertConfigDTO(int ventanaVelocidadDias, int plazoEntregaDias,
                                int diasStockSeguridadPorDefecto, int stockOptimoRespaldoDias,
-                               int bufferReordenDias, @Nullable Long articuloCodigo,
+                               int bufferReordenDias, int multiploSobrestock,
+                               @Nullable Long articuloCodigo,
                                @Nullable String articuloNombre, @Nullable Integer diasStockSeguridad,
                                boolean estadoAlertas, @Nullable Integer stockOptimoActual) {
         this.ventanaVelocidadDias = ventanaVelocidadDias;
@@ -92,6 +97,7 @@ public class StockAlertConfigDTO {
         this.diasStockSeguridadPorDefecto = diasStockSeguridadPorDefecto;
         this.stockOptimoRespaldoDias = stockOptimoRespaldoDias;
         this.bufferReordenDias = bufferReordenDias;
+        this.multiploSobrestock = multiploSobrestock;
         this.articuloCodigo = articuloCodigo;
         this.articuloNombre = articuloNombre;
         this.diasStockSeguridad = diasStockSeguridad;
@@ -137,6 +143,14 @@ public class StockAlertConfigDTO {
 
     public void setBufferReordenDias(int bufferReordenDias) {
         this.bufferReordenDias = bufferReordenDias;
+    }
+
+    public int getMultiploSobrestock() {
+        return multiploSobrestock;
+    }
+
+    public void setMultiploSobrestock(int multiploSobrestock) {
+        this.multiploSobrestock = multiploSobrestock;
     }
 
     @Nullable

@@ -94,7 +94,6 @@ public class StockAlertConfigResource {
     private static final int STOCK_OPTIMO_RESPALDO_DIAS = 14;
     /** calculateReorderQuantity(): "optimal stock + 30 days buffer". */
     private static final int BUFFER_REORDEN_DIAS = 30;
-
     @Nonnull
     @Inject
     StockAlertService stockAlertService;
@@ -413,17 +412,19 @@ public class StockAlertConfigResource {
     }
 
     /** Global engine view: constants + defaults, no article scope. */
-    private static StockAlertConfigDTO vistaGlobal() {
+    private StockAlertConfigDTO vistaGlobal() {
         return new StockAlertConfigDTO(VENTANA_VELOCIDAD_DIAS, PLAZO_ENTREGA_DIAS,
                 DIAS_STOCK_SEGURIDAD_POR_DEFECTO, STOCK_OPTIMO_RESPALDO_DIAS,
-                BUFFER_REORDEN_DIAS, null, null, null, true, null);
+                BUFFER_REORDEN_DIAS, stockAlertService.getMultiploSobrestock(),
+                null, null, null, true, null);
     }
 
     /** Per-article view as StockAlertService reads/writes the row. */
-    private static StockAlertConfigDTO vistaArticulo(@Nonnull Articulos entidad) {
+    private StockAlertConfigDTO vistaArticulo(@Nonnull Articulos entidad) {
         return new StockAlertConfigDTO(VENTANA_VELOCIDAD_DIAS, PLAZO_ENTREGA_DIAS,
                 DIAS_STOCK_SEGURIDAD_POR_DEFECTO, STOCK_OPTIMO_RESPALDO_DIAS,
-                BUFFER_REORDEN_DIAS, entidad.getCodigo(), entidad.getNombre(),
+                BUFFER_REORDEN_DIAS, stockAlertService.getMultiploSobrestock(),
+                entidad.getCodigo(), entidad.getNombre(),
                 entidad.getDiasStockSeguridad(),
                 entidad.getEstadoAlertas() == null || entidad.getEstadoAlertas(),
                 entidad.getStockOptimo());
@@ -500,7 +501,10 @@ public class StockAlertConfigResource {
                 Map.of("label", "Tipo"),
                 Map.of("label", "Artículo"),
                 Map.of("label", "Stock Actual"),
-                Map.of("label", "Stock Mínimo"),
+                // "Umbral", not "Stock Mínimo": the column carries the trigger
+                // threshold, which for overstock rows is a maximum. The DTO
+                // field stays cantidadMinima for API compatibility.
+                Map.of("label", "Umbral"),
                 Map.of("label", "Sugerido Reordenar"),
                 Map.of("label", "Fecha Creación"),
                 Map.of("label", "Estado"));
@@ -529,6 +533,7 @@ public class StockAlertConfigResource {
         return switch (tipo) {
             case "out_of_stock" -> "Sin Stock";
             case "low_stock" -> "Stock Bajo";
+            case "overstock" -> "Sobrestock";
             case "reorder_suggestion" -> "Sugerencia";
             default -> tipo;
         };
