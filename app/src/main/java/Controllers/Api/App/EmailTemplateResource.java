@@ -1,5 +1,7 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
+
 import Models.Correos.EmailTemplate;
 import Models.DTO.ApiResponse;
 import Models.DTO.EmailTemplateDTO;
@@ -613,18 +615,6 @@ public class EmailTemplateResource {
         return header != null && !"false".equalsIgnoreCase(header);
     }
 
-    private static Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
-    }
-
-    /** HTMX redirect: the client navigates and the page re-renders fresh. */
-    private static Response hxRedirect(@Nonnull String url) {
-        return Response.status(Response.Status.OK)
-                .header("HX-Redirect", url)
-                .build();
-    }
-
     /**
      * Failure branch shared by the form twins: HTMX callers get the
      * redisplayed form fragment (entered values echoed back) plus an
@@ -776,28 +766,6 @@ public class EmailTemplateResource {
                 q);
     }
 
-    /** Column definition helper (label + nullable sort key) as a map. */
-    private static Map<String, Object> col(@Nonnull String label, @Nullable String key) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("label", label);
-        map.put("key", key);
-        return map;
-    }
-
-    /** Server-computed pager window: current ±2 clamped to [1,totalPages]. */
-    private static List<Integer> pageWindow(int page, int totalPages) {
-        if (totalPages <= 1) {
-            return List.of(1);
-        }
-        List<Integer> pages = new ArrayList<>();
-        int from = Math.max(1, page - 2);
-        int to = Math.min(totalPages, page + 2);
-        for (int i = from; i <= to; i++) {
-            pages.add(i);
-        }
-        return pages;
-    }
-
     private record Window(int page, int size, int from, int to, int totalPages) {}
 
     /** Clamped 1-based window over an in-memory result (Qute can't divide). */
@@ -808,10 +776,6 @@ public class EmailTemplateResource {
         int from = Math.min((p - 1) * s, (int) total);
         int to = Math.min(from + s, (int) total);
         return new Window(p, s, from, to, totalPages);
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
     }
 
     /**
