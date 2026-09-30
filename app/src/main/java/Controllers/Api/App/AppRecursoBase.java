@@ -61,6 +61,10 @@ import java.util.Map;
  *       {@code ComprobantesRecibidos}, {@code ReporteProgramado},
  *       {@code Usuarios}). Mover solo la variante {@code String} ocultaría a
  *       las demás; se usa {@link #contains(String, String)} en su lugar.</li>
+ *   <li>{@code parseIntOrNull}: la copia de aquí no lleva {@code @Nullable} en
+ *       el método; ArticuloResource, CategoriaResource e InventarioResource
+ *       conservan la suya anotada (mismo cuerpo). Hace sombra igual que los
+ *       demás casos mixtos y compila sin cambios.</li>
  *   <li>{@code isHxRequest}, {@code currentUser}, {@code isAdmin}: son
  *       <b>de instancia</b> y tienen cuerpos distintos según si leen
  *       {@code RoutingContext}, {@code HttpHeaders} o

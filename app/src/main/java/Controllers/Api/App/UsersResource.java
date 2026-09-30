@@ -1,5 +1,7 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
+
 import Models.DTO.ApiResponse;
 import Models.DTO.PagedResponse;
 import Models.DTO.UsersDTO;
@@ -745,24 +747,8 @@ public class UsersResource {
         return header != null && !"false".equalsIgnoreCase(header);
     }
 
-    private static Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
-    }
-
-    private static Response hxRedirect(@Nonnull String url) {
-        return Response.status(Response.Status.OK)
-                .header("HX-Redirect", url)
-                .build();
-    }
-
     private static String trimToEmpty(@Nullable String raw) {
         return raw == null ? "" : raw.trim();
-    }
-
-    @Nullable
-    private static String emptyToNull(@Nullable String raw) {
-        return raw == null || raw.isBlank() ? null : raw;
     }
 
     private static List<String> permisosLimpios(@Nullable List<String> groupName) {
@@ -994,26 +980,6 @@ public class UsersResource {
         if (cmp != null) {
             rows.sort("desc".equalsIgnoreCase(dir) ? cmp.reversed() : cmp);
         }
-    }
-
-    private static Map<String, Object> col(@Nonnull String label, @Nullable String key) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("label", label);
-        map.put("key", key);
-        return map;
-    }
-
-    private static List<Integer> pageWindow(int page, int totalPages) {
-        if (totalPages <= 1) {
-            return List.of(1);
-        }
-        List<Integer> pages = new ArrayList<>();
-        int from = Math.max(1, page - 2);
-        int to = Math.min(totalPages, page + 2);
-        for (int i = from; i <= to; i++) {
-            pages.add(i);
-        }
-        return pages;
     }
 
     private record Window(int page, int size, int from, int to, int totalPages) {}
