@@ -1,5 +1,7 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
+
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import Models.DTO.ApiResponse;
@@ -34,7 +36,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -621,10 +622,6 @@ public class TributacionResource {
         return header != null && !"false".equalsIgnoreCase(header);
     }
 
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
-    }
-
     /** Legacy counter: case-insensitive estado match. */
     private static int countEstado(@Nonnull List<ComprobantesEmitidos> todos, @Nonnull String estado) {
         return (int) todos.stream()
@@ -878,18 +875,6 @@ public class TributacionResource {
             LOG.debug("No current user resolvable", e);
             return null;
         }
-    }
-
-    private static Response htmlOk(@Nonnull String html) {
-        return Response.ok(html)
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
-    }
-
-    /** HTMX redirect: the client navigates and the page re-renders fresh. */
-    private static Response hxRedirect(@Nonnull String url) {
-        return Response.status(Response.Status.OK)
-                .header("HX-Redirect", url)
-                .build();
     }
 
     // ── Small value carriers ────────────────────────────────────────────
