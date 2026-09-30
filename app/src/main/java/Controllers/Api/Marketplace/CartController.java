@@ -1,6 +1,7 @@
 package Controllers.Api.Marketplace;
 
 import Models.DTO.AddToCartRequest;
+import Models.DTO.ApiResponse;
 import Models.DTO.CartResponse;
 import Models.DTO.UpdateCartItemRequest;
 import Services.MarketplaceCartService;
@@ -45,7 +46,7 @@ public class CartController {
         } catch (RuntimeException e) {
             LOG.error("Error getting cart", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al obtener carrito\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al obtener carrito"))
                     .build();
         }
     }
@@ -60,12 +61,12 @@ public class CartController {
             return Response.ok(cart).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
                     .build();
         } catch (RuntimeException e) {
             LOG.error("Error adding cart item", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al agregar al carrito\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al agregar al carrito"))
                     .build();
         }
     }
@@ -81,12 +82,12 @@ public class CartController {
             return Response.ok(cart).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
                     .build();
         } catch (RuntimeException e) {
             LOG.error("Error updating cart item", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al actualizar carrito\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al actualizar carrito"))
                     .build();
         }
     }
@@ -103,7 +104,7 @@ public class CartController {
         } catch (RuntimeException e) {
             LOG.error("Error removing cart item", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al eliminar del carrito\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al eliminar del carrito"))
                     .build();
         }
     }
@@ -118,7 +119,7 @@ public class CartController {
         } catch (RuntimeException e) {
             LOG.error("Error clearing cart", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al limpiar carrito\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al limpiar carrito"))
                     .build();
         }
     }

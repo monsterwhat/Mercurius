@@ -1,6 +1,7 @@
 package Controllers.Api.Marketplace;
 
 import Models.DTO.CreateOrderRequest;
+import Models.DTO.ApiResponse;
 import Models.DTO.OrderDTO;
 import Services.MarketplaceOrderService;
 import jakarta.annotation.Nonnull;
@@ -45,7 +46,7 @@ public class OrderController {
         } catch (RuntimeException e) {
             LOG.error("Error listing orders", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al cargar órdenes\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al cargar órdenes"))
                     .build();
         }
     }
@@ -60,12 +61,12 @@ public class OrderController {
             return Response.status(Response.Status.CREATED).entity(order).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\":\"" + e.getMessage() + "\"}")
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
                     .build();
         } catch (RuntimeException e) {
             LOG.error("Error creating order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al crear orden\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al crear orden"))
                     .build();
         }
     }
@@ -79,14 +80,14 @@ public class OrderController {
             OrderDTO order = orderService.getOrder(clientCode, orderId);
             if (order == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"error\":\"Orden no encontrada\"}")
+                        .entity(ApiResponse.error("NOT_FOUND", "Orden no encontrada"))
                         .build();
             }
             return Response.ok(order).build();
         } catch (RuntimeException e) {
             LOG.error("Error getting order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al cargar orden\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al cargar orden"))
                     .build();
         }
     }
@@ -100,14 +101,14 @@ public class OrderController {
             boolean cancelled = orderService.cancelOrder(clientCode, orderId);
             if (!cancelled) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("{\"error\":\"No se puede cancelar. Solo órdenes pendientes pueden cancelarse.\"}")
+                        .entity(ApiResponse.error("VALIDATION_ERROR", "No se puede cancelar. Solo órdenes pendientes pueden cancelarse."))
                         .build();
             }
             return Response.ok("{\"message\":\"Orden cancelada exitosamente\"}").build();
         } catch (RuntimeException e) {
             LOG.error("Error cancelling order", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al cancelar orden\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al cancelar orden"))
                     .build();
         }
     }
