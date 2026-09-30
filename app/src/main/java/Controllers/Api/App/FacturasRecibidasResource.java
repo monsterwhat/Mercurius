@@ -41,6 +41,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.FormParam;
@@ -216,6 +217,16 @@ public class FacturasRecibidasResource {
     @Nonnull
     @Inject
     Parser parser;
+
+    /**
+     * EntityManager de la lectura masiva de {@link #procesarArticulos}. El
+     * {@code em} de los servicios no sirve desde aquí: los beans
+     * {@code @ApplicationScoped} se consumen a través de un proxy de cliente y el
+     * proxy no lleva los campos inyectados (leerlos devuelve {@code null}).
+     */
+    @Inject
+    @Nonnull
+    EntityManager em;
 
     @Inject
     @Nonnull
@@ -1070,6 +1081,37 @@ public class FacturasRecibidasResource {
      * {@link Inventario} (ingreso por factura; egreso de cantidad negativa y
      * nota por nota de crédito "02"). No es atómico: cada llamada de servicio
      * confirma su propia transacción, igual que el flujo legacy.
+     *
+     * <p><b>Lecturas precargadas (el bucle se sirve desde mapas).</b> El bucle
+     * legacy consultaba línea por línea —{@code findByName}/{@code findByBarCode}
+     * más el SELECT por nombre de {@code createIfNotExist}—, así que una factura
+     * de 500 líneas rondaba las 1000 lecturas. Ahora los datos de todas las
+     * líneas se resuelven ANTES del bucle con un {@code WHERE IN} por columna
+     (como máximo tres consultas, sea cual sea el número de líneas) y el bucle
+     * consulta los mapas.
+     *
+     * <p>La precarga reproduce exactamente la semántica de los métodos de
+     * servicio: coincidencia EXACTA por {@code nombre} o por
+     * {@code codigoBarra} (no "like", sin filtros de {@code status} ni de
+     * {@code processed}) y, cuando hay duplicados, gana la primera fila —el
+     * {@code get(0)} del servicio, aquí {@code putIfAbsent} sobre el mismo orden
+     * que devuelve la BD—. Para departamentos se replica el SELECT de
+     * {@code createIfNotExist}, que tampoco filtra por {@code status}: filtrar
+     * por {@code listAllActive} traería un id distinto del que el legacy habría
+     * creado o reutilizado.
+     *
+     * <p>Una clave ausente en el mapa significa "no encontrado" y la línea cae
+     * al {@code findByName}/{@code findByBarCode} de siempre: nunca se inventa
+     * un resultado. Si la consulta masiva falla, el mapa queda vacío y el
+     * factura se procesa exactamente como antes.
+     *
+     * <p><b>Lo que NO cambia:</b> las escrituras siguen siendo las mismas, una
+     * por línea y cada una con su propia transacción, con las carreras de
+     * create-if-absent ({@code create} y {@code createIfNotExist} se tragan la
+     * {@code PersistenceException}) y sin atomicidad. La única lectura que se
+     * memoiza es el departamento, porque su clave es la misma en todas las
+     * líneas y {@code createIfNotExist} busca por nombre: las líneas siguientes
+     * habrían recibido exactamente esa misma fila.
      */
     private void procesarArticulos(@Nonnull ComprobantesRecibidos factura, @Nullable Usuarios usuario) {
         List<LineaDetalle> lineasDetalle = factura.getDetalles() == null
@@ -1083,21 +1125,113 @@ public class FacturasRecibidasResource {
                 return; // paridad legacy: factura vacía → aborta sin cambios
             }
         }
+        // ── Precarga de las lecturas del bucle ────────────────────────────
+        // Código de barra por línea con el criterio legacy (el último
+        // CodigoComercial cuyo tipo contiene "03"; "" si la línea no trae, y
+        // null si el comercial encontrado no trae código — el NPE posterior de
+        // codigoBarra.isEmpty() se conserva tal cual).
+        List<String> codigosBarraPorLinea = new ArrayList<>(lineasDetalle.size());
+        Set<String> nombres = new java.util.LinkedHashSet<>();
+        Set<String> codigosBarra = new java.util.LinkedHashSet<>();
         for (LineaDetalle linea : lineasDetalle) {
-            String codigoBarra = "";
-            String nombre = linea.getDetalle();
+            String codigo = "";
             List<CodigoComercial> comerciales = linea.getCodigosComerciales();
             if (comerciales != null) {
                 for (CodigoComercial cc : comerciales) {
                     if (cc.getTipo() != null && cc.getTipo().contains("03")) {
-                        codigoBarra = cc.getCodigo();
+                        codigo = cc.getCodigo();
                     }
                 }
             }
+            codigosBarraPorLinea.add(codigo);
+            if (codigo != null && !codigo.isEmpty()) {
+                codigosBarra.add(codigo);
+            }
+            if (linea.getDetalle() != null) {
+                nombres.add(linea.getDetalle());
+            }
+        }
 
-            Articulos articuloExistente = codigoBarra.isEmpty()
-                    ? articulosService.findByName(nombre)
-                    : articulosService.findByBarCode(codigoBarra);
+        // Un WHERE IN por columna: el JPQL es el mismo que usan
+        // findByName/findByBarCode/createIfNotExist, sólo que con la lista
+        // completa de la factura en vez de un valor por línea.
+        Map<String, Articulos> articulosPorNombre = new LinkedHashMap<>();
+        Map<String, Articulos> articulosPorCodigoBarra = new LinkedHashMap<>();
+        if (!nombres.isEmpty()) {
+            try {
+                for (Articulos articulo : em
+                        .createQuery("SELECT a FROM Articulos a WHERE a.nombre IN (:nombres)",
+                                Articulos.class)
+                        .setParameter("nombres", new ArrayList<>(nombres))
+                        .getResultList()) {
+                    articulosPorNombre.putIfAbsent(articulo.getNombre(), articulo);
+                }
+            } catch (jakarta.persistence.PersistenceException e) {
+                LOG.warn("No se pudieron precargar los artículos por nombre de la factura "
+                        + factura.getId() + "; cada línea usará findByName"
+                        + " | user=" + String.valueOf(usuario)
+                        + " | source=" + "FacturasRecibidasResource.procesarArticulos()", e);
+            }
+        }
+        if (!codigosBarra.isEmpty()) {
+            try {
+                for (Articulos articulo : em
+                        .createQuery("SELECT a FROM Articulos a WHERE a.codigoBarra IN (:codigosBarra)",
+                                Articulos.class)
+                        .setParameter("codigosBarra", new ArrayList<>(codigosBarra))
+                        .getResultList()) {
+                    articulosPorCodigoBarra.putIfAbsent(articulo.getCodigoBarra(), articulo);
+                }
+            } catch (jakarta.persistence.PersistenceException e) {
+                LOG.warn("No se pudieron precargar los artículos por código de barra de la factura "
+                        + factura.getId() + "; cada línea usará findByBarCode"
+                        + " | user=" + String.valueOf(usuario)
+                        + " | source=" + "FacturasRecibidasResource.procesarArticulos()", e);
+            }
+        }
+
+        // El nombre del emisor es el mismo en todas las líneas, así que el
+        // departamento se resuelve una vez (hoist de la expresión invariante).
+        String nombreEmisor = (factura.getEncabezado() != null
+                && factura.getEncabezado().getEmisor() != null
+                && factura.getEncabezado().getEmisor().getNombre() != null)
+                ? factura.getEncabezado().getEmisor().getNombre() : "Sin emisor";
+        Map<String, Departamento> departamentosPorNombre = new LinkedHashMap<>();
+        try {
+            for (Departamento departamento : em
+                    .createQuery("SELECT d FROM Departamento d WHERE d.nombre IN (:nombres)",
+                            Departamento.class)
+                    .setParameter("nombres", List.of(nombreEmisor))
+                    .getResultList()) {
+                departamentosPorNombre.putIfAbsent(departamento.getNombre(), departamento);
+            }
+        } catch (jakarta.persistence.PersistenceException e) {
+            LOG.warn("No se pudo precargar el departamento '" + nombreEmisor + "' de la factura "
+                    + factura.getId() + "; cada línea usará createIfNotExist"
+                    + " | user=" + String.valueOf(usuario)
+                    + " | source=" + "FacturasRecibidasResource.procesarArticulos()", e);
+        }
+
+        for (int indice = 0; indice < lineasDetalle.size(); indice++) {
+            LineaDetalle linea = lineasDetalle.get(indice);
+            String codigoBarra = codigosBarraPorLinea.get(indice);
+            String nombre = linea.getDetalle();
+
+            // Lectura desde la precarga; si la clave no está (el artículo no
+            // existe, el nombre es null, o la consulta masiva falló) se cae al
+            // find* por línea, idéntico al legacy.
+            Articulos articuloExistente;
+            if (codigoBarra.isEmpty()) {
+                articuloExistente = articulosPorNombre.get(nombre);
+                if (articuloExistente == null) {
+                    articuloExistente = articulosService.findByName(nombre);
+                }
+            } else {
+                articuloExistente = articulosPorCodigoBarra.get(codigoBarra);
+                if (articuloExistente == null) {
+                    articuloExistente = articulosService.findByBarCode(codigoBarra);
+                }
+            }
 
             BigDecimal cantidad = linea.getCantidad();
             BigDecimal montoTotalLinea = linea.getMontoTotalLinea();
@@ -1105,17 +1239,25 @@ public class FacturasRecibidasResource {
             BigDecimal unidadesParseadas = parser.parseUnidadMedida(
                     linea.getUnidadMedida(), linea.getUnidadMedidaComercial()).multiply(cantidad);
 
-            String nombreEmisor = (factura.getEncabezado() != null
-                    && factura.getEncabezado().getEmisor() != null
-                    && factura.getEncabezado().getEmisor().getNombre() != null)
-                    ? factura.getEncabezado().getEmisor().getNombre() : "Sin emisor";
-            Departamento departamento = new Departamento();
-            departamento.setNombre(nombreEmisor);
-            departamento.setStatus(true);
-            departamento.setUsuario(usuario);
-            Departamento persistido = departamentoService.createIfNotExist(departamento);
+            // Departamento desde la precarga; si no está (emisor nuevo, o la
+            // consulta masiva falló) se cae al createIfNotExist de siempre. Su
+            // clave se memoiza solo cuando la llamada devuelve fila: es la misma
+            // en todas las líneas y createIfNotExist busca por nombre, así que
+            // las siguientes habrían recibido exactamente esa fila. El fallo
+            // (null) no se memoiza y se reintenta línea por línea, igual que
+            // antes.
+            Departamento persistido = departamentosPorNombre.get(nombreEmisor);
             if (persistido == null) {
-                LOG.warn("No se pudo crear u obtener el departamento '" + nombreEmisor + "' | user=" + String.valueOf(usuario) + " | source=" + "FacturasRecibidasResource.procesarArticulos()");
+                Departamento departamento = new Departamento();
+                departamento.setNombre(nombreEmisor);
+                departamento.setStatus(true);
+                departamento.setUsuario(usuario);
+                persistido = departamentoService.createIfNotExist(departamento);
+                if (persistido == null) {
+                    LOG.warn("No se pudo crear u obtener el departamento '" + nombreEmisor + "' | user=" + String.valueOf(usuario) + " | source=" + "FacturasRecibidasResource.procesarArticulos()");
+                } else {
+                    departamentosPorNombre.put(nombreEmisor, persistido);
+                }
             }
 
             Articulos articuloFinal;
