@@ -265,7 +265,7 @@ public class ClientAuthService {
         }
 
         if (client.getStatus() != null && !client.getStatus()) {
-            throw new IllegalArgumentException("La cuenta está desactivada");
+            throw new IllegalArgumentException(MENSAJE_CREDENCIALES_INVALIDAS);
         }
 
         return buildAuthResponse(client);
