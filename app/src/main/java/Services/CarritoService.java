@@ -381,28 +381,38 @@ public class CarritoService implements Serializable {
         return CarritoCalculations.calculateTotalImpuesto(ctx.getCarrito());
     }
 
-    public void ajustarInventario(@Nonnull CartSessionContext ctx, @Nonnull Usuarios currentUser) {
-        try {
-            for (ArticuloCarrito articulo : ctx.getCarrito()) {
-                var Articulo = articulo;
-                var Cantidad = articulo.getCantidad();
+    /**
+     * Decrements stock for every cart line, one movement row per line.
+     *
+     * <p>PROPAGATES failures instead of swallowing them. This runs inside the
+     * invoice transaction (called from
+     * {@code ComprobanteService.crearComprobante}), so a stock-write failure
+     * must roll the sale back — the old catch-and-warn here committed invoices
+     * whose stock never moved. Callers outside a transaction get the exception
+     * and decide; there are none left besides that path.</p>
+     */
+    public void ajustarInventario(@Nonnull List<ArticuloCarrito> lineas, @Nonnull Usuarios currentUser) {
+        for (ArticuloCarrito articulo : lineas) {
+            var Articulo = articulo;
+            var Cantidad = articulo.getCantidad();
 
-                Inventario movimiento = new Inventario();
-                movimiento.setArticulo(Articulo.getArticulo());
-                movimiento.setCantidad(Cantidad.negate());
-                movimiento.setFechaMovimiento(new Date());
-                movimiento.setNotas("Articulo Vendido");
-                movimiento.setProcessed(Boolean.TRUE);
-                movimiento.setStatus(Boolean.TRUE);
-                movimiento.setTipoMovimiento("Venta");
-                movimiento.setUnidadesRecomendadasFactura(Cantidad.negate());
-                movimiento.setUsuario(currentUser);
+            Inventario movimiento = new Inventario();
+            movimiento.setArticulo(Articulo.getArticulo());
+            movimiento.setCantidad(Cantidad.negate());
+            movimiento.setFechaMovimiento(new Date());
+            movimiento.setNotas("Articulo Vendido");
+            movimiento.setProcessed(Boolean.TRUE);
+            movimiento.setStatus(Boolean.TRUE);
+            movimiento.setTipoMovimiento("Venta");
+            movimiento.setUnidadesRecomendadasFactura(Cantidad.negate());
+            movimiento.setUsuario(currentUser);
 
-                inventario.update(movimiento);
-            }
-        } catch (RuntimeException e) {
-                        LOG.warn("Error : " + e.getMessage() + " | source=" + "CarritoService.method()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            inventario.update(movimiento);
         }
+    }
+
+    public void ajustarInventario(@Nonnull CartSessionContext ctx, @Nonnull Usuarios currentUser) {
+        ajustarInventario(ctx.getCarrito(), currentUser);
     }
 
     /**

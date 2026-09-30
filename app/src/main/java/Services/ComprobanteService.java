@@ -43,6 +43,7 @@ import Services.Facturas.DescuentoService;
 import Services.Facturas.ImpuestoService;
 import Services.Facturas.LineaDetalleService;
 import Services.LoyaltyService;
+import Services.CarritoService;
 import Models.PuntosTransaccion;
 import Utils.CarritoCalculations;
 import Utils.PDFGenerator;
@@ -142,6 +143,9 @@ public class ComprobanteService implements Serializable {
     @Inject
     private @Nonnull EnvioFueraLineaService envioFueraLineaService;
 
+    @Inject
+    private @Nonnull CarritoService carritoService;
+
     /**
      * Thrown when the comprobante could not be assembled and persisted.
      *
@@ -163,10 +167,51 @@ public class ComprobanteService implements Serializable {
         }
     }
 
+    /**
+     * Thrown when the loyalty-points redemption could not be applied.
+     *
+     * <p>Exists because the points discount is money the customer already
+     * stopped paying at the register: the sale is only legitimate once the
+     * debit exists. The redemption therefore runs INSIDE
+     * {@link #crearComprobante}'s transaction, before the first write, so this
+     * exception rolls back encabezado + detalles + resumen together with the
+     * debit attempt. No invoice is created, the POS keeps the cart (no
+     * idempotency stamp) and the cashier can retry or re-send the sale without
+     * the discount.</p>
+     *
+     * <p>It is a distinct type (not a {@link ComprobanteNoCreadoException})
+     * because the caller must tell the operator WHICH step failed: "the loyalty
+     * subsystem would not debit" is a different action than "the invoice could
+     * not be built".</p>
+     */
+    public static class PuntosNoCanjeadosException extends RuntimeException {
+        public PuntosNoCanjeadosException(String message) {
+            super(message);
+        }
+
+        public PuntosNoCanjeadosException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
     public static class CrearComprobanteResult {
         public ComprobantesEmitidos comprobante;
         public boolean haciendaEnviado;
         public String haciendaMensaje;
+        /**
+         * DOCUMENTED WIDENING (additive): false when the sale was invoiced and
+         * charged but the earned points could NOT be credited, so the customer
+         * is owed them. It can never be false for a rolled-back sale, because a
+         * failed redemption aborts the whole transaction instead. The caller
+         * MUST surface it: a swallowed {@code earnPoints} is exactly how earned
+         * points used to vanish without a trace.
+         */
+        public boolean puntosOtorgados = true;
+        /**
+         * Human-readable reason plus the {@code FACT-<consecutivo>} reference
+         * needed to credit the points by hand; null when nothing failed.
+         */
+        public String puntosMensaje;
         /**
          * DOCUMENTED WIDENING (additive, source-compatible): true when the
          * document was signed but not transmitted and now lives in the
@@ -181,12 +226,42 @@ public class ComprobanteService implements Serializable {
     @jakarta.transaction.Transactional
     public @Nullable CrearComprobanteResult crearComprobante(@Nonnull ConfiguracionAplicacion appSettings, @Nonnull List<ArticuloCarrito> carrito,
                                                     @Nullable Clientes selectedClient, @Nullable Clientes cliente, @Nonnull Usuarios currentUser,
-                                                    @Nonnull DocumentoStrategy strategy, @Nonnull List<EntradaPago> pagos) {
+                                                    @Nonnull DocumentoStrategy strategy, @Nonnull List<EntradaPago> pagos,
+                                                    @Nullable BigDecimal puntosARedimir) {
         CrearComprobanteResult result = new CrearComprobanteResult();
         result.haciendaEnviado = false;
         result.pendienteEnvio = false;
         
         try {
+            // ── Ajuste de inventario (PRIMERO, dentro de la transacción) ────
+            // El stock se decrementaba en PosResource ANTES de llamar aquí, en
+            // su propia transacción ya confirmada: si el canje de puntos o la
+            // factura fallaban después, el reintento volvía a decrementar y la
+            // venta quedaba con doble rebaja de inventario sin factura. Dentro
+            // de ESTA transacción, cualquier fallo revierte stock + puntos +
+            // comprobante juntos, y el reintento arranca limpio. Se conserva el
+            // orden original (stock, luego canje, luego factura).
+            carritoService.ajustarInventario(carrito, currentUser);
+
+            // ── Canje de puntos (ANTES de la primera escritura) ─────────────
+            // El descuento por puntos ya se aplicó al monto a pagar en el POS,
+            // así que la venta solo es legítima si el débito existe. Va dentro
+            // de ESTA transacción y antes de encabezado/detalles/resumen por
+            // dos razones que no se pueden conseguir canjeando desde afuera:
+            //  · si falla, la excepción revierte también el comprobante a medio
+            //    escribir -> nunca queda una factura cobrada cuyo descuento no
+            //    fue debitado (nunca cobrar sin canjear);
+            //  · al ser atómico con la factura, el reintento del POS que no
+            //    encuentra el sello de idempotencia vuelve a debitar lo mismo
+            //    UNA sola vez (nunca debitar dos veces la misma venta).
+            // El canje no necesita el id de la factura, así que no hay ningún
+            // motivo para hacerlo después del commit.
+            BigDecimal puntosACanjean = puntosARedimir == null
+                    ? BigDecimal.ZERO : puntosARedimir.max(BigDecimal.ZERO);
+            if (puntosACanjean.compareTo(BigDecimal.ZERO) > 0) {
+                canjearPuntos(selectedClient, puntosACanjean);
+            }
+
             String tipoDocumento = strategy.getCodigoDocumento();
             String sucursal = String.format("%03d", Integer.parseInt(
                 appSettings.getCodigoSucursal() != null ? appSettings.getCodigoSucursal() : "001"));
@@ -365,20 +440,43 @@ public class ComprobanteService implements Serializable {
                 }
             }
             
-            // Add loyalty points for the sale if client exists
+            // ── Otorgar puntos de lealtad ─────────────────────────────────────
+            // Aquí el camino es el inverso al canje y por eso NO se relanza:
+            // el comprobante ya está escrito, firmado y enviado, y el cliente
+            // ya pagó; revertir dejaría una venta cobrada sin factura, que es
+            // peor que un punto faltante. Pero tampoco puede quedar en un
+            // LOG.warn, porque eso es exactamente como los puntos ganados
+            // desaparecían sin que nadie se enterara. Por eso el fallo se
+            // DECLARA en el resultado (puntosOtorgados=false + puntosMensaje
+            // con la referencia para acreditarlos a mano) y PosResource lo
+            // devuelve al operador.
             if (selectedClient != null && currentUser != null) {
                 BigDecimal totalAmount = resumen.getTotalVentaNeta();
                 String facturaReferencia = "FACT-" + consecutivo;
-                
+
                 try {
                     loyaltyService.earnPoints(selectedClient, totalAmount, facturaReferencia, currentUser);
                 } catch (RuntimeException e) {
-                    LOG.warn("Error al agregar puntos de lealtad: " + e.getMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
-                    LOG.warn("Error adding loyalty points: " + e.getMessage() + " | source=crearComprobante() | despues=" + e.getMessage());
+                    result.puntosOtorgados = false;
+                    result.puntosMensaje = "La venta se cobró y facturó, pero NO se otorgaron los puntos "
+                            + "de lealtad al cliente. Acréditelos a mano con la referencia "
+                            + facturaReferencia + " (total de la venta: " + totalAmount + ").";
+                    LOG.error("Error al agregar puntos de lealtad: " + e.getMessage()
+                            + " | cliente=" + selectedClient.getCode()
+                            + " | referencia=" + facturaReferencia
+                            + " | monto=" + totalAmount
+                            + " | source=crearComprobante()"
+                            + " | despues=la factura queda vigente; el operador debe acreditar los puntos", e);
                 }
             }
             
             return result;
+        } catch (PuntosNoCanjeadosException e) {
+            // El canje falló y la transacción se revierte completa (ver el
+            // javadoc de la excepción). Se relanza SIN envolver para que el
+            // llamador lo distinga de un fallo de armado del comprobante y
+            // pueda devolverle al operador el envelope PUNTOS_NO_CANJEADOS.
+            throw e;
         } catch (ComprobanteNoCreadoException e) {
             // Already the signal we want; rethrow untouched so the transaction
             // rolls back and nothing double-wraps.
@@ -396,6 +494,53 @@ public class ComprobanteService implements Serializable {
                     "No se pudo crear el comprobante: " + e.getMessage(), e);
         }
 
+    }
+
+    /**
+     * Debita los puntos del cliente antes de que exista el comprobante.
+     *
+     * <p>Se ejecuta dentro de la transacción de
+     * {@link #crearComprobante}, así que cualquier fallo revierte el canje Y
+     * el comprobante a la vez: nunca queda una factura cuyo descuento no fue
+     * debitado. Un fallo del subsistema de lealtad tampoco se traga — se
+     * convierte en {@link PuntosNoCanjeadosException} para que el POS la
+     * muestre y conserve el carrito.</p>
+     *
+     * <p>Un canje parcial también es un fallo: {@code redeemPoints} devuelve
+     * {@link BigDecimal#ZERO} en vez de lanzar cuando el saldo no alcanza, y un
+     * cero silencioso con descuento aplicado en caja es exactamente la pérdida
+     * de puntos que este método existe para impedir.</p>
+     */
+    private void canjearPuntos(@Nullable Clientes cliente, @Nonnull BigDecimal puntos) {
+        if (cliente == null) {
+            throw new PuntosNoCanjeadosException(
+                    "No hay cliente seleccionado para canjear " + puntos.toPlainString() + " puntos.");
+        }
+        BigDecimal canjeados;
+        try {
+            canjeados = loyaltyService.redeemPoints(cliente, puntos);
+        } catch (RuntimeException e) {
+            // LOG.error y no warn: acá todavía no hay una venta cobrada que
+            // preservar, y el reintento del POS vuelve a intentar el canje,
+            // pero el operador tiene que saber que el subsistema de lealtad
+            // falló.
+            LOG.error("No se pudo canjear los puntos de lealtad: " + e.getMessage()
+                    + " | cliente=" + cliente.getCode()
+                    + " | puntos=" + puntos.toPlainString()
+                    + " | source=crearComprobante()"
+                    + " | despues=la transacción se revierte; no hay comprobante y el carrito queda intacto", e);
+            throw new PuntosNoCanjeadosException(
+                    "No se pudo canjear los puntos de lealtad: " + e.getMessage(), e);
+        }
+        if (canjeados == null || canjeados.compareTo(puntos) != 0) {
+            LOG.error("Canje de puntos incompleto: se pidieron " + puntos.toPlainString()
+                    + " y se debitaron " + canjeados
+                    + " | cliente=" + cliente.getCode()
+                    + " | source=crearComprobante()"
+                    + " | despues=la transacción se revierte; no hay comprobante y el carrito queda intacto");
+            throw new PuntosNoCanjeadosException(
+                    "El cliente no tiene saldo suficiente para canjear " + puntos.toPlainString() + " puntos.");
+        }
     }
 
     /**
