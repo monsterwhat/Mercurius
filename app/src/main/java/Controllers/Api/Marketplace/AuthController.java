@@ -1,11 +1,13 @@
 package Controllers.Api.Marketplace;
 
 import Models.Clientes;
+import Models.DTO.ApiResponse;
 import Models.DTO.AuthResponse;
 import Models.DTO.LoginRequest;
 import Models.DTO.RegisterRequest;
 import Models.DTO.ProfileDTO;
 import Services.ClientAuthService;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
@@ -32,6 +34,16 @@ public class AuthController {
     @Nonnull
     ClientAuthService clientAuthService;
 
+    /** Bounds password guessing against {@link #login(LoginRequest)}. */
+    @Nonnull
+    @Inject
+    Utils.IntentosDeCredencial intentosDeCredencial;
+
+    /** Source address for throttling; see {@link #direccionOrigen()}. */
+    @Inject
+    @Nullable
+    RoutingContext routing;
+
     @Context
     SecurityContext securityContext;
 
@@ -54,12 +66,30 @@ public class AuthController {
         }
     }
 
+    /**
+     * Login: verifies a BCrypt hash for an <em>arbitrary, caller-supplied</em>
+     * email, so unthrottled it was a credential-stuffing oracle.
+     *
+     * <p>The budget check lives here, before the verification, so a blocked key
+     * is refused without spending any BCrypt CPU; the accounting for the
+     * individual outcomes lives in {@link ClientAuthService#login}, which is the
+     * only place that knows which branch rejected and therefore has to pay the
+     * equalization cost. Both sides key the limiter on the same raw email,
+     * which {@code IntentosDeCredencial.claveCuenta} normalizes identically.</p>
+     */
     @POST
     @Path("/login")
     @Nonnull
     public Response login(@Nonnull LoginRequest request) {
+        String direccion = direccionOrigen();
+
+        Long bloqueo = intentosDeCredencial.restanteBloqueo(request.getEmail(), direccion);
+        if (bloqueo != null) {
+            return demasiadosIntentos(bloqueo);
+        }
+
         try {
-            AuthResponse response = clientAuthService.login(request);
+            AuthResponse response = clientAuthService.login(request, direccion);
             return Response.ok(response).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.UNAUTHORIZED)
@@ -71,6 +101,42 @@ public class AuthController {
                     .entity("{\"error\":\"Error al iniciar sesión. Intente nuevamente.\"}")
                     .build();
         }
+    }
+
+    /**
+     * Best-effort source address for throttling.
+     *
+     * <p>Falls back to a constant when it cannot be determined. That is
+     * deliberately NOT the empty string: an empty fallback would give every
+     * unknown caller the same bucket, so one attacker could lock every user out
+     * by tripping a shared counter. See
+     * {@code AppAuthResource.direccionOrigen()}.</p>
+     */
+    private String direccionOrigen() {
+        try {
+            if (routing != null) {
+                String ip = routing.request().remoteAddress() != null
+                        ? routing.request().remoteAddress().hostAddress()
+                        : null;
+                if (ip != null && !ip.isBlank()) {
+                    return ip;
+                }
+            }
+        } catch (RuntimeException e) {
+            LOG.debug("No se pudo determinar la direccion de origen: " + e.getMessage()
+                    + " | source=AuthController.direccionOrigen()");
+        }
+        return "desconocida";
+    }
+
+    /** 429 with Retry-After, so a client backs off instead of hammering. */
+    private Response demasiadosIntentos(long segundos) {
+        return Response.status(429)
+                .header("Retry-After", String.valueOf(segundos))
+                .entity(ApiResponse.error("TOO_MANY_ATTEMPTS",
+                        "Demasiados intentos. Intentelo de nuevo en "
+                                + (segundos / 60) + " minuto(s)."))
+                .build();
     }
 
     @POST
