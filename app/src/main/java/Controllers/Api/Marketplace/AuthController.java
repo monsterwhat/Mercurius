@@ -76,6 +76,13 @@ public class AuthController {
      * only place that knows which branch rejected and therefore has to pay the
      * equalization cost. Both sides key the limiter on the same raw email,
      * which {@code IntentosDeCredencial.claveCuenta} normalizes identically.</p>
+     *
+     * <p>The 401 goes out in the same {@link ApiResponse} envelope as the 429 of
+     * {@link #demasiadosIntentos(long)} — same class, same {@code error.code}
+     * vocabulary — so a marketplace client reads a failed login and a throttled
+     * login through one accessor instead of two. The two controllers under
+     * {@code /api/marketplace} and {@code /api/v1/mercatus} are byte-for-byte
+     * interchangeable on this status.</p>
      */
     @POST
     @Path("/login")
@@ -92,15 +99,35 @@ public class AuthController {
             AuthResponse response = clientAuthService.login(request, direccion);
             return Response.ok(response).build();
         } catch (IllegalArgumentException e) {
-            return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}")
-                    .build();
+            LOG.debug("Login rechazado: " + e.getMessage()
+                    + " | source=AuthController.login()");
+            return credencialesInvalidas(e);
         } catch (RuntimeException e) {
             LOG.error("Login error", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity("{\"error\":\"Error al iniciar sesión. Intente nuevamente.\"}")
                     .build();
         }
+    }
+
+    /**
+     * 401 con envelope {@link ApiResponse}, identico al que ya emitia el
+     * controlador de mercatus, para que los dos endpoints de login no se
+     * distinguan ni por codigo ni por forma.
+     *
+     * <p>El codigo es {@code INVALID_CREDENTIALS} —el mismo que ya usaba
+     * {@code Controllers.Api.Mercatus.ClientAuthController} y
+     * {@code AppAuthResource.invalidCredentials()}, y el que el cliente ya
+     * recibe ahi— de modo que unificar la FORMA no obliga a ningun consumidor a
+     * cambiar la clave que ya tenia. El mensaje lo aporta
+     * {@link ClientAuthService#MENSAJE_CREDENCIALES_INVALIDAS}, identico en las
+     * cuatro ramas de rechazo.</p>
+     */
+    @Nonnull
+    private Response credencialesInvalidas(@Nonnull IllegalArgumentException causa) {
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .entity(ApiResponse.error("INVALID_CREDENTIALS", causa.getMessage()))
+                .build();
     }
 
     /**
@@ -139,6 +166,14 @@ public class AuthController {
                 .build();
     }
 
+    /**
+     * Renueva el token de acceso.
+     *
+     * <p>El 401 usa el mismo envelope {@link ApiResponse} que el de login, pero
+     * con codigo {@code INVALID_TOKEN}: no son credenciales, es un token de
+     * actualizacion rechazado, y reutilizar {@code INVALID_CREDENTIALS} obligaria
+     * al cliente a distinguir por el mensaje lo que el codigo ya dice.</p>
+     */
     @POST
     @Path("/refresh")
     @Nonnull
@@ -153,7 +188,7 @@ public class AuthController {
             return Response.ok(response).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.UNAUTHORIZED)
-                    .entity("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}")
+                    .entity(ApiResponse.error("INVALID_TOKEN", e.getMessage()))
                     .build();
         } catch (RuntimeException e) {
             LOG.error("Token refresh error", e);
@@ -163,6 +198,14 @@ public class AuthController {
         }
     }
 
+    /**
+     * Perfil del cliente autenticado.
+     *
+     * <p>Sin identidad ({@code securityContext} vacio o sin principal) se
+     * responde con el envelope {@link ApiResponse} y codigo
+     * {@code UNAUTHENTICATED}, el mismo que ya usa
+     * {@code AppAuthResource.me()} para la autenticacion por formulario.</p>
+     */
     @GET
     @Path("/me")
     @Nonnull
@@ -170,7 +213,7 @@ public class AuthController {
         try {
             if (securityContext == null || securityContext.getUserPrincipal() == null) {
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .entity("{\"error\":\"No autenticado\"}")
+                        .entity(ApiResponse.error("UNAUTHENTICATED", "No autenticado"))
                         .build();
             }
             int clientCode = Integer.parseInt(securityContext.getUserPrincipal().getName());

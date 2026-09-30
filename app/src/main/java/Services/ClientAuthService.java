@@ -27,6 +27,27 @@ public class ClientAuthService {
 
     private static final Logger LOG = Logger.getLogger(ClientAuthService.class);
 
+    /**
+     * Unico texto que sale por el cable cuando un login se rechaza.
+     *
+     * <p>Las cuatro salidas negativas de {@link #login(LoginRequest, String)} —
+     * correo no registrado, cuenta sin password de mercado, contrasena
+     * incorrecta y cuenta desactivada — devuelven EXACTAMENTE esta cadena. No
+     * es cosmetico: las tres ultimas solo son alcanzables con un correo que ya
+     * esta registrado, asi que un texto propio por rama convertia el 401 en un
+     * oraculo de enumeracion de usuarios por el cuerpo de la respuesta. El
+     * coste de BCrypt ya estaba igualado con
+     * {@link LoginService#verificarContraHashFalso(String)}; esta constante
+     * cierra el mismo hueco por el lado del cuerpo.</p>
+     *
+     * <p>La distincion NO se pierde del todo: cada rama escribe su propio
+     * {@code LOG.debug} con el motivo real, de modo que el operador sigue
+     * pudiendo diagnosticar en el servidor. Lo que no debe volver a funcionar es
+     * que el cliente lo pueda leer.</p>
+     */
+    @Nonnull
+    public static final String MENSAJE_CREDENCIALES_INVALIDAS = "Credenciales inválidas";
+
     @Inject
     @Nonnull
     JwtTokenUtil jwtTokenUtil;
@@ -151,6 +172,10 @@ public class ClientAuthService {
      * let an attacker escape the budget by spraying unknown emails — those burn
      * the same per-address counter, so polling is bounded too.</p>
      *
+     * <p>Every rejection throws {@link IllegalArgumentException} carrying the
+     * same {@link #MENSAJE_CREDENCIALES_INVALIDAS}, so the body cannot be used
+     * to tell which branch fired; the reason is logged per branch instead.</p>
+     *
      * @param request login credentials
      * @param direccion source address for throttling. Passed in because only the
      *        JAX-RS resource can see the Vert.x request; see
@@ -168,7 +193,9 @@ public class ClientAuthService {
             // response time discloses which emails are registered.
             loginService.verificarContraHashFalso(request.getPassword());
             intentosDeCredencial.registrarFallo(cuenta, direccion);
-            throw new IllegalArgumentException("Credenciales inválidas");
+            LOG.debug("Login rechazado: correo no registrado"
+                    + " | source=ClientAuthService.login() | cuenta=" + cuenta);
+            throw new IllegalArgumentException(MENSAJE_CREDENCIALES_INVALIDAS);
         }
 
         if (client.getPassword() == null) {
@@ -176,12 +203,18 @@ public class ClientAuthService {
             // marketplace password, so no real BCrypt verification is reachable.
             loginService.verificarContraHashFalso(request.getPassword());
             intentosDeCredencial.registrarFallo(cuenta, direccion);
-            throw new IllegalArgumentException("Esta cuenta no tiene acceso al mercado en línea. Contacte al administrador.");
+            LOG.debug("Login rechazado: cuenta sin password de mercado"
+                    + " | source=ClientAuthService.login() | cuenta=" + cuenta
+                    + " | cliente=" + client.getCode());
+            throw new IllegalArgumentException(MENSAJE_CREDENCIALES_INVALIDAS);
         }
 
         if (!verifyPassword(request.getPassword(), client.getPassword())) {
             intentosDeCredencial.registrarFallo(cuenta, direccion);
-            throw new IllegalArgumentException("Credenciales inválidas");
+            LOG.debug("Login rechazado: contrasena incorrecta"
+                    + " | source=ClientAuthService.login() | cuenta=" + cuenta
+                    + " | cliente=" + client.getCode());
+            throw new IllegalArgumentException(MENSAJE_CREDENCIALES_INVALIDAS);
         }
 
         if (client.getStatus() != null && !client.getStatus()) {
@@ -189,7 +222,10 @@ public class ClientAuthService {
             // disabled account cannot be probed for free. No equalizing hash is
             // needed here: the real verification above already ran.
             intentosDeCredencial.registrarFallo(cuenta, direccion);
-            throw new IllegalArgumentException("La cuenta está desactivada");
+            LOG.debug("Login rechazado: cuenta desactivada"
+                    + " | source=ClientAuthService.login() | cuenta=" + cuenta
+                    + " | cliente=" + client.getCode());
+            throw new IllegalArgumentException(MENSAJE_CREDENCIALES_INVALIDAS);
         }
 
         AuthResponse response = buildAuthResponse(client);
