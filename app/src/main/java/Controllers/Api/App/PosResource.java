@@ -19,6 +19,7 @@ import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
 import Services.DirectoryService;
 import Services.LoginService;
+import Services.LoyaltyService;
 import Services.Strategies.DocumentoStrategy;
 import Services.Strategies.DocumentoStrategyFactory;
 import Services.TipoCambioService;
@@ -160,10 +161,14 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     @Inject
     PDFGenerator pdfGenerator;
 
-    // LoyaltyService ya no se inyecta acá: el canje de puntos viaja dentro de
+    // LoyaltyService se inyecta SOLO para la lectura del replay
+    // (existeAcreditacion): el canje de puntos viaja dentro de
     // crearComprobante (misma transacción que la factura) y el otorgamiento
-    // vuelve en el CrearComprobanteResult. Canjear desde este recurso era lo
-    // que dejaba perder puntos en silencio.
+    // vuelve en el CrearComprobanteResult. Ningún débito/crédito se hace
+    // desde este recurso — eso era lo que dejaba perder puntos en silencio.
+    @Nonnull
+    @Inject
+    LoyaltyService loyaltyService;
     @Nonnull
     @Inject
     DirectoryService dirService;
@@ -863,6 +868,30 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         out.haciendaEstado = comprobante.getHaciendaEstado();
         out.haciendaMensaje = "Este comprobante ya había sido creado en un intento anterior; "
                 + "se devuelve el resultado original sin duplicar la factura ni el inventario.";
+        // Puntos en replay: se reconstruyen desde el libro mayor, no del valor
+        // por defecto. Si el primer intento acreditó, hay fila earn para
+        // FACT-<consecutivo> y se reporta éxito; si debía acreditar y no hay
+        // fila, el crédito falló y el operador debe otorgarlo a mano (mismo
+        // mensaje que el primer intento). Si nada había que acreditar
+        // (sin cliente o sin cashback), se reporta éxito como entonces.
+        String consecutivoReplay = out.consecutivo;
+        boolean debioOtorgar = cliente != null
+                && settings.getCashbackPercentage() != null;
+        if (debioOtorgar && consecutivoReplay != null) {
+            String referenciaReplay = "FACT-" + consecutivoReplay;
+            if (loyaltyService.existeAcreditacion(referenciaReplay)) {
+                out.puntosOtorgados = true;
+                out.puntosMensaje = null;
+            } else {
+                out.puntosOtorgados = false;
+                out.puntosMensaje = "En el intento original no se pudo confirmar la "
+                        + "acreditación de puntos. Verifique PuntosTransaccion con referencia "
+                        + referenciaReplay + " y acredite a mano si falta.";
+            }
+        } else {
+            out.puntosOtorgados = true;
+            out.puntosMensaje = null;
+        }
         out.totalPagado = totalPagado;
         out.vuelto = ctx.getVuelto();
         return Response.ok(ApiResponse.ok(out)).build();
@@ -1673,6 +1702,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
             resultado.put("haciendaMensaje", data.haciendaMensaje);
             resultado.put("totalPagado", data.totalPagado);
             resultado.put("vuelto", data.vuelto);
+            resultado.put("puntosOtorgados", data.puntosOtorgados);
+            resultado.put("puntosMensaje", data.puntosMensaje);
         } else if (entity instanceof ApiResponse<?> envelope && envelope.getError() != null) {
             resultado.put("errorCode", envelope.getError().getCode());
             resultado.put("errorMessage", envelope.getError().getMessage());
