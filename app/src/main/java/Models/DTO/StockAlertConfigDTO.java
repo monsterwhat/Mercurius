@@ -12,8 +12,9 @@ import jakarta.annotation.Nullable;
  *
  * <ol>
  * <li><b>Engine constants (read-only facts).</b> {@code StockAlertService}
- * hardcodes these inside {@code calculateOptimalStock()} /
- * {@code calculateReorderQuantity()} and there is NO global settings row for
+ * computes the first group inside {@code calculateOptimalStock()} /
+ * {@code calculateReorderQuantity()}, and reads the second group from config
+ * ({@code mercurius.stock.*}); either way there is NO global settings row for
  * them (see the note in {@link AppSettingsDTO}: thresholds are per-article
  * values computed by the service). They are surfaced so operators can see the
  * effective behavior; PUT never accepts them.</li>
@@ -60,6 +61,18 @@ public class StockAlertConfigDTO {
      *  Read-only fact from {@code mercurius.stock.sobrestock.multiplo}. */
     private int multiploSobrestock;
 
+    /** Days of movement history an article needs before the engine judges it
+     *  (both alert families). Articles with less history — including those with
+     *  no movements at all — are skipped in the sweep. 0 disables the gate.
+     *  Read-only fact from {@code mercurius.stock.antiguedad.minima-dias}. */
+    private int antiguedadMinimaDias;
+
+    /** Maximum NEW alerts (low-stock family + overstock) created per sweep;
+     *  &lt;=0 means unlimited. The cap is what turns a dormant-alert backlog
+     *  into gradual catch-up across runs.
+     *  Read-only fact from {@code mercurius.stock.lote.maximo-nuevas}. */
+    private int maximoNuevasPorBarrido;
+
     // ── 2. Per-article thresholds (the writable surface) ─────────────────────
 
     /** {@code Articulos.codigo} (PK); null when this DTO carries only the
@@ -89,6 +102,7 @@ public class StockAlertConfigDTO {
     public StockAlertConfigDTO(int ventanaVelocidadDias, int plazoEntregaDias,
                                int diasStockSeguridadPorDefecto, int stockOptimoRespaldoDias,
                                int bufferReordenDias, int multiploSobrestock,
+                               int antiguedadMinimaDias, int maximoNuevasPorBarrido,
                                @Nullable Long articuloCodigo,
                                @Nullable String articuloNombre, @Nullable Integer diasStockSeguridad,
                                boolean estadoAlertas, @Nullable Integer stockOptimoActual) {
@@ -98,6 +112,8 @@ public class StockAlertConfigDTO {
         this.stockOptimoRespaldoDias = stockOptimoRespaldoDias;
         this.bufferReordenDias = bufferReordenDias;
         this.multiploSobrestock = multiploSobrestock;
+        this.antiguedadMinimaDias = antiguedadMinimaDias;
+        this.maximoNuevasPorBarrido = maximoNuevasPorBarrido;
         this.articuloCodigo = articuloCodigo;
         this.articuloNombre = articuloNombre;
         this.diasStockSeguridad = diasStockSeguridad;
@@ -151,6 +167,22 @@ public class StockAlertConfigDTO {
 
     public void setMultiploSobrestock(int multiploSobrestock) {
         this.multiploSobrestock = multiploSobrestock;
+    }
+
+    public int getAntiguedadMinimaDias() {
+        return antiguedadMinimaDias;
+    }
+
+    public void setAntiguedadMinimaDias(int antiguedadMinimaDias) {
+        this.antiguedadMinimaDias = antiguedadMinimaDias;
+    }
+
+    public int getMaximoNuevasPorBarrido() {
+        return maximoNuevasPorBarrido;
+    }
+
+    public void setMaximoNuevasPorBarrido(int maximoNuevasPorBarrido) {
+        this.maximoNuevasPorBarrido = maximoNuevasPorBarrido;
     }
 
     @Nullable

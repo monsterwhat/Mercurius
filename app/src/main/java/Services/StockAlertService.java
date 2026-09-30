@@ -18,6 +18,9 @@ import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -57,6 +60,44 @@ public class StockAlertService extends GService<AlertaStock> {
      */
     public int getMultiploSobrestock() {
         return Math.max(1, multiploSobrestock);
+    }
+
+    /**
+     * Dias de historia minima antes de juzgar un articulo (ambas familias).
+     *
+     * <p>Un articulo recien creado no tiene velocidad de venta: sin este gate su
+     * primera compra entra al barrido y se le calcula un optimo de respaldo contra
+     * el que dispara de inmediato. Se resuelve con UNA consulta bulk
+     * ({@code MIN(fechaMovimiento)} agrupado por articulo) resuelta a mapa en
+     * memoria, no con una query por articulo. Sin movimientos no hay historia:
+     * el articulo se salta (antes tampoco alertaba, porque stock 0 caia en el
+     * {@code continue} de stock vacio). 0 desactiva el gate.</p>
+     */
+    @ConfigProperty(name = "mercurius.stock.antiguedad.minima-dias", defaultValue = "7")
+    int antiguedadMinimaDias;
+
+    /**
+     * Tope de alertas NUEVAS por barrido, contando las dos familias (stock bajo y
+     * sobrestock). &lt;=0 = ilimitado.
+     *
+     * <p>El fix de {@code getCurrentStock} desperto alertas dormidas y la primera
+     * corrida post-deploy generaba todo el backlog de una. Con el tope el corte es
+     * un {@code break} sobre el orden determinista por codigo: el dedup por tipo
+     * garantiza que lo que no cabe hoy se crea en la corrida siguiente
+     * (catch-up completo). Los writebacks de {@code stockOptimo} pueden esperar
+     * a esa corrida, por eso no es {@code continue}.</p>
+     */
+    @ConfigProperty(name = "mercurius.stock.lote.maximo-nuevas", defaultValue = "50")
+    int maximoNuevasPorBarrido;
+
+    /** Antiguedad minima efectiva en dias (0 = gate desactivado). */
+    public int getAntiguedadMinimaDias() {
+        return Math.max(0, antiguedadMinimaDias);
+    }
+
+    /** Tope efectivo de alertas nuevas por barrido (&lt;=0 = ilimitado). */
+    public int getMaximoNuevasPorBarrido() {
+        return maximoNuevasPorBarrido;
     }
 
     @Override
@@ -142,7 +183,27 @@ public class StockAlertService extends GService<AlertaStock> {
         TypedQuery<Articulos> query = em.createQuery(jpql, Articulos.class);
         List<Articulos> articulos = query.getResultList();
 
+        // Una sola consulta para todo el catalogo (el gate de antiguedad no puede
+        // costar una query por articulo: el barrido corre tras cada venta, en el
+        // planificador y a mano).
+        Map<Long, Date> primeraMovimiento = historiaPorArticulo();
+        int tope = getMaximoNuevasPorBarrido();
+        int nuevas = 0;
+
         for (Articulos articulo : articulos) {
+            // Tope por barrido: se corta, no se sigue. El orden por codigo es
+            // determinista y el dedup por tipo hace que lo que queda fuera se cree
+            // en la proxima corrida.
+            if (tope > 0 && nuevas >= tope) {
+                break;
+            }
+
+            // Gate de antiguedad (ambas familias): sin historia no hay velocidad que
+            // juzgar, y con historia reciente todavia tampoco.
+            if (!historiaSuficiente(primeraMovimiento, articulo)) {
+                continue;
+            }
+
             // Get current stock level
             Integer currentStock = getCurrentStock(articulo);
             
@@ -184,6 +245,7 @@ public class StockAlertService extends GService<AlertaStock> {
                               ", Stock óptimo: " + optimalStock);
 
                 em.persist(alert);
+                nuevas++;
 
                 // Update article's optimal stock
                 articulo.setStockOptimo(optimalStock);
@@ -198,8 +260,76 @@ public class StockAlertService extends GService<AlertaStock> {
             // as the low-stock family (tipoAlerta 'overstock'), evaluated in the
             // same pass so all three triggers (post-sale, scheduler, manual)
             // cover it with no extra full-table scan.
-            evaluarSobrestock(articulo, currentStock, optimalStock);
+            if (evaluarSobrestock(articulo, currentStock, optimalStock)) {
+                nuevas++;
+            }
         }
+    }
+
+    /**
+     * Primera fecha de movimiento por articulo (articulo -&gt; MIN(fechaMovimiento))
+     * en UNA sola consulta, para las dos familias de alertas.
+     *
+     * <p>Se filtran los mismos movimientos que suma {@link #getCurrentStock}
+     * (archivados excluidos): la historia que sirve para juzgar tiene que ser la
+     * misma que sostiene el stock que se compara. Los movimientos sin articulo se
+     * dejan fuera porque no pueden asociarse a ninguno.</p>
+     */
+    @Nonnull
+    private Map<Long, Date> historiaPorArticulo() {
+        List<Object[]> filas = em.createQuery(
+                        "SELECT i.articulo.codigo, MIN(i.fechaMovimiento) FROM Inventario i "
+                                + "WHERE i.status = true AND i.articulo IS NOT NULL "
+                                + "GROUP BY i.articulo.codigo",
+                        Object[].class)
+                .getResultList();
+        Map<Long, Date> historia = new HashMap<>();
+        for (Object[] fila : filas) {
+            Date primera = aFecha(fila[1]);
+            if (primera != null && fila[0] instanceof Long codigo) {
+                historia.put(codigo, primera);
+            }
+        }
+        return historia;
+    }
+
+    /**
+     * Gate de antiguedad: el articulo ya tiene historia para ser judgedo.
+     *
+     * <p>Sin movimientos no hay historia (se salta; antes tampoco alertaba porque
+     * el stock 0 caia en el {@code continue} de stock vacio). Con el gate en 0 la
+     * comprobacion se desactiva y el filtro de stock vacio sigue siendo el unico
+     * descarte.</p>
+     */
+    private boolean historiaSuficiente(@Nonnull Map<Long, Date> historia, @Nonnull Articulos articulo) {
+        int minimoDias = getAntiguedadMinimaDias();
+        if (minimoDias <= 0) {
+            return true;
+        }
+        Date primera = historia.get(articulo.getCodigo());
+        if (primera == null) {
+            return false;
+        }
+        return System.currentTimeMillis() - primera.getTime() >= minimoDias * 86_400_000L;
+    }
+
+    /**
+     * Convierte el valor temporal que devuelve {@code MIN(fechaMovimiento)} a
+     * {@link Date} (mismo criterio que {@code SeleccionMetodoService.aFecha}:
+     * el driver puede entregar {@code java.sql.Date/TimeStamp}, ambos {@link Date}).
+     */
+    @Nullable
+    private static Date aFecha(@Nullable Object valor) {
+        if (valor instanceof Date fecha) {
+            return fecha;
+        }
+        if (valor instanceof LocalDateTime instante) {
+            return Date.from(instante.atZone(ZoneId.systemDefault()).toInstant());
+        }
+        if (valor instanceof LocalDate dia) {
+            return Date.from(dia.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        }
+        return null;
     }
 
     /**
@@ -216,12 +346,16 @@ public class StockAlertService extends GService<AlertaStock> {
      * born for low-stock; for overstock rows it is the trigger maximum, which
      * is why the UI header reads "Umbral" instead. {@code sugeridoReordenar}
      * stays null — there is nothing to reorder — and renders as "-".</p>
+     *
+     * <p>Devuelve {@code true} solo si creo una alerta nueva, que es lo que el
+     * tope por barrido necesita contabilizar (ver
+     * {@link #maximoNuevasPorBarrido}).</p>
      */
-    private void evaluarSobrestock(@Nonnull Articulos articulo,
-                                   @Nonnull Integer currentStock,
-                                   @Nonnull Integer optimalStock) {
+    private boolean evaluarSobrestock(@Nonnull Articulos articulo,
+                                      @Nonnull Integer currentStock,
+                                      @Nonnull Integer optimalStock) {
         if (articulo.getEstadoAlertas() == null || !articulo.getEstadoAlertas()) {
-            return;
+            return false;
         }
         // Without sales velocity the computed optimal is 0 (0 daily sales x
         // any horizon), which would make every unit "overstock" — including a
@@ -234,7 +368,7 @@ public class StockAlertService extends GService<AlertaStock> {
         int multiplo = Math.max(1, multiploSobrestock);
         int umbral = optimo * multiplo;
         if (currentStock <= umbral) {
-            return;
+            return false;
         }
 
         Long existentes = em.createQuery(
@@ -244,7 +378,7 @@ public class StockAlertService extends GService<AlertaStock> {
                 .setParameter("articulo", articulo)
                 .getSingleResult();
         if (existentes != null && existentes > 0) {
-            return;
+            return false;
         }
 
         AlertaStock alerta = new AlertaStock();
@@ -258,6 +392,7 @@ public class StockAlertService extends GService<AlertaStock> {
                 + " unidades frente a un óptimo de " + optimo
                 + " (umbral x" + multiplo + " = " + umbral + ")");
         em.persist(alerta);
+        return true;
     }
 
     /**
