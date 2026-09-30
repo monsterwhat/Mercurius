@@ -1,5 +1,6 @@
 package Controllers.filters;
 
+import Models.DTO.ApiResponse;
 import Services.JwtTokenUtil;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Priority;
@@ -8,6 +9,7 @@ import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
@@ -26,6 +28,28 @@ public class MarketplaceJwtFilter implements ContainerRequestFilter {
 
     private static final String AUTH_PREFIX = "/api/marketplace/auth";
     private static final String OPTIONS_METHOD = "OPTIONS";
+
+    /**
+     * Los dos 401 de este filtro salen en el MISMO envelope
+     * {@link ApiResponse} que los de los controladores de mercado, no en el
+     * {@code {"error":"..."}} plano de antes: un cliente de
+     * {@code /api/marketplace} no debe tener un lector para el rechazo del
+     * token y otro para el del controlador.
+     *
+     * <p>El texto de ambos mensajes no cambia —es el que ya recibia esta
+     * superficie—; lo que se agrega es {@code error.code}, que si distingue las
+     * dos situaciones que el cliente debe tratar de forma distinta:
+     * {@code UNAUTHORIZED} cuando no se presento ninguna credencial (hay que
+     * pedirla) y {@code INVALID_TOKEN} cuando se presento un token y fue
+     * rechazado, que es el mismo codigo que ya usa
+     * {@code Controllers.Api.Marketplace.AuthController#refresh} para un token de
+     * actualizacion rechazado. Antes esa distincion solo existia en el mensaje.</p>
+     */
+    @Nonnull
+    private static final String MENSAJE_TOKEN_REQUERIDO = "Token de autenticación requerido";
+
+    @Nonnull
+    private static final String MENSAJE_TOKEN_INVALIDO = "Token inválido o expirado";
 
     @Inject
     @Nonnull
@@ -54,11 +78,7 @@ public class MarketplaceJwtFilter implements ContainerRequestFilter {
         String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             LOG.debug("Missing or invalid Authorization header for: " + path);
-            requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                            .entity("{\"error\":\"Token de autenticación requerido\"}")
-                            .build()
-            );
+            requestContext.abortWith(noAutenticado("UNAUTHORIZED", MENSAJE_TOKEN_REQUERIDO));
             return;
         }
 
@@ -67,11 +87,7 @@ public class MarketplaceJwtFilter implements ContainerRequestFilter {
 
         if (clientCode == null) {
             LOG.debug("Invalid or expired JWT token for: " + path);
-            requestContext.abortWith(
-                    Response.status(Response.Status.UNAUTHORIZED)
-                            .entity("{\"error\":\"Token inválido o expirado\"}")
-                            .build()
-            );
+            requestContext.abortWith(noAutenticado("INVALID_TOKEN", MENSAJE_TOKEN_INVALIDO));
             return;
         }
 
@@ -90,5 +106,22 @@ public class MarketplaceJwtFilter implements ContainerRequestFilter {
             @Override
             public String getAuthenticationScheme() { return "Bearer"; }
         });
+    }
+
+/**
+     * 401 con envelope {@link ApiResponse}.
+     *
+     * <p>El tipo de medio se fija explicito porque el cuerpo ya no es una cadena
+     * con el JSON escrito a mano: un filtro que aborta no hereda el
+     * {@code @Produces} del recurso —este filtro actua DESPUES del emparejamiento,
+     * de modo que la negociacion con el recurso aun no ha ocurrido— y el
+     * cliente merecia un tipo que describa lo que realmente lleva.</p>
+     */
+    @Nonnull
+    private static Response noAutenticado(@Nonnull String codigo, @Nonnull String mensaje) {
+        return Response.status(Response.Status.UNAUTHORIZED)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(ApiResponse.error(codigo, mensaje))
+                .build();
     }
 }

@@ -55,13 +55,21 @@ public class AuthController {
             AuthResponse response = clientAuthService.register(request);
             return Response.status(Response.Status.CREATED).entity(response).build();
         } catch (IllegalArgumentException e) {
+            // El motivo de la validacion viaja en error.message dentro del
+            // envelope, no en un {"error":"..."} plano. El codigo es
+            // VALIDATION_ERROR, el mismo que ya emitia
+            // Controllers.Api.Mercatus.ClientAuthController.register: lo que
+            // cambia entre los dos endpoints de registro es el status (400 aqui,
+            // 409 alla), no el cuerpo, asi que un cliente que los use a los dos
+            // tiene un solo lector.
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("{\"error\":\"" + escapeJson(e.getMessage()) + "\"}")
+                    .entity(ApiResponse.error("VALIDATION_ERROR", e.getMessage()))
                     .build();
         } catch (RuntimeException e) {
             LOG.error("Registration error", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al registrar. Intente nuevamente.\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR",
+                            "Error al registrar. Intente nuevamente."))
                     .build();
         }
     }
@@ -105,7 +113,8 @@ public class AuthController {
         } catch (RuntimeException e) {
             LOG.error("Login error", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al iniciar sesión. Intente nuevamente.\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR",
+                            "Error al iniciar sesión. Intente nuevamente."))
                     .build();
         }
     }
@@ -169,10 +178,14 @@ public class AuthController {
     /**
      * Renueva el token de acceso.
      *
-     * <p>El 401 usa el mismo envelope {@link ApiResponse} que el de login, pero
-     * con codigo {@code INVALID_TOKEN}: no son credenciales, es un token de
-     * actualizacion rechazado, y reutilizar {@code INVALID_CREDENTIALS} obligaria
-     * al cliente a distinguir por el mensaje lo que el codigo ya dice.</p>
+     * <p>Todo lo que este endpoint rechaza —token ausente (400), token
+     * desconocido, expirado o de una cuenta desactivada (401)— sale en el
+     * envelope {@link ApiResponse} con codigo {@code INVALID_TOKEN}: no son
+     * credenciales, es un token rechazado, y reutilizar
+     * {@code INVALID_CREDENTIALS} obligaria al cliente a distinguir por el
+     * mensaje lo que el codigo ya dice. Un token ausente y un token invalido
+     * comparten codigo a proposito: para el cliente es la misma instruccion
+     * (volver a iniciar sesion), y el status ya los separa.</p>
      */
     @POST
     @Path("/refresh")
@@ -181,7 +194,7 @@ public class AuthController {
         try {
             if (request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity("{\"error\":\"Token de actualización requerido\"}")
+                        .entity(ApiResponse.error("INVALID_TOKEN", "Token de actualización requerido"))
                         .build();
             }
             AuthResponse response = clientAuthService.refreshAccessToken(request.getRefreshToken());
@@ -193,7 +206,8 @@ public class AuthController {
         } catch (RuntimeException e) {
             LOG.error("Token refresh error", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al actualizar sesión. Intente nuevamente.\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR",
+                            "Error al actualizar sesión. Intente nuevamente."))
                     .build();
         }
     }
@@ -205,6 +219,13 @@ public class AuthController {
      * responde con el envelope {@link ApiResponse} y codigo
      * {@code UNAUTHENTICATED}, el mismo que ya usa
      * {@code AppAuthResource.me()} para la autenticacion por formulario.</p>
+     *
+     * <p>Los tres fallos de este recurso salen en ese mismo envelope —sin
+     * identidad {@code UNAUTHENTICATED}, cliente inexistente {@code NOT_FOUND} y
+     * cualquier otra cosa {@code INTERNAL_ERROR}—, con los codigos que ya usan
+     * el resto de la API. Antes el 404 y el 500 iban como
+     * {@code {"error":"..."}} plano, que era la unica forma que quedaba en
+     * /api/marketplace aparte de las del filtro.</p>
      */
     @GET
     @Path("/me")
@@ -220,7 +241,7 @@ public class AuthController {
             Clientes client = clientAuthService.findByCode(clientCode);
             if (client == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"error\":\"Cliente no encontrado\"}")
+                        .entity(ApiResponse.error("NOT_FOUND", "Cliente no encontrado"))
                         .build();
             }
 
@@ -240,20 +261,9 @@ public class AuthController {
         } catch (RuntimeException e) {
             LOG.error("Error getting profile", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al obtener perfil\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al obtener perfil"))
                     .build();
         }
-    }
-
-    @Nonnull
-    private static String escapeJson(@Nullable String value) {
-        if (value == null) return "";
-        return value
-                .replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
     }
 
     public static class RefreshTokenRequest {
