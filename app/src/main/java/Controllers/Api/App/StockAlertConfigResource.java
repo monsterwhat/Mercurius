@@ -45,7 +45,9 @@ import jakarta.ws.rs.core.Response;
  * <p>{@link StockAlertService} manages thresholds at two levels and nothing
  * else (see the note in {@code AppSettingsDTO}: there is NO global settings
  * row): engine constants hardcoded in {@code calculateOptimalStock()} /
- * {@code calculateReorderQuantity()}, exposed READ-ONLY by GET; and the
+ * {@code calculateReorderQuantity()} plus the sweep settings it reads from
+ * {@code mercurius.stock.*} (overstock multiplier, minimum-history gate,
+ * per-sweep cap), all exposed READ-ONLY by GET; and the
  * per-article thresholds {@code Articulos.diasStockSeguridad} /
  * {@code estadoAlertas} (+ service-written-back {@code stockOptimo}), which are
  * the writable surface of PUT {@code ?articulo=}.</p>
@@ -416,6 +418,8 @@ public class StockAlertConfigResource {
         return new StockAlertConfigDTO(VENTANA_VELOCIDAD_DIAS, PLAZO_ENTREGA_DIAS,
                 DIAS_STOCK_SEGURIDAD_POR_DEFECTO, STOCK_OPTIMO_RESPALDO_DIAS,
                 BUFFER_REORDEN_DIAS, stockAlertService.getMultiploSobrestock(),
+                stockAlertService.getAntiguedadMinimaDias(),
+                stockAlertService.getMaximoNuevasPorBarrido(),
                 null, null, null, true, null);
     }
 
@@ -424,6 +428,8 @@ public class StockAlertConfigResource {
         return new StockAlertConfigDTO(VENTANA_VELOCIDAD_DIAS, PLAZO_ENTREGA_DIAS,
                 DIAS_STOCK_SEGURIDAD_POR_DEFECTO, STOCK_OPTIMO_RESPALDO_DIAS,
                 BUFFER_REORDEN_DIAS, stockAlertService.getMultiploSobrestock(),
+                stockAlertService.getAntiguedadMinimaDias(),
+                stockAlertService.getMaximoNuevasPorBarrido(),
                 entidad.getCodigo(), entidad.getNombre(),
                 entidad.getDiasStockSeguridad(),
                 entidad.getEstadoAlertas() == null || entidad.getEstadoAlertas(),
