@@ -248,6 +248,54 @@ class PosFacturarPuntosTest extends support.ContextPathIsolation {
                 .isEqualByComparingTo(PUNTOS_A_CANJEAR);
     }
 
+    // ── 5. El canje queda reportado como descuento en el documento ──────
+
+    @Test
+    @DisplayName("la factura de una venta con puntos trae el descuento en TotalDescuentos y la neta rebajada")
+    void canjeReportadoComoDescuentoEnFactura() {
+        reset(loyaltyService);
+        ensureAppSettings();
+        Set<Long> idsPrevios = idsDeComprobantes();
+        Clientes cliente = null;
+        try {
+            Map<String, String> sesion = adminSession();
+            Articulos articulo = sembrarArticulo();
+            cliente = sembrarCliente();
+            prepararVenta(sesion, articulo, cliente);
+
+            when(loyaltyService.redeemPoints(any(Clientes.class), any(BigDecimal.class)))
+                    .thenReturn(new BigDecimal(PUNTOS_A_CANJEAR));
+
+            long id = facturar(sesion, PUNTOS_A_CANJEAR).then()
+                    .statusCode(200)
+                    .extract().jsonPath().getLong("data.comprobanteId");
+
+            // Venta de 1000 exenta con 100 puntos: el documento debe decir lo
+            // cobrado (900 netos con 100 de descuento), no la venta íntegra.
+            // Antes de este cambio la factura salía por 1000/0 mientras la caja
+            // cobraba 900: Hacienda recibía una venta mayor que la cobrada.
+            Models.Resumen.ResumenFactura resumen = em.createQuery(
+                            "SELECT c FROM ComprobantesEmitidos c "
+                                    + "LEFT JOIN FETCH c.resumen WHERE c.id = :id",
+                            Models.ComprobantesEmitidos.class)
+                    .setParameter("id", id)
+                    .getSingleResult()
+                    .getResumen();
+            assertThat(resumen).as("la factura debe traer resumen").isNotNull();
+            assertThat(resumen.getTotalDescuentos())
+                    .as("el canje debe reportarse como descuento del documento")
+                    .isEqualByComparingTo(new BigDecimal(PUNTOS_A_CANJEAR));
+            assertThat(resumen.getTotalVentaNeta())
+                    .as("la neta es la venta menos el descuento")
+                    .isEqualByComparingTo(new BigDecimal("900"));
+            assertThat(resumen.getTotalComprobante())
+                    .as("el comprobante totaliza lo cobrado (exento, sin otros cargos)")
+                    .isEqualByComparingTo(new BigDecimal("900"));
+        } finally {
+            limpiar(idsPrevios, cliente);
+        }
+    }
+
     // ── Limpieza ────────────────────────────────────────────────────────
 
     private Set<Long> idsDeComprobantes() {

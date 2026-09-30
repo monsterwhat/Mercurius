@@ -413,6 +413,37 @@ public class ComprobanteService implements Serializable {
             detallesService.create(detalles);
             ResumenFactura resumen = resumenComprobante(carrito);
 
+            // Descuento por puntos EN EL DOCUMENTO (summary-level). Hasta aquí
+            // el canje solo existía en caja (calcularVuelto) y en el débito:
+            // la factura salía por el total íntegro mientras el cliente pagaba
+            // menos, y Hacienda recibía una venta mayor que la cobrada. Ahora
+            // el TotalDescuentos del resumen incluye la parte de puntos y la
+            // venta neta baja en lo mismo, así que el XML dice lo cobrado.
+            //
+            // Semántica de descuento ABSOLUTO de la casa (igual que los
+            // totalDescuento por línea): reduce ventaNeta y registra el total,
+            // sin tocar la base del IVA — que se calcula por línea sobre
+            // precios. Los elementos Descuento por línea siguen siendo solo de
+            // promociones; aquí no se muta ninguna línea del carrito (el objeto
+            // ResumenFactura es fresco por llamada, así que un reintento
+            // reproduce exactamente los mismos números).
+            //
+            // D es puntosACanjean por la paridad de la casa 1 punto = ₡1 (el
+            // mismo valor que se debitó arriba). Si esa paridad cambia algún
+            // día, este bloque debe recibir el monto monetario explícito en vez
+            // de reutilizar el conteo. Se acota a totalVenta para no emitir
+            // netas negativas si el canje superara el total.
+            BigDecimal descuentoPuntosDoc = puntosACanjean.min(
+                    resumen.getTotalVenta() != null ? resumen.getTotalVenta() : BigDecimal.ZERO);
+            if (descuentoPuntosDoc.compareTo(BigDecimal.ZERO) > 0) {
+                resumen.setTotalDescuentos(
+                        resumen.getTotalDescuentos().add(descuentoPuntosDoc));
+                resumen.setTotalVentaNeta(
+                        resumen.getTotalVentaNeta().subtract(descuentoPuntosDoc));
+                LOG.info("Descuento por puntos en factura: " + descuentoPuntosDoc
+                        + " | source=ComprobanteService.crearComprobante()");
+            }
+
             BigDecimal totalOtrosCargos = calcularTotalOtrosCargos(detalles);
             resumen.setTotalOtrosCargos(totalOtrosCargos);
 
