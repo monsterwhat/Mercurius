@@ -36,6 +36,47 @@ public class ClientAuthService {
     ClientService clientService;
 
     /**
+     * Bounds password guessing against {@link #login(LoginRequest, String)}.
+     *
+     * <p>Counted per account (the email, normalized inside
+     * {@link Utils.IntentosDeCredencial#claveCuenta}) AND per source address, so
+     * neither one target being ground down nor one caller spraying many targets
+     * is possible: the account key alone would not catch the spray, because
+     * every victim would stay under its own threshold.</p>
+     */
+    @Inject
+    @Nonnull
+    Utils.IntentosDeCredencial intentosDeCredencial;
+
+    /**
+     * Injected ONLY for {@link LoginService#verificarContraHashFalso(String)} —
+     * the equalization helper the two form-auth BCrypt oracles already use. It
+     * is stateless for this purpose (a throwaway cost-12 hash), so reusing it
+     * here keeps a single dummy-hash implementation in the codebase.
+     */
+    @Inject
+    @Nonnull
+    LoginService loginService;
+
+    /**
+     * EntityManager propio de este bean, usado por las dos consultas de lectura.
+     *
+     * <p>No es un detalle de estilo: estas consultas se hacian antes con
+     * {@code clientService.em}, es decir leyendo un <em>campo</em> de otro bean a
+     * traves del client proxy de ArC. El proxy arrastra su propia copia del campo
+     * y ArC no la inyecta, de modo que esa lectura devolvia {@code null} y
+     * <strong>todo</strong> login de marketplace terminaba en
+     * {@code NullPointerException} -&gt; 500, sin llegar a la verificacion ni al
+     * limiter. Un metodo invocado a traves del proxy si se ejecuta sobre la
+     * instancia real (con su EntityManager); un campo no. Injectarlo aqui
+     * replica exactamente el mecanismo que ya usa {@code GService.em} y que si
+     * funciona sobre peticiones HTTP.</p>
+     */
+    @jakarta.persistence.PersistenceContext
+    @Nonnull
+    jakarta.persistence.EntityManager em;
+
+    /**
      * Registers a new client for marketplace access.
      *
      * @param request registration details
@@ -91,34 +132,82 @@ public class ClientAuthService {
     /**
      * Authenticates a client with email and password.
      *
+     * <p><b>Throttled and timing-equalized.</b> This verifies a BCrypt hash for
+     * an <em>arbitrary, caller-supplied</em> email, so unthrottled it was both a
+     * password-guessing oracle and — because the not-found and no-market-access
+     * branches returned without ever invoking BCrypt — a username-enumeration
+     * oracle measurable from outside: those answered in microseconds while a
+     * wrong password cost a full cost-12 verification.</p>
+     *
+     * <p>Both are closed here, mirroring
+     * {@code AppAuthResource.supervisorAuthorize()}: {@link
+     * Utils.IntentosDeCredencial} bounds the attempts per account and per source
+     * address, and every branch that rejects without a real verification spends
+     * the same CPU via {@link LoginService#verificarContraHashFalso(String)}.</p>
+     *
+     * <p>Not-found and no-market-access ARE counted as failures even though no
+     * stored hash was checked, matching that precedent: counting them keeps the
+     * unknown-email and wrong-password paths indistinguishable, and it does not
+     * let an attacker escape the budget by spraying unknown emails — those burn
+     * the same per-address counter, so polling is bounded too.</p>
+     *
      * @param request login credentials
+     * @param direccion source address for throttling. Passed in because only the
+     *        JAX-RS resource can see the Vert.x request; see
+     *        {@code AppAuthResource.direccionOrigen()}.
      * @return auth response with tokens
      * @throws IllegalArgumentException if credentials are invalid
      */
     @Nonnull
-    public AuthResponse login(@Nonnull LoginRequest request) {
-        Clientes client = findByEmail(request.getEmail().trim().toLowerCase());
+    public AuthResponse login(@Nonnull LoginRequest request, @Nullable String direccion) {
+        String cuenta = request.getEmail();
+
+        Clientes client = findByEmail(cuenta.trim().toLowerCase());
         if (client == null) {
+            // Equalize: without this the branch answers in microseconds and
+            // response time discloses which emails are registered.
+            loginService.verificarContraHashFalso(request.getPassword());
+            intentosDeCredencial.registrarFallo(cuenta, direccion);
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
         if (client.getPassword() == null) {
+            // Same equalization as above: a client created by an admin has no
+            // marketplace password, so no real BCrypt verification is reachable.
+            loginService.verificarContraHashFalso(request.getPassword());
+            intentosDeCredencial.registrarFallo(cuenta, direccion);
             throw new IllegalArgumentException("Esta cuenta no tiene acceso al mercado en línea. Contacte al administrador.");
         }
 
         if (!verifyPassword(request.getPassword(), client.getPassword())) {
+            intentosDeCredencial.registrarFallo(cuenta, direccion);
             throw new IllegalArgumentException("Credenciales inválidas");
         }
 
         if (client.getStatus() != null && !client.getStatus()) {
+            // Counted like any other rejected login (form-auth precedent), so a
+            // disabled account cannot be probed for free. No equalizing hash is
+            // needed here: the real verification above already ran.
+            intentosDeCredencial.registrarFallo(cuenta, direccion);
             throw new IllegalArgumentException("La cuenta está desactivada");
         }
 
-        return buildAuthResponse(client);
+        AuthResponse response = buildAuthResponse(client);
+        // Only after the tokens are actually built: a user who mistyped twice and
+        // then got it right must not stay one mistake away from a lockout.
+        intentosDeCredencial.registrarExito(cuenta, direccion);
+        return response;
     }
 
     /**
      * Refreshes an access token using a valid refresh token.
+     *
+     * <p><b>Deliberately NOT throttled.</b> Unlike
+     * {@link #login(LoginRequest, String)}, nothing is
+     * guessed here: a refresh token is a 128-bit random bearer value, so the
+     * attempt count does not measure a password-guessing rate. Replaying it is
+     * governed by expiry and the {@code sha256} digest stored instead of the raw
+     * token (see {@link #buildAuthResponse}).</p>
      *
      * @param refreshToken the refresh token string
      * @return new auth response with fresh tokens
@@ -216,11 +305,14 @@ public class ClientAuthService {
 
     /**
      * Finds a client by email address.
+     *
+     * <p>Usa el EntityManager propio del bean; ver el comentario del campo
+     * {@code em} para por que leerlo de {@code clientService} devolvia null.</p>
      */
     @Nullable
     Clientes findByEmail(@Nonnull String email) {
         try {
-            TypedQuery<Clientes> query = clientService.em.createQuery(
+            TypedQuery<Clientes> query = em.createQuery(
                     "SELECT c FROM Clientes c WHERE LOWER(c.email) = :email", Clientes.class);
             query.setParameter("email", email.toLowerCase());
             List<Clientes> results = query.getResultList();
@@ -241,7 +333,7 @@ public class ClientAuthService {
     @Nullable
     Clientes findByRefreshToken(@Nonnull String refreshToken) {
         try {
-            TypedQuery<Clientes> query = clientService.em.createQuery(
+            TypedQuery<Clientes> query = em.createQuery(
                     "SELECT c FROM Clientes c WHERE c.refreshToken = :token", Clientes.class);
             query.setParameter("token", sha256Hex(refreshToken));
             List<Clientes> results = query.getResultList();

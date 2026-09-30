@@ -5,7 +5,9 @@ import Models.DTO.AuthResponse;
 import Models.DTO.LoginRequest;
 import Models.DTO.RegisterRequest;
 import Services.ClientAuthService;
+import io.vertx.ext.web.RoutingContext;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -32,6 +34,16 @@ public class ClientAuthController {
     @Inject
     @Nonnull
     ClientAuthService clientAuthService;
+
+    /** Bounds password guessing against {@link #login(LoginRequest)}. */
+    @Nonnull
+    @Inject
+    Utils.IntentosDeCredencial intentosDeCredencial;
+
+    /** Source address for throttling; see {@link #direccionOrigen()}. */
+    @Inject
+    @Nullable
+    RoutingContext routing;
 
     @POST
     @Path("/register")
@@ -60,17 +72,36 @@ public class ClientAuthController {
         }
     }
 
+    /**
+     * Login: verifies a BCrypt hash for an <em>arbitrary, caller-supplied</em>
+     * email, so unthrottled it was a credential-stuffing oracle.
+     *
+     * <p>The budget check lives here, before the verification, so a blocked key
+     * is refused without spending any BCrypt CPU; the accounting for the
+     * individual outcomes lives in {@link ClientAuthService#login}, which is the
+     * only place that knows which branch rejected and therefore has to pay the
+     * equalization cost. Both sides key the limiter on the same raw email,
+     * which {@code IntentosDeCredencial.claveCuenta} normalizes identically.</p>
+     */
     @POST
     @Path("/auth/login")
     @Operation(summary = "Login with email and password to get JWT token")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Login successful"),
         @APIResponse(responseCode = "401", description = "Invalid credentials"),
+        @APIResponse(responseCode = "429", description = "Too many attempts; retry after the indicated delay"),
         @APIResponse(responseCode = "500", description = "Internal server error")
     })
     public Response login(@Nonnull LoginRequest request) {
+        String direccion = direccionOrigen();
+
+        Long bloqueo = intentosDeCredencial.restanteBloqueo(request.getEmail(), direccion);
+        if (bloqueo != null) {
+            return demasiadosIntentos(bloqueo);
+        }
+
         try {
-            AuthResponse authResponse = clientAuthService.login(request);
+            AuthResponse authResponse = clientAuthService.login(request, direccion);
             return Response.ok(authResponse).build();
         } catch (IllegalArgumentException e) {
             LOG.info("Login failed: " + e.getMessage());
@@ -83,5 +114,41 @@ public class ClientAuthController {
                     .entity(ApiResponse.error("INTERNAL_ERROR", "Login failed"))
                     .build();
         }
+    }
+
+    /**
+     * Best-effort source address for throttling.
+     *
+     * <p>Falls back to a constant when it cannot be determined. That is
+     * deliberately NOT the empty string: an empty fallback would give every
+     * unknown caller the same bucket, so one attacker could lock every user out
+     * by tripping a shared counter. See
+     * {@code AppAuthResource.direccionOrigen()}.</p>
+     */
+    private String direccionOrigen() {
+        try {
+            if (routing != null) {
+                String ip = routing.request().remoteAddress() != null
+                        ? routing.request().remoteAddress().hostAddress()
+                        : null;
+                if (ip != null && !ip.isBlank()) {
+                    return ip;
+                }
+            }
+        } catch (RuntimeException e) {
+            LOG.debug("No se pudo determinar la direccion de origen: " + e.getMessage()
+                    + " | source=ClientAuthController.direccionOrigen()");
+        }
+        return "desconocida";
+    }
+
+    /** 429 with Retry-After, so a client backs off instead of hammering. */
+    private Response demasiadosIntentos(long segundos) {
+        return Response.status(429)
+                .header("Retry-After", String.valueOf(segundos))
+                .entity(ApiResponse.error("TOO_MANY_ATTEMPTS",
+                        "Demasiados intentos. Intentelo de nuevo en "
+                                + (segundos / 60) + " minuto(s)."))
+                .build();
     }
 }
