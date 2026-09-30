@@ -1,5 +1,7 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
+
 import Models.Articulos.Articulos;
 import Models.DTO.ApiResponse;
 import Models.DTO.OrdenCompraDTO;
@@ -1014,17 +1016,6 @@ public class OrdenCompraResource {
                 .build();
     }
 
-    private static Response hxRedirect(@Nonnull String url) {
-        return Response.status(Response.Status.OK)
-                .header("HX-Redirect", url)
-                .build();
-    }
-
-    private static Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
-    }
-
     @Nullable
     private static String trimToNull(@Nullable String raw) {
         return raw == null || raw.isBlank() ? null : raw.trim();
@@ -1473,26 +1464,6 @@ public class OrdenCompraResource {
                 sort, "desc".equalsIgnoreCase(dir) ? "desc" : "asc",
                 p, s, total, totalPages, pageWindow(p, totalPages),
                 filtros, qTrim);
-    }
-
-    private static Map<String, Object> col(@Nonnull String label, @Nullable String key) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("label", label);
-        map.put("key", key);
-        return map;
-    }
-
-    private static List<Integer> pageWindow(int page, int totalPages) {
-        if (totalPages <= 1) {
-            return List.of(1);
-        }
-        List<Integer> pages = new ArrayList<>();
-        int from = Math.max(1, page - 2);
-        int to = Math.min(totalPages, page + 2);
-        for (int i = from; i <= to; i++) {
-            pages.add(i);
-        }
-        return pages;
     }
 
     /** Immutable view of everything pages/compras/ordenes-tabla.html needs. */
