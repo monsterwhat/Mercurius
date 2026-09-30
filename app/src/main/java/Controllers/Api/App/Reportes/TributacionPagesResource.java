@@ -1,5 +1,7 @@
 package Controllers.Api.App.Reportes;
 
+import static Controllers.Api.App.AppRecursoBase.*;
+
 import Controllers.Api.App.TributacionResource;
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
@@ -682,15 +684,6 @@ public class TributacionPagesResource {
 
     private static String nombreMes(int mes) {
         return MESES[mes - 1];
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
-    }
-
-    private static Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
     private static Response serverError(@Nonnull String mensaje) {

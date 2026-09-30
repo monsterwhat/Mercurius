@@ -195,7 +195,19 @@ public class LoginService extends GService<Usuarios> {
         }
     }
 
+    /**
+     * Persists a user, hashing a plaintext password on the way in.
+     *
+     * <p>The {@code @Transactional} is load-bearing, not decorative: this
+     * overrides {@code GService.create}, and the annotation is not inherited
+     * by the override, so without it every direct call outside a transaction
+     * (tests, seed helpers, admin provisioning) fails with "Transaction is not
+     * active" and — worse — fails SILENTLY inside the catch below, leaving the
+     * caller believing the user exists. Same defect class as the missing
+     * annotation on {@code CabysService.delete}.</p>
+     */
     @Override
+    @Transactional
     public void create(Usuarios entity) {
         try {
             // Hash the password before storing
