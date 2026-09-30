@@ -74,11 +74,20 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * <p><b>Facturar pipeline</b> mirrors {@code CrearTiqueteController.facturar()}
  * step by step (override gate → settings gate → strategy → inventory adjust →
  * {@code ComprobanteService.crearComprobante} [loyalty redemption + earn,
- * inside its transaction] → PDF → conditional client email → clear).
+ * inside its transaction, and nothing else] → idempotency stamp →
+ * {@code ComprobanteService.enviarComprobanteCreado} [the Hacienda send, OUTSIDE
+ * that transaction] → PDF → conditional client email → clear).
  * Documented deltas and their written justifications live in
  * .omo/evidence/t37prep/baseline-characterization.md
  * (PDF FacesContext NPE tolerance, no auto-printing, settings-null envelope,
  * unused tipoCambio argument, single client reference, fresh fallback total).</p>
+ *
+ * <p><b>Por qué el envío va después del sello y no dentro de la factura:</b>
+ * la fase de armado retiene el bloqueo pesimista de la fila de consecutivo, y
+ * el envío a Hacienda es HTTPS con sondeo de estado (segundos). Con el envío
+ * adentro, toda venta concurrente esperaba la red de la anterior con el
+ * consecutivo bloqueado. Estampando primero, además, una muerte de proceso
+ * durante el envío deja sello y reintento seguro.</p>
  */
 @Path("/api/app/pos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -416,7 +425,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      * payment sufficiency gate, then the SAME creation pipeline (override gate,
      * settings gate, strategy resolution, inventory adjustment,
      * {@code ComprobanteService.crearComprobante} —which also redeems the
-     * points discount in its own transaction— PDF generation, Hacienda-gated
+     * points discount in its own transaction— idempotency stamp, Hacienda send
+     * (outside that transaction), PDF generation, Hacienda-gated
      * client email, cart cleanup).
      *
      * <p>Returns {@code {pdfUrl}} pointing at GET /api/app/pos/facturas/{file},
@@ -441,7 +451,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      * payment sufficiency gate, then the SAME creation pipeline (override gate,
      * settings gate, strategy resolution, inventory adjustment,
      * {@code ComprobanteService.crearComprobante} —which also redeems the
-     * points discount in its own transaction— PDF generation, Hacienda-gated
+     * points discount in its own transaction— idempotency stamp, Hacienda send
+     * (outside that transaction), PDF generation, Hacienda-gated
      * client email, cart cleanup).
      *
      * <p>{@code pagos} null/empty falls back to the staged /payment-entries
@@ -616,10 +627,18 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         }
         ComprobanteService.CrearComprobanteResult result;
         try {
+            // Fase (a): SOLO armado + confirmación (consecutivo, encabezado,
+            // detalles, resumen, comprobante, canje de puntos e inventario).
             // Tanto el ajuste de inventario como el canje de puntos viajan
             // DENTRO de esta llamada, en la transacción del comprobante: un
             // fallo en cualquiera revierte stock + puntos + factura juntos, y
             // el reintento arranca limpio sin duplicar nada.
+            //
+            // Lo que NO viaja es el envío a Hacienda: el bloqueo pesimista del
+            // consecutivo dura lo que esta transacción, y mantenerlo abierto
+            // durante el sondeo de estado de Hacienda hacía que cada venta
+            // concurrente esperara la E/S de red de la anterior. El envío va
+            // dos pasos más abajo, ya con el commit hecho.
             result = comprobanteService.crearComprobante(
                     settings,
                     ctx.getCarrito(),
@@ -667,10 +686,24 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         ComprobantesEmitidos comprobante = result.comprobante;
 
         // Idempotency stamp, set at the commit point: stock and invoice are
-        // persisted from here on. Everything below (loyalty, PDF, email) is a
-        // post-commit side effect that may fail or be retried; stamping FIRST
+        // persisted from here on. Everything below (Hacienda send, PDF, email) is
+        // a post-commit side effect that may fail or be retried; stamping FIRST
         // makes any retry replay the stored invoice instead of duplicating it.
         entry.setFacturadoComprobanteId(comprobante.getId());
+
+        // Fase (b): ahora sí, Hacienda — y es ahora cuando debe ser. El
+        // consecutivo ya está liberado (la fase (a) hizo commit), así que esta
+        // llamada, que puede tardar segundos en HTTPS y sondear el estado, no
+        // bloquea la numeración de las demás ventas ni retiene la fila con
+        // PESSIMISTIC_WRITE. Corre después del sello a propósito: si el proceso
+        // muere aquí, el reintento del cajero encuentra el sello y reproduce el
+        // resultado guardado en vez de facturar dos veces.
+        //
+        // El método no relanza: la venta ya está cobrada y confirmada, así que
+        // un fallo de envío se reporta en el mensaje, no como error HTTP.
+        // Rellena result.haciendaEnviado / pendienteEnvio / haciendaMensaje y
+        // deja el estado de Hacienda en el comprobante.
+        comprobanteService.enviarComprobanteCreado(result);
 
         // 9. Loyalty redemption (controller lines 480-491) now happens INSIDE
         //    crearComprobante, before its first write: the debit and the
