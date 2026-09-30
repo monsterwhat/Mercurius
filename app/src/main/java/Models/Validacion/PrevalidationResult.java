@@ -10,7 +10,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PrevalidationResult {
     
-    private boolean isValid;
+    /**
+     * Starts true and only ever flips to false: {@link #addError} clears it for
+     * ERROR severity. (Nothing reads this yet — consumers use
+     * {@code !hasErrors()} — but a validity flag that defaults to false is a
+     * trap for the first reader.)
+     */
+    private boolean isValid = true;
     private List<ValidationError> errors = new ArrayList<>();
     private List<ValidationError> warnings = new ArrayList<>();
     private LocalDateTime validatedAt = LocalDateTime.now();
