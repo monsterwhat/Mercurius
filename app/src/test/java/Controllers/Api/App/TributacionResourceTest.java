@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -432,6 +433,16 @@ class TributacionResourceTest extends support.ContextPathIsolation {
         ComprobantesEmitidos venta = null;
         ComprobantesRecibidos compra = null;
         try {
+            // Baseline FIRST: invoice cleanup above is best-effort (shared
+            // receptor rows can block cascade deletes with FK violations that
+            // GService swallows), so other suites' leftovers may survive in a
+            // shared boot. Asserting DELTAS instead of absolute sums makes this
+            // test immune to that shared state: leftovers shift baseline and
+            // final equally and cancel out. What is pinned is the contract —
+            // the endpoint adds exactly the seeded amounts.
+            Map<String, BigDecimal> base = resumenTotales(hoy);
+            BigDecimal baseFilaMes = resumenFilaMes(hoy);
+
             venta = seedEmitido(consecutivo("IVAVTA"), "ACEPTADO",
                     hoy.atTime(10, 0), "IT28-IVA");
             venta.setResumen(resumen(new BigDecimal("100000"), new BigDecimal("13000"),
@@ -441,28 +452,30 @@ class TributacionResourceTest extends support.ContextPathIsolation {
             compra = seedRecibido(consecutivo("IVACMP"), hoy.atTime(11, 0),
                     new BigDecimal("50000"), new BigDecimal("6500"));
 
+            Map<String, BigDecimal> total = resumenTotales(hoy);
+            assertEquals(0, total.get("totalVentas").subtract(base.get("totalVentas"))
+                    .compareTo(new BigDecimal("100000")), "ventas = base + sum(totalVentaNeta emitidas)");
+            assertEquals(0, total.get("ivaDebito").subtract(base.get("ivaDebito"))
+                    .compareTo(new BigDecimal("13000")), "débito = base + sum(totalImpuesto emitidas)");
+            assertEquals(0, total.get("totalCompras").subtract(base.get("totalCompras"))
+                    .compareTo(new BigDecimal("50000")), "compras = base + sum(totalVentaNeta recibidas)");
+            assertEquals(0, total.get("ivaCredito").subtract(base.get("ivaCredito"))
+                    .compareTo(new BigDecimal("6500")), "crédito = base + sum(totalImpuesto recibidas)");
+            assertEquals(0, total.get("ivaNeto").subtract(base.get("ivaNeto"))
+                    .compareTo(new BigDecimal("6500")), "neto = base + débito − crédito");
+
             Response respuesta = given()
                     .queryParam("mes", hoy.getMonthValue())
                     .queryParam("anio", hoy.getYear())
                     .when().get(API + "/declaracion/resumen");
             respuesta.then().statusCode(200);
             var json = respuesta.jsonPath();
-            assertEquals(0, new BigDecimal(json.getString("data.totalVentas"))
-                    .compareTo(new BigDecimal("100000")), "ventas = sum(totalVentaNeta emitidas)");
-            assertEquals(0, new BigDecimal(json.getString("data.ivaDebito"))
-                    .compareTo(new BigDecimal("13000")), "débito = sum(totalImpuesto emitidas)");
-            assertEquals(0, new BigDecimal(json.getString("data.totalCompras"))
-                    .compareTo(new BigDecimal("50000")), "compras = sum(totalVentaNeta recibidas)");
-            assertEquals(0, new BigDecimal(json.getString("data.ivaCredito"))
-                    .compareTo(new BigDecimal("6500")), "crédito = sum(totalImpuesto recibidas)");
-            assertEquals(0, new BigDecimal(json.getString("data.ivaNeto"))
-                    .compareTo(new BigDecimal("6500")), "neto = débito − crédito");
             assertEquals(12, json.getList("data.filas").size(),
                     "one monthly fila per month of the year");
             int indiceMes = hoy.getMonthValue() - 1;
             assertEquals(0, new BigDecimal(json.getString("data.filas[" + indiceMes + "].totalVentas"))
-                    .compareTo(new BigDecimal("100000")),
-                    "the current-month fila carries the seeded ventas");
+                    .subtract(baseFilaMes).compareTo(new BigDecimal("100000")),
+                    "the current-month fila carries base + the seeded ventas");
 
             given()
                     .queryParam("mes", 13)
@@ -476,6 +489,35 @@ class TributacionResourceTest extends support.ContextPathIsolation {
                 recibidosService.delete(compra);
             }
         }
+    }
+
+    /** Reads the resumen totals map for the current month (baseline or final). */
+    private Map<String, BigDecimal> resumenTotales(LocalDate hoy) {
+        var json = given()
+                .queryParam("mes", hoy.getMonthValue())
+                .queryParam("anio", hoy.getYear())
+                .when().get(API + "/declaracion/resumen")
+                .then().statusCode(200)
+                .extract().jsonPath();
+        Map<String, BigDecimal> total = new HashMap<>();
+        total.put("totalVentas", new BigDecimal(json.getString("data.totalVentas")));
+        total.put("ivaDebito", new BigDecimal(json.getString("data.ivaDebito")));
+        total.put("totalCompras", new BigDecimal(json.getString("data.totalCompras")));
+        total.put("ivaCredito", new BigDecimal(json.getString("data.ivaCredito")));
+        total.put("ivaNeto", new BigDecimal(json.getString("data.ivaNeto")));
+        return total;
+    }
+
+    /** Current-month fila totalVentas (baseline or final). */
+    private BigDecimal resumenFilaMes(LocalDate hoy) {
+        var json = given()
+                .queryParam("mes", hoy.getMonthValue())
+                .queryParam("anio", hoy.getYear())
+                .when().get(API + "/declaracion/resumen")
+                .then().statusCode(200)
+                .extract().jsonPath();
+        int indiceMes = hoy.getMonthValue() - 1;
+        return new BigDecimal(json.getString("data.filas[" + indiceMes + "].totalVentas"));
     }
 
     // ── 11. MR deadline indicator states ────────────────────────────────

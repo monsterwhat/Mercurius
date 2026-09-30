@@ -17,8 +17,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import Models.Articulos.Articulos;
 import Models.Articulos.ArticuloPrecio;
 import Models.Cabys;
@@ -187,6 +189,29 @@ class PosFacturarIdempotenciaTest extends support.ContextPathIsolation {
                 .orElseThrow();
     }
 
+    /**
+     * Borra las facturas que la prueba creó (marca de agua) y sus PDFs.
+     * Artículos e inventario se dejan, igual que PosFacturarPuntosTest: las
+     * filas de inventario referencian al artículo por FK. Sin esta limpieza,
+     * las facturas acumuladas contaminan a las suites que cuentan emitidas en
+     * el boot compartido (p. ej. TributacionResourceTest espera sumas exactas).
+     */
+    private void limpiarFacturas(Set<Long> idsPrevios) {
+        for (Models.ComprobantesEmitidos comprobante : emitidosService.listAll()) {
+            if (!idsPrevios.contains(comprobante.getId())) {
+                emitidosService.delete(comprobante);
+                try {
+                    Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                            "tiqueteElectronico_" + comprobante.getId() + ".pdf"));
+                } catch (java.io.IOException e) {
+                    throw new AssertionError("No se pudo borrar el PDF de prueba "
+                            + comprobante.getId() + ": " + e.getMessage(), e);
+                }
+            }
+        }
+        cartSessionStore.remove("admin");
+    }
+
     private void limpiarPdfsDePrueba() throws Exception {
         // The invoice ids restart at 1 on every %test drop-and-create boot, but
         // the PDF directory lives on the filesystem and survives across test
@@ -211,6 +236,9 @@ class PosFacturarIdempotenciaTest extends support.ContextPathIsolation {
     void reintentoTras500NoDuplica() throws Exception {
         ensureAppSettings();
         limpiarPdfsDePrueba();
+        Set<Long> idsPrevios = new HashSet<>();
+        emitidosService.listAll().forEach(f -> idsPrevios.add(f.getId()));
+        try {
         Map<String, String> s = adminSession();
         cartSessionStore.remove("admin");
         Articulos articulo = sembrarArticulo();
@@ -254,6 +282,9 @@ class PosFacturarIdempotenciaTest extends support.ContextPathIsolation {
                 .isEqualByComparingTo(stockTrasPrimero);
 
         cartSessionStore.remove("admin");
+        } finally {
+            limpiarFacturas(idsPrevios);
+        }
     }
 
     @Test
@@ -261,6 +292,10 @@ class PosFacturarIdempotenciaTest extends support.ContextPathIsolation {
     void reintentoRecuperaLaVentaOriginal() throws Exception {
         ensureAppSettings();
         limpiarPdfsDePrueba();
+        Set<Long> idsPrevios = new HashSet<>();
+        emitidosService.listAll().forEach(f -> idsPrevios.add(f.getId()));
+        Path pdf = null;
+        try {
         Map<String, String> s = adminSession();
         cartSessionStore.remove("admin");
         Articulos articulo = sembrarArticulo();
@@ -276,7 +311,7 @@ class PosFacturarIdempotenciaTest extends support.ContextPathIsolation {
         assertThat(contarFacturas()).isEqualTo(facturasAntes + 1);
 
         // El subsistema de PDF se recupera: el archivo aparece en disco.
-        Path pdf = Paths.get(dirService.getFacturasDirPath(), "tiqueteElectronico_" + id + ".pdf");
+        pdf = Paths.get(dirService.getFacturasDirPath(), "tiqueteElectronico_" + id + ".pdf");
         Files.createDirectories(pdf.getParent());
         Files.write(pdf, "%PDF-1.4 recuperado".getBytes(StandardCharsets.UTF_8));
 
@@ -295,7 +330,12 @@ class PosFacturarIdempotenciaTest extends support.ContextPathIsolation {
                 .then()
                 .body("data.items", org.hamcrest.Matchers.hasSize(0));
 
-        Files.deleteIfExists(pdf);
+        if (pdf != null) {
+            Files.deleteIfExists(pdf);
+        }
         cartSessionStore.remove("admin");
+        } finally {
+            limpiarFacturas(idsPrevios);
+        }
     }
 }
