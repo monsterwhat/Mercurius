@@ -17,6 +17,7 @@ import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -32,6 +33,14 @@ import org.jboss.logging.Logger;
  * silently permitted. Before that, a changed root-path or a proxy stripping
  * the prefix left all 23 accounting/mercatus endpoints unauthenticated with no
  * log line at all.</p>
+ *
+ * <p>Las exenciones se comparan por igualdad EXACTA sobre la ruta ya
+ * normalizada ({@link #normalizarRuta}), no por {@code endsWith} ni por
+ * {@code contains}: con esas dos, cualquier ruta que CONTUBIERA el literal
+ * se saltaba la autenticacion, de modo que {@code /api/v1/x/oauth/token} o
+ * {@code /api/v1/mercatus/clients/auth/login/extra} pasaban sin Bearer. Con
+ * igualdad exacta, un segmento de mas hace que la ruta deje de ser la exenta y
+ * caiga en la rama que le corresponde.</p>
  */
 @Provider
 @Priority(Priorities.AUTHENTICATION)
@@ -41,6 +50,10 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
     private static final String OPTIONS_METHOD = "OPTIONS";
 
     // Paths that are exempt from auth (token endpoint, etc.)
+    // Rutas COMPLETAS, no prefijos ni fragmentos: se comparan por igualdad
+    // exacta contra la ruta normalizada (ver normalizarRuta). Una entrada se
+    // escribe tal cual llega en el contenedor, con barra inicial y SIN el
+    // prefijo raiz, para que sea obvio que no es un patron.
     private static final Set<String> EXEMPT_PATHS = Set.of(
         "/oauth/token",
         // Mercatus credential-issuing endpoints: requiring a Bearer token to
@@ -52,6 +65,18 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
         "/api/v1/mercatus/clients/auth/login",
         "/api/v1/mercatus/clients/register"
     );
+
+    /**
+     * Las mismas entradas de {@link #EXEMPT_PATHS} en forma canonica, porque
+     * la comparacion es de igualdad exacta y los dos lados tienen que estar
+     * igual de normalizados. Hoy los literales ya vienen normalizados, asi que
+     * el resultado es identico a EXEMPT_PATHS; se calcula igual para que
+     * anadir una entrada sin la barra inicial (o con el prefijo raiz) no
+     * disables la exencion en silencio.
+     */
+    private static final Set<String> EXEMPT_PATHS_NORMALIZADOS = EXEMPT_PATHS.stream()
+            .map(exempt -> normalizarRuta(exempt, ""))
+            .collect(Collectors.toUnmodifiableSet());
 
     // Analytics endpoints that need auth but are NOT under /api/v1/
     private static final Set<String> ANALYTICS_PATHS = Set.of(
@@ -161,6 +186,25 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
     }
 
     /**
+     * Forma canonica de una ruta para compararla contra las listas de la
+     * filtro: relativa a la raiz (ver {@link #rutaRelativa}) y con barra
+     * inicial garantizada. Una ruta vacia (o nula) se canoniza a {@code "/"}.
+     *
+     * <p>Es la unica normalizacion que se aplica: NO se quitan barras
+     * finales ni se resuelve {@code .} / {@code ..} / dobles barras, para que
+     * lo que se compara sea exactamente el camino quellego al contenedor. Por
+     * eso la comparacion de exenciones puede ser de igualdad exacta sin
+     * abrir la puerta a los prefijos.</p>
+     */
+    static String normalizarRuta(String path, String rootPath) {
+        String relativa = rutaRelativa(path, rootPath);
+        if (relativa.isEmpty()) {
+            return "/";
+        }
+        return relativa.startsWith("/") ? relativa : "/" + relativa;
+    }
+
+    /**
      * Coincidencia historica: la ruta empieza por {@code <raiz>/api/v1/}.
      * Se conserva con {@code startsWith} (no {@code contains}) por seguridad.
      */
@@ -197,18 +241,22 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
 
     /**
      * Decision unica de ruteo. Orden de evaluacion:
-     * 1. exentas; 2. dominio publico (/api/v1/ con o sin prefijo raiz, y
-     * analytics); 3. fuera de alcance (paginas, estaticos, espacios ajenos);
-     * 4. cualquier otra cosa bajo /api/ -> DENEGAR (fail-closed).
+     * 1. exentas (igualdad exacta sobre la ruta normalizada); 2. dominio publico
+     * (/api/v1/ con o sin prefijo raiz, y analytics); 3. fuera de alcance
+     * (paginas, estaticos, espacios ajenos); 4. cualquier otra cosa bajo /api/
+     * -> DENEGAR (fail-closed).
      */
     static Decision decidir(String path, String rootPath) {
         if (path == null) {
             return Decision.FUERA_DE_ALCANCE;
         }
-        for (String exempt : EXEMPT_PATHS) {
-            if (path.endsWith(exempt) || path.contains(exempt)) {
-                return Decision.EXENTO;
-            }
+        // Exenciones por igualdad EXACTA. Antes era endsWith || contains, que
+        // concedia la exencion a CUALQUIER ruta que contuviera el literal:
+        // /api/v1/x/oauth/token, /api/v1/mercatus/clients/auth/login/extra y
+        // /api/v1/mercatus/clients/registerXYZ se saltaban la autenticacion.
+        // Con igualdad exacta, la exencion se aplica a la ruta y solo a ella.
+        if (EXEMPT_PATHS_NORMALIZADOS.contains(normalizarRuta(path, rootPath))) {
+            return Decision.EXENTO;
         }
         if (conPrefijoRaiz(path, rootPath)) {
             return Decision.AUTENTICAR;
