@@ -17,10 +17,14 @@ import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import Models.ConfiguracionAplicacion;
 import Models.Articulos.ArticuloPrecio;
@@ -95,6 +99,12 @@ class PosResourceTest extends support.ContextPathIsolation {
 
     @Inject
     CartSessionStore cartSessionStore;
+
+    @Inject
+    Services.ComprobantesEmitidosService emitidosService;
+
+    @Inject
+    Services.DirectoryService dirService;
 
     // ── Auth helpers (house style) ──────────────────────────────────────
 
@@ -651,6 +661,9 @@ class PosResourceTest extends support.ContextPathIsolation {
     @Order(15)
     void facturarHappyPathYieldsPdfUrlStreamingPdfBytes() {
         ensureAppSettings();
+        Set<Long> idsPrevios = new HashSet<>();
+        emitidosService.listAll().forEach(f -> idsPrevios.add(f.getId()));
+        try {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
         Articulos articulo = seedExemptArticulo(productoReal(), "1000");
@@ -692,12 +705,40 @@ class PosResourceTest extends support.ContextPathIsolation {
                 .then()
                 .body("data.items", hasSize(0))
                 .body("data.totalPagado", equalTo(0));
+        } finally {
+            limpiarFacturas(idsPrevios);
+        }
+    }
+
+    /**
+     * Borra las facturas que la prueba creó (marca de agua) y sus PDFs, para no
+     * contaminar a las suites que cuentan emitidas en el boot compartido
+     * (TributacionResourceTest espera sumas exactas). Artículos e inventario se
+     * dejan (FK desde inventario al artículo).
+     */
+    private void limpiarFacturas(Set<Long> idsPrevios) {
+        for (Models.ComprobantesEmitidos comprobante : emitidosService.listAll()) {
+            if (!idsPrevios.contains(comprobante.getId())) {
+                emitidosService.delete(comprobante);
+                try {
+                    Files.deleteIfExists(Paths.get(dirService.getFacturasDirPath(),
+                            "tiqueteElectronico_" + comprobante.getId() + ".pdf"));
+                } catch (java.io.IOException e) {
+                    throw new AssertionError("No se pudo borrar el PDF de prueba "
+                            + comprobante.getId() + ": " + e.getMessage(), e);
+                }
+            }
+        }
+        cartSessionStore.remove("admin");
     }
 
     @Test
     @Order(16)
     void priceOverrideRequiresSupervisorAuthorization() {
         ensureAppSettings();
+        Set<Long> idsPrevios = new HashSet<>();
+        emitidosService.listAll().forEach(f -> idsPrevios.add(f.getId()));
+        try {
         Map<String, String> session = adminSession();
         cartSessionStore.remove("admin");
         Articulos articulo = seedExemptArticulo(productoReal(), "1000");
@@ -753,6 +794,9 @@ class PosResourceTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body("data.pdfUrl", notNullValue());
+        } finally {
+            limpiarFacturas(idsPrevios);
+        }
     }
 
     @Test
