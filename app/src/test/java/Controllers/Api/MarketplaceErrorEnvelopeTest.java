@@ -461,4 +461,45 @@ class MarketplaceErrorEnvelopeTest {
                 .as("el codigo debe corresponder al status: 401 UNAUTHENTICATED, 500 INTERNAL_ERROR")
                 .isEqualTo(401 == respuesta.getStatusCode() ? "UNAUTHENTICATED" : "INTERNAL_ERROR");
     }
+
+    // ── catálogo, pedidos, carrito y perfil: el mismo envelope ──────────
+
+    @Test
+    @DisplayName("producto inexistente responde 404 NOT_FOUND con envelope")
+    void productoInexistenteResponde404ConEnvelope() {
+        String token = jwtTokenUtil.generateAccessToken(CODIGO_CLIENTE_FANTASMA);
+
+        Response respuesta = getConToken("/api/marketplace/products/999999999", token);
+
+        respuesta.then()
+                .statusCode(404)
+                .body("error.code", equalTo("NOT_FOUND"))
+                .body("error.message", equalTo("Producto no encontrado"));
+        esEnvelope(respuesta);
+    }
+
+    @Test
+    @DisplayName("pedido inexistente responde 404 NOT_FOUND con envelope")
+    void pedidoInexistenteResponde404ConEnvelope() {
+        String token = jwtTokenUtil.generateAccessToken(CODIGO_CLIENTE_FANTASMA);
+
+        Response respuesta = getConToken("/api/marketplace/orders/999999999", token);
+
+        respuesta.then()
+                .statusCode(404)
+                .body("error.code", equalTo("NOT_FOUND"))
+                .body("error.message", equalTo("Orden no encontrada"));
+        esEnvelope(respuesta);
+    }
+
+    @Test
+    @DisplayName("los 200 no llevan envelope: el cambio es solo de errores")
+    void exitosSinEnvelope() {
+        String token = jwtTokenUtil.generateAccessToken(CODIGO_CLIENTE_FANTASMA);
+
+        String cuerpo = getConToken(MARKETPLACE_PRODUCTS, token).getBody().asString();
+        assertThat(cuerpo.trim())
+                .as("un 200 de productos es una lista, no un envelope con clave error")
+                .startsWith("[");
+    }
 }

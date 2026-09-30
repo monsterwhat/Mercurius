@@ -1,6 +1,7 @@
 package Controllers.Api.Marketplace;
 
 import Models.Clientes;
+import Models.DTO.ApiResponse;
 import Models.DTO.ProfileDTO;
 import Models.DTO.UpdateProfileRequest;
 import Services.ClientService;
@@ -41,14 +42,14 @@ public class ProfileController {
             Clientes client = clientService.find(clientCode);
             if (client == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"error\":\"Cliente no encontrado\"}")
+                        .entity(ApiResponse.error("NOT_FOUND", "Cliente no encontrado"))
                         .build();
             }
             return Response.ok(toProfileDTO(client)).build();
         } catch (RuntimeException e) {
             LOG.error("Error getting profile", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al obtener perfil\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al obtener perfil"))
                     .build();
         }
     }
@@ -61,7 +62,7 @@ public class ProfileController {
             Clientes client = clientService.find(clientCode);
             if (client == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"error\":\"Cliente no encontrado\"}")
+                        .entity(ApiResponse.error("NOT_FOUND", "Cliente no encontrado"))
                         .build();
             }
 
@@ -77,7 +78,7 @@ public class ProfileController {
         } catch (RuntimeException e) {
             LOG.error("Error updating profile", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al actualizar perfil\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al actualizar perfil"))
                     .build();
         }
     }

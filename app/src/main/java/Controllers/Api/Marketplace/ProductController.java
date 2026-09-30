@@ -1,6 +1,7 @@
 package Controllers.Api.Marketplace;
 
 import Models.DTO.ProductDTO;
+import Models.DTO.ApiResponse;
 import Models.DTO.ProductDetailDTO;
 import Services.MarketplaceProductService;
 import jakarta.annotation.Nonnull;
@@ -37,7 +38,7 @@ public class ProductController {
         } catch (RuntimeException e) {
             LOG.error("Error listing products", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al cargar productos\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al cargar productos"))
                     .build();
         }
     }
@@ -55,7 +56,7 @@ public class ProductController {
         } catch (RuntimeException e) {
             LOG.error("Error searching products", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al buscar productos\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al buscar productos"))
                     .build();
         }
     }
@@ -68,14 +69,14 @@ public class ProductController {
             ProductDetailDTO product = productService.getProductDetail(codigo);
             if (product == null) {
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity("{\"error\":\"Producto no encontrado\"}")
+                        .entity(ApiResponse.error("NOT_FOUND", "Producto no encontrado"))
                         .build();
             }
             return Response.ok(product).build();
         } catch (RuntimeException e) {
             LOG.error("Error getting product detail", e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"Error al cargar detalle del producto\"}")
+                    .entity(ApiResponse.error("INTERNAL_ERROR", "Error al cargar detalle del producto"))
                     .build();
         }
     }
