@@ -27,6 +27,40 @@ public abstract class GService<T> implements Serializable{
     protected abstract @Nonnull Class<T> getEntityClass();
 
     /**
+     * Serializes counter-row read-or-create per key using a PostgreSQL
+     * transaction-scoped advisory lock.
+     *
+     * <p>Why this exists: the consecutive-number services do read-or-create
+     * (SELECT … FOR UPDATE, else INSERT). The row lock only covers EXISTING
+     * rows, and Java {@code synchronized} releases at method exit — long before
+     * the surrounding invoice transaction commits. So two concurrent first-uses
+     * of a key both see "no row" and both INSERT, and the loser dies with a
+     * unique violation (its whole sale 500s). That is not theoretical: a
+     * 10-way concurrent-sale test reproduced it deterministically on a fresh
+     * database.</p>
+     *
+     * <p>The advisory lock is held until TRANSACTION end (not method exit), so
+     * it covers the read, the insert-if-absent, the increment, and the outer
+     * commit — the full check-then-act window, on one node or many
+     * ({@code synchronized} is JVM-only). Keyed per counter so different
+     * sucursal/terminal/tipo sequences proceed in parallel; a 32-bit hash
+     * collision between two different keys only over-serializes (a performance
+     * ripple, never a correctness issue).</p>
+     *
+     * <p>PostgreSQL-only by design (the project's sole supported engine, per
+     * README). Advisory locks need no special grants. Failures propagate
+     * deliberately: a consecutive number that cannot be sequenced must fail
+     * loudly rather than risk duplicate fiscal numbers.</p>
+     *
+     * @param clave the counter key, e.g. {@code "consecutivo:001|00001|04"}
+     */
+    protected void bloquearConsecutivo(@Nonnull String clave) {
+        em.createNativeQuery("SELECT pg_advisory_xact_lock(hashtext(:clave))")
+                .setParameter("clave", clave)
+                .getSingleResult();
+    }
+
+    /**
      * Best-effort listing: every row of {@code T}, or an EMPTY list if the query fails.
      *
      * <p><strong>The empty result is ambiguous on purpose and must be treated as such.</strong>

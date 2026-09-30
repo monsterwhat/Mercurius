@@ -20,9 +20,11 @@ import org.jboss.logging.Logger;
  * matching Hacienda CR requirement.
  *
  * Mirrors {@link ConsecutivoReceptorService} design:
- * - {@code synchronized} method for JVM-level mutual exclusion
- * - {@link LockModeType#PESSIMISTIC_WRITE} for database-level row lock
- * - Automatic counter row creation on first use
+ * - PostgreSQL advisory lock per counter key (real serialization, tx-scoped)
+ * - {@code PESSIMISTIC_WRITE} for database-level row lock
+ * - {@code synchronized} method for JVM-level belt-and-braces
+ * - Automatic counter row creation on first use (safe under concurrency
+ *   because the advisory lock covers the read-or-create window)
  * - Timestamp-based fallback on persistence failure
  */
 @Named
@@ -45,8 +47,11 @@ public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
      * Atomically increments and returns the next sequential number for a given
      * sucursal + terminal + tipo combination.
      * <p>
-     * Uses PESSIMISTIC_WRITE lock + synchronized to guarantee uniqueness
-     * across both single-instance and multi-instance deployments.
+     * Three layers, each covering what the others cannot: a PostgreSQL advisory
+     * lock per counter key (the real cross-instance serialization, held to
+     * transaction end so it covers the read-or-create window that row locks
+     * miss), {@code PESSIMISTIC_WRITE} on the existing row, and
+     * {@code synchronized} for same-JVM belt-and-braces.
      * <p>
      * Starts at 1 per (sucursal, terminal, tipo). Auto-creates the counter row
      * on first invocation for a new combination.
@@ -54,6 +59,7 @@ public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
     @Transactional
     public synchronized long getNextSequential(@Nonnull String sucursal, @Nonnull String terminal, @Nonnull String tipo) {
         try {
+            bloquearConsecutivo("consecutivo:" + sucursal + "|" + terminal + "|" + tipo);
             TypedQuery<ConsecutivoEmitido> query = em.createQuery(
                 "SELECT c FROM ConsecutivoEmitido c WHERE c.sucursal = :sucursal AND c.terminal = :terminal AND c.tipo = :tipo",
                 ConsecutivoEmitido.class);

@@ -9,6 +9,7 @@ import jakarta.inject.Named;
 import jakarta.persistence.LockModeType;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
 @Named
@@ -31,14 +32,21 @@ public class ConsecutivoReceptorService extends GService<ConsecutivoReceptor> {
      * Atomically increments and returns the next sequential number for a given
      * sucursal + terminal + tipo combination.
      * <p>
-     * Uses PESSIMISTIC_WRITE lock to prevent duplicate sequences under concurrent access.
-     * Thread-safe across both single-instance and multi-instance deployments.
+     * Same three layers as {@code ConsecutivoEmitidoService}: PostgreSQL
+     * advisory lock per counter key (the real serialization, held to
+     * transaction end), {@code PESSIMISTIC_WRITE} on the existing row,
+     * {@code synchronized} for the JVM. The advisory lock needs a transaction
+     * to span, hence the {@code @Transactional} this method was missing (it
+     * previously ran wherever the caller happened to be, correct only by
+     * accident of its single call site).
      * <p>
      * Format: 10 digits zero-padded (0000000001, 0000000002, ...)
      */
+    @Transactional
     @Nonnull
     public synchronized String getNextSequential(@Nonnull String sucursal, @Nonnull String terminal, @Nonnull String tipo) {
         try {
+            bloquearConsecutivo("consecutivo-receptor:" + sucursal + "|" + terminal + "|" + tipo);
             TypedQuery<ConsecutivoReceptor> query = em.createQuery(
                 "SELECT c FROM ConsecutivoReceptor c WHERE c.sucursal = :sucursal AND c.terminal = :terminal AND c.tipo = :tipo",
                 ConsecutivoReceptor.class);
