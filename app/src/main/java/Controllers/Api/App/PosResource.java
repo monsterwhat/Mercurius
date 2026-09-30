@@ -18,7 +18,6 @@ import Services.ClientService;
 import Services.ComprobanteService;
 import Services.ComprobantesEmitidosService;
 import Services.DirectoryService;
-import Services.LoyaltyService;
 import Services.LoginService;
 import Services.Strategies.DocumentoStrategy;
 import Services.Strategies.DocumentoStrategyFactory;
@@ -74,9 +73,10 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *
  * <p><b>Facturar pipeline</b> mirrors {@code CrearTiqueteController.facturar()}
  * step by step (override gate → settings gate → strategy → inventory adjust →
- * {@code ComprobanteService.crearComprobante} → loyalty redemption → PDF →
- * conditional client email → clear). Documented deltas and their written
- * justifications live in .omo/evidence/t37prep/baseline-characterization.md
+ * {@code ComprobanteService.crearComprobante} [loyalty redemption + earn,
+ * inside its transaction] → PDF → conditional client email → clear).
+ * Documented deltas and their written justifications live in
+ * .omo/evidence/t37prep/baseline-characterization.md
  * (PDF FacesContext NPE tolerance, no auto-printing, settings-null envelope,
  * unused tipoCambio argument, single client reference, fresh fallback total).</p>
  */
@@ -151,10 +151,10 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     @Inject
     PDFGenerator pdfGenerator;
 
-    @Nonnull
-    @Inject
-    LoyaltyService loyaltyService;
-
+    // LoyaltyService ya no se inyecta acá: el canje de puntos viaja dentro de
+    // crearComprobante (misma transacción que la factura) y el otorgamiento
+    // vuelve en el CrearComprobanteResult. Canjear desde este recurso era lo
+    // que dejaba perder puntos en silencio.
     @Nonnull
     @Inject
     DirectoryService dirService;
@@ -415,8 +415,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      * Mirrors {@code CrearTiqueteController.verificarPago()} + {@code facturar()}:
      * payment sufficiency gate, then the SAME creation pipeline (override gate,
      * settings gate, strategy resolution, inventory adjustment,
-     * {@code ComprobanteService.crearComprobante}, loyalty redemption, PDF
-     * generation, Hacienda-gated client email, cart cleanup).
+     * {@code ComprobanteService.crearComprobante} —which also redeems the
+     * points discount in its own transaction— PDF generation, Hacienda-gated
+     * client email, cart cleanup).
      *
      * <p>Returns {@code {pdfUrl}} pointing at GET /api/app/pos/facturas/{file},
      * which streams the generated PDF bytes as application/octet-stream.</p>
@@ -439,8 +440,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      * {@code CrearTiqueteController.verificarPago()} + {@code facturar()}:
      * payment sufficiency gate, then the SAME creation pipeline (override gate,
      * settings gate, strategy resolution, inventory adjustment,
-     * {@code ComprobanteService.crearComprobante}, loyalty redemption, PDF
-     * generation, Hacienda-gated client email, cart cleanup).
+     * {@code ComprobanteService.crearComprobante} —which also redeems the
+     * points discount in its own transaction— PDF generation, Hacienda-gated
+     * client email, cart cleanup).
      *
      * <p>{@code pagos} null/empty falls back to the staged /payment-entries
      * entries, then to a single efectivo entry for the fresh cart total.
@@ -612,9 +614,12 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                 }
             }
         }
-        carritoService.ajustarInventario(ctx, currentUser);
         ComprobanteService.CrearComprobanteResult result;
         try {
+            // Tanto el ajuste de inventario como el canje de puntos viajan
+            // DENTRO de esta llamada, en la transacción del comprobante: un
+            // fallo en cualquiera revierte stock + puntos + factura juntos, y
+            // el reintento arranca limpio sin duplicar nada.
             result = comprobanteService.crearComprobante(
                     settings,
                     ctx.getCarrito(),
@@ -622,8 +627,24 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     cliente,
                     currentUser,
                     strategy,
-                    pagos
+                    pagos,
+                    descuentoPuntos
             );
+        } catch (ComprobanteService.PuntosNoCanjeadosException e) {
+            // Aborta ANTES del commit: no hay comprobante, no se consume un
+            // número consecutivo, no se movió inventario (el ajuste corre en la
+            // misma transacción revertida), el carrito sigue intacto y sin sello
+            // de idempotencia, así que el cajero puede reintentar (o reenviar la
+            // venta sin descuento) sin que se pierdan ni se dupliquen puntos.
+            LOG.error("No se pudo canjear los puntos del cliente: " + e.getMessage()
+
+                    + " | source=PosResource.doFacturar()"
+                    + " | despues=sin comprobante; el carrito se conserva para reintentar");
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(ApiResponse.error("PUNTOS_NO_CANJEADOS",
+                            "No se pudieron canjear los puntos del cliente. No se emitió la factura y "
+                                    + "el carrito se conserva; reintente o quite el descuento por puntos."))
+                    .build();
         } catch (ComprobanteService.ComprobanteNoCreadoException e) {
             // crearComprobante is @Transactional and rethrows on failure so the
             // half-written encabezado/detalles/resumen roll back atomically
@@ -651,16 +672,16 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         // makes any retry replay the stored invoice instead of duplicating it.
         entry.setFacturadoComprobanteId(comprobante.getId());
 
-        // 9. Loyalty redemption (controller lines 480-491).
-        if (cliente != null && cliente.getCode() > 0
-                && descuentoPuntos.compareTo(BigDecimal.ZERO) > 0
-                && puntosARedimir.compareTo(BigDecimal.ZERO) > 0) {
-            try {
-                loyaltyService.redeemPoints(cliente, puntosARedimir);
-            } catch (RuntimeException e) {
-                                LOG.warn("Error al canjear puntos: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "PosResource.facturar()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
-            }
-        }
+        // 9. Loyalty redemption (controller lines 480-491) now happens INSIDE
+        //    crearComprobante, before its first write: the debit and the
+        //    invoice share one transaction, so a failed redemption aborts the
+        //    sale with the cart intact (409 PUNTOS_NO_CANJEADOS) instead of
+        //    charging the discount at the register without debiting it, and a
+        //    retry cannot debit the same sale twice. The earned points
+        //    (earnPoints) also ran inside that transaction; if the credit
+        //    failed, the sale is still valid — the money is collected and the
+        //    document is filed — so the failure is reported, not swallowed.
+        //    puntosOtorgados/puntosMensaje travel to the operator below.
 
         // 10. PDF generation (controller lines 502-514). generarPDFTiqueteElectronico
         //     writes the file BEFORE reading FacesContext for an absolute base URL,
@@ -719,6 +740,8 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                 ? comprobante.getEncabezado().getNumeroConsecutivo() : null;
         out.haciendaEstado = comprobante.getHaciendaEstado();
         out.haciendaMensaje = result.haciendaMensaje;
+        out.puntosOtorgados = result.puntosOtorgados;
+        out.puntosMensaje = result.puntosMensaje;
         out.totalPagado = totalPagado;
         out.vuelto = vueltoFinal;
         return Response.ok(ApiResponse.ok(out)).build();
@@ -733,8 +756,11 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      * was submitted twice. Re-running the pipeline would duplicate both, so
      * nothing here touches stock, numbers, loyalty points, or email:</p>
      * <ul>
-     *   <li>Loyalty redemption is NOT repeated — points were already redeemed
-     *       on the first pass; repeating would double-charge them.</li>
+     *   <li>Loyalty redemption is NOT repeated — the debit and the invoice share
+     *       one transaction, so the points were redeemed exactly when the stamp
+     *       was set; repeating would double-charge them. For the same reason a
+     *       failed redemption never got this far: it rolled the invoice back and
+     *       left no stamp to find here.</li>
      *   <li>The customer email is NOT re-sent — it either went out on the first
      *       pass or failed safely there; a retry must not double-email.</li>
      *   <li>The PDF IS ensured: if the first attempt left no file, generation
@@ -2016,6 +2042,16 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         public @Nullable String consecutivo;
         public @Nullable String haciendaEstado;
         public @Nullable String haciendaMensaje;
+        /**
+         * false cuando la venta se cobró y facturó pero los puntos ganados no
+         * pudieron acreditarse. La venta NO se revierte (el dinero está
+         * cobrado y el documento existe), así que este aviso es la única forma
+         * de que el operador se entere y los acredite a mano; por eso viaja en
+         * la respuesta y no solo en el log.
+         */
+        public boolean puntosOtorgados = true;
+        /** Referencia para la acreditación manual; null si no hubo fallo. */
+        public @Nullable String puntosMensaje;
         public @Nullable BigDecimal totalPagado;
         public @Nullable BigDecimal vuelto;
     }
