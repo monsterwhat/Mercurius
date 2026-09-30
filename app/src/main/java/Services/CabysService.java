@@ -80,7 +80,16 @@ public class CabysService extends GService<Cabys>{
         return result;
     }
 
+    /**
+     * Deletes a CABYS row. The {@code @Transactional} is load-bearing, not
+     * decorative: this overrides {@code GService.delete}, and Java annotations
+     * are not inherited by overriding methods, so without it {@code em.remove}
+     * runs with no transaction and every delete fails with
+     * "Transaction is not active" — surfacing as silently-skipped test
+     * cleanups and undeletable catalog rows.
+     */
     @Override
+    @Transactional
     public void delete(@Nonnull Cabys entity) {
         try {
             if (!em.contains(entity)) {

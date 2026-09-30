@@ -16,12 +16,17 @@ import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import Models.Enums.Tipo_CodigosReferencia;
 import Models.Referencias.InformacionReferencia;
@@ -52,6 +57,18 @@ public class ComprobantesRecibidosPrevalidationService {
 
     @Inject @Nonnull
     private PrevalidationConfigService prevalidationConfigService;
+
+    /**
+     * EM propio del servicio para la carga masiva del catálogo CAByS.
+     *
+     * <p>No se puede leer {@code cabysService.em} desde aquí: {@code CabysService}
+     * se inyecta como proxy cliente de CDI y los campos de un proxy no son
+     * accesibles (salen a null); sólo las llamadas a método se delegan. Mismo
+     * patrón que {@code PrevalidationConfigService}, que también declara su
+     * propio {@code @PersistenceContext}.
+     */
+    @PersistenceContext @Nonnull
+    private EntityManager em;
 
     @PostConstruct
     public void init() {
@@ -210,11 +227,24 @@ public class ComprobantesRecibidosPrevalidationService {
      *
      * STRICT mode: missing codes = ERROR (reject invoice).
      * LENIENT mode: missing codes = WARNING (allow acceptance).
+     *
+     * <p>El catálogo se resuelve con UNA consulta para todas las líneas
+     * ({@link #catalogoCabysPorCodigo(List)}); antes se llamaba a
+     * {@code cabysService.find(codigo)} DENTRO del bucle, de modo que una factura
+     * de N líneas disparaba N consultas secuenciales al catálogo.
      */
     void validarCabys(@Nullable List<LineaDetalle> lineas, @Nonnull PrevalidationResult result) {
         if (lineas == null || lineas.isEmpty()) {
             return;
         }
+
+        Map<String, Cabys> catalogo = catalogoCabysPorCodigo(lineas);
+
+        // Una sola lectura de configuración para todo el lote: getConfig() hace
+        // una consulta por llamada, y esta rama se ejecuta por línea faltante.
+        // El modo estricto no puede cambiar a mitad de un documento, así que
+        // cachearlo aquí además de ser más barato es más correcto.
+        boolean modoEstricto = getConfig().isCabysStrictMode();
 
         for (LineaDetalle linea : lineas) {
             String codigo = linea.getCodigoCabys();
@@ -238,10 +268,10 @@ public class ComprobantesRecibidosPrevalidationService {
                 continue;
             }
 
-            Cabys cabys = cabysService.find(codigo);
+            Cabys cabys = catalogo.get(codigo);
             if (cabys == null) {
                 String msg = "El código CAByS '" + codigo + "' no fue encontrado en el catálogo local";
-                if (getConfig().isCabysStrictMode()) {
+                if (modoEstricto) {
                     result.addError(new ValidationError(
                         ValidationError.Category.valueOf("CABYS"),
                         "codigoCabys", "MISSING_CABYS",
@@ -267,12 +297,96 @@ public class ComprobantesRecibidosPrevalidationService {
         }
     }
 
+    /**
+     * Resuelve en UNA sola consulta el catálogo CAByS de todas las líneas.
+     *
+     * <p>Sustituye al {@code cabysService.find(codigo)} por línea: una factura de
+     * 500 líneas lanzaba ~500 consultas secuenciales a la tabla {@code cabys}
+     * (una por línea, aunque el código se repitiera). Ahora se recogen los
+     * códigos DISTINTOS —ya recortados y sólo los de 13 dígitos, los únicos que
+     * el validador consulta hoy— y se resuelven de una vez con
+     * {@code WHERE c.codigo IN :codigos}; el bucle de {@link #validarCabys} se
+     * sirve luego desde el mapa, sin tocar la semántica de cada rama.
+     *
+     * <p>El JPQL no filtra por {@code estado} a propósito: {@code find()} tampoco
+     * lo hace y el aviso {@code INACTIVE_CABYS} lo emite el propio bucle. Mismo
+     * estilo de consulta y de captura que {@code CabysService.searchByName()}.
+     *
+     * <p>Los códigos que la consulta masiva NO devuelve se resuelven igual con
+     * {@code find()}, uno por código DISTINTO, para no cambiar la semántica de un
+     * código ausente: {@code CabysService.find()} tiene un caso especial (el
+     * respaldo {@code 0111010010010}, que además persiste al vuelo) que una
+     * consulta por IN no reproduce. Factura sin códigos ausentes: 1 consulta en
+     * lugar de N. Peor caso: 1 + (códigos distintos ausentes), nunca N.
+     */
+    @Nonnull
+    private Map<String, Cabys> catalogoCabysPorCodigo(@Nonnull List<LineaDetalle> lineas) {
+        Map<String, Cabys> catalogo = new HashMap<>();
+
+        // Solo los códigos que el bucle llegaría a consultar: nulos, vacíos y mal
+        // formados se resuelven antes, sin tocar la base de datos.
+        Set<String> codigos = new LinkedHashSet<>();
+        for (LineaDetalle linea : lineas) {
+            String codigo = linea.getCodigoCabys();
+            if (codigo == null || codigo.trim().isEmpty()) {
+                continue;
+            }
+            codigo = codigo.trim();
+            if (!codigo.matches("\\d{13}")) {
+                continue;
+            }
+            codigos.add(codigo);
+        }
+        if (codigos.isEmpty()) {
+            return catalogo;
+        }
+
+        List<Cabys> encontrados;
+        try {
+            encontrados = em.createQuery(
+                    "SELECT c FROM Cabys c WHERE c.codigo IN :codigos",
+                    Cabys.class)
+                    .setParameter("codigos", codigos)
+                    .getResultList();
+        } catch (jakarta.persistence.PersistenceException e) {
+            // Mismo contrato que CabysService.searchByName(): la consulta masiva
+            // es una optimización, así que si falla se devuelve el catálogo vacío
+            // y cada código ausente cae al find() individual de abajo, que es la
+            // ruta que hoy produce los errores MISSING_CABYS. Se avisa porque una
+            // factura entera caería a N consultas, que es justo lo que se vino a
+            // eliminar.
+            LOG.warn("Error cargando el catálogo CAByS de " + codigos.size()
+                    + " códigos; se resuelve código por código: " + e.getMessage()
+                    + " | source=ComprobantesRecibidosPrevalidationService.catalogoCabysPorCodigo()"
+                    + " | despues=" + e.getMessage());
+            encontrados = Collections.emptyList();
+        }
+        for (Cabys cabys : encontrados) {
+            catalogo.put(cabys.getCodigo(), cabys);
+        }
+
+        for (String codigo : codigos) {
+            if (catalogo.containsKey(codigo)) {
+                continue;
+            }
+            Cabys cabys = cabysService.find(codigo);
+            if (cabys != null) {
+                catalogo.put(codigo, cabys);
+            }
+        }
+        return catalogo;
+    }
+
     // ─── Tax Calculation Validator ────────────────────────────────────
 
     void verificarCalculosImpuestos(@Nullable List<LineaDetalle> lineas, @Nullable ResumenFactura resumen, @Nonnull PrevalidationResult result) {
         if (lineas == null || lineas.isEmpty()) {
             return;
         }
+
+        // Una lectura por documento, no una por línea: la tolerancia no cambia
+        // a mitad de la validación y cada getConfig() es una consulta.
+        BigDecimal tolerancia = getConfig().getTaxTolerance();
 
         // Costa Rica XSD requires separating merchandise (tipoTransaccion=01) from
         // services (tipoTransaccion=02) because resumen totals are split:
@@ -323,7 +437,7 @@ public class ComprobantesRecibidosPrevalidationService {
                     expectedImpuesto = expectedImpuesto.setScale(2, java.math.RoundingMode.HALF_UP);
 
                     BigDecimal diff = expectedImpuesto.subtract(linea.getImpuestoNeto()).abs();
-                    if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
+                    if (diff.compareTo(tolerancia) > 0) {
                         String exoneracionNote = (exoneracion != null) ? " [exoneración aplicada]" : "";
                         ValidationError taxError = new ValidationError(
                             ValidationError.Category.valueOf("TAX_CALCULATION"),
@@ -426,11 +540,12 @@ public class ComprobantesRecibidosPrevalidationService {
         if (resumen.getTotalComprobante() == null) {
             return;
         }
+        BigDecimal tolerancia = getConfig().getTaxTolerance();
         BigDecimal suma = resumen.getMediosPago().stream()
             .map(mp -> mp.getTotalMedioPago() != null ? mp.getTotalMedioPago() : BigDecimal.ZERO)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal diff = suma.subtract(resumen.getTotalComprobante()).abs();
-        if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
+        if (diff.compareTo(tolerancia) > 0) {
             ValidationError err = new ValidationError(
                 ValidationError.Category.valueOf("TAX_CALCULATION"),
                 "resumen.totalMedioPago", "TOTAL_MEDIO_PAGO_MISMATCH",
@@ -446,8 +561,9 @@ public class ComprobantesRecibidosPrevalidationService {
                                     @Nullable BigDecimal sumValue, @Nullable BigDecimal resumenValue,
                                     @Nonnull String description) {
         if (sumValue == null || resumenValue == null) return;
+        BigDecimal tolerancia = getConfig().getTaxTolerance();
         BigDecimal diff = sumValue.subtract(resumenValue).abs();
-        if (diff.compareTo(getConfig().getTaxTolerance()) > 0) {
+        if (diff.compareTo(tolerancia) > 0) {
             ValidationError mismatchError = new ValidationError(
                 ValidationError.Category.valueOf("TAX_CALCULATION"),
                 field, "RESUMEN_MISMATCH",
