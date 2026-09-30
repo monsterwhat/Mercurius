@@ -82,6 +82,14 @@ public class ClientAuthController {
      * only place that knows which branch rejected and therefore has to pay the
      * equalization cost. Both sides key the limiter on the same raw email,
      * which {@code IntentosDeCredencial.claveCuenta} normalizes identically.</p>
+     *
+     * <p>El 401 y el 429 salen los dos en el envelope {@link ApiResponse} —misma
+     * clase, mismo vocabulario de {@code error.code}— y con el mismo codigo
+     * {@code INVALID_CREDENTIALS} que ahora emite tambien
+     * {@code Controllers.Api.Marketplace.AuthController}, de modo que los dos
+     * endpoints de login de mercado son intercambiables byte a byte. El mensaje
+     * es {@link ClientAuthService#MENSAJE_CREDENCIALES_INVALIDAS} en las cuatro
+     * ramas de rechazo: ninguna delata si el correo esta registrado.</p>
      */
     @POST
     @Path("/auth/login")
@@ -104,7 +112,14 @@ public class ClientAuthController {
             AuthResponse authResponse = clientAuthService.login(request, direccion);
             return Response.ok(authResponse).build();
         } catch (IllegalArgumentException e) {
-            LOG.info("Login failed: " + e.getMessage());
+            // A DEBUG y no a INFO: las cuatro ramas de rechazo de
+            // ClientAuthService.login ya escriben su propio motivo (correo no
+            // registrado / sin password de mercado / contrasena incorrecta /
+            // cuenta desactivada) en esa misma llamada. Con el mensaje unificado,
+            // repetirlo aqui solo repetiria la misma cadena genérica y crearia la
+            // impresion de que hay cuatro 401 distintos.
+            LOG.debug("Login rechazado: " + e.getMessage()
+                    + " | source=ClientAuthController.login()");
             return Response.status(Response.Status.UNAUTHORIZED)
                     .entity(ApiResponse.error("INVALID_CREDENTIALS", e.getMessage()))
                     .build();
