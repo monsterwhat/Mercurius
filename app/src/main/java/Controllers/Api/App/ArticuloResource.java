@@ -1,5 +1,7 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
+
 import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
@@ -1373,11 +1375,6 @@ public class ArticuloResource {
                 .entity(ApiResponse.error("NOT_FOUND", mensaje)).build();
     }
 
-    private static Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
-    }
-
     /**
      * Failure branch shared by the mutating article endpoints: HTMX callers
      * get the refreshed table fragment + OOB toast (ui-kit Pattern A); API
@@ -1412,13 +1409,6 @@ public class ArticuloResource {
         }
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity(ApiResponse.error("VALIDATION_ERROR", mensaje)).build();
-    }
-
-    /** HTMX redirect: the client navigates and the page re-renders fresh. */
-    private static Response hxRedirect(@Nonnull String url) {
-        return Response.status(Response.Status.OK)
-                .header("HX-Redirect", url)
-                .build();
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -1567,28 +1557,6 @@ public class ArticuloResource {
                 pageWindow(w.page(), w.totalPages()),
                 filtros,
                 q);
-    }
-
-    /** Column definition helper (label + nullable sort key) as a map. */
-    private static Map<String, Object> col(@Nonnull String label, @Nullable String key) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("label", label);
-        map.put("key", key);
-        return map;
-    }
-
-    /** Server-computed pager window: current ±2 clamped to [1,totalPages]. */
-    private static List<Integer> pageWindow(int page, int totalPages) {
-        if (totalPages <= 1) {
-            return List.of(1);
-        }
-        List<Integer> pages = new ArrayList<>();
-        int from = Math.max(1, page - 2);
-        int to = Math.min(totalPages, page + 2);
-        for (int i = from; i <= to; i++) {
-            pages.add(i);
-        }
-        return pages;
     }
 
     private record Window(int page, int size, int from, int to, int totalPages) {}
@@ -1920,11 +1888,6 @@ public class ArticuloResource {
     }
 
     @Nullable
-    private static String emptyToNull(@Nullable String raw) {
-        return raw == null || raw.isBlank() ? null : raw;
-    }
-
-    @Nullable
     private static TipoRefrigeracion parseRefrigeracion(@Nullable String raw) {
         if (raw == null || raw.isBlank()) {
             return TipoRefrigeracion.NINGUNA;
@@ -1934,10 +1897,6 @@ public class ArticuloResource {
         } catch (IllegalArgumentException e) {
             return TipoRefrigeracion.NINGUNA;
         }
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
     }
 
     // ── Current-user resolution (SessionController.getCurrentUser parity) ──
