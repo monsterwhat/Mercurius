@@ -1,5 +1,7 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
+
 import Models.ConfiguracionAplicacion;
 import Models.Clientes;
 import Models.ComprobantesEmitidos;
@@ -1035,10 +1037,6 @@ public class DevolucionesResource {
         return header != null && !"false".equalsIgnoreCase(header);
     }
 
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
-    }
-
     private static Response badRequest(@Nonnull String mensaje) {
         return Response.status(Response.Status.BAD_REQUEST)
                 .entity(ApiResponse.error("VALIDATION_ERROR", mensaje))
@@ -1057,11 +1055,6 @@ public class DevolucionesResource {
                 .entity(ApiResponse.error("INVALID_CREDENTIALS",
                         "Usuario o contraseña incorrectos"))
                 .build();
-    }
-
-    private static Response htmlOk(@Nonnull String html) {
-        return Response.ok(html)
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
     private @Nonnull Map<String, Object> facturaHeader(@Nonnull ComprobantesEmitidos factura) {
