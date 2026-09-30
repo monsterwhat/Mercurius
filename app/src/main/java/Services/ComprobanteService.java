@@ -221,8 +221,92 @@ public class ComprobanteService implements Serializable {
          * keeps its original meaning and stays false either way.
          */
         public boolean pendienteEnvio;
+        /**
+         * DOCUMENTED WIDENING (additive): lo que la fase (b)
+         * ({@link #enviarComprobanteCreado}) necesita del armado para decidir y
+         * para reencolar — tipo de documento, sucursal, terminal, la situacion
+         * ya incrustada en la clave y el veredicto del sondeo de conectividad.
+         * Viaja en el resultado porque son datos de SOLO lectura que la fase (a)
+         * ya calculó dentro de la transacción y que no se pueden volver a pedir
+         * afuera sin recomputar la clave. Es null únicamente si el documento no
+         * llegó a persistirse.
+         */
+        public EnvioPendiente envio;
     }
 
+    /**
+     * Contexto de la fase de envío, capturado durante la fase (a).
+     *
+     * <p>Es un simple contenedor de datos: ni entidad ni efectos. La clave ya
+     * está escrita con la {@code situacion} que se capturó aquí, así que la
+     * fase (b) no puede recalcularla — solo puede usarla.</p>
+     */
+    public static class EnvioPendiente {
+        /** "01"/"04"/… tal como se emitió. */
+        public String tipoDocumento;
+        /** 3 dígitos, como se imprimió en el consecutivo. */
+        public String sucursal;
+        /** 5 dígitos, como se imprimió en el consecutivo. */
+        public String terminal;
+        /** {@link EnvioFueraLineaService#SITUACION_NORMAL} o {@code SITUACION_FUERA_LINEA}. */
+        public String situacion;
+        /** Veredicto del sondeo, ya tomado dentro de la fase (a). */
+        public boolean hayConectividad;
+    }
+
+    /**
+     * FASE (a) — arma y CONFIRMA la factura, y nada más.
+     *
+     * <p><b>El punto del cambio: el bloqueo pesimista del consecutivo dura
+     * únicamente esta fase.</b> El consecutivo se numera con
+     * {@link jakarta.persistence.LockModeType#PESSIMISTIC_WRITE} sobre la fila
+     * de {@code ConsecutivoEmitido}, así que el bloqueo dura lo que dure la
+     * transacción que lo pide. Antes esta transacción incluía además el envío
+     * HTTPS a Hacienda con su sondeo de estado (hasta
+     * {@code mercatus.hacienda.poll.intentos} × {@code poll.intervalo-ms} de
+     * esperas), de modo que <b>cada venta concurrente serializaba detrás de la
+     * E/S de red de la anterior, con la fila del consecutivo bloqueada</b> y un
+     * punto de conexión del pool tomado durante todo ese tiempo. Con el pool
+     * en 20, veinte ventas simultáneas bastaban para agotarlo y dejar el POS
+     * sin conexiones.
+     *
+     * <p>Ahora el envío es la fase (b) ({@link #enviarComprobanteCreado}), que
+     * corre DESPUÉS de este commit, sin transacción: cada venta libera el
+     * consecutivo al confirmarse y habla con Hacienda por su cuenta. La factura
+     * queda escrita antes de hablar con Hacienda, que es el orden correcto:
+     * el documento es un hecho local y la comunicación a Hacienda es un trámite
+     * posterior con cola de reintento propia
+     * ({@link EnvioFueraLineaService}, Art. 21 ¶3).</p>
+     *
+     * <p><b>Lo que sigue dentro de esta fase, en el mismo orden y por las
+     * mismas razones:</b></p>
+     * <ul>
+     *   <li>{@code carritoService.ajustarInventario} y el canje de puntos, antes
+     *       de la primera escritura, para que un fallo en cualquiera revierta
+     *       stock + puntos + comprobante juntos y el reintento arranque limpio
+     *       (ver {@link PuntosNoCanjeadosException}).</li>
+     *   <li>el sondeo de conectividad —que NO puede salir de aquí: su veredicto
+     *       decide la {@code situacion}, y la situacion va incrustada en la
+     *       posición 42 de la clave. Es un connect() de 2,5 s como máximo
+     *       cacheado 60 s
+     *       ({@link EnvioFueraLineaService#hayConectividadConHacienda()}), así
+     *       que no se paga por venta; lo caro —el envío y el sondeo de
+     *       estado— es lo que sí salió.</li>
+     *   <li>el otorgamiento de puntos ganados, porque es una escritura en el
+     *       mismo libro que el canje: atómica con la factura en el mismo commit
+     *       o, si falla, declarada en el resultado
+     *       ({@code puntosOtorgados=false}) para que el operador la sepa. Su
+     *       fallo nunca relanza, así que la semántica observable es idéntica a
+     *       cuando corría después del envío.</li>
+     * </ul>
+     *
+     * <p>El envío NO ocurre aquí, ni por éxito ni por excepción: quien lo pide
+     * es {@link Controllers.Api.App.PosResource}, que estampa la
+     * idempotencia entre una fase y otra y así no pierde la venta si el proceso
+     * muere durante la E/S de Hacienda.</p>
+     *
+     * @see #enviarComprobanteCreado(CrearComprobanteResult)
+     */
     @jakarta.transaction.Transactional
     public @Nullable CrearComprobanteResult crearComprobante(@Nonnull ConfiguracionAplicacion appSettings, @Nonnull List<ArticuloCarrito> carrito,
                                                     @Nullable Clientes selectedClient, @Nullable Clientes cliente, @Nonnull Usuarios currentUser,
@@ -402,54 +486,35 @@ public class ComprobanteService implements Serializable {
             // Persist the comprobante first
             comprobantesEmitidosService.createAndReturn(tiqueteElectronico);
 
-            // Art. 21 ¶3 — two outcomes, one of them new:
-            //  · Hacienda is unreachable (sondeo negativo): no se intenta el envío
-            //    inmediato, el comprobante ya está firmado con situacion 3 y se
-            //    encola con su XML firmado para transmitirlo dentro de dos días hábiles.
-            //  · Hacienda es alcanzable: se mantiene la ruta original (situacion 1,
-            //    envío inmediato). Si ese envío falla, el XML firmado se encola igual
-            //    para que el documento no se pierda y quede bajo el mismo plazo legal;
-            //    antes quedaba en haciendaEstado='ENVIADO' sin estarlo, es decir, un
-            //    falso éxito que además sacaba la fila de los lotes de 48 h.
-            if (!hayConectividad) {
-                EnvioFueraLinea encolado = registrarPendienteDeEnvio(
-                    tiqueteElectronico, tipoDocumento, sucursal, terminal, situacion,
-                    EnvioFueraLineaService.ORIGEN_OFFLINE_SITUACION_3);
-                result.haciendaEnviado = false;
-                result.pendienteEnvio = encolado != null;
-                result.haciendaMensaje = encolado != null
-                    ? "Comprobante creado y firmado con situacion 3 (sin conexión a Hacienda). "
-                        + "Se enviará automáticamente antes del " + encolado.getVencimiento()
-                        + " (Art. 21 párr. 3, Ley 6828)."
-                    : "Comprobante creado y firmado con situacion 3, pero NO se pudo encolar para envío. "
-                        + "Requiere envío manual a Hacienda antes de dos días hábiles (Art. 21 párr. 3).";
-            } else {
-                result.haciendaEnviado = enviarComprobanteAHacienda(tiqueteElectronico);
-                if (result.haciendaEnviado) {
-                    result.haciendaMensaje = "Comprobante creado y enviado a Hacienda";
-                } else {
-                    EnvioFueraLinea encolado = registrarPendienteDeEnvio(
-                        tiqueteElectronico, tipoDocumento, sucursal, terminal, situacion,
-                        EnvioFueraLineaService.ORIGEN_FALLO_ENVIO_INMEDIATO);
-                    result.pendienteEnvio = encolado != null;
-                    result.haciendaMensaje = encolado != null
-                        ? "Comprobante creado pero NO enviado a Hacienda. Se reintentará automáticamente "
-                            + "antes del " + encolado.getVencimiento() + " (Art. 21 párr. 3, Ley 6828)."
-                        : "Comprobante creado pero NO enviado a Hacienda y sin cola de reintento. "
-                            + "Requiere envío manual (Art. 21 párr. 3, Ley 6828).";
-                }
-            }
-            
+            // ── Fin de la fase (a): el documento está escrito ────────────────
+            // A partir de acá NO se habla con Hacienda. Se deja capturado lo
+            // que la fase (b) necesita para decidir y para reencolar, y se
+            // devuelve. El bloqueo pesimista del consecutivo se libera con el
+            // commit de esta transacción.
+            EnvioPendiente envio = new EnvioPendiente();
+            envio.tipoDocumento = tipoDocumento;
+            envio.sucursal = sucursal;
+            envio.terminal = terminal;
+            envio.situacion = situacion;
+            envio.hayConectividad = hayConectividad;
+            result.envio = envio;
+            // Los tres campos de estado del resultado los llena la fase (b); acá
+            // arrancan en su valor neutro, idéntico al de antes del envío.
+            result.haciendaEnviado = false;
+            result.pendienteEnvio = false;
+            result.haciendaMensaje = null;
+
             // ── Otorgar puntos de lealtad ─────────────────────────────────────
             // Aquí el camino es el inverso al canje y por eso NO se relanza:
-            // el comprobante ya está escrito, firmado y enviado, y el cliente
-            // ya pagó; revertir dejaría una venta cobrada sin factura, que es
-            // peor que un punto faltante. Pero tampoco puede quedar en un
-            // LOG.warn, porque eso es exactamente como los puntos ganados
-            // desaparecían sin que nadie se enterara. Por eso el fallo se
-            // DECLARA en el resultado (puntosOtorgados=false + puntosMensaje
-            // con la referencia para acreditarlos a mano) y PosResource lo
-            // devuelve al operador.
+            // el comprobante ya está escrito y firmado, el cliente ya pagó y la
+            // fase (b) puede haberlo comunicado ya a Hacienda; revertir dejaría
+            // una venta cobrada sin factura —o un documento comunicado que la
+            // base ya no refleja—, que es peor que un punto faltante. Pero
+            // tampoco puede quedar en un LOG.warn, porque eso es exactamente
+            // como los puntos ganados desaparecían sin que nadie se enterara.
+            // Por eso el fallo se DECLARA en el resultado (puntosOtorgados=false
+            // + puntosMensaje con la referencia para acreditarlos a mano) y
+            // PosResource lo devuelve al operador.
             if (selectedClient != null && currentUser != null) {
                 BigDecimal totalAmount = resumen.getTotalVentaNeta();
                 String facturaReferencia = "FACT-" + consecutivo;
@@ -494,6 +559,105 @@ public class ComprobanteService implements Serializable {
                     "No se pudo crear el comprobante: " + e.getMessage(), e);
         }
 
+    }
+
+    /**
+     * FASE (b) — comunica a Hacienda un comprobante YA CONFIRMADO, fuera de
+     * cualquier transacción.
+     *
+     * <p>Se llama después del commit de {@link #crearComprobante}, y esa es
+     * toda la razón de existir: el envío (HTTPS + sondeo de estado) ocurre
+     * fuera de la transacción que retiene el bloqueo pesimista del consecutivo,
+     * así las ventas concurrentes no se serializan detrás de la E/S de red de
+     * la anterior. Los tres campos de estado del resultado
+     * ({@code haciendaEnviado}, {@code pendienteEnvio}, {@code haciendaMensaje})
+     * los rellena ESTE método, con los mismos valores y los mismos dos finales
+     * que producía cuando el envío vivía dentro del armado.</p>
+     *
+     * <p><b>Idempotencia y reintento.</b> Es idempotente respecto del POS: la
+     * fila que sale de la fase (a) es la única, y si este envío falla, el XML
+     * firmado queda en la bandeja de {@link EnvioFueraLineaService} con su
+     * vencimiento de Art. 21 ¶3, y el documento queda en el estado que
+     * corresponde —PENDIENTE tras un fallo de transporte, RECHAZADO con su
+     * motivo tras un rechazo de fondo—, que es exactamente el conjunto que
+     * barren el lote de 48 h y esa bandeja. El POS ya estampó su idempotency
+     * stamp antes de llamar acá, así que un reintento del cajero nunca vuelve
+     * a entrar por la fase (a).</p>
+     *
+     * <p><b>No relanza nunca.</b> La factura ya está cobrada y escrita: una
+     * excepción acá no puede deshacerla, y convertirla en error HTTP haría que
+     * el cajero creyera que no se vendió algo que sí se vendió. Se registra y
+     * el documento queda pendiente.</p>
+     *
+     * <p>Transaccionalidad: cada sello de estado
+     * (ENVIADO → ACEPTADO/RECHAZADO/PENDIENTE) lo escribe
+     * {@link ComprobantesEmitidosService#update}, que es {@code @Transactional}
+     * y sin transacción ambiente abre la suya propia. Son transacciones cortas,
+     * una por sello, y ninguna contiene E/S de red.</p>
+     *
+     * <p>El camino Art. 21 ¶3 se conserva tal cual: si el sondeo de la fase (a)
+     * fue negativo, el comprobante ya viene firmado con {@code situacion 3} y
+     * no se intenta el envío inmediato —se encola; si el envío inmediato falla,
+     * también se encola, para no dejar un documento fuera del plazo legal.</p>
+     *
+     * @param result el resultado devuelto por {@link #crearComprobante}
+     */
+    public void enviarComprobanteCreado(@Nonnull CrearComprobanteResult result) {
+        if (result == null || result.comprobante == null || result.envio == null) {
+            // Nada que enviar: o no se armó comprobante, o el resultado no viene
+            // de la fase (a). No es un error del POS, así que no se propaga.
+            return;
+        }
+        EnvioPendiente envio = result.envio;
+        ComprobantesEmitidos comprobante = result.comprobante;
+        try {
+            if (!envio.hayConectividad) {
+                // Hacienda inalcanzable en el momento de la venta: el documento
+                // ya está firmado con situacion 3 y se transmite dentro de dos
+                // días hábiles (Art. 21 párr. 3). No se intenta el envío.
+                EnvioFueraLinea encolado = registrarPendienteDeEnvio(
+                    comprobante, envio.tipoDocumento, envio.sucursal, envio.terminal, envio.situacion,
+                    EnvioFueraLineaService.ORIGEN_OFFLINE_SITUACION_3);
+                result.haciendaEnviado = false;
+                result.pendienteEnvio = encolado != null;
+                result.haciendaMensaje = encolado != null
+                    ? "Comprobante creado y firmado con situacion 3 (sin conexión a Hacienda). "
+                        + "Se enviará automáticamente antes del " + encolado.getVencimiento()
+                        + " (Art. 21 párr. 3, Ley 6828)."
+                    : "Comprobante creado y firmado con situacion 3, pero NO se pudo encolar para envío. "
+                        + "Requiere envío manual a Hacienda antes de dos días hábiles (Art. 21 párr. 3).";
+                return;
+            }
+            result.haciendaEnviado = enviarComprobanteAHacienda(comprobante);
+            if (result.haciendaEnviado) {
+                result.haciendaMensaje = "Comprobante creado y enviado a Hacienda";
+                return;
+            }
+            // El envío inmediato no prosperó (rechazo, fallo de transporte o
+            // preflight). El XML firmado se encola igual para que el documento
+            // no se pierda: antes de este cambio quedaba en haciendaEstado
+            // 'ENVIADO' sin estarlo, un falso éxito que además sacaba la fila de
+            // los lotes de 48 h.
+            EnvioFueraLinea encolado = registrarPendienteDeEnvio(
+                comprobante, envio.tipoDocumento, envio.sucursal, envio.terminal, envio.situacion,
+                EnvioFueraLineaService.ORIGEN_FALLO_ENVIO_INMEDIATO);
+            result.pendienteEnvio = encolado != null;
+            result.haciendaMensaje = encolado != null
+                ? "Comprobante creado pero NO enviado a Hacienda. Se reintentará automáticamente "
+                    + "antes del " + encolado.getVencimiento() + " (Art. 21 párr. 3, Ley 6828)."
+                : "Comprobante creado pero NO enviado a Hacienda y sin cola de reintento. "
+                    + "Requiere envío manual (Art. 21 párr. 3, Ley 6828).";
+        } catch (RuntimeException e) {
+            // La venta está cobrada y confirmada: no hay nada que deshacer acá.
+            // Se deja constancia y el documento vuelve a PENDIENTE para el lote
+            // de 48 h / la bandeja de Art. 21 párr. 3.
+            result.haciendaEnviado = false;
+            result.haciendaMensaje = "Comprobante creado pero NO enviado a Hacienda: " + e.getMessage()
+                + ". Queda pendiente de reintento automático (Art. 21 párr. 3, Ley 6828).";
+            LOG.error("Error en la fase de envío del comprobante: " + e.getMessage()
+                + " | source=ComprobanteService.enviarComprobanteCreado()"
+                + " | despues=la factura ya está confirmada; el documento queda pendiente de reintento", e);
+        }
     }
 
     /**
@@ -620,7 +784,7 @@ public class ComprobanteService implements Serializable {
                 // Un rechazo de Hacienda (validación de fondo) no se reintenta solo:
                 // se conserva el motivo y el estado RECHAZADO para que el operador lo
                 // regule. Un fallo de conectividad, en cambio, sí se reencola (lo
-                // hace el llamador de crearComprobante con el XML firmado).
+                // hace el llamador de esta fase de envío con el XML firmado).
                 if (comprobante.getEncabezado() != null) {
                     comprobante.getEncabezado().setEstado("RECHAZADO");
                     comprobante.getEncabezado().setMotivoRechazo(result.errorMessage);
