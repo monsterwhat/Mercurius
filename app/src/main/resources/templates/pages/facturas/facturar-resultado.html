@@ -11,6 +11,9 @@
     pdfUrl          String  - success only (GET streams application/octet-stream)
     consecutivo / comprobanteId / haciendaEstado / haciendaMensaje
     totalPagado / vuelto     - success only
+    puntosOtorgados bool    - success only (false + puntosMensaje warn block
+                            when the earn credit could not be confirmed)
+    puntosMensaje   String  - success only, set when puntosOtorgados is false
     errorCode / errorMessage - failure only
     panelHtml       String  - rendered cart-panel carrying hx-swap-oob
 !}
@@ -24,6 +27,12 @@
         {#if resultado.haciendaEstado??}
         <p>Hacienda: <span class="tag is-light">{resultado.haciendaEstado}</span>
             {#if resultado.haciendaMensaje??}{resultado.haciendaMensaje}{/if}</p>
+        {/if}
+        {#if resultado.puntosOtorgados?? && !resultado.puntosOtorgados}
+        <div class="notification is-warning" role="alert">
+            <p><strong>&#9888; Puntos sin acreditar</strong></p>
+            {#if resultado.puntosMensaje??}<p>{resultado.puntosMensaje}</p>{/if}
+        </div>
         {/if}
         {#if resultado.vuelto?? && resultado.vuelto > 0}
         <p>Vuelto entregado: <span class="has-text-weight-semibold">{resultado.vuelto}</span></p>

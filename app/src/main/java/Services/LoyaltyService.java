@@ -18,6 +18,7 @@ import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import org.jboss.logging.Logger;
 
 /**
  * Service for managing customer loyalty points system
@@ -25,6 +26,8 @@ import java.util.List;
 @Named
 @ApplicationScoped
 public class LoyaltyService extends GService<PuntosTransaccion> {
+
+    private static final Logger LOG = Logger.getLogger(LoyaltyService.class);
 
     @Inject @Nonnull
     private EntityManager em;
@@ -49,9 +52,26 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
     }
 
     /**
-     * Earn points for a customer from a purchase
+     * Earn points for a customer from a purchase.
+     *
+     * <p>{@code REQUIRES_NEW}, deliberately different from every other method
+     * here: the points ledger commits in its own transaction, independent of
+     * the invoice's fate. Called from {@code ComprobanteService.crearComprobante},
+     * a failure deep inside the earn (dropped connection mid-flush, constraint
+     * hit) would otherwise mark the whole invoice transaction rollback-only and
+     * surface at commit as a bare {@code RollbackException} — an unmapped 500
+     * after the customer paid, with no invoice and no points. With its own
+     * transaction the three outcomes stay mappable: invoice OK + points OK
+     * (normal), invoice OK + earn failed (loud {@code puntosOtorgados=false}),
+     * invoice failed (everything rolls back as before).</p>
+     *
+     * <p>Mirror risk, accepted and auditable: if the process dies between this
+     * commit and the invoice commit, the points exist without a sale. That
+     * window is microseconds (the invoice commits immediately after), versus
+     * the unbounded confusion of the alternative — and every row carries its
+     * {@code facturaId}, so orphans are queryable, not silent.</p>
      */
-    @Transactional
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void earnPoints(@Nonnull Clientes client, @Nonnull BigDecimal purchaseAmount, @Nullable String facturaId, @Nonnull Usuarios currentUser) {
         ConfiguracionAplicacion settings = appSettingsService.returnCurrent();
         if (settings == null || settings.getCashbackPercentage() == null) {
@@ -160,6 +180,32 @@ public class LoyaltyService extends GService<PuntosTransaccion> {
         TypedQuery<PuntosTransaccion> query = em.createQuery(jpql, PuntosTransaccion.class)
                 .setParameter("clientId", client.getCode());
         return query.getResultList();
+    }
+
+    /**
+     * Whether an earn credit exists for the given invoice reference.
+     *
+     * <p>Read by the POS idempotency replay ({@code PosResource.repetirFacturado})
+     * to reconstruct the first attempt's earn outcome from the ledger instead
+     * of defaulting it: a row means the points were credited, no row (with an
+     * earnable sale) means the credit failed and the operator must grant it by
+     * hand. A lookup failure reads as "unknown" (false) rather than throwing —
+     * a replay must never 500 on a reporting query.</p>
+     */
+    public boolean existeAcreditacion(@Nonnull String facturaReferencia) {
+        try {
+            Long n = em.createQuery(
+                            "SELECT COUNT(pt) FROM PuntosTransaccion pt "
+                                    + "WHERE pt.facturaId = :referencia AND pt.tipoTransaccion = 'earn'",
+                            Long.class)
+                    .setParameter("referencia", facturaReferencia)
+                    .getSingleResult();
+            return n != null && n > 0;
+        } catch (RuntimeException e) {
+            LOG.warn("No se pudo verificar la acreditación de puntos " + facturaReferencia + ": "
+                    + e.getMessage() + " | source=LoyaltyService.existeAcreditacion()");
+            return false;
+        }
     }
 
     /**
