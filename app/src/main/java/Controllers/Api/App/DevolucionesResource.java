@@ -30,12 +30,12 @@ import Services.NotaCreditoService;
 import Services.Strategies.DocumentoStrategy;
 import Services.Strategies.DocumentoStrategyFactory;
 import Services.SustitucionComprobanteService;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.FormParam;
@@ -103,6 +103,14 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  *       {@code enviarComprobanteAHacienda}. An NC-generation failure is caught
  *       and alerted ("Error NC") while the base devolucion still succeeds —
  *       legacy swallow semantics.</li>
+ *   <li><b>Processing order (two phases, as the POS sale in 5dbcee8):</b>
+ *       {@link #authorize} persists and CONFIRMS in one short transaction
+ *       ({@link #procesarDevolucion}, the region that used to carry
+ *       {@code @Transactional}) and only then talks to Hacienda
+ *       ({@link #enviarNcAHacienda}), with no transaction open. Envelopes,
+ *       status codes and Hacienda states (ACEPTADO / RECHAZADO / PENDIENTE) are
+ *       unchanged; what changed is that the send no longer runs while the
+ *       pessimistic lock on the credit-note consecutive ("02") is held.</li>
  *   <li>Double-devolucion guard: when an active NotaCredito already exists
  *       for the factura the endpoint answers 409 ALREADY_RETURNED (dispatch
  *       requirement; precedent TributacionResource idempotency via
@@ -123,8 +131,11 @@ import org.eclipse.microprofile.openapi.annotations.tags.Tag;
  * additionally requires any authenticated user through the T13 permission
  * policy; mutating POSTs are CSRF-gated by quarkus-rest-csrf.</p>
  *
- * <p><b>NO real Hacienda sends from tests:</b> tests replace
- * {@link ComprobanteService} with {@code @InjectMock}; production behavior is
+ * <p><b>NO real Hacienda sends from tests:</b> tests either replace
+ * {@link ComprobanteService} with {@code @InjectMock}, or —where the real
+ * service must run to prove the two-phase order— stub
+ * {@link Services.HaciendaServiceFacade}, which is the boundary
+ * {@code enviarComprobanteAHacienda} calls; production behavior is
  * untouched.</p>
  */
 @Path("/api/app/devoluciones")
@@ -137,6 +148,19 @@ public class DevolucionesResource {
 
     /** Hacienda document code for Nota de Crédito Electrónica ("02"). */
     public static final String CODIGO_NC = "02";
+
+    /**
+     * {@code Situacion} con el que este módulo firma SIEMPRE la NC
+     * (posición 42 de la clave): "1" = normal, envío inmediato.
+     *
+     * <p>No es parametrizable a propósito. La venta sí sondea conectividad y
+     * puede salir con {@code situacion 3} (offline, Art. 21 párr. 3), pero acá
+     * la firma siempre fue "1"; cambiarlo alteraría la clave de un documento ya
+     * emitido. Se declara como constante para que la clave y el sobre de la
+     * bandeja de reintento no puedan divergir: se usan las dos en el mismo
+     * lugar.</p>
+     */
+    private static final String SITUACION_NC = "1";
 
     /** Legacy p:dataTable rows=10 on both search results and historial. */
     public static final int DEFAULT_PAGE_SIZE = 10;
@@ -186,6 +210,16 @@ public class DevolucionesResource {
     @Nonnull
     @Inject
     SustitucionComprobanteService sustitucionComprobanteService;
+
+    /**
+     * Bandeja de Art. 21 párr. 3. La usa SOLO la fase (b)
+     * ({@link #enviarNcAHacienda}), y únicamente cuando el envío inmediato no
+     * prosperó: el XML firmado de la NC queda con su vencimiento de dos días
+     * hábiles para que el documento no se pierda ni salga del plazo legal.
+     */
+    @Nonnull
+    @Inject
+    Services.EnvioFueraLineaService envioFueraLineaService;
 
     @Inject
     @Nonnull
@@ -395,17 +429,42 @@ public class DevolucionesResource {
      * also write nothing (except the legacy "Autorización Exitosa" alerta
      * which the legacy bean already wrote before its own guards ran).
      *
-     * <p>Transactional note: unlike the legacy ViewScoped bean (whose service
-     * calls each committed independently), the NEW world wraps the whole
-     * processing in ONE transaction — the house pattern of the migrated
-     * resources (ClientsResource et al.) and the only way the pessimistic
-     * consecutive generator can run. On success the observable state is
-     * identical to legacy.</p>
+     * <p><b>Dos fases, como la venta del POS (5dbcee8).</b> La fase (a)
+     * ({@link #procesarDevolucion}) corre dentro de UNA transacción —la región
+     * que antes llevaba {@code @Transactional} sobre este método— y TERMINA
+     * confirmando; la fase (b) ({@link #enviarNcAHacienda}) habla con Hacienda
+     * después, sin ninguna transacción abierta.
+     *
+     * <p><b>Por qué el envío salió de esa transacción:</b> el consecutivo de la
+     * NC se numera con {@code PESSIMISTIC_WRITE} sobre la fila de
+     * {@code ConsecutivoEmitido} del tipo "02", así que el bloqueo dura lo que
+     * dure la transacción que lo pide. Con el envío HTTPS y su sondeo de estado
+     * adentro, cada devolución concurrente serializaba detrás de la E/S de red
+     * de la anterior con esa fila bloqueada y un punto del pool tomado durante
+     * todo el sondeo; con el pool en 20, veinte devoluciones simultáneas bastaban
+     * para agotarlo. Ahora cada devolución libera el consecutivo al confirmarse
+     * y habla con Hacienda por su cuenta —que además es el orden correcto: el
+     * documento es un hecho local y la comunicación es un trámite posterior con
+     * cola de reintento propia (Art. 21 párr. 3).</p>
+     *
+     * <p><b>Nada observable cambió:</b> mismos sobres y mismo orden de
+     * campos, mismos 401/400/404/409/500 con sus mensajes, y los estados de
+     * Hacienda (ACEPTADO / RECHAZADO / PENDIENTE) los sigue escribiendo
+     * {@link ComprobanteService#enviarComprobanteAHacienda}, que abre sus
+     * propias transacciones cortas por sello. Tampoco la regla del Art. 19: el
+     * guard de {@link #validarGuardias} corre dentro de la fase (a), antes de
+     * cualquier escritura, así que un comprobante rechazado por Hacienda
+     * sigue contestando 409 DOCUMENTO_RECHAZADO sin generar nada.</p>
+     *
+     * <p>La demarcación es explícita
+     * ({@link QuarkusTransaction#requiringNew()}) y no el interceptor de
+     * {@code @Transactional} a propósito: si el método fuera transaccional, la
+     * transacción seguiría viva durante el sondeo de Hacienda, que es
+     * justamente lo que este cambio elimina.</p>
      */
     @POST
     @Path("/{id}/authorize")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Transactional
     @Operation(summary = "Authorize (supervisor credentials) and process the devolucion")
     @APIResponses({
         @APIResponse(responseCode = "200", description = "Devolucion processed; NC summary returned"),
@@ -455,91 +514,144 @@ public class DevolucionesResource {
         //    procesarDevolucion guards, so failed validations still carry it.
                 LOG.info("Devolución autorizada por: " + authorizedBy + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.authorize()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
-        // ── procesarDevolucion guards (all BEFORE any domain write)
-        ComprobantesEmitidos facturaSeleccionada = comprobantesService.find(id);
-        if (facturaSeleccionada == null) {
-            return notFound();
-        }
-        List<LineaSeleccion> seleccion;
+        // ── FASE (a): todo lo que escribe, en una transacción que CONFIRMA
+        //    al terminar. Requiere-nueva, no el interceptor de
+        //    @Transactional sobre este método: con el interceptor la
+        //    transacción seguiría viva durante el sondeo de Hacienda de la
+        //    fase (b), que es justo el bloqueo que este cambio libera.
+        DevolucionProcesada procesada;
         try {
-            seleccion = parseSelecciones(facturaSeleccionada, lineaNumero, lineaCantidad);
-        } catch (IllegalArgumentException e) {
-            return badRequest(e.getMessage());
-        }
-        Response guard = validarGuardias(facturaSeleccionada, motivo, seleccion);
-        if (guard != null) {
-            return guard;
-        }
-        List<NotaCredito> previas = notaCreditoService.listPorComprobante(id);
-        if (previas != null && !previas.isEmpty()) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity(ApiResponse.error("ALREADY_RETURNED",
-                            "La factura ya tiene una nota de credito registrada"))
-                    .build();
-        }
-
-        String motivoFinal = motivo.trim();
-        BigDecimal totalDevolucion = totalDevolucion(seleccion);
-        Usuarios currentUser = currentUser();
-
-        try {
-            // ── NotaCredito row (legacy field-for-field)
-            Clientes notaCliente = buscarClienteDeFactura(facturaSeleccionada);
-            NotaCredito nota = new NotaCredito();
-            nota.setComprobanteOriginal(facturaSeleccionada);
-            nota.setFecha(new Date());
-            nota.setMotivo(motivoFinal);
-            nota.setMontoTotal(totalDevolucion);
-            nota.setCliente(notaCliente);
-            nota.setUsuario(currentUser != null ? currentUser.getUsername() : authorizedBy);
-            nota.setStatus(true);
-            nota.setHaciendaEstado("PENDIENTE");
-            notaCreditoService.create(nota);
-
-            // ── Inventory movements (legacy verbatim: articulo=null,
-            //    cantidad negated, plain create() — see evidence notes for
-            //    why createWithStock would change behavior).
-            String consecutivoOriginal = facturaSeleccionada.getEncabezado() != null
-                    ? facturaSeleccionada.getEncabezado().getNumeroConsecutivo() : null;
-            for (LineaSeleccion sel : seleccion) {
-                Inventario inv = new Inventario();
-                inv.setArticulo(null);
-                inv.setCantidad(sel.cantidadDevolver().negate());
-                inv.setTipoMovimiento("Devolucion");
-                inv.setUsuario(currentUser);
-                inv.setFechaMovimiento(new Date());
-                inv.setNotas("Devolucion factura: "
-                        + consecutivoOriginal + " - " + motivoFinal);
-                inv.setStatus(true);
-                inv.setProcessed(true);
-                inventarioService.create(inv);
-            }
-
-            // ── Hacienda Nota de Credito Electronica (strategy UNCHANGED).
-            //    Legacy swallows failures here with an "Error NC" alerta and
-            //    the base devolucion still succeeds.
-            NcElectronicaResultado nc = generarNcElectronica(
-                    facturaSeleccionada, seleccion, motivoFinal, totalDevolucion, authorizedBy);
-
-                        LOG.info("Nota de credito creada por " + totalDevolucion + " - " + motivoFinal + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
-
-            NcSummary summary = new NcSummary(consecutivoOriginal, nc.clave(), nc.consecutivo(),
-                    totalDevolucion, motivoFinal, nc.generada(), nc.mensaje(), printUrl(nc.clave()));
-
-            if (isHxRequest()) {
-                return htmlOk(ncSummaryFragment(summary));
-            }
-            return Response.ok(ApiResponse.ok(summary)).build();
-
+            procesada = QuarkusTransaction.requiringNew().call(() -> procesarDevolucion(
+                    id, motivo, lineaNumero, lineaCantidad, authorizedBy));
         } catch (RuntimeException e) {
-            // Legacy catch: alert + error message; partial state stays.
-                        LOG.warn("Error al procesar devolucion: " + e.getMessage() + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
+            // Legacy catch: alert + error message; the rollback undoes the
+            // partial writes and the 500 envelope is the one it always was.
+                        LOG.warn("Error al procesar devolucion: " + e.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(e.getMessage()));
             LOG.warn("Error procesando la devolucion de la factura " + id, e);
             return Response.serverError()
                     .entity(ApiResponse.error("INTERNAL_ERROR",
                             "Error al procesar devolucion: " + e.getMessage()))
                     .build();
         }
+
+        // Un guard de la fase (a) cortó: 400/404/409, sin escrituras y sin
+        // envío. Se devuelve tal cual, con el mismo sobre de siempre.
+        if (procesada.rechazo() != null) {
+            return procesada.rechazo();
+        }
+
+        // ── FASE (b): Hacienda, ya con la transacción de arriba confirmada.
+        //    El consecutivo de la NC está liberado y la NC escrita; que el
+        //    sondeo HTTPS tarde segundos ya no retiene la numeración de las
+        //    demás devoluciones. No relanza (ver enviarNcAHacienda).
+        NcElectronicaResultado nc = procesada.nc();
+        enviarNcAHacienda(nc);
+
+        NcSummary summary = new NcSummary(nc.facturaConsecutivo(), nc.clave(), nc.consecutivo(),
+                procesada.totalDevolucion(), procesada.motivoFinal(), nc.generada(), nc.mensaje(),
+                printUrl(nc.clave()));
+
+        if (isHxRequest()) {
+            return htmlOk(ncSummaryFragment(summary));
+        }
+        return Response.ok(ApiResponse.ok(summary)).build();
+    }
+
+    /**
+     * FASE (a) — guarda y CONFIRMA la devolucion: los guards del legacy, la
+     * fila de {@link NotaCredito}, los movimientos de inventario y el armado
+     * de la NC electrónica. No habla con Hacienda.
+     *
+     * <p>Es exactamente la región que antes llevaba {@code @Transactional} sobre
+     * {@link #authorize}, con el mismo orden, los mismos mensajes y el mismo
+     * alcance: los guards siguen corriendo antes de cualquier escritura, el
+     * guard del Art. 19 sigue cortando con 409 y el fallo de armado de la NC
+     * sigue tragándose ("Error NC") con la devolución base confirmada.</p>
+     *
+     * <p>Devuelve o bien el {@code Response} de un guard que cortó, o bien la
+     * NC con los datos que la fase (b) necesita. La transacción se confirma al
+     * salir de este método, que es donde se libera el bloqueo pesimista del
+     * consecutivo de la NC.</p>
+     *
+     * <p>La excepción no se captura acá: {@link QuarkusTransaction} marca el
+     * rollback y la relanza, y {@link #authorize} la traduce al mismo 500 de
+     * siempre.</p>
+     */
+    private @Nonnull DevolucionProcesada procesarDevolucion(
+            long id,
+            @Nullable String motivo,
+            @Nullable List<String> lineaNumero,
+            @Nullable List<String> lineaCantidad,
+            @Nonnull String authorizedBy) {
+
+        // ── procesarDevolucion guards (all BEFORE any domain write)
+        ComprobantesEmitidos facturaSeleccionada = comprobantesService.find(id);
+        if (facturaSeleccionada == null) {
+            return DevolucionProcesada.rechazada(notFound());
+        }
+        List<LineaSeleccion> seleccion;
+        try {
+            seleccion = parseSelecciones(facturaSeleccionada, lineaNumero, lineaCantidad);
+        } catch (IllegalArgumentException e) {
+            return DevolucionProcesada.rechazada(badRequest(e.getMessage()));
+        }
+        Response guard = validarGuardias(facturaSeleccionada, motivo, seleccion);
+        if (guard != null) {
+            return DevolucionProcesada.rechazada(guard);
+        }
+        List<NotaCredito> previas = notaCreditoService.listPorComprobante(id);
+        if (previas != null && !previas.isEmpty()) {
+            return DevolucionProcesada.rechazada(Response.status(Response.Status.CONFLICT)
+                    .entity(ApiResponse.error("ALREADY_RETURNED",
+                            "La factura ya tiene una nota de credito registrada"))
+                    .build());
+        }
+
+        String motivoFinal = motivo.trim();
+        BigDecimal totalDevolucion = totalDevolucion(seleccion);
+        Usuarios currentUser = currentUser();
+
+        // ── NotaCredito row (legacy field-for-field)
+        Clientes notaCliente = buscarClienteDeFactura(facturaSeleccionada);
+        NotaCredito nota = new NotaCredito();
+        nota.setComprobanteOriginal(facturaSeleccionada);
+        nota.setFecha(new Date());
+        nota.setMotivo(motivoFinal);
+        nota.setMontoTotal(totalDevolucion);
+        nota.setCliente(notaCliente);
+        nota.setUsuario(currentUser != null ? currentUser.getUsername() : authorizedBy);
+        nota.setStatus(true);
+        nota.setHaciendaEstado("PENDIENTE");
+        notaCreditoService.create(nota);
+
+        // ── Inventory movements (legacy verbatim: articulo=null,
+        //    cantidad negated, plain create() — see evidence notes for
+        //    why createWithStock would change behavior).
+        String consecutivoOriginal = facturaSeleccionada.getEncabezado() != null
+                ? facturaSeleccionada.getEncabezado().getNumeroConsecutivo() : null;
+        for (LineaSeleccion sel : seleccion) {
+            Inventario inv = new Inventario();
+            inv.setArticulo(null);
+            inv.setCantidad(sel.cantidadDevolver().negate());
+            inv.setTipoMovimiento("Devolucion");
+            inv.setUsuario(currentUser);
+            inv.setFechaMovimiento(new Date());
+            inv.setNotas("Devolucion factura: "
+                    + consecutivoOriginal + " - " + motivoFinal);
+            inv.setStatus(true);
+            inv.setProcessed(true);
+            inventarioService.create(inv);
+        }
+
+        // ── Hacienda Nota de Credito Electronica (strategy UNCHANGED).
+        //    Legacy swallows failures here with an "Error NC" alerta and
+        //    the base devolucion still succeeds.
+        NcElectronicaResultado nc = generarNcElectronica(
+                facturaSeleccionada, seleccion, motivoFinal, totalDevolucion, authorizedBy);
+
+                LOG.info("Nota de credito creada por " + totalDevolucion + " - " + motivoFinal + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
+
+        return DevolucionProcesada.procesada(motivoFinal, totalDevolucion, nc);
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -746,7 +858,155 @@ public class DevolucionesResource {
 
     /** Outcome carrier of the NC-electrónica block (legacy swallow semantics). */
     private record NcElectronicaResultado(boolean generada, @Nullable String clave,
-                                          @Nullable String consecutivo, @Nullable String mensaje) {}
+                                          @Nullable String consecutivo, @Nullable String mensaje,
+                                          @Nullable String facturaConsecutivo,
+                                          @Nullable EnvioNc envio) {
+        /**
+         * La NC no llegó a persistirse: no hay clave, ni consecutivo, ni
+         * documento que enviar, y {@code ncGenerada} es false.
+         */
+        static NcElectronicaResultado sinDocumento(@Nullable String mensaje,
+                                                   @Nullable String facturaConsecutivo) {
+            return new NcElectronicaResultado(false, null, null, mensaje,
+                    facturaConsecutivo, null);
+        }
+    }
+
+    /**
+     * Contexto de la fase (b) de la NC, capturado en la fase (a).
+     *
+     * <p>Contenedor de datos, ni entidad ni efectos: la clave ya quedó escrita
+     * con el {@code situacion} y el consecutivo ya quedó escrito con la
+     * sucursal y la terminal, así que la fase (b) no puede recalcular nada de
+     * eso — solo puede usarlo, y en ese mismo orden. Es null únicamente cuando
+     * la NC no llegó a persistirse.</p>
+     */
+    private record EnvioNc(@Nonnull ComprobantesEmitidos comprobante,
+                           @Nonnull String tipoDocumento,
+                           @Nonnull String sucursal,
+                           @Nonnull String terminal,
+                           @Nonnull String situacion) {}
+
+    // ════════════════════════════════════════════════════════════════════
+    // FASE (b): envío a Hacienda, ya fuera de la transacción
+    // ════════════════════════════════════════════════════════════════════
+
+    /**
+     * FASE (b) — comunica a Hacienda una NC YA CONFIRMADA, sin transacción
+     * abierta.
+     *
+     * <p>Se llama después del commit de {@link #procesarDevolucion}, y esa es
+     * toda la razón de existir: el envío (HTTPS + sondeo de estado) ocurre
+     * fuera de la transacción que retiene el bloqueo pesimista del consecutivo,
+     * así las devoluciones concurrentes no se serializan detrás de la E/S de
+     * red de la anterior. Es el mismo diseño y la misma referencia que
+     * {@link ComprobanteService#enviarComprobanteCreado} para la venta del POS
+     * (commit 5dbcee8).</p>
+     *
+     * <p><b>Los tres finales se conservan tal cual</b>, porque los estados los
+     * sigue escribiendo {@link ComprobanteService#enviarComprobanteAHacienda}
+     * (que abre su propia transacción corta por sello, sin E/S de red):
+     * ACEPTADO con su fecha de respuesta, RECHAZADO con su motivo de fondo, o
+     * PENDIENTE si el transporte o el preflight fallaron. Lo que se agrega es el
+     * reintento con cola: si el envío no prosperó, el XML firmado se encola en
+     * {@link Services.EnvioFueraLineaService} con su vencimiento de Art. 21
+     * párr. 3, igual que hace la venta. Sin eso, una NC rechazada o con fallo de
+     * transporte se quedaba en PENDIENTE sin ningún plazo legal que la
+     * persiguiera.</p>
+     *
+     * <p><b>Por qué no relanza nunca:</b> la devolución ya está registrada y la
+     * NC ya está escrita y firmada —una excepción acá no puede deshacer ninguna
+     * de las dos—, y convertirla en error HTTP haría que el supervisor creyera
+     * que no se devolvió algo que sí se devolvió. Se registra y el documento
+     * queda pendiente del lote de 48 h y de la bandeja de Art. 21 párr. 3. El
+     * sobre de respuesta tampoco lo menciona: {@code ncGenerada} y
+     * {@code mensaje} son exactamente los de siempre, porque el destino de la
+     * NC no cambia —la venta tampoco lo cambió al partir la fase.</p>
+     *
+     * <p>El sondeo de conectividad NO se consulta acá, a diferencia de la venta:
+     * esta NC se firma con {@code situacion 1} fijo desde siempre (posición 42
+     * de la clave), así que el camino offline con {@code situacion 3} no existe
+     * en este recurso y no se inventa.</p>
+     */
+    private void enviarNcAHacienda(@Nonnull NcElectronicaResultado nc) {
+        EnvioNc envio = nc.envio();
+        if (envio == null) {
+            // La NC no llegó a persistirse (o no se generó): no hay documento
+            // que comunicar y no es un error del operador.
+            return;
+        }
+        ComprobantesEmitidos ncComprobante = envio.comprobante();
+        try {
+            if (comprobanteService.enviarComprobanteAHacienda(ncComprobante)) {
+                return; // ACEPTADO, con sus fechas selladas
+            }
+            // Rechazo de fondo, fallo de transporte o preflight: el XML firmado
+            // se encola igual para que la NC no se pierda ni salga del plazo
+            // legal (Art. 21 párr. 3).
+            registrarPendienteDeEnvioNc(envio);
+        } catch (RuntimeException e) {
+            // La devolución está confirmada y la NC escrita: no hay nada que
+            // deshacer acá. Se deja constancia y el documento sigue PENDIENTE
+            // para el lote de 48 h.
+            LOG.error("Error en la fase de envío de la nota de crédito: " + e.getMessage()
+                    + " | source=DevolucionesResource.enviarNcAHacienda()"
+                    + " | despues=la devolución ya está confirmada; la NC queda pendiente de reintento",
+                    e);
+        }
+    }
+
+    /**
+     * FIRMADO-AHORA y encolado del envío diferido de la NC.
+     *
+     * <p>Réplica mínima, en este recurso, de la fase (b) de
+     * {@link ComprobanteService#enviarComprobanteCreado}: allí el
+     * {@code registrarPendienteDeEnvio} equivalente es privado y su firma de
+     * entrada es el resultado de la venta, así que la NC no puede pasar por ese
+     * camino sin cambiar el contrato de ese servicio. Se replica entonces solo
+     * lo imprescindible —firmar el XML y llamar
+     * {@link Services.EnvioFueraLineaService#registrarDocumentoFirmado}— con la
+     * misma tolerancia a fallos: se registra y se sigue, sin propagar.</p>
+     *
+     * <p>La firma se produce acá y no al reintentar porque la firma cubre los
+     * bytes: un documento re-marshallado ya no sería el mismo que Hacienda debe
+     * aceptar para esa clave.</p>
+     */
+    private void registrarPendienteDeEnvioNc(@Nonnull EnvioNc envio) {
+        ComprobantesEmitidos ncComprobante = envio.comprobante();
+        try {
+            String xml = strategyFactory.forCode(envio.tipoDocumento()).buildXml(ncComprobante);
+            if (xml == null || xml.isBlank()) {
+                LOG.warn("No se generó XML para encolar el envío diferido de la NC"
+                        + " | source=DevolucionesResource.registrarPendienteDeEnvioNc()"
+                        + " | despues=la NC sigue PENDIENTE y el lote de 48h la reintentará");
+                return;
+            }
+            Services.HaciendaSigner.SignResult firmado = haciendaSigner.signXml(xml);
+            if (!firmado.success || firmado.signedXml == null || firmado.signedXml.isBlank()) {
+                LOG.warn("No se pudo firmar el XML para encolar el envío diferido de la NC: "
+                        + (firmado.errorMessage != null ? firmado.errorMessage : "sin detalle")
+                        + " | source=DevolucionesResource.registrarPendienteDeEnvioNc()"
+                        + " | despues=queda PENDIENTE; sin firma no hay documento que diferir");
+                return;
+            }
+            Models.EnvioFueraLinea encolado = envioFueraLineaService.registrarDocumentoFirmado(
+                    ncComprobante, envio.tipoDocumento(), envio.sucursal(), envio.terminal(),
+                    envio.situacion(), firmado.signedXml,
+                    Services.EnvioFueraLineaService.ORIGEN_FALLO_ENVIO_INMEDIATO);
+            if (encolado == null) {
+                LOG.warn("No se pudo encolar la NC para su envío diferido"
+                        + " | source=DevolucionesResource.registrarPendienteDeEnvioNc()"
+                        + " | despues=queda PENDIENTE y el lote de 48h la reintentará");
+            }
+        } catch (jakarta.xml.bind.JAXBException | RuntimeException e) {
+            // Ni el XML ni la firma ni la fila: la NC sigue PENDIENTE, que es
+            // justamente el estado del que parte el lote de 48 h. Se registra y
+            // NO se propaga: la devolución ya está confirmada.
+            LOG.warn("Error encolando el envío diferido de la NC: " + e.getMessage()
+                    + " | source=DevolucionesResource.registrarPendienteDeEnvioNc()"
+                    + " | despues=la NC queda PENDIENTE y el lote de 48h la reintentará");
+        }
+    }
 
     /**
      * Builds, persists and sends the Nota de Crédito Electrónica through the
@@ -754,6 +1014,13 @@ public class DevolucionesResource {
      * INNER try/catch: any {@link RuntimeException} is alerted as "Error NC"
      * and swallowed here so the base devolucion still succeeds without the
      * electronic document.
+     *
+     * <p><b>Solo la fase (a):</b> arma, firma y CONFIRMA la NC, y devuelve el
+     * contexto que necesita la fase (b). El envío a Hacienda es de
+     * {@link #enviarNcAHacienda}, que corre después del commit — la firma de la
+     * clave va con {@code situacion 1} fijo (posición 42), que es lo que este
+     * módulo siempre emitió, así que no hay decisión de conectividad que
+     * tomar acá.</p>
      */
     private @Nonnull NcElectronicaResultado generarNcElectronica(
             @Nonnull ComprobantesEmitidos facturaSeleccionada,
@@ -761,11 +1028,14 @@ public class DevolucionesResource {
             @Nonnull String motivo,
             @Nonnull BigDecimal totalDevolucion,
             @Nonnull String authorizedBy) {
+        String consecutivoFactura = facturaSeleccionada.getEncabezado() != null
+                ? facturaSeleccionada.getEncabezado().getNumeroConsecutivo() : null;
         try {
             ConfiguracionAplicacion appSettings = appSettingsService.returnCurrent();
             if (appSettings == null || facturaSeleccionada.getEncabezado() == null) {
-                return new NcElectronicaResultado(false, null, null,
-                        "NC electrónica omitida: configuración o encabezado no disponible");
+                return NcElectronicaResultado.sinDocumento(
+                        "NC electrónica omitida: configuración o encabezado no disponible",
+                        consecutivoFactura);
             }
             Clientes client = buscarClienteDeFactura(facturaSeleccionada);
 
@@ -788,7 +1058,7 @@ public class DevolucionesResource {
             ncEncabezado.setMedioPago(medioPagoList);
 
             String clave = haciendaSigner.generateInvoiceKey(
-                    appSettings.getIdentificacion(), numeroConsecutivo, "1",
+                    appSettings.getIdentificacion(), numeroConsecutivo, SITUACION_NC,
                     ncEncabezado.getFechaEmision().toLocalDate());
             ncEncabezado.setClave(clave);
 
@@ -988,18 +1258,23 @@ public class DevolucionesResource {
 
             comprobantesService.createAndReturn(ncComprobante);
 
-            // Send NC immediately to Hacienda per CR 2176 §5.6 (tests stub
-            // ComprobanteService — never a real network call).
-            comprobanteService.enviarComprobanteAHacienda(ncComprobante);
-
+            // ── Fin de la fase (a): la NC está escrita. El envío per CR 2176
+            //    §5.6 lo pide la fase (b), ya con el commit hecho (ver
+            //    enviarNcAHacienda); acá solo se deja capturado lo que esa
+            //    fase necesita para decidir y para reencolar. Los mismos
+            //    valores de sucursal, terminal y tipo que se imprimieron en el
+            //    consecutivo, porque son los que quedaron grabados en la clave.
                         LOG.info("Nota de Credito electronica " + numeroConsecutivo + " generada para devolucion" + " | user=" + String.valueOf(currentUser) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf((Object) null));
 
             return new NcElectronicaResultado(true, clave, numeroConsecutivo,
-                    "Nota de Credito electronica generada");
+                    "Nota de Credito electronica generada", consecutivoFactura,
+                    new EnvioNc(ncComprobante, ncStrategy.getCodigoDocumento(),
+                            sucursal, terminal, SITUACION_NC));
         } catch (RuntimeException eNC) {
                         LOG.warn("Error al generar Nota de Credito electronica: " + eNC.getMessage() + " | user=" + String.valueOf(currentUser()) + " | source=" + "DevolucionesResource.procesarDevolucion()" + " | antes=" + String.valueOf((Object) null) + " | despues=" + String.valueOf(eNC.getMessage()));
-            return new NcElectronicaResultado(false, null, null,
-                    "Error al generar Nota de Credito electronica: " + eNC.getMessage());
+            return NcElectronicaResultado.sinDocumento(
+                    "Error al generar Nota de Credito electronica: " + eNC.getMessage(),
+                    consecutivoFactura);
         }
     }
 
@@ -1276,6 +1551,30 @@ public class DevolucionesResource {
     }
 
     // ── Small value carriers ────────────────────────────────────────────
+
+    /**
+     * Lo que devuelve la fase (a) a {@link #authorize}: o un guard que cortó
+     * (400/404/409, sin escrituras y sin envío), o la devolución ya
+     * confirmada con la NC y los datos que el sobre necesita.
+     *
+     * <p>Es un carrier y nada más: no decide, no habla con Hacienda y no abre
+     * transacciones. Existe porque la fase (a) y la fase (b) no pueden
+     * devolverse un {@code Response}: el sobre se construye DESPUÉS del envío,
+     * y el envío necesita salir de la transacción que la fase (a) confirma.</p>
+     */
+    private record DevolucionProcesada(@Nullable Response rechazo,
+                                       @Nullable String motivoFinal,
+                                       @Nullable BigDecimal totalDevolucion,
+                                       @Nullable NcElectronicaResultado nc) {
+        static DevolucionProcesada rechazada(Response rechazo) {
+            return new DevolucionProcesada(rechazo, null, null, null);
+        }
+
+        static DevolucionProcesada procesada(String motivoFinal, BigDecimal totalDevolucion,
+                                             NcElectronicaResultado nc) {
+            return new DevolucionProcesada(null, motivoFinal, totalDevolucion, nc);
+        }
+    }
 
     /** One searchable invoice row (legacy resultados table). */
     public record ComprobantesEmitidasRow(Long id, String consecutivo, Object fechaEmision,
