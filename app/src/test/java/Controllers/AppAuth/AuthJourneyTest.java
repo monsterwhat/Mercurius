@@ -270,6 +270,14 @@ class AuthJourneyTest {
                 .then()
                 .statusCode(200)
                 .body(containsString("Usuario o contraseña incorrectos"));
+
+        // The form mechanism redirects to bare "?error" (no value), which
+        // arrives as "" — the banner must key on parameter presence.
+        given().redirects().follow(false)
+                .when().get(BASE + "/login?error")
+                .then()
+                .statusCode(200)
+                .body(containsString("Usuario o contraseña incorrectos"));
     }
 
     @Test
