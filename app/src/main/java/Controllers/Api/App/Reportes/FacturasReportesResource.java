@@ -1,5 +1,6 @@
 package Controllers.Api.App.Reportes;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -148,10 +149,6 @@ public class FacturasReportesResource {
         return contains(consecutivo, needle) || contains(condicion, needle)
                 || contains(emisorNombre, needle) || contains(fecha, needle)
                 || contains(f.getHaciendaEstado(), needle) || contains(f.getUser(), needle);
-    }
-
-    private static boolean contains(@Nullable String value, @Nonnull String needle) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
     }
 
     private static @Nullable Models.Encabezado.Encabezado encabezado(@Nonnull ComprobantesEmitidos f) {

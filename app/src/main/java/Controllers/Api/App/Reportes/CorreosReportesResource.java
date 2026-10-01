@@ -1,5 +1,6 @@
 package Controllers.Api.App.Reportes;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -139,10 +140,6 @@ public class CorreosReportesResource {
                 || contains(String.valueOf(r.getCorreos()), needle)
                 || contains(String.valueOf(r.getReportes()), needle)
                 || contains(String.valueOf(r.getFrecuencia()), needle);
-    }
-
-    private static boolean contains(@Nullable String value, @Nonnull String needle) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
     }
 
     private static @Nonnull <T> List<T> orEmpty(@Nullable List<T> list) {

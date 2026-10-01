@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import Controllers.Api.App.Reportes.ReportePageSupport;
 import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
@@ -1909,11 +1910,6 @@ public class FacturasRecibidasResource {
 
     private boolean isHxRequest() {
         return ReportePageSupport.isHxRequest(httpHeaders);
-    }
-
-    private static Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
     private static Response notFound(@Nonnull String mensaje) {

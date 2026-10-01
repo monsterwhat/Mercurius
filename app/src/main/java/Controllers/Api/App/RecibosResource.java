@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -874,11 +875,6 @@ public class RecibosResource {
         return Response.status(Response.Status.CONFLICT)
                 .entity(ApiResponse.error("BUSINESS_RULE", mensaje))
                 .build();
-    }
-
-    private static @Nonnull Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
     private static @Nonnull Response notFound(@Nonnull String mensaje) {

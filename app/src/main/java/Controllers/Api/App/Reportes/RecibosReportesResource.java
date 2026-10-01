@@ -1,5 +1,6 @@
 package Controllers.Api.App.Reportes;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -185,10 +186,6 @@ public class RecibosReportesResource {
     private static @Nullable String emisorNombre(@Nonnull ComprobantesRecibidos f) {
         return encabezado(f) != null && encabezado(f).getEmisor() != null
                 ? encabezado(f).getEmisor().getNombre() : null;
-    }
-
-    private static boolean contains(@Nullable String value, @Nonnull String needle) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
     }
 
     private static @Nonnull <T> List<T> orEmpty(@Nullable List<T> list) {

@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import Models.ComprobantesEmitidos;
 import Models.Encabezado.Encabezado;
 import Models.NotaCredito;
@@ -223,9 +224,5 @@ public class DevolucionesPagesResource {
     private boolean isHxRequest() {
         String header = httpHeaders.getHeaderString("HX-Request");
         return header != null && !"false".equalsIgnoreCase(header);
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
     }
 }

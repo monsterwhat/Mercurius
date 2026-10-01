@@ -1,5 +1,6 @@
 package Controllers.Api.App.Reportes;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
@@ -208,10 +209,6 @@ public class LoyaltyReportesResource {
                 || contains(c.getEmail(), needle)
                 || contains(c.getIdNumber(), needle)
                 || contains(c.getPuntosAcumulados() == null ? null : c.getPuntosAcumulados().toString(), needle);
-    }
-
-    private static boolean contains(@Nullable String value, @Nonnull String needle) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
     }
 
     private static @Nonnull <T> List<T> orEmpty(@Nullable List<T> list) {
