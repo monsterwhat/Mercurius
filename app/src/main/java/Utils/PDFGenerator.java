@@ -78,7 +78,12 @@ public class PDFGenerator {
             savePdfToFileSystem(baos, tiqueteElectronico);
 
         } catch (DocumentException | IOException e) {
-            LOG.warn("failed to generar p d f tiquete electronico");
+            // La excepcion va en el log: sin ella, un 500 PDF_NO_GENERADO
+            // arrives a PosResource sin ninguna causa registrada y el fallo
+            // queda sin explicar. (Fue justo lo que paso con la carrera de
+            // mkdirs de arriba: tres hilos en el mismo milisegundo y ni una
+            // linea con el motivo.)
+            LOG.warn("failed to generar p d f tiquete electronico: " + e, e);
         }
 
     }
@@ -430,13 +435,20 @@ public class PDFGenerator {
         String dirPath = dirService.getFacturasDirPath();
         String filePath = dirPath + File.separator + fileName;
 
-        // Create the directory if it doesn't exist
+        // Create the directory if it doesn't exist.
+        //
+        // Idempotencia bajo concurrencia: `if (!exists()) { if (!mkdirs()) throw }`
+        // es un TOCTOU. Diez cajeros simultaneos entraban los diez con
+        // exists() == false, uno creaba el arbol de directorios y los otros nueve
+        // recibian mkdirs() == false, que ese codigo confundia con un fallo real
+        // -> IOException tragado mas abajo -> ningun PDF en disco ->
+        // PosResource.facturar respondia 500 PDF_NO_GENERADO y la venta, ya
+        // cobrada y facturada, se perdia. Se comprueba isDirectory() DE NUEVO
+        // despues del mkdirs(): si otro hilo lo creo, el directorio esta y se
+        // sigue. Solo se propaga el error si el directorio sigue sin existir.
         File directory = new File(dirPath);
-        if (!directory.exists()) {
-            boolean created = directory.mkdirs(); // Create the directory
-            if (!created) {
-                throw new IOException("Failed to create directory: " + dirPath);
-            }
+        if (!directory.isDirectory() && !directory.mkdirs() && !directory.isDirectory()) {
+            throw new IOException("Failed to create directory: " + dirPath);
         }
 
         // Write the ByteArrayOutputStream to a file
