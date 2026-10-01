@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import Models.Cabys;
 import Services.CabysService;
 import io.quarkus.qute.Location;
@@ -135,28 +136,5 @@ public class CabysPagesResource {
     }
 
     /** Column definition helper (label + nullable sort key) as a map. */
-    private static Map<String, Object> col(@Nonnull String label, @Nullable String key) {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("label", label);
-        map.put("key", key);
-        return map;
-    }
-
     /** Server-computed pager window: current ±2 clamped to [1,totalPages]. */
-    private static List<Integer> pageWindow(int page, int totalPages) {
-        if (totalPages <= 1) {
-            return List.of(1);
-        }
-        List<Integer> pages = new ArrayList<>();
-        int from = Math.max(1, page - 2);
-        int to = Math.min(totalPages, page + 2);
-        for (int i = from; i <= to; i++) {
-            pages.add(i);
-        }
-        return pages;
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
-    }
 }

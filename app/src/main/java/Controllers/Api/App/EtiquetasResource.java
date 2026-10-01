@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import Models.Articulos.Articulos;
 import Models.DTO.ApiResponse;
 import Models.DTO.EtiquetaDTO;
@@ -264,10 +265,6 @@ public class EtiquetasResource {
                 familiaDe(articulo),
                 departamentoDe(articulo),
                 cantidad);
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
     }
 
     private record Window(int page, int size, int from, int to, int totalPages) {}

@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import Models.Clientes;
 import Models.ConfiguracionAplicacion;
 import Models.DTO.ApiResponse;
@@ -578,11 +579,6 @@ public class LoyaltyResource {
     private boolean isHxRequest() {
         String header = routing.request().getHeader("HX-Request");
         return header != null && !"false".equalsIgnoreCase(header);
-    }
-
-    private static Response htmlOk(@Nonnull TemplateInstance template) {
-        return Response.ok(template.render())
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
     @Nullable

@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import Models.ConfiguracionAplicacion;
 import Models.Articulos.Articulos;
 import Models.Articulos.Carrito.ArticuloCarrito;
@@ -1902,11 +1903,6 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         map.put("summary", mensaje.summary);
         map.put("detail", mensaje.detail);
         return map;
-    }
-
-    private static Response htmlOk(@Nonnull String html) {
-        return Response.ok(html)
-                .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────

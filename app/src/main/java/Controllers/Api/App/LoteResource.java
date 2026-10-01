@@ -1,5 +1,6 @@
 package Controllers.Api.App;
 
+import static Controllers.Api.App.AppRecursoBase.*;
 import Models.Articulos.Articulos;
 import Models.DTO.ApiResponse;
 import Models.DTO.LoteDTO;
@@ -455,15 +456,6 @@ public class LoteResource {
         } catch (RuntimeException e) {
             return null;
         }
-    }
-
-    @Nullable
-    private static String emptyToNull(@Nullable String raw) {
-        return raw == null || raw.isBlank() ? null : raw;
-    }
-
-    private static <T> List<T> orEmpty(@Nullable List<T> list) {
-        return list == null ? Collections.emptyList() : list;
     }
 
     private record Window(int page, int size, int from, int to, int totalPages) {}
