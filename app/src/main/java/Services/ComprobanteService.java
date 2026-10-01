@@ -931,7 +931,11 @@ public class ComprobanteService implements Serializable {
                     BigDecimal desc = articuloCarrito.getDescuento() != null ? articuloCarrito.getDescuento() : BigDecimal.ZERO;
                     if (desc.compareTo(BigDecimal.valueOf(100)) > 0) desc = BigDecimal.valueOf(100);
                     precioFinal = precioUnit.multiply(BigDecimal.ONE.subtract(desc.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP)))
-                            .multiply(articuloCarrito.getCantidad());
+                            .multiply(articuloCarrito.getCantidad())
+                            // Escala Hacienda: sin esto una promo con % fraccionario
+                            // estira la escala a 7 (p.ej. 99.99 × 0.92500 × 3) y el
+                            // XSD (fractionDigits <= 5) rechaza el documento.
+                            .setScale(5, RoundingMode.HALF_UP);
                 } else {
                     precioFinal = articuloCarrito.getTotalArticulos();
                 }
@@ -951,7 +955,11 @@ public class ComprobanteService implements Serializable {
                     }
                 }
                 var impuesto = impuestoPct.divide(BigDecimal.valueOf(100), 5, RoundingMode.HALF_UP);
-                var totalImpuestoArticulo = precioFinal.multiply(impuesto);
+                // Misma escala Hacienda que en detallesComprobante: ambas caras
+                // redondean el impuesto de la línea a 5, así el cruce
+                // Σ líneas == TotalImpuesto se mantiene exacto.
+                var totalImpuestoArticulo = precioFinal.multiply(impuesto)
+                        .setScale(5, RoundingMode.HALF_UP);
 
                 ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
                         articulo.getArticulo().getCodigo().toString());
@@ -982,8 +990,12 @@ public class ComprobanteService implements Serializable {
                     }
                 }
                 totalVenta = totalVenta.add(precioFinal);
+                // Escala Hacienda también aquí: el descuento unitario por promo
+                // (precio × %/100) puede traer escala 7; se redondea igual que
+                // el Descuento por línea del detalle para que ambos cuadren.
                 totalDescuentos = totalDescuentos.add(
-                    articuloCarrito.getTotalDescuento().multiply(articuloCarrito.getCantidad()));
+                    articuloCarrito.getTotalDescuento().multiply(articuloCarrito.getCantidad())
+                            .setScale(5, RoundingMode.HALF_UP));
             }
             totalVentaNeta = totalVenta.subtract(totalDescuentos);
             ResumenFactura resumen = new ResumenFactura();
@@ -1167,7 +1179,10 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                     if (promociones != null && !promociones.isEmpty()) {
                         for (Promocion promocion : promociones) {
                             Descuento descuento = new Descuento();
-                            descuento.setMontoDescuento(articulo.getTotalDescuento().multiply(Cantidad));
+                            // Escala Hacienda (igual que el resumen): un % de promo
+                            // fraccionario estira la escala más allá de 5.
+                            descuento.setMontoDescuento(articulo.getTotalDescuento().multiply(Cantidad)
+                                    .setScale(5, RoundingMode.HALF_UP));
                             // Use the promo's Nota 20 discount code, fall back to "06" if unset
                             String codigo = promocion.getCodigoDescuento();
                             if (codigo == null || codigo.isBlank()) {
@@ -1231,7 +1246,10 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                     Tipo_TarifaIVA tarifa = Tipo_TarifaIVA.getTarifa(codigoImpuesto);
                     impuesto.setCodigoTarifaIVA(tarifa.getCodigo());
                     impuesto.setTarifa(new BigDecimal(codigoImpuesto));
-                    impuesto.setMonto(articulo.getTotalImpuesto().multiply(Cantidad));
+                    // Escala Hacienda (igual que el resumen): cantidad
+                    // fraccionaria × tasa reducida supera los 5 decimales.
+                    impuesto.setMonto(articulo.getTotalImpuesto().multiply(Cantidad)
+                            .setScale(5, RoundingMode.HALF_UP));
                     ProductoExoneracion exoneracion = productoExoneracionService.findByArticuloCodigo(
                             articulo.getArticulo().getCodigo().toString());
                     if (exoneracion != null) {
@@ -1254,9 +1272,10 @@ LOG.warn("Error al crear resumen de tiquete: " + e.getMessage() + " | source=res
                 linea.setMontoTotalLinea(montoTotal);
                 linea.setImpuestos(impuestos);
 
-                // ImpuestoNeto mandatory in all XSDs except FEE
+                // ImpuestoNeto mandatory in all XSDs except FEE (misma escala que Monto)
                 if (!"05".equals(tipoDocumento)) {
-                    linea.setImpuestoNeto(articulo.getTotalImpuesto().multiply(Cantidad));
+                    linea.setImpuestoNeto(articulo.getTotalImpuesto().multiply(Cantidad)
+                            .setScale(5, RoundingMode.HALF_UP));
                 }
                 // BaseImponible mandatory for FE/TE/NC/ND/FEC — not in REP/FEE XSD
                 if (!isRep && !"05".equals(tipoDocumento)) {
