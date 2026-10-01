@@ -552,6 +552,18 @@ ComprobantesEmitidosService comprobantesEmitidosService;
         DocumentoStrategy strategy = strategyFactory.forCode(tipoDocumento);
         Clientes cliente = ctx.getSelectedClient();
         boolean clienteValido = cliente != null && cliente.getCode() != 0;
+        if (clienteValido) {
+            // El cliente staged en POST /client llega detached (otra
+            // transacción): recargarlo acá para que las estrategias con
+            // receptor (FE/NC/ND/FEC/FEE/REP) puedan leer sus colecciones
+            // lazy (p.ej. actividades → CodigoActividadReceptor) sin
+            // LazyInitializationException. Sin esto, TODA venta con cliente
+            // y receptor obligatorio terminaba en 500.
+            Clientes fresco = clientService.find(cliente.getCode());
+            if (fresco != null) {
+                cliente = fresco;
+            }
+        }
         if (strategy.requiresReceptor() && !clienteValido) {
             return badRequest("CLIENTE_REQUERIDO",
                     "Para emitir una Factura Electrónica debe seleccionar un cliente.");
