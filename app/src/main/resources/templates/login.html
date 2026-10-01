@@ -55,21 +55,29 @@
                             {/if}
 
                             <!-- Container form-auth endpoint (j_security_check).
-                                 Login-CSRF note (residual risk, documented not fixed):
-                                 this POST is served by Quarkus' form mechanism
-                                 before the main router and outside permission
-                                 evaluation. A Vert.x @RouteFilter, a custom
-                                 HttpSecurityPolicy, and an
-                                 HttpAuthenticationMechanism decorator were each
-                                 tried and verified: the first two never fire for
-                                 this path, and the decorator cannot block without
-                                 also disrupting legitimate logins and session
-                                 replay (it broke 148 tests). So a cross-site
-                                 login POST is not rejected. Impact is bounded:
-                                 the session cookie is SameSite=Strict, and
-                                 sensitive operations require step-up
-                                 supervisor authorization, which an attacker-owned
-                                 session cannot satisfy. Do NOT add a hidden csrf
+                                 Login-CSRF note: this POST is served by Quarkus'
+                                 form mechanism before the main router and outside
+                                 permission evaluation, so no filter or policy
+                                 layer sees it (each was tried and verified).
+                                 Residual risk is NEGLIGIBLE in this deployment,
+                                 for two compounding reasons — and they matter
+                                 in this order:
+                                 1. Solo los administradores crean cuentas, así
+                                 que un atacante externo casi nunca posee una
+                                 cuenta propia a la cual conectar a la víctima;
+                                 sin cuenta del atacante no hay ataque.
+                                 2. SameSite=Strict + autorización escalonada de
+                                 supervisor acotan lo que una sesión ajena puede
+                                 ver y hacer.
+                                 Nótese lo que WireGuard NO hace: al servirse
+                                 (casi siempre) solo por la VPN interna, un
+                                 atacante no alcanza el servidor para sondear,
+                                 forzar credenciales ni establecerse — pero una
+                                 VPN no bloquea CSRF en sí, porque el POST
+                                 forjado viaja en el navegador de la víctima,
+                                 que sí tiene acceso. El riesgo reviviría solo
+                                 con un actor interno con cuenta válida que
+                                 engañe a otro usuario. Do NOT add a hidden csrf
                                  input here: nothing validates it. -->
                             <form method="POST" action="j_security_check">
                                 <div class="field">
