@@ -12,6 +12,7 @@ import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import java.io.IOException;
@@ -33,6 +34,13 @@ import org.jboss.logging.Logger;
  * silently permitted. Before that, a changed root-path or a proxy stripping
  * the prefix left all 23 accounting/mercatus endpoints unauthenticated with no
  * log line at all.</p>
+ *
+ * <p>Los cuatro {@code abortWith} que llevan un cuerpo de error declaran
+ * {@code .type(MediaType.APPLICATION_JSON)}. Sin eso JAX-RS serializa la
+ * cadena con el default {@code text/plain}: el cuerpo era JSON pero
+ * {@code Content-Type} decia otra cosa, y un cliente que decide como
+ * parsear el error por el content type no lo parseaba. El mismo criterio
+ * usa {@code MarketplaceJwtFilter} en sus aborts.</p>
  *
  * <p>Las exenciones se comparan por igualdad EXACTA sobre la ruta ya
  * normalizada ({@link #normalizarRuta}), no por {@code endsWith} ni por
@@ -312,6 +320,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
                             .header("WWW-Authenticate", "Bearer error=\"invalid_token\"")
+                            .type(MediaType.APPLICATION_JSON)
                             .entity("{\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Ruta de API no reconocida\"}}")
                             .build()
             );
@@ -325,6 +334,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)
                             .header("WWW-Authenticate", "Bearer error=\"invalid_token\"")
+                            .type(MediaType.APPLICATION_JSON)
                             .entity("{\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Token de autenticación requerido\"}}")
                             .build()
             );
@@ -353,6 +363,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
                     requestContext.abortWith(
                             Response.status(429)
                                     .header("Retry-After", String.valueOf(retryAfter))
+                                    .type(MediaType.APPLICATION_JSON)
                                     .entity("{\"error\":{\"code\":\"RATE_LIMITED\",\"message\":\"Rate limit exceeded. Try again in " + retryAfter + " seconds.\"}}")
                                     .build()
                     );
@@ -412,6 +423,7 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
         requestContext.abortWith(
                 Response.status(Response.Status.UNAUTHORIZED)
                         .header("WWW-Authenticate", "Bearer error=\"invalid_token\"")
+                        .type(MediaType.APPLICATION_JSON)
                         .entity("{\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Token inválido o expirado\"}}")
                         .build()
         );

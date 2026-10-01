@@ -180,59 +180,85 @@ class RoutingComprehensiveTest extends AppBase {
                 .statusCode(anyOf(is(302), is(303))).header("Location", containsString("/app"));
     }
 
-    // ── Fallback: unknown API → JSON 404 ────────────────────────────────
+    // ── Unknown API → 401 fail-closed (PublicApiJwtFilter) ───────────────
+    //
+    // Una ruta bajo /api/ que no coincide con ninguna regla la niega
+    // PublicApiJwtFilter con 401 + log WARN, en vez de dejarse caer al 404
+    // generico de Quarkus: antes de ese cambio el filtro hacia return sin
+    // autenticar y una ruta desconocida pasaba en silencio. El contrato
+    // DENEGAR -> 401 esta fijado por PublicApiJwtFilterRoutingTest (unitario,
+    // sin arranque); estas pruebas fijan el mismo contrato sobre HTTP, incluido
+    // el codigo de error, para que un 404 futuro se note como regresion de
+    // seguridad y no como un simple cambio de codigo.
+    //
+    // El fallback JSON 404 sigue vivo para los espacios /api/ ajenos a esa
+    // filtro: /api/app/unknown-xyz (ver apiAppUnknownJson404 mas abajo).
 
     @Test
-    void apiUnknownAnonymousJson404() {
+    void apiUnknownAnonymousJson401() {
         given().redirects().follow(false).when().get("/api/unknown-xyz-123").then()
-                .statusCode(404).contentType(containsString("application/json"));
+                .statusCode(401)
+                .contentType(containsString("application/json"))
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     @Test
-    void apiUnknownAuthenticatedJson404() {
+    void apiUnknownAuthenticatedJson401() {
         Map<String, String> jar = authenticatedJar();
         given().redirects().follow(false).cookies(jar).when().get("/api/unknown-xyz-123").then()
-                .statusCode(404).contentType(containsString("application/json"));
+                .statusCode(401)
+                .contentType(containsString("application/json"))
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     @Test
-    void apiNestedUnknownJson404() {
+    void apiNestedUnknownJson401() {
         // Use a truly unknown nested API path that doesn't collide with secured sub-resources
         given().redirects().follow(false).when().get("/api/unknown/nested/xyz-123").then()
-                .statusCode(404).contentType(containsString("application/json"));
+                .statusCode(401)
+                .contentType(containsString("application/json"))
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     @Test
     void apiAppUnknownJson404() {
+        // /api/app/ es un espacio de autenticacion ajeno a PublicApiJwtFilter
+        // (ESPACIOS_AJENOS), asi que la ruta desconocida SI llega al fallback y
+        // conserva el 404 JSON.
         given().redirects().follow(false).when().get("/api/app/unknown-xyz").then()
                 .statusCode(404).contentType(containsString("application/json"));
     }
 
     @Test
-    void postApiUnknownJson404() {
-        // POST without CSRF token is rejected with 400 by quarkus-rest-csrf before reaching fallback
+    void postApiUnknownJson401() {
+        // Con CSRF: la peticion llega al filtro y la niega el fail-closed.
         given().redirects().follow(false).contentType(io.restassured.http.ContentType.JSON)
                 .when().post("/api/unknown-xyz-123").then()
-                .statusCode(anyOf(is(400), is(404)));
+                .statusCode(401)
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     @Test
-    void putApiUnknownJson404() {
+    void putApiUnknownJson401() {
         given().redirects().follow(false).contentType(io.restassured.http.ContentType.JSON)
                 .when().put("/api/unknown-xyz-123").then()
-                .statusCode(anyOf(is(400), is(404)));
+                .statusCode(401)
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     @Test
-    void deleteApiUnknownJson404() {
+    void deleteApiUnknownJson401() {
         given().redirects().follow(false).when().delete("/api/unknown-xyz-123").then()
-                .statusCode(anyOf(is(400), is(404)));
+                .statusCode(401)
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     @Test
-    void unknownApiWithQueryReturnsJson404() {
+    void unknownApiWithQueryReturnsJson401() {
         given().redirects().follow(false).when().get("/api/unknown-xyz?foo=bar").then()
-                .statusCode(404).contentType(containsString("application/json"));
+                .statusCode(401)
+                .contentType(containsString("application/json"))
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     // ── Fallback must not break valid API 401 handling ──────────────────

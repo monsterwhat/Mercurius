@@ -144,17 +144,23 @@ class RootRedirectAppRouteTest extends AppBase {
                 .header("Location", containsString("/app"));
     }
 
+    // Una ruta desconocida bajo /api/ la niega PublicApiJwtFilter con 401
+    // (fail-closed, Decision.DENEGAR) en vez de caer al 404 generico: antes la
+    // ruta se servia sin autenticar y sin dejar rastro. Este archivo sigue
+    // fijando el fallback 302 -> /app para las PAGINAS inexistentes; aqui lo
+    // que se fija es que una ruta /api/ desconocida responde 401 + JSON.
     @Test
-    void apiUnknownReturnsJson404() {
+    void apiUnknownReturnsJson401() {
         given().redirects().follow(false)
                 .when().get("/api/unknown-notfound-xyz")
                 .then()
-                .statusCode(404)
-                .contentType(containsString("application/json"));
+                .statusCode(401)
+                .contentType(containsString("application/json"))
+                .body("error.code", is("UNAUTHORIZED"));
     }
 
     @Test
-    void authenticatedApiUnknownReturnsJson404() {
+    void authenticatedApiUnknownReturnsJson401() {
         Response login = freshLogin();
         login.then().statusCode(302);
         Map<String, String> jar = new LinkedHashMap<>();
@@ -164,7 +170,8 @@ class RootRedirectAppRouteTest extends AppBase {
                 .cookies(jar)
                 .when().get("/api/unknown-notfound-xyz")
                 .then()
-                .statusCode(404)
-                .contentType(containsString("application/json"));
+                .statusCode(401)
+                .contentType(containsString("application/json"))
+                .body("error.code", is("UNAUTHORIZED"));
     }
 }
