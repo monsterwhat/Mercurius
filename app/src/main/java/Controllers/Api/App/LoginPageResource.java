@@ -4,8 +4,8 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import jakarta.annotation.Nonnull;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
@@ -65,8 +65,13 @@ public class LoginPageResource {
         @APIResponse(responseCode = "200", description = "Login page HTML"),
         @APIResponse(responseCode = "500", description = "Template rendering failure")
     })
-    public Response render(@QueryParam("error") @DefaultValue("") @Nonnull String error) {
-        boolean showError = !error.isBlank();
+    public Response render(@QueryParam("error") String error,
+            @Context jakarta.ws.rs.core.UriInfo uriInfo) {
+        // The form mechanism redirects to plain "?error" (no value), which
+        // arrives as "" — so presence of the parameter, not its value,
+        // drives the banner. Checking only !isBlank() never fired.
+        boolean showError = (error != null && !error.isBlank())
+                || (uriInfo != null && uriInfo.getQueryParameters().containsKey("error"));
         String html = login.data("error", showError).render();
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8"))
