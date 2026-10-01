@@ -24,6 +24,21 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Rendimiento de productos (top/bottom por unidades e ingresos).
+ *
+ * <p>Los agregados de unidades usan {@code COALESCE(SUM(ld.cantidad), 0)} y NO
+ * {@code SUM(ld.cantidad)} a secas. La columna es nullable y de hecho queda NULL
+ * para los comprobantes REP (tipo 10): su LineaDetalle simplificado segun el XSD
+ * V4.4 no lleva Cantidad, y ComprobanteService lo omite a proposito. Un grupo
+ * cuyas filas tengan todas Cantidad NULL hace que SUM devuelva NULL (no 0), y el
+ * mapeo {@code ((Number) row[1]).longValue()} reventaba con NullPointerException
+ * -> HTTP 500 en la pagina de rendimiento en cuanto habia un REP vigente.
+ *
+ * <p>{@code getWorstSellingProducts} no necesita el COALESCE porque su
+ * {@code HAVING SUM(ld.cantidad) > 0} ya descarta los grupos nulos, pero se
+ * documenta aqui para que no se "simplifique" el HAVING.
+ */
 @ApplicationScoped
 @Named("productPerformanceService")
 public class ProductPerformanceService {
@@ -37,7 +52,7 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT ld.detalle, SUM(ld.cantidad), SUM(ld.montoTotalLinea) " +
+            "SELECT ld.detalle, COALESCE(SUM(ld.cantidad), 0), SUM(ld.montoTotalLinea) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
@@ -45,7 +60,7 @@ public class ProductPerformanceService {
             "WHERE f.status = true " +
             "AND e.fechaEmision BETWEEN :start AND :end " +
             "GROUP BY ld.detalle " +
-            "ORDER BY SUM(ld.cantidad) DESC"
+            "ORDER BY COALESCE(SUM(ld.cantidad), 0) DESC"
         )
         .setParameter("start", start)
         .setParameter("end", end)
@@ -98,7 +113,7 @@ public class ProductPerformanceService {
         LocalDateTime end = toLocalDateTime(endDate);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT ld.detalle, SUM(ld.cantidad), SUM(ld.montoTotalLinea) " +
+            "SELECT ld.detalle, COALESCE(SUM(ld.cantidad), 0), SUM(ld.montoTotalLinea) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +

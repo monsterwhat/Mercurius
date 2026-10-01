@@ -18,6 +18,15 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Pronostico de stock por articulo.
+ *
+ * <p>Igual que {@link ProductPerformanceService}, {@code getSalesHistory} agrega
+ * con {@code COALESCE(SUM(ld.cantidad), 0)}: los comprobantes REP (tipo 10) no
+ * llevan Cantidad en su LineaDetalle, de modo que un dia con solo lineas REP
+ * agrupaba a NULL y el mapeo lanzaba NullPointerException en vez de reportar 0
+ * unidades vendidas.
+ */
 @ApplicationScoped
 @Named("stockForecastService")
 public class StockForecastService {
@@ -273,7 +282,7 @@ public class StockForecastService {
         LocalDateTime endDate = LocalDate.now().atTime(23, 59, 59);
 
         List<Object[]> results = entityManager.createQuery(
-            "SELECT CAST(e.fechaEmision AS date), SUM(ld.cantidad) " +
+            "SELECT CAST(e.fechaEmision AS date), COALESCE(SUM(ld.cantidad), 0) " +
             "FROM ComprobantesEmitidos f " +
             "JOIN f.detalles d " +
             "JOIN d.lineasDetalle ld " +
