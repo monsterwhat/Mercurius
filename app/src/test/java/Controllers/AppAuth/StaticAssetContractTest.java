@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
 
 import java.io.IOException;
@@ -183,6 +184,62 @@ class StaticAssetContractTest extends support.ContextPathIsolation {
             out.add(m.group(1));
         }
         return out;
+    }
+
+    // ── the bundle must be served by the app, not only by a build-time route ──
+
+    /**
+     * Pins the PRODUCTION fix, and the reason it needs its own assertion.
+     *
+     * <p>The regression this guards is invisible to every other test in this
+     * class: in the test profile Quarkus installs a catch-all route for
+     * <em>generated</em> static resources, so a bundle hit answers 200 with
+     * the right content type even with the application contributing nothing.
+     * In production that route is deliberately absent
+     * ({@code GeneratedStaticResourcesProcessor.process} is
+     * {@code onlyIfNot = IsProduction}); there the bundle path has to be in the
+     * static-resource index, which for this servlet-packaged app is computed
+     * before the bundler's files exist. The deployed runner jar therefore
+     * 404s the bundle — bytes in the jar, no handler, no index entry — and the
+     * login page loads unstyled. Only a marker that the application itself
+     * answered distinguishes that world from the test profile's.
+     *
+     * @see Controllers.BundleAssetRoute
+     */
+    @Test
+    void bundleAssetIsServedByTheApplicationRoute() {
+        String name = bundleAssetNames().stream().filter(n -> n.endsWith(".js")).findFirst()
+                .orElseThrow(() -> new AssertionError("web-bundler produced no .js asset"));
+        int length = given()
+                .when().get(BASE + "/static/bundle/" + name)
+                .then()
+                .statusCode(equalTo(200))
+                .contentType(startsWith("text/javascript"))
+                // 200 here is not proof: Quarkus' own generated-static-resource
+                // route serves the same file under the test profile, and it is
+                // not installed in production. This header is the app's own
+                // handler, i.e. the one that also runs in production.
+                .header("X-Mercurius-Static-Asset", equalTo("web-bundler"))
+                .extract().asByteArray().length;
+        if (length == 0) {
+            throw new AssertionError("served bundle asset was empty");
+        }
+    }
+
+    /**
+     * The route that serves the bundle must not widen into "serve anything on
+     * the classpath": an unknown bundle name keeps the plain 404 contract, and
+     * is never answered with a redirect to the login page (the MIME error that
+     * made this bug look like an auth problem in the first place).
+     */
+    @Test
+    void unknownBundleAssetStillAnswersPlain404() {
+        given()
+                .redirects().follow(false)
+                .when().get(BASE + "/static/bundle/app-ZZZZnotarealhash.js")
+                .then()
+                .statusCode(equalTo(404))
+                .header("Location", nullValue());
     }
 
     // ── the catch-all must still do its job for genuinely dead paths ───────
