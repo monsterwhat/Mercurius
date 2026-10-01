@@ -67,16 +67,19 @@ public class ClientesReportesResource {
             @QueryParam("dir") @DefaultValue("asc") @Nullable String dir,
             @QueryParam("q") @Nullable String q) {
 
-        List<Clientes> rows = filterAndSort(orEmpty(clientService.listAll()), sort, dir, q);
+        // UNA sola lectura: los contadores se derivan de la misma lista que las
+        // filas (antes eran 3 listAll() por request sobre la misma tabla).
+        List<Clientes> todos = orEmpty(clientService.listAll());
+        List<Clientes> rows = filterAndSort(todos, sort, dir, q);
 
         int current = ReportePageSupport.clampPage(page);
         int pageSize = ReportePageSupport.clampSize(size);
         long total = rows.size();
         int totalPages = ReportePageSupport.totalPages(total, pageSize);
 
-        long activos = clientService.listAll().stream()
+        long activos = todos.stream()
                 .filter(c -> c.getStatus() != null && c.getStatus()).count();
-        long inactivos = clientService.listAll().stream()
+        long inactivos = todos.stream()
                 .filter(c -> c.getStatus() == null || !c.getStatus()).count();
 
         Map<String, Object> model = ReportePageSupport.model(
