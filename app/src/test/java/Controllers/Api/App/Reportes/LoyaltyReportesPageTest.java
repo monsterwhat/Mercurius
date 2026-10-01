@@ -129,7 +129,17 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
     void rowCountMatchesDirectServiceCalls() throws Exception {
         Clientes cliente = null;
         try {
-            cliente = seedClientWithPoints("IT-T20-Top-" + UUID.randomUUID(), 25);
+            // getTopLoyaltyCustomers(10) ordena sobre la tabla COMPLETA y los
+            // tests de facturacion del POS acreditan puntos en el mismo boot
+            // compartido, de modo que sembrar 25 puntos fijos solo garantiza la
+            // pertenencia al top-10 cuando la base esta casi vacia: en suite
+            // completa el corte lo desplazan los fixtures acumulados y el
+            // cliente sembrado se caia (fallo observado en el baseline). Se
+            // siembra POR ENCIMA del corte actual -- el peor saldo entre los N
+            // mejores, mas uno -- que es la forma estable de garantizar la
+            // membresia sin afirmar un total absoluto sobre una base sucia.
+            cliente = seedClientWithPoints("IT-T20-Top-" + UUID.randomUUID(),
+                    puntosParaEntrarAlTop(10));
 
             String html = given()
                     .queryParam("size", 500)
@@ -157,6 +167,22 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
         } finally {
             cleanupCliente(cliente);
         }
+    }
+
+    /**
+     * Saldo que garantiza entrar al top-N contra el estado ACTUAL de la base:
+     * el menor saldo entre los N mejores clientes, mas uno. Con la lista llena
+     * devuelve el corte + 1; si todavía no hay N clientes con puntos, el corte
+     * es 0 y el minimo de 25 conserva el valor con el que se sembraba antes.
+     */
+    private double puntosParaEntrarAlTop(int limite) {
+        double corte = loyaltyService.getTopLoyaltyCustomers(limite).stream()
+                .map(Clientes::getPuntosAcumulados)
+                .filter(java.util.Objects::nonNull)
+                .map(java.math.BigDecimal::doubleValue)
+                .min(java.util.Comparator.naturalOrder())
+                .orElse(0.0);
+        return Math.max(corte + 1.0, 25.0);
     }
 
     private Clientes seedClientWithPoints(String name, double points) {
