@@ -33,14 +33,20 @@ import support.AppBase;
  * <ol>
  *   <li><b>Page group markers</b> - the template's {@code contenido} fragment
  *       renders every legacy field group (general-negocio, correo, loyalty,
- *       stock-umbrales, prevalidacion, backups), the Alpine wizard and both
- *       save endpoints, and NEVER mentions secret field names.</li>
+ *       stock-umbrales, prevalidacion, backups), the Alpine wizard, the mail
+ *       provider controls and both save endpoints, and NEVER mentions secret
+ *       field names.</li>
  *   <li><b>PUT whitelist round-trip</b> - JSON PUT of a whitelisted field
  *       persists and reads back through the live endpoint (plus the HH:mm
  *       validation guard).</li>
  *   <li><b>backup-trigger shape</b> - POST /backup-trigger answers the
  *       {@link BackupStatusDTO} key set inside the ApiResponse envelope.</li>
  * </ol>
+ *
+ * <p>The provider block (2b) covers the IMAP/SMTP endpoints
+ * {@code Services.EmailService} reads: round-trip through the live endpoint,
+ * plus the two rejections that keep a typo from being stored as if it were a
+ * configuration (unknown provider key, out-of-range port).</p>
  *
  * <p>Auth follows the repo convention (see StockAlertConfigResourceTest):
  * {@code @TestSecurity(user = "admin", roles = {"admin"})} impersonates the
@@ -86,6 +92,11 @@ class SettingsPageTest extends AppBase {
         settings.setNotificarRechazos(Boolean.TRUE);
         settings.setNotificarRechazosResumen(Boolean.FALSE);
         settings.setCorreoNotificaciones("avisos@mercurius.local");
+        settings.setProveedorCorreo("OUTLOOK");
+        settings.setImapCorreoHost("outlook.office365.com");
+        settings.setImapCorreoPuerto(993);
+        settings.setSmtpCorreoHost("smtp.office365.com");
+        settings.setSmtpCorreoPuerto(587);
         settings.setBackupHabilitado(Boolean.TRUE);
         settings.setBackupHora("03:00");
         settings.setBackupRetencionDias(7);
@@ -129,6 +140,18 @@ class SettingsPageTest extends AppBase {
         assertTrue(html.contains("name=\"backupHora\""), "falta campo whitelisted backupHora");
         assertTrue(html.contains("name=\"backupRetencionDias\""), "falta campo whitelisted backupRetencionDias");
         assertTrue(html.contains("name=\"backupRuta\""), "falta campo whitelisted backupRuta");
+
+        // mail provider quartet: the mailbox sweep and every sender read these,
+        // so they have to be editable here and not just displayed.
+        assertTrue(html.contains("name=\"proveedorCorreo\""), "falta el selector de proveedor de correo");
+        assertTrue(html.contains("name=\"imapCorreoHost\""), "falta el host IMAP editable");
+        assertTrue(html.contains("name=\"imapCorreoPuerto\""), "falta el puerto IMAP editable");
+        assertTrue(html.contains("name=\"smtpCorreoHost\""), "falta el host SMTP editable");
+        assertTrue(html.contains("name=\"smtpCorreoPuerto\""), "falta el puerto SMTP editable");
+        for (String clave : new String[]{"GMAIL", "OUTLOOK", "YAHOO", "PERSONALIZADO"}) {
+            assertTrue(html.contains("value=\"" + clave + "\""),
+                    "falta el preset " + clave + " en el selector de proveedor");
+        }
 
         // Alpine wizard replaces p:steps with the five legacy steps
         assertTrue(html.contains("id=\"asistente-aplicacion\""), "falta el asistente Alpine");
@@ -201,6 +224,101 @@ class SettingsPageTest extends AppBase {
                     .then()
                     .statusCode(200)
                     .body("data.backupHora", equalTo(original));
+        }
+    }
+
+    // ── 2b. Proveedor de correo (IMAP/SMTP) ────────────────────────────
+
+    /**
+     * The provider quartet survives the live PUT→GET round trip. Without it
+     * the settings page would accept the selection and EmailService would keep
+     * connecting to whatever the row said before, which is exactly the failure
+     * this feature exists to remove.
+     */
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void putProveedorCorreoRoundTrip() {
+        Map<String, String> jar = csrfJar();
+        String host = "imap." + System.nanoTime() + ".mercurius.local";
+
+        given()
+                .cookies(jar)
+                .header("X-CSRF-TOKEN", jar.get("csrf-token"))
+                .contentType(ContentType.JSON)
+                .body(Map.of(
+                        "proveedorCorreo", "PERSONALIZADO",
+                        "imapCorreoHost", host,
+                        "imapCorreoPuerto", 1143,
+                        "smtpCorreoHost", "smtp.mercurius.local",
+                        "smtpCorreoPuerto", 2525))
+                .when().put(BASE)
+                .then()
+                .statusCode(200)
+                .body("error", nullValue())
+                .body("data.proveedorCorreo", equalTo("PERSONALIZADO"))
+                .body("data.imapCorreoHost", equalTo(host))
+                .body("data.imapCorreoPuerto", equalTo(1143))
+                .body("data.smtpCorreoHost", equalTo("smtp.mercurius.local"))
+                .body("data.smtpCorreoPuerto", equalTo(2525));
+
+        given()
+                .when().get(BASE)
+                .then()
+                .statusCode(200)
+                .body("data.proveedorCorreo", equalTo("PERSONALIZADO"))
+                .body("data.imapCorreoHost", equalTo(host))
+                .body("data.imapCorreoPuerto", equalTo(1143));
+
+        // Volver a un preset: los hosts quedan como overrides, que es lo
+        // documentado, pero el preset debe quedar registrado.
+        given()
+                .cookies(jar)
+                .header("X-CSRF-TOKEN", jar.get("csrf-token"))
+                .contentType(ContentType.JSON)
+                .body(Map.of("proveedorCorreo", "GMAIL"))
+                .when().put(BASE)
+                .then()
+                .statusCode(200)
+                .body("data.proveedorCorreo", equalTo("GMAIL"));
+    }
+
+    /**
+     * A typo in the provider must not be stored: ProveedorCorreo.desdeClave
+     * resolves anything unknown to Gmail, so accepting it would leave the
+     * operator believing the mailbox sweep reads somewhere it does not.
+     */
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void putRechazaProveedorDesconocido400() {
+        Map<String, String> jar = csrfJar();
+        given()
+                .cookies(jar)
+                .header("X-CSRF-TOKEN", jar.get("csrf-token"))
+                .contentType(ContentType.JSON)
+                .body(Map.of("proveedorCorreo", "ICLOUD"))
+                .when().put(BASE)
+                .then()
+                .statusCode(400)
+                .body("error.code", equalTo("VALIDATION_ERROR"))
+                .body("error.message", containsString("Proveedor de correo"));
+    }
+
+    /** A port outside 1..65535 (or non-numeric) is a typo, not a silent fallback. */
+    @Test
+    @TestSecurity(user = "admin", roles = {"admin"})
+    void putRechazaPuertoInvalido400() {
+        Map<String, String> jar = csrfJar();
+        for (String puerto : new String[]{"70000", "0", "abc"}) {
+            given()
+                    .cookies(jar)
+                    .header("X-CSRF-TOKEN", jar.get("csrf-token"))
+                    .contentType(ContentType.JSON)
+                    .body(Map.of("smtpCorreoPuerto", puerto))
+                    .when().put(BASE)
+                    .then()
+                    .statusCode(400)
+                    .body("error.code", equalTo("VALIDATION_ERROR"))
+                    .body("error.message", containsString("puerto SMTP"));
         }
     }
 
