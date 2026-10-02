@@ -11,7 +11,12 @@
                                                correoNotificaciones,
                                                notificarRechazosResumen,
                                                backupHabilitado, backupHora,
-                                               backupRetencionDias, backupRuta.
+                                               backupRetencionDias, backupRuta,
+                                               proveedorSistemas, and the mail
+                                               provider quartet
+                                               (proveedorCorreo, imapCorreoHost,
+                                               imapCorreoPuerto, smtpCorreoHost,
+                                               smtpCorreoPuerto).
     POST {root}/api/app/settings/backup-trigger -> JSON ApiResponse(BackupStatusDTO)
     GET  {root}/api/app/settings/backup-status  -> JSON ApiResponse(BackupStatusDTO)
     GET  {root}/api/app/settings/sucursales    -> registro de sucursales/terminales
@@ -59,8 +64,10 @@
     general-negocio  legacy wizard "Tributacion"+"CurrentSettings" panels
                      (read-only here: writes still flow through the legacy
                      entity-bound controllers until their migration lands)
-    correo           legacy wizard "Correo" step: address display + the three
-                     whitelisted notification toggles (editable)
+    correo           legacy wizard "Correo" step: address display, the mail
+                     provider selector (GMAIL/OUTLOOK/YAHOO/PERSONALIZADO) with
+                     its IMAP/SMTP host+port overrides, and the three
+                     whitelisted notification toggles (all editable)
     loyalty          cashbackPercentage + puntosInactivityMonths (read-only;
                      owned by the Loyalty module endpoints)
     stock-umbrales   stock-alert engine constants (read-only snapshot) +
@@ -412,6 +419,90 @@
                                    value="{settings.correoNotificaciones}"/>
                         </div>
                         <p class="help has-text-grey">Destino de las notificaciones de rechazos.</p>
+                    </div>
+                </div>
+                <div class="column is-full">
+                    <div class="field">
+                        <label class="label" for="proveedor-correo">Proveedor de correo</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="proveedor-correo" name="proveedorCorreo">
+                                    <option value="GMAIL"
+                                        {#if settings.proveedorCorreo?? && settings.proveedorCorreo == 'GMAIL'}selected{/if}>
+                                        Gmail
+                                    </option>
+                                    <option value="OUTLOOK"
+                                        {#if settings.proveedorCorreo?? && settings.proveedorCorreo == 'OUTLOOK'}selected{/if}>
+                                        Outlook / Hotmail
+                                    </option>
+                                    <option value="YAHOO"
+                                        {#if settings.proveedorCorreo?? && settings.proveedorCorreo == 'YAHOO'}selected{/if}>
+                                        Yahoo
+                                    </option>
+                                    <option value="PERSONALIZADO"
+                                        {#if settings.proveedorCorreo?? && settings.proveedorCorreo == 'PERSONALIZADO'}selected{/if}>
+                                        Personalizado (host propio)
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="help has-text-grey">
+                            Define el servidor IMAP con el que se revisa la bandeja
+                            cada 15 minutos y el servidor SMTP con el que se envian
+                            facturas y avisos. Gmail es el valor por omision.
+                        </p>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label" for="imap-host">Host IMAP</label>
+                        <div class="control">
+                            <input id="imap-host" class="input" type="text"
+                                   name="imapCorreoHost"
+                                   placeholder="Vacío = el del proveedor"
+                                   value="{settings.imapCorreoHost ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label" for="smtp-host">Host SMTP</label>
+                        <div class="control">
+                            <input id="smtp-host" class="input" type="text"
+                                   name="smtpCorreoHost"
+                                   placeholder="Vacío = el del proveedor"
+                                   value="{settings.smtpCorreoHost ?: ''}"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label" for="imap-puerto">Puerto IMAP</label>
+                        <div class="control">
+                            <input id="imap-puerto" class="input" type="number"
+                                   name="imapCorreoPuerto"
+                                   min="1" max="65535"
+                                   placeholder="993"
+                                   value="{settings.imapCorreoPuerto ?: ''}"/>
+                        </div>
+                        <p class="help has-text-grey">
+                            Se usa TLS implícito (IMAPS), como hasta ahora.
+                        </p>
+                    </div>
+                </div>
+                <div class="column is-half">
+                    <div class="field">
+                        <label class="label" for="smtp-puerto">Puerto SMTP</label>
+                        <div class="control">
+                            <input id="smtp-puerto" class="input" type="number"
+                                   name="smtpCorreoPuerto"
+                                   min="1" max="65535"
+                                   placeholder="587"
+                                   value="{settings.smtpCorreoPuerto ?: ''}"/>
+                        </div>
+                        <p class="help has-text-grey">
+                            La conexión usa STARTTLS sobre el puerto indicado.
+                        </p>
                     </div>
                 </div>
                 <div class="column is-full">

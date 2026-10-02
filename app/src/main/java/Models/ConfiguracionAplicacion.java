@@ -28,6 +28,26 @@ public class ConfiguracionAplicacion {
     @Nullable private String LogoMimeType; //Practicamente la extencion de la imagen.
     @Nullable private String CorreoElectronico; //Correo Electronico para enviar mensajes
     @Nullable private String ContrasenaCorreo; //Contrasena del Correo
+
+    // ============ PROVEEDOR DE CORREO (IMAP/SMTP) ============
+    //
+    // EmailService usaba constantes imap.gmail.com / smtp.gmail.com, asi que la
+    // bandeja solo se leia en Gmail. Estos campos convierten el proveedor en
+    // configuracion. Todos son nullables a proposito: una fila guardada antes
+    // de que existieran (columna ausente, o %prod con hbm2ddl=update todavia
+    // sin pasada) debe seguir funcionando, y los valores ausentes se resuelven
+    // al preset (Gmail por omision) en Models.Correos.ConfiguracionConexion.
+    @Nullable private String proveedorCorreo; //GMAIL | OUTLOOK | YAHOO | PERSONALIZADO
+
+    @Nullable @Column(length = 200)
+    private String imapCorreoHost; //Host IMAP; vacio = el del preset
+
+    @Nullable private Integer imapCorreoPuerto; //Puerto IMAP; vacio/ilegible = el del preset
+
+    @Nullable @Column(length = 200)
+    private String smtpCorreoHost; //Host SMTP; vacio = el del preset
+
+    @Nullable private Integer smtpCorreoPuerto; //Puerto SMTP; vacio/ilegible = el del preset
     
     @Nullable private String Nombre; //Completo con apellidos
     @Nullable private String TipoIdentificacion; //Tipo de ID

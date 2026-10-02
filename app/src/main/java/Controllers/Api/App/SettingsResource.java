@@ -1,6 +1,7 @@
 package Controllers.Api.App;
 
 import Models.ConfiguracionAplicacion;
+import Models.Correos.ProveedorCorreo;
 import Models.DTO.ApiResponse;
 import Models.DTO.AppSettingsDTO;
 import Models.DTO.BackupStatusDTO;
@@ -32,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -210,6 +212,63 @@ public class SettingsResource {
                             .build();
                 }
                 settings.setProvedor(valorProveedor.isEmpty() ? null : valorProveedor);
+            }
+
+            // ── Proveedor de correo (IMAP/SMTP) ──
+            // Se guarda por triplete (clave + host + puerto) porque la UI
+            // manda el host/puerto editable siempre: si el operador cambia de
+            // preset, los valores del preset anterior quedarian como overrides
+            // y el "nuevo" proveedor apuntaria al host viejo. El endpoint
+            // resuelve los presets en ConfiguracionConexion.
+            if (request.proveedorCorreo != null) {
+                String clave = request.proveedorCorreo.trim().toUpperCase(Locale.ROOT);
+                if (!esProveedorConocido(clave)) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "Proveedor de correo no reconocido. Use GMAIL, OUTLOOK, YAHOO o PERSONALIZADO."))
+                            .build();
+                }
+                settings.setProveedorCorreo(clave);
+            }
+            if (request.imapCorreoHost != null) {
+                String host = request.imapCorreoHost.trim();
+                if (host.length() > 200 || !host.matches("[A-Za-z0-9._-]*")) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El host IMAP solo admite letras, digitos, punto, guion y guion bajo."))
+                            .build();
+                }
+                settings.setImapCorreoHost(host.isEmpty() ? null : host);
+            }
+            if (request.imapCorreoPuerto != null) {
+                Integer puerto = puertoValido(request.imapCorreoPuerto);
+                if (puerto == null) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El puerto IMAP debe ser un numero entre 1 y 65535."))
+                            .build();
+                }
+                settings.setImapCorreoPuerto(puerto);
+            }
+            if (request.smtpCorreoHost != null) {
+                String host = request.smtpCorreoHost.trim();
+                if (host.length() > 200 || !host.matches("[A-Za-z0-9._-]*")) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El host SMTP solo admite letras, digitos, punto, guion y guion bajo."))
+                            .build();
+                }
+                settings.setSmtpCorreoHost(host.isEmpty() ? null : host);
+            }
+            if (request.smtpCorreoPuerto != null) {
+                Integer puerto = puertoValido(request.smtpCorreoPuerto);
+                if (puerto == null) {
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(ApiResponse.error("VALIDATION_ERROR",
+                                    "El puerto SMTP debe ser un numero entre 1 y 65535."))
+                            .build();
+                }
+                settings.setSmtpCorreoPuerto(puerto);
             }
 
             settingsService.update(settings);
@@ -585,7 +644,12 @@ public class SettingsResource {
                 s.getFidesApiUrl(),
                 s.getFidesAuthEmail(),
                 s.getFidesTenantId(),
-                s.getFidesUserId());
+                s.getFidesUserId(),
+                s.getProveedorCorreo(),
+                s.getImapCorreoHost(),
+                s.getImapCorreoPuerto(),
+                s.getSmtpCorreoHost(),
+                s.getSmtpCorreoPuerto());
     }
 
     /**
@@ -633,5 +697,63 @@ public class SettingsResource {
          */
         @Nullable
         public String proveedorSistemas;
+
+        /**
+         * Proveedor de buzone: GMAIL | OUTLOOK | YAHOO | PERSONALIZADO. Un valor
+         * desconocido se rechaza con 400 en vez de guardarse: un nombre mal
+         * escrito se resolveria en silencio a Gmail (ver
+         * ProveedorCorreo.desdeClave) y el operador creeria que esta leyendo
+         * otra bandeja.
+         */
+        @Nullable
+        public String proveedorCorreo;
+
+        /** Host IMAP; vacio = el del preset. */
+        @Nullable
+        public String imapCorreoHost;
+
+        /** Puerto IMAP; null/vacio/ilegible = el del preset. */
+        @Nullable
+        public String imapCorreoPuerto;
+
+        /** Host SMTP; vacio = el del preset. */
+        @Nullable
+        public String smtpCorreoHost;
+
+        /** Puerto SMTP; null/vacio/ilegible = el del preset. */
+        @Nullable
+        public String smtpCorreoPuerto;
+    }
+
+    /** Whether a stored provider key names a real preset. */
+    private static boolean esProveedorConocido(@Nonnull String clave) {
+        for (ProveedorCorreo proveedor : ProveedorCorreo.values()) {
+            if (proveedor.name().equals(clave)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Parses an operator-entered port, or returns null when it is absent or
+     * outside 1..65535. Rejecting here (rather than clamping) means a typo in
+     * the settings page is reported to whoever typed it instead of silently
+     * connecting somewhere else.
+     */
+    @Nullable
+    private static Integer puertoValido(@Nullable String puerto) {
+        if (puerto == null || puerto.isBlank()) {
+            return null;
+        }
+        try {
+            int valor = Integer.parseInt(puerto.trim());
+            if (valor < 1 || valor > 65535) {
+                return null;
+            }
+            return valor;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 }

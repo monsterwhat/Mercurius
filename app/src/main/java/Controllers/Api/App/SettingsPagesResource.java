@@ -190,7 +190,12 @@ public class SettingsPagesResource {
                 s.getFidesApiUrl(),
                 s.getFidesAuthEmail(),
                 s.getFidesTenantId(),
-                s.getFidesUserId());
+                s.getFidesUserId(),
+                s.getProveedorCorreo(),
+                s.getImapCorreoHost(),
+                s.getImapCorreoPuerto(),
+                s.getSmtpCorreoHost(),
+                s.getSmtpCorreoPuerto());
     }
 
     /**

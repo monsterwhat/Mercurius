@@ -161,6 +161,28 @@ public class AppSettingsDTO {
     @Nullable
     private String fidesUserId;
 
+    // ============ PROVEEDOR DE CORREO (IMAP/SMTP) ============
+    //
+    // NOT secrets: hosts and ports are not credentials, so they DO cross this
+    // resource (the password still never does - see contrasenaCorreo above).
+    // Without them the settings page could not show which provider the mailbox
+    // sweep is about to connect to.
+
+    @Nullable
+    private String proveedorCorreo; // GMAIL | OUTLOOK | YAHOO | PERSONALIZADO
+
+    @Nullable
+    private String imapCorreoHost;
+
+    @Nullable
+    private Integer imapCorreoPuerto;
+
+    @Nullable
+    private String smtpCorreoHost;
+
+    @Nullable
+    private Integer smtpCorreoPuerto;
+
     public AppSettingsDTO() {
     }
 
@@ -189,7 +211,10 @@ public class AppSettingsDTO {
                           @Nullable LocalDateTime backupUltimoEjecutado, @Nullable String haciendaCallbackUrl,
                           @Nullable Boolean useFides, @Nullable String fidesApiUrl,
                           @Nullable String fidesAuthEmail, @Nullable String fidesTenantId,
-                          @Nullable String fidesUserId) {
+                          @Nullable String fidesUserId,
+                          @Nullable String proveedorCorreo, @Nullable String imapCorreoHost,
+                          @Nullable Integer imapCorreoPuerto, @Nullable String smtpCorreoHost,
+                          @Nullable Integer smtpCorreoPuerto) {
         this.id = id;
         this.nombrePerfil = nombrePerfil;
         this.logo = logo;
@@ -239,6 +264,11 @@ public class AppSettingsDTO {
         this.fidesAuthEmail = fidesAuthEmail;
         this.fidesTenantId = fidesTenantId;
         this.fidesUserId = fidesUserId;
+        this.proveedorCorreo = proveedorCorreo;
+        this.imapCorreoHost = imapCorreoHost;
+        this.imapCorreoPuerto = imapCorreoPuerto;
+        this.smtpCorreoHost = smtpCorreoHost;
+        this.smtpCorreoPuerto = smtpCorreoPuerto;
     }
 
     public int getId() {
@@ -685,6 +715,51 @@ public class AppSettingsDTO {
 
     public void setFidesUserId(@Nullable String fidesUserId) {
         this.fidesUserId = fidesUserId;
+    }
+
+    @Nullable
+    public String getProveedorCorreo() {
+        return proveedorCorreo;
+    }
+
+    public void setProveedorCorreo(@Nullable String proveedorCorreo) {
+        this.proveedorCorreo = proveedorCorreo;
+    }
+
+    @Nullable
+    public String getImapCorreoHost() {
+        return imapCorreoHost;
+    }
+
+    public void setImapCorreoHost(@Nullable String imapCorreoHost) {
+        this.imapCorreoHost = imapCorreoHost;
+    }
+
+    @Nullable
+    public Integer getImapCorreoPuerto() {
+        return imapCorreoPuerto;
+    }
+
+    public void setImapCorreoPuerto(@Nullable Integer imapCorreoPuerto) {
+        this.imapCorreoPuerto = imapCorreoPuerto;
+    }
+
+    @Nullable
+    public String getSmtpCorreoHost() {
+        return smtpCorreoHost;
+    }
+
+    public void setSmtpCorreoHost(@Nullable String smtpCorreoHost) {
+        this.smtpCorreoHost = smtpCorreoHost;
+    }
+
+    @Nullable
+    public Integer getSmtpCorreoPuerto() {
+        return smtpCorreoPuerto;
+    }
+
+    public void setSmtpCorreoPuerto(@Nullable Integer smtpCorreoPuerto) {
+        this.smtpCorreoPuerto = smtpCorreoPuerto;
     }
 
     /**
