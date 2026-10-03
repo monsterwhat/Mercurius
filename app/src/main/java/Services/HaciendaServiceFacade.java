@@ -173,6 +173,19 @@ public class HaciendaServiceFacade {
             FidesApiService.FidesResponse fidesResp = fidesApiService.submitToHaciendaViaFides(invoiceData);
 
             if (fidesResp.success) {
+                // Identity check: Fides must file under OUR clave. A mismatch
+                // means Hacienda accepted a different document than the one
+                // stored here — reject loudly instead of marking ACEPTADO.
+                String enviada = comprobante.getHaciendaClave();
+                if (enviada != null && !enviada.isBlank()
+                        && fidesResp.filedAccessKey != null
+                        && !enviada.equals(fidesResp.filedAccessKey)) {
+                    LOG.error("Fides radico otra clave: enviada=" + enviada
+                            + " radicada=" + fidesResp.filedAccessKey
+                            + " | source=HaciendaServiceFacade.submitViaFides()");
+                    return SubmitResult.rejected("Fides radico una clave distinta a la enviada"
+                            + " (enviada " + enviada + ", radicada " + fidesResp.filedAccessKey + ")");
+                }
                 return SubmitResult.accepted();
             } else {
                 return SubmitResult.rejected(fidesResp.errorMessage != null
@@ -204,6 +217,10 @@ public class HaciendaServiceFacade {
         }
 
         data.accessKey = comprobante.getHaciendaClave();
+        if (enc != null && enc.getNumeroConsecutivo() != null
+                && !enc.getNumeroConsecutivo().isBlank()) {
+            data.consecutivo = enc.getNumeroConsecutivo();
+        }
 
         if (comprobante.getDetalles() != null
                 && comprobante.getDetalles().getLineasDetalle() != null) {
