@@ -12,10 +12,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.Version;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Data
@@ -55,4 +57,11 @@ public class Lote implements Serializable {
     private String notas;
 
     private Boolean status;
+
+    /**
+     * Bloqueo optimista para consumos concurrentes del mismo lote.
+     */
+    @Version
+    @EqualsAndHashCode.Exclude
+    private Long version = 0L;
 }

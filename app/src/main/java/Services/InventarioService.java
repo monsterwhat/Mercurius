@@ -11,6 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.LockModeType;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
@@ -364,6 +365,12 @@ public class InventarioService extends GService<Inventario> {
      * the winner and the loser fails loudly. That loser is expected to retry
      * the sale; the previous behaviour let both inserts succeed and split the
      * article's stock across two rows permanently.</p>
+     *
+     * <p><b>Optimista + pesimista.</b> La fila sigue tomándose con
+     * {@code PESSIMISTIC_WRITE} y {@code ArticuloStock.version} ({@code @Version})
+     * detecta la confirmación tardía: el perdedor recibe
+     * {@code OptimisticLockException} sin envolver (el mapper responde 409)
+     * para que la venta recargue y reintente.</p>
      */
     @Transactional
     public void updateStock(Inventario entity) {
@@ -395,6 +402,10 @@ public class InventarioService extends GService<Inventario> {
             }
             em.merge(stock);
             em.flush();
+        } catch (OptimisticLockException e) {
+            LOG.warn("Conflicto de versión en stock " + codigoBarra
+                    + " | source=InventarioService.updateStock()");
+            throw e;
         } catch (PersistenceException e) {
             LOG.warn("Error updating stock: " + e.getMessage()
                     + " | source=InventarioService.updateStock()"

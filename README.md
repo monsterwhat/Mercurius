@@ -120,24 +120,9 @@ Convenciones obligatorias para todo cambio en `app/src` (backend Quarkus + plant
 
 ### Estado de conformidad
 
-> **Medido, no estimado.** La tabla anterior (2026-09-26) reportaba cifras que
-> la medición contradecía — en particular "4 `catch` vacíos" cuando hay 19, y
-> "0 `@SuppressWarnings` en pruebas" cuando hay 2. Estas cifras se obtuvieron
-> contando el árbol de fuentes; si una regla se corrige, vuelva a contar y
-> actualice el número aquí en lugar de copiar el anterior.
-
-| Estándar | Estado | Detalle (medido) |
-|----------|--------|------------------|
-| `@SuppressWarnings` justificados | Conforme | 15 en `main`, todos `"unchecked"` en casts inevitables (mapas sin tipo, `Query` crudo, Jackson `Map.class`); **2 en pruebas** (no 0) |
-| Sin `catch` vacíos | Conforme (2026-09-28) | Medidos 19 cuerpos sin sentencias en `main`. **8 se conservan con justificación escrita** (siguiente formato en `Parser`/`ImportacionMasivaService`, cierre de recursos en `AppLauncher`, derivación de clave en `EncryptionUtil`, doble intento de descifrado en `HaciendaCertificateService`, valor por defecto en `PronosticosResource`, sonda LAZY en `OrdenCompraResource:893`). **Los otros 11 se hicieron visibles**: 10 ahora registran `LOG.warn`/`debug` (tasas de impuesto no numéricas en `CarritoService`/`ComprobanteService`/`PDFGenerator`, desglose de tarifa sin mapeo, QR fallido, token Fides, callback de Hacienda, mapa de merma vacío) y `CabysService:67` documenta que su respaldo puede devolverse transitorio. Regla vigente: ningún `catch` sin sentencia ni justificación |
-| Dinero con `BigDecimal` | Conforme | 18 declaraciones `double`/`float` en `main`: días, porcentajes, scores y stock. Ningún importe monetario. Única excepción a vigilar: `Clientes.discount:63` (`double`, ya marcado `DEPRECATED` y nunca aplicado a totales) |
-| Anotaciones `jakarta.*` | Conforme | 0 imports `javax.*` de Java EE en `main` y pruebas (los 64 restantes son del JDK: `javax.xml`, `javax.crypto`, `javax.imageio`, `javax.swing`) |
-| Dominio en español | Conforme | 10 entidades renombradas en 2026-09-26 (148 archivos, JPQL incluido; `@Table`, rutas REST, JSON y plantillas intactos). DTOs/servicios/recursos conservan nombre en inglés por compatibilidad de API |
-| Sin `System.out` en `main` | Conforme | 0 apariciones de `System.out`/`System.err`; 0 `printStackTrace()`; 0 `getStackTrace()` en `main` |
-| XML externo sin acceso | Conforme (2026-09-28) | La política de análisis vive en un solo sitio, `Utils.XmlSeguro`: `disallow-doctype-decl`, `FEATURE_SECURE_PROCESSING` y `ACCESS_EXTERNAL_DTD`/`ACCESS_EXTERNAL_SCHEMA` vacíos. En `HaciendaXsdValidator` esas propiedades se aplican **al `SchemaFactory` y al `Validator`**; el `Validator` es el único punto donde se parsean bytes no confiables. **Los XSD de Hacienda y el `xmldsig-core-schema.xsd` de la W3C se conservan byte a byte tal como se publican** — no se editan. Los dos DTD que ese esquema nombra (`XMLSchema.dtd`, `datatypes.dtd`) están **vendidos como archivos nuevos** en `xsd/dtd/` con cabecera de procedencia (W3C, 2026-09-28) y los sirve el `ClasspathResourceResolver` solo para esas dos referencias exactas: la compilación de esquemas ya no sale a red, demostrable porque con `ACCESS_EXTERNAL_DTD=""` cualquier intento HTTP haría fallar la compilación |
-| Transacciones atómicas | Conforme | `ComprobanteService.crearComprobante` y `InventarioService.updateStock` ya no tragan excepciones dentro de `@Transactional`. El envío a Hacienda corre en fase (b) (`enviarComprobanteCreado`), fuera de la transacción que retiene el bloqueo pesimista del consecutivo — solo la fase corta de armado lo retiene |
-| Bloqueo de versión | **No conforme** | `@Version` aparece **0** veces en 600 archivos de `main`. No hay bloqueo optimista en el modelo de persistencia; la corrección concurrente depende de `PESSIMISTIC_WRITE` fila a fila |
-| Esquema de base de datos | Conforme (documentado) | Hibernate `update` es el único mecanismo: **no hay Flyway ni Liquibase**, y deliberadamente no existe `db/migration/`. Los cinco scripts que había ahí nunca se ejecutaron (no había dependencia) y todo lo que describían ya estaba en las entidades. El compromiso de `update` en producción está documentado en `application.properties` |
+> Detalle de la auditoría 2026-09-28 movido al historial (`fcd7ccb0`) para no saturar el README. Regla vigente: ningún `catch` sin sentencia ni justificación; ver `docs/handoff-2026-09-29.md` para el estado por sesión.
+>
+> Bloqueo de versión (2026-10-02): `@Version` en 4 entidades contendidas (`ArticuloStock`, `Articulos`, `CierreCaja`, `Lote`); conflicto responde 409 (`OptimisticLockExceptionMapper`). Consecutivos siguen pesimistas a propósito (secuencia sin huecos): `PESSIMISTIC_WRITE` + advisory lock. Candado: `BloqueoVersionTest` (3 en verde).
 
 ### Pruebas
 

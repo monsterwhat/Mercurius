@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 //Tabla con el valor actual del stock de los articulos.
 @Entity
@@ -43,6 +44,16 @@ public class ArticuloStock {
     @Column(nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date lastUpdated;
+
+    /**
+     * Bloqueo optimista: dos ventas concurrentes del mismo código leen la
+     * misma fila; la segunda en confirmar falla con
+     * {@code OptimisticLockException} (409) en vez de descartar la primera.
+     * Los contadores de consecutivo siguen pesimistas (secuencia sin huecos).
+     */
+    @Version
+    @EqualsAndHashCode.Exclude
+    private Long version = 0L;
 
     @PrePersist
     @PreUpdate
