@@ -138,6 +138,10 @@ Precondiciones (Dev Services está deshabilitado, `%test.quarkus.datasource.devs
 - **PostgreSQL local en el puerto `5433`** con las bases `mercurius` (aplicación) y `mercurius_test` (pruebas), usuario `mercurius` / contraseña `Mercurius@1!` (ver [Instalación](#1-configurar-base-de-datos)).
 - El perfil `%test` usa `drop-and-create` y ejecuta `app/src/test/resources/import-test.sql`, que siembra el usuario **`admin` / `admin123`** (hash BCrypt real) usado por las pruebas de autenticación. No hay que sembrar nada a mano.
 
+Estado medido el **2026-10-03**: **1269 pruebas, 0 fallos, 0 errores, 2 omitidas** (`mvn -B -ntp test`, BUILD SUCCESS en ~12 min). Incluye 8 pruebas de la rama Fides (`HaciendaServiceFacadeFidesTest`: mapeo emisor/receptor/líneas/total, ACEPTADO/RECHAZADO/ERROR, rechazo de clave radicada distinta) y 3 de bloqueo de versión (`BloqueoVersionTest`). Las 2 omitidas siguen siendo las de respaldo real sin `pg_dump`.
+
+> E2E factura vía Fides (2026-10-03, servidor dev + stub local en `:8080`): ciclo completo auth → invoices (con `clave` + `numero_consecutivo` del consecutivo Mercurius) → sign → submissions → poll → **ACEPTADO**, clave radicada verificada igual a la enviada. Hallazgo del E2E: `FidesApiService.getAccessToken` nunca hacía `setDoOutput(true)` — la autenticación Fides jamás podía funcionar; corregido.
+
 Estado medido el **2026-09-28**: **954 pruebas, 954 en verde, 0 fallos, 0 errores, 2 omitidas**.
 
 > **2026-09-29 (sin verificar en suite completa):** se agregaron ~65 pruebas
