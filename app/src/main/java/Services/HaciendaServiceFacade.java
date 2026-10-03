@@ -221,6 +221,30 @@ public class HaciendaServiceFacade {
                 && !enc.getNumeroConsecutivo().isBlank()) {
             data.consecutivo = enc.getNumeroConsecutivo();
         }
+        if (enc != null) {
+            if (enc.getCondicionVenta() != null && !enc.getCondicionVenta().isBlank()) {
+                data.condicionVenta = enc.getCondicionVenta().trim();
+            }
+            if (enc.getCondicionVentaOtros() != null && !enc.getCondicionVentaOtros().isBlank()) {
+                data.condicionVentaOtros = enc.getCondicionVentaOtros().trim();
+            }
+            if (enc.getPlazoCredito() != null && !enc.getPlazoCredito().isBlank()) {
+                try {
+                    data.plazoCredito = Integer.valueOf(enc.getPlazoCredito().trim());
+                } catch (NumberFormatException e) {
+                    LOG.warn("PlazoCredito no numérico '" + enc.getPlazoCredito()
+                            + "': se omite en el envío a Fides"
+                            + " | source=HaciendaServiceFacade.buildInvoiceData()");
+                }
+            }
+            String actividad = enc.getCodigoActividadEmisor();
+            if ((actividad == null || actividad.isBlank()) && appSettings.getCodigoActividad() != null) {
+                actividad = appSettings.getCodigoActividad();
+            }
+            if (actividad != null && !actividad.isBlank()) {
+                data.codigoActividadEmisor = actividad.trim();
+            }
+        }
 
         if (comprobante.getDetalles() != null
                 && comprobante.getDetalles().getLineasDetalle() != null) {

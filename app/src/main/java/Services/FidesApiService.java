@@ -109,6 +109,14 @@ public class FidesApiService {
         public String accessKey;
         /** Optional caller NumeroConsecutivo (20 digits). Travels with accessKey; Fides validates both. */
         public String consecutivo;
+        /** Optional sale condition code (01/02/.../99). Absent = Contado in Fides. */
+        public String condicionVenta;
+        /** Optional CondicionVentaOtros free text (99/Otros). */
+        public String condicionVentaOtros;
+        /** Optional credit term in days (PlazoCredito). */
+        public Integer plazoCredito;
+        /** Optional issuer activity code (CodigoActividadEmisor, 6 digits). */
+        public String codigoActividadEmisor;
         public List<ItemData> items;
         public String total;
 
@@ -335,6 +343,18 @@ public class FidesApiService {
             }
             if (data.consecutivo != null && !data.consecutivo.isEmpty()) {
                 payload.put("numero_consecutivo", data.consecutivo);
+            }
+            if (data.condicionVenta != null && !data.condicionVenta.isEmpty()) {
+                payload.put("condicion_venta", data.condicionVenta);
+            }
+            if (data.condicionVentaOtros != null && !data.condicionVentaOtros.isEmpty()) {
+                payload.put("condicion_venta_otros", data.condicionVentaOtros);
+            }
+            if (data.plazoCredito != null) {
+                payload.put("plazo_credito", data.plazoCredito);
+            }
+            if (data.codigoActividadEmisor != null && !data.codigoActividadEmisor.isEmpty()) {
+                payload.put("codigo_actividad_emisor", data.codigoActividadEmisor);
             }
 
             String jsonPayload = mapper.writeValueAsString(payload);

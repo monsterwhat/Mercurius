@@ -75,6 +75,9 @@ class HaciendaServiceFacadeFidesTest {
         Encabezado encabezado = new Encabezado();
         encabezado.setReceptor(receptor);
         encabezado.setNumeroConsecutivo("00100001010000000001");
+        encabezado.setCondicionVenta("02");
+        encabezado.setPlazoCredito("30");
+        encabezado.setCodigoActividadEmisor("123456");
 
         Impuesto impuesto = new Impuesto();
         impuesto.setTarifa(new BigDecimal("13.00"));
@@ -192,6 +195,9 @@ class HaciendaServiceFacadeFidesTest {
         assertThat(dto.items.get(0).unitPrice).isEqualTo("1500");
         assertThat(dto.items.get(0).taxRate).isEqualTo("13.00");
         assertThat(dto.consecutivo).isEqualTo("00100001010000000001");
+        assertThat(dto.condicionVenta).isEqualTo("02");
+        assertThat(dto.plazoCredito).isEqualTo(30);
+        assertThat(dto.codigoActividadEmisor).isEqualTo("123456");
     }
 
     @Test
