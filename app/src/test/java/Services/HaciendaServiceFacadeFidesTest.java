@@ -74,6 +74,7 @@ class HaciendaServiceFacadeFidesTest {
 
         Encabezado encabezado = new Encabezado();
         encabezado.setReceptor(receptor);
+        encabezado.setNumeroConsecutivo("00100001010000000001");
 
         Impuesto impuesto = new Impuesto();
         impuesto.setTarifa(new BigDecimal("13.00"));
@@ -190,5 +191,37 @@ class HaciendaServiceFacadeFidesTest {
         assertThat(dto.items.get(0).quantity).isEqualTo("2");
         assertThat(dto.items.get(0).unitPrice).isEqualTo("1500");
         assertThat(dto.items.get(0).taxRate).isEqualTo("13.00");
+        assertThat(dto.consecutivo).isEqualTo("00100001010000000001");
+    }
+
+    @Test
+    @DisplayName("Clave radicada distinta a la enviada se rechaza, no se marca ACEPTADO")
+    void claveDistintaEsRechazado() {
+        when(appSettingsService.returnCurrent()).thenReturn(ajustes(true));
+        FidesApiService.FidesResponse ok =
+                FidesApiService.FidesResponse.ok(200, "{\"estado\":\"ACEPTADO\"}");
+        ok.filedAccessKey = "50602102500003101123456001000000019999999999";
+        when(fidesApiService.submitToHaciendaViaFides(any())).thenReturn(ok);
+
+        HaciendaServiceFacade.SubmitResult r = facade.submitDocument(comprobanteCompleto());
+
+        assertThat(r.success).isFalse();
+        assertThat(r.estado).isEqualTo("RECHAZADO");
+        assertThat(r.errorMessage).contains("clave distinta");
+    }
+
+    @Test
+    @DisplayName("Clave radicada igual a la enviada se acepta")
+    void claveCoincidenteEsAceptado() {
+        when(appSettingsService.returnCurrent()).thenReturn(ajustes(true));
+        FidesApiService.FidesResponse ok =
+                FidesApiService.FidesResponse.ok(200, "{\"estado\":\"ACEPTADO\"}");
+        ok.filedAccessKey = "50602102500003101123456001000000010000000011";
+        when(fidesApiService.submitToHaciendaViaFides(any())).thenReturn(ok);
+
+        HaciendaServiceFacade.SubmitResult r = facade.submitDocument(comprobanteCompleto());
+
+        assertThat(r.success).isTrue();
+        assertThat(r.estado).isEqualTo("ACEPTADO");
     }
 }

@@ -65,6 +65,13 @@ public class FidesApiService {
         public int httpStatus;
         public String body;
         public String errorMessage;
+        /**
+         * Clave under which Fides actually filed the document (echoed from
+         * its create response). The caller must compare it with the clave it
+         * sent: a mismatch means Hacienda accepted a different identity than
+         * the one stored locally.
+         */
+        public String filedAccessKey;
 
         public static FidesResponse ok(int status, String body) {
             FidesResponse r = new FidesResponse();
@@ -100,6 +107,8 @@ public class FidesApiService {
         public String receiverEmail;
         /** Optional pre-generated Hacienda access key (clave). If null, Fides generates one. */
         public String accessKey;
+        /** Optional caller NumeroConsecutivo (20 digits). Travels with accessKey; Fides validates both. */
+        public String consecutivo;
         public List<ItemData> items;
         public String total;
 
@@ -206,8 +215,11 @@ public class FidesApiService {
 
             // 6. Map Fides state back to Mercurius-style response
             switch (result.state) {
-                case "Completed":
-                    return FidesResponse.ok(200, "{\"estado\":\"ACEPTADO\"}");
+                case "Completed": {
+                    FidesResponse ok = FidesResponse.ok(200, "{\"estado\":\"ACEPTADO\"}");
+                    ok.filedAccessKey = doc.accessKey;
+                    return ok;
+                }
                 case "Failed":
                     String reason = result.responseMessage != null ? result.responseMessage : "Unknown error";
                     return FidesResponse.error(400, "Document rejected by Fides/Hacienda: " + reason);
@@ -249,6 +261,7 @@ public class FidesApiService {
 
             String url = fidesApiUrl + "/api/v1/auth/token";
             HttpURLConnection conn = openConnection(url, "POST", "application/json; charset=UTF-8");
+            conn.setDoOutput(true);
             conn.setConnectTimeout(15000);
             conn.setReadTimeout(30000);
 
@@ -319,6 +332,9 @@ public class FidesApiService {
             payload.put("total", data.total != null ? data.total : "0");
             if (data.accessKey != null && !data.accessKey.isEmpty()) {
                 payload.put("clave", data.accessKey);
+            }
+            if (data.consecutivo != null && !data.consecutivo.isEmpty()) {
+                payload.put("numero_consecutivo", data.consecutivo);
             }
 
             String jsonPayload = mapper.writeValueAsString(payload);
