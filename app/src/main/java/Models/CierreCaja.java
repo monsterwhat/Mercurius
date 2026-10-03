@@ -12,10 +12,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.persistence.Version;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 @Entity
 @Data
@@ -73,4 +75,12 @@ public class CierreCaja implements Serializable {
     private String estado; // "abierto" or "cerrado"
 
     private String notas;
+
+    /**
+     * Bloqueo optimista: dos cierres concurrentes de la misma caja no se
+     * pisan; el segundo recibe 409 y debe recargar.
+     */
+    @Version
+    @EqualsAndHashCode.Exclude
+    private Long version = 0L;
 }

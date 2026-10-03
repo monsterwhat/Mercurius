@@ -113,6 +113,13 @@ public class Articulos implements Serializable {
     @Temporal(TemporalType.TIMESTAMP)
     private Date fecha; //LOGS LOGS LOGS!!
 
+    /**
+     * Bloqueo optimista para ediciones concurrentes de la ficha del artículo.
+     */
+    @Version
+    @EqualsAndHashCode.Exclude
+    private Long version = 0L;
+
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     @Nullable
