@@ -533,14 +533,14 @@ public final class MotorPronostico {
         if (historia == null || historia.isEmpty()) {
             return new Rejilla(null, new double[0]);
         }
-        TreeMap<LocalDate, Long> acumulado = new TreeMap<>();
+        TreeMap<LocalDate, Double> acumulado = new TreeMap<>();
         int descartadas = 0;
         for (SerieDiaria punto : historia) {
             if (punto == null || punto.fecha() == null) {
                 descartadas++;
                 continue;
             }
-            acumulado.merge(punto.fecha(), punto.cantidad(), Long::sum);
+            acumulado.merge(punto.fecha(), punto.cantidad(), Double::sum);
         }
         if (descartadas > 0) {
             LOG.warnf("Se descartaron %d puntos de historia sin fecha utilizable", descartadas);
@@ -563,7 +563,7 @@ public final class MotorPronostico {
         }
 
         double[] valores = new double[periodos];
-        for (Map.Entry<LocalDate, Long> punto : acumulado.entrySet()) {
+        for (Map.Entry<LocalDate, Double> punto : acumulado.entrySet()) {
             long desplazamiento = ChronoUnit.DAYS.between(inicio, punto.getKey());
             if (desplazamiento >= 0 && desplazamiento < periodos) {
                 valores[(int) desplazamiento] += punto.getValue();

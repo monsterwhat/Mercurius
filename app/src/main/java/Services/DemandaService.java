@@ -590,13 +590,13 @@ public class DemandaService {
      * lectura correcta (no hay demanda, no hay registro de demanda).
      */
     private List<SerieDiaria> serieAgregada(List<Long> miembros) {
-        TreeMap<LocalDate, Long> porDia = new TreeMap<>();
+        TreeMap<LocalDate, Double> porDia = new TreeMap<>();
         for (Long codigo : miembros) {
             for (SerieDiaria punto : serieDiaria(codigo)) {
                 if (punto.fecha() == null) {
                     continue;
                 }
-                porDia.merge(punto.fecha(), punto.cantidad(), Long::sum);
+                porDia.merge(punto.fecha(), punto.cantidad(), Double::sum);
             }
         }
         if (porDia.isEmpty()) {
@@ -605,7 +605,7 @@ public class DemandaService {
 
         List<SerieDiaria> agregada = new ArrayList<>(porDia.size());
         for (LocalDate dia = porDia.firstKey(); !dia.isAfter(porDia.lastKey()); dia = dia.plusDays(1)) {
-            agregada.add(new SerieDiaria(dia, porDia.getOrDefault(dia, 0L)));
+            agregada.add(new SerieDiaria(dia, porDia.getOrDefault(dia, 0.0)));
         }
         return agregada;
     }
@@ -617,10 +617,10 @@ public class DemandaService {
      * {@link #predecirFamilia}).
      */
     private Map<Long, Double> repartirPorParticipacion(double total, List<Long> miembros) {
-        Map<Long, Long> unidades = new LinkedHashMap<>();
+        Map<Long, Double> unidades = new LinkedHashMap<>();
         double suma = 0.0;
         for (Long codigo : miembros) {
-            long vendido = 0L;
+            double vendido = 0.0;
             for (SerieDiaria punto : serieDiaria(codigo)) {
                 vendido += punto.cantidad();
             }
@@ -631,8 +631,8 @@ public class DemandaService {
         Map<Long, Double> reparto = new LinkedHashMap<>();
         List<Long> sinParte = new ArrayList<>();
         double atribuido = 0.0;
-        for (Map.Entry<Long, Long> articulo : unidades.entrySet()) {
-            if (suma > 0.0 && articulo.getValue() > 0L) {
+        for (Map.Entry<Long, Double> articulo : unidades.entrySet()) {
+            if (suma > 0.0 && articulo.getValue() > 0.0) {
                 double cuota = total * articulo.getValue() / suma;
                 reparto.put(articulo.getKey(), cuota);
                 atribuido += cuota;

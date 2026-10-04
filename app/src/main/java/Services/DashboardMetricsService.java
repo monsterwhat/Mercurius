@@ -369,17 +369,17 @@ public class DashboardMetricsService {
 
     public static class TopProduct {
         private String name;
-        private long quantity;
+        private double quantity;
         private BigDecimal revenue;
 
-        public TopProduct(String name, long quantity, BigDecimal revenue) {
+        public TopProduct(String name, double quantity, BigDecimal revenue) {
             this.name = name;
             this.quantity = quantity;
             this.revenue = revenue;
         }
 
         public String getName() { return name; }
-        public long getQuantity() { return quantity; }
+        public double getQuantity() { return quantity; }
         public BigDecimal getRevenue() { return revenue; }
     }
 

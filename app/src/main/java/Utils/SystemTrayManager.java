@@ -86,7 +86,7 @@ public class SystemTrayManager {
                     public void mouseClicked(MouseEvent e) {
                         if (e.getClickCount() == 2) {
                             // Double click - open browser
-                            appLauncher.openBrowser("http://localhost:8081/Mercurius/index.xhtml");
+                            appLauncher.openBrowser("http://localhost:8081/Mercurius/app");
                         }
                     }
                 });
@@ -145,7 +145,7 @@ public class SystemTrayManager {
         
         // Open Browser menu item
         MenuItem openItem = new MenuItem("Open Mercurius");
-        openItem.addActionListener(e -> appLauncher.openBrowser("http://localhost:8081/Mercurius/index.xhtml"));
+        openItem.addActionListener(e -> appLauncher.openBrowser("http://localhost:8081/Mercurius/app"));
         popup.add(openItem);
         
         popup.addSeparator();
