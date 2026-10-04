@@ -170,6 +170,16 @@ public class HaciendaServiceFacade {
 
             FidesApiService.InvoiceData invoiceData = buildInvoiceData(comprobante, appSettings);
 
+            // Fides localiza el tenant por issuerTaxId: sin identificación del
+            // emisor el envío falla allá con un error genérico. Fallar aquí,
+            // con la causa a la vista, en vez de quemar el ciclo auth→create.
+            if (invoiceData.issuerTaxId == null || invoiceData.issuerTaxId.isBlank()) {
+                LOG.warn("Envío a Fides bloqueado: sin identificación del emisor en la configuración"
+                        + " | source=HaciendaServiceFacade.submitViaFides()");
+                return SubmitResult.error("Sin identificación del emisor en la configuración;"
+                        + " no se puede radicar en Fides");
+            }
+
             FidesApiService.FidesResponse fidesResp = fidesApiService.submitToHaciendaViaFides(invoiceData);
 
             if (fidesResp.success) {
