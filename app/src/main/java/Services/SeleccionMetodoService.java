@@ -83,10 +83,13 @@ public class SeleccionMetodoService {
     private static final Logger LOG = Logger.getLogger(SeleccionMetodoService.class);
 
     /**
-     * Ventana de historia considerada, en dias. Cubre varios ciclos semanales ( HOLT_WINTERS
-     * exige 28 observaciones) con holgada para un horizonte de dos semanas.
+     * Ventana de historia considerada, en dias. {@code 0} = historia completa
+     * (desde el primer movimiento del articulo): con anos de ventas importadas
+     * el backtesting y la seleccion de metodo usan todo lo disponible en vez
+     * de solo los ultimos meses. HOLT_WINTERS exige 28 observaciones; el tope
+     * real lo pone {@code MAX_PERIODOS_REJILLA} del motor (~10 anos).
      */
-    public static final int DIAS_HISTORIA = 120;
+    public static final int DIAS_HISTORIA = 0;
 
     /**
      * Orden de simplicidad para desempatar dos metodos con el mismo MASE: gana el mas simple.
@@ -343,13 +346,38 @@ public class SeleccionMetodoService {
      * que un {@code = true} a secas descartaria historia real de articulos antiguos.</p>
      *
      * @param codigoArticulo articulo consultado
-     * @param dias           ventana retrospectiva en dias
+     * @param dias           ventana retrospectiva en dias; {@code <= 0} = historia
+     *                       completa (desde el primer movimiento del articulo)
      * @return serie diaria ordenada, o lista vacia si no hay ventas en la ventana
      */
+    /**
+     * Primer dia con movimiento 'Venta' del articulo. Sostiene la ventana
+     * ilimitada ({@code dias <= 0}): sin historia, hoy (la serie saldra vacia
+     * igual que antes).
+     */
+    private LocalDate primerMovimiento(@Nonnull Long codigoArticulo) {
+        try {
+            Date min = entityManager.createQuery(
+                            "SELECT MIN(i.fechaMovimiento) FROM Inventario i "
+                                    + "WHERE i.articulo.codigo = :codigo "
+                                    + "AND i.tipoMovimiento = 'Venta' "
+                                    + "AND (i.status IS NULL OR i.status = true)",
+                            Date.class)
+                    .setParameter("codigo", codigoArticulo)
+                    .getSingleResult();
+            if (min != null) {
+                return min.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
+        } catch (RuntimeException e) {
+            LOG.warnf("sin fecha minima para %d, se usa hoy", codigoArticulo);
+        }
+        return LocalDate.now();
+    }
+
     @Transactional(TxType.SUPPORTS)
     public List<SerieDiaria> serieDiaria(@Nonnull Long codigoArticulo, int dias) {
         LocalDate hoy = LocalDate.now();
-        LocalDate inicio = hoy.minusDays(Math.max(1, dias));
+        LocalDate inicio = dias <= 0 ? primerMovimiento(codigoArticulo) : hoy.minusDays(Math.max(1, dias));
         ZoneId zona = ZoneId.systemDefault();
         Date desde = Date.from(inicio.atStartOfDay(zona).toInstant());
         Date hasta = Date.from(hoy.plusDays(1).atStartOfDay(zona).toInstant().minusMillis(1));
@@ -367,14 +395,14 @@ public class SeleccionMetodoService {
                 .setParameter("hasta", hasta)
                 .getResultList();
 
-        TreeMap<LocalDate, Long> porDia = new TreeMap<>();
+        TreeMap<LocalDate, Double> porDia = new TreeMap<>();
         for (Object[] movimiento : movimientos) {
             LocalDate dia = aFecha(movimiento[0]);
             if (dia == null || dia.isBefore(inicio) || dia.isAfter(hoy)) {
                 continue;
             }
-            long unidades = Math.abs(((Number) movimiento[1]).longValue());
-            porDia.merge(dia, unidades, Long::sum);
+            double unidades = Math.abs(((Number) movimiento[1]).doubleValue());
+            porDia.merge(dia, unidades, Double::sum);
         }
 
         if (porDia.isEmpty()) {
@@ -383,7 +411,7 @@ public class SeleccionMetodoService {
 
         List<SerieDiaria> serie = new ArrayList<>(porDia.size());
         for (LocalDate dia = porDia.firstKey(); !dia.isAfter(porDia.lastKey()); dia = dia.plusDays(1)) {
-            serie.add(new SerieDiaria(dia, porDia.getOrDefault(dia, 0L)));
+            serie.add(new SerieDiaria(dia, porDia.getOrDefault(dia, 0.0)));
         }
         return serie;
     }

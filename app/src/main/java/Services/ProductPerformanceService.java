@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * para los comprobantes REP (tipo 10): su LineaDetalle simplificado segun el XSD
  * V4.4 no lleva Cantidad, y ComprobanteService lo omite a proposito. Un grupo
  * cuyas filas tengan todas Cantidad NULL hace que SUM devuelva NULL (no 0), y el
- * mapeo {@code ((Number) row[1]).longValue()} reventaba con NullPointerException
+ * mapeo {@code ((Number) row[1]).doubleValue()} reventaba con NullPointerException
  * -> HTTP 500 en la pagina de rendimiento en cuanto habia un REP vigente.
  *
  * <p>{@code getWorstSellingProducts} no necesita el COALESCE porque su
@@ -70,7 +70,7 @@ public class ProductPerformanceService {
         return results.stream()
             .map(row -> new ProductSalesSummary(
                 (String) row[0],
-                ((Number) row[1]).longValue(),
+                ((Number) row[1]).doubleValue(),
                 (BigDecimal) row[2]
             ))
             .collect(Collectors.toList());
@@ -101,7 +101,7 @@ public class ProductPerformanceService {
         return results.stream()
             .map(row -> new ProductSalesSummary(
                 (String) row[0],
-                ((Number) row[1]).longValue(),
+                ((Number) row[1]).doubleValue(),
                 (BigDecimal) row[2]
             ))
             .collect(Collectors.toList());
@@ -131,7 +131,7 @@ public class ProductPerformanceService {
         return results.stream()
             .map(row -> new ProductSalesSummary(
                 (String) row[0],
-                ((Number) row[1]).longValue(),
+                ((Number) row[1]).doubleValue(),
                 (BigDecimal) row[2]
             ))
             .collect(Collectors.toList());
@@ -383,7 +383,7 @@ public class ProductPerformanceService {
         return new ProductPerformanceSummary(
             totalRevenue != null ? totalRevenue : BigDecimal.ZERO,
             totalTransactions != null ? totalTransactions.intValue() : 0,
-            totalQuantity != null ? totalQuantity.longValue() : 0L,
+            totalQuantity != null ? totalQuantity.doubleValue() : 0.0,
             uniqueProducts != null ? uniqueProducts.intValue() : 0,
             averageTicket
         );
@@ -395,17 +395,17 @@ public class ProductPerformanceService {
 
     public static class ProductSalesSummary {
         private String productName;
-        private Long quantitySold;
+        private Double quantitySold;
         private BigDecimal totalRevenue;
 
-        public ProductSalesSummary(String productName, Long quantitySold, BigDecimal totalRevenue) {
+        public ProductSalesSummary(String productName, Double quantitySold, BigDecimal totalRevenue) {
             this.productName = productName;
             this.quantitySold = quantitySold;
             this.totalRevenue = totalRevenue;
         }
 
         public String getProductName() { return productName; }
-        public Long getQuantitySold() { return quantitySold; }
+        public Double getQuantitySold() { return quantitySold; }
         public BigDecimal getTotalRevenue() { return totalRevenue; }
     }
 
@@ -454,12 +454,12 @@ public class ProductPerformanceService {
     public static class ProductPerformanceSummary {
         private BigDecimal totalRevenue;
         private int totalTransactions;
-        private long totalQuantitySold;
+        private double totalQuantitySold;
         private int uniqueProductsSold;
         private BigDecimal averageTicket;
 
         public ProductPerformanceSummary(BigDecimal totalRevenue, int totalTransactions, 
-                                       long totalQuantitySold, int uniqueProductsSold, BigDecimal averageTicket) {
+                                       double totalQuantitySold, int uniqueProductsSold, BigDecimal averageTicket) {
             this.totalRevenue = totalRevenue;
             this.totalTransactions = totalTransactions;
             this.totalQuantitySold = totalQuantitySold;
@@ -469,7 +469,7 @@ public class ProductPerformanceService {
 
         public BigDecimal getTotalRevenue() { return totalRevenue; }
         public int getTotalTransactions() { return totalTransactions; }
-        public long getTotalQuantitySold() { return totalQuantitySold; }
+        public double getTotalQuantitySold() { return totalQuantitySold; }
         public int getUniqueProductsSold() { return uniqueProductsSold; }
         public BigDecimal getAverageTicket() { return averageTicket; }
     }

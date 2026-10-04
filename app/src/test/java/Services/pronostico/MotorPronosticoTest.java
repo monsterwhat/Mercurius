@@ -247,7 +247,7 @@ class MotorPronosticoTest {
         @DisplayName("85 por ciento de ceros con picos: pronostico finito y dentro de [0, maximo del pico]")
         void intermitenteAcotado() {
             List<SerieDiaria> historia = serieIntermitente(LUNES, 120, PICOS_INTERMITENTES);
-            double maxPico = historia.stream().mapToLong(SerieDiaria::cantidad).max().orElseThrow();
+            double maxPico = historia.stream().mapToDouble(SerieDiaria::cantidad).max().orElseThrow();
 
             List<Double> pronostico = MotorPronostico.pronosticar(
                     MetodoPronostico.SBA, historia, 30, POR_DEFECTO);
@@ -326,6 +326,17 @@ class MotorPronosticoTest {
                     MetodoPronostico.INGENUO, historia, 4, POR_DEFECTO);
 
             assertThat(pronostico).containsExactly(11.0, 11.0, 11.0, 11.0);
+        }
+
+        @Test
+        @DisplayName("INGENUO conserva fracciones de kilo (2.5 kg no se trunca)")
+        void ingenuoFraccional() {
+            List<SerieDiaria> historia = serie(LUNES, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5);
+
+            List<Double> pronostico = MotorPronostico.pronosticar(
+                    MetodoPronostico.INGENUO, historia, 4, POR_DEFECTO);
+
+            assertThat(pronostico).containsExactly(2.5, 2.5, 2.5, 2.5);
         }
 
         @Test
@@ -775,7 +786,7 @@ class MotorPronosticoTest {
     // Constructores de series sinteticas
     // ------------------------------------------------------------------
 
-    private static List<SerieDiaria> serie(LocalDate inicio, long... cantidades) {
+    private static List<SerieDiaria> serie(LocalDate inicio, double... cantidades) {
         List<SerieDiaria> puntos = new ArrayList<>(cantidades.length);
         for (int i = 0; i < cantidades.length; i++) {
             puntos.add(new SerieDiaria(inicio.plusDays(i), cantidades[i]));
@@ -802,7 +813,7 @@ class MotorPronosticoTest {
         }
         List<SerieDiaria> puntos = new ArrayList<>(periodos);
         for (int i = 0; i < periodos; i++) {
-            long cantidad = picos.contains(i) ? (long) (20 + ((i * 7) % 25)) : 0L;
+            double cantidad = picos.contains(i) ? (20 + ((i * 7) % 25)) : 0.0;
             puntos.add(new SerieDiaria(inicio.plusDays(i), cantidad));
         }
         return puntos;
@@ -813,44 +824,44 @@ class MotorPronosticoTest {
         List<SerieDiaria> puntos = new ArrayList<>(ciclos * 7);
         for (int dia = 0; dia < ciclos * 7; dia++) {
             DayOfWeek dow = inicio.plusDays(dia).getDayOfWeek();
-            long cantidad = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY) ? 20L : 10L;
+            double cantidad = (dow == DayOfWeek.SATURDAY || dow == DayOfWeek.SUNDAY) ? 20.0 : 10.0;
             puntos.add(new SerieDiaria(inicio.plusDays(dia), cantidad));
         }
         return puntos;
     }
 
-    private static long[] repeticion(int veces, long valor) {
-        long[] salida = new long[veces];
+    private static double[] repeticion(int veces, double valor) {
+        double[] salida = new double[veces];
         Arrays.fill(salida, valor);
         return salida;
     }
 
-    private static long[] alternos(int veces, long a, long b) {
-        long[] salida = new long[veces];
+    private static double[] alternos(int veces, double a, double b) {
+        double[] salida = new double[veces];
         for (int i = 0; i < veces; i++) {
             salida[i] = (i % 2 == 0) ? a : b;
         }
         return salida;
     }
 
-    private static long[] ascendentes(int periodos) {
-        long[] salida = new long[periodos];
+    private static double[] ascendentes(int periodos) {
+        double[] salida = new double[periodos];
         for (int i = 0; i < periodos; i++) {
-            salida[i] = i + 1L;
+            salida[i] = i + 1.0;
         }
         return salida;
     }
 
-    private static long[] picosCada(int periodos, int cada, long magnitud) {
-        long[] salida = new long[periodos];
+    private static double[] picosCada(int periodos, int cada, double magnitud) {
+        double[] salida = new double[periodos];
         for (int i = 0; i < periodos; i += cada) {
             salida[i] = magnitud;
         }
         return salida;
     }
 
-    private static long[] picosCadaVariables(int periodos, int cada, long magnitudA, long magnitudB) {
-        long[] salida = new long[periodos];
+    private static double[] picosCadaVariables(int periodos, int cada, double magnitudA, double magnitudB) {
+        double[] salida = new double[periodos];
         int pico = 0;
         for (int i = 0; i < periodos; i += cada) {
             salida[i] = ((pico++ % 2 == 0) ? magnitudA : magnitudB);

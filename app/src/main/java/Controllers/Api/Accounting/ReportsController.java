@@ -108,7 +108,7 @@ public class ReportsController {
                 dto.totalVendido = toBigDecimal(entry.get("totalVentas"));
 
                 Object cantidadObj = entry.get("cantidadArticulos");
-                dto.cantidadArticulos = cantidadObj instanceof Number ? ((Number) cantidadObj).longValue() : 0L;
+                dto.cantidadArticulos = cantidadObj instanceof Number ? ((Number) cantidadObj).doubleValue() : 0.0;
                 dtos.add(dto);
             }
 
@@ -203,7 +203,7 @@ public class ReportsController {
     public static class SalesByCategoryDTO {
         public String categoriaNombre;
         public BigDecimal totalVendido;
-        public Long cantidadArticulos;
+        public Double cantidadArticulos;
     }
 
     /**

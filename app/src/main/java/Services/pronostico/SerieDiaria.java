@@ -12,5 +12,5 @@ import java.time.LocalDate;
  * @param fecha    dia natural de la observacion
  * @param cantidad unidades vendidas; valores 0 se consideran "sin demanda" a efectos de ADI/CV^2
  */
-public record SerieDiaria(LocalDate fecha, long cantidad) {
+public record SerieDiaria(LocalDate fecha, double cantidad) {
 }

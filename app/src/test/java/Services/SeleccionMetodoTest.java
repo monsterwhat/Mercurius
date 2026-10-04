@@ -63,10 +63,10 @@ class SeleccionMetodoTest {
     private static final int DIAS_SEMBRADOS = 60;
 
     /** Unidades vendidas de dia habil. */
-    private static final long VENTA_DIA_HABIL = 2L;
+    private static final double VENTA_DIA_HABIL = 2.0;
 
     /** Unidades vendidas de sabado y domingo. */
-    private static final long VENTA_FIN_DE_SEMANA = 8L;
+    private static final double VENTA_FIN_DE_SEMANA = 8.0;
 
     private static final AtomicInteger SUFIJOS = new AtomicInteger();
 
@@ -278,7 +278,7 @@ class SeleccionMetodoTest {
     private Long sembrarArticuloConVentas(String etiqueta) {
         Long codigo = sembrarArticulo(etiqueta);
         for (LocalDate dia : diasSembrados()) {
-            long unidades = unidadesDelDia(dia);
+            double unidades = unidadesDelDia(dia);
             Inventario movimiento = new Inventario();
             movimiento.setArticulo(buscarArticulo(codigo));
             movimiento.setCantidad(BigDecimal.valueOf(-unidades));
@@ -322,7 +322,7 @@ class SeleccionMetodoTest {
         return dias;
     }
 
-    private static long unidadesDelDia(LocalDate dia) {
+    private static double unidadesDelDia(LocalDate dia) {
         DayOfWeek diaSemana = dia.getDayOfWeek();
         return (diaSemana == DayOfWeek.SATURDAY || diaSemana == DayOfWeek.SUNDAY)
                 ? VENTA_FIN_DE_SEMANA

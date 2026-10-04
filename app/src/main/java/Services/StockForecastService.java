@@ -312,7 +312,7 @@ public class StockForecastService {
                 } else {
                     date = LocalDate.parse(dateObj.toString());
                 }
-                return new SalesData(date, ((Number) row[1]).longValue());
+                return new SalesData(date, ((Number) row[1]).doubleValue());
             })
             .collect(Collectors.toList());
     }
@@ -380,7 +380,7 @@ public class StockForecastService {
     private BigDecimal calculateSeasonalFactor(List<SalesData> salesHistory) {
         if (salesHistory.isEmpty()) return BigDecimal.ONE;
         
-        Map<DayOfWeek, List<Long>> dayOfWeekSales = new HashMap<>();
+        Map<DayOfWeek, List<Double>> dayOfWeekSales = new HashMap<>();
         
         for (SalesData data : salesHistory) {
             DayOfWeek day = data.date().getDayOfWeek();
@@ -391,9 +391,9 @@ public class StockForecastService {
         DayOfWeek today = LocalDate.now().getDayOfWeek();
         
         if (dayOfWeekSales.containsKey(today)) {
-            List<Long> todaySales = dayOfWeekSales.get(today);
-            double avgToday = todaySales.stream().mapToLong(Long::longValue).average().orElse(0);
-            double overallAvg = salesHistory.stream().mapToLong(SalesData::quantity).average().orElse(0);
+            List<Double> todaySales = dayOfWeekSales.get(today);
+            double avgToday = todaySales.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+            double overallAvg = salesHistory.stream().mapToDouble(SalesData::quantity).average().orElse(0);
             
             if (overallAvg > 0) {
                 currentDayFactor = BigDecimal.valueOf(avgToday / overallAvg);
@@ -418,7 +418,7 @@ public class StockForecastService {
     private int calculateSafetyStock(List<SalesData> salesHistory) {
         if (salesHistory.size() < 7) return 7;
         
-        double sum = salesHistory.stream().mapToLong(SalesData::quantity).sum();
+        double sum = salesHistory.stream().mapToDouble(SalesData::quantity).sum();
         double mean = sum / salesHistory.size();
         
         double variance = salesHistory.stream()
@@ -430,7 +430,7 @@ public class StockForecastService {
         return Math.max(1, (int) Math.ceil(stdDev * 1.65));
     }
 
-    public record SalesData(LocalDate date, long quantity) {}
+    public record SalesData(LocalDate date, double quantity) {}
 
     public static class ProductForecast {
         private Long articuloId;

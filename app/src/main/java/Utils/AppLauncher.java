@@ -25,7 +25,18 @@ public class AppLauncher {
     private static final Logger LOG = Logger.getLogger(AppLauncher.class);
 
     private static final String LOCK_FILE_PATH = System.getProperty("java.io.tmpdir") + "/mercurius.lock";
-    private static final String APP_URL = "http://localhost:8081/Mercurius/index.xhtml";
+    /** Qute/HTMX landing (the JSF-era index.xhtml is only a redirect trap now). */
+    private static final String APP_URL = "http://localhost:8081/Mercurius/app";
+
+    /**
+     * Auto-open del navegador al arrancar. Apagado por defecto: abrir pestanas
+     * solas en cada arranque (dev, tests, servicio) es el comportamiento que
+     * se quiere evitar; quien lo quiera lo enciende explicitamente.
+     */
+    @Inject
+    @org.eclipse.microprofile.config.inject.ConfigProperty(
+            name = "mercurius.launcher.open-browser", defaultValue = "false")
+    boolean autoOpenBrowser;
     
     @Nonnull private final AtomicBoolean isRunning = new AtomicBoolean(false);
     
@@ -61,7 +72,10 @@ public class AppLauncher {
             trayThread.start();
 
             // Open browser after a short delay to ensure server is ready
-            openBrowserAfterDelay(3000);
+            // (solo si mercurius.launcher.open-browser=true).
+            if (autoOpenBrowser) {
+                openBrowserAfterDelay(3000);
+            }
 
         } catch (RuntimeException e) {
             LOG.warn("failed to on start", e);
