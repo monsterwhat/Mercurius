@@ -245,4 +245,43 @@ class HaciendaServiceFacadeFidesTest {
         assertThat(r.success).isTrue();
         assertThat(r.estado).isEqualTo("ACEPTADO");
     }
+
+    @Test
+    @DisplayName("Descuentos de linea viajan a Fides sumados")
+    void descuentosViajanAFides() {
+        when(appSettingsService.returnCurrent()).thenReturn(ajustes(true));
+        when(fidesApiService.submitToHaciendaViaFides(any()))
+                .thenReturn(FidesApiService.FidesResponse.ok(200, "{\"estado\":\"ACEPTADO\"}"));
+
+        Models.ComprobantesEmitidos c = comprobanteCompleto();
+        Models.Detalles.Descuento d1 = new Models.Detalles.Descuento();
+        d1.setMontoDescuento(new BigDecimal("120.50"));
+        d1.setCodigoDescuento("06");
+        Models.Detalles.Descuento d2 = new Models.Detalles.Descuento();
+        d2.setMontoDescuento(new BigDecimal("79.50"));
+        d2.setCodigoDescuento("07");
+        c.getDetalles().getLineasDetalle().get(0).setDescuentos(List.of(d1, d2));
+
+        facade.submitDocument(c);
+
+        ArgumentCaptor<FidesApiService.InvoiceData> captor =
+                ArgumentCaptor.forClass(FidesApiService.InvoiceData.class);
+        verify(fidesApiService).submitToHaciendaViaFides(captor.capture());
+        assertThat(captor.getValue().items.get(0).discount).isEqualTo("200.00");
+    }
+
+    @Test
+    @DisplayName("Sin descuentos no se envia discount")
+    void sinDescuentosNoEnviaDiscount() {
+        when(appSettingsService.returnCurrent()).thenReturn(ajustes(true));
+        when(fidesApiService.submitToHaciendaViaFides(any()))
+                .thenReturn(FidesApiService.FidesResponse.ok(200, "{\"estado\":\"ACEPTADO\"}"));
+
+        facade.submitDocument(comprobanteCompleto());
+
+        ArgumentCaptor<FidesApiService.InvoiceData> captor =
+                ArgumentCaptor.forClass(FidesApiService.InvoiceData.class);
+        verify(fidesApiService).submitToHaciendaViaFides(captor.capture());
+        assertThat(captor.getValue().items.get(0).discount).isNull();
+    }
 }
