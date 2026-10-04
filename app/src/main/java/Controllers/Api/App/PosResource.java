@@ -173,6 +173,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
     @Nonnull
     @Inject
     DirectoryService dirService;
+    @Nonnull
+    @Inject
+    Services.FacturaArchivoService facturaArchivoService;
 
     // ── T37 template-phase additions ────────────────────────────────────
 
@@ -1023,6 +1026,9 @@ ComprobantesEmitidosService comprobantesEmitidosService;
      * Streams a previously generated tiquete PDF as application/octet-stream.
      * File names must match {@code tiqueteElectronico_<id>.pdf} (regex guard
      * against path traversal); missing files yield a 404 envelope.
+     *
+     * <p>Transparente al archivo mensual: si el suelto ya se movió a
+     * {@code facturas-YYYY-MM.zip}, se sirve desde el ZIP.</p>
      */
     @GET
     @Path("/facturas/{fileName:.+}")
@@ -1040,13 +1046,28 @@ ComprobantesEmitidosService comprobantesEmitidosService;
                     .build();
         }
         File pdfFile = new File(dirService.getFacturasDirPath(), fileName);
-        if (!pdfFile.isFile()) {
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(ApiResponse.error("ARCHIVO_NO_ENCONTRADO",
-                            "No existe el PDF solicitado"))
-                    .build();
+        final byte[] bytes;
+        if (pdfFile.isFile()) {
+            try {
+                bytes = Files.readAllBytes(pdfFile.toPath());
+            } catch (java.io.IOException e) {
+                LOG.warn("no se pudo leer PDF " + fileName + " | source=PosResource.facturaPdf()");
+                return Response.serverError()
+                        .entity(ApiResponse.error("LECTURA_FALLIDA",
+                                "No se pudo leer el PDF solicitado"))
+                        .build();
+            }
+        } else {
+            byte[] desdeZip = facturaArchivoService.leerFactura(fileName);
+            if (desdeZip == null) {
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(ApiResponse.error("ARCHIVO_NO_ENCONTRADO",
+                                "No existe el PDF solicitado"))
+                        .build();
+            }
+            bytes = desdeZip;
         }
-        StreamingOutput stream = (OutputStream out) -> Files.copy(pdfFile.toPath(), out);
+        StreamingOutput stream = (OutputStream out) -> out.write(bytes);
         return Response.ok(stream, MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=\"" + fileName + "\"")
                 .build();

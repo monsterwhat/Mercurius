@@ -13,6 +13,7 @@ import Services.ComprobantesEmitidosService;
 import Services.ComprobantesRecibidosService;
 import Services.DepartamentoService;
 import Services.EmailService;
+import Services.FacturaArchivoService;
 import Services.HaciendaApiService;
 import Services.InventarioService;
 import Services.LoteService;
@@ -69,6 +70,11 @@ public class ProgramadorTareas {
     @Inject @Nonnull private LoyaltyService loyaltyService;
     @Inject @Nonnull private StockAlertService stockAlertService;
     @Inject @Nonnull private MensajeReceptorService mensajeReceptorService;
+    @Inject @Nonnull private FacturaArchivoService facturaArchivoService;
+
+    @org.eclipse.microprofile.config.inject.ConfigProperty(
+            name = "mercurius.facturas.archivo.dias", defaultValue = "90")
+    int facturasArchivoDias;
 
     //Media noche
     @Scheduled(cron = "0 0 0 * * ?")
@@ -156,8 +162,24 @@ public class ProgramadorTareas {
         Files.deleteIfExists(archivo);
     }
 
-    private void avisarVencimientoLogs(List<String> dias30, List<String> dias7, List<String> dias1) {
+    //Archivo mensual de facturas: PDFs/XMLs del directorio facturas/ con más
+    //de mercurius.facturas.archivo.dias (defecto 90) se mueven a
+    //facturas-YYYY-MM.zip. La lectura (descarga, correo) es transparente
+    //via FacturaArchivoService.leerFactura.
+    @Scheduled(cron = "0 0 2 1 * ?")
+    public void archivarFacturasAntiguas() {
         try {
+            FacturaArchivoService.Stats stats = facturaArchivoService.archivarAntiguas(facturasArchivoDias);
+            LOG.info("archivo mensual de facturas: " + stats.archivados + " archivados, "
+                    + stats.omitidos + " omitidos (" + stats.bytesOriginal + " -> "
+                    + stats.bytesZip + " bytes)"
+                    + " | source=ProgramadorTareas.archivarFacturasAntiguas()");
+        } catch (RuntimeException e) {
+            LOG.warn("fallo el archivo mensual de facturas", e);
+        }
+    }
+
+    private void avisarVencimientoLogs(List<String> dias30, List<String> dias7, List<String> dias1) {        try {
             StringBuilder cuerpo = new StringBuilder("Archivos de log próximos a eliminarse (retención 4 años):\n\n");
             if (!dias30.isEmpty()) {
                 cuerpo.append("Vencen en 30 días:\n");
