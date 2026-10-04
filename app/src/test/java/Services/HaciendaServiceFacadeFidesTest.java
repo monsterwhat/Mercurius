@@ -217,6 +217,21 @@ class HaciendaServiceFacadeFidesTest {
     }
 
     @Test
+    @DisplayName("Sin identificación del emisor no se llama a Fides (falla local con causa)")
+    void sinEmisorNoTocaFides() {
+        ConfiguracionAplicacion s = ajustes(true);
+        s.setIdentificacion(null);
+        when(appSettingsService.returnCurrent()).thenReturn(s);
+
+        HaciendaServiceFacade.SubmitResult r = facade.submitDocument(comprobanteCompleto());
+
+        assertThat(r.success).isFalse();
+        assertThat(r.estado).isEqualTo("ERROR");
+        assertThat(r.errorMessage).contains("emisor");
+        verifyNoInteractions(fidesApiService);
+    }
+
+    @Test
     @DisplayName("Clave radicada igual a la enviada se acepta")
     void claveCoincidenteEsAceptado() {
         when(appSettingsService.returnCurrent()).thenReturn(ajustes(true));
