@@ -126,6 +126,8 @@ public class FidesApiService {
             public String quantity;
             public String unitPrice;
             public String taxRate;
+            /** Line discount amount (same currency). Absent = no discount. */
+            public String discount;
         }
     }
 
@@ -332,6 +334,9 @@ public class FidesApiService {
                     itemNode.put("unit_price", item.unitPrice != null ? item.unitPrice : "0");
                     if (item.taxRate != null && !item.taxRate.isEmpty()) {
                         itemNode.put("tax_rate", item.taxRate);
+                    }
+                    if (item.discount != null && !item.discount.isEmpty()) {
+                        itemNode.put("discount", item.discount);
                     }
                     items.add(itemNode);
                 }

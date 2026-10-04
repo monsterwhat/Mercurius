@@ -269,10 +269,21 @@ public class HaciendaServiceFacade {
                 item.unitPrice = linea.getPrecioUnitario() != null
                         ? linea.getPrecioUnitario().toPlainString() : "0";
                 if (linea.getImpuestos() != null && !linea.getImpuestos().isEmpty()) {
-                    item.taxRate = linea.getImpuestos().get(0).getTarifa() != null
+                item.taxRate = linea.getImpuestos().get(0).getTarifa() != null
                             ? linea.getImpuestos().get(0).getTarifa().toPlainString() : null;
-                }
-                data.items.add(item);
+                    }
+                    if (linea.getDescuentos() != null && !linea.getDescuentos().isEmpty()) {
+                        java.math.BigDecimal totalDesc = java.math.BigDecimal.ZERO;
+                        for (Models.Detalles.Descuento d : linea.getDescuentos()) {
+                            if (d != null && d.getMontoDescuento() != null) {
+                                totalDesc = totalDesc.add(d.getMontoDescuento());
+                            }
+                        }
+                        if (totalDesc.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                            item.discount = totalDesc.toPlainString();
+                        }
+                    }
+                    data.items.add(item);
             }
         }
 
