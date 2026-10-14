@@ -347,6 +347,78 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
 
+    public @Nonnull Long countFacturasAceptadas() {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
+                            "LEFT JOIN f.encabezado e " +
+                            "WHERE f.status = true " +
+                            "AND e.estado = 'ACEPTADO'",
+                    Long.class);
+            return query.getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting facturas aceptadas: " + e.getMessage() + " | source=ComprobantesEmitidosService.countFacturasAceptadas() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    public @Nonnull Long countFacturasRechazadas() {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
+                            "LEFT JOIN f.encabezado e " +
+                            "WHERE f.status = true " +
+                            "AND e.estado = 'RECHAZADO'",
+                    Long.class);
+            return query.getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting facturas rechazadas: " + e.getMessage() + " | source=ComprobantesEmitidosService.countFacturasRechazadas() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    // --- Hacienda-dashboard counters (by haciendaEstado, not encabezado estado) ---
+    public @Nonnull Long countHaciendaAceptadas() {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
+                            "WHERE UPPER(f.haciendaEstado) = 'ACEPTADO'",
+                    Long.class);
+            return query.getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting hacienda aceptadas: " + e.getMessage() + " | source=ComprobantesEmitidosService.countHaciendaAceptadas() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    public @Nonnull Long countHaciendaRechazadas() {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
+                            "WHERE UPPER(f.haciendaEstado) = 'RECHAZADO'",
+                    Long.class);
+            return query.getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting hacienda rechazadas: " + e.getMessage() + " | source=ComprobantesEmitidosService.countHaciendaRechazadas() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    public @Nonnull Long countHaciendaPendientes() {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
+                            "WHERE f.haciendaEstado IS NULL " +
+                            "OR f.haciendaEstado = '' " +
+                            "OR UPPER(f.haciendaEstado) = 'PENDIENTE'",
+                    Long.class);
+            return query.getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting hacienda pendientes: " + e.getMessage() + " | source=ComprobantesEmitidosService.countHaciendaPendientes() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
     public @Nullable List<ComprobantesEmitidos> findByClave(@Nonnull String clave) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
@@ -422,6 +494,84 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         } catch (PersistenceException e) {
             LOG.warn("Error finding facturas sin respuesta 3h: " + e.getMessage() + " | source=ComprobantesEmitidosService.findFacturasSinRespuesta3Horas() | despues=" + e.getMessage());
             return null;
+        }
+    }
+
+    // --- Reporte "Facturas Emitidas": DB-side filtering, sorting and paging ---
+    private static String facturasReporteWhere(@Nullable String q) {
+        String needle = q == null ? "" : q.trim().toLowerCase(java.util.Locale.ROOT);
+        if (needle.isEmpty()) {
+            return "";
+        }
+        return " WHERE (" +
+                "LOWER(COALESCE(e.numeroConsecutivo, '')) LIKE :needle OR " +
+                "LOWER(COALESCE(e.condicionVenta, '')) LIKE :needle OR " +
+                "LOWER(COALESCE(f.user, '')) LIKE :needle OR " +
+                "LOWER(COALESCE(f.haciendaEstado, '')) LIKE :needle OR " +
+                "LOWER(COALESCE(em.nombre, '')) LIKE :needle OR " +
+                "LOWER(COALESCE(FUNCTION('to_char', e.fechaEmision, 'YYYY-MM-DD HH24:MI:SS'), '')) LIKE :needle" +
+                ")";
+    }
+
+    private static void bindFacturasReporteNeedle(@Nonnull TypedQuery<?> query, @Nullable String q) {
+        String needle = q == null ? "" : q.trim().toLowerCase(java.util.Locale.ROOT);
+        if (!needle.isEmpty()) {
+            query.setParameter("needle", "%" + needle + "%");
+        }
+    }
+
+    private static String facturasReporteOrder(@Nullable String sort, @Nullable String dir) {
+        String column = switch (sort == null ? "" : sort) {
+            case "consecutivo" -> "e.numeroConsecutivo";
+            case "fecha" -> "e.fechaEmision";
+            case "emisor" -> "f.user";
+            case "condicion" -> "e.condicionVenta";
+            case "estado" -> "f.haciendaEstado";
+            case "total" -> "r.totalComprobante";
+            default -> null;
+        };
+        if (column == null) {
+            return "";
+        }
+        boolean desc = "desc".equalsIgnoreCase(dir);
+        return " ORDER BY " + column + (desc ? " DESC" : " ASC") + " NULLS FIRST";
+    }
+
+    public @Nonnull Long countFacturasReporte(@Nullable String q) {
+        try {
+            TypedQuery<Long> query = em.createQuery(
+                    "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
+                            "LEFT JOIN f.encabezado e " +
+                            "LEFT JOIN e.emisor em " +
+                            facturasReporteWhere(q),
+                    Long.class);
+            bindFacturasReporteNeedle(query, q);
+            Long result = query.getSingleResult();
+            return result != null ? result : 0L;
+        } catch (PersistenceException e) {
+            LOG.warn("Error counting facturas reporte: " + e.getMessage() + " | source=ComprobantesEmitidosService.countFacturasReporte() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    public @Nullable List<ComprobantesEmitidos> listFacturasReportePage(
+            @Nullable String sort, @Nullable String dir, @Nullable String q, int offset, int pageSize) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                    "SELECT DISTINCT f FROM ComprobantesEmitidos f " +
+                            "LEFT JOIN FETCH f.resumen r " +
+                            "LEFT JOIN FETCH f.encabezado e " +
+                            "LEFT JOIN FETCH e.emisor em " +
+                            facturasReporteWhere(q) +
+                            facturasReporteOrder(sort, dir),
+                    ComprobantesEmitidos.class);
+            bindFacturasReporteNeedle(query, q);
+            query.setFirstResult(Math.max(offset, 0));
+            query.setMaxResults(Math.max(pageSize, 1));
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listing facturas reporte page: " + e.getMessage() + " | source=ComprobantesEmitidosService.listFacturasReportePage() | despues=" + e.getMessage());
+            return java.util.Collections.emptyList();
         }
     }
 

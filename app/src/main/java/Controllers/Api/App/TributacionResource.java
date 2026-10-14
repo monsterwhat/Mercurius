@@ -203,12 +203,14 @@ public class TributacionResource {
     })
     public Response dashboard() {
         try {
-            List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAll());
-            return Response.ok(ApiResponse.ok(new HaciendaDashboardDTO(
-                    countEstado(todos, "ACEPTADO"),
-                    countEstado(todos, "RECHAZADO"),
-                    countPendientes(todos),
-                    new Date()))).build();
+            // Counts only, no entity hydration — avoid loading the full
+            // 8-years invoice graph for a dashboard that only needs 3 numbers.
+            HaciendaDashboardDTO dto = new HaciendaDashboardDTO(
+                    (int) (long) emitidosService.countHaciendaAceptadas(),
+                    (int) (long) emitidosService.countHaciendaRechazadas(),
+                    (int) (long) emitidosService.countHaciendaPendientes(),
+                    new Date());
+            return Response.ok(ApiResponse.ok(dto)).build();
         } catch (RuntimeException e) {
             LOG.warn("Error calculando el dashboard de Hacienda", e);
             return Response.serverError()
@@ -654,14 +656,13 @@ public class TributacionResource {
                 ? "Próximo envío: " + nextScheduledTime
                 : "No hay envíos programados";
 
-        List<ComprobantesEmitidos> pendientes = orEmpty(emitidosService.findFacturasPendientes());
-        List<ComprobantesEmitidos> aceptadas = orEmpty(emitidosService.findFacturasAceptadas());
-        List<ComprobantesEmitidos> rechazadas = orEmpty(emitidosService.findFacturasRechazadas());
-        long mensajes = orEmpty(recibidosService.listAll()).size();
+        long pendientes = emitidosService.countFacturasPendientes();
+        long aceptadas = emitidosService.countFacturasAceptadas();
+        long rechazadas = emitidosService.countFacturasRechazadas();
+        long mensajes = recibidosService.count();
 
         return new CountdownDTO(proximo != null, proximoDisplay, display,
-                (long) pendientes.size(), (long) aceptadas.size(), (long) rechazadas.size(),
-                mensajes);
+                pendientes, aceptadas, rechazadas, mensajes);
     }
 
     /**

@@ -12,9 +12,11 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import jakarta.xml.bind.annotation.XmlAccessType;
 import jakarta.xml.bind.annotation.XmlAccessorType;
 import jakarta.xml.bind.annotation.XmlElement;
@@ -27,6 +29,11 @@ import lombok.ToString;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlRootElement(name = "ComprobantesEmitidos")
 @Entity
+@Table(indexes = {
+        @Index(name = "idx_ce_usuario", columnList = "usuario"),
+        @Index(name = "idx_ce_hacienda_estado", columnList = "haciendaEstado"),
+        @Index(name = "idx_ce_status", columnList = "status")
+})
 @Data
 public class ComprobantesEmitidos {
     
