@@ -67,16 +67,20 @@ public class FacturasReportesResource {
             @QueryParam("dir") @DefaultValue("asc") @Nullable String dir,
             @QueryParam("q") @Nullable String q) {
 
-        List<ComprobantesEmitidos> rows = filterAndSort(orEmpty(comprobantesService.listAll()), sort, dir, q);
-
         int current = ReportePageSupport.clampPage(page);
         int pageSize = ReportePageSupport.clampSize(size);
-        long total = rows.size();
+
+        // Push filtering, sorting and paging into the database: only the visible
+        // page (<= 500 rows) is hydrated instead of the full 8-year invoice graph.
+        long total = comprobantesService.countFacturasReporte(q);
         int totalPages = ReportePageSupport.totalPages(total, pageSize);
+        int offset = (current - 1) * pageSize;
+        List<ComprobantesEmitidos> rows =
+                orEmpty(comprobantesService.listFacturasReportePage(sort, dir, q, offset, pageSize));
 
         Map<String, Object> model = ReportePageSupport.model(
                 "columnas", columnas(),
-                "rows", ReportePageSupport.pageOf(rows, current, pageSize),
+                "rows", rows,
                 "total", total,
                 "totalPages", totalPages,
                 "pages", ReportePageSupport.pageWindow(current, totalPages),

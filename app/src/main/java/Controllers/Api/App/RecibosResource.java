@@ -170,6 +170,15 @@ public class RecibosResource {
     // Bucket predicates (package-visible: shared with RecibosPagesResource)
     // ════════════════════════════════════════════════════════════════════
 
+    /**
+     * Loads the full emitted-invoice list once. Exposed so callers (the Recibos
+     * HTML page) can compute all buckets/stats from a single fetch instead of
+     * re-querying per bucket.
+     */
+    public @Nonnull List<ComprobantesEmitidos> emitidosTodos() {
+        return orEmpty(comprobantesEmitidosService.listAll());
+    }
+
     /** Pagadas: settled terminal state (legacy {@code paid==true} analog). */
     static boolean esPagada(@Nullable ComprobantesEmitidos f) {
         Encabezado enc = f == null ? null : f.getEncabezado();
@@ -224,12 +233,16 @@ public class RecibosResource {
      * bean instead of pushing predicates into the service).
      */
     private @Nonnull List<ComprobantesEmitidos> filasDelBucket(@Nonnull String bucket) {
-        List<ComprobantesEmitidos> todas = orEmpty(comprobantesEmitidosService.listAll());
+        return filasDelBucket(bucket, orEmpty(comprobantesEmitidosService.listAll()));
+    }
+
+    private @Nonnull List<ComprobantesEmitidos> filasDelBucket(@Nonnull String bucket,
+                                                               @Nonnull List<ComprobantesEmitidos> todas) {
         return switch (bucket) {
             case BUCKET_PAGADAS -> todas.stream().filter(RecibosResource::esPagada).toList();
             case BUCKET_PROCESADAS -> todas.stream().filter(RecibosResource::esProcesada).toList();
             case BUCKET_VENCIDOS -> todas.stream().filter(RecibosResource::esVencida).toList();
-            default -> todas;
+            default -> new ArrayList<>(todas);
         };
     }
 
@@ -556,7 +569,16 @@ public class RecibosResource {
     public @Nonnull Map<String, Object> tablaModel(@Nonnull String bucket, int page, int size,
                                                    @Nullable String sort, @Nullable String dir,
                                                    @Nullable String q) {
-        List<ComprobantesEmitidos> filas = ordenar(filtrar(filasDelBucket(bucket), q), sort, dir);
+        return tablaModel(bucket, page, size, sort, dir, q, null);
+    }
+
+    /** Like {@link #tablaModel(String, int, int, String, String, String)} but reuses an already-loaded emitidos list (avoids re-querying). */
+    public @Nonnull Map<String, Object> tablaModel(@Nonnull String bucket, int page, int size,
+                                                   @Nullable String sort, @Nullable String dir,
+                                                   @Nullable String q,
+                                                   @Nullable List<ComprobantesEmitidos> todasOrNull) {
+        List<ComprobantesEmitidos> todas = todasOrNull == null ? orEmpty(comprobantesEmitidosService.listAll()) : todasOrNull;
+        List<ComprobantesEmitidos> filas = ordenar(filtrar(filasDelBucket(bucket, todas), q), sort, dir);
         long total = filas.size();
         int pagina = Math.max(page, 1);
         int medida = clampSize(size);
@@ -595,7 +617,13 @@ public class RecibosResource {
 
     /** Stats header view (server-computed bucket counts). */
     public @Nonnull StatsView statsView() {
-        List<ComprobantesEmitidos> todas = orEmpty(comprobantesEmitidosService.listAll());
+        return statsView(orEmpty(comprobantesEmitidosService.listAll()));
+    }
+
+    /** Like {@link #statsView()} but reuses an already-loaded emitidos list (avoids re-querying). */
+    public @Nonnull StatsView statsView(@Nullable List<ComprobantesEmitidos> todasOrNull) {
+        List<ComprobantesEmitidos> todas = todasOrNull == null
+                ? orEmpty(comprobantesEmitidosService.listAll()) : todasOrNull;
         long pagadas = todas.stream().filter(RecibosResource::esPagada).count();
         long procesadas = todas.stream().filter(RecibosResource::esProcesada).count();
         long vencidos = todas.stream().filter(RecibosResource::esVencida).count();
@@ -605,12 +633,14 @@ public class RecibosResource {
     /** Fresh tablero instance (stats + four tables [+ OOB toast keys]). */
     public @Nonnull TemplateInstance tableroInstance(@Nullable String toastSeverity,
                                                     @Nullable String toastMessage) {
+        // Load the emitted-invoice list ONCE for all four buckets + stats.
+        List<ComprobantesEmitidos> todos = orEmpty(comprobantesEmitidosService.listAll());
         Map<String, Object> modelos = new LinkedHashMap<>();
         for (String bucket : List.of(BUCKET_TODAS, BUCKET_PAGADAS, BUCKET_PROCESADAS, BUCKET_VENCIDOS)) {
-            modelos.put(bucket, tablaModel(bucket, 1, clampSize(null), null, "asc", null));
+            modelos.put(bucket, tablaModel(bucket, 1, clampSize(null), null, "asc", null, todos));
         }
         TemplateInstance instance = tablero.instance()
-                .data("stats", statsView())
+                .data("stats", statsView(todos))
                 .data("modelos", modelos);
         if (toastSeverity != null && toastMessage != null) {
             instance.data("toastSeverity", toastSeverity).data("toastMessage", toastMessage);

@@ -21,6 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import Models.ComprobantesEmitidos;
+
 import org.jboss.logging.Logger;
 
 /**
@@ -71,13 +73,15 @@ public class RecibosPagesResource {
         try {
             String cubeta = bucket == null || bucket.isBlank()
                     ? RecibosResource.BUCKET_TODAS : bucket;
+            // Load emitted invoices ONCE for the whole page (stats + every bucket).
+            List<ComprobantesEmitidos> todos = recibos.emitidosTodos();
             Map<String, Object> modelos = new LinkedHashMap<>();
             for (String b : List.of(RecibosResource.BUCKET_TODAS, RecibosResource.BUCKET_PAGADAS,
                     RecibosResource.BUCKET_PROCESADAS, RecibosResource.BUCKET_VENCIDOS)) {
                 if (b.equals(cubeta)) {
-                    modelos.put(b, recibos.tablaModel(b, page, size, sort, dir, q));
+                    modelos.put(b, recibos.tablaModel(b, page, size, sort, dir, q, todos));
                 } else {
-                    modelos.put(b, recibos.tablaModel(b, 1, 20, null, "asc", null));
+                    modelos.put(b, recibos.tablaModel(b, 1, 20, null, "asc", null, todos));
                 }
             }
             TemplateInstance instance;
@@ -85,7 +89,7 @@ public class RecibosPagesResource {
                 instance = recibos.tableroInstance(null, null);
             } else {
                 instance = pageIndex.instance()
-                        .data("stats", recibos.statsView())
+                        .data("stats", recibos.statsView(todos))
                         .data("modelos", modelos)
                         .data("bucket", cubeta)
                         .data("q", q);

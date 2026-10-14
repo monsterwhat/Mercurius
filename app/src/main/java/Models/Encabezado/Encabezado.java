@@ -7,6 +7,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.ManyToOne;
@@ -30,7 +31,11 @@ import lombok.ToString;
 @XmlRootElement(name = "Encabezado")
 @Data
 @Entity
-@Table(name = "encabezado")
+@Table(name = "encabezado", indexes = {
+        @Index(name = "idx_encabezado_fecha_emision", columnList = "fecha_emision"),
+        @Index(name = "idx_encabezado_estado", columnList = "estado"),
+        @Index(name = "idx_encabezado_numero_consecutivo", columnList = "numero_consecutivo")
+})
 public class Encabezado {
 
     @Id
