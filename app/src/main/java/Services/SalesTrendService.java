@@ -437,6 +437,190 @@ public class SalesTrendService {
         );
     }
 
+    @Transactional(value = Transactional.TxType.SUPPORTS)
+    public @Nonnull SameDateHistory getSameDateSalesHistory(int month, int day, int yearsBack,
+                                                          @Nullable String dimension,
+                                                          @Nullable List<String> selectedItems) {
+        String resolvedDimension = (dimension == null || dimension.isBlank()) ? "productos" : dimension.trim().toLowerCase(Locale.ROOT);
+        if (month < 1 || month > 12 || day < 1 || day > 31) {
+            throw new IllegalArgumentException("Mes o dia invalido");
+        }
+        if (yearsBack < 1 || yearsBack > 50) {
+            throw new IllegalArgumentException("yearsBack debe estar entre 1 y 50");
+        }
+        // Validate that the month/day exists on at least a non-leap year key.
+        LocalDate.of(2000, month, day);
+
+        int currentYear = LocalDate.now().getYear();
+        int startYear = currentYear - yearsBack + 1;
+        int endYear = currentYear;
+
+        List<Integer> years = new ArrayList<>();
+        for (int year = startYear; year <= endYear; year++) {
+            years.add(year);
+        }
+
+        Map<Integer, BigDecimal> totalsByYear = new LinkedHashMap<>();
+        Map<Integer, Integer> transactionsByYear = new LinkedHashMap<>();
+        for (int year : years) {
+            totalsByYear.put(year, BigDecimal.ZERO);
+            transactionsByYear.put(year, 0);
+        }
+
+        for (int year : years) {
+            LocalDateTime start = LocalDate.of(year, month, day).atStartOfDay();
+            LocalDateTime end = LocalDate.of(year, month, day).atTime(23, 59, 59);
+            Object[] row = entityManager.createQuery(
+                "SELECT COALESCE(SUM(r.totalComprobante), 0), COUNT(f) " +
+                "FROM ComprobantesEmitidos f " +
+                "JOIN f.encabezado e " +
+                "JOIN f.resumen r " +
+                "WHERE f.status = true " +
+                "AND e.fechaEmision BETWEEN :start AND :end",
+                Object[].class
+            )
+            .setParameter("start", start)
+            .setParameter("end", end)
+            .getSingleResult();
+            BigDecimal total = row != null && row[0] != null ? (BigDecimal) row[0] : BigDecimal.ZERO;
+            int transactions = row != null && row[1] != null ? ((Number) row[1]).intValue() : 0;
+            totalsByYear.put(year, total);
+            transactionsByYear.put(year, transactions);
+        }
+
+        List<String> selectedKeys = new ArrayList<>();
+        if (selectedItems != null) {
+            for (String raw : selectedItems) {
+                if (raw == null) continue;
+                String name = raw.trim();
+                if (!name.isEmpty() && !selectedKeys.contains(name)) selectedKeys.add(name);
+            }
+        }
+        boolean hasSelection = !selectedKeys.isEmpty();
+        Set<String> selectedKeySet = new LinkedHashSet<>();
+        for (String key : selectedKeys) selectedKeySet.add(normalizeProductName(key));
+
+        String joinClause = "";
+        String groupExpression = "ld.detalle";
+        if ("familias".equals(resolvedDimension)) {
+            joinClause = "LEFT JOIN Articulos a ON a.nombre = ld.detalle";
+            groupExpression = "COALESCE(a.familia.nombre, 'Sin familia')";
+        } else if ("departamentos".equals(resolvedDimension)) {
+            joinClause = "LEFT JOIN Articulos a ON a.nombre = ld.detalle";
+            groupExpression = "COALESCE(a.departamento.nombre, 'Sin departamento')";
+        } else {
+            resolvedDimension = "productos";
+        }
+
+        Map<String, Map<Integer, BigDecimal>> groupedByYear = new LinkedHashMap<>();
+        Map<String, BigDecimal> groupTotals = new LinkedHashMap<>();
+        if (hasSelection) {
+            for (String key : selectedKeys) {
+                Map<Integer, BigDecimal> zeros = new LinkedHashMap<>();
+                for (int y : years) zeros.put(y, BigDecimal.ZERO);
+                groupedByYear.put(key, zeros);
+            }
+        }
+
+        for (int year : years) {
+            LocalDateTime start = LocalDate.of(year, month, day).atStartOfDay();
+            LocalDateTime end = LocalDate.of(year, month, day).atTime(23, 59, 59);
+            @SuppressWarnings("unchecked")
+            List<Object[]> rows = entityManager.createQuery(
+                "SELECT " + groupExpression + ", COALESCE(SUM(ld.montoTotalLinea), 0) " +
+                "FROM ComprobantesEmitidos f " +
+                "JOIN f.detalles d " +
+                "JOIN d.lineasDetalle ld " +
+                "JOIN f.encabezado e " +
+                joinClause + " " +
+                "WHERE f.status = true " +
+                "AND e.fechaEmision BETWEEN :start AND :end " +
+                "GROUP BY " + groupExpression
+            )
+            .setParameter("start", start)
+            .setParameter("end", end)
+            .getResultList();
+
+            for (Object[] row : rows) {
+                String key = row[0] != null ? String.valueOf(row[0]) : "Sin detalle";
+                BigDecimal amount = row[1] != null ? (BigDecimal) row[1] : BigDecimal.ZERO;
+                if (hasSelection && !selectedKeySet.contains(normalizeProductName(key))) {
+                    continue;
+                }
+                if (!hasSelection) {
+                    groupedByYear.computeIfAbsent(key, k -> {
+                        Map<Integer, BigDecimal> m = new LinkedHashMap<>();
+                        for (int y : years) m.put(y, BigDecimal.ZERO);
+                        return m;
+                    });
+                } else if (!groupedByYear.containsKey(key)) {
+                    groupedByYear.computeIfAbsent(key, k -> {
+                        Map<Integer, BigDecimal> m = new LinkedHashMap<>();
+                        for (int y : years) m.put(y, BigDecimal.ZERO);
+                        return m;
+                    });
+                }
+                if (groupedByYear.containsKey(key)) {
+                    groupedByYear.get(key).put(year, amount);
+                }
+                if (!hasSelection) {
+                    groupTotals.merge(key, amount, BigDecimal::add);
+                }
+            }
+        }
+
+        List<String> groupsToChart = new ArrayList<>();
+        if (hasSelection) {
+            for (String key : selectedKeys) {
+                String match = findMatchingProduct(groupedByYear.keySet(), key);
+                if (match != null && !containsName(groupsToChart, match)) groupsToChart.add(match);
+            }
+            for (String key : groupedByYear.keySet()) {
+                if (!containsName(groupsToChart, key) && selectedKeySet.contains(normalizeProductName(key))) {
+                    groupsToChart.add(key);
+                }
+            }
+            if (groupsToChart.isEmpty()) {
+                groupsToChart.addAll(selectedKeys);
+                for (String key : selectedKeys) {
+                    groupedByYear.computeIfAbsent(key, k -> {
+                        Map<Integer, BigDecimal> m = new LinkedHashMap<>();
+                        for (int y : years) m.put(y, BigDecimal.ZERO);
+                        return m;
+                    });
+                }
+            }
+        } else {
+            groupsToChart = groupTotals.entrySet().stream()
+                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
+                .limit(8)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+        }
+
+        List<ProductYearSeries> productSeries = new ArrayList<>();
+        for (String group : groupsToChart) {
+            Map<Integer, BigDecimal> yearly = groupedByYear.computeIfAbsent(group, k -> {
+                Map<Integer, BigDecimal> m = new LinkedHashMap<>();
+                for (int y : years) m.put(y, BigDecimal.ZERO);
+                return m;
+            });
+            List<BigDecimal> values = new ArrayList<>();
+            for (int year : years) {
+                values.add(yearly.getOrDefault(year, BigDecimal.ZERO));
+            }
+            productSeries.add(new ProductYearSeries(group, values));
+        }
+        List<BigDecimal> totalsList = new ArrayList<>();
+        List<Integer> transactionsList = new ArrayList<>();
+        for (int year : years) {
+            totalsList.add(totalsByYear.getOrDefault(year, BigDecimal.ZERO));
+            transactionsList.add(transactionsByYear.getOrDefault(year, 0));
+        }
+
+        return new SameDateHistory(month, day, years, totalsList, transactionsList, productSeries);
+    }
+
     private LocalDateTime toLocalDateTime(Date date) {
         return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     }
@@ -626,6 +810,65 @@ public class SalesTrendService {
         public BigDecimal getDailyAverage() { return dailyAverage; }
         public BigDecimal getWeeklyAverage() { return weeklyAverage; }
         public BigDecimal getMonthlyAverage() { return monthlyAverage; }
+    }
+
+    public static class SameDateHistory {
+        private final int month;
+        private final int day;
+        private final List<Integer> years;
+        private final List<BigDecimal> totalSales;
+        private final List<Integer> transactionCounts;
+        private final List<ProductYearSeries> products;
+
+        public SameDateHistory(int month, int day, List<Integer> years, List<BigDecimal> totalSales,
+                               List<Integer> transactionCounts, List<ProductYearSeries> products) {
+            this.month = month;
+            this.day = day;
+            this.years = years;
+            this.totalSales = totalSales;
+            this.transactionCounts = transactionCounts;
+            this.products = products;
+        }
+
+        public int getMonth() { return month; }
+        public int getDay() { return day; }
+        public List<Integer> getYears() { return years; }
+        public List<BigDecimal> getTotalSales() { return totalSales; }
+        public List<Integer> getTransactionCounts() { return transactionCounts; }
+        public List<ProductYearSeries> getProducts() { return products; }
+    }
+
+    public static class ProductYearSeries {
+        private final String productName;
+        private final List<BigDecimal> yearlySales;
+
+        public ProductYearSeries(String productName, List<BigDecimal> yearlySales) {
+            this.productName = productName;
+            this.yearlySales = yearlySales;
+        }
+
+        public String getProductName() { return productName; }
+        public List<BigDecimal> getYearlySales() { return yearlySales; }
+    }
+
+    private static String normalizeProductName(String value) {
+        if (value == null) return "";
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean containsName(List<String> names, String candidate) {
+        for (String name : names) {
+            if (name != null && name.equals(candidate)) return true;
+        }
+        return false;
+    }
+
+    private static String findMatchingProduct(Set<String> available, String requested) {
+        if (available == null || requested == null) return null;
+        for (String name : available) {
+            if (normalizeProductName(name).equals(normalizeProductName(requested))) return name;
+        }
+        return null;
     }
 
     /**

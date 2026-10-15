@@ -159,6 +159,7 @@ public class TendenciasResource {
 
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Tendencias de Ventas");
+        model.put("periodoTexto", textoPeriodo(inicio, fin));
         model.put("baseUrl", BASE_URL);
         model.put("columnas", columnas(seccionIndicadores));
         model.put("filas", Tablas.paginaDe(filas, page, size));
@@ -179,8 +180,7 @@ public class TendenciasResource {
         model.put("ingresosTotales", metricas != null
                 ? Tablas.fmtColones(metricas.getTotalRevenue()) : "-");
         model.put("direccionTendencia", indicadores != null
-                && indicadores.getTrendDirection() != null
-                ? indicadores.getTrendDirection() : "-");
+                ? direccionTendenciaEs(indicadores.getTrendDirection()) : "-");
 
         boolean fragmento = headers.getHeaderString("HX-Request") != null;
         Template plantilla = fragmento ? tabla : pagina;
@@ -221,11 +221,39 @@ public class TendenciasResource {
     }
 
     @Nonnull
+    private static String textoPeriodo(@Nullable java.util.Date inicio, @Nullable java.util.Date fin) {
+        if (inicio == null || fin == null) {
+            return "Sin período";
+        }
+        long dias = Math.max(1L,
+                (fin.getTime() - inicio.getTime()) / 86_400_000L);
+        long mitad = Math.max(1L, dias / 2L);
+        return "Últimos " + dias + " días (" + Tablas.fmtFecha(inicio)
+                + " – " + Tablas.fmtFecha(fin)
+                + "): segundos " + mitad + " días vs primeros " + mitad + " días";
+    }
+
+    @Nonnull
+    private static String direccionTendenciaEs(@Nullable String direccion) {
+        if (direccion == null) {
+            return "-";
+        }
+        return switch (direccion) {
+            case "UP" -> "▲ Arriba";
+            case "DOWN" -> "▼ Abajo";
+            case "STABLE" -> "● Estable";
+            default -> direccion;
+        };
+    }
+
+    @Nonnull
     private static String porcentaje(@Nullable BigDecimal crecimiento) {
         if (crecimiento == null) {
             return "-";
         }
-        return crecimiento.multiply(BigDecimal.valueOf(100))
+        // SalesTrendService.calculateGrowthPercentage() already returns a
+        // percentage (x100): only format here, never scale again.
+        return crecimiento
                 .setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + "%";
     }
 
