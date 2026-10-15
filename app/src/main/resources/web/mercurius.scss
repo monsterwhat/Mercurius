@@ -561,32 +561,31 @@ button.metric-card:focus-visible,
 
 // ── Navbar en pantallas angostas ───────────────────────────────────────────
 // Bulma colapsa .navbar-menu a display:none por debajo de 1024px y solo lo
-// muestra cuando el burger anade la clase .is-active. Ese toggle lo activa un
-// manejador vanilla en fragments/navbar.html; si el burger no se pulsa (o el
-// manejador no llega a adjuntarse tras un re-render), la barra queda con el logo
-// y el burger pero SIN NINGUN BOTON, que es exactamente lo que se reporto.
-//
-// Decision: los items se muestran siempre en vez de depender del burger.
-// El burger sigue visible, pero deja de ser la unica via de acceso.
+// muestra cuando el burger anade la clase .is-active (manejador vanilla en
+// fragments/navbar.html). No forzar display:block aqui: eso dejaba el menu
+// permanentemente abierto en ventanas angostas (p. ej. media pantalla en
+// 1920x1080) y rompia el comportamiento del burger.
 @media screen and (max-width: 1023px) {
-  .navbar.is-black .navbar-menu {
-    display: block;
-  }
-
   .navbar.is-black .navbar-menu .navbar-item,
   .navbar.is-black .navbar-menu .navbar-link {
-    color: var(--bulma-black-invert-l, #fff);
+    color: var(--bulma-black-invert, #fff);
   }
 
   // Bulma keeps desktop dropdown panels absolutely positioned and hidden until
-  // hover/focus; touch screens cannot hover, so expand these entries inline.
+  // hover/focus; touch screens cannot hover, so these entries expand inline
+  // ONLY when their header is tapped (.is-open, toggled by the vanilla
+  // handler in fragments/navbar.html). Never display:block unconditionally:
+  // that splays every submenu open and makes the burger menu look broken.
   .navbar.is-black .navbar-item.has-dropdown .navbar-dropdown {
     background: transparent;
     box-shadow: none;
     border: 0;
-    display: block;
+    display: none;
     padding: 0 0 .5rem 1rem;
     position: static;
+  }
+  .navbar.is-black .navbar-item.has-dropdown.is-open .navbar-dropdown {
+    display: block;
   }
 
   .navbar.is-black .navbar-divider {

@@ -93,7 +93,11 @@
             var desde = lienzo.getAttribute('data-desde');
             var hasta = lienzo.getAttribute('data-hasta');
             if (desde && hasta) {
-                url = url + '?startDate=' + encodeURIComponent(desde) + '&endDate=' + encodeURIComponent(hasta);
+                var inicioMs = Date.parse(desde);
+                var finMs = Date.parse(hasta);
+                if (!isNaN(inicioMs) && !isNaN(finMs)) {
+                    url = url + '?startDate=' + inicioMs + '&endDate=' + finMs;
+                }
             }
             fetch(url, { credentials: 'same-origin' })
                 .then(function (respuesta) { return respuesta.json(); })
@@ -108,20 +112,32 @@
                 })
                 .catch(function () { /* sin datos: el canvas queda vacío */ });
 
+            function colorEsquema(nombre, alternativa) {
+                var v = '';
+                if (window.getComputedStyle) {
+                    v = getComputedStyle(document.documentElement).getPropertyValue(nombre);
+                }
+                v = v && v.trim() ? v.trim() : alternativa;
+                return v;
+            }
+
             function dibujarBarras(canvas, etiquetas, valores) {
                 var ctx = canvas.getContext('2d');
                 var ancho = canvas.width;
                 var alto = canvas.height;
+                var colorTexto = colorEsquema('--bulma-text', '#333');
+                var colorSuave = colorEsquema('--bulma-text-weak', '#777');
+                var colorEje = colorEsquema('--bulma-border', '#ccc');
                 ctx.clearRect(0, 0, ancho, alto);
                 if (valores.length === 0) {
-                    ctx.fillStyle = '#777';
+                    ctx.fillStyle = colorSuave;
                     ctx.fillText('Sin datos para el período seleccionado', 20, alto / 2);
                     return;
                 }
                 var maximo = Math.max.apply(null, valores);
                 var margen = 40;
                 var paso = (ancho - margen * 2) / valores.length;
-                ctx.strokeStyle = '#ccc';
+                ctx.strokeStyle = colorEje;
                 ctx.beginPath();
                 ctx.moveTo(margen, alto - margen);
                 ctx.lineTo(ancho - margen, alto - margen);
@@ -132,7 +148,7 @@
                     var y = alto - margen - alturaBarra;
                     ctx.fillStyle = '#48c78e';
                     ctx.fillRect(x, y, paso * 0.7, alturaBarra);
-                    ctx.fillStyle = '#333';
+                    ctx.fillStyle = colorTexto;
                     ctx.save();
                     ctx.translate(x + paso * 0.35, alto - margen + 12);
                     ctx.rotate(Math.PI / 4);

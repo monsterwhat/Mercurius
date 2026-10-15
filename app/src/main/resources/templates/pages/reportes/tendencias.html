@@ -13,8 +13,9 @@
     {#body}
         <div class="inventario-header">
             <p class="title is-3 has-text-centered">{titulo}</p>
+            <p class="subtitle is-6 has-text-centered" style="color: var(--bulma-text-strong);">{periodoTexto}</p>
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card" title="{periodoTexto}">
                     <span class="stat-number">{tasaCrecimiento}</span>
                     <span class="stat-label">Tasa de Crecimiento</span>
                 </div>
@@ -93,8 +94,18 @@
             var desde = lienzo.getAttribute('data-desde');
             var hasta = lienzo.getAttribute('data-hasta');
             if (desde && hasta) {
-                url = url + '?startDate=' + encodeURIComponent(desde) + '&endDate=' + encodeURIComponent(hasta);
+                var inicioMs = Date.parse(desde);
+                var finMs = Date.parse(hasta);
+                if (!isNaN(inicioMs) && !isNaN(finMs)) {
+                    url = url + '?startDate=' + inicioMs + '&endDate=' + finMs;
+                }
             }
+            var vista = { inicio: 0, fin: -1 };
+            var datosEtiquetas = [];
+            var datosValores = [];
+            var interaccionLista = false;
+            var cargandoMas = false;
+            var urlBase = lienzo.getAttribute('data-root') + '/api/sales-trend/daily';
             fetch(url, { credentials: 'same-origin' })
                 .then(function (respuesta) { return respuesta.json(); })
                 .then(function (datos) {
@@ -104,44 +115,361 @@
                         etiquetas.push(punto.date);
                         valores.push(Number(punto.totalSales));
                     });
+                    datosEtiquetas = etiquetas;
+                    datosValores = valores;
+                    vista.inicio = 0;
+                    vista.fin = valores.length - 1;
                     dibujarLinea(lienzo, etiquetas, valores);
+                    activarZoomPan(lienzo);
                 })
                 .catch(function () { /* sin datos: el canvas queda vacío */ });
+
+            function colorEsquema(nombre, alternativa) {
+                var v = '';
+                if (window.getComputedStyle) {
+                    v = getComputedStyle(document.documentElement).getPropertyValue(nombre);
+                }
+                v = v && v.trim() ? v.trim() : alternativa;
+                return v;
+            }
+
+            function activarZoomPan(canvas) {
+                if (interaccionLista) {
+                    return;
+                }
+                interaccionLista = true;
+                var arrastrando = false;
+                var ultimoX = 0;
+                var restoPuntos = 0;
+                function posRelativa(e) {
+                    var rect = canvas.getBoundingClientRect();
+                    var cx = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+                    return (cx - rect.left) * (canvas.width / rect.width);
+                }
+                canvas.style.cursor = 'grab';
+                canvas.style.touchAction = 'pan-y';
+                canvas.addEventListener('mousedown', function (e) {
+                    arrastrando = true;
+                    restoPuntos = 0;
+                    ultimoX = posRelativa(e);
+                    canvas.style.cursor = 'grabbing';
+                });
+                window.addEventListener('mouseup', function () {
+                    arrastrando = false;
+                    canvas.style.cursor = 'grab';
+                });
+                canvas.addEventListener('mousemove', function (e) {
+                    if (!arrastrando) {
+                        return;
+                    }
+                    var x = posRelativa(e);
+                    moverVista(x - ultimoX);
+                    ultimoX = x;
+                });
+                canvas.addEventListener('mouseleave', function () {
+                    arrastrando = false;
+                });
+                canvas.addEventListener('touchstart', function (e) {
+                    if (e.touches.length === 1) {
+                        arrastrando = true;
+                        restoPuntos = 0;
+                        ultimoX = posRelativa(e);
+                    }
+                }, { passive: true });
+                canvas.addEventListener('touchmove', function (e) {
+                    if (!arrastrando || e.touches.length !== 1) {
+                        return;
+                    }
+                    var x = posRelativa(e);
+                    moverVista(x - ultimoX);
+                    ultimoX = x;
+                }, { passive: true });
+                canvas.addEventListener('touchend', function () {
+                    arrastrando = false;
+                });
+                canvas.addEventListener('wheel', function (e) {
+                    e.preventDefault();
+                    aplicarZoom(e.deltaY > 0 ? 1.15 : 0.87);
+                }, { passive: false });
+                canvas.addEventListener('dblclick', function () {
+                    vista.inicio = 0;
+                    vista.fin = datosValores.length - 1;
+                    dibujarLinea(canvas, datosEtiquetas, datosValores);
+                });
+            }
+
+            function moverVista(deltaPx) {
+                var total = datosValores.length;
+                if (total < 2) {
+                    return;
+                }
+                var anchoTrazo = canvasAnchoTrazo();
+                if (anchoTrazo <= 0) {
+                    return;
+                }
+                var porPx = (vista.fin - vista.inicio + 1) / anchoTrazo;
+                restoPuntos += deltaPx * porPx;
+                var paso = Math.trunc(restoPuntos);
+                if (paso === 0) {
+                    return;
+                }
+                restoPuntos -= paso;
+                var largo = vista.fin - vista.inicio;
+                var nuevoInicio = vista.inicio - paso;
+                if (nuevoInicio < 0) {
+                    nuevoInicio = 0;
+                    extenderDatos('atras');
+                }
+                if (nuevoInicio + largo > total - 1) {
+                    nuevoInicio = total - 1 - largo;
+                    extenderDatos('adelante');
+                }
+                vista.inicio = nuevoInicio;
+                vista.fin = nuevoInicio + largo;
+                dibujarLinea(lienzo, datosEtiquetas, datosValores);
+            }
+
+            function extenderDatos(direccion) {
+                if (cargandoMas || datosEtiquetas.length === 0) {
+                    return;
+                }
+                var diaMs = 24 * 60 * 60 * 1000;
+                var esAtras = direccion === 'atras';
+                var primeraMs = Date.parse(datosEtiquetas[0]);
+                var ultimaMs = Date.parse(datosEtiquetas[datosEtiquetas.length - 1]);
+                if (isNaN(primeraMs) || isNaN(ultimaMs)) {
+                    return;
+                }
+                var hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                var urlExtra = null;
+                if (esAtras) {
+                    if (datosEtiquetas.length > 1800) {
+                        return;
+                    }
+                    urlExtra = urlBase + '?startDate=' + (primeraMs - 60 * diaMs) + '&endDate=' + primeraMs;
+                } else {
+                    if (ultimaMs >= hoy.getTime() || datosEtiquetas.length > 1800) {
+                        return;
+                    }
+                    var topeMs = ultimaMs + 60 * diaMs;
+                    if (topeMs > hoy.getTime()) {
+                        topeMs = hoy.getTime();
+                    }
+                    urlExtra = urlBase + '?startDate=' + ultimaMs + '&endDate=' + topeMs;
+                }
+                cargandoMas = true;
+                fetch(urlExtra, { credentials: 'same-origin' })
+                    .then(function (respuesta) { return respuesta.json(); })
+                    .then(function (datos) {
+                        var et = [];
+                        var va = [];
+                        datos.forEach(function (punto) {
+                            et.push(punto.date);
+                            va.push(Number(punto.totalSales));
+                        });
+                        if (et.length === 0) {
+                            return;
+                        }
+                        if (esAtras) {
+                            if (et[et.length - 1] === datosEtiquetas[0]) {
+                                et.pop();
+                                va.pop();
+                            }
+                            if (et.length === 0) {
+                                return;
+                            }
+                            datosEtiquetas = et.concat(datosEtiquetas);
+                            datosValores = va.concat(datosValores);
+                            vista.inicio += et.length;
+                            vista.fin += et.length;
+                        } else {
+                            if (et[0] === datosEtiquetas[datosEtiquetas.length - 1]) {
+                                et.shift();
+                                va.shift();
+                            }
+                            if (et.length === 0) {
+                                return;
+                            }
+                            datosEtiquetas = datosEtiquetas.concat(et);
+                            datosValores = datosValores.concat(va);
+                        }
+                        dibujarLinea(lienzo, datosEtiquetas, datosValores);
+                    })
+                    .catch(function () { /* sin datos extra: se queda el rango actual */ })
+                    .finally(function () {
+                        cargandoMas = false;
+                    });
+            }
+
+            function aplicarZoom(factor) {
+                var total = datosValores.length;
+                if (total < 2) {
+                    return;
+                }
+                var largo = vista.fin - vista.inicio + 1;
+                var nuevoLargo = Math.round(largo * factor);
+                if (nuevoLargo < 7) {
+                    nuevoLargo = 7;
+                }
+                if (nuevoLargo > total) {
+                    nuevoLargo = total;
+                }
+                if (nuevoLargo === largo) {
+                    return;
+                }
+                var centro = (vista.inicio + vista.fin) / 2;
+                var nuevoInicio = Math.round(centro - (nuevoLargo - 1) / 2);
+                if (nuevoInicio < 0) {
+                    nuevoInicio = 0;
+                }
+                if (nuevoInicio + nuevoLargo > total) {
+                    nuevoInicio = total - nuevoLargo;
+                }
+                vista.inicio = nuevoInicio;
+                vista.fin = nuevoInicio + nuevoLargo - 1;
+                dibujarLinea(lienzo, datosEtiquetas, datosValores);
+            }
+
+            function canvasAnchoTrazo() {
+                return lienzo.width - 64 - 40;
+            }
 
             function dibujarLinea(canvas, etiquetas, valores) {
                 var ctx = canvas.getContext('2d');
                 var ancho = canvas.width;
                 var alto = canvas.height;
+                var colorTexto = colorEsquema('--bulma-text', '#333');
+                var colorSuave = colorEsquema('--bulma-text-weak', '#777');
+                var colorEje = colorEsquema('--bulma-border', '#ccc');
                 ctx.clearRect(0, 0, ancho, alto);
                 if (valores.length === 0) {
-                    ctx.fillStyle = '#777';
+                    ctx.fillStyle = colorSuave;
                     ctx.fillText('Sin datos para el período seleccionado', 20, alto / 2);
                     return;
                 }
-                var maximo = Math.max.apply(null, valores);
+                var desde = Math.max(0, Math.min(vista.inicio, valores.length - 1));
+                var hasta = Math.max(desde, Math.min(vista.fin, valores.length - 1));
+                var visibles = valores.slice(desde, hasta + 1);
+                var maximo = Math.max.apply(null, visibles);
+                var margenIzq = 64;
                 var margen = 40;
-                var pasoX = valores.length > 1 ? (ancho - margen * 2) / (valores.length - 1) : 0;
-                ctx.strokeStyle = '#ccc';
-                ctx.beginPath();
-                ctx.moveTo(margen, alto - margen);
-                ctx.lineTo(ancho - margen, alto - margen);
-                ctx.stroke();
+                var totalVisibles = hasta - desde + 1;
+                var pasoX = totalVisibles > 1 ? (ancho - margenIzq - margen) / (totalVisibles - 1) : 0;
+                function fmtEje(v) {
+                    if (v >= 1000000) {
+                        return '₡' + (Math.round(v / 100000) / 10) + 'M';
+                    }
+                    if (v >= 1000) {
+                        return '₡' + Math.round(v / 1000) + 'k';
+                    }
+                    return '₡' + Math.round(v);
+                }
+                ctx.font = '11px system-ui, sans-serif';
+                ctx.strokeStyle = colorEje;
+                ctx.fillStyle = colorSuave;
+                ctx.lineWidth = 1;
+                var lineas = 4;
+                for (var g = 0; g <= lineas; g++) {
+                    var valorEje = maximo > 0 ? (maximo * g) / lineas : 0;
+                    var yEje = alto - margen - (maximo > 0 ? (g / lineas) * (alto - margen * 2) : 0);
+                    ctx.beginPath();
+                    ctx.moveTo(margenIzq, yEje);
+                    ctx.lineTo(ancho - margen, yEje);
+                    ctx.stroke();
+                    ctx.fillText(fmtEje(valorEje), 4, yEje + 4);
+                }
+                function posY(v) {
+                    return alto - margen - (maximo > 0 ? (v / maximo) * (alto - margen * 2) : 0);
+                }
                 ctx.strokeStyle = '#3e8ed0';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                for (var i = 0; i < valores.length; i++) {
-                    var x = margen + i * pasoX;
-                    var y = alto - margen - (maximo > 0 ? (valores[i] / maximo) * (alto - margen * 2) : 0);
-                    if (i === 0) {
+                for (var i = desde; i <= hasta; i++) {
+                    var x = margenIzq + (i - desde) * pasoX;
+                    var y = posY(valores[i]);
+                    if (i === desde) {
                         ctx.moveTo(x, y);
                     } else {
                         ctx.lineTo(x, y);
                     }
                 }
                 ctx.stroke();
-                ctx.fillStyle = '#333';
-                ctx.fillText(etiquetas[0], margen, alto - margen + 14);
-                ctx.fillText(etiquetas[etiquetas.length - 1], ancho - margen - 60, alto - margen + 14);
+                var leyenda = [{ color: '#3e8ed0', texto: 'Ventas diarias' }];
+                if (valores.length >= 7) {
+                    var ventana = 7;
+                    ctx.strokeStyle = '#ff9f43';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    var sumaMovil = 0;
+                    var empezoMovil = false;
+                    for (var m = 0; m < valores.length; m++) {
+                        sumaMovil += valores[m];
+                        if (m >= ventana) {
+                            sumaMovil -= valores[m - ventana];
+                        }
+                        if (m >= ventana - 1 && m >= desde && m <= hasta) {
+                            var xM = margenIzq + (m - desde) * pasoX;
+                            var yM = posY(sumaMovil / ventana);
+                            if (!empezoMovil) {
+                                ctx.moveTo(xM, yM);
+                                empezoMovil = true;
+                            } else {
+                                ctx.lineTo(xM, yM);
+                            }
+                        }
+                    }
+                    ctx.stroke();
+                    leyenda.push({ color: '#ff9f43', texto: 'Promedio 7 días' });
+                }
+                if (totalVisibles >= 2) {
+                    var n = totalVisibles;
+                    var sumX = 0;
+                    var sumY = 0;
+                    var sumXY = 0;
+                    var sumXX = 0;
+                    for (var t = 0; t < n; t++) {
+                        sumX += t;
+                        sumY += visibles[t];
+                        sumXY += t * visibles[t];
+                        sumXX += t * t;
+                    }
+                    var den = n * sumXX - sumX * sumX;
+                    if (den !== 0) {
+                        var pendiente = (n * sumXY - sumX * sumY) / den;
+                        var base = (sumY - pendiente * sumX) / n;
+                        ctx.strokeStyle = '#ef5350';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([6, 4]);
+                        ctx.beginPath();
+                        ctx.moveTo(margenIzq, posY(base));
+                        ctx.lineTo(margenIzq + (n - 1) * pasoX, posY(base + pendiente * (n - 1)));
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                        leyenda.push({ color: '#ef5350', texto: pendiente >= 0 ? 'Tendencia al alza' : 'Tendencia a la baja' });
+                    }
+                }
+                ctx.font = '11px system-ui, sans-serif';
+                ctx.fillStyle = colorTexto;
+                var lx = margenIzq + 8;
+                for (var l = 0; l < leyenda.length; l++) {
+                    ctx.strokeStyle = leyenda[l].color;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(lx, 12);
+                    ctx.lineTo(lx + 22, 12);
+                    ctx.stroke();
+                    ctx.fillText(leyenda[l].texto, lx + 26, 16);
+                    lx += 26 + ctx.measureText(leyenda[l].texto).width + 18;
+                }
+                ctx.fillStyle = colorSuave;
+                ctx.fillText(etiquetas[desde], margenIzq, alto - margen + 14);
+                ctx.fillText(etiquetas[hasta], ancho - margen - 60, alto - margen + 14);
+                if (vista.inicio > 0 || vista.fin < valores.length - 1) {
+                    ctx.fillText('Doble clic para ver todo', ancho - margen - 140, 16);
+                } else {
+                    ctx.fillText('Arrastra para explorar · rueda para zoom', ancho - margen - 225, 16);
+                }
             }
         })();
         </script>

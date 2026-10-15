@@ -1,0 +1,247 @@
+{#include layout}
+    {#title}{titulo} | Mercurius{/title}
+
+    {#body}
+        <h1 class="title is-3">{titulo}</h1>
+        <p class="subtitle is-6">Ventas de un mismo día/mes a lo largo de los últimos años</p>
+
+        <div class="box">
+            <form method="get"
+                  action="{config:['quarkus.http.root-path']}{baseUrl}"
+                  class="columns is-multiline is-vcentered is-mobile">
+                <div class="column is-narrow field">
+                    <label class="label" for="mes">Mes</label>
+                    <div class="control">
+                        <input class="input" type="number" id="mes" name="mes" min="1" max="12" value="{filtros.mes}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="dia">Día</label>
+                    <div class="control">
+                        <input class="input" type="number" id="dia" name="dia" min="1" max="31" value="{filtros.dia}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="anos">Años</label>
+                    <div class="control">
+                        <input class="input" type="number" id="anos" name="anos" min="1" max="50" value="{filtros.anos}"/>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="dimension">Ver por</label>
+                    <div class="control select">
+                        <select id="dimension" name="dimension">
+                            <option value="productos" {#if dimension == 'productos'}selected{/if}>Productos</option>
+                            <option value="familias" {#if dimension == 'familias'}selected{/if}>Familias</option>
+                            <option value="departamentos" {#if dimension == 'departamentos'}selected{/if}>Departamentos</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-full field">
+                    <label class="label">Elementos (marque los que desea, vacío = top 8)</label>
+                    <div class="control">
+                        <input class="input" type="search" id="busqueda-elementos" placeholder="Buscar..."/>
+                    </div>
+                    <div style="max-height:320px; overflow:auto; margin-top:0.5rem; border:1px solid #ddd; border-radius:4px;">
+                        <table class="table is-fullwidth is-striped">
+                            <thead>
+                                <tr>
+                                    <th style="width:48px;">Sel.</th>
+                                    <th>Nombre</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-elementos">
+                                {#for o in opciones}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" name="items" value="{o}" {#if itemsSeleccionados.contains(o)}checked{/if}/>
+                                    </td>
+                                    <td>{o}</td>
+                                </tr>
+                                {/for}
+                            </tbody>
+                        </table>
+                    </div>
+                    <script>
+                    (function () {
+                        var input = document.getElementById('busqueda-elementos');
+                        var filas = document.querySelectorAll('#tabla-elementos tr');
+                        if (input && filas.length) {
+                            input.addEventListener('input', function () {
+                                var q = this.value.toLowerCase();
+                                filas.forEach(function (fila) {
+                                    fila.style.display = fila.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+                                });
+                            });
+                        }
+                    })();
+                    </script>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label">&nbsp;</label>
+                    <div class="control">
+                        <button class="button is-primary" type="submit">Cargar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="box">
+            <p class="title is-5">Histórico de ventas para {filtros.dia}/{filtros.mes}</p>
+            <div style="width:100%; overflow-x:auto;">
+                <canvas id="grafica-fecha-historica" width="960" height="360"
+                        data-root="{config:['quarkus.http.root-path']}"
+                        data-mes="{filtros.mes}" data-dia="{filtros.dia}" data-anos="{filtros.anos}"
+                        data-dimension="{filtros.dimension}" data-items="{filtros.items}"
+                        style="max-width:100%; height:auto; display:block;">
+                    Su navegador no soporta canvas.
+                </canvas>
+            </div>
+            <p class="help" id="historica-estado">Cargando datos...</p>
+        </div>
+
+        <div class="box">
+            <p class="title is-5">Top productos en esas fechas</p>
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th class="has-text-right">Total histórico</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historica-productos">
+                {#if resultado != null}
+                {#for p in resultado.products}
+                <tr>
+                    <td>{p.productName}</td>
+                    <td class="has-text-right">{p.yearlySales}</td>
+                </tr>
+                {/for}
+                {/if}
+            </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+        (function () {
+            var canvas = document.getElementById('grafica-fecha-historica');
+            if (!canvas || !canvas.getContext) { return; }
+            var root = canvas.getAttribute('data-root');
+            var mes = canvas.getAttribute('data-mes');
+            var dia = canvas.getAttribute('data-dia');
+            var anos = canvas.getAttribute('data-anos');
+            var dimension = canvas.getAttribute('data-dimension');
+
+            function splitPipe(value) {
+                if (!value) { return []; }
+                return value.split('|').map(function (v) { return v.trim(); }).filter(function (v) { return v.length > 0; });
+            }
+
+            var params = new URLSearchParams();
+            params.set('month', mes);
+            params.set('day', dia);
+            params.set('yearsBack', anos);
+            params.set('dimension', dimension);
+            splitPipe(canvas.getAttribute('data-items')).forEach(function (v) { params.append('items', v); });
+
+            var url = root + '/api/sales-trend/same-date-history?' + params.toString();
+
+            var colores = ['#3e8ed0', '#23a55a', '#f5a623', '#e85d75', '#7b61ff', '#2bb0a6', '#b7843f', '#556270'];
+
+            fetch(url, { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (datos) {
+                    document.getElementById('historica-estado').textContent =
+                        'Mostrando ' + (datos.years ? datos.years.length : 0) + ' años para ' + datos.day + '/' + datos.month + '.';
+                    dibujar(datos);
+                    renderProductos(datos);
+                })
+                .catch(function (e) {
+                    document.getElementById('historica-estado').textContent = 'No se pudieron cargar los datos.';
+                });
+
+            function dibujar(datos) {
+                var ctx = canvas.getContext('2d');
+                var ancho = canvas.width;
+                var alto = canvas.height;
+                ctx.clearRect(0, 0, ancho, alto);
+                var etiquetas = datos.years || [];
+                var totales = datos.totalSales || [];
+                var productos = datos.products || [];
+                var series = [{ nombre: 'Total', valores: totales, color: '#111111' }];
+                productos.forEach(function (p, i) {
+                    series.push({ nombre: p.productName, valores: p.yearlySales, color: colores[i % colores.length] });
+                });
+
+                var margen = 50;
+                var maxY = 1;
+                series.forEach(function (s) {
+                    (s.valores || []).forEach(function (v) {
+                        if (Number(v) > maxY) { maxY = Number(v); }
+                    });
+                });
+                if (maxY <= 0) { maxY = 1; }
+
+                var pasoX = etiquetas.length > 1 ? (ancho - margen * 2) / (etiquetas.length - 1) : 0;
+
+                // Ejes
+                ctx.strokeStyle = '#cccccc';
+                ctx.beginPath();
+                ctx.moveTo(margen, margen);
+                ctx.lineTo(margen, alto - margen);
+                ctx.lineTo(ancho - margen, alto - margen);
+                ctx.stroke();
+
+                series.forEach(function (s) {
+                    ctx.strokeStyle = s.color;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    for (var i = 0; i < (s.valores || []).length; i++) {
+                        var x = margen + i * pasoX;
+                        var y = alto - margen - (Number(s.valores[i]) / maxY) * (alto - margen * 2);
+                        if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
+                    }
+                    ctx.stroke();
+                });
+
+                // Etiquetas X y leyenda
+                ctx.fillStyle = '#333333';
+                ctx.font = '12px sans-serif';
+                for (var i = 0; i < etiquetas.length; i++) {
+                    var x = margen + i * pasoX;
+                    ctx.fillText(String(etiquetas[i]), x - 16, alto - margen + 16);
+                }
+                var ly = margen;
+                series.forEach(function (s) {
+                    ctx.fillStyle = s.color;
+                    ctx.fillRect(ancho - 180, ly, 12, 12);
+                    ctx.fillStyle = '#333333';
+                    ctx.fillText(s.nombre.substring(0, 22), ancho - 162, ly + 11);
+                    ly += 16;
+                });
+            }
+
+            function renderProductos(datos) {
+                var tbody = document.getElementById('historica-productos');
+                if (!tbody) { return; }
+                tbody.innerHTML = '';
+                var productos = datos.products || [];
+                productos.forEach(function (p) {
+                    var total = (p.yearlySales || []).reduce(function (a, b) { return a + Number(b); }, 0);
+                    var tr = document.createElement('tr');
+                    var td1 = document.createElement('td');
+                    td1.textContent = p.productName;
+                    var td2 = document.createElement('td');
+                    td2.className = 'has-text-right';
+                    td2.textContent = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(total);
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tbody.appendChild(tr);
+                });
+            }
+        })();
+        </script>
+    {/body}
+{/include}

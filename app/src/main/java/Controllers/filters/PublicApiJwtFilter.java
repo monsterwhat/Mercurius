@@ -330,6 +330,15 @@ public class PublicApiJwtFilter implements ContainerRequestFilter {
         // Extract Authorization header
         String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            // Browser callers authenticated via the form-cookie session: the
+            // report pages fetch these analytics endpoints with
+            // credentials=same-origin and carry no Bearer token. Let the
+            // already-established session identity through; anonymous
+            // callers without any session still get the 401 below.
+            if (requestContext.getSecurityContext() != null
+                    && requestContext.getSecurityContext().getUserPrincipal() != null) {
+                return;
+            }
             LOG.debug("Missing or invalid Authorization header for: " + path);
             requestContext.abortWith(
                     Response.status(Response.Status.UNAUTHORIZED)

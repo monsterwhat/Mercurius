@@ -8,6 +8,7 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 
@@ -144,6 +145,33 @@ public class SalesTrendController {
             Date end = new Date(endDate != null ? endDate : System.currentTimeMillis());
             SalesTrendService.GrowthMetrics result = salesTrendService.getGrowthMetrics(start, end);
             return Response.ok(result).build();
+        } catch (RuntimeException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
+        }
+    }
+
+    @GET
+    @Path("/same-date-history")
+    @Nonnull
+    public Response getSameDateSalesHistory(
+            @Nullable @QueryParam("month") Integer month,
+            @Nullable @QueryParam("day") Integer day,
+            @Nullable @QueryParam("yearsBack") Integer yearsBack,
+            @Nullable @QueryParam("dimension") String dimension,
+            @Nullable @QueryParam("items") List<String> items) {
+        try {
+            LocalDate today = LocalDate.now();
+            int resolvedMonth = month != null ? month : today.getMonthValue();
+            int resolvedDay = day != null ? day : today.getDayOfMonth();
+            int resolvedYearsBack = yearsBack != null ? yearsBack : 6;
+            String resolvedDimension = (dimension == null || dimension.isBlank()) ? "productos" : dimension.trim();
+            SalesTrendService.SameDateHistory result =
+                    salesTrendService.getSameDateSalesHistory(resolvedMonth, resolvedDay, resolvedYearsBack, resolvedDimension, items);
+            return Response.ok(result).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
         } catch (RuntimeException e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("{\"error\": \"" + e.getMessage() + "\"}").build();
