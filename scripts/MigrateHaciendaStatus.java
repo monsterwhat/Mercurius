@@ -63,7 +63,7 @@ public class MigrateHaciendaStatus {
         DbfReader(String path) throws Exception {
             try (java.io.RandomAccessFile f = new java.io.RandomAccessFile(path, "r")) {
                 byte[] h = new byte[32]; f.readFully(h);
-                int n = Integer.reverseBytes? reverse4(h,4): reverse4(h,4);
+                int n = reverse4(h,4);
                 int hs = (h[8]&0xFF)|((h[9]&0xFF)<<8);
                 int rs = (h[10]&0xFF)|((h[11]&0xFF)<<8);
                 f.seek(32); List<Field> fields=new ArrayList<>();
