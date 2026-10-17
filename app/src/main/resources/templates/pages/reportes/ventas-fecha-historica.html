@@ -151,7 +151,7 @@
         <script>
         (function () {
             var canvas = document.getElementById('grafica-fecha-historica');
-            if (!canvas || !canvas.getContext) { return; }
+            if (!canvas) { return; }
             var root = canvas.getAttribute('data-root');
             var mes = canvas.getAttribute('data-mes');
             var dia = canvas.getAttribute('data-dia');
@@ -172,99 +172,33 @@
 
             var url = root + '/api/sales-trend/same-date-history?' + params.toString();
 
-            var colores = ['#3e8ed0', '#23a55a', '#f5a623', '#e85d75', '#7b61ff', '#2bb0a6', '#b7843f', '#556270'];
-
             fetch(url, { credentials: 'same-origin' })
                 .then(function (r) { return r.json(); })
                 .then(function (datos) {
                     document.getElementById('historica-estado').textContent =
                         'Mostrando ' + (datos.years ? datos.years.length : 0) + ' años para ' + datos.day + '/' + datos.month + '.';
-                    dibujar(datos);
-                    renderProductos(datos);
+                    var etiquetas = datos.years || [];
+                    var datasets = [{ label: 'Total', data: datos.totalSales || [], borderColor: '#111111', tension: 0.2, fill: false }];
+                    (datos.products || []).forEach(function (p, i) {
+                        var colores = ['#3e8ed0', '#23a55a', '#f5a623', '#e85d75', '#7b61ff', '#2bb0a6', '#b7843f', '#556270'];
+                        datasets.push({ label: p.productName, data: p.yearlySales || [], borderColor: colores[i % colores.length], tension: 0.2, fill: false });
+                    });
+                    if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                        window.MercuriusCharts.create('grafica-fecha-historica', {
+                            type: 'line',
+                            labels: etiquetas,
+                            datasets: datasets,
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { position: 'bottom' } }
+                            }
+                        });
+                    }
                 })
                 .catch(function (e) {
                     document.getElementById('historica-estado').textContent = 'No se pudieron cargar los datos.';
                 });
-
-            function dibujar(datos) {
-                var ctx = canvas.getContext('2d');
-                var ancho = canvas.width;
-                var alto = canvas.height;
-                ctx.clearRect(0, 0, ancho, alto);
-                var etiquetas = datos.years || [];
-                var totales = datos.totalSales || [];
-                var productos = datos.products || [];
-                var series = [{ nombre: 'Total', valores: totales, color: '#111111' }];
-                productos.forEach(function (p, i) {
-                    series.push({ nombre: p.productName, valores: p.yearlySales, color: colores[i % colores.length] });
-                });
-
-                var margen = 50;
-                var maxY = 1;
-                series.forEach(function (s) {
-                    (s.valores || []).forEach(function (v) {
-                        if (Number(v) > maxY) { maxY = Number(v); }
-                    });
-                });
-                if (maxY <= 0) { maxY = 1; }
-
-                var pasoX = etiquetas.length > 1 ? (ancho - margen * 2) / (etiquetas.length - 1) : 0;
-
-                // Ejes
-                ctx.strokeStyle = '#cccccc';
-                ctx.beginPath();
-                ctx.moveTo(margen, margen);
-                ctx.lineTo(margen, alto - margen);
-                ctx.lineTo(ancho - margen, alto - margen);
-                ctx.stroke();
-
-                series.forEach(function (s) {
-                    ctx.strokeStyle = s.color;
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    for (var i = 0; i < (s.valores || []).length; i++) {
-                        var x = margen + i * pasoX;
-                        var y = alto - margen - (Number(s.valores[i]) / maxY) * (alto - margen * 2);
-                        if (i === 0) { ctx.moveTo(x, y); } else { ctx.lineTo(x, y); }
-                    }
-                    ctx.stroke();
-                });
-
-                // Etiquetas X y leyenda
-                ctx.fillStyle = '#333333';
-                ctx.font = '12px sans-serif';
-                for (var i = 0; i < etiquetas.length; i++) {
-                    var x = margen + i * pasoX;
-                    ctx.fillText(String(etiquetas[i]), x - 16, alto - margen + 16);
-                }
-                var ly = margen;
-                series.forEach(function (s) {
-                    ctx.fillStyle = s.color;
-                    ctx.fillRect(ancho - 180, ly, 12, 12);
-                    ctx.fillStyle = '#333333';
-                    ctx.fillText(s.nombre.substring(0, 22), ancho - 162, ly + 11);
-                    ly += 16;
-                });
-            }
-
-            function renderProductos(datos) {
-                var tbody = document.getElementById('historica-productos');
-                if (!tbody) { return; }
-                tbody.innerHTML = '';
-                var productos = datos.products || [];
-                productos.forEach(function (p) {
-                    var total = (p.yearlySales || []).reduce(function (a, b) { return a + Number(b); }, 0);
-                    var tr = document.createElement('tr');
-                    var td1 = document.createElement('td');
-                    td1.textContent = p.productName;
-                    var td2 = document.createElement('td');
-                    td2.className = 'has-text-right';
-                    td2.textContent = new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC' }).format(total);
-                    tr.appendChild(td1);
-                    tr.appendChild(td2);
-                    tbody.appendChild(tr);
-                });
-            }
         })();
         </script>
     {/body}
