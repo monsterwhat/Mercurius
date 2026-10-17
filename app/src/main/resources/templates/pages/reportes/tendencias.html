@@ -73,18 +73,21 @@
 
         {#include pages/reportes/_tablas/tendencias /}
 
-        <div class="box mt-4">
-            <p class="title is-5">Ventas Diarias del Período</p>
-            <div style="width:100%; overflow-x:auto;">
-            <canvas id="grafica-tendencias" width="900" height="320" style="max-width:100%; height:auto; display:block;"
-                    data-root="{config:['quarkus.http.root-path']}"
-                    data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
-                Su navegador no soporta canvas.
-            </canvas>
-            </div>
-        </div>
+                {#include _kit/chart-card}
+            {#title}Ventas Diarias del Período{/title}
+            {#subtitle}{periodoTexto}{/subtitle}
+            {#canvasId}grafica-tendencias{/canvasId}
+            {#height}360px{/height}
+            {#body}
+                <canvas id="grafica-tendencias" width="900" height="320"
+                        data-root="{config:['quarkus.http.root-path']}"
+                        data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
+                    Su navegador no soporta canvas.
+                </canvas>
+            {/body}
+        {/include}
 
-        <script>
+<script>
         (function () {
             var lienzo = document.getElementById('grafica-tendencias');
             if (!lienzo || !lienzo.getContext) {
