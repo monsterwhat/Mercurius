@@ -79,71 +79,32 @@
         </div>
 
         <script>
-        (function () {
-            var lienzo = document.getElementById('grafica-pronosticos');
-            if (!lienzo || !lienzo.getContext) {
-                return;
+(function () {
+    var canvas = document.getElementById('grafica-pronosticos');
+    if (!canvas) { return; }
+    var root = canvas.getAttribute('data-root');
+    var dias = canvas.getAttribute('data-dias');
+    var url = root + '/api/stock-forecast/bulk-forecast?days=' + encodeURIComponent(dias);
+    fetch(url, { credentials: 'same-origin' })
+        .then(function (respuesta) { return respuesta.json(); })
+        .then(function (datos) {
+            var etiquetas = [];
+            var valores = [];
+            (datos || []).slice(0, 12).forEach(function (pronostico) {
+                etiquetas.push(pronostico.articuloNombre);
+                valores.push(Number(pronostico.predictedSales));
+            });
+            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                window.MercuriusCharts.create('grafica-pronosticos', {
+                    type: 'bar',
+                    labels: etiquetas,
+                    datasets: [{ label: 'Demanda pronosticada', data: valores, backgroundColor: '#3e8ed0' }],
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
             }
-            var url = lienzo.getAttribute('data-root') + '/api/stock-forecast/bulk-forecast?days='
-                    + encodeURIComponent(lienzo.getAttribute('data-dias'));
-            fetch(url, { credentials: 'same-origin' })
-                .then(function (respuesta) { return respuesta.json(); })
-                .then(function (datos) {
-                    var etiquetas = [];
-                    var valores = [];
-                    datos.slice(0, 12).forEach(function (pronostico) {
-                        etiquetas.push(pronostico.articuloNombre);
-                        valores.push(Number(pronostico.predictedSales));
-                    });
-                    dibujarBarras(lienzo, etiquetas, valores);
-                })
-                .catch(function () { /* sin datos: el canvas queda vacío */ });
-
-            function colorEsquema(nombre, alternativa) {
-                var v = '';
-                if (window.getComputedStyle) {
-                    v = getComputedStyle(document.documentElement).getPropertyValue(nombre);
-                }
-                v = v && v.trim() ? v.trim() : alternativa;
-                return v;
-            }
-
-            function dibujarBarras(canvas, etiquetas, valores) {
-                var ctx = canvas.getContext('2d');
-                var ancho = canvas.width;
-                var alto = canvas.height;
-                var colorTexto = colorEsquema('--bulma-text', '#333');
-                var colorSuave = colorEsquema('--bulma-text-weak', '#777');
-                var colorEje = colorEsquema('--bulma-border', '#ccc');
-                ctx.clearRect(0, 0, ancho, alto);
-                if (valores.length === 0) {
-                    ctx.fillStyle = colorSuave;
-                    ctx.fillText('Sin pronósticos disponibles', 20, alto / 2);
-                    return;
-                }
-                var maximo = Math.max.apply(null, valores);
-                var margen = 40;
-                var paso = (ancho - margen * 2) / valores.length;
-                ctx.strokeStyle = colorEje;
-                ctx.beginPath();
-                ctx.moveTo(margen, alto - margen);
-                ctx.lineTo(ancho - margen, alto - margen);
-                ctx.stroke();
-                for (var i = 0; i < valores.length; i++) {
-                    var alturaBarra = maximo > 0 ? (valores[i] / maximo) * (alto - margen * 2) : 0;
-                    var x = margen + i * paso + paso * 0.15;
-                    var y = alto - margen - alturaBarra;
-                    ctx.fillStyle = '#3e8ed0';
-                    ctx.fillRect(x, y, paso * 0.7, alturaBarra);
-                    ctx.fillStyle = colorTexto;
-                    ctx.save();
-                    ctx.translate(x + paso * 0.35, alto - margen + 12);
-                    ctx.rotate(Math.PI / 4);
-                    ctx.fillText(etiquetas[i].substring(0, 14), 0, 0);
-                    ctx.restore();
-                }
-            }
-        })();
-        </script>
+        })
+        .catch(function () { /* sin datos */ });
+})();
+</script>
     {/body}
 {/include}
