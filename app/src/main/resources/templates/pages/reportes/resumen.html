@@ -77,6 +77,27 @@
 
         {#include pages/reportes/_tablas/resumen /}
 
+        {#include _kit/chart-card}
+            {#title}Stock por Familia{/title}
+            {#canvasId}grafica-resumen{/canvasId}
+            {#height}320px{/height}
+        {/include}
+
+        <script>
+        (function () {
+            var labels = [{#for l in chartLabels}'{l}',{/for}];
+            var values = [{#for v in chartValues}{v},{/for}];
+            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                window.MercuriusCharts.create('grafica-resumen', {
+                    type: 'bar',
+                    labels: labels,
+                    datasets: [{ label: 'Stock Actual', data: values, backgroundColor: '#3298dc' }],
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+        })();
+        </script>
+
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>

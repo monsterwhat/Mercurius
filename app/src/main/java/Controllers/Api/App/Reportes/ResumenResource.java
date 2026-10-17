@@ -113,6 +113,7 @@ public class ResumenResource {
         List<Map<String, Object>> filas = new ArrayList<>();
         long ceroCount = 0;
         long negativoCount = 0;
+        Map<String, BigDecimal> stockPorFamilia = new LinkedHashMap<>();
         if (articulos != null) {
             for (Articulos articulo : articulos) {
                 BigDecimal stock = stockDe(stocks, articulo);
@@ -143,7 +144,21 @@ public class ResumenResource {
                                 && articulo.getLastPrecio().getPrecioFinal() != null
                                 ? Tablas.fmtColones(articulo.getLastPrecio().getPrecioFinal())
                                 : "-"));
+                String familiaNombre = articulo.getFamilia() != null
+                        && articulo.getFamilia().getNombre() != null
+                        && !articulo.getFamilia().getNombre().isBlank()
+                        ? articulo.getFamilia().getNombre()
+                        : "Sin familia";
+                BigDecimal acumulado = stockPorFamilia.getOrDefault(familiaNombre, BigDecimal.ZERO);
+                stockPorFamilia.put(familiaNombre, acumulado.add(stock));
             }
+        }
+
+        List<String> chartLabels = new ArrayList<>();
+        List<BigDecimal> chartValues = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> entry : stockPorFamilia.entrySet()) {
+            chartLabels.add(entry.getKey());
+            chartValues.add(entry.getValue());
         }
 
         Tablas.ordenar(filas, sort, dir);
@@ -165,6 +180,8 @@ public class ResumenResource {
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("vista", tipoVista);
+        model.put("chartLabels", chartLabels);
+        model.put("chartValues", chartValues);
         model.put("todosCount", articulosService.countActivos());
         model.put("ceroCount", ceroCount);
         model.put("negativoCount", negativoCount);
