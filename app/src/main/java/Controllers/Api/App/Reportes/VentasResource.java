@@ -109,6 +109,12 @@ public class VentasResource {
             cal.add(Calendar.DAY_OF_MONTH, -30);
             inicio = cal.getTime();
         }
+        if (desde == null || desde.isBlank()) {
+            filtros.put("desde", new java.text.SimpleDateFormat("yyyy-MM-dd").format(inicio));
+        }
+        if (hasta == null || hasta.isBlank()) {
+            filtros.put("hasta", new java.text.SimpleDateFormat("yyyy-MM-dd").format(fin));
+        }
 
         List<Map<String, Object>> filas = new ArrayList<>();
         BigDecimal total = null;

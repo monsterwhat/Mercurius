@@ -35,6 +35,37 @@
            SeasonalityService JSON (monthly trend, day-of-week, department,
            family) once chart infrastructure lands. !}
 
+        <div class="columns is-multiline mb-4">
+            <div class="column is-half">
+                {#include _kit/chart-card}
+                    {#title}Tendencia Mensual de Ventas{/title}
+                    {#canvasId}estacionalidad-mensual-chart{/canvasId}
+                    {#height}260px{/height}
+                {/include}
+            </div>
+            <div class="column is-half">
+                {#include _kit/chart-card}
+                    {#title}Ventas por Día de la Semana{/title}
+                    {#canvasId}estacionalidad-dias-chart{/canvasId}
+                    {#height}260px{/height}
+                {/include}
+            </div>
+            <div class="column is-half">
+                {#include _kit/chart-card}
+                    {#title}Ventas por Departamento{/title}
+                    {#canvasId}estacionalidad-departamentos-chart{/canvasId}
+                    {#height}260px{/height}
+                {/include}
+            </div>
+            <div class="column is-half">
+                {#include _kit/chart-card}
+                    {#title}Ventas por Familia{/title}
+                    {#canvasId}estacionalidad-familias-chart{/canvasId}
+                    {#height}260px{/height}
+                {/include}
+            </div>
+        </div>
+
         <div id="estacionalidad-tabla-container">
             {#fragment id=tabla}
                 <div class="columns is-multiline">
@@ -105,5 +136,43 @@
                 </div>
             {/fragment}
         </div>
+<script>
+(function () {
+    if (!window.MercuriusCharts || typeof window.MercuriusCharts.create !== 'function') { return; }
+    var monthlyLabels = [{#for m in mensual}'{m.mes}',{#else}{/for}];
+    var monthlyValues = [{#for m in mensual}{m.total},{#else}{/for}];
+    var dayLabels = [{#for d in dias}'{d.dia}',{#else}{/for}];
+    var dayValues = [{#for d in dias}{d.total},{#else}{/for}];
+    var departmentLabels = [{#for d in departamentos}'{d.nombre}',{#else}{/for}];
+    var departmentValues = [{#for d in departamentos}{d.total},{#else}{/for}];
+    var familyLabels = [{#for f in familias}'{f.nombre}',{#else}{/for}];
+    var familyValues = [{#for f in familias}{f.total},{#else}{/for}];
+
+    window.MercuriusCharts.create('estacionalidad-mensual-chart', {
+        type: 'bar',
+        labels: monthlyLabels,
+        datasets: [{ label: 'Ventas', data: monthlyValues, backgroundColor: '#3298dc' }],
+        options: { plugins: { legend: { display: false } } }
+    });
+    window.MercuriusCharts.create('estacionalidad-dias-chart', {
+        type: 'bar',
+        labels: dayLabels,
+        datasets: [{ label: 'Ventas', data: dayValues, backgroundColor: '#48c78e' }],
+        options: { plugins: { legend: { display: false } } }
+    });
+    window.MercuriusCharts.create('estacionalidad-departamentos-chart', {
+        type: 'bar',
+        labels: departmentLabels,
+        datasets: [{ label: 'Ventas', data: departmentValues, backgroundColor: '#ffdd57' }],
+        options: { plugins: { legend: { display: false } } }
+    });
+    window.MercuriusCharts.create('estacionalidad-familias-chart', {
+        type: 'bar',
+        labels: familyLabels,
+        datasets: [{ label: 'Ventas', data: familyValues, backgroundColor: '#f14668' }],
+        options: { plugins: { legend: { display: false } } }
+    });
+})();
+</script>
     {/body}
 {/include}
