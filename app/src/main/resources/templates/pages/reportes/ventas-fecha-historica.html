@@ -112,6 +112,9 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {#if resumenAnual == null || resumenAnual.isEmpty()}
+                        <tr><td colspan="3" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                        {#else}
                         {#for r in resumenAnual}
                         <tr>
                             <td>{r.anio}</td>
@@ -119,6 +122,7 @@
                             <td class="has-text-right">{r.transacciones}</td>
                         </tr>
                         {/for}
+                        {/if}
                     </tbody>
                 </table>
             </div>
@@ -136,6 +140,9 @@
                         </tr>
                     </thead>
                     <tbody id="historica-productos">
+                        {#if productosResultado == null || productosResultado.isEmpty()}
+                        <tr><td colspan="3" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                        {#else}
                         {#for p in productosResultado}
                         <tr>
                             <td>{p.nombre}</td>
@@ -143,6 +150,7 @@
                             <td>{p.detalle}</td>
                         </tr>
                         {/for}
+                        {/if}
                     </tbody>
                 </table>
             </div>
