@@ -75,9 +75,13 @@
                             <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-mensual">
                                 <thead><tr><th>Mes</th><th>Total Ventas</th></tr></thead>
                                 <tbody>
+                                    {#if mensual == null || mensual.isEmpty()}
+                                    <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                                    {#else}
                                     {#for m in mensual}
                                     <tr data-row-key="{m.mes}"><td>{m.mes}</td><td>₡{m.total}</td></tr>
                                     {/for}
+                                    {/if}
                                 </tbody>
                             </table>
                         </div>
@@ -101,9 +105,13 @@
                             <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-departamentos">
                                 <thead><tr><th>Departamento</th><th>Total Ventas</th></tr></thead>
                                 <tbody>
+                                    {#if departamentos == null || departamentos.isEmpty()}
+                                    <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                                    {#else}
                                     {#for d in departamentos}
                                     <tr data-row-key="{d.nombre}"><td>{d.nombre}</td><td>₡{d.total}</td></tr>
                                     {/for}
+                                    {/if}
                                 </tbody>
                             </table>
                         </div>
@@ -114,9 +122,13 @@
                             <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-familias">
                                 <thead><tr><th>Familia</th><th>Total Ventas</th></tr></thead>
                                 <tbody>
+                                    {#if familias == null || familias.isEmpty()}
+                                    <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                                    {#else}
                                     {#for f in familias}
                                     <tr data-row-key="{f.nombre}"><td>{f.nombre}</td><td>₡{f.total}</td></tr>
                                     {/for}
+                                    {/if}
                                 </tbody>
                             </table>
                         </div>
@@ -128,9 +140,13 @@
                     <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-diarios">
                         <thead><tr><th>Fecha</th><th>Total Ventas</th></tr></thead>
                         <tbody>
+                            {#if diarios == null || diarios.isEmpty()}
+                            <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                            {#else}
                             {#for row in diarios}
                             <tr data-row-key="{row.fecha}"><td>{row.fecha}</td><td>₡{row.total}</td></tr>
                             {/for}
+                            {/if}
                         </tbody>
                     </table>
                 </div>
@@ -139,14 +155,14 @@
 <script>
 (function () {
     if (!window.MercuriusCharts || typeof window.MercuriusCharts.create !== 'function') { return; }
-    var monthlyLabels = [{#for m in mensual}'{m.mes}',{#else}{/for}];
-    var monthlyValues = [{#for m in mensual}{m.total},{#else}{/for}];
-    var dayLabels = [{#for d in dias}'{d.dia}',{#else}{/for}];
-    var dayValues = [{#for d in dias}{d.total},{#else}{/for}];
-    var departmentLabels = [{#for d in departamentos}'{d.nombre}',{#else}{/for}];
-    var departmentValues = [{#for d in departamentos}{d.total},{#else}{/for}];
-    var familyLabels = [{#for f in familias}'{f.nombre}',{#else}{/for}];
-    var familyValues = [{#for f in familias}{f.total},{#else}{/for}];
+    var monthlyLabels = [{#for m in mensual}'{m.mes}',{/for}];
+    var monthlyValues = [{#for m in mensual}{m.total},{/for}];
+    var dayLabels = [{#for d in dias}'{d.dia}',{/for}];
+    var dayValues = [{#for d in dias}{d.total},{/for}];
+    var departmentLabels = [{#for d in departamentos}'{d.nombre}',{/for}];
+    var departmentValues = [{#for d in departamentos}{d.total},{/for}];
+    var familyLabels = [{#for f in familias}'{f.nombre}',{/for}];
+    var familyValues = [{#for f in familias}{f.total},{/for}];
 
     window.MercuriusCharts.create('estacionalidad-mensual-chart', {
         type: 'bar',
