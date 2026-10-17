@@ -4,7 +4,13 @@ import Models.DTO.ApiResponse;
 import Models.CorteMargen;
 import Models.ReportesFamiliasYDepartamentos;
 import Services.ArticulosService;
+import Services.ArticuloPrecioService;
+import Services.ClientService;
+import Services.ComprobantesEmitidosService;
+import Services.ComprobantesRecibidosService;
+import Services.Correos.ReportesProgramadosService;
 import Services.DepartamentoService;
+import Services.LoginService;
 import Services.FamiliaService;
 import Services.InventarioService;
 import Services.ProfitAnalysisService;
@@ -88,6 +94,30 @@ public class ExportResource {
 
     @Nonnull
     @Inject
+    ComprobantesEmitidosService comprobantesService;
+
+    @Nonnull
+    @Inject
+    ComprobantesRecibidosService recibidosService;
+
+    @Nonnull
+    @Inject
+    LoginService loginService;
+
+    @Nonnull
+    @Inject
+    ArticuloPrecioService precioService;
+
+    @Nonnull
+    @Inject
+    ClientService clientService;
+
+    @Nonnull
+    @Inject
+    ReportesProgramadosService reportesProgramadosService;
+
+    @Nonnull
+    @Inject
     DepartamentoService departamentoService;
 
     @Nonnull
@@ -130,7 +160,8 @@ public class ExportResource {
             @FormParam("type") @Nullable String type,
             @FormParam("dataset") @Nullable String dataset,
             @FormParam("desde") @Nullable String desde,
-            @FormParam("hasta") @Nullable String hasta) {
+            @FormParam("hasta") @Nullable String hasta,
+            @FormParam("q") @Nullable String q) {
 
         if (type == null || type.isBlank()) {
             return badRequest("Falta el parámetro 'type' (xlsx|pdf)");
@@ -146,7 +177,7 @@ public class ExportResource {
         String key = dataset.trim().toLowerCase(Locale.ROOT);
         byte[] bytes;
         try {
-            bytes = buildExport(key, normalizedType, desde, hasta);
+            bytes = buildExport(key, normalizedType, desde, hasta, q);
         } catch (UnsupportedDatasetException e) {
             return notFound(e.getMessage());
         } catch (Exception e) {
@@ -161,11 +192,33 @@ public class ExportResource {
     }
 
     private byte[] buildExport(@Nonnull String dataset, @Nonnull String type,
-                               @Nullable String desde, @Nullable String hasta)
+                               @Nullable String desde, @Nullable String hasta,
+                               @Nullable String q)
             throws DocumentException, IOException, UnsupportedDatasetException {
         boolean wantsPdf = TYPE_PDF.equals(type);
 
         return switch (dataset) {
+            case "correos" -> !wantsPdf
+                    ? ReportExporter.exportCorreosExcel(orEmpty(reportesProgramadosService.listAll()))
+                    : unsupported(dataset, type);
+            case "precios" -> !wantsPdf
+                    ? ReportExporter.exportPreciosExcel(orEmpty(precioService.listAll()))
+                    : unsupported(dataset, type);
+            case "clientes" -> !wantsPdf
+                    ? ReportExporter.exportClientesExcel(orEmpty(clientService.listAll()))
+                    : unsupported(dataset, type);
+            case "recibos-pendientes" -> !wantsPdf
+                    ? ReportExporter.exportRecibosExcel("Recibos Pendientes", orEmpty(recibidosService.listPendientes()))
+                    : unsupported(dataset, type);
+            case "usuarios" -> !wantsPdf
+                    ? ReportExporter.exportUsuariosExcel(orEmpty(loginService.listAll()))
+                    : unsupported(dataset, type);
+            case "recibos-vencidos" -> !wantsPdf
+                    ? ReportExporter.exportRecibosExcel("Recibos Vencidos", orEmpty(recibidosService.listVencidas()))
+                    : unsupported(dataset, type);
+            case "facturas" -> !wantsPdf
+                    ? ReportExporter.exportFacturasExcel(orEmpty(comprobantesService.listFacturasReportePage(null, "asc", q, 0, 100000)))
+                    : unsupported(dataset, type);
             case "articulos" -> wantsPdf
                     ? ReportExporter.exportArticulosPdf(orEmpty(articulosService.ListAllEnabled()))
                     : ReportExporter.exportArticulosExcel(orEmpty(articulosService.ListAllEnabled()));

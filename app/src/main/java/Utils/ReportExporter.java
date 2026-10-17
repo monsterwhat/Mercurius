@@ -2,6 +2,11 @@ package Utils;
 
 import Models.Articulos.ArticuloPrecio;
 import Models.Articulos.Articulos;
+import Models.Clientes;
+import Models.ComprobantesEmitidos;
+import Models.ComprobantesRecibidos;
+import Models.Correos.ReporteProgramado;
+import Models.Usuarios;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
@@ -432,6 +437,153 @@ public final class ReportExporter {
         }
 
         return exportGenericExcel("Ventas por Departamento", headers, rows);
+    }
+
+    /**
+     * "Clientes" workbook — mirrors the Reportes de Clientes table
+     * (ClientesReportesResource): one row per client.
+     */
+    @Nonnull
+    public static byte[] exportClientesExcel(@Nonnull List<Clientes> clientes) throws IOException {
+        String[] headers = {"CA3digo", "Nombre", "DirecciA3n", "Correo", "CAcdula",
+                          "TelAcfono", "Tributario", "Asltima Compra", "Puntos", "Estado"};
+
+        List<Object[]> rows = new ArrayList<>(clientes.size());
+        for (Clientes cliente : clientes) {
+            rows.add(new Object[]{
+                cliente.getCode(),
+                cliente.getName() != null ? cliente.getName() : "",
+                cliente.getAddress() != null ? cliente.getAddress() : "",
+                cliente.getEmail() != null ? cliente.getEmail() : "",
+                cliente.getIdNumber() != null ? cliente.getIdNumber() : "",
+                cliente.getPhoneNumber() != null ? cliente.getPhoneNumber() : "",
+                cliente.isTaxpayer(),
+                cliente.getLastPurchaseDate() != null ? cliente.getLastPurchaseDate().toString() : "",
+                cliente.getPuntosAcumulados() != null ? Double.valueOf(cliente.getPuntosAcumulados().doubleValue()) : Double.valueOf(0.0),
+                cliente.getStatus() != null && cliente.getStatus() ? "Activo" : "Inactivo"
+            });
+        }
+
+        return exportGenericExcel("Clientes", headers, rows);
+    }
+
+    /**
+     * "Reportes Programados por Correo" workbook — mirrors the Correos
+     * listing (CorreosReportesResource): one row per scheduled report.
+     */
+    @Nonnull
+    public static byte[] exportCorreosExcel(@Nonnull List<ReporteProgramado> reportes) throws IOException {
+        String[] headers = {"ID", "Perfil", "Correos", "Frecuencia", "Reportes", "Ultima Ejecucion", "Estado"};
+
+        List<Object[]> rows = new ArrayList<>(reportes.size());
+        for (ReporteProgramado reporte : reportes) {
+            rows.add(new Object[]{
+                reporte.getId(),
+                reporte.getPerfil() != null ? reporte.getPerfil() : "",
+                reporte.getCorreos() != null ? reporte.getCorreos() : "",
+                reporte.getFrecuencia() != null ? reporte.getFrecuencia() : "",
+                reporte.getReportes() != null ? reporte.getReportes() : "",
+                reporte.getLastRun() != null ? reporte.getLastRun().toString() : "",
+                reporte.isStatus() ? "Activo" : "Inactivo"
+            });
+        }
+
+        return exportGenericExcel("Reportes por Correo", headers, rows);
+    }
+
+    /**
+     * "Historico de Precios" workbook — mirrors the Precios table
+     * (PreciosResource): one row per price history entry.
+     */
+    @Nonnull
+    public static byte[] exportPreciosExcel(@Nonnull List<ArticuloPrecio> precios) throws IOException {
+        String[] headers = {"ArtA-culo", "Utilidad %", "Costo S/IVA", "Precio", "Precio C/IVA",
+                          "Fecha", "Usuario"};
+
+        List<Object[]> rows = new ArrayList<>(precios.size());
+        for (ArticuloPrecio precio : precios) {
+            rows.add(new Object[]{
+                precio.getArticulo() != null ? precio.getArticulo().getNombre() : "",
+                precio.getPorcentajeUtilidad() != null ? Double.valueOf(precio.getPorcentajeUtilidad().doubleValue()) : Double.valueOf(0.0),
+                precio.getPrecioCostoSinIVA() != null ? Double.valueOf(precio.getPrecioCostoSinIVA().doubleValue()) : Double.valueOf(0.0),
+                precio.getPrecioConUtilidad() != null ? Double.valueOf(precio.getPrecioConUtilidad().doubleValue()) : Double.valueOf(0.0),
+                precio.getPrecioFinal() != null ? Double.valueOf(precio.getPrecioFinal().doubleValue()) : Double.valueOf(0.0),
+                precio.getFechaCompra() != null ? precio.getFechaCompra().toString() : "",
+                precio.getUsuario() != null && precio.getUsuario().getUsername() != null ? precio.getUsuario().getUsername() : ""
+            });
+        }
+
+        return exportGenericExcel("Historico de Precios", headers, rows);
+    }
+
+    /**
+     * "Facturas Emitidas" workbook — mirrors the Facturas table
+     * (FacturasReportesResource): one row per emitted invoice.
+     */
+    @Nonnull
+    public static byte[] exportFacturasExcel(@Nonnull List<ComprobantesEmitidos> facturas) throws IOException {
+        String[] headers = {"Numero Consecutivo", "Fecha", "Emisor", "Condicion Venta", "Estado Hacienda", "Total"};
+
+        List<Object[]> rows = new ArrayList<>(facturas.size());
+        for (ComprobantesEmitidos factura : facturas) {
+            Models.Encabezado.Encabezado encabezado = factura.getEncabezado();
+            Models.Resumen.ResumenFactura resumen = factura.getResumen();
+            rows.add(new Object[]{
+                encabezado != null ? encabezado.getNumeroConsecutivo() : "",
+                encabezado != null && encabezado.getFechaEmision() != null ? encabezado.getFechaEmision().toString() : "",
+                encabezado != null && encabezado.getEmisor() != null ? encabezado.getEmisor().getNombre() : "",
+                encabezado != null ? encabezado.getCondicionVenta() : "",
+                factura.getHaciendaEstado() != null ? factura.getHaciendaEstado() : "PENDIENTE",
+                resumen != null && resumen.getTotalComprobante() != null ? Double.valueOf(resumen.getTotalComprobante().doubleValue()) : Double.valueOf(0.0)
+            });
+        }
+
+        return exportGenericExcel("Facturas Emitidas", headers, rows);
+    }
+
+    /**
+     * "Recibos" workbook — mirrors the Recibos Pendientes/Vencidos tables
+     * (RecibosReportesResource): one row per received invoice.
+     */
+    @Nonnull
+    public static byte[] exportRecibosExcel(@Nonnull String titulo, @Nonnull List<ComprobantesRecibidos> recibos) throws IOException {
+        String[] headers = {"Numero Consecutivo", "Fecha", "Emisor", "Condicion Venta", "Plazo Credito", "Total"};
+
+        List<Object[]> rows = new ArrayList<>(recibos.size());
+        for (ComprobantesRecibidos recibido : recibos) {
+            Models.Encabezado.Encabezado encabezado = recibido.getEncabezado();
+            Models.Resumen.ResumenFactura resumen = recibido.getResumen();
+            rows.add(new Object[]{
+                encabezado != null ? encabezado.getNumeroConsecutivo() : "",
+                encabezado != null && encabezado.getFechaEmision() != null ? encabezado.getFechaEmision().toString() : "",
+                encabezado != null && encabezado.getEmisor() != null ? encabezado.getEmisor().getNombre() : "",
+                encabezado != null ? encabezado.getCondicionVenta() : "",
+                encabezado != null ? encabezado.getPlazoCredito() : "",
+                resumen != null && resumen.getTotalComprobante() != null ? Double.valueOf(resumen.getTotalComprobante().doubleValue()) : Double.valueOf(0.0)
+            });
+        }
+
+        return exportGenericExcel(titulo, headers, rows);
+    }
+
+    /**
+     * "Usuarios" workbook — mirrors the Usuarios table
+     * (UsuariosReportesResource): one row per user.
+     */
+    @Nonnull
+    public static byte[] exportUsuariosExcel(@Nonnull List<Usuarios> usuarios) throws IOException {
+        String[] headers = {"Nombre de usuario", "Permisos", "Activo"};
+
+        List<Object[]> rows = new ArrayList<>(usuarios.size());
+        for (Usuarios usuario : usuarios) {
+            rows.add(new Object[]{
+                usuario.getUsername() != null ? usuario.getUsername() : "",
+                usuario.getGroupName() != null ? usuario.getGroupName() : "",
+                usuario.getStatus() != null && usuario.getStatus()
+            });
+        }
+
+        return exportGenericExcel("Usuarios", headers, rows);
     }
 
     /**
