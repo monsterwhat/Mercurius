@@ -6,6 +6,7 @@ import Models.ReportesFamiliasYDepartamentos;
 import Services.ArticulosService;
 import Services.ArticuloPrecioService;
 import Services.ClientService;
+import Services.SalesTrendService;
 import Services.ComprobantesEmitidosService;
 import Services.ComprobantesRecibidosService;
 import Services.Correos.ReportesProgramadosService;
@@ -104,6 +105,10 @@ public class ExportResource {
     @Nonnull
     @Inject
     LoginService loginService;
+
+    @Nonnull
+    @Inject
+    SalesTrendService salesTrendService;
 
     @Nonnull
     @Inject
@@ -252,6 +257,32 @@ public class ExportResource {
                 yield !wantsPdf
                         ? ReportExporter.exportMermaExcel("detalle",
                                 shrinkageAnalysisService.getShrinkageMovements(inicio, fin), null, null, null)
+                        : unsupported(dataset, type);
+            }
+            case "tendencias" -> {
+                Date inicio = fecha(desde, false);
+                Date fin = fecha(hasta, true);
+                if (inicio == null || fin == null) {
+                    Calendar cal = Calendar.getInstance();
+                    fin = new Date();
+                    cal.add(Calendar.DAY_OF_MONTH, -90);
+                    inicio = cal.getTime();
+                }
+                String vista = (seccion == null || seccion.isBlank()) ? "diarias" : seccion;
+                if ("indicadores".equals(vista)) {
+                    yield !wantsPdf
+                            ? ReportExporter.exportTendenciasExcel(vista, null,
+                                    salesTrendService.getGrowthMetrics(inicio, fin),
+                                    salesTrendService.getTrendIndicators(inicio, fin))
+                            : unsupported(dataset, type);
+                }
+                List<Services.SalesTrendService.TimeSeriesData> serie = switch (vista) {
+                    case "semanales" -> salesTrendService.getWeeklySalesTimeSeries(inicio, fin);
+                    case "mensuales" -> salesTrendService.getMonthlySalesTimeSeries(inicio, fin);
+                    default -> salesTrendService.getDailySalesTimeSeries(inicio, fin);
+                };
+                yield !wantsPdf
+                        ? ReportExporter.exportTendenciasExcel(vista, serie, null, null)
                         : unsupported(dataset, type);
             }
             case "articulos" -> wantsPdf
