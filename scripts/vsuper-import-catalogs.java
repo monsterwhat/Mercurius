@@ -58,6 +58,7 @@ class vsuper_import_catalogs {
         List<Map<String, String>> out = new ArrayList<>();
         if (lines.isEmpty()) return out;
         String[] headers = lines.get(0).split(",", -1);
+        headers[0] = headers[0].replace("\ufeff", "");
         for (int i = 1; i < lines.size(); i++) {
             if (lines.get(i).isBlank()) continue;
             String[] vals = lines.get(i).split(",", -1);
