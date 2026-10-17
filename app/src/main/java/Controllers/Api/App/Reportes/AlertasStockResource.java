@@ -102,6 +102,14 @@ public class AlertasStockResource {
                             : stockAlertService.getAllReorderSuggestions();
             if (sugerencias != null) {
                 for (SugerenciaReposicion sugerencia : sugerencias) {
+                    if (departamento != null && !departamento.isBlank()) {
+                        Departamento depto = departamentoService.findByName(departamento.trim());
+                        if (depto == null
+                                || sugerencia.getDepartamento() == null
+                                || depto.getId() != sugerencia.getDepartamento().getId()) {
+                            continue;
+                        }
+                    }
                     filas.add(Tablas.fila(
                             "articulo", sugerencia.getArticulo() != null
                                     ? sugerencia.getArticulo().getNombre() : "-",
@@ -129,9 +137,9 @@ public class AlertasStockResource {
         // Department filter mirrors the legacy getStockAlertsByDepartment path.
         if (departamento != null && !departamento.isBlank() && "alertas".equals(vista)) {
             Departamento depto = departamentoService.findByName(departamento.trim());
+            filas.clear();
             if (depto != null) {
                 List<AlertaStock> filtradas = stockAlertService.getStockAlertsByDepartment(depto);
-                filas.clear();
                 if (filtradas != null) {
                     for (AlertaStock alerta : filtradas) {
                         filas.add(toFila(alerta));

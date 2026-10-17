@@ -33,6 +33,9 @@
                     <tr><th>Nombre</th><th>Correo</th><th>Cédula</th><th>Puntos Acumulados</th><th>Última Compra</th><th>Estado Puntos</th><th>Historial</th></tr>
                 </thead>
                 <tbody>
+                    {#if topClientes == null || topClientes.isEmpty()}
+                    <tr><td colspan="7" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                    {#else}
                     {#for c in topClientes}
                     <tr data-row-key="{c.code}">
                         <td>{c.name}</td>
@@ -54,6 +57,7 @@
                         </td>
                     </tr>
                     {/for}
+                    {/if}
                 </tbody>
             </table>
         </div>

@@ -109,6 +109,9 @@
                     <table class="table is-striped is-hoverable is-fullwidth">
                         <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th></tr></thead>
                         <tbody>
+                            {#if topArticulos == null || topArticulos.isEmpty()}
+                            <tr><td colspan="4" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                            {#else}
                             {#for a in topArticulos}
                             <tr data-row-key="{a.codigo}">
                                 <td>{a.codigo}</td>
@@ -117,6 +120,7 @@
                                 <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioCostoSinIVA}{#else}0{/if}</td>
                             </tr>
                             {/for}
+                            {/if}
                         </tbody>
                     </table>
                 </div>
@@ -125,6 +129,9 @@
                     <table class="table is-striped is-hoverable is-fullwidth">
                         <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th></tr></thead>
                         <tbody>
+                            {#if peoresArticulos == null || peoresArticulos.isEmpty()}
+                            <tr><td colspan="4" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                            {#else}
                             {#for a in peoresArticulos}
                             <tr data-row-key="{a.codigo}">
                                 <td>{a.codigo}</td>
@@ -133,6 +140,7 @@
                                 <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioCostoSinIVA}{#else}0{/if}</td>
                             </tr>
                             {/for}
+                            {/if}
                         </tbody>
                     </table>
                 </div>
