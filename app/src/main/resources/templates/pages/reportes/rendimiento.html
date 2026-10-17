@@ -72,18 +72,21 @@
 
         {#include pages/reportes/_tablas/rendimiento /}
 
-        <div class="box mt-4">
-            <p class="title is-5">Ventas por Departamento</p>
-            <div style="width:100%; overflow-x:auto;">
-            <canvas id="grafica-rendimiento" width="900" height="320" style="max-width:100%; height:auto; display:block;"
-                    data-root="{config:['quarkus.http.root-path']}"
-                    data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
-                Su navegador no soporta canvas.
-            </canvas>
-            </div>
-        </div>
+                {#include _kit/chart-card}
+            {#title}Ventas por Departamento{/title}
+            {#subtitle}{filtros.desde} - {filtros.hasta}{/subtitle}
+            {#canvasId}grafica-rendimiento{/canvasId}
+            {#height}360px{/height}
+            {#body}
+                <canvas id="grafica-rendimiento" width="900" height="320"
+                        data-root="{config:['quarkus.http.root-path']}"
+                        data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
+                    Su navegador no soporta canvas.
+                </canvas>
+            {/body}
+        {/include}
 
-        <script>
+<script>
 (function () {
     var canvas = document.getElementById('grafica-rendimiento');
     if (!canvas) { return; }
