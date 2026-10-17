@@ -72,6 +72,28 @@
                href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Detalle de Movimientos</a>
         </div>
 
+        {#include _kit/chart-card}
+            {#title}{chartTitle}{/title}
+            {#subtitle}{filtros.desde} - {filtros.hasta}{/subtitle}
+            {#canvasId}grafica-merma{/canvasId}
+            {#height}320px{/height}
+        {/include}
+
+        <script>
+        (function () {
+            var labels = [{#for l in chartLabels}'{l}',{/for}];
+            var values = [{#for v in chartValues}{v},{/for}];
+            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                window.MercuriusCharts.create('grafica-merma', {
+                    type: 'bar',
+                    labels: labels,
+                    datasets: [{ label: 'Merma', data: values, backgroundColor: '#f14668' }],
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+        })();
+        </script>
+
         {#include pages/reportes/_tablas/merma /}
 
         <div class="buttons mt-4">
