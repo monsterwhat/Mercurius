@@ -13,10 +13,13 @@ import Services.Correos.ReportesProgramadosService;
 import Services.DepartamentoService;
 import Services.ShrinkageAnalysisService;
 import Services.LoginService;
+import Services.ProductPerformanceService;
 import Services.FamiliaService;
 import Services.InventarioService;
 import Services.ProfitAnalysisService;
 import Services.StockAlertService;
+import Services.StockForecastService;
+import Services.SeasonalityService;
 import Utils.ReportExporter;
 import com.lowagie.text.DocumentException;
 import jakarta.annotation.Nonnull;
@@ -108,11 +111,23 @@ public class ExportResource {
 
     @Nonnull
     @Inject
+    ProductPerformanceService productPerformanceService;
+
+    @Nonnull
+    @Inject
     SalesTrendService salesTrendService;
 
     @Nonnull
     @Inject
     ShrinkageAnalysisService shrinkageAnalysisService;
+
+    @Nonnull
+    @Inject
+    StockForecastService stockForecastService;
+
+    @Nonnull
+    @Inject
+    SeasonalityService seasonalityService;
 
     @Nonnull
     @Inject
@@ -172,7 +187,8 @@ public class ExportResource {
             @FormParam("desde") @Nullable String desde,
             @FormParam("hasta") @Nullable String hasta,
             @FormParam("q") @Nullable String q,
-            @FormParam("seccion") @Nullable String seccion) {
+            @FormParam("seccion") @Nullable String seccion,
+            @FormParam("dias") @Nullable String dias) {
 
         if (type == null || type.isBlank()) {
             return badRequest("Falta el parámetro 'type' (xlsx|pdf)");
@@ -188,7 +204,7 @@ public class ExportResource {
         String key = dataset.trim().toLowerCase(Locale.ROOT);
         byte[] bytes;
         try {
-            bytes = buildExport(key, normalizedType, desde, hasta, q, seccion);
+            bytes = buildExport(key, normalizedType, desde, hasta, q, seccion, dias);
         } catch (UnsupportedDatasetException e) {
             return notFound(e.getMessage());
         } catch (Exception e) {
@@ -204,7 +220,8 @@ public class ExportResource {
 
     private byte[] buildExport(@Nonnull String dataset, @Nonnull String type,
                                @Nullable String desde, @Nullable String hasta,
-                               @Nullable String q, @Nullable String seccion)
+                               @Nullable String q, @Nullable String seccion,
+                               @Nullable String dias)
             throws DocumentException, IOException, UnsupportedDatasetException {
         boolean wantsPdf = TYPE_PDF.equals(type);
 
@@ -283,6 +300,74 @@ public class ExportResource {
                 };
                 yield !wantsPdf
                         ? ReportExporter.exportTendenciasExcel(vista, serie, null, null)
+                        : unsupported(dataset, type);
+            }
+            case "rendimiento" -> {
+                Date inicio = fecha(desde, false);
+                Date fin = fecha(hasta, true);
+                if (inicio == null || fin == null) {
+                    Calendar cal = Calendar.getInstance();
+                    fin = new Date();
+                    cal.add(Calendar.DAY_OF_MONTH, -30);
+                    inicio = cal.getTime();
+                }
+                String vista = (seccion == null || seccion.isBlank()) ? "mas" : seccion;
+                if ("departamento".equals(vista)) {
+                    yield !wantsPdf
+                            ? ReportExporter.exportRendimientoExcel(vista, null,
+                                    productPerformanceService.getDepartmentPerformance(inicio, fin))
+                            : unsupported(dataset, type);
+                }
+                List<Services.ProductPerformanceService.ProductSalesSummary> resumen = switch (vista) {
+                    case "menos" -> productPerformanceService.getWorstSellingProducts(inicio, fin, 10);
+                    case "ingresos" -> productPerformanceService.getBestSellingProductsByRevenue(inicio, fin, 10);
+                    default -> productPerformanceService.getBestSellingProducts(inicio, fin, 10);
+                };
+                yield !wantsPdf
+                        ? ReportExporter.exportRendimientoExcel(vista, resumen, null)
+                        : unsupported(dataset, type);
+            }
+            case "pronosticos" -> {
+                int diasPronostico = 30;
+                try {
+                    int valor = Integer.parseInt(dias == null ? "30" : dias.trim());
+                    if (valor == 7 || valor == 14 || valor == 30 || valor == 60) {
+                        diasPronostico = valor;
+                    }
+                } catch (NumberFormatException e) {
+                    // default
+                }
+                String vista = (seccion == null || seccion.isBlank()) ? "pronosticos" : seccion;
+                Services.StockForecastService.InventoryHealthReport salud =
+                        stockForecastService.getInventoryHealthReport();
+                if ("salud".equals(vista)) {
+                    yield !wantsPdf
+                            ? ReportExporter.exportPronosticosExcel(vista, diasPronostico, null, salud)
+                            : unsupported(dataset, type);
+                }
+                List<Services.StockForecastService.ProductForecast> pronosticos =
+                        stockForecastService.generateBulkForecast(diasPronostico);
+                yield !wantsPdf
+                        ? ReportExporter.exportPronosticosExcel(vista, diasPronostico, pronosticos, salud)
+                        : unsupported(dataset, type);
+            }
+            case "estacionalidad" -> {
+                Date end = new Date();
+                Date start;
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(end);
+                cal.add(Calendar.MONTH, -12);
+                start = cal.getTime();
+                Date parsedStart = fecha(desde, false);
+                Date parsedEnd = fecha(hasta, true);
+                if (parsedStart != null) {
+                    start = parsedStart;
+                }
+                if (parsedEnd != null) {
+                    end = parsedEnd;
+                }
+                yield !wantsPdf
+                        ? ReportExporter.exportEstacionalidadExcel(seasonalityService.getDailySales(start, end))
                         : unsupported(dataset, type);
             }
             case "articulos" -> wantsPdf
