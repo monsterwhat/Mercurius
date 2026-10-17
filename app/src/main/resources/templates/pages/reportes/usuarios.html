@@ -57,5 +57,15 @@
                 {/include}
             {/fragment}
         </div>
+
+        <div class="buttons mt-4">
+            <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
+                <input type="hidden" name="dataset" value="usuarios"/>
+                <input type="hidden" name="type" value="xlsx"/>
+                {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
+                <button class="button is-success" type="submit">Exportar Excel</button>
+            </form>
+        </div>
     {/body}
 {/include}
