@@ -105,6 +105,18 @@ public class MermaResource {
                 shrinkageAnalysisService.getShrinkageByDepartment(inicio, fin);
 
         List<Map<String, Object>> filas = new ArrayList<>();
+
+        List<String> chartLabels = new ArrayList<>();
+        List<BigDecimal> chartValues = new ArrayList<>();
+        String chartTitle = "causas".equals(vista) ? "Mermas por Causa" : ("departamentos".equals(vista) ? "Mermas por Departamento" : "Mermas por Causa");
+        Map<String, BigDecimal> chartSource = "departamentos".equals(vista) ? porDepartamento : porCausa;
+        if (chartSource != null) {
+            for (Map.Entry<String, BigDecimal> entry : chartSource.entrySet()) {
+                chartLabels.add(entry.getKey() != null ? entry.getKey() : "-");
+                chartValues.add(entry.getValue() != null ? entry.getValue() : BigDecimal.ZERO);
+            }
+        }
+
         if ("causas".equals(vista)) {
             if (porCausa != null) {
                 for (Map.Entry<String, BigDecimal> entry : porCausa.entrySet()) {
@@ -158,6 +170,9 @@ public class MermaResource {
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("seccion", vista);
+        model.put("chartLabels", chartLabels);
+        model.put("chartValues", chartValues);
+        model.put("chartTitle", chartTitle);
         model.put("hayDatos", movimientos != null && !movimientos.isEmpty());
         model.put("totalMerma", Tablas.fmtNumero(totalMerma));
         model.put("porcentajeMerma", Tablas.fmtNumero(porcentajeMerma));
