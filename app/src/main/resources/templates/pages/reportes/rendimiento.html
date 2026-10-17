@@ -84,79 +84,40 @@
         </div>
 
         <script>
-        (function () {
-            var lienzo = document.getElementById('grafica-rendimiento');
-            if (!lienzo || !lienzo.getContext) {
-                return;
+(function () {
+    var canvas = document.getElementById('grafica-rendimiento');
+    if (!canvas) { return; }
+    var root = canvas.getAttribute('data-root');
+    var desde = canvas.getAttribute('data-desde');
+    var hasta = canvas.getAttribute('data-hasta');
+    var url = root + '/api/product-performance/department-performance';
+    if (desde && hasta) {
+        var inicioMs = Date.parse(desde);
+        var finMs = Date.parse(hasta);
+        if (!isNaN(inicioMs) && !isNaN(finMs)) {
+            url = url + '?startDate=' + inicioMs + '&endDate=' + finMs;
+        }
+    }
+    fetch(url, { credentials: 'same-origin' })
+        .then(function (respuesta) { return respuesta.json(); })
+        .then(function (datos) {
+            var etiquetas = [];
+            var valores = [];
+            Object.keys(datos).forEach(function (clave) {
+                etiquetas.push(clave);
+                valores.push(Number(datos[clave]));
+            });
+            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                window.MercuriusCharts.create('grafica-rendimiento', {
+                    type: 'bar',
+                    labels: etiquetas,
+                    datasets: [{ label: 'Ventas por departamento', data: valores, backgroundColor: '#48c78e' }],
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
             }
-            var url = lienzo.getAttribute('data-root') + '/api/product-performance/department-performance';
-            var desde = lienzo.getAttribute('data-desde');
-            var hasta = lienzo.getAttribute('data-hasta');
-            if (desde && hasta) {
-                var inicioMs = Date.parse(desde);
-                var finMs = Date.parse(hasta);
-                if (!isNaN(inicioMs) && !isNaN(finMs)) {
-                    url = url + '?startDate=' + inicioMs + '&endDate=' + finMs;
-                }
-            }
-            fetch(url, { credentials: 'same-origin' })
-                .then(function (respuesta) { return respuesta.json(); })
-                .then(function (datos) {
-                    var etiquetas = [];
-                    var valores = [];
-                    Object.keys(datos).forEach(function (clave) {
-                        etiquetas.push(clave);
-                        valores.push(Number(datos[clave]));
-                    });
-                    dibujarBarras(lienzo, etiquetas, valores);
-                })
-                .catch(function () { /* sin datos: el canvas queda vacío */ });
-
-            function colorEsquema(nombre, alternativa) {
-                var v = '';
-                if (window.getComputedStyle) {
-                    v = getComputedStyle(document.documentElement).getPropertyValue(nombre);
-                }
-                v = v && v.trim() ? v.trim() : alternativa;
-                return v;
-            }
-
-            function dibujarBarras(canvas, etiquetas, valores) {
-                var ctx = canvas.getContext('2d');
-                var ancho = canvas.width;
-                var alto = canvas.height;
-                var colorTexto = colorEsquema('--bulma-text', '#333');
-                var colorSuave = colorEsquema('--bulma-text-weak', '#777');
-                var colorEje = colorEsquema('--bulma-border', '#ccc');
-                ctx.clearRect(0, 0, ancho, alto);
-                if (valores.length === 0) {
-                    ctx.fillStyle = colorSuave;
-                    ctx.fillText('Sin datos para el período seleccionado', 20, alto / 2);
-                    return;
-                }
-                var maximo = Math.max.apply(null, valores);
-                var margen = 40;
-                var paso = (ancho - margen * 2) / valores.length;
-                ctx.strokeStyle = colorEje;
-                ctx.beginPath();
-                ctx.moveTo(margen, alto - margen);
-                ctx.lineTo(ancho - margen, alto - margen);
-                ctx.stroke();
-                for (var i = 0; i < valores.length; i++) {
-                    var alturaBarra = maximo > 0 ? (valores[i] / maximo) * (alto - margen * 2) : 0;
-                    var x = margen + i * paso + paso * 0.15;
-                    var y = alto - margen - alturaBarra;
-                    ctx.fillStyle = '#48c78e';
-                    ctx.fillRect(x, y, paso * 0.7, alturaBarra);
-                    ctx.fillStyle = colorTexto;
-                    ctx.save();
-                    ctx.translate(x + paso * 0.35, alto - margen + 12);
-                    ctx.rotate(Math.PI / 4);
-                    ctx.fillText(etiquetas[i], 0, 0);
-                    ctx.restore();
-                }
-            }
-        })();
-        </script>
+        })
+        .catch(function () { /* sin datos */ });
+})();
+</script>
     {/body}
 {/include}
