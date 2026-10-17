@@ -8,6 +8,7 @@ import Models.ComprobantesRecibidos;
 import Models.Correos.ReporteProgramado;
 import Models.Inventario;
 import Models.Usuarios;
+import Services.SalesTrendService.TimeSeriesData;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
@@ -657,6 +658,78 @@ public final class ReportExporter {
             }
         }
         return exportGenericExcel("Control de Mermas", headers, rows);
+    }
+
+    /**
+     * "Tendencias de Ventas" workbook — mirrors the Tendencias table
+     * (TendenciasResource): time series or trend indicators.
+     */
+    @Nonnull
+    public static byte[] exportTendenciasExcel(@Nonnull String seccion,
+                                             @Nullable List<TimeSeriesData> serie,
+                                             @Nullable Services.SalesTrendService.GrowthMetrics metricas,
+                                             @Nullable Services.SalesTrendService.TrendIndicators indicadores) throws IOException {
+        if ("indicadores".equals(seccion)) {
+            String[] headers = {"Concepto", "Valor"};
+            List<Object[]> rows = new ArrayList<>();
+            if (indicadores != null) {
+                rows.add(new Object[]{"Crecimiento vs Periodo Anterior", formatPorcentaje(indicadores.getRevenueGrowth())});
+                rows.add(new Object[]{"Crecimiento de Transacciones", formatPorcentaje(indicadores.getTransactionGrowth())});
+                rows.add(new Object[]{"Ingresos Primer Periodo", formatDecimal(indicadores.getFirstPeriodRevenue())});
+                rows.add(new Object[]{"Ingresos Segundo Periodo", formatDecimal(indicadores.getSecondPeriodRevenue())});
+            }
+            if (metricas != null) {
+                rows.add(new Object[]{"Ventas Promedio Diarias", formatDecimal(metricas.getDailyAverage())});
+                rows.add(new Object[]{"Promedio Semanal", formatDecimal(metricas.getWeeklyAverage())});
+                rows.add(new Object[]{"Promedio Mensual", formatDecimal(metricas.getMonthlyAverage())});
+                rows.add(new Object[]{"Ticket Promedio", formatDecimal(metricas.getAverageTicket())});
+            }
+            return exportGenericExcel("Tendencias", headers, rows);
+        }
+
+        String[] headers = {"Periodo", "Ventas", "Transacciones"};
+        List<Object[]> rows = new ArrayList<>();
+        if (serie != null) {
+            for (TimeSeriesData punto : serie) {
+                rows.add(new Object[]{
+                    etiquetaPeriodo(seccion, punto),
+                    punto.getTotalSales() != null ? Double.valueOf(punto.getTotalSales().doubleValue()) : Double.valueOf(0.0),
+                    punto.getTransactionCount()
+                });
+            }
+        }
+        return exportGenericExcel("Tendencias", headers, rows);
+    }
+
+    private static @Nonnull String etiquetaPeriodo(@Nonnull String vista, @Nonnull TimeSeriesData punto) {
+        if ("semanales".equals(vista)) {
+            Integer anio = punto.getYear();
+            Integer semana = punto.getWeekOrMonth();
+            return "Semana " + (semana != null ? semana : "-") + " " + (anio != null ? anio : "");
+        }
+        if ("mensuales".equals(vista)) {
+            Integer mes = punto.getWeekOrMonth();
+            Integer anio = punto.getYear();
+            String[] meses = {"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+                    "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
+            String nombreMes = mes != null && mes >= 1 && mes <= 12 ? meses[mes - 1] : "-";
+            return nombreMes + " " + (anio != null ? anio : "");
+        }
+        return punto.getDate() != null ? punto.getDate().toString() : "-";
+    }
+
+    private static @Nonnull String formatPorcentaje(@Nullable java.math.BigDecimal crecimiento) {
+        if (crecimiento == null) {
+            return "-";
+        }
+        return crecimiento.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString() + "%";
+    }
+
+    private static @Nonnull String formatDecimal(@Nullable java.math.BigDecimal valor) {
+        if (valor == null) {
+            return "-";
+        }
+        return valor.toPlainString();
     }
 
     /**
