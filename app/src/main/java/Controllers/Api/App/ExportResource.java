@@ -10,6 +10,7 @@ import Services.ComprobantesEmitidosService;
 import Services.ComprobantesRecibidosService;
 import Services.Correos.ReportesProgramadosService;
 import Services.DepartamentoService;
+import Services.ShrinkageAnalysisService;
 import Services.LoginService;
 import Services.FamiliaService;
 import Services.InventarioService;
@@ -106,6 +107,10 @@ public class ExportResource {
 
     @Nonnull
     @Inject
+    ShrinkageAnalysisService shrinkageAnalysisService;
+
+    @Nonnull
+    @Inject
     ArticuloPrecioService precioService;
 
     @Nonnull
@@ -161,7 +166,8 @@ public class ExportResource {
             @FormParam("dataset") @Nullable String dataset,
             @FormParam("desde") @Nullable String desde,
             @FormParam("hasta") @Nullable String hasta,
-            @FormParam("q") @Nullable String q) {
+            @FormParam("q") @Nullable String q,
+            @FormParam("seccion") @Nullable String seccion) {
 
         if (type == null || type.isBlank()) {
             return badRequest("Falta el parámetro 'type' (xlsx|pdf)");
@@ -177,7 +183,7 @@ public class ExportResource {
         String key = dataset.trim().toLowerCase(Locale.ROOT);
         byte[] bytes;
         try {
-            bytes = buildExport(key, normalizedType, desde, hasta, q);
+            bytes = buildExport(key, normalizedType, desde, hasta, q, seccion);
         } catch (UnsupportedDatasetException e) {
             return notFound(e.getMessage());
         } catch (Exception e) {
@@ -193,7 +199,7 @@ public class ExportResource {
 
     private byte[] buildExport(@Nonnull String dataset, @Nonnull String type,
                                @Nullable String desde, @Nullable String hasta,
-                               @Nullable String q)
+                               @Nullable String q, @Nullable String seccion)
             throws DocumentException, IOException, UnsupportedDatasetException {
         boolean wantsPdf = TYPE_PDF.equals(type);
 
@@ -219,6 +225,35 @@ public class ExportResource {
             case "facturas" -> !wantsPdf
                     ? ReportExporter.exportFacturasExcel(orEmpty(comprobantesService.listFacturasReportePage(null, "asc", q, 0, 100000)))
                     : unsupported(dataset, type);
+            case "merma" -> {
+                Date inicio = fecha(desde, false);
+                Date fin = fecha(hasta, true);
+                if (inicio == null || fin == null) {
+                    Calendar cal = Calendar.getInstance();
+                    fin = new Date();
+                    cal.add(Calendar.DAY_OF_MONTH, -30);
+                    inicio = cal.getTime();
+                }
+                String vista = (seccion == null || seccion.isBlank()) ? "detalle" : seccion;
+                if ("causas".equals(vista)) {
+                    yield !wantsPdf
+                            ? ReportExporter.exportMermaExcel(vista, null,
+                                    shrinkageAnalysisService.getShrinkageByCause(inicio, fin),
+                                    null, shrinkageAnalysisService.getTotalShrinkage(inicio, fin))
+                            : unsupported(dataset, type);
+                }
+                if ("departamentos".equals(vista)) {
+                    yield !wantsPdf
+                            ? ReportExporter.exportMermaExcel(vista, null, null,
+                                    shrinkageAnalysisService.getShrinkageByDepartment(inicio, fin),
+                                    shrinkageAnalysisService.getTotalShrinkage(inicio, fin))
+                            : unsupported(dataset, type);
+                }
+                yield !wantsPdf
+                        ? ReportExporter.exportMermaExcel("detalle",
+                                shrinkageAnalysisService.getShrinkageMovements(inicio, fin), null, null, null)
+                        : unsupported(dataset, type);
+            }
             case "articulos" -> wantsPdf
                     ? ReportExporter.exportArticulosPdf(orEmpty(articulosService.ListAllEnabled()))
                     : ReportExporter.exportArticulosExcel(orEmpty(articulosService.ListAllEnabled()));

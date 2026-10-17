@@ -6,6 +6,7 @@ import Models.Clientes;
 import Models.ComprobantesEmitidos;
 import Models.ComprobantesRecibidos;
 import Models.Correos.ReporteProgramado;
+import Models.Inventario;
 import Models.Usuarios;
 import Models.Departamento;
 import Models.Familia;
@@ -21,6 +22,7 @@ import com.lowagie.text.Paragraph;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfWriter;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -584,6 +586,77 @@ public final class ReportExporter {
         }
 
         return exportGenericExcel("Usuarios", headers, rows);
+    }
+
+    /**
+     * "Control de Mermas" workbook — mirrors the Merma table
+     * (MermaResource): movement detail or cause/department summary.
+     */
+    @Nonnull
+    public static byte[] exportMermaExcel(@Nonnull String seccion,
+                                          @Nullable List<Inventario> movimientos,
+                                          @Nullable Map<String, BigDecimal> porCausa,
+                                          @Nullable Map<String, BigDecimal> porDepartamento,
+                                          @Nullable BigDecimal totalMerma) throws IOException {
+        BigDecimal total = totalMerma != null ? totalMerma : BigDecimal.ZERO;
+
+        if ("causas".equals(seccion)) {
+            String[] headers = {"Causa", "Total", "%"};
+            List<Object[]> rows = new ArrayList<>();
+            if (porCausa != null) {
+                for (Map.Entry<String, BigDecimal> entry : porCausa.entrySet()) {
+                    BigDecimal causa = entry.getValue() != null ? entry.getValue() : BigDecimal.ZERO;
+                    BigDecimal porcentaje = total.compareTo(BigDecimal.ZERO) == 0
+                            ? BigDecimal.ZERO
+                            : causa.abs().divide(total.abs(), 4, java.math.RoundingMode.HALF_UP)
+                                    .multiply(BigDecimal.valueOf(100))
+                                    .setScale(1, java.math.RoundingMode.HALF_UP);
+                    rows.add(new Object[]{
+                        entry.getKey() != null ? entry.getKey() : "",
+                        Double.valueOf(causa.doubleValue()),
+                        Double.valueOf(porcentaje.doubleValue())
+                    });
+                }
+            }
+            return exportGenericExcel("Mermas por Causa", headers, rows);
+        }
+
+        if ("departamentos".equals(seccion)) {
+            String[] headers = {"Departamento", "Total Mermas", "% del Total"};
+            List<Object[]> rows = new ArrayList<>();
+            if (porDepartamento != null) {
+                for (Map.Entry<String, BigDecimal> entry : porDepartamento.entrySet()) {
+                    BigDecimal causa = entry.getValue() != null ? entry.getValue() : BigDecimal.ZERO;
+                    BigDecimal porcentaje = total.compareTo(BigDecimal.ZERO) == 0
+                            ? BigDecimal.ZERO
+                            : causa.abs().divide(total.abs(), 4, java.math.RoundingMode.HALF_UP)
+                                    .multiply(BigDecimal.valueOf(100))
+                                    .setScale(1, java.math.RoundingMode.HALF_UP);
+                    rows.add(new Object[]{
+                        entry.getKey() != null ? entry.getKey() : "",
+                        Double.valueOf(causa.doubleValue()),
+                        Double.valueOf(porcentaje.doubleValue())
+                    });
+                }
+            }
+            return exportGenericExcel("Mermas por Departamento", headers, rows);
+        }
+
+        String[] headers = {"Tipo", "ArtA-culo", "Cantidad", "Fecha", "Notas", "Usuario"};
+        List<Object[]> rows = new ArrayList<>();
+        if (movimientos != null) {
+            for (Inventario movimiento : movimientos) {
+                rows.add(new Object[]{
+                    movimiento.getTipoMovimiento() != null ? movimiento.getTipoMovimiento() : "",
+                    movimiento.getArticulo() != null ? movimiento.getArticulo().getNombre() : "-",
+                    movimiento.getCantidad() != null ? Double.valueOf(movimiento.getCantidad().doubleValue()) : Double.valueOf(0.0),
+                    movimiento.getFechaMovimiento() != null ? movimiento.getFechaMovimiento().toString() : "",
+                    movimiento.getNotas() != null ? movimiento.getNotas() : "",
+                    movimiento.getUsuario() != null ? movimiento.getUsuario().getUsername() : "-"
+                });
+            }
+        }
+        return exportGenericExcel("Control de Mermas", headers, rows);
     }
 
     /**
