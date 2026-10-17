@@ -101,25 +101,49 @@
         </div>
 
         <div class="box">
-            <p class="title is-5">Top productos en esas fechas</p>
+            <p class="title is-5">Resumen por año</p>
             <div class="table-container">
                 <table class="table is-fullwidth is-striped">
                     <thead>
                         <tr>
-                            <th>Producto</th>
+                            <th>Año</th>
+                            <th class="has-text-right">Ventas</th>
+                            <th class="has-text-right">Transacciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#for r in resumenAnual}
+                        <tr>
+                            <td>{r.anio}</td>
+                            <td class="has-text-right">{r.total}</td>
+                            <td class="has-text-right">{r.transacciones}</td>
+                        </tr>
+                        {/for}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="box">
+            <p class="title is-5">Elementos seleccionados / top por monto histórico</p>
+            <div class="table-container">
+                <table class="table is-fullwidth is-striped">
+                    <thead>
+                        <tr>
+                            <th>Elemento</th>
                             <th class="has-text-right">Total histórico</th>
+                            <th>Valores por año</th>
                         </tr>
                     </thead>
                     <tbody id="historica-productos">
-                {#if resultado != null}
-                {#for p in resultado.products}
-                <tr>
-                    <td>{p.productName}</td>
-                    <td class="has-text-right">{p.yearlySales}</td>
-                </tr>
-                {/for}
-                {/if}
-            </tbody>
+                        {#for p in productosResultado}
+                        <tr>
+                            <td>{p.nombre}</td>
+                            <td class="has-text-right">{p.total}</td>
+                            <td>{p.detalle}</td>
+                        </tr>
+                        {/for}
+                    </tbody>
                 </table>
             </div>
         </div>

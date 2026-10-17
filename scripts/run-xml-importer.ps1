@@ -1,0 +1,6 @@
+$env:DB_URL="jdbc:postgresql://localhost:5434/mercurius"
+$env:DB_USERNAME="mercurius"
+$env:DB_PASSWORD="Mercurius@1!"
+Set-Location "C:\Users\OIJ\AppData\Local\Temp\opencode"
+java -cp ".;C:\Users\OIJ\.m2\repository\org\postgresql\postgresql\42.7.13\postgresql-42.7.13.jar" MigrateXmlInvoices --xml-dir "D:/Documents/Facturas Electronicas/vSuper/Facturas" 2>&1 | Out-File "D:\xml-mig.log"
+Write-Host "XML DONE"

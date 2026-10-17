@@ -468,8 +468,16 @@ public class SalesTrendService {
         }
 
         for (int year : years) {
-            LocalDateTime start = LocalDate.of(year, month, day).atStartOfDay();
-            LocalDateTime end = LocalDate.of(year, month, day).atTime(23, 59, 59);
+            LocalDateTime start;
+            LocalDateTime end;
+            try {
+                start = LocalDate.of(year, month, day).atStartOfDay();
+                end = LocalDate.of(year, month, day).atTime(23, 59, 59);
+            } catch (java.time.DateTimeException e) {
+                totalsByYear.put(year, BigDecimal.ZERO);
+                transactionsByYear.put(year, 0);
+                continue;
+            }
             Object[] row = entityManager.createQuery(
                 "SELECT COALESCE(SUM(r.totalComprobante), 0), COUNT(f) " +
                 "FROM ComprobantesEmitidos f " +
@@ -523,8 +531,14 @@ public class SalesTrendService {
         }
 
         for (int year : years) {
-            LocalDateTime start = LocalDate.of(year, month, day).atStartOfDay();
-            LocalDateTime end = LocalDate.of(year, month, day).atTime(23, 59, 59);
+            LocalDateTime start;
+            LocalDateTime end;
+            try {
+                start = LocalDate.of(year, month, day).atStartOfDay();
+                end = LocalDate.of(year, month, day).atTime(23, 59, 59);
+            } catch (java.time.DateTimeException e) {
+                continue;
+            }
             @SuppressWarnings("unchecked")
             List<Object[]> rows = entityManager.createQuery(
                 "SELECT " + groupExpression + ", COALESCE(SUM(ld.montoTotalLinea), 0) " +
