@@ -370,6 +370,9 @@ public class ExportResource {
                         ? ReportExporter.exportEstacionalidadExcel(seasonalityService.getDailySales(start, end))
                         : unsupported(dataset, type);
             }
+            case "loyalty" -> !wantsPdf
+                    ? ReportExporter.exportLoyaltyExcel(orEmpty(clientService.listAll()))
+                    : unsupported(dataset, type);
             case "articulos" -> wantsPdf
                     ? ReportExporter.exportArticulosPdf(orEmpty(articulosService.ListAllEnabled()))
                     : ReportExporter.exportArticulosExcel(orEmpty(articulosService.ListAllEnabled()));

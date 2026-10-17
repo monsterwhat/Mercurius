@@ -862,6 +862,29 @@ public final class ReportExporter {
     }
 
     /**
+     * "Programa de Lealtad - Reportes" workbook — mirrors the all-clients
+     * table (LoyaltyReportesResource): one row per client.
+     */
+    @Nonnull
+    public static byte[] exportLoyaltyExcel(@Nonnull List<Clientes> clientes) throws IOException {
+        String[] headers = {"Nombre", "Correo", "TelAcfono", "Puntos", "Asltima Compra", "Estado Puntos"};
+
+        List<Object[]> rows = new ArrayList<>(clientes.size());
+        for (Clientes cliente : clientes) {
+            rows.add(new Object[]{
+                cliente.getName() != null ? cliente.getName() : "",
+                cliente.getEmail() != null ? cliente.getEmail() : "",
+                cliente.getPhoneNumber() != null ? cliente.getPhoneNumber() : "",
+                cliente.getPuntosAcumulados() != null ? Double.valueOf(cliente.getPuntosAcumulados().doubleValue()) : Double.valueOf(0.0),
+                cliente.getLastPurchaseDate() != null ? cliente.getLastPurchaseDate().toString() : "",
+                cliente.getStatusPuntos() != null ? cliente.getStatusPuntos() : "Sin estado"
+            });
+        }
+
+        return exportGenericExcel("Lealtad", headers, rows);
+    }
+
+    /**
      * Dataset-agnostic XLSX builder: one sheet, a styled header row and one
      * row per {@code Object[]} entry. Cell typing follows the legacy
      * ExcelExporter conventions — {@link Number} values become numeric cells,
