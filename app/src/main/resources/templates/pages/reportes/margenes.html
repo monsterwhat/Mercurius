@@ -161,8 +161,41 @@
                     {/for}
                   {/rows}
                 {/include}
+                {#include _kit/chart-card}
+                    {#title}Ventas por Departamento{/title}
+                    {#canvasId}margenes-chart{/canvasId}
+                    {#height}300px{/height}
+                {/include}
+                <script type="application/json" id="margenes-chart-data">
+{"labels":[{#for l in chartLabels}"{l}",{/for}],"values":[{#for v in chartValues}{v},{/for}]}
+                </script>
                 {/if}
             {/fragment}
         </div>
+
+        <script>
+        (function () {
+            function renderMargenesChart() {
+                var dataEl = document.getElementById('margenes-chart-data');
+                if (!dataEl) { return; }
+                var data = { labels: [], values: [] };
+                try { data = JSON.parse(dataEl.textContent || '{}'); } catch (e) { return; }
+                if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                    window.MercuriusCharts.create('margenes-chart', {
+                        type: 'bar',
+                        labels: data.labels || [],
+                        datasets: [{ label: 'Ventas', data: data.values || [], backgroundColor: '#3298dc' }],
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
+            }
+            renderMargenesChart();
+            document.addEventListener('htmx:afterSwap', function (event) {
+                if (event.target && event.target.id === 'margenes-tabla-container') {
+                    renderMargenesChart();
+                }
+            });
+        })();
+        </script>
     {/body}
 {/include}

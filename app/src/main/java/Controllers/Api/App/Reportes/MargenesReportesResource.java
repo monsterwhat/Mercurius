@@ -112,10 +112,14 @@ public class MargenesReportesResource {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<Map<String, Object>> filasBase = new ArrayList<>();
+        List<String> chartLabels = new ArrayList<>();
+        List<BigDecimal> chartValues = new ArrayList<>();
         for (CorteMargen snapshot : snapshots) {
             filasBase.add(Map.of(
                     "s", snapshot,
                     "etiqueta", etiquetaDesempeno(snapshot.getMargenPromedio())));
+            chartLabels.add(snapshot.getDepartamento() != null ? snapshot.getDepartamento() : "-");
+            chartValues.add(snapshot.getTotalVentas() != null ? snapshot.getTotalVentas() : BigDecimal.ZERO);
         }
         List<Map<String, Object>> filas = sortFilas(filasBase, sort, dir);
 
@@ -149,6 +153,8 @@ public class MargenesReportesResource {
                 "filtroInicio", inicio == null ? "" : inicio,
                 "filtroFin", fin == null ? "" : fin,
                 "filtroDepartamento", departamento == null ? "" : departamento,
+                "chartLabels", chartLabels,
+                "chartValues", chartValues,
                 "filtroFamilia", familia == null ? "" : familia,
                 "seccion", seccion == null || seccion.isBlank() ? "resumen" : seccion,
                 "baseUrl", BASE_URL);
