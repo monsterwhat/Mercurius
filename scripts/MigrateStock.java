@@ -11,6 +11,7 @@ public class MigrateStock {
         String dbf = "D:/Documents/Facturas Electronicas/vSuper/Sistema_extracted/MAESTRO.DBF";
 
         try (Connection c = DriverManager.getConnection(dbUrl, dbUser, dbPass)) {
+            c.setAutoCommit(false);
             int inserted = 0;
             DbfReader r = new DbfReader(dbf);
             for (DbfReader.Row row : r.rows) {
