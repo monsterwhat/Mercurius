@@ -41,6 +41,28 @@
 
         {#include pages/reportes/_tablas/familias /}
 
+        {#include _kit/chart-card}
+            {#title}Ventas por Familia{/title}
+            {#subtitle}{filtros.desde} - {filtros.hasta}{/subtitle}
+            {#canvasId}grafica-familias{/canvasId}
+            {#height}360px{/height}
+        {/include}
+
+        <script>
+        (function () {
+            var labels = [{#for l in chartLabels}'{l}',{/for}];
+            var values = [{#for v in chartValues}{v},{/for}];
+            if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                window.MercuriusCharts.create('grafica-familias', {
+                    type: 'bar',
+                    labels: labels,
+                    datasets: [{ label: 'Ventas', data: values, backgroundColor: '#48c78e' }],
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+        })();
+        </script>
+
         <div class="buttons mt-4">
             <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>

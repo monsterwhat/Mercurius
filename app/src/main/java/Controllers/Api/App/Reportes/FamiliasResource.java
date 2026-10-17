@@ -100,6 +100,8 @@ public class FamiliasResource {
         BigDecimal total = null;
         boolean consultaCompleta = inicio != null && fin != null;
 
+        List<String> chartLabels = new ArrayList<>();
+        List<BigDecimal> chartValues = new ArrayList<>();
         if (consultaCompleta) {
             List<ReportesFamiliasYDepartamentos> reportes =
                     inventarioService.getTotalSalesByFamilia(inicio, fin);
@@ -110,6 +112,8 @@ public class FamiliasResource {
                             "nombre", reporte.getNombre(),
                             "cantidad", Tablas.fmtNumero(reporte.getCantidad()),
                             "porcentaje", Tablas.fmtNumero(reporte.getPorcentaje())));
+                    chartLabels.add(reporte.getNombre() != null ? reporte.getNombre() : "-");
+                    chartValues.add(reporte.getCantidad() != null ? reporte.getCantidad() : BigDecimal.ZERO);
                 }
             }
         }
@@ -133,6 +137,8 @@ public class FamiliasResource {
         model.put("params", Tablas.params(filtros));
         model.put("filtros", filtros);
         model.put("consultaCompleta", consultaCompleta);
+        model.put("chartLabels", chartLabels);
+        model.put("chartValues", chartValues);
         model.put("totalGeneral", total != null ? Tablas.fmtNumero(total) : null);
 
         boolean fragmento = headers.getHeaderString("HX-Request") != null;
