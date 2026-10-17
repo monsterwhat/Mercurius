@@ -39,6 +39,16 @@
 
             {#include pages/reportes/_tablas/etiquetas /}
 
+            <div class="buttons mt-4">
+                <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
+                    <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
+                    <input type="hidden" name="dataset" value="etiquetas"/>
+                    <input type="hidden" name="type" value="pdf"/>
+                    {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
+                    <button class="button is-primary" type="submit">Exportar PDF</button>
+                </form>
+            </div>
+
             <div class="card mt-4">
                 <div class="card-header"><p class="card-header-title">Vista Previa de Etiquetas</p></div>
                 <div class="card-content">
