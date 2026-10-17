@@ -1,6 +1,7 @@
 package Controllers.Api.App.Reportes;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -88,6 +89,19 @@ public class FechasResource {
 
         Date inicio = Tablas.fecha(desde, false);
         Date fin = Tablas.fecha(hasta, true);
+        if (inicio == null || fin == null) {
+            // Default last 7 days for inventory movement reports.
+            Calendar cal = Calendar.getInstance();
+            fin = new Date();
+            cal.add(Calendar.DAY_OF_MONTH, -7);
+            inicio = cal.getTime();
+        }
+        if (inicio == null || fin == null) {
+            Calendar cal = Calendar.getInstance();
+            fin = new Date();
+            cal.add(Calendar.DAY_OF_MONTH, -30);
+            inicio = cal.getTime();
+        }
 
         List<Map<String, Object>> filas = new ArrayList<>();
         boolean consultaCompleta = usuario != null && !usuario.isBlank()
@@ -154,3 +168,5 @@ public class FechasResource {
                 Map.of("label", "Detalles", "key", "notas"));
     }
 }
+
+

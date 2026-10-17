@@ -2,6 +2,7 @@ package Controllers.Api.App.Reportes;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -75,6 +76,19 @@ public class FamiliasResource {
 
         Date inicio = Tablas.fecha(desde, false);
         Date fin = Tablas.fecha(hasta, true);
+        if (inicio == null || fin == null) {
+            // Default last 30 days for family sales reports.
+            Calendar cal = Calendar.getInstance();
+            fin = new Date();
+            cal.add(Calendar.DAY_OF_MONTH, -30);
+            inicio = cal.getTime();
+        }
+        if (inicio == null || fin == null) {
+            Calendar cal = Calendar.getInstance();
+            fin = new Date();
+            cal.add(Calendar.DAY_OF_MONTH, -30);
+            inicio = cal.getTime();
+        }
 
         List<Map<String, Object>> filas = new ArrayList<>();
         BigDecimal total = null;
@@ -131,3 +145,5 @@ public class FamiliasResource {
                 Map.of("label", "Porcentaje", "key", "porcentaje"));
     }
 }
+
+

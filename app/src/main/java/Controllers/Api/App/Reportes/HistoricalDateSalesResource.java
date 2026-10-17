@@ -112,6 +112,27 @@ public class HistoricalDateSalesResource {
             resultado = null;
         }
 
+        List<Map<String, Object>> resumenAnual = new ArrayList<>();
+        List<Map<String, Object>> productosResultado = new ArrayList<>();
+        if (resultado != null) {
+            for (int i = 0; i < resultado.getYears().size(); i++) {
+                resumenAnual.add(Map.of(
+                        "anio", resultado.getYears().get(i),
+                        "total", resultado.getTotalSales().get(i),
+                        "transacciones", resultado.getTransactionCounts().get(i)));
+            }
+            for (SalesTrendService.ProductYearSeries p : resultado.getProducts()) {
+                java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+                for (java.math.BigDecimal v : p.getYearlySales()) {
+                    if (v != null) total = total.add(v);
+                }
+                productosResultado.add(Map.of(
+                        "nombre", p.getProductName(),
+                        "total", total,
+                        "detalle", String.join(" / ", p.getYearlySales().stream().map(String::valueOf).toList())));
+            }
+        }
+
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Ventas por Fecha Histórica");
         model.put("baseUrl", BASE_URL);
@@ -123,6 +144,8 @@ public class HistoricalDateSalesResource {
         model.put("opciones", opciones);
         model.put("itemsSeleccionados", selectedItems);
         model.put("resultado", resultado);
+        model.put("resumenAnual", resumenAnual);
+        model.put("productosResultado", productosResultado);
 
         String html = pagina.data(model).render();
         return Response.ok(html)
