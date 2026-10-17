@@ -9,6 +9,7 @@ import Models.Correos.ReporteProgramado;
 import Models.Inventario;
 import Models.Usuarios;
 import Services.ProductPerformanceService.ProductSalesSummary;
+import Services.SalesTrendService.SameDateHistory;
 import Services.SalesTrendService.TimeSeriesData;
 import Services.StockForecastService.InventoryHealthReport;
 import Services.StockForecastService.ProductForecast;
@@ -882,6 +883,32 @@ public final class ReportExporter {
         }
 
         return exportGenericExcel("Lealtad", headers, rows);
+    }
+
+    /**
+     * "Ventas por Fecha Historica" workbook — mirrors the annual summary table
+     * (HistoricalDateSalesResource): one row per year.
+     */
+    @Nonnull
+    public static byte[] exportVentasFechaHistoricaExcel(@Nonnull SameDateHistory resultado) throws IOException {
+        String[] headers = {"AAo", "Ventas", "Transacciones"};
+
+        List<Object[]> rows = new ArrayList<>();
+        if (resultado != null) {
+            List<Integer> years = resultado.getYears();
+            List<java.math.BigDecimal> totals = resultado.getTotalSales();
+            List<Integer> transactions = resultado.getTransactionCounts();
+            int size = Math.min(Math.min(years.size(), totals.size()), transactions.size());
+            for (int i = 0; i < size; i++) {
+                rows.add(new Object[]{
+                    years.get(i),
+                    totals.get(i) != null ? Double.valueOf(totals.get(i).doubleValue()) : Double.valueOf(0.0),
+                    transactions.get(i)
+                });
+            }
+        }
+
+        return exportGenericExcel("Ventas por Fecha Historica", headers, rows);
     }
 
     /**

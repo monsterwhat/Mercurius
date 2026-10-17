@@ -188,7 +188,12 @@ public class ExportResource {
             @FormParam("hasta") @Nullable String hasta,
             @FormParam("q") @Nullable String q,
             @FormParam("seccion") @Nullable String seccion,
-            @FormParam("dias") @Nullable String dias) {
+            @FormParam("dias") @Nullable String dias,
+            @FormParam("month") @Nullable String month,
+            @FormParam("day") @Nullable String day,
+            @FormParam("yearsBack") @Nullable String yearsBack,
+            @FormParam("dimension") @Nullable String dimension,
+            @FormParam("items") @Nullable String items) {
 
         if (type == null || type.isBlank()) {
             return badRequest("Falta el parámetro 'type' (xlsx|pdf)");
@@ -204,7 +209,7 @@ public class ExportResource {
         String key = dataset.trim().toLowerCase(Locale.ROOT);
         byte[] bytes;
         try {
-            bytes = buildExport(key, normalizedType, desde, hasta, q, seccion, dias);
+            bytes = buildExport(key, normalizedType, desde, hasta, q, seccion, dias, month, day, yearsBack, dimension, items);
         } catch (UnsupportedDatasetException e) {
             return notFound(e.getMessage());
         } catch (Exception e) {
@@ -221,7 +226,9 @@ public class ExportResource {
     private byte[] buildExport(@Nonnull String dataset, @Nonnull String type,
                                @Nullable String desde, @Nullable String hasta,
                                @Nullable String q, @Nullable String seccion,
-                               @Nullable String dias)
+                               @Nullable String dias, @Nullable String month,
+                               @Nullable String day, @Nullable String yearsBack,
+                               @Nullable String dimension, @Nullable String items)
             throws DocumentException, IOException, UnsupportedDatasetException {
         boolean wantsPdf = TYPE_PDF.equals(type);
 
@@ -376,6 +383,47 @@ public class ExportResource {
             case "etiquetas" -> wantsPdf
                     ? ReportExporter.exportEtiquetasPdf(orEmpty(articulosService.ListAllEnabled()), new java.util.HashMap<>())
                     : unsupported(dataset, type);
+            case "ventas-fecha-historica" -> {
+                int resolvedMes = 1;
+                int resolvedDia = 1;
+                int resolvedAnos = 6;
+                try {
+                    if (month != null && !month.isBlank()) {
+                        resolvedMes = Integer.parseInt(month.trim());
+                    }
+                    if (day != null && !day.isBlank()) {
+                        resolvedDia = Integer.parseInt(day.trim());
+                    }
+                    if (yearsBack != null && !yearsBack.isBlank()) {
+                        resolvedAnos = Integer.parseInt(yearsBack.trim());
+                    }
+                } catch (NumberFormatException e) {
+                    // keep defaults
+                }
+                if (resolvedMes < 1 || resolvedMes > 12) resolvedMes = 1;
+                if (resolvedDia < 1 || resolvedDia > 31) resolvedDia = 1;
+                if (resolvedAnos < 1 || resolvedAnos > 50) resolvedAnos = 6;
+                String resolvedDimension = (dimension == null || dimension.isBlank()) ? "productos" : dimension.trim();
+                List<String> selectedItems = new ArrayList<>();
+                if (items != null && !items.isBlank()) {
+                    for (String item : items.split("\\|")) {
+                        String trimmed = item.trim();
+                        if (!trimmed.isEmpty()) {
+                            selectedItems.add(trimmed);
+                        }
+                    }
+                }
+                Services.SalesTrendService.SameDateHistory resultado;
+                try {
+                    resultado = salesTrendService.getSameDateSalesHistory(
+                            resolvedMes, resolvedDia, resolvedAnos, resolvedDimension, selectedItems);
+                } catch (RuntimeException e) {
+                    resultado = null;
+                }
+                yield !wantsPdf
+                        ? ReportExporter.exportVentasFechaHistoricaExcel(resultado)
+                        : unsupported(dataset, type);
+            }
             case "articulos" -> wantsPdf
                     ? ReportExporter.exportArticulosPdf(orEmpty(articulosService.ListAllEnabled()))
                     : ReportExporter.exportArticulosExcel(orEmpty(articulosService.ListAllEnabled()));
