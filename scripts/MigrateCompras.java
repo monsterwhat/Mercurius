@@ -21,6 +21,7 @@ public class MigrateCompras {
 
                 LocalDate fecha = localDate(row.get("FECHA"));
                 if (fecha == null) fecha = LocalDate.now();
+                if (fecha.getYear() < 2000 || fecha.getYear() > 2030) continue;
                 String estado = str(row.get("ESTADO"));
                 if (estado.isBlank()) estado = "REGISTRADO";
 
