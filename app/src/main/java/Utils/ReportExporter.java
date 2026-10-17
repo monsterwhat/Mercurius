@@ -8,7 +8,10 @@ import Models.ComprobantesRecibidos;
 import Models.Correos.ReporteProgramado;
 import Models.Inventario;
 import Models.Usuarios;
+import Services.ProductPerformanceService.ProductSalesSummary;
 import Services.SalesTrendService.TimeSeriesData;
+import Services.StockForecastService.InventoryHealthReport;
+import Services.StockForecastService.ProductForecast;
 import Models.Departamento;
 import Models.Familia;
 import Models.Inventario;
@@ -730,6 +733,132 @@ public final class ReportExporter {
             return "-";
         }
         return valor.toPlainString();
+    }
+
+    /**
+     * "Rendimiento de Productos" workbook — mirrors the Rendimiento table
+     * (RendimientoResource): product summaries or department performance.
+     */
+    @Nonnull
+    public static byte[] exportRendimientoExcel(@Nonnull String seccion,
+                                               @Nullable List<ProductSalesSummary> resumen,
+                                               @Nullable Map<String, BigDecimal> departamentos) throws IOException {
+        if ("departamento".equals(seccion)) {
+            String[] headers = {"Departamento", "Ventas", "Porcentaje"};
+            List<Object[]> rows = new ArrayList<>();
+            BigDecimal total = BigDecimal.ZERO;
+            if (departamentos != null) {
+                for (BigDecimal value : departamentos.values()) {
+                    if (value != null) {
+                        total = total.add(value);
+                    }
+                }
+                for (Map.Entry<String, BigDecimal> entry : departamentos.entrySet()) {
+                    BigDecimal value = entry.getValue() != null ? entry.getValue() : BigDecimal.ZERO;
+                    BigDecimal porcentaje = total.compareTo(BigDecimal.ZERO) == 0
+                            ? BigDecimal.ZERO
+                            : value.multiply(BigDecimal.valueOf(100)).divide(total, 1, java.math.RoundingMode.HALF_UP);
+                    rows.add(new Object[]{
+                        entry.getKey() != null ? entry.getKey() : "",
+                        Double.valueOf(value.doubleValue()),
+                        Double.valueOf(porcentaje.doubleValue())
+                    });
+                }
+            }
+            return exportGenericExcel("Rendimiento por Departamento", headers, rows);
+        }
+
+        String[] headers = {"Nombre", "Cantidad Vendida", "Ingresos"};
+        List<Object[]> rows = new ArrayList<>();
+        if (resumen != null) {
+            for (ProductSalesSummary producto : resumen) {
+                rows.add(new Object[]{
+                    producto.getProductName() != null ? producto.getProductName() : "",
+                    producto.getQuantitySold() != null ? Double.valueOf(producto.getQuantitySold()) : Double.valueOf(0.0),
+                    producto.getTotalRevenue() != null ? Double.valueOf(producto.getTotalRevenue().doubleValue()) : Double.valueOf(0.0)
+                });
+            }
+        }
+        return exportGenericExcel("Rendimiento de Productos", headers, rows);
+    }
+
+    /**
+     * "Pronosticos de Inventario" workbook — mirrors the Pronosticos table
+     * (PronosticosResource): forecast, health or reorder rows.
+     */
+    @Nonnull
+    public static byte[] exportPronosticosExcel(@Nonnull String seccion, int dias,
+                                               @Nullable List<ProductForecast> pronosticos,
+                                               @Nullable InventoryHealthReport salud) throws IOException {
+        if ("salud".equals(seccion)) {
+            String[] headers = {"ArtA-culo", "Estado"};
+            List<Object[]> rows = new ArrayList<>();
+            if (salud != null && salud.criticalItems() != null) {
+                for (String critico : salud.criticalItems()) {
+                    rows.add(new Object[]{critico != null ? critico : "", "CrA-tico"});
+                }
+            }
+            return exportGenericExcel("Salud del Inventario", headers, rows);
+        }
+
+        if ("reorden".equals(seccion)) {
+            String[] headers = {"ArtA-culo", "Stock Actual", "Cantidad Sugerida", "Prioridad"};
+            List<Object[]> rows = new ArrayList<>();
+            if (pronosticos != null) {
+                for (ProductForecast pronostico : pronosticos) {
+                    int sugerido = Math.max(0,
+                            pronostico.avgDailySales().multiply(java.math.BigDecimal.valueOf(dias))
+                                    .setScale(0, java.math.RoundingMode.HALF_UP).intValue()
+                            - pronostico.currentStock());
+                    rows.add(new Object[]{
+                        pronostico.articuloNombre() != null ? pronostico.articuloNombre() : "",
+                        pronostico.currentStock(),
+                        sugerido,
+                        pronostico.shouldReorder() && pronostico.predictedStock() <= 0 ? "Comprar" : (pronostico.shouldReorder() ? "Pronto" : "OK")
+                    });
+                }
+            }
+            return exportGenericExcel("Sugerencias de Reorden", headers, rows);
+        }
+
+        String[] headers = {"ArtA-culo", "Stock Actual", "Demanda Pronosticada", "DA-as Restantes", "RecomendaciA3n"};
+        List<Object[]> rows = new ArrayList<>();
+        if (pronosticos != null) {
+            for (ProductForecast pronostico : pronosticos) {
+                int diasRestantes = 0;
+                if (pronostico.avgDailySales() != null && pronostico.avgDailySales().compareTo(java.math.BigDecimal.ZERO) > 0) {
+                    diasRestantes = java.math.BigDecimal.valueOf(pronostico.currentStock())
+                            .divide(pronostico.avgDailySales(), 0, java.math.RoundingMode.DOWN).intValue();
+                }
+                rows.add(new Object[]{
+                    pronostico.articuloNombre() != null ? pronostico.articuloNombre() : "",
+                    pronostico.currentStock(),
+                    pronostico.predictedSales(),
+                    Math.max(0, diasRestantes),
+                    pronostico.shouldReorder() && pronostico.predictedStock() <= 0 ? "Comprar" : (pronostico.shouldReorder() ? "Pronto" : "OK")
+                });
+            }
+        }
+        return exportGenericExcel("Pronosticos de Inventario", headers, rows);
+    }
+
+    /**
+     * "Analisis de Estacionalidad" workbook — mirrors the daily sales table
+     * (EstacionalidadReportesResource): one row per day.
+     */
+    @Nonnull
+    public static byte[] exportEstacionalidadExcel(@Nonnull List<Object[]> diarios) throws IOException {
+        String[] headers = {"Fecha", "Total Ventas"};
+
+        List<Object[]> rows = new ArrayList<>(diarios.size());
+        for (Object[] row : diarios) {
+            rows.add(new Object[]{
+                row.length > 0 && row[0] != null ? row[0].toString() : "",
+                row.length > 1 && row[1] != null ? Double.valueOf(row[1].toString()) : Double.valueOf(0.0)
+            });
+        }
+
+        return exportGenericExcel("Estacionalidad", headers, rows);
     }
 
     /**
