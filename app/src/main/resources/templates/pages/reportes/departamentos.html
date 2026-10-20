@@ -41,9 +41,8 @@
 
         {#include pages/reportes/_tablas/departamentos /}
 
-        {#include _kit/chart-card}
-            {#title}Ventas por Departamento{/title}
-            {#subtitle}{filtros.desde} - {filtros.hasta}{/subtitle}
+        {#include _kit/chart-card title="Ventas por Departamento"}
+            subtitle=filtros.desde} - {filtros.hasta
             {#canvasId}grafica-departamentos{/canvasId}
             {#height}360px{/height}
         {/include}
