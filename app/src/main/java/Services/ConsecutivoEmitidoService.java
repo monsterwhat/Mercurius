@@ -44,6 +44,65 @@ public class ConsecutivoEmitidoService extends GService<ConsecutivoEmitido> {
     }
 
     /**
+     * Eleva el contador de una combinación (sucursal, terminal, tipo) hasta
+     * {@code secuencia} sin decrementarlo nunca.
+     *
+     * <p>Se usa en la importación del histórico: los documentos que la empresa
+     * emitió con el sistema anterior consumieron números que el contador
+     * actual no conoce, así que sin esto la numeración nueva podría reutilizar
+     * un consecutivo ya usado ante Hacienda.</p>
+     *
+     * @return el valor final del contador tras la operación
+     */
+    @Transactional
+    public synchronized long asegurarSecuencialAlto(@Nonnull String sucursal, @Nonnull String terminal,
+                                                    @Nonnull String tipo, long secuencia) {
+        try {
+            // Mismo candado consultivo que getNextSequential(): el Historical import
+            // corre en paralelo con las ventas, y ambos tocan el mismo contador.
+            bloquearConsecutivo("consecutivo:" + sucursal + "|" + terminal + "|" + tipo);
+            TypedQuery<ConsecutivoEmitido> query = em.createQuery(
+                    "SELECT c FROM ConsecutivoEmitido c WHERE c.sucursal = :sucursal AND c.terminal = :terminal AND c.tipo = :tipo",
+                    ConsecutivoEmitido.class);
+            query.setParameter("sucursal", sucursal);
+            query.setParameter("terminal", terminal);
+            query.setParameter("tipo", tipo);
+            query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+            query.setMaxResults(1);
+
+            ConsecutivoEmitido counter;
+            try {
+                counter = query.getSingleResult();
+            } catch (NoResultException e) {
+                counter = new ConsecutivoEmitido();
+                counter.setSucursal(sucursal);
+                counter.setTerminal(terminal);
+                counter.setTipo(tipo);
+                counter.setUltimoSecuencial(0L);
+                em.persist(counter);
+                em.flush();
+            }
+
+            long actual = counter.getUltimoSecuencial() == null ? 0L : counter.getUltimoSecuencial();
+            if (secuencia > actual) {
+                counter.setUltimoSecuencial(secuencia);
+                em.merge(counter);
+                em.flush();
+                LOG.info("Contador de consecutivos elevado por importación histórica | source=ConsecutivoEmitidoService.asegurarSecuencialAlto()"
+                        + " | antes=" + actual + " | despues=" + secuencia);
+                return secuencia;
+            }
+            return actual;
+        } catch (PersistenceException e) {
+            LOG.warn("Error elevando el contador de consecutivos: " + e.getMessage()
+                    + " | source=ConsecutivoEmitidoService.asegurarSecuencialAlto()"
+                    + " | despues=" + e.getMessage());
+            throw new RuntimeException("No se pudo elevar el contador de consecutivos para "
+                    + sucursal + "-" + terminal + "-" + tipo + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Atomically increments and returns the next sequential number for a given
      * sucursal + terminal + tipo combination.
      * <p>
