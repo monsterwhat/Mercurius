@@ -83,11 +83,8 @@
             </form>
         </div>
 
-                {#include _kit/chart-card title="Ventas Diarias del Período"}
-            subtitle=periodoTexto
-            {#canvasId}grafica-tendencias{/canvasId}
-            {#height}360px{/height}
-            {#body}
+                {#include _kit/chart-card title="Ventas Diarias del Período" subtitle=periodoTexto canvasId="grafica-tendencias" height="360px"}
+{#body}
                 <canvas id="grafica-tendencias" width="900" height="320"
                         data-root="{config:['quarkus.http.root-path']}"
                         data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
