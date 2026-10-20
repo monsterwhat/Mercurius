@@ -72,9 +72,8 @@
                href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Detalle de Movimientos</a>
         </div>
 
-        {#include _kit/chart-card}
-            {#title}{chartTitle}{/title}
-            {#subtitle}{filtros.desde} - {filtros.hasta}{/subtitle}
+        {#include _kit/chart-card title=chartTitle}
+            subtitle=filtros.desde} - {filtros.hasta
             {#canvasId}grafica-merma{/canvasId}
             {#height}320px{/height}
         {/include}

@@ -78,9 +78,8 @@
             </form>
         </div>
 
-                {#include _kit/chart-card}
-            {#title}Demanda Pronosticada{/title}
-            {#subtitle}Pronóstico a {dias} días{/subtitle}
+                {#include _kit/chart-card title="Demanda Pronosticada"}
+            subtitle="Pronóstico a {dias} días"
             {#canvasId}grafica-pronosticos{/canvasId}
             {#height}360px{/height}
             {#body}

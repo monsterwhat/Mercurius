@@ -83,9 +83,8 @@
             </form>
         </div>
 
-                {#include _kit/chart-card}
-            {#title}Ventas Diarias del Período{/title}
-            {#subtitle}{periodoTexto}{/subtitle}
+                {#include _kit/chart-card title="Ventas Diarias del Período"}
+            subtitle=periodoTexto
             {#canvasId}grafica-tendencias{/canvasId}
             {#height}360px{/height}
             {#body}

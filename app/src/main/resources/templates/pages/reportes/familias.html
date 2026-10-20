@@ -41,9 +41,8 @@
 
         {#include pages/reportes/_tablas/familias /}
 
-        {#include _kit/chart-card}
-            {#title}Ventas por Familia{/title}
-            {#subtitle}{filtros.desde} - {filtros.hasta}{/subtitle}
+        {#include _kit/chart-card title="Ventas por Familia"}
+            subtitle=filtros.desde} - {filtros.hasta
             {#canvasId}grafica-familias{/canvasId}
             {#height}360px{/height}
         {/include}
