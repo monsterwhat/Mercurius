@@ -161,10 +161,7 @@
                     {/for}
                   {/rows}
                 {/include}
-                {#include _kit/chart-card title="Ventas por Departamento"}
-                    {#canvasId}margenes-chart{/canvasId}
-                    {#height}300px{/height}
-                {/include}
+                {#include _kit/chart-card title="Ventas por Departamento" canvasId="margenes-chart" height="300px"}
                 <script type="application/json" id="margenes-chart-data">
 {"labels":[{#for l in chartLabels}"{l}",{/for}],"values":[{#for v in chartValues}{v},{/for}]}
                 </script>

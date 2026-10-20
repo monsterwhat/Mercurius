@@ -82,11 +82,8 @@
             </form>
         </div>
 
-                {#include _kit/chart-card title="Ventas por Departamento"}
-            subtitle=filtros.desde} - {filtros.hasta
-            {#canvasId}grafica-rendimiento{/canvasId}
-            {#height}360px{/height}
-            {#body}
+                {#include _kit/chart-card title="Ventas por Departamento" subtitle=(filtros.desde + " - " + filtros.hasta) canvasId="grafica-rendimiento" height="360px"}
+{#body}
                 <canvas id="grafica-rendimiento" width="900" height="320"
                         data-root="{config:['quarkus.http.root-path']}"
                         data-desde="{filtros.desde}" data-hasta="{filtros.hasta}">
