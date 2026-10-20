@@ -1023,7 +1023,7 @@ public class Parser {
      * Utility method to extract NumeroConsecutivo from JSON tree with fallback
      * logic
      */
-    private String extractNumeroConsecutivo(JsonNode rootNode) {
+    public String extractNumeroConsecutivo(JsonNode rootNode) {
         // Try direct path first
         String numeroConsecutivo = rootNode.path("NumeroConsecutivo").asText();
 
@@ -1584,7 +1584,7 @@ public class Parser {
         }
     }
 
-    private String mapRootElementToDocumentCode(String rootElement) {
+    public String mapRootElementToDocumentCode(String rootElement) {
         if (rootElement == null) return "01";
         switch (rootElement) {
             case "FacturaElectronica":
@@ -1613,7 +1613,7 @@ public class Parser {
         }
     }
 
-    private void validarTotalMedioPago(ResumenFactura resumenFactura, String numeroConsecutivo, String xmlContent) {
+    public void validarTotalMedioPago(ResumenFactura resumenFactura, String numeroConsecutivo, String xmlContent) {
         if (resumenFactura == null) return;
         List<MedioPagoR> mediosPago = resumenFactura.getMediosPago();
         if (mediosPago == null || mediosPago.isEmpty()) return;
