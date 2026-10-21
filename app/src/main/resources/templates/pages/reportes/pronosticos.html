@@ -79,13 +79,14 @@
         </div>
 
                 {#include _kit/chart-card title="Demanda Pronosticada" subtitle=("Pronóstico a " + dias + " días") canvasId="grafica-pronosticos" height="360px"}
-            {#body}
+
+            {#chartBody}
                 <canvas id="grafica-pronosticos" width="900" height="320"
                         data-root="{config:['quarkus.http.root-path']}"
                         data-dias="{dias}">
                     Su navegador no soporta canvas.
                 </canvas>
-            {/body}
+            {/chartBody}
         {/include}
 
 <script>

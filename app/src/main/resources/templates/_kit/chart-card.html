@@ -24,7 +24,7 @@
 
   SLOTS
     {#actions} - header controls (a range selector, an export button).
-    {#body}    - overrides the default canvas. Use for a legend row, an empty
+    {#chartBody} - overrides the default canvas. Use for a legend row, an empty
                   state, or a server-rendered fallback table.
 
   INITIALISING FROM THE PAGE SCRIPT
@@ -65,7 +65,7 @@
         {#insert actions}{/insert}
     </figcaption>
     <div class="chart-body">
-        {#insert body}
+        {#insert chartBody}
             {#if canvasId??}
             <canvas id="{canvasId}" role="img" aria-label="{title}">
                 Su navegador no soporta canvas.
