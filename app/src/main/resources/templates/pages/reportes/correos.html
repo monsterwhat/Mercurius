@@ -54,7 +54,7 @@
                 <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                 <input type="hidden" name="dataset" value="correos"/>
                 <input type="hidden" name="type" value="xlsx"/>
-                {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
+                {#for f in filtros.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
                 <button class="button is-success" type="submit">Exportar Excel</button>
             </form>
         </div>
