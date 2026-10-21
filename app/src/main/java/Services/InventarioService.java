@@ -435,48 +435,80 @@ public class InventarioService extends GService<Inventario> {
         return query.getResultList();
     }
     
-    public List<ReportesFamiliasYDepartamentos> getTotalSalesByDepartamento(Date startDate, Date endDate) {
-        String jpql = "SELECT d.nombre, SUM(ap.precioFinal * i.cantidad) " +
-                      "FROM Inventario i " +
-                      "JOIN i.articulo a " +
-                      "JOIN a.departamento d " +
-                      "JOIN ArticuloPrecio ap ON ap.articulo.codigo = a.codigo " +
-                      "WHERE i.tipoMovimiento = 'Venta' " +
-                      "AND ap.fechaCompra = (SELECT MAX(ap2.fechaCompra) FROM ArticuloPrecio ap2 WHERE ap2.articulo.codigo = a.codigo) " +
-                      "AND i.fechaMovimiento BETWEEN :startDate AND :endDate " +
-                      "GROUP BY d.nombre";
-
-        Query query = em.createQuery(jpql);
+    /**
+     * Ventas agrupadas por familia o departamento, valuadas al PRECIO VIGENTE
+     * en la fecha de cada movimiento.
+     *
+     * <p>Antes se tomaba el ultimo precio del articulo: con mas de una decada
+     * de historico eso valoraba las ventas de 2013 al precio de 2026 y falseaba
+     * la distribucion. Ahora se usa la serie historica de precios
+     * ({@code articuloprecio}) tomando el precio vigente en la fecha del
+     * movimiento.</p>
+     *
+     * @param grupo "familia" o "departamento"
+     */
+    private @Nonnull List<Object[]> ventasPorGrupoValoradas(@Nonnull String grupo,
+                                                            Date startDate, Date endDate) {
+        boolean esFamilia = "familia".equals(grupo);
+        String tabla = esFamilia ? "familia" : "departamento";
+        String columna = esFamilia ? "familia_id" : "departamento_id";
+        String sql = "SELECT g.nombre, SUM(p.precio_final * i.cantidad) "
+                + "FROM inventario i "
+                + "JOIN articulos a ON a.codigo = i.articulo_codigo "
+                + "JOIN " + tabla + " g ON g.id = a." + columna + " "
+                + "JOIN LATERAL (SELECT ap.precio_final FROM articuloprecio ap "
+                + "              WHERE ap.articulo_id = a.codigo AND ap.fechacompra <= i.fechamovimiento "
+                + "              ORDER BY ap.fechacompra DESC LIMIT 1) p ON true "
+                + "WHERE i.tipomovimiento = 'Venta' "
+                + "AND i.fechamovimiento BETWEEN :startDate AND :endDate "
+                + "GROUP BY g.nombre";
+        Query query = em.createNativeQuery(sql);
         query.setParameter("startDate", startDate);
         query.setParameter("endDate", endDate);
+        @SuppressWarnings("unchecked")
         List<Object[]> results = query.getResultList();
+        return results;
+    }
+
+    /** Convierte los totales por grupo en el modelo del reporte (montes y %). */
+    private @Nonnull List<ReportesFamiliasYDepartamentos> reportePorGrupo(@Nonnull String grupo,
+                                                                        Date startDate, Date endDate) {
+        List<Object[]> results = ventasPorGrupoValoradas(grupo, startDate, endDate);
 
         // Calculate the grand total
         BigDecimal grandTotal = BigDecimal.ZERO;
         for (Object[] result : results) {
-            BigDecimal totalSales = (BigDecimal) result[1]; 
+            BigDecimal totalSales = (BigDecimal) result[1];
             // Handle null by initializing to BigDecimal.ZERO if necessary
             totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
             grandTotal = grandTotal.add(totalSales);
         }
 
         // Create a list to store ReportesFamiliasYDepartamentos
-        List<ReportesFamiliasYDepartamentos> totalSalesByDepartamento = new ArrayList<>();
+        List<ReportesFamiliasYDepartamentos> reporte = new ArrayList<>();
         for (Object[] result : results) {
-            String departamentoName = (String) result[0];
+            String nombre = (String) result[0];
             BigDecimal totalSales = (BigDecimal) result[1];
             // Handle null by initializing to BigDecimal.ZERO if necessary
             totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
-            BigDecimal percentage = (grandTotal.compareTo(BigDecimal.ZERO) == 0) 
-                ? BigDecimal.ZERO 
+            BigDecimal percentage = (grandTotal.compareTo(BigDecimal.ZERO) == 0)
+                ? BigDecimal.ZERO
                 : totalSales.divide(grandTotal, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
 
-            // Create ReportesFamiliasYDepartamentos object and add to the list
-            ReportesFamiliasYDepartamentos reporte = new ReportesFamiliasYDepartamentos(departamentoName, totalSales, percentage);
-            totalSalesByDepartamento.add(reporte);
+            reporte.add(new ReportesFamiliasYDepartamentos(nombre, totalSales, percentage));
         }
 
-        return totalSalesByDepartamento;
+        return reporte;
+    }
+
+    public List<ReportesFamiliasYDepartamentos> getTotalSalesByDepartamento(Date startDate, Date endDate) {
+        try {
+            return reportePorGrupo("departamento", startDate, endDate);
+        } catch (PersistenceException e) {
+            LOG.warn("Error getting total sales by departamento: " + e.getMessage()
+                    + " | source=InventarioService.getTotalSalesByDepartamento() | despues=" + e.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     public Date getLastPurchaseDateByDepartamento(Integer departamentoId) {
@@ -498,22 +530,25 @@ public class InventarioService extends GService<Inventario> {
 
     public List<Object[]> getSalesDetailsByDepartamento(Date startDate, Date endDate, Integer departamentoId) {
         try {
-            String jpql = "SELECT a.nombre, SUM(i.cantidad), SUM(ap.precioFinal * i.cantidad) " +
-                          "FROM Inventario i " +
-                          "JOIN i.articulo a " +
-                          "JOIN a.departamento d " +
-                          "JOIN ArticuloPrecio ap ON ap.articulo.codigo = a.codigo " +
-                          "WHERE i.tipoMovimiento = 'Venta' " +
-                          "AND d.id = :departamentoId " +
-                          "AND ap.fechaCompra = (SELECT MAX(ap2.fechaCompra) FROM ArticuloPrecio ap2 WHERE ap2.articulo.codigo = a.codigo) " +
-                          "AND i.fechaMovimiento BETWEEN :startDate AND :endDate " +
-                          "GROUP BY a.nombre " +
-                          "ORDER BY SUM(ap.precioFinal * i.cantidad) DESC";
-            Query query = em.createQuery(jpql);
+            String sql = "SELECT a.nombre, SUM(i.cantidad), SUM(p.precio_final * i.cantidad) "
+                    + "FROM inventario i "
+                    + "JOIN articulos a ON a.codigo = i.articulo_codigo "
+                    + "JOIN departamento d ON d.id = a.departamento_id "
+                    + "JOIN LATERAL (SELECT ap.precio_final FROM articuloprecio ap "
+                    + "              WHERE ap.articulo_id = a.codigo AND ap.fechacompra <= i.fechamovimiento "
+                    + "              ORDER BY ap.fechacompra DESC LIMIT 1) p ON true "
+                    + "WHERE i.tipomovimiento = 'Venta' "
+                    + "AND d.id = :departamentoId "
+                    + "AND i.fechamovimiento BETWEEN :startDate AND :endDate "
+                    + "GROUP BY a.nombre "
+                    + "ORDER BY SUM(p.precio_final * i.cantidad) DESC";
+            Query query = em.createNativeQuery(sql);
             query.setParameter("startDate", startDate);
             query.setParameter("endDate", endDate);
             query.setParameter("departamentoId", departamentoId);
-            return query.getResultList();
+            @SuppressWarnings("unchecked")
+            List<Object[]> results = query.getResultList();
+            return results;
         } catch (PersistenceException e) {
             LOG.warn("Error getting sales details: " + e.getMessage() + " | source=InventarioService.getSalesDetailsByDepartamento() | despues=" + e.getMessage());
             return null;
@@ -521,48 +556,13 @@ public class InventarioService extends GService<Inventario> {
     }
 
     public List<ReportesFamiliasYDepartamentos> getTotalSalesByFamilia(Date startDate, Date endDate) {
-        String jpql = "SELECT f.nombre, SUM(ap.precioFinal * i.cantidad) " +
-                      "FROM Inventario i " +
-                      "JOIN i.articulo a " +
-                      "JOIN a.familia f " +
-                      "JOIN ArticuloPrecio ap ON ap.articulo.codigo = a.codigo " +
-                      "WHERE i.tipoMovimiento = 'Venta' " +
-                      "AND ap.fechaCompra = (SELECT MAX(ap2.fechaCompra) FROM ArticuloPrecio ap2 WHERE ap2.articulo.codigo = a.codigo) " +
-                      "AND i.fechaMovimiento BETWEEN :startDate AND :endDate " +
-                      "GROUP BY f.nombre";
-
-        Query query = em.createQuery(jpql);
-        query.setParameter("startDate", startDate);
-        query.setParameter("endDate", endDate);
-        List<Object[]> results = query.getResultList();
-
-        // Calculate the grand total
-        BigDecimal grandTotal = BigDecimal.ZERO;
-        for (Object[] result : results) {
-            BigDecimal totalSales = (BigDecimal) result[1]; 
-            // Handle null by initializing to BigDecimal.ZERO if necessary
-            totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
-            grandTotal = grandTotal.add(totalSales);
+        try {
+            return reportePorGrupo("familia", startDate, endDate);
+        } catch (PersistenceException e) {
+            LOG.warn("Error getting total sales by familia: " + e.getMessage()
+                    + " | source=InventarioService.getTotalSalesByFamilia() | despues=" + e.getMessage());
+            return new ArrayList<>();
         }
-
-        // Create a list to store ReportesFamiliasYDepartamentos
-        List<ReportesFamiliasYDepartamentos> totalSalesByFamilia = new ArrayList<>();
-        for (Object[] result : results) {
-            String familiaName = (String) result[0];
-            BigDecimal totalSales = (BigDecimal) result[1]; 
-            // Handle null by initializing to BigDecimal.ZERO if necessary
-            totalSales = (totalSales != null) ? totalSales.multiply(BigDecimal.valueOf(-1)) : BigDecimal.ZERO;
-
-            BigDecimal percentage = (grandTotal.compareTo(BigDecimal.ZERO) == 0) 
-                ? BigDecimal.ZERO 
-                : totalSales.divide(grandTotal, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
-
-            // Create ReportesFamiliasYDepartamentos object and add to the list
-            ReportesFamiliasYDepartamentos reporte = new ReportesFamiliasYDepartamentos(familiaName, totalSales, percentage);
-            totalSalesByFamilia.add(reporte);
-        }
-
-        return totalSalesByFamilia;
     }
 
     public List<ArticuloStock> getAllStock() {

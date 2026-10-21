@@ -200,20 +200,32 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
 
     /**
      * Get profit margin trend for department or family
+     *
+     * <p>Si {@code name} viene vacio NO se filtra por grupo: se devuelve la
+     * tendencia completa del periodo. Antes se armaba siempre
+     * {@code WHERE departamento = :name}, y en SQL {@code = NULL} nunca
+     * coincide, asi que la vista sin filtro salia siempre vacia.</p>
      */
     @Transactional(TxType.SUPPORTS)
-    public @Nonnull List<CorteMargen> getMarginTrend(@Nonnull String name, @Nonnull String type, @Nonnull Date startDate, @Nonnull Date endDate) {
+    public @Nonnull List<CorteMargen> getMarginTrend(@Nullable String name, @Nonnull String type, @Nonnull Date startDate, @Nonnull Date endDate) {
+        boolean filtrar = name != null && !name.isBlank();
         String jpql;
         if ("department".equals(type)) {
-            jpql = "SELECT pms FROM CorteMargen pms WHERE pms.departamento = :name AND pms.fechaSnapshot BETWEEN :startDate AND :endDate ORDER BY pms.fechaSnapshot DESC";
+            jpql = "SELECT pms FROM CorteMargen pms WHERE pms.fechaSnapshot BETWEEN :startDate AND :endDate"
+                    + (filtrar ? " AND pms.departamento = :name" : " AND pms.departamento IS NOT NULL")
+                    + " ORDER BY pms.fechaSnapshot DESC";
         } else {
-            jpql = "SELECT pms FROM CorteMargen pms WHERE pms.familia = :name AND pms.fechaSnapshot BETWEEN :startDate AND :endDate ORDER BY pms.fechaSnapshot DESC";
+            jpql = "SELECT pms FROM CorteMargen pms WHERE pms.fechaSnapshot BETWEEN :startDate AND :endDate"
+                    + (filtrar ? " AND pms.familia = :name" : " AND pms.familia IS NOT NULL")
+                    + " ORDER BY pms.fechaSnapshot DESC";
         }
-        
+
         TypedQuery<CorteMargen> query = em.createQuery(jpql, CorteMargen.class)
-                .setParameter("name", name)
                 .setParameter("startDate", startDate)
                 .setParameter("endDate", endDate);
+        if (filtrar) {
+            query.setParameter("name", name);
+        }
         return query.getResultList();
     }
 
