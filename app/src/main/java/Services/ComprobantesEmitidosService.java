@@ -593,7 +593,6 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
                 "LEFT JOIN FETCH f.resumen r " +
                 "WHERE f.status = true " +
                 "AND (e.estado IS NULL OR e.estado = 'PENDIENTE') " +
-                "AND e.clave IS NOT NULL " +
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
