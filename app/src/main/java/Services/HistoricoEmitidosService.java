@@ -23,6 +23,7 @@ import Models.Encabezado.Emisor;
 import Models.Encabezado.Encabezado;
 import Models.Encabezado.MedioPago;
 import Models.Encabezado.Receptor;
+import Models.Resumen.MedioPagoR;
 import Models.Resumen.ResumenFactura;
 import Utils.ComprobanteFactory;
 import Utils.Parsers.Parser;
@@ -178,13 +179,27 @@ public class HistoricoEmitidosService {
             throw new IllegalArgumentException("XML inválido: error en fecha de emisión");
         }
 
-        List<MedioPago> medioPago = parser.parseMedioPago(rootNode.path("MedioPago"), encabezado);
-        if (medioPago == null || medioPago.isEmpty()) {
-            throw new IllegalArgumentException("XML inválido: error en medio de pago");
-        }
         ResumenFactura resumenFactura = parser.parseResumenFactura(rootNode.path("ResumenFactura"));
         if (resumenFactura == null) {
             throw new IllegalArgumentException("XML inválido: error en resumen de factura");
+        }
+        List<MedioPago> medioPago = parser.parseMedioPago(rootNode.path("MedioPago"), encabezado);
+        if (medioPago == null) {
+            throw new IllegalArgumentException("XML inválido: error en medio de pago");
+        }
+        if (medioPago.isEmpty() && resumenFactura.getMediosPago() != null) {
+            // En el XML de Hacienda el MedioPago va DENTRO del ResumenFactura, no
+            // en la raiz. El encabezado lo toma de ahi para que el comprobante
+            // quede igual que el que crea el flujo de venta.
+            for (MedioPagoR mp : resumenFactura.getMediosPago()) {
+                if (mp == null || mp.getTipoMedioPago() == null || mp.getTipoMedioPago().isBlank()) {
+                    continue;
+                }
+                MedioPago medio = new MedioPago();
+                medio.setMedioPago(mp.getTipoMedioPago());
+                medio.setComprobante(encabezado);
+                medioPago.add(medio);
+            }
         }
         List<LineaDetalle> lineas = parser.parseDetalleServicio(rootNode.path("DetalleServicio"));
         if (lineas == null || lineas.isEmpty()) {
