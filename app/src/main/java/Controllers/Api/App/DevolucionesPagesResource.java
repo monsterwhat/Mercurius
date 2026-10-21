@@ -171,7 +171,7 @@ public class DevolucionesPagesResource {
                 return Collections.emptyList();
             }
             String needle = criterio.toLowerCase(Locale.ROOT);
-            for (ComprobantesEmitidos f : orEmpty(emitidosService.listAll())) {
+            for (ComprobantesEmitidos f : orEmpty(emitidosService.listAllConClave())) {
                 Encabezado enc = f.getEncabezado();
                 if (enc == null || enc.getReceptor() == null || enc.getReceptor().getNombre() == null) {
                     continue;
@@ -181,7 +181,7 @@ public class DevolucionesPagesResource {
                 }
             }
         } else {
-            for (ComprobantesEmitidos f : orEmpty(emitidosService.listAll())) {
+            for (ComprobantesEmitidos f : orEmpty(emitidosService.listAllConClave())) {
                 Encabezado enc = f.getEncabezado();
                 if (enc != null && enc.getNumeroConsecutivo() != null
                         && enc.getNumeroConsecutivo().contains(criterio)) {

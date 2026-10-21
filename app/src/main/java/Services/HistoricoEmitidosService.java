@@ -346,18 +346,12 @@ public class HistoricoEmitidosService {
      * desglose por estado de Hacienda.
      */
     public @Nonnull java.util.Map<String, Object> resumen() {
-        List<ComprobantesEmitidos> todos = comprobantesEmitidosService.listAll();
-        java.util.Map<String, Long> porEstado = new java.util.TreeMap<>();
-        int total = todos == null ? 0 : todos.size();
-        if (todos != null) {
-            for (ComprobantesEmitidos c : todos) {
-                String estado = c.getHaciendaEstado() == null || c.getHaciendaEstado().isBlank()
-                        ? "SIN_ESTADO" : c.getHaciendaEstado();
-                porEstado.merge(estado, 1L, Long::sum);
-            }
-        }
+        // Conteos en SQL: el historico completo son cientos de miles de
+        // comprobantes y materializar la tabla entera desborda el heap.
+        java.util.Map<String, Long> porEstado = new java.util.TreeMap<>(
+                comprobantesEmitidosService.countByHaciendaEstado());
         java.util.Map<String, Object> salida = new java.util.LinkedHashMap<>();
-        salida.put("total", total);
+        salida.put("total", comprobantesEmitidosService.countEmitidos());
         salida.put("porEstado", porEstado);
         return salida;
     }

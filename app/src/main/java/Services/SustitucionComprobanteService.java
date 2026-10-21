@@ -361,7 +361,7 @@ public class SustitucionComprobanteService {
     }
 
     private @Nonnull List<ComprobantesEmitidos> emittedOrEmpty() {
-        List<ComprobantesEmitidos> emitidos = comprobantesEmitidosService.listAll();
+        List<ComprobantesEmitidos> emitidos = comprobantesEmitidosService.listAllConClave();
         return emitidos == null ? new ArrayList<>() : emitidos;
     }
 }
