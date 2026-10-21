@@ -529,6 +529,22 @@ public final class ReportExporter {
      */
     @Nonnull
     public static byte[] exportFacturasExcel(@Nonnull List<ComprobantesEmitidos> facturas) throws IOException {
+        return exportFacturasExcel(facturas, facturas.size());
+    }
+
+    /**
+     * "Facturas Emitidas" workbook with the total the filter matched.
+     *
+     * <p>When the export is capped, the workbook says so: a sheet that looks
+     * complete but holds a slice of the data is worse than one that tells the
+     * truth.</p>
+     *
+     * @param facturas the exported rows
+     * @param total   how many rows the filter matched in total
+     */
+    @Nonnull
+    public static byte[] exportFacturasExcel(@Nonnull List<ComprobantesEmitidos> facturas, long total)
+            throws IOException {
         String[] headers = {"Numero Consecutivo", "Fecha", "Emisor", "Condicion Venta", "Estado Hacienda", "Total"};
 
         List<Object[]> rows = new ArrayList<>(facturas.size());
@@ -542,6 +558,13 @@ public final class ReportExporter {
                 encabezado != null ? encabezado.getCondicionVenta() : "",
                 factura.getHaciendaEstado() != null ? factura.getHaciendaEstado() : "PENDIENTE",
                 resumen != null && resumen.getTotalComprobante() != null ? Double.valueOf(resumen.getTotalComprobante().doubleValue()) : Double.valueOf(0.0)
+            });
+        }
+        if (total > facturas.size()) {
+            rows.add(new Object[]{
+                "Se exportaron " + facturas.size() + " de " + total
+                        + " facturas; use el filtro de busqueda para el resto",
+                "", "", "", "", ""
             });
         }
 
