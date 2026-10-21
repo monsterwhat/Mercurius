@@ -4,7 +4,6 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.annotation.Nonnull;
-import org.eclipse.microprofile.config.ConfigProvider;
 import Controllers.Api.App.Reportes.ReportePageSupport;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
@@ -113,20 +112,5 @@ public class RecibosPagesResource {
                             "No se pudieron cargar las facturas emitidas"))
                     .build();
         }
-    }
-
-    /**
-     * "Recibos" son las facturas que se RECIBEN (las de los proveedores).
-     *
-     * <p>La ruta vieja ({@code /app/recibos}) mostraba las emitidas, que es
-     * justo lo que confunde: ahora lleva a las recibidas.</p>
-     */
-    @GET
-    @Path("/app/recibos")
-    public Response recibidos() {
-        String root = ConfigProvider.getConfig().getValue("quarkus.http.root-path", String.class);
-        return Response.status(Response.Status.FOUND)
-                .header("Location", (root == null ? "" : root) + "/app/facturas-recibidas")
-                .build();
     }
 }
