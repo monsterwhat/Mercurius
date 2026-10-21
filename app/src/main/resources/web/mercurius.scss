@@ -108,7 +108,24 @@
 // -----------------------------------------------------------------------------
 :root {
     --mercurius-chart-series-1: var(--bulma-primary);
-    --mercurius-chart-series-2: color-mix(in srgb, var(--bulma-primary) 45%, transparent);
+    /* The second series is the SAME hue at a lighter step, written as an
+       hsla() so it resolves to a colour the 2D canvas accepts everywhere
+       (a color-mix() computes to a color() value, which not every canvas
+       implementation parses). */
+    --mercurius-chart-series-2: hsla(var(--bulma-primary-h), var(--bulma-primary-s), 70%, 1);
+}
+
+// -----------------------------------------------------------------------------
+// 3.6b Secondary text — the one that has to work in BOTH schemes
+//
+// Bulma's `has-text-grey` is a FIXED mid-grey (`--bulma-grey`, 48% lightness)
+// that does not flip with the colour scheme. On the light ground it is
+// perfectly readable; on the dark ground it is about 2.5:1, and the footers,
+// the subtitles and the empty states vanish. This token is the same idea
+// resolved per scheme, and it clears 4.5:1 in both.
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-text-muted: color-mix(in srgb, var(--bulma-text) 92%, var(--bulma-scheme-main));
 }
 
 // -----------------------------------------------------------------------------
@@ -182,7 +199,7 @@
 }
 
 .page-header .page-subtitle {
-    color: var(--bulma-text-weak);
+    color: var(--mercurius-text-muted);
     margin-bottom: 0;
 }
 
@@ -445,7 +462,7 @@ button.metric-card {
 }
 
 .surface-subtitle {
-    color: var(--bulma-text-light);
+    color: var(--mercurius-text-muted);
     font-size: .875rem;
     margin: 0;
 }
@@ -505,12 +522,21 @@ button.metric-card {
 
 .chart-body {
     flex: 1 1 auto;
-    min-height: var(--chart-height);
+    /* A DEFINITE height, not a minimum. The wrapper used to size itself from
+       its content, so the canvas decided the page height - and Chart.js's
+       responsive observer resizes the canvas to its parent. The two chased
+       each other: any change to the viewport (a full-page screenshot, a
+       window resize) changed the page height, which changed the canvas,
+       which changed the page height again. The full-page capture never
+       settled. A fixed wrapper height breaks the loop: the canvas follows
+       the wrapper, never the other way round. */
+    height: var(--chart-height);
     padding: var(--mercurius-space-4);
     position: relative;
 }
 
 .chart-body > canvas {
+    display: block;
     height: 100% !important;
     width: 100% !important;
 }
@@ -710,6 +736,82 @@ button.metric-card:focus-visible,
     opacity: 0;
     transform: translateX(16px);
     transition-duration: var(--mercurius-dur-fast);
+}
+
+// =============================================================================
+// 32. Buttons and table headers
+//
+// Bulma gives every button a coloured drop shadow. In the light scheme it is
+// a soft glow under the control; on an app screen, where a button is pressed
+// dozens of times a day, the shadow only adds noise and makes the primary
+// action louder than the data around it. The control becomes a flat fill in
+// one colour. Bulma's `.button:focus-visible` is a separate, more specific
+// rule and is left alone: that one is the keyboard's way home.
+//
+// The table header is a header, not a link. Bulma's <th> is 16px at weight
+// 700 in the strong ink, which is louder than the data it labels; and the
+// sortable columns wrapped the label in an <a>, so they came out in the link
+// colour and read as links - three blue labels in a row of grey ones. A
+// header is 12px at 500 in the weak ink, and the sort affordance is the
+// arrow next to the label.
+// =============================================================================
+.button {
+    box-shadow: none;
+}
+
+// Bulma's `has-text-grey` is a fixed mid-grey that does not flip with the
+// scheme, so on the dark ground every "secondary" label in the app drops to
+// about 2.5:1 - the footer, the subtitles and the empty states all vanish.
+// This maps the class onto the scheme-aware token instead.
+.has-text-grey {
+    color: var(--mercurius-text-muted) !important;
+}
+
+// Bulma draws the navbar dropdown arrow in `--bulma-link`, which put a SECOND
+// accent next to the labels: a blue chevron beside turquoise tabs on the same
+// screen. The arrow is chrome - it belongs in the same colour as the label
+// it belongs to.
+.navbar .navbar-item.has-dropdown > .navbar-link::after {
+    border-color: currentColor;
+}
+
+// Bulma halves the opacity of a disabled pager link, which drops it to about
+// 2.9:1. A disabled control still has to be legible: it says "there is no
+// previous page", and at that contrast it reads as broken rather than as
+// unavailable.
+.pagination-previous[disabled],
+.pagination-next[disabled],
+.pagination-link[disabled],
+.pagination-previous.is-disabled,
+.pagination-next.is-disabled,
+.pagination-link.is-disabled {
+    color: var(--mercurius-text-muted);
+    opacity: 1;
+}
+
+.table thead th {
+    color: var(--bulma-text-weak);
+    font-size: .75rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    text-transform: none;
+    vertical-align: bottom;
+}
+
+.table thead th a {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--mercurius-dur-fast) var(--mercurius-ease-out);
+}
+
+.table thead th a:hover {
+    color: var(--bulma-primary);
+}
+
+.kit-sort {
+    color: var(--bulma-primary);
+    font-size: .7rem;
+    margin-left: .25rem;
 }
 
 // =============================================================================

@@ -36,6 +36,38 @@ function cssVar(name, fallback) {
     return v && v.trim() ? v.trim() : fallback;
 }
 
+/**
+ * Resolve a CSS custom property to a colour the canvas can actually paint.
+ *
+ * <b>Why this exists.</b> `getPropertyValue` on an UNREGISTERED custom
+ * property returns the token stream exactly as it was written, not the
+ * substituted value: `--mercurius-chart-series-1: var(--bulma-primary)` reads
+ * back as the string "var(--bulma-primary)". Handing that to a canvas makes
+ * `fillStyle` an invalid value, so the assignment is ignored and the chart
+ * draws in the canvas default black - which on the dark ground is invisible.
+ * The charts measured 0.0% coloured pixels before this.
+ *
+ * The fix is to paint the token into an element and read the COMPUTED colour,
+ * which the browser has already substituted.
+ *
+ * @param {string} cssValue the raw token stream, e.g. "var(--bulma-primary)"
+ * @param {string} fallback used when the value cannot be resolved
+ * @returns {string} a colour the 2D canvas understands, e.g. "rgb(72, 95, 199)"
+ */
+export function resolveColour(cssValue, fallback) {
+    if (!cssValue || typeof document === 'undefined') {
+        return fallback;
+    }
+    const probe = document.createElement('span');
+    probe.style.display = 'none';
+    probe.style.color = cssValue;
+    document.body.appendChild(probe);
+    const resolved = getComputedStyle(probe).color;
+    probe.remove();
+    // A colour the browser could not parse comes back as the same string.
+    return resolved && resolved !== cssValue ? resolved : fallback;
+}
+
 /** rgba() from a hex custom property, e.g. '#3298dc' + 0.35. */
 function withAlpha(value, alpha) {
     const hex = value.trim();

@@ -11,7 +11,7 @@ import './index.scss';
 // still yields Bulma -> legacy layers -> Mercurius tokens + components.
 import './mercurius.scss';
 import { installIconHydration } from './icons.js';
-import { applyChartDefaults, Chart, create as createChart, destroyAll as destroyCharts } from './chart-config.js';
+import { applyChartDefaults, Chart, create as createChart, destroyAll as destroyCharts, resolveColour, currency, number, date } from './chart-config.js';
 
 // chart.js is a provided-scope org.mvnpm dependency resolvable ONLY at build
 // time inside bundle entries, so Qute pages cannot import it directly.
@@ -22,7 +22,11 @@ Chart.register();
 window.Chart = Chart;
 window.MercuriusCharts = {
     create: createChart,
-    destroyAll: destroyCharts
+    destroyAll: destroyCharts,
+    resolveColour: resolveColour,
+    currency: currency,
+    number: number,
+    date: date
 };
 
 window.Alpine = Alpine;

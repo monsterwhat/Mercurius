@@ -28,12 +28,32 @@
 
 // -----------------------------------------------------------------------------
 // Ported legacy layer: base-theme.css
+//
+// `--bulma-text-title-l` IS NOT A COLOUR.
+//
+// Bulma 1.x splits its palette into components: `--bulma-text-title-h`,
+// `--bulma-text-title-s` and `--bulma-text-title-l` (a bare lightness such as
+// "14%"), which are meant to be substituted INSIDE an hsl() function. These
+// legacy rules used the lightness component directly as a colour:
+//
+//     color: var(--bulma-text-title-l) !important;
+//
+// That is an invalid colour value, so the declaration was DROPPED and the
+// text fell back to the initial colour, black. In the light scheme black on
+// white happens to look right, which is why nobody noticed. In the dark
+// scheme it is black on near-black: the footer, the timeline labels and every
+// legacy input were unreadable.
+//
+// The fix is the composed token `--bulma-text-strong`, which is a real colour
+// and flips with the scheme (near-black on light, near-white on dark).
+// Bulma 1.0.4 has no `--bulma-text-title` composed token, only the
+// components, so `--bulma-text-strong` is the closest correct one.
 // -----------------------------------------------------------------------------
 body,
 .section,
 .ui-card {
     background: var(--bulma-background) !important;
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 .ui-commandlink,
@@ -151,7 +171,7 @@ hr {
 // -----------------------------------------------------------------------------
 .ui-radiobutton .ui-radiobutton-box {
     background: var(--bulma-scheme-main) !important;
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 .ui-radiobutton .ui-radiobutton-box.ui-state-active .ui-icon-bullet {
@@ -193,7 +213,7 @@ select,
 .ui-datepicker .ui-inputtext,
 .ui-calendar .ui-inputtext {
     background: var(--bulma-background-l) !important;
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 .ui-datepicker-panel,
@@ -209,7 +229,7 @@ select,
 
 .p-datepicker .p-datepicker-input {
     background: var(--bulma-background-l) !important;
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 .ui-datepicker {
@@ -224,7 +244,7 @@ select,
 .ui-inputfield,
 .ui-password-panel {
     background: var(--bulma-background-l) !important;
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 .ui-outputlabel,
@@ -796,7 +816,7 @@ select,
 }
 
 .ui-tabs .ui-tabs-nav li.ui-tabs-header a{
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active {
@@ -832,7 +852,7 @@ select,
 }
 
 .timeline-axis-text {
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 .timeline-groups-axis {
@@ -844,7 +864,7 @@ select,
 }
 
 .timeline-event {
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
     border-radius: 5px !important;
 }
 
@@ -895,7 +915,7 @@ select,
 }
 
 .vis-time-axis .vis-text {
-    color: var(--bulma-text-title-l) !important;
+    color: var(--bulma-text-strong) !important;
 }
 
 // -----------------------------------------------------------------------------

@@ -88,9 +88,17 @@
             // colour scheme. Two SERIES, ONE HUE: the second is a lighter step
             // of the same primary, not a second colour - two unrelated hues
             // would make the two series look like two different subjects.
+            //
+            // The tokens are resolved through resolveColour(): reading a CSS
+            // custom property can hand back a token stream, and a canvas
+            // cannot paint that. resolveColour() paints the value into an
+            // element and reads the computed colour, which the browser has
+            // already substituted.
             const rootStyle = getComputedStyle(document.documentElement);
-            const seriesOne = rootStyle.getPropertyValue('--mercurius-chart-series-1').trim();
-            const seriesTwo = rootStyle.getPropertyValue('--mercurius-chart-series-2').trim();
+            const seriesOne = factory.resolveColour(
+                rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
+            const seriesTwo = factory.resolveColour(
+                rootStyle.getPropertyValue('--mercurius-chart-series-2'), '#66f2e3');
 
             async function cargar(clave, respaldoId) {
                 try {

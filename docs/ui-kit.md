@@ -493,8 +493,12 @@ These are the decisions the components now encode. They are written down because
 
 * **One ground, one ink, one accent.** The accent is for the data and at most one control. A screen with a different hue per KPI tile reads as seven unrelated facts instead of one answer.
 * **Status chips are a pale tint with dark text of the same hue.** The old treatment was a saturated fill with white text, which failed WCAG AA on every semantic colour (white on Bulma success is about 1.9:1; white on Bulma warning is about 1.1:1 — the word inside the chip was unreadable). The tokens are in `web/mercurius.scss` §3.7 and are derived from the Bulma semantic via `color-mix()`, so they follow the colour scheme with no hex literal.
+* **Never use a Bulma lightness component as a colour.** `--bulma-text-title-l` is a bare `14%` meant to be substituted inside an `hsl()`. The legacy layer used it as a colour: `color: var(--bulma-text-title-l)`. That is an invalid value, so the declaration was DROPPED and the text fell back to the initial colour, black. In the light scheme black on white looks right, which is why nobody noticed; in the dark scheme it is black on near-black and the footers, the timeline labels and every legacy input are unreadable. Use a composed token (`--bulma-text`, `--bulma-text-strong`, `--bulma-text-weak`) instead.
+* **`has-text-grey` is a fixed mid-grey and does not flip with the scheme.** On the dark ground it sits at about 2.5:1. `--mercurius-text-muted` is the scheme-aware version and clears 4.5:1 in both.
 * **The navigation sits on the page ground.** A saturated dark navbar over a light canvas is the one treatment no screen in the app's own reference set uses. The navbar is the default Bulma bar with one 1px rule under it.
+* **The navbar dropdown arrow is chrome, not an accent.** Bulma draws it in `--bulma-link`, which put a blue chevron beside turquoise tabs on the same screen — two accent families in one bar.
 * **A module does not get its own colour.** The twelve gradient banners are now ONE flat banner. They carried three separate defects: a gradient that carried no information, hard-coded hex palettes on five of them that ignored the colour scheme, and contrast failures (white on the pale-yellow warning banner measured 1.1:1).
+* **One filled primary per screen.** The export buttons were filled green next to the filled primary, which gave the screen two accents and two competing calls to action. They are bordered secondaries now.
 
 ### Type
 
@@ -515,8 +519,17 @@ These are the decisions the components now encode. They are written down because
 ### Charts
 
 * **One hue per chart.** A second series is a lighter step of the same primary (`--mercurius-chart-series-1` / `-2`), not a second colour: two unrelated hues make the two series look like two different subjects.
+* **Resolve a CSS token before handing it to a canvas.** `getPropertyValue` on a custom property can hand back a token stream, and `ctx.fillStyle = "var(--x)"` is an invalid assignment that the canvas ignores — the chart then draws in the canvas default black, which is invisible on the dark ground. `MercuriusCharts.resolveColour(value, fallback)` paints the value into an element and reads the computed colour.
+* **The chart wrapper has a DEFINITE height, not a minimum.** The wrapper used to size itself from its content, so the canvas decided the page height — and Chart.js's responsive observer resizes the canvas to its parent. The two chased each other: any change to the viewport (a full-page screenshot, a window resize) changed the page height, which changed the canvas, which changed the page height again, and the full-page capture never settled. A fixed wrapper height breaks the loop: the canvas follows the wrapper, never the other way round.
 * **Two units, two axes.** "Ventas por hora" plots colones and transactions; on one axis the transaction line sat flat on the floor. Each series now has its own axis and its own label.
 * **Straight segments, no point markers.** A smoothed spline invents values between the daily totals it was given; a dot on every sample adds ink without adding information.
+
+### Buttons and tables
+
+* **Flat fill, one colour.** Bulma gives every button a coloured drop shadow. In the light scheme it is a soft glow; on an app screen, where a button is pressed dozens of times a day, it only adds noise and makes the primary action louder than the data around it. Bulma's `.button:focus-visible` is more specific and is left alone: that one is the keyboard's way home.
+* **A table header is a header, not a link.** Bulma's `<th>` is 16px at weight 700 in the strong ink, which is louder than the data it labels; and the sortable columns wrapped the label in an `<a>`, so they came out in the link colour and read as links — three blue labels in a row of grey ones. A header is 12px at 500 in the weak ink, and the sort affordance is the arrow next to the label.
+* **A disabled control stays legible.** Bulma halves the opacity of a disabled pager link, which drops it to about 2.9:1. It says "there is no previous page", and at that contrast it reads as broken rather than as unavailable.
+* **One filled primary per screen**; a secondary is a bordered button.
 
 ### Accessibility
 
