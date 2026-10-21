@@ -105,13 +105,31 @@ public class PronosticosResource {
             @QueryParam("sort") @Nullable String sort,
             @QueryParam("dir") @DefaultValue("asc") String dir,
             @QueryParam("dias") @DefaultValue("30") String dias,
+            @QueryParam("departamento") @Nullable String departamento,
+            @QueryParam("familia") @Nullable String familia,
             @QueryParam("seccion") @Nullable String seccion) {
 
         String vista = normalizarSeccion(seccion);
         int diasPronostico = normalizarDias(dias);
+        String deptoSel = departamento == null ? "" : departamento.trim();
+        String familiaSel = familia == null ? "" : familia.trim();
         Map<String, String> filtros = new LinkedHashMap<>();
         filtros.put("dias", String.valueOf(diasPronostico));
         filtros.put("seccion", vista);
+        if (!deptoSel.isEmpty()) {
+            filtros.put("departamento", deptoSel);
+        }
+        if (!familiaSel.isEmpty()) {
+            filtros.put("familia", familiaSel);
+        }
+
+        // Departamento y familia de cada articulo (una consulta para todo el
+        // catalogo) + las listas para los selectores del formulario.
+        Map<Long, String[]> grupos = gruposPorArticulo();
+        List<String> departamentos = grupos.values().stream()
+                .map(g -> g[0]).filter(s -> !s.isEmpty()).distinct().sorted().toList();
+        List<String> familias = grupos.values().stream()
+                .map(g -> g[1]).filter(s -> !s.isEmpty()).distinct().sorted().toList();
 
         List<Map<String, Object>> filas = new ArrayList<>();
         if ("pronosticos".equals(vista)) {
@@ -121,8 +139,14 @@ public class PronosticosResource {
                 Map<Long, Exactitud> exactitudes = exactitudPorArticulo(pronosticos);
                 for (StockForecastService.ProductForecast pronostico : pronosticos) {
                     Exactitud acc = exactitud(pronostico, exactitudes);
+                    String[] grupo = grupos.getOrDefault(pronostico.articuloId(), new String[]{"", ""});
+                    if (!coincide(grupo, deptoSel, familiaSel)) {
+                        continue;
+                    }
                     filas.add(Tablas.fila(
                             "articulo", pronostico.articuloNombre(),
+                            "departamento", grupo[0],
+                            "familia", grupo[1],
                             "stockActual", String.valueOf(pronostico.currentStock()),
                             "demandaEstimada", String.valueOf(pronostico.predictedSales()),
                             "diasRestantes", diasRestantes(pronostico),
@@ -139,9 +163,16 @@ public class PronosticosResource {
             // Those rows are NAMES, not articles, so there is no key to join the
             // precision table on: this section stays accuracy-free on purpose.
             if (salud != null && salud.criticalItems() != null) {
+                Map<String, String[]> porNombre = gruposPorNombre();
                 for (String critico : salud.criticalItems()) {
+                    String[] grupo = porNombre.getOrDefault(critico, new String[]{"", ""});
+                    if (!coincide(grupo, deptoSel, familiaSel)) {
+                        continue;
+                    }
                     filas.add(Tablas.fila(
                             "articulo", critico,
+                            "departamento", grupo[0],
+                            "familia", grupo[1],
                             "estado", "Cr\u00edtico"));
                 }
             }
@@ -152,6 +183,10 @@ public class PronosticosResource {
                 Map<Long, Exactitud> exactitudes = exactitudPorArticulo(pronosticos);
                 for (StockForecastService.ProductForecast pronostico : pronosticos) {
                     Exactitud acc = exactitud(pronostico, exactitudes);
+                    String[] grupo = grupos.getOrDefault(pronostico.articuloId(), new String[]{"", ""});
+                    if (!coincide(grupo, deptoSel, familiaSel)) {
+                        continue;
+                    }
                     int sugerido = Math.max(0,
                             pronostico.avgDailySales().multiply(
                                     BigDecimal.valueOf(diasPronostico))
@@ -159,6 +194,8 @@ public class PronosticosResource {
                             - pronostico.currentStock());
                     filas.add(Tablas.fila(
                             "articulo", pronostico.articuloNombre(),
+                            "departamento", grupo[0],
+                            "familia", grupo[1],
                             "stockActual", String.valueOf(pronostico.currentStock()),
                             "cantidadSugerida", String.valueOf(sugerido),
                             "prioridad", recomendacion(pronostico),
@@ -192,6 +229,10 @@ public class PronosticosResource {
         model.put("filtros", filtros);
         model.put("seccion", vista);
         model.put("dias", diasPronostico);
+        model.put("departamentos", departamentos);
+        model.put("familias", familias);
+        model.put("departamentoSeleccionado", deptoSel);
+        model.put("familiaSeleccionada", familiaSel);
         model.put("totalProductos", salud != null ? salud.totalProducts() : 0);
         model.put("saludables", salud != null ? salud.optimal() : 0);
         model.put("stockBajo", salud != null ? salud.lowStock() : 0);
@@ -257,11 +298,15 @@ public class PronosticosResource {
         if ("salud".equals(vista)) {
             return List.of(
                     Map.of("label", "Artículo", "key", "articulo"),
+                    Map.of("label", "Departamento", "key", "departamento"),
+                    Map.of("label", "Familia", "key", "familia"),
                     Map.of("label", "Estado", "key", "estado"));
         }
         if ("reorden".equals(vista)) {
             List<Map<String, Object>> columnas = new ArrayList<>(List.of(
                     Map.of("label", "Artículo", "key", "articulo"),
+                    Map.of("label", "Departamento", "key", "departamento"),
+                    Map.of("label", "Familia", "key", "familia"),
                     Map.of("label", "Stock Actual", "key", "stockActual"),
                     Map.of("label", "Cantidad Sugerida", "key", "cantidadSugerida"),
                     Map.of("label", "Prioridad", "key", "prioridad")));
@@ -270,12 +315,80 @@ public class PronosticosResource {
         }
         List<Map<String, Object>> columnas = new ArrayList<>(List.of(
                 Map.of("label", "Artículo", "key", "articulo"),
+                Map.of("label", "Departamento", "key", "departamento"),
+                Map.of("label", "Familia", "key", "familia"),
                 Map.of("label", "Stock Actual", "key", "stockActual"),
                 Map.of("label", "Demanda Pronosticada", "key", "demandaEstimada"),
                 Map.of("label", "Días Restantes", "key", "diasRestantes"),
                 Map.of("label", "Recomendación", "key", "recomendacion")));
         columnas.addAll(columnasExactitud());
         return List.copyOf(columnas);
+    }
+
+    /**
+     * Departamento y familia de cada articulo, en una sola consulta.
+     *
+     * <p>El grupo es un dato del propio articulo (no del pronostico), asi que
+     * se trae aparte para no repetir la consulta por fila.</p>
+     *
+     * @return id del articulo -&gt; {departamento, familia}
+     */
+    @Nonnull
+    private Map<Long, String[]> gruposPorArticulo() {
+        Map<Long, String[]> mapa = new java.util.HashMap<>();
+        for (Object[] fila : consultaGrupos()) {
+            Long id = fila[0] instanceof Number n ? n.longValue() : null;
+            if (id == null) {
+                continue;
+            }
+            mapa.put(id, new String[]{
+                    fila[2] == null ? "" : String.valueOf(fila[2]),
+                    fila[3] == null ? "" : String.valueOf(fila[3])});
+        }
+        return mapa;
+    }
+
+    /**
+     * Los mismos grupos indexados por nombre de articulo.
+     *
+     * <p>La seccion de salud solo trae nombres de articulos criticos (no ids),
+     * asi que para poder filtrarla por grupo hace falta el nombre.</p>
+     */
+    @Nonnull
+    private Map<String, String[]> gruposPorNombre() {
+        Map<String, String[]> porNombre = new java.util.HashMap<>();
+        for (Object[] fila : consultaGrupos()) {
+            String nombre = fila[1] == null ? "" : String.valueOf(fila[1]);
+            if (nombre.isEmpty()) {
+                continue;
+            }
+            porNombre.put(nombre, new String[]{
+                    fila[2] == null ? "" : String.valueOf(fila[2]),
+                    fila[3] == null ? "" : String.valueOf(fila[3])});
+        }
+        return porNombre;
+    }
+
+    /** id, nombre, departamento y familia de todo el catalogo (una consulta). */
+    @Nonnull
+    private List<Object[]> consultaGrupos() {
+        return entityManager.createQuery(
+                        "SELECT a.codigo, a.nombre, d.nombre, f.nombre FROM Articulos a "
+                                + "LEFT JOIN a.departamento d "
+                                + "LEFT JOIN a.familia f",
+                        Object[].class)
+                .getResultList();
+    }
+
+    /** El filtro por departamento/familia (vacio = todos). */
+    private static boolean coincide(@Nonnull String[] grupo,
+                                    @Nonnull String departamento,
+                                    @Nonnull String familia) {
+        if (!departamento.isEmpty()
+                && !departamento.equalsIgnoreCase(grupo[0].trim())) {
+            return false;
+        }
+        return familia.isEmpty() || familia.equalsIgnoreCase(grupo[1].trim());
     }
 
     /**

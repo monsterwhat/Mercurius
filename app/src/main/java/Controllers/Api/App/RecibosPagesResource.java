@@ -4,6 +4,7 @@ import io.quarkus.qute.Location;
 import io.quarkus.qute.Template;
 import io.quarkus.qute.TemplateInstance;
 import jakarta.annotation.Nonnull;
+import org.eclipse.microprofile.config.ConfigProvider;
 import Controllers.Api.App.Reportes.ReportePageSupport;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.security.RolesAllowed;
@@ -37,7 +38,16 @@ import org.jboss.logging.Logger;
  * <p><b>Roles:</b> {@code admin} + {@code facturacion} (legacy web.xml gate
  * for {@code /secured/pages/Recibos/*}).</p>
  */
-@Path("/app/recibos")
+/**
+ * Tablero de las facturas EMITIDAS (las que el negocio emite y tiene que
+ * cobrar).
+ *
+ * <p>Antes esta pantalla vivia en {@code /app/recibos}, pero "recibos" en el
+ * sistema viejo son las facturas que se RECIBEN (las que pasan los
+ * proveedores). La pantalla de emitidas quedo en {@code /app/facturas} y
+ * {@code /app/recibos} lleva a las recibidas.</p>
+ */
+@Path("/app/facturas")
 @Produces(MediaType.TEXT_HTML)
 @RolesAllowed({"admin", "facturacion"})
 public class RecibosPagesResource {
@@ -97,11 +107,26 @@ public class RecibosPagesResource {
             return Response.ok(instance.render())
                     .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
         } catch (RuntimeException e) {
-            LOG.warn("Error renderizando la página de recibos", e);
+            LOG.warn("Error renderizando la página de facturas emitidas", e);
             return Response.serverError()
                     .entity(Models.DTO.ApiResponse.error("INTERNAL_ERROR",
-                            "No se pudieron cargar los recibos"))
+                            "No se pudieron cargar las facturas emitidas"))
                     .build();
         }
+    }
+
+    /**
+     * "Recibos" son las facturas que se RECIBEN (las de los proveedores).
+     *
+     * <p>La ruta vieja ({@code /app/recibos}) mostraba las emitidas, que es
+     * justo lo que confunde: ahora lleva a las recibidas.</p>
+     */
+    @GET
+    @Path("/app/recibos")
+    public Response recibidos() {
+        String root = ConfigProvider.getConfig().getValue("quarkus.http.root-path", String.class);
+        return Response.status(Response.Status.FOUND)
+                .header("Location", (root == null ? "" : root) + "/app/facturas-recibidas")
+                .build();
     }
 }

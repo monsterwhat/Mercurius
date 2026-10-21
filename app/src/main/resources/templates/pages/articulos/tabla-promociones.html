@@ -36,8 +36,8 @@
             <tr>
                 <td style="font-weight:500">{#if promocion.nombre??}{promocion.nombre}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">{promocion.articulosCarrito.size()}</td>
-                <td>{#if promocion.fechaInicio??}{{time:format(promocion.fechaInicio, 'dd/MM/yyyy')}}{#else}&mdash;{/if}</td>
-                <td>{#if promocion.fechaFin??}{{time:format(promocion.fechaFin, 'dd/MM/yyyy')}}{#else}&mdash;{/if}</td>
+                <td>{#if promocion.fechaInicio??}{time:format(promocion.fechaInicio, 'dd/MM/yyyy')}{#else}&mdash;{/if}</td>
+                <td>{#if promocion.fechaFin??}{time:format(promocion.fechaFin, 'dd/MM/yyyy')}{#else}&mdash;{/if}</td>
                 <td class="has-text-right">{#if promocion.descuento??}{promocion.descuento}%{#else}N/A{/if}</td>
                 <td class="has-text-centered">
                     {#if promocion.activa}<span class="tag is-success">Activa</span>

@@ -42,7 +42,7 @@
                         <td>{#if c.email??}{c.email}{/if}</td>
                         <td>{#if c.idNumber??}{c.idNumber}{/if}</td>
                         <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
-                        <td>{#if c.lastPurchaseDate??}{{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}}{/if}</td>
+                        <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
                         <td>
                             {#if c.statusPuntos == 'active'}<span class="tag is-success">{c.statusPuntos}</span>
                             {#else if c.statusPuntos == 'inactive'}<span class="tag is-warning">{c.statusPuntos}</span>
@@ -91,7 +91,7 @@
                         <td>{#if c.email??}{c.email}{/if}</td>
                         <td>{#if c.phoneNumber??}{c.phoneNumber}{/if}</td>
                         <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
-                        <td>{#if c.lastPurchaseDate??}{{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}}{/if}</td>
+                        <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
                         <td>
                             <button type="button" class="button is-small is-info"
                                     hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"

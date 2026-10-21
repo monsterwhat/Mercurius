@@ -49,6 +49,28 @@
                     </div>
                 </div>
                 <div class="column is-narrow field">
+                    <label class="label" for="departamento">Departamento</label>
+                    <div class="control select">
+                        <select name="departamento" id="departamento">
+                            <option value="">Todos</option>
+                            {#for d in departamentos}
+                            <option value="{d}" {#if d == departamentoSeleccionado}selected{/if}>{d}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
+                    <label class="label" for="familia">Familia</label>
+                    <div class="control select">
+                        <select name="familia" id="familia">
+                            <option value="">Todas</option>
+                            {#for f in familias}
+                            <option value="{f}" {#if f == familiaSeleccionada}selected{/if}>{f}</option>
+                            {/for}
+                        </select>
+                    </div>
+                </div>
+                <div class="column is-narrow field">
                     <label class="label">&nbsp;</label>
                     <div class="control">
                         <button class="button is-info" type="submit">Generar Pronóstico</button>
