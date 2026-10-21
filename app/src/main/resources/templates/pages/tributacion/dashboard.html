@@ -54,7 +54,7 @@
                         :class="{ 'active': tab === 'resumen' }">
                     <span class="stat-number">{emitidosHoy}</span>
                     <span class="stat-label">Emitidos Hoy</span>
-                    <p class="is-size-7" style="opacity:0.85">✓ {aceptadosHoy} · ✗ {rechazadosHoy}</p>
+                    <p class="is-size-7 stat-detail">{#include _kit/icon name="check" /} {aceptadosHoy} &nbsp;{#include _kit/icon name="close" /} {rechazadosHoy}</p>
                 </button>
             </div>
             </div>

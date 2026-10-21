@@ -87,17 +87,33 @@ class DesignSystemPrimitivesTest {
     void pageHeaderRendersSingleH1() {
         String html = pageHeader
                 .data("title", "Artículos")
-                .data("eyebrow", "Inventario")
                 .data("subtitle", "Administre los artículos del inventario")
                 .render();
 
         assertTrue(html.contains("<h1 class=\"title is-3 page-title\">Artículos</h1>"),
                 "title must render as the page's single h1");
-        assertTrue(html.contains("page-eyebrow"), "eyebrow must render when supplied");
         assertTrue(html.contains("page-subtitle"), "subtitle must render when supplied");
         assertTrue(html.contains("<header class=\"page-header\">"), "root must be <header class=page-header>");
         assertFalse(html.contains("articulos-header"),
                 "the module gradient banners must not come back through this component");
+    }
+
+    @Test
+    @DisplayName("page-header: the eyebrow is gone and a stale one is ignored, not rendered")
+    void pageHeaderDropsTheEyebrow() {
+        // The eyebrow was a small uppercase kicker above the title. It repeated
+        // the title in smaller, greyer, tracked type, no page ever passed one,
+        // and it is a banned pattern. A caller that still passes it must get
+        // silence, not a kicker.
+        String html = pageHeader
+                .data("title", "Artículos")
+                .data("eyebrow", "Inventario")
+                .render();
+
+        assertFalse(html.contains("page-eyebrow"),
+                "the eyebrow must not render, even when a stale caller still passes one");
+        assertFalse(html.contains("Inventario"),
+                "a stale eyebrow value must not leak into the markup either");
     }
 
     @Test
@@ -326,5 +342,67 @@ class DesignSystemPrimitivesTest {
         assertFalse(sinToasts.contains("Listo"), "no toasts model means no notifications");
         assertFalse(sinToasts.contains("class=\"notification"),
                 "an absent toasts model must not render an empty notification");
+    }
+
+    // ── _kit/metric: the detail suffix ──────────────────────────────────────
+    //
+    // The detail suffix exists because a composed string ("+8.2% vs ayer")
+    // cannot be passed as one include parameter without relying on how Qute
+    // resolves an expression inside a string literal. The suffix is passed as
+    // its own literal instead, which is portable.
+
+    @Test
+    @DisplayName("metric: detailSuffix is appended to the detail line")
+    void metricAppendsTheDetailSuffix() {
+        String html = metric.data("label", "Ventas hoy").data("value", "1.250.000")
+                .data("detail", "+8.2%").data("detailSuffix", "vs ayer").render();
+
+        assertTrue(html.contains("<span class=\"metric-detail\">+8.2% vs ayer</span>"),
+                "the suffix must land after the detail, inside the same line");
+    }
+
+    @Test
+    @DisplayName("metric: without a detailSuffix the detail line is unchanged")
+    void metricDetailIsUnchangedWithoutASuffix() {
+        String html = metric.data("label", "Ventas Hoy").data("value", "1.250.000")
+                .data("detail", "+8 esta semana").render();
+
+        assertTrue(html.contains("<span class=\"metric-detail\">+8 esta semana</span>"),
+                "the detail must render exactly as supplied when there is no suffix");
+    }
+
+    // ── _kit/toast-item: severity and announcement ──────────────────────────
+    //
+    // A failure interrupts (role="alert"); everything else is announced
+    // politely (role="status"). The old markup used role="alert" on EVERY
+    // toast, so a burst of three success messages cut through whatever the
+    // screen reader was already saying.
+
+    @Location("_kit/toast-item")
+    Template toastItem;
+
+    @Test
+    @DisplayName("toast-item: an error interrupts, everything else is announced politely")
+    void toastItemPicksTheRightLiveRegionRole() {
+        String error = toastItem.data("severity", "error").data("message", "No se pudo guardar").render();
+        assertTrue(error.contains("role=\"alert\""),
+                "a failure must interrupt: the operator has to know now");
+
+        String exito = toastItem.data("severity", "success").data("message", "Guardado").render();
+        assertTrue(exito.contains("role=\"status\""),
+                "a success must not interrupt whatever the screen reader is saying");
+
+        String aviso = toastItem.data("severity", "warn").data("message", "Revise los totales").render();
+        assertTrue(aviso.contains("role=\"status\""),
+                "a warning is announced politely like any non-failure");
+    }
+
+    @Test
+    @DisplayName("toast-item: the severity still maps to its Bulma colour class")
+    void toastItemKeepsTheSeverityVocabulary() {
+        assertTrue(toastItem.data("severity", "error").data("message", "x").render().contains("is-danger"));
+        assertTrue(toastItem.data("severity", "warn").data("message", "x").render().contains("is-warning"));
+        assertTrue(toastItem.data("severity", "success").data("message", "x").render().contains("is-success"));
+        assertTrue(toastItem.data("severity", "whatever").data("message", "x").render().contains("is-info"));
     }
 }

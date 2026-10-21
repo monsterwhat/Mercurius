@@ -234,161 +234,67 @@ select,
 
 // -----------------------------------------------------------------------------
 // Ported legacy layer: headers.css
+//
+// THE TWELVE MODULE BANNERS ARE NOW ONE BANNER.
+//
+// Each module used to own a coloured gradient banner: .articulos-header,
+// .categorias-header, .clientes-header, .cabys-header, .recibos-header,
+// .correos-header, .usuarios-header, .registros-header, .backups-header,
+// .inventario-header, .tributacion-header and .caja-header (the last one is
+// an inline <style> on the caja page).
+//
+// Three things were wrong with them, and none of them were taste:
+//
+//   1. The gradient. A gradient across a header carries no information; it is
+//      decoration, and it made the top of every screen the loudest thing on
+//      it.
+//   2. The hard-coded hexes. .clientes-header, .backups-header,
+//      .registros-header, .correos-header and .usuarios-header carried their
+//      own hex palette, so those five headers did not follow the active
+//      colour scheme at all - they were the same navy in a dark theme as in
+//      a light one.
+//   3. The contrast. .cabys-header was white text on Bulma's warning (a pale
+//      yellow), which measures about 1.1:1 - unreadable. The others measured
+//      between 3.2:1 and 4.3:1, under the 4.5:1 floor.
+//
+// The class names stay, so the pages that still use them keep working. They
+// all resolve to the same flat, theme-aware treatment, which is exactly what
+// _kit/page-header renders for a migrated page. A module no longer gets its
+// own colour: the page title says what the screen is.
+//
+// To give one page its own colour, use _kit/page-header's `accent` parameter
+// (one Bulma semantic, flat, reserved for a page that IS one workflow).
 // -----------------------------------------------------------------------------
-/* Estilos mejorados para las páginas de Artículos, Categorías e Inventario */
-
-/* Header con métricas - Artículos */
-.articulos-header {
-    background: linear-gradient(135deg, var(--bulma-primary) 0%, var(--bulma-primary-dark) 100%);
+.articulos-header,
+.categorias-header,
+.clientes-header,
+.cabys-header,
+.recibos-header,
+.correos-header,
+.usuarios-header,
+.registros-header,
+.backups-header,
+.inventario-header,
+.tributacion-header {
+    background: var(--bulma-primary);
     border-radius: 1rem;
-    padding: 2rem;
+    color: var(--bulma-primary-invert);
     margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-/* Header con métricas - Categorías */
-.categorias-header {
-    background: linear-gradient(135deg, var(--bulma-info) 0%, var(--bulma-info-dark) 100%);
-    border-radius: 1rem;
     padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
 }
 
-/* Header con métricas - Inventario */
-.inventario-header {
-    background: linear-gradient(135deg, var(--bulma-success) 0%, var(--bulma-success-dark) 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-/* Header con métricas - Clientes */
-.clientes-header {
-    background: linear-gradient(135deg, #3298dc 0%, #1e3a52 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-/* Header con métricas - CAByS */
-.cabys-header {
-    background: linear-gradient(135deg, var(--bulma-warning) 0%, var(--bulma-warning-dark) 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-/* Header con métricas - Recibos */
-.recibos-header {
-    background: linear-gradient(135deg, var(--bulma-danger) 0%, #b71c1c 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-/* Header con métricas - Backups */
-.backups-header {
-    background: linear-gradient(135deg, #00897b 0%, #004d40 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-.backups-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-/* Header con métricas - Registros */
-.registros-header {
-    background: linear-gradient(135deg, #455a64 0%, #263238 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-.registros-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-/* Header con métricas - Correos */
-.correos-header {
-    background: linear-gradient(135deg, #42a5f5 0%, #1565c0 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-.correos-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-/* Header con métricas - Usuarios */
-.usuarios-header {
-    background: linear-gradient(135deg, #607d8b 0%, #37474f 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
-.usuarios-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-/* Header con métricas - Tributación */
-.tributacion-header {    background: linear-gradient(135deg, var(--bulma-link) 0%, var(--bulma-link-dark) 100%);
-    border-radius: 1rem;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    color: white;
-}
-
+.articulos-header .title,
+.categorias-header .title,
+.clientes-header .title,
+.cabys-header .title,
+.recibos-header .title,
+.correos-header .title,
+.usuarios-header .title,
+.registros-header .title,
+.backups-header .title,
+.inventario-header .title,
 .tributacion-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-.cabys-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-.clientes-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-.articulos-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
-}
-
-.recibos-header .title {
-    color: white !important;
-    margin-bottom: 1.5rem;
+    color: inherit;
 }
 
 .stats-grid {
@@ -399,18 +305,29 @@ select,
 }
 
 .stat-card {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, .12);
     border-radius: 0.75rem;
     padding: 1rem;
     text-align: center;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, .2);
+    transition: background-color .15s cubic-bezier(.23, 1, .32, 1),
+                border-color .15s cubic-bezier(.23, 1, .32, 1),
+                transform .12s cubic-bezier(.23, 1, .32, 1);
 }
+
+// The card used to carry backdrop-filter: blur(10px) over a translucent
+// white. The blur is the "glass" habit: it costs a compositing pass on every
+// scroll, it made the numbers behind it unreadable, and it broke outright on
+// the coloured module banners this card sits on. A flat translucent fill
+// reads the same and costs nothing.
 
 .stat-card:hover {
     transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, .18);
+}
+
+.stat-card:active {
+    transform: scale(.97);
 }
 
 .stat-card.active {
@@ -428,8 +345,6 @@ select,
 .stat-label {
     font-size: 0.875rem;
     opacity: 0.9;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
 /* Pestañas mejoradas */
@@ -448,7 +363,8 @@ select,
 .ui-tabs .ui-tabs-nav li.ui-tabs-header {
     border-radius: 0.75rem 0.75rem 0 0 !important;
     margin-right: 0.5rem;
-    transition: all 0.3s ease;
+    transition: background-color .15s cubic-bezier(.23, 1, .32, 1),
+                color .15s cubic-bezier(.23, 1, .32, 1);
     position: relative;
 }
 
@@ -456,7 +372,7 @@ select,
     color: var(--bulma-text) !important;
     font-weight: 500;
     padding: 0.75rem 1.5rem;
-    transition: all 0.3s ease;
+    transition: color .15s cubic-bezier(.23, 1, .32, 1);
 }
 
 .ui-tabs .ui-tabs-nav li.ui-tabs-header.ui-state-active {
@@ -525,7 +441,8 @@ select,
 .action-btn {
     border-radius: 0.75rem !important;
     font-weight: 500;
-    transition: all 0.3s ease;
+    transition: box-shadow .15s cubic-bezier(.23, 1, .32, 1),
+                transform .12s cubic-bezier(.23, 1, .32, 1);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     display: inline-flex;
     align-items: center;
@@ -538,7 +455,7 @@ select,
 }
 
 .action-btn:active {
-    transform: translateY(0);
+    transform: scale(.97);
 }
 
 /* Filtros mejorados */
@@ -567,8 +484,6 @@ select,
     font-weight: 600;
     color: var(--bulma-text);
     font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
 }
 
 /* Tablas mejoradas */
@@ -599,8 +514,6 @@ select,
     font-weight: 600 !important;
     padding: 0.25rem 0.75rem !important;
     border: none !important;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
 }
 
 .status-processed {
@@ -637,11 +550,15 @@ select,
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: all 0.2s ease;
+    transition: transform .12s cubic-bezier(.23, 1, .32, 1),
+                background-color .15s cubic-bezier(.23, 1, .32, 1);
 }
 
-.table-action-btn:hover {
-    transform: scale(1.1);
+// The old hover rule scaled the button to 1.1 - a 10% jump on a 40px
+// control, which reads as the button lunging at the cursor and makes the row
+// feel unstable. A button presses IN, and only while it is pressed.
+.table-action-btn:active {
+    transform: scale(.97);
 }
 
 /* Vista de cuadrícula */
@@ -657,15 +574,23 @@ select,
     border: 1px solid var(--bulma-border);
     border-radius: 1rem;
     padding: 1.5rem;
-    transition: all 0.3s ease;
+    transition: border-color .15s cubic-bezier(.23, 1, .32, 1),
+                box-shadow .15s cubic-bezier(.23, 1, .32, 1),
+                transform .15s cubic-bezier(.23, 1, .32, 1);
     cursor: pointer;
     position: relative;
 }
 
+// A card that rises 4px on hover swaps places with the rest of the grid in
+// the reader's eye - the row of cards no longer lines up while the pointer
+// is on it. 2px is enough to say "this one is live".
 .articulo-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
     border-color: var(--bulma-primary);
+}
+
+.articulo-card:active {
+    transform: scale(.99);
 }
 
 .articulo-card-header {
@@ -768,8 +693,14 @@ select,
     to { opacity: 1; transform: translateY(0); }
 }
 
+// The tab panel used to fade in from below every time it was revealed. On an
+// operational screen that is wrong twice over: the panel appears on EVERY
+// tab change, so the operator pays for the animation dozens of times a day,
+// and the content is hidden until the animation finishes. An app screen
+// shows its content; it does not perform it. (The keyframes stay for
+// anything that still references them deliberately.)
 .tab-content-card {
-    animation: fadeIn 0.3s ease-out;
+    animation: none;
 }
 
 /* Tooltip mejorado */
@@ -788,7 +719,7 @@ select,
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.8);
+    background: color-mix(in srgb, var(--bulma-scheme-main) 80%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -895,8 +826,8 @@ select,
     border-radius: 5px;
 }
 .timeline-axis {
-    background: linear-gradient(to bottom, #5D99C3, #3A6DA0), var(--bulma-primary);
-    border-color: #5D99C3;
+    background: var(--bulma-primary);
+    border-color: var(--bulma-primary);
     opacity: 1;
 }
 
@@ -922,19 +853,25 @@ select,
     text-shadow: none;
 }
 
+// The selected-event mark was #E61FC0 - a saturated magenta that appears on
+// no other surface in the app and is not one of Bulma's semantics, so it
+// read as an error rather than as "the row you picked". Selection is now
+// the primary hue at full strength, which is the one colour on the timeline
+// that means "this one".
 .timeline-event-selected {
-    background: #E61FC0 !important;
-    border-color: #AA008A !important;
+    background: var(--bulma-primary) !important;
+    border-color: var(--bulma-primary-dark) !important;
+    color: var(--bulma-primary-invert) !important;
 }
 
 .timeline-event.Equipment {
-    background: #ffdd8f !important;
-    border-color: #C4A65B !important;
+    background: color-mix(in srgb, var(--bulma-warning) 35%, var(--bulma-scheme-main)) !important;
+    border-color: var(--bulma-warning) !important;
 }
 
 .timeline-event.Property {
-    background: #99e0ff !important;
-    border-color: #60A9C6 !important;
+    background: color-mix(in srgb, var(--bulma-info) 30%, var(--bulma-scheme-main)) !important;
+    border-color: var(--bulma-info) !important;
 }
 .vis-timeline .vis-item.vis-selected{
     background: var(--bulma-warning-60) !important;

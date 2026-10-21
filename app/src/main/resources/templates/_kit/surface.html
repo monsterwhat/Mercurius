@@ -21,22 +21,29 @@
 
   SLOTS
     {#actions} - controls in the header, right-aligned.
-    {#body}    - the content. Default is empty.
+    {#content} - the content. Default is empty.
     {#footer}  - a footer strip, right-aligned by default. Use for
                   Cancelar / Confirmar pairs.
+
+  WHY THE SLOT IS CALLED `content` AND NOT `body`
+    Qute does not allow a `body` section inside a `body` section. Every page
+    reaches this component through the layout, whose own body section is
+    already open, so a slot named `body` fails to parse with "section end tag
+    [body] does not match the start tag [$root]". The slot is therefore named
+    `content`, which is unambiguous.
 
   TYPED HEADINGS
     Pass `title` and the component emits <h2 class="surface-title">. Nested
     surfaces should not re-declare the level - if a page needs an h3, render
     the title yourself in the {#actions}... no: render the surface without
-    `title` and put your own heading in {#body}. Do not fight the component.
+    `title` and put your own heading in {#content}. Do not fight the component.
 
   EXAMPLE
-    {#include _kit/surface id="prevalidacion-panel" title="Pre-validacion" /}
+    {#include _kit/surface id="prevalidacion-panel" title="Pre-validacion" }
       {#actions}<span class="tag is-warning ml-2">2 advertencias</span>{/actions}
-      {#body}
+      {#content}
         <p class="subtitle is-6">Sin errores de pre-validacion.</p>
-      {/body}
+      {/content}
       {#footer}
         <button class="button is-primary" type="submit">Aceptar factura</button>
       {/footer}
@@ -61,7 +68,7 @@
     </header>
     {/if}
     <div class="surface-body{#if flush??}{#if flush} is-flush{/if}{/if}">
-        {#insert body}{/insert}
+        {#insert content}{/insert}
     </div>
     {#insert footer}{/insert}
 </section>

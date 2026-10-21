@@ -24,8 +24,11 @@
     baseUrl     String - REQUIRED context-path-relative endpoint, e.g.
                        "/app/articulos". Root-path prefix is added HERE.
     headers     List   - REQUIRED. Column definitions as maps, each exposing
-                       "label" (always) and "key" (nullable -> column is
-                       NOT sortable when key is absent/null).
+                       "label" (always), "key" (nullable -> column is
+                       NOT sortable when key is absent/null) and "num"
+                       (optional Boolean -> the column holds figures, so it
+                       is right-aligned with tabular numerals; the header
+                       gets the same treatment so the two line up).
                        Build them server-side e.g.
                        Map.of("label","Nombre","key","nombre").
     rows        List   - row data for rowFragment mode (see below).
@@ -49,7 +52,15 @@
   SORT LINKS: each sortable header emits ?sort=<key>&dir=<toggled> plus
   preserved params, targeting the same endpoint. Clicking a sorted column
   flips asc->desc; clicking another column starts at asc. aria-sort marks
-   the active column for screen readers.
+   the active column for screen readers. The ▲/▼ glyph is aria-hidden: the
+   sort state is announced by aria-sort, not by a shape.
+
+  ZEBRA STRIPING IS GONE
+    The table used to carry Bulma's `is-striped`. Banded rows make a dense
+    table louder than its data and hide where one record ends and the next
+    begins; Bulma's own row rules already do that job. `is-hoverable` stays:
+    a row that responds to the pointer is what lets an operator find their
+    place in a 40-row list.
 !}
 {@java.lang.String id}
 {@java.lang.String baseUrl}
@@ -58,12 +69,12 @@
    OPTIONAL per the data contract above, and {@...} declarations make Qute
    fail rendering when a caller omits them. Optional usages are ??-guarded. !}
 <div class="table-container" id="{id}" data-kit-table data-base-url="{baseUrl}">
-    <table class="table is-striped is-hoverable is-fullwidth">
+    <table class="table is-hoverable is-fullwidth">
         <thead>
             <tr>
                 {#for col in headers}
                     {#if col.key??}
-                    <th scope="col" {#if col.key == sortKey}{#if sortDir == 'desc'}aria-sort="descending"{#else}aria-sort="ascending"{/if}{/if}>
+                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}{#if col.key == sortKey}{#if sortDir == 'desc'} aria-sort="descending"{#else} aria-sort="ascending"{/if}{/if}>
                         <!--
                           W2 (root-path normalization): the deployment root is read
                           from configuration via {config:['quarkus.http.root-path']},
@@ -82,7 +93,7 @@
                         {#if col.key == sortKey}{#if sortDir == 'desc'}<span aria-hidden="true">▼</span>{#else}<span aria-hidden="true">▲</span>{/if}{/if}
                     </th>
                     {#else}
-                    <th scope="col">{col.label}</th>
+                    <th scope="col"{#if col.num??}{#if col.num} class="num"{/if}{/if}>{col.label}</th>
                     {/if}
                 {/for}
             </tr>

@@ -11,10 +11,10 @@ Stack pins — **do not add libraries.** HTMX **2.0.10**, Alpine.js **3.16.1** (
 ## 1. Layer order
 
 ```
-Bulma  →  Mercurius tokens  →  Mercurius components  →  page exceptions
+Bulma  →  legacy layers  →  Mercurius tokens  →  Mercurius components  →  page exceptions
 ```
 
-`web/index.scss` imports Bulma, then `mercurius.scss`, then the ported legacy layers. Components must be composed from `_kit/` before a page adds any CSS of its own. A page that needs a new visual pattern opens a design review instead of writing a new rule.
+`web/index.scss` imports Bulma, then the ported legacy layers, then `web/mercurius.scss` (pulled in from `web/index.js`, after the module, so the new primitives win over the legacy selectors they will eventually replace). Components must be composed from `_kit/` before a page adds any CSS of its own. A page that needs a new visual pattern opens a design review instead of writing a new rule.
 
 ### 1.1 W1 scope rule (important)
 
@@ -23,6 +23,8 @@ W1 was **purely additive**. `mercurius.scss` deliberately does **not** redefine 
 `.stat-card` · `.stats-grid` · `.actions-bar` · `.actions-group` · `.filters-section` · `.filters-row` · `.filter-group` · `.tab-content-card` · `.nav-cards` · `.nav-card` · `.grid-view` · `.articulo-card` · `.table-actions` · `.table-action-btn` · `.action-btn` · `.button-stack` · `.edit-btn` / `.edit-text` · `.empty-state` · `.loading-overlay` · `.side-panel` · the twelve module gradient banners (`.articulos-header`, `.categorias-header`, `.inventario-header`, `.cabys-header`, `.recibos-header`, `.correos-header`, `.usuarios-header`, `.registros-header`, `.backups-header`, `.clientes-header`, `.tributacion-header`, plus `.caja-header` which lives in an inline `<style>` on the caja page) · the `.ui-*` PrimeFaces leftovers (`ui-tabs`, `ui-datatable`, `ui-dialog`, `ui-datepicker`, `ui-tooltip`, `timeline.css` / vis-timeline).
 
 `.status-chip` is the one exception: its base class already existed, so W1 only **adds** the semantic modifiers `.is-success` / `.is-warning` / `.is-info` / `.is-danger` / `.is-neutral` alongside the legacy `.status-processed` / `.status-unprocessed` / `.status-active` / `.status-inactive` aliases. W6 drops the aliases.
+
+**The twelve module banners are now ONE banner.** They were listed above as "not to be used by new work"; the UI/UX pass went further and flattened them in place, so the class names still resolve but every one of them is the same flat, theme-aware fill. See §10.1, "A module does not get its own colour". The legacy `.stat-card` lost its `backdrop-filter` for the same reason. The legacy selectors themselves are still deleted in W6, once a repo-wide grep proves zero references.
 
 ## 2. Golden rules
 
@@ -54,6 +56,8 @@ Violating any of these breaks the app.
 10. **Charts are Chart.js only.** `window.MercuriusCharts.create(id, config)` applies the shared defaults. Never hand-draw on a canvas, never call `toLocaleString()` in a page script.
 11. **Icons come from `_kit/icon`.** No FontAwesome, no emoji, no numeric HTML entities as glyphs. See §9.
 12. **One component per concern.** Page headers, metric cards, view tabs, filter bars, action bars, surfaces, tables, modals, toasts and charts each have exactly one implementation. Do not add a second.
+13. **Include parameters take a bare name, a parenthesised expression, or a quoted literal** — `baseUrl=modelo.baseUrl`, `subtitle=(a + " - " + b)`, `title="Artículos"`. Never `param={expr}`, and never a quoted value that starts with a space. Both break the parameter scanner and the template fails to parse with an error that points at an unrelated line. See §10.
+14. **An include that carries slots is not self-closing.** `{#include x}` … `{/include}` when it has slots; `{#include x /}` only when it has none. A self-closing include followed by `{/include}` is an orphan end tag.
 
 ## 3. Kit inventory
 
@@ -91,7 +95,11 @@ Renders a sortable, server-paginated dataset. The single replacement for `p:data
 
 ### Markup / API
 
-`#id` > `.table-container` > `table.table.is-striped.is-hoverable.is-fullwidth`, with `thead` (sortable headers carry `aria-sort` + `▲/▼`), `tbody` (slot mode or automatic empty state), and an optional `tfoot` holding the count + pager.
+`#id` > `.table-container` > `table.table.is-hoverable.is-fullwidth`, with `thead` (sortable headers carry `aria-sort` + `▲/▼`), `tbody` (slot mode or automatic empty state), and an optional `tfoot` holding the count + pager.
+
+**No zebra striping.** The table used to carry Bulma's `is-striped`. Banded rows make a dense table louder than its data and hide where one record ends and the next begins; Bulma's own row rules already do that job. `is-hoverable` stays: a row that responds to the pointer is what lets an operator find their place in a 40-row list.
+
+**Numeric columns.** A header map may carry `"num" => true`. The column is then right-aligned with tabular figures, so a column of colones lines up digit for digit instead of jittering as it updates.
 
 ### Parameters
 
@@ -131,7 +139,7 @@ None required. Below 768px the container scrolls horizontally; do not compress c
 {#include _kit/data-table id="clientes-tabla" baseUrl="/app/clientes"
      headers=columnas sortKey=sortKey sortDir=sortDir
      page=page size=size total=total totalPages=totalPages
-     pages=paginas params=filtros /}
+     pages=paginas params=filtros}
   {#rows}
     {#for c in clientes}
     <tr>
@@ -149,6 +157,8 @@ None required. Below 768px the container scrolls horizontally; do not compress c
   {/rows}
 {/include}
 ```
+
+> **An include that carries slots is NOT self-closing.** The `{#include x … /}` form ends the include immediately and takes no body, so a following `{/include}` is an orphan end tag and the parser fails with *"section end tag [include] does not match the start tag [if]"*. When a component has slots, open it with `{#include x …}` and close it with `{/include}`. When it has none, use the self-closing form. This bit three separate W1 examples in this document, which is why it is called out here.
 
 ---
 
@@ -417,14 +427,32 @@ All eight are documented in full at the top of each template. Common rules:
 
 | Component | Required | Optional | Slots |
 | --- | --- | --- | --- |
-| `page-header` | `title` | `eyebrow`, `subtitle`, `variant` (`compact`), `accent` (6 Bulma semantics) | `{#actions}`, `{#metrics}` |
-| `metric` | `label`, `value` | `detail`, `href`, `interactive`, `active`, `id` | — |
+| `page-header` | `title` | `subtitle`, `variant` (`compact`), `accent` (6 Bulma semantics) | `{#actions}`, `{#metrics}` |
+| `metric` | `label`, `value` | `detail`, `detailSuffix`, `href`, `interactive`, `active`, `id` | — |
 | `view-tabs` | `ariaLabel` | `tabs` (List of Map: `key`,`label`,`href?`,`count?`,`active?`), `id` | `{#tabs}` (slot mode) |
-| `surface` | — | `title`, `subtitle`, `flush`, `id` | `{#actions}`, `{#body}`, `{#footer}` |
+| `surface` | — | `title`, `subtitle`, `flush`, `id` | `{#actions}`, `{#content}`, `{#footer}` |
 | `filter-bar` | — | `id`, `method`, `action`, `id_field` | default (grid), `{#actions}` |
 | `action-bar` | — | `count`, `countLabel`, `id` | `{#left}`, `{#actions}` |
-| `chart-card` | `title` | `subtitle`, `size` (`short`/`tall`), `canvasId`, `height` | `{#actions}`, `{#body}` |
+| `chart-card` | `title` | `subtitle`, `size` (`short`/`tall`), `canvasId`, `height` | `{#actions}`, `{#chartBody}` |
 | `icon` | `name` | `label`, `size` | — |
+
+> **`page-header` no longer takes an `eyebrow`.** The kicker above the title was a small uppercase label repeating the title in smaller, greyer, tracked type. No page ever passed one, and it is a banned pattern. A caller that still passes `eyebrow` gets silence, not a kicker.
+>
+> **`metric` gained `detailSuffix`.** A composed detail ("+8.2% vs ayer") cannot be passed as one include parameter without relying on how Qute resolves an expression inside a string literal. The suffix is passed as its own literal instead. The separating space lives in the component, not in the caller's value.
+>
+> **`surface`'s body slot is `content`, not `body`.** Qute does not allow a `body` section inside a `body` section, and every page reaches `surface` through the layout, whose body section is already open. A slot named `body` fails to parse.
+
+### Include parameters — the three ways to pass a value
+
+```html
+{#include _kit/data-table baseUrl=modelo.baseUrl …}   ← a bare name (a data key)
+{#include _kit/chart-card subtitle=(filtros.desde + " - " + filtros.hasta) …}   ← a parenthesised expression
+{#include _kit/page-header title="Artículos" …}   ← a quoted literal
+```
+
+**Do not write `param={expr}`.** A value in braces is taken as literal text by the parameter scanner, and the template then fails to parse with *"section end tag [body] does not match the start tag [$root]"* — an error that points at an unrelated line and costs an afternoon. Use the bare name or the parenthesised expression.
+
+**A quoted value must not start with a space.** `detailSuffix=" vs ayer"` breaks the scanner in the same way; put the space in the component instead.
 
 ### Notes that are easy to get wrong
 
@@ -448,6 +476,54 @@ MercuriusCharts.number(n); MercuriusCharts.currency(n); MercuriusCharts.date(v);
 ```
 
 Pages supply labels, datasets, type and an optional `options` override. They must **not** redefine fonts, grid colours, tooltip appearance or locale. `responsive: true` and `maintainAspectRatio: false` are global.
+
+---
+
+## 10.1 The visual rules
+
+These are the decisions the components now encode. They are written down because a rule that lives only in a stylesheet is a rule the next page worker will undo.
+
+### Surfaces
+
+* **A border OR a shadow, never both.** Every resting panel in the kit (`.surface`, `.chart-card`, `.metric-card`, `.page-header`) carries a 1px border and no shadow. A shadow is for what genuinely floats: a menu, a popover, a dragged row.
+* **Separation is a step in tone, not a hairline.** `var(--bulma-scheme-main-bis)` against `var(--bulma-scheme-main)` is the working pair.
+* **No glass.** The legacy `.stat-card` used `backdrop-filter: blur(10px)`. It costs a compositing pass on every scroll, it made the numbers behind it unreadable, and it broke outright on a coloured banner. Flat translucent fill, no blur.
+
+### Colour
+
+* **One ground, one ink, one accent.** The accent is for the data and at most one control. A screen with a different hue per KPI tile reads as seven unrelated facts instead of one answer.
+* **Status chips are a pale tint with dark text of the same hue.** The old treatment was a saturated fill with white text, which failed WCAG AA on every semantic colour (white on Bulma success is about 1.9:1; white on Bulma warning is about 1.1:1 — the word inside the chip was unreadable). The tokens are in `web/mercurius.scss` §3.7 and are derived from the Bulma semantic via `color-mix()`, so they follow the colour scheme with no hex literal.
+* **The navigation sits on the page ground.** A saturated dark navbar over a light canvas is the one treatment no screen in the app's own reference set uses. The navbar is the default Bulma bar with one 1px rule under it.
+* **A module does not get its own colour.** The twelve gradient banners are now ONE flat banner. They carried three separate defects: a gradient that carried no information, hard-coded hex palettes on five of them that ignored the colour scheme, and contrast failures (white on the pale-yellow warning banner measured 1.1:1).
+
+### Type
+
+* **App type is not display type.** The page title is capped at 1.75rem (28px). Bulma's `.title.is-3` is 2.5rem (40px) — a landing-page size that an operator reads all day as shouting, and that costs vertical space on every screen.
+* **A KPI value is 1.5rem at 600.** Not 36px, not bold, not in the brand colour.
+* **A metric label is 12px sentence case at 500.** Not an uppercase tracked caption: that habit reads as a label from a 2014 admin template and fights the value it sits above.
+* **Figures take tabular numerals** wherever they stack in a column, so a column of colones lines up digit for digit instead of jittering as it updates.
+
+### Motion
+
+* **One vocabulary.** `--mercurius-ease-out` (`cubic-bezier(.23, 1, .32, 1)`) and three durations: 120ms press, 150ms fast, 200ms base. The built-in `ease` curve starts slow, which reads as lag at the exact moment the user is watching.
+* **UI animations stay under 300ms.** A 180ms dropdown feels more responsive than a 400ms one.
+* **Press feedback is `scale(0.97)` on `:active`** on any pressable element. Nothing in the real world appears from nothing, so entrances start at 0.95 or higher, never 0.
+* **Hover is gated** behind `@media (hover: hover) and (pointer: fine)`. On touch the hover state fires on tap and leaves the control looking stuck.
+* **Nothing on a screen performs an entrance.** A screen is worked in, not read once; the tab panel that faded in on every tab change made the operator pay for the animation dozens of times a day and hid the content until it finished.
+* **Reduced motion is honoured everywhere.** `prefers-reduced-motion: reduce` neutralises the CSS layer, and `web/chart-config.js` sets the Chart.js animation duration to 0. Before this pass the app had no reduced-motion handling at all.
+
+### Charts
+
+* **One hue per chart.** A second series is a lighter step of the same primary (`--mercurius-chart-series-1` / `-2`), not a second colour: two unrelated hues make the two series look like two different subjects.
+* **Two units, two axes.** "Ventas por hora" plots colones and transactions; on one axis the transaction line sat flat on the floor. Each series now has its own axis and its own label.
+* **Straight segments, no point markers.** A smoothed spline invents values between the daily totals it was given; a dot on every sample adds ink without adding information.
+
+### Accessibility
+
+* **The keyboard can open every menu.** The dropdown headers were `<a class="navbar-link">` with no `href`, which is not focusable and cannot be activated: the Articulos / Usuarios / Tributacion / Ajustes menus were mouse-only. They are now real `<button>` elements carrying `aria-haspopup` and `aria-expanded`.
+* **A failure interrupts; everything else is announced politely.** Toasts use `role="alert"` for an error and `role="status"` for the rest. The old markup used `role="alert"` on every toast, so a burst of three success messages cut through whatever the screen reader was already saying.
+* **An icon-only button carries its own name.** `aria-label` on the button, never on the icon.
+* **Icons come from `_kit/icon`.** FontAwesome is not a dependency; the nine `fas fa-*` markup that survived had rendered nothing at all.
 
 ---
 
@@ -537,5 +613,6 @@ Contract: `{dataset}-{yyyyMMdd}.xlsx|.pdf`, magic bytes `PK\x03\x04` / `%PDF-`; 
 | **W4** | Charts. Move `reportes/tendencias`, `reportes/rendimiento`, `reportes/pronosticos` from hand-drawn canvas to Chart.js; delete the custom rendering. | ⬜ pending |
 | **W5** | Page migration, by archetype: list → tabbed board → reports → settings → POS → hub. Adopt the W1 primitives; remove per-page `<style>`/`<script>` duplicates. | ⬜ pending |
 | **W6** | Cleanup **after** a repo-wide grep proves zero references: FontAwesome references, emoji/Unicode action glyphs, the 16 `data-kit-open` bridge script copies, the PrimeFaces `ui-*` and `timeline.css` layers, the twelve module gradient banners and other legacy selectors, the second `#toast-container` in `factura-standalone.html`, `probe.html`, and the two hand-rolled `htmx:afterRequest` toast renderers (`settings/index.html`, `tipo-cambio/fragment.html`). Then grep for `fas fa-`, `ui-`, `vis-timeline`, `config:['quarkus.http.root-path']`, `.nav-card`, `.stat-card`, `*-header`, and require them to be **gone from the source**, not merely unused. | ⬜ pending |
+| **UX1** | **The UI/UX pass.** Not a migration wave: it fixes the design system itself and the two flagship screens, so the remaining waves land on correct foundations. The kit was reviewed against the app's own reference set and against the WCAG AA floor, and the following changed: the twelve module banners are now ONE flat banner; `.stat-card` lost its backdrop blur; `transition: all` is gone from the legacy layer (specific properties + `--mercurius-ease-out`); the tab panel no longer performs an entrance on every tab change; the timeline's magenta selection mark is now the primary hue; `prefers-reduced-motion` is honoured across the CSS layer and in Chart.js; the status chips are pale tints with AA-compliant ink instead of saturated fills with white text; the panels carry a border OR a shadow, never both; the page title is capped at 28px; the metric card is left-aligned with a sentence-case label and tabular figures; the navigation sits on the page ground instead of being a saturated dark bar, and its dropdown headers are real buttons so the keyboard can open them; the signed-in operator's name is in the navigation bar instead of a greeting in a page title; the dashboard is a real `<h1>` plus one metric strip and two chart cards, with colones and transactions on separate axes; the artículos board uses `_kit/page-header` + `_kit/view-tabs`; the nine surviving FontAwesome glyphs (which rendered nothing — FontAwesome is not a dependency) are `_kit/icon`; and the eight Qute include-parameter traps are documented in §10. | ✅ landed |
 
 **Definition of done for the redesign:** redesign the 10–15 primitives, then migrate pages onto them. That yields one visual language while preserving the existing Qute/HTMX architecture, server-side pagination, CSRF model, role gating, routes, business logic and `_kit` contracts.

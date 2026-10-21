@@ -35,7 +35,7 @@
     the tab set is driven by Alpine rather than a server-rendered list:
 
         <div x-data="{ tab: 'activos' }">
-          {#include _kit/view-tabs ariaLabel="Vistas de articulos" /}
+          {#include _kit/view-tabs ariaLabel="Vistas de articulos" }
             {#tabs}
               <a class="view-tab" :class="{ 'is-active': tab === 'activos' }"
                  href="?tab=activos">Activos</a>
