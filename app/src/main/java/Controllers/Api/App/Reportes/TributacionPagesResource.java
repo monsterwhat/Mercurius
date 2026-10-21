@@ -526,6 +526,7 @@ public class TributacionPagesResource {
         model.put("mesSeleccionado", mes);
         model.put("anioSeleccionado", anio);
         model.put("meses", MESES);
+        model.put("mesesNumerados", mesesNumerados());
         model.put("anios", aniosValidos());
         // Label-only headers (docs/ui-kit.md §3.1): fixed report snapshots,
         // no server-side sorting contract on this page.
@@ -658,6 +659,24 @@ public class TributacionPagesResource {
             anios.add(y);
         }
         return Collections.unmodifiableList(anios);
+    }
+
+    /**
+     * Meses con su numero.
+     *
+     * <p>El numero va en el modelo y no como {@code indice + 1} en la
+     * plantilla: Qute no parses una comparacion con una expresion aritmetica
+     * ({@code {#if indice + 1 == mes}} deja la plantilla con 500).</p>
+     */
+    private static List<Map<String, Object>> mesesNumerados() {
+        List<Map<String, Object>> lista = new ArrayList<>();
+        for (int i = 0; i < MESES.length; i++) {
+            Map<String, Object> mes = new LinkedHashMap<>();
+            mes.put("numero", i + 1);
+            mes.put("nombre", MESES[i]);
+            lista.add(mes);
+        }
+        return Collections.unmodifiableList(lista);
     }
 
     private static long countEstado(@Nonnull List<ComprobantesEmitidos> todos, @Nonnull String estado) {
