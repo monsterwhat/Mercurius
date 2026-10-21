@@ -363,13 +363,15 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
     public @Nullable LocalDate primeraFechaMargen() {
         try {
             // la columna fecha es un DATE mapeado a java.util.Date: el MIN
-            // devuelve Date, no LocalDate (con LocalDate la consulta falla y el
-            // reporte se queda con el rango por defecto de 30 dias).
+            // devuelve java.sql.Date, y ese tipo no soporta toInstant().
             TypedQuery<Date> query = em.createQuery(
                     "SELECT MIN(pmh.fecha) FROM HistorialMargen pmh", Date.class);
             Date minimo = query.getSingleResult();
             if (minimo == null) {
                 return null;
+            }
+            if (minimo instanceof java.sql.Date sqlDate) {
+                return sqlDate.toLocalDate();
             }
             return minimo.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
         } catch (PersistenceException e) {
