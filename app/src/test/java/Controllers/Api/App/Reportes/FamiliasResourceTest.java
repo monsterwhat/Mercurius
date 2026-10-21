@@ -32,12 +32,16 @@ class FamiliasResourceTest {
 
     @Test
     @TestSecurity(user = "admin", roles = {"admin", "inventario"})
-    void rangoVacioMuestraMensaje() {
+    void rangoVacioUsaElUltimoMes() {
+        // Sin rango el recurso aplica el ultimo mes por defecto, asi que la
+        // pagina se renderiza con su tabla (no pide un rango: el mensaje
+        // "Seleccione el rango de fechas" quedo sin uso cuando se introdujo
+        // ese valor por defecto).
         given()
                 .when().get(PAGE)
                 .then()
                 .statusCode(200)
-                .body(containsString("Seleccione el rango de fechas"));
+                .body(containsString("data-kit-table"));
     }
 
     @Test
