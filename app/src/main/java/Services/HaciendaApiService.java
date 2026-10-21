@@ -190,7 +190,35 @@ public class HaciendaApiService {
 
         String environment = certificateService.getEnvironment();
         String envPrefix = "production".equalsIgnoreCase(environment) ? "prod" : "stag";
-        return prefix + "-" + tipoId + "-" + idNumber + "@" + envPrefix + ".comprobanteselectronicos.go.cr";
+        return prefix + "-" + tipoId + "-" + idpIdNumber(tipoId, idNumber)
+                + "@" + envPrefix + ".comprobanteselectronicos.go.cr";
+    }
+
+    /**
+     * El ID que Hacienda tiene registrado en el IdP no es siempre el numero
+     * completo tal como se escribe hoy.
+     *
+     * <p>Para persona fisica, Hacienda registro el numero en el formato
+     * anterior a la reforma (sin el digito de provincia y con guion):
+     * {@code 1-0455-0334} se registra como {@code 0455-0334}. Con el numero
+     * completo ({@code 104550334}) el IdP responde {@code invalid_grant}
+     * (verificado contra el IdP de produccion el 2026-10-21 con la credencial
+     * del sistema anterior, que si usaba el formato con guion).</p>
+     *
+     * <p>Persona juridica ({@code 3-101-...}) se registra con el digito de
+     * tipo separado del resto.</p>
+     */
+    static String idpIdNumber(@Nonnull String tipoId, @Nonnull String idNumber) {
+        String numero = idNumber.trim();
+        if ("01".equals(tipoId) && numero.length() == 9 && numero.startsWith("1")) {
+            // 104550334 -> 0455-0334 (como lo tiene registrado Hacienda)
+            return numero.substring(1, 5) + "-" + numero.substring(5);
+        }
+        if ("02".equals(tipoId) && numero.length() == 10 && numero.startsWith("3")) {
+            // 3101123456 -> 3-101-123456
+            return numero.charAt(0) + "-" + numero.substring(1, 4) + "-" + numero.substring(4);
+        }
+        return numero;
     }
 
     /**
