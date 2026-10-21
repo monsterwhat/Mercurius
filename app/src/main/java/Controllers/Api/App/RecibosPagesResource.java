@@ -73,15 +73,15 @@ public class RecibosPagesResource {
         try {
             String cubeta = bucket == null || bucket.isBlank()
                     ? RecibosResource.BUCKET_TODAS : bucket;
-            // Load emitted invoices ONCE for the whole page (stats + every bucket).
-            List<ComprobantesEmitidos> todos = recibos.emitidosTodos();
+            // Cada bucket se consulta paginado en SQL: el historico completo no
+            // cabe en memoria.
             Map<String, Object> modelos = new LinkedHashMap<>();
             for (String b : List.of(RecibosResource.BUCKET_TODAS, RecibosResource.BUCKET_PAGADAS,
                     RecibosResource.BUCKET_PROCESADAS, RecibosResource.BUCKET_VENCIDOS)) {
                 if (b.equals(cubeta)) {
-                    modelos.put(b, recibos.tablaModel(b, page, size, sort, dir, q, todos));
+                    modelos.put(b, recibos.tablaModel(b, page, size, sort, dir, q, null));
                 } else {
-                    modelos.put(b, recibos.tablaModel(b, 1, 20, null, "asc", null, todos));
+                    modelos.put(b, recibos.tablaModel(b, 1, 20, null, "asc", null, null));
                 }
             }
             TemplateInstance instance;
@@ -89,7 +89,7 @@ public class RecibosPagesResource {
                 instance = recibos.tableroInstance(null, null);
             } else {
                 instance = pageIndex.instance()
-                        .data("stats", recibos.statsView(todos))
+                        .data("stats", recibos.statsView(null))
                         .data("modelos", modelos)
                         .data("bucket", cubeta)
                         .data("q", q);

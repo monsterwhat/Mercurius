@@ -233,7 +233,7 @@ public class TributacionPagesResource {
      * (contract of pages/tributacion/index.html).
      */
     private Map<String, Object> indexModel() {
-        List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAll());
+        List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAllConClave());
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("totalFacturas", (long) todos.size());
         model.put("totalEnviadas", countEstado(todos, "ENVIADO"));
@@ -249,7 +249,7 @@ public class TributacionPagesResource {
      * twin {@link TributacionResource#dashboard()} for the DTO contract).
      */
     private Map<String, Object> dashboardModel() {
-        List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAll());
+        List<ComprobantesEmitidos> todos = orEmpty(emitidosService.listAllConClave());
 
         long totalEmitidos = todos.size();
         long totalAceptados = countEstado(todos, "ACEPTADO");

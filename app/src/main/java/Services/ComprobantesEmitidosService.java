@@ -134,6 +134,158 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         }
     }
     
+    /**
+     * Conteos por estado de Hacienda (SQL). El historico completo son cientos
+     * de miles de comprobantes: contarlos en Java exige materializar la tabla.
+     */
+    public @Nonnull java.util.Map<String, Long> countByHaciendaEstado() {
+        java.util.Map<String, Long> salida = new java.util.LinkedHashMap<>();
+        try {
+            var query = em.createNativeQuery(
+                    "SELECT COALESCE(haciendaestado, 'SIN_ESTADO') AS e, count(*) AS c"
+                            + " FROM comprobantesemitidos GROUP BY 1 ORDER BY 2 DESC");
+            @SuppressWarnings("unchecked")
+            List<Object[]> filas = (List<Object[]>) query.getResultList();
+            for (Object[] f : filas) {
+                salida.put(String.valueOf(f[0]), ((Number) f[1]).longValue());
+            }
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando por estado de Hacienda: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.countByHaciendaEstado() | despues=" + e.getMessage());
+        }
+        return salida;
+    }
+
+    /** Total de comprobantes emitidos. */
+    public long countEmitidos() {
+        try {
+            Object v = em.createNativeQuery("SELECT count(*) FROM comprobantesemitidos").getSingleResult();
+            return v instanceof Number n ? n.longValue() : 0L;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando comprobantes: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.countEmitidos() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * Comprobantes emitidos cuyo consecutivo contiene el texto (acotado).
+     * Reemplaza el listAll() + filtrado en Java.
+     */
+    public @Nonnull List<ComprobantesEmitidos> listByConsecutivoLike(@Nullable String texto, int max) {
+        String like = "%" + (texto == null ? "" : texto.trim().toUpperCase(java.util.Locale.ROOT)) + "%";
+        if (texto == null || texto.trim().isEmpty()) {
+            return java.util.List.of();
+        }
+        try {
+            var q = em.createNativeQuery(
+                    "SELECT f.id FROM comprobantesemitidos f JOIN encabezado e ON e.id = f.encabezado_id"
+                            + " WHERE UPPER(COALESCE(e.numero_consecutivo,'')) LIKE :q"
+                            + " ORDER BY e.fecha_emision DESC NULLS LAST LIMIT :lim");
+            q.setParameter("q", like);
+            q.setParameter("lim", Math.max(max, 1));
+            @SuppressWarnings("unchecked")
+            List<Number> ids = (List<Number>) q.getResultList();
+            return cargarPorIds(ids);
+        } catch (PersistenceException e) {
+            LOG.warn("Error buscando por consecutivo: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listByConsecutivoLike() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    /** Comprobantes emitidos cuyo receptor coincide con el texto (acotado). */
+    public @Nonnull List<ComprobantesEmitidos> listByReceptorLike(@Nullable String texto, int max) {
+        if (texto == null || texto.trim().isEmpty()) {
+            return java.util.List.of();
+        }
+        String like = "%" + texto.trim().toUpperCase(java.util.Locale.ROOT) + "%";
+        try {
+            var q = em.createNativeQuery(
+                    "SELECT f.id FROM comprobantesemitidos f JOIN encabezado e ON e.id = f.encabezado_id"
+                            + " LEFT JOIN receptor rc ON rc.id = e.receptor_id"
+                            + " WHERE UPPER(COALESCE(rc.nombre,'')) LIKE :q"
+                            + " ORDER BY e.fecha_emision DESC NULLS LAST LIMIT :lim");
+            q.setParameter("q", like);
+            q.setParameter("lim", Math.max(max, 1));
+            @SuppressWarnings("unchecked")
+            List<Number> ids = (List<Number>) q.getResultList();
+            return cargarPorIds(ids);
+        } catch (PersistenceException e) {
+            LOG.warn("Error buscando por receptor: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listByReceptorLike() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    /** Comprobantes emitidos de un tipo de documento concreto (notas de credito). */
+    public @Nonnull List<ComprobantesEmitidos> listByCodigoDocumento(@Nullable String codigo, int max) {
+        if (codigo == null || codigo.isBlank()) {
+            return java.util.List.of();
+        }
+        try {
+            var q = em.createNativeQuery(
+                    "SELECT f.id FROM comprobantesemitidos f JOIN encabezado e ON e.id = f.encabezado_id"
+                            + " WHERE e.codigo_documento = :cod"
+                            + " ORDER BY e.fecha_emision DESC NULLS LAST LIMIT :lim");
+            q.setParameter("cod", codigo);
+            q.setParameter("lim", Math.max(max, 1));
+            @SuppressWarnings("unchecked")
+            List<Number> ids = (List<Number>) q.getResultList();
+            return cargarPorIds(ids);
+        } catch (PersistenceException e) {
+            LOG.warn("Error buscando por tipo de documento: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listByCodigoDocumento() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    /** Carga las filas indicadas con encabezado, resumen y emisor. */
+    private @Nonnull List<ComprobantesEmitidos> cargarPorIds(@Nonnull List<Number> ids) {
+        if (ids.isEmpty()) {
+            return java.util.List.of();
+        }
+        List<Long> longs = new java.util.ArrayList<>(ids.size());
+        for (Number n : ids) {
+            longs.add(n.longValue());
+        }
+        TypedQuery<ComprobantesEmitidos> q = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f"
+                        + " LEFT JOIN FETCH f.resumen"
+                        + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.emisor"
+                        + " WHERE f.id IN :ids",
+                ComprobantesEmitidos.class);
+        q.setParameter("ids", longs);
+        return q.getResultList();
+    }
+
+    /**
+     * Comprobantes con clave (documentos electronicos).
+     *
+     * <p>El historico importado del sistema viejo (vsuper) son facturas
+     * pre-electronicas: no tienen clave de 50 digitos, no se enviaron nunca a
+     * Hacienda y no se pueden sustituir ni creditar. Los tableros operativos
+     * (recibos, tributacion, devoluciones, factura publica) deben trabajar solo
+     * con documentos electronicos; el historico se ve en los reportes, que si
+     * filtran por fecha.</p>
+     */
+    public @Nonnull List<ComprobantesEmitidos> listAllConClave() {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT DISTINCT f FROM ComprobantesEmitidos f"
+                        + " LEFT JOIN FETCH f.resumen"
+                        + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.emisor"
+                        + " WHERE e.clave IS NOT NULL",
+                ComprobantesEmitidos.class
+            );
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listing all electronic comprobantes: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listAllConClave() | despues=" + e.getMessage());
+            return java.util.Collections.emptyList();
+        }
+    }
+
     @Override
     public @Nonnull List<ComprobantesEmitidos> listAll() {
         try {
@@ -145,6 +297,137 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         } catch (PersistenceException e) {
             LOG.warn("Error listing all entities: " + e.getMessage() + " | source=ComprobantesEmitidosService.listAll() | despues=" + e.getMessage());
             return java.util.Collections.emptyList();
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // Listado PAGINADO (el historico puede tener cientos de miles de
+    // comprobantes: materializar la tabla entera desborda el heap y el
+    // timeout, asi que el filtro de bucket va a SQL y solo se materializa la
+    // pagina pedida).
+    // ════════════════════════════════════════════════════════════════════
+
+    /** Una pagina de comprobantes emitidos + el total del bucket. */
+    public record PaginaEmitidos(List<ComprobantesEmitidos> filas, long total) { }
+
+    /** Predicado SQL del bucket (mismo criterio que las versiones en Java). */
+    private static @Nonnull String bucketWhere(@Nonnull String bucket) {
+        return switch (bucket) {
+            case "pagadas" -> " AND UPPER(COALESCE(e.estado,'')) = 'ACEPTADO'";
+            case "procesadas" -> " AND f.haciendaestado IS NOT NULL AND UPPER(f.haciendaestado) <> 'PENDIENTE'";
+            case "vencidos" -> " AND e.condicion_venta = '02' AND e.fecha_emision IS NOT NULL"
+                    + " AND e.plazo_credito IS NOT NULL AND btrim(e.plazo_credito) ~ '^[0-9]+$'"
+                    + " AND (e.fecha_emision::date + btrim(e.plazo_credito)::int)::date <= CURRENT_DATE"
+                    + " AND UPPER(COALESCE(e.estado,'')) NOT IN ('RECHAZADO','ACEPTADO')";
+            default -> "";
+        };
+    }
+
+    /** Filtro de busqueda (mismos campos que la version en Java). */
+    private static @Nonnull String qWhere(@Nullable String q) {
+        String texto = q == null ? "" : q.trim();
+        if (texto.isEmpty()) {
+            return "";
+        }
+        String like = "%" + texto.toUpperCase(java.util.Locale.ROOT) + "%";
+        return " AND (UPPER(COALESCE(e.codigo_actividad_emisor,'')) LIKE :q"
+                + " OR UPPER(COALESCE(e.condicion_venta,'')) LIKE :q"
+                + " OR UPPER(COALESCE(em.nombre,'')) LIKE :q"
+                + " OR UPPER(COALESCE(em.nombre_comercial,'')) LIKE :q"
+                + " OR UPPER(COALESCE(ie.numero,'')) LIKE :q"
+                + " OR UPPER(COALESCE(e.fecha_emision::text,'')) LIKE :q"
+                + " OR UPPER(COALESCE(e.numero_consecutivo,'')) LIKE :q"
+                + " OR UPPER(COALESCE(rc.nombre,'')) LIKE :q)";
+    }
+
+    /** Columna de ordenamiento (solo claves permitidas). */
+    private static @Nonnull String orderColumn(@Nullable String sort) {
+        if (sort == null) {
+            return "f.id";
+        }
+        return switch (sort) {
+            case "consecutivo" -> "e.numero_consecutivo";
+            case "fechaEmision" -> "e.fecha_emision";
+            case "emisorNombre" -> "em.nombre";
+            case "totalComprobante" -> "r.total_comprobante";
+            case "totalImpuesto" -> "r.total_impuesto";
+            case "haciendaEstado" -> "f.haciendaestado";
+            default -> "f.id";
+        };
+    }
+
+    private static @Nonnull String fromWhere(@Nonnull String bucket, @Nullable String q) {
+        return " FROM comprobantesemitidos f"
+                + " JOIN encabezado e ON e.id = f.encabezado_id"
+                + " LEFT JOIN resumen_factura r ON r.id = f.resumen_id"
+                + " LEFT JOIN emisor em ON em.id = e.emisor_id"
+                + " LEFT JOIN identificacion_emisor ie ON ie.id = em.identificacion_emisor_id"
+                + " LEFT JOIN receptor rc ON rc.id = e.receptor_id"
+                + " WHERE 1=1" + bucketWhere(bucket) + qWhere(q);
+    }
+
+    /**
+     * Numero de comprobantes del bucket (con el filtro de busqueda).
+     */
+    public long countEmitidos(@Nonnull String bucket, @Nullable String q) {
+        try {
+            var query = em.createNativeQuery("SELECT count(*)" + fromWhere(bucket, q));
+            if (q != null && !q.trim().isEmpty()) {
+                query.setParameter("q", "%" + q.trim().toUpperCase(java.util.Locale.ROOT) + "%");
+            }
+            Object v = query.getSingleResult();
+            return v instanceof Number n ? n.longValue() : 0L;
+        } catch (PersistenceException e) {
+            LOG.warn("Error contando comprobantes emitidos: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.countEmitidos() | despues=" + e.getMessage());
+            return 0L;
+        }
+    }
+
+    /**
+     * Pagina de comprobantes emitidos con el filtro de bucket en SQL.
+     *
+     * @param first indice de la primera fila (0-based)
+     * @param max   numero maximo de filas
+     */
+    public @Nonnull PaginaEmitidos listPagedEmitidos(@Nonnull String bucket, int first, int max,
+                                                     @Nullable String sort, @Nullable String dir,
+                                                     @Nullable String q) {
+        long total = countEmitidos(bucket, q);
+        if (total <= 0 || max <= 0) {
+            return new PaginaEmitidos(java.util.List.of(), total);
+        }
+        try {
+            String order = orderColumn(sort);
+            String direccion = "desc".equalsIgnoreCase(dir == null ? "" : dir.trim()) ? "DESC" : "ASC";
+            var query = em.createNativeQuery("SELECT f.id" + fromWhere(bucket, q)
+                    + " ORDER BY " + order + " " + direccion + ", f.id ASC LIMIT :lim OFFSET :off");
+            if (q != null && !q.trim().isEmpty()) {
+                query.setParameter("q", "%" + q.trim().toUpperCase(java.util.Locale.ROOT) + "%");
+            }
+            query.setParameter("lim", max);
+            query.setParameter("off", Math.max(first, 0));
+            @SuppressWarnings("unchecked")
+            List<Number> ids = (List<Number>) query.getResultList();
+            if (ids.isEmpty()) {
+                return new PaginaEmitidos(java.util.List.of(), total);
+            }
+            List<Long> longs = new java.util.ArrayList<>(ids.size());
+            for (Number n : ids) {
+                longs.add(n.longValue());
+            }
+            TypedQuery<ComprobantesEmitidos> q2 = em.createQuery(
+                    "SELECT f FROM ComprobantesEmitidos f"
+                            + " LEFT JOIN FETCH f.resumen"
+                            + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.emisor"
+                            + " WHERE f.id IN :ids",
+                    ComprobantesEmitidos.class);
+            q2.setParameter("ids", longs);
+            return new PaginaEmitidos(q2.getResultList(), total);
+        } catch (PersistenceException e) {
+            LOG.warn("Error listando comprobantes emitidos paginados: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.listPagedEmitidos() | despues=" + e.getMessage());
+            return new PaginaEmitidos(java.util.List.of(), total);
         }
     }
       
@@ -462,6 +745,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "LEFT JOIN FETCH f.encabezado e " +
                 "WHERE f.status = true " +
                 "AND f.haciendaEstado = 'ENVIADO' " +
+                "AND e.clave IS NOT NULL " +
                 "AND (f.haciendaFechaRespuesta IS NULL " +
                 "     OR f.haciendaFechaEnvio IS NULL " +
                 "     OR f.haciendaFechaRespuesta < f.haciendaFechaEnvio) " +
@@ -483,6 +767,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "LEFT JOIN FETCH f.encabezado e " +
                 "WHERE f.status = true " +
                 "AND f.haciendaEstado = 'ENVIADO' " +
+                "AND e.clave IS NOT NULL " +
                 "AND f.haciendaFechaEnvio IS NOT NULL " +
                 "AND f.haciendaFechaEnvio < :hace3Horas " +
                 "AND (f.haciendaFechaRespuesta IS NULL OR f.haciendaFechaRespuesta < f.haciendaFechaEnvio) " +

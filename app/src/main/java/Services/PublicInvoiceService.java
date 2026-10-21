@@ -87,7 +87,7 @@ public class PublicInvoiceService {
                 result.put("data", data);
                 result.put("total", total);
             } else {
-                List<ComprobantesEmitidos> data = comprobantesEmitidosService.listAll();
+                List<ComprobantesEmitidos> data = comprobantesEmitidosService.listAllConClave();
                 result.put("data", data);
                 result.put("total", (long) data.size());
             }
