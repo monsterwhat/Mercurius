@@ -455,7 +455,7 @@ public class TributacionPagesResource {
         Date end = Date.from(finMes.atTime(23, 59, 59)
                 .atZone(java.time.ZoneId.systemDefault()).toInstant());
 
-        List<ComprobantesEmitidos> emitidas = orEmpty(emitidosService.listByDateRange(start, end));
+        List<ComprobantesEmitidos> emitidas = orEmpty(emitidosService.listByDateRangeConClave(start, end));
         List<ComprobantesRecibidos> recibidas = orEmpty(recibidosService.listByDateRange(start, end));
 
         BigDecimal totalVentas = BigDecimal.ZERO;
@@ -502,7 +502,7 @@ public class TributacionPagesResource {
             ventasMes[i] = BigDecimal.ZERO;
             impuestoMes[i] = BigDecimal.ZERO;
         }
-        for (ComprobantesEmitidos f : orEmpty(emitidosService.listByDateRange(yearStart, yearEnd))) {
+        for (ComprobantesEmitidos f : orEmpty(emitidosService.listByDateRangeConClave(yearStart, yearEnd))) {
             if (f.getResumen() == null || f.getEncabezado() == null
                     || f.getEncabezado().getFechaEmision() == null) {
                 continue;

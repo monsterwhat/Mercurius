@@ -533,6 +533,35 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
         return query.getResultList();
     }
 
+    /**
+ * Comprobantes emitidos del rango, solo los ELECTRONICOS (con clave).
+ *
+ * <p>La declaracion mensual de IVA solo puede sumar comprobantes
+ *electronicos: el historico importado del sistema viejo no es fiscal y hace
+ * que la pagina cargue cientos de miles de filas.</p>
+ */
+public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Date start, @Nonnull Date end) {
+        try {
+            TypedQuery<ComprobantesEmitidos> query = em.createQuery(
+                "SELECT f FROM ComprobantesEmitidos f " +
+                "LEFT JOIN FETCH f.resumen r " +
+                "LEFT JOIN FETCH f.encabezado e " +
+                "WHERE e.fechaEmision BETWEEN :start AND :end " +
+                "AND e.clave IS NOT NULL " +
+                "ORDER BY e.fechaEmision ASC",
+                ComprobantesEmitidos.class
+            );
+            LocalDateTime startLdt = start.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            LocalDateTime endLdt = end.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            query.setParameter("start", startLdt);
+            query.setParameter("end", endLdt);
+            return query.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listing by date range: " + e.getMessage() + " | source=ComprobantesEmitidosService.listByDateRangeConClave() | despues=" + e.getMessage());
+            return null;
+        }
+    }
+
     public @Nullable List<ComprobantesEmitidos> listByDateRange(@Nonnull Date start, @Nonnull Date end) {
         try {
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
@@ -564,6 +593,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "LEFT JOIN FETCH f.resumen r " +
                 "WHERE f.status = true " +
                 "AND (e.estado IS NULL OR e.estado = 'PENDIENTE') " +
+                "AND e.clave IS NOT NULL " +
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
@@ -584,6 +614,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "LEFT JOIN FETCH f.resumen r " +
                 "WHERE f.status = true " +
                 "AND e.estado = 'ACEPTADO' " +
+                "AND e.clave IS NOT NULL " +
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
@@ -604,6 +635,7 @@ public class ComprobantesEmitidosService extends GService<ComprobantesEmitidos> 
                 "LEFT JOIN FETCH f.resumen r " +
                 "WHERE f.status = true " +
                 "AND e.estado = 'RECHAZADO' " +
+                "AND e.clave IS NOT NULL " +
                 "ORDER BY e.fechaEmision DESC",
                 ComprobantesEmitidos.class
             );
