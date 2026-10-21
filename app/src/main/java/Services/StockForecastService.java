@@ -91,10 +91,16 @@ public class StockForecastService {
             "SELECT a FROM Articulos a WHERE a.status = true", Articulos.class
         ).getResultList();
 
+        // El historial y el stock se cargan de una vez para todo el catalogo:
+        // consultarlos articulo por articulo son miles de consultas y la
+        // pagina se pasa del timeout con el catalogo real.
+        Map<Long, List<SalesData>> historiales = getSalesHistoryBatch(90);
+        Map<Long, Integer> stocks = getCurrentStockBatch();
+
         List<ProductForecast> allForecasts = new ArrayList<>();
 
         for (Articulos articulo : articulos) {
-            List<SalesData> salesHistory = getSalesHistory(articulo.getCodigo(), 90);
+            List<SalesData> salesHistory = historiales.getOrDefault(articulo.getCodigo(), List.of());
             
             if (salesHistory.isEmpty()) continue;
 
@@ -102,7 +108,7 @@ public class StockForecastService {
             BigDecimal salesVelocity = calculateSalesVelocity(salesHistory);
             BigDecimal trendFactor = calculateTrendFactor(salesHistory);
 
-            int currentStock = getCurrentStock(articulo.getCodigo());
+            int currentStock = stocks.getOrDefault(articulo.getCodigo(), 0);
             int reorderPoint = calculateReorderPoint(averageDailySales, 7);
             
             BigDecimal predictedSales = averageDailySales;
@@ -185,9 +191,13 @@ public class StockForecastService {
 
         List<Articulos> criticalItems = new ArrayList<>();
 
+        // Una sola consulta para el catalogo completo (ver generateBulkForecast).
+        Map<Long, List<SalesData>> historiales = getSalesHistoryBatch(90);
+        Map<Long, Integer> stocks = getCurrentStockBatch();
+
         for (Articulos articulo : articulos) {
-            List<SalesData> salesHistory = getSalesHistory(articulo.getCodigo(), 90);
-            int currentStock = getCurrentStock(articulo.getCodigo());
+            List<SalesData> salesHistory = historiales.getOrDefault(articulo.getCodigo(), List.of());
+            int currentStock = stocks.getOrDefault(articulo.getCodigo(), 0);
             
             if (currentStock <= 0) {
                 outOfStock++;
@@ -274,6 +284,75 @@ public class StockForecastService {
             status,
             avgDaily.setScale(2, RoundingMode.HALF_UP)
         );
+    }
+
+    /**
+     * Historial de ventas de TODO el catálogo en una sola consulta.
+     *
+     * <p>Equivale a {@link #getSalesHistory(Long, int)} para cada artículo, pero
+     * resuelto en una consulta: con el catálogo real (miles de artículos) la
+     * versión por artículo hace miles de consultas y la página de pronósticos
+     * revienta el timeout. La línea seasocia al artículo por su nombre, igual
+     * que la versión por artículo.</p>
+     */
+    private Map<Long, List<SalesData>> getSalesHistoryBatch(int days) {
+        LocalDateTime startDate = LocalDate.now().minusDays(days).atStartOfDay();
+        LocalDateTime endDate = LocalDate.now().atTime(23, 59, 59);
+
+        List<Object[]> results = entityManager.createQuery(
+            "SELECT a.codigo, CAST(e.fechaEmision AS date), COALESCE(SUM(ld.cantidad), 0) " +
+            "FROM ComprobantesEmitidos f " +
+            "JOIN f.detalles d " +
+            "JOIN d.lineasDetalle ld " +
+            "JOIN f.encabezado e " +
+            "JOIN Articulos a ON a.nombre = ld.detalle " +
+            "WHERE f.status = true " +
+            "AND e.fechaEmision BETWEEN :start AND :end " +
+            "GROUP BY a.codigo, CAST(e.fechaEmision AS date) " +
+            "ORDER BY a.codigo, CAST(e.fechaEmision AS date)",
+            Object[].class
+        )
+        .setParameter("start", startDate)
+        .setParameter("end", endDate)
+        .getResultList();
+
+        Map<Long, List<SalesData>> porArticulo = new HashMap<>();
+        for (Object[] row : results) {
+            Long articuloId = (Long) row[0];
+            LocalDate date;
+            Object dateObj = row[1];
+            if (dateObj instanceof LocalDate) {
+                date = (LocalDate) dateObj;
+            } else if (dateObj instanceof java.sql.Date) {
+                date = ((java.sql.Date) dateObj).toLocalDate();
+            } else {
+                date = LocalDate.parse(String.valueOf(dateObj));
+            }
+            double cantidad = row[2] == null ? 0.0 : ((Number) row[2]).doubleValue();
+            porArticulo.computeIfAbsent(articuloId, k -> new ArrayList<>())
+                    .add(new SalesData(date, cantidad));
+        }
+        return porArticulo;
+    }
+
+    /**
+     * Stock vigente de TODO el catálogo en una sola consulta
+     * (equivalente a {@link #getCurrentStock(Long)} para cada artículo).
+     */
+    private Map<Long, Integer> getCurrentStockBatch() {
+        List<Object[]> results = entityManager.createQuery(
+            "SELECT a.codigo, COALESCE(SUM(i.cantidad), 0) " +
+            "FROM Articulos a LEFT JOIN Inventario i ON i.articulo.codigo = a.codigo " +
+            "GROUP BY a.codigo",
+            Object[].class
+        ).getResultList();
+
+        Map<Long, Integer> porArticulo = new HashMap<>();
+        for (Object[] row : results) {
+            Long articuloId = (Long) row[0];
+            porArticulo.put(articuloId, row[1] == null ? 0 : ((Number) row[1]).intValue());
+        }
+        return porArticulo;
     }
 
     @CacheResult(cacheName = "analytics-forecast")
