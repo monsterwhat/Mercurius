@@ -136,7 +136,7 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
         
         for (Object[] result : deptResults) {
             String departamento = (String) result[0];
-            BigDecimal margenPromedio = (BigDecimal) result[1];
+            BigDecimal margenPromedio = aBigDecimal(result[1]);
             BigDecimal totalVentas = (BigDecimal) result[2];
             BigDecimal totalUtilidad = (BigDecimal) result[3];
             Long cantidadArticulos = (Long) result[4];
@@ -168,7 +168,7 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
         
         for (Object[] result : familyResults) {
             String familia = (String) result[0];
-            BigDecimal margenPromedio = (BigDecimal) result[1];
+            BigDecimal margenPromedio = aBigDecimal(result[1]);
             BigDecimal totalVentas = (BigDecimal) result[2];
             BigDecimal totalUtilidad = (BigDecimal) result[3];
             Long cantidadArticulos = (Long) result[4];
@@ -262,6 +262,26 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
     }
 
     /**
+     * Convierte el resultado de un agregado a BigDecimal.
+     *
+     * <p>AVG devuelve Double en Hibernate (segun JPA), no BigDecimal: castear
+     * directo a BigDecimal rompia con ClassCastException en cuanto la tabla
+     * tenia filas.</p>
+     */
+    private static @Nonnull BigDecimal aBigDecimal(@Nullable Object valor) {
+        if (valor == null) {
+            return BigDecimal.ZERO;
+        }
+        if (valor instanceof BigDecimal bd) {
+            return bd;
+        }
+        if (valor instanceof Number n) {
+            return new BigDecimal(n.toString());
+        }
+        return new BigDecimal(valor.toString());
+    }
+
+    /**
      * Get average profit margin for all articles
      */
     @Transactional(TxType.SUPPORTS)
@@ -293,7 +313,9 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
         return results.stream().collect(
             Collectors.toMap(
                 result -> (String) result[0],
-                result -> result[1] != null ? ((BigDecimal) result[1]).setScale(2, RoundingMode.HALF_UP) : BigDecimal.ZERO
+                result -> result[1] != null
+                        ? aBigDecimal(result[1]).setScale(2, RoundingMode.HALF_UP)
+                        : BigDecimal.ZERO
             )
         );
     }
