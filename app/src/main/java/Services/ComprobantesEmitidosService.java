@@ -873,8 +873,12 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
     public @Nullable List<ComprobantesEmitidos> listFacturasReportePage(
             @Nullable String sort, @Nullable String dir, @Nullable String q, int offset, int pageSize) {
         try {
+            // Sin DISTINCT: resumen, encabezado y emisor son relaciones a uno,
+            // no duplican filas. Con el historico completo (750 mil
+            // comprobantes) el DISTINCT obligaba a ordenar y deduplicar todo
+            // el conjunto antes de aplicar el LIMIT.
             TypedQuery<ComprobantesEmitidos> query = em.createQuery(
-                    "SELECT DISTINCT f FROM ComprobantesEmitidos f " +
+                    "SELECT f FROM ComprobantesEmitidos f " +
                             "LEFT JOIN FETCH f.resumen r " +
                             "LEFT JOIN FETCH f.encabezado e " +
                             "LEFT JOIN FETCH e.emisor em " +

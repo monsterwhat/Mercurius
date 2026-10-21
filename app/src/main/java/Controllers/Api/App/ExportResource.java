@@ -2,6 +2,7 @@ package Controllers.Api.App;
 
 import Models.DTO.ApiResponse;
 import Models.CorteMargen;
+import Models.ComprobantesEmitidos;
 import Models.ReportesFamiliasYDepartamentos;
 import Services.ArticulosService;
 import Services.ArticuloPrecioService;
@@ -252,7 +253,7 @@ public class ExportResource {
                     ? ReportExporter.exportRecibosExcel("Recibos Vencidos", orEmpty(recibidosService.listVencidas()))
                     : unsupported(dataset, type);
             case "facturas" -> !wantsPdf
-                    ? ReportExporter.exportFacturasExcel(orEmpty(comprobantesService.listFacturasReportePage(null, "asc", q, 0, 100000)))
+                    ? exportarFacturas(q)
                     : unsupported(dataset, type);
             case "merma" -> {
                 Date inicio = fecha(desde, false);
@@ -517,6 +518,22 @@ public class ExportResource {
     private static byte[] unsupported(@Nonnull String dataset, @Nonnull String type) throws UnsupportedDatasetException {
         throw new UnsupportedDatasetException(
                 "El dataset '" + dataset + "' no soporta el tipo '" + type + "'");
+    }
+
+    /**
+     * Exporta las facturas emitidas del reporte.
+     *
+     * <p>Con el historico completo el reporte tiene cientos de miles de
+     * comprobantes: exportarlos todos no cabe en el tiempo ni en la memoria,
+     * asi que se exporta el primer bloque y se deja constancia en el libro
+     * de cuantas filas hay en total.</p>
+     */
+    private byte[] exportarFacturas(@Nullable String q) throws IOException {
+        final int tope = 20000;
+        long total = comprobantesService.countFacturasReporte(q);
+        List<ComprobantesEmitidos> filas =
+                orEmpty(comprobantesService.listFacturasReportePage(null, "asc", q, 0, tope));
+        return ReportExporter.exportFacturasExcel(filas, total);
     }
 
     private static <T> @Nonnull List<T> orEmpty(@Nullable List<T> list) {
