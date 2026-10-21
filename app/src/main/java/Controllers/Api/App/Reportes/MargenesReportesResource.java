@@ -94,7 +94,9 @@ public class MargenesReportesResource {
         LocalDate finDefecto = LocalDate.now();
         LocalDate inicioDefecto = profitAnalysisService.primeraFechaMargen();
         if (inicioDefecto == null) {
-            inicioDefecto = finDefecto.minusDays(30);
+            // sin la primera fecha conocida el reporte muestra todo el
+            // historico (mejor que recortarlo a 30 dias sin avisar)
+            inicioDefecto = LocalDate.of(2000, 1, 1);
         }
         Date endDate = toDate(ReportePageSupport.parseDate(fin), finDefecto);
         Date startDate = toDate(ReportePageSupport.parseDate(inicio), inicioDefecto);
