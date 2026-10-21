@@ -141,7 +141,7 @@
                         <input class="input" name="actividad" placeholder="Ej: 561110" value="{actividad.codigo}"/>
                     </div>
                     <div class="control">
-                        <button class="button is-small is-danger" type="button" data-quitar-actividad title="Quitar">✕</button>
+                        <button class="button is-small is-danger" type="button" data-quitar-actividad aria-label="Quitar" title="Quitar">{#include _kit/icon name="close" /}</button>
                     </div>
                 </div>
                 {/for}
@@ -156,7 +156,7 @@
                         <input class="input" name="actividad" placeholder="Ej: 561110"/>
                     </div>
                     <div class="control">
-                        <button class="button is-small is-danger" type="button" data-quitar-actividad title="Quitar">✕</button>
+                        <button class="button is-small is-danger" type="button" data-quitar-actividad aria-label="Quitar" title="Quitar">{#include _kit/icon name="close" /}</button>
                     </div>
                 </div>
             </div>
@@ -190,7 +190,7 @@
                 '<input type="radio" name="actividadPrincipal"' + (principal ? ' checked' : '') + '/> Principal</label></div>' +
                 '<div class="control is-expanded">' +
                 '<input class="input" name="actividad" placeholder="Ej: 561110" value="' + valor + '"/></div>' +
-                '<div class="control"><button class="button is-small is-danger" type="button" data-quitar-actividad title="Quitar">✕</button></div>';
+                '<div class="control"><button class="button is-small is-danger" type="button" data-quitar-actividad aria-label="Quitar" title="Quitar"><span class="mi-icon" data-icon="close"></span></button></div>';
             return fila;
         }
         var boton = document.getElementById('agregar-actividad');

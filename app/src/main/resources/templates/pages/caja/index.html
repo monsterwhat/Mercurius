@@ -30,20 +30,26 @@
 
     {#body}
     <style>
-        {! Ported verbatim from secured/pages/Caja/index.xhtml (headers.css layer) !}
+        {! The caja banner is the last of the twelve module headers. It used
+           to carry its own green gradient with two hard-coded hex stops and
+           white text; it now matches every other module banner: one flat,
+           theme-aware fill from a Bulma token, so it follows the colour
+           scheme and keeps its contrast. See web/index.scss, "THE TWELVE
+           MODULE BANNERS ARE NOW ONE BANNER". !}
         .caja-header {
             padding: 1rem;
             border-radius: 0.75rem;
             margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, #2d8a4e 0%, #1a5e32 100%);
+            background: var(--bulma-primary);
+            color: var(--bulma-primary-invert);
         }
-        .caja-header .title { color: white; margin-bottom: 1rem; }
-        .caja-header .subtitle { color: rgba(255,255,255,0.8); }
+        .caja-header .title { color: inherit; margin-bottom: 1rem; }
+        .caja-header .subtitle { color: inherit; opacity: .85; }
     </style>
 
     <section class="section" style="padding-top:1rem">
         <div class="caja-header">
-            <p class="title is-3 has-text-centered">Control de Caja</p>
+            <h1 class="title is-3 has-text-centered">Control de Caja</h1>
             <p class="subtitle has-text-centered">Apertura y cierre de sesion de caja</p>
         </div>
 

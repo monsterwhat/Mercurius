@@ -2,7 +2,29 @@
   pages/dashboard/index - Dashboard Cajero (T29 port of secured/index.xhtml,
   which stays in place as the legacy landing until T39 decommission).
 
-  Charts: two <canvas> elements replace the legacy p:chart pair
+  WHAT CHANGED IN THE UI PASS
+  --------------------------
+  - The greeting ("¡Bienvenido, {usuario}!") is gone. A screen title is a
+    noun, not a greeting: the screen is "Dashboard", and the operator's name
+    now lives in the navigation bar, where it belongs.
+  - The title is a real <h1> (via _kit/page-header). The old markup used a
+    <p class="title is-3">, which is not a heading at all.
+  - The seven KPI tiles are one _kit/metric strip. They used to be seven
+    Bulma boxes, each with a DIFFERENT colour (primary, info, link, warning,
+    success): seven hues for one set of numbers, which reads as seven
+    unrelated facts instead of one answer. They are now all ink, with the
+    period in the label.
+  - The charts are _kit/chart-cards, and they use the shared chart factory
+    (window.MercuriusCharts) instead of raw `new Chart(...)` with hard-coded
+    rgba() colours, a smoothed spline and a dot on every sample.
+  - "Ventas por hora" no longer plots colones and transactions on ONE axis.
+    They are different units - a few hundred colones against a handful of
+    transactions - so the transaction bars were invisible. Each series now
+    has its own axis and its own label.
+  - The top-products table lost its zebra striping, its centred units
+    column and its tag-as-a-number.
+
+  Charts: two <canvas> elements
     bar  "Ventas por Hora"      <- GET {root}/app/dashboard/data/hourly (raw array x24)
     line "Tendencia Semanal"    <- GET {root}/app/dashboard/data/weekly (raw array x7)
   Chart.js comes FROM THE BUNDLE: web/index.js imports 'chart.js' (provided-scope
@@ -16,89 +38,36 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="level mb-5">
-            <div class="level-left">
-                <div>
-                    <p class="title is-3">¡Bienvenido, {usuario}!</p>
-                    <p class="subtitle is-5 has-text-grey">{fechaActual}</p>
-                </div>
-            </div>
-            <div class="level-right">
-                <span class="icon is-large has-text-link">
-                    <i class="fas fa-user-circle fa-2x" aria-hidden="true"></i>
-                </span>
-            </div>
-        </div>
+        {! The page title is a noun and the subtitle carries the scope. The
+           operator's name is shown in the navigation bar, not in a greeting. !}
+        {#include _kit/page-header title=titulo subtitle=fechaActual /}
 
         {#if esKpi}
-        <div class="columns is-multiline mb-5">
-            <div class="column is-12-mobile is-6-tablet is-4-desktop">
-                <div class="box has-text-centered">
-                    <p class="heading">Ventas Hoy</p>
-                    <p class="title is-4 has-text-primary">{ventasHoy}</p>
-                    <p class="subtitle is-6 {crecimientoCss}">{crecimientoDiario} vs ayer</p>
-                </div>
-            </div>
-            <div class="column is-12-mobile is-6-tablet is-4-desktop">
-                <div class="box has-text-centered">
-                    <p class="heading">Ventas Ayer</p>
-                    <p class="title is-4 has-text-info">{ventasAyer}</p>
-                </div>
-            </div>
-            <div class="column is-12-mobile is-6-tablet is-4-desktop">
-                <div class="box has-text-centered">
-                    <p class="heading">Esta Semana</p>
-                    <p class="title is-4 has-text-link">{ventasSemana}</p>
-                </div>
-            </div>
-            <div class="column is-12-mobile is-6-tablet is-4-desktop">
-                <div class="box has-text-centered">
-                    <p class="heading">Últimos 30 Días</p>
-                    <p class="title is-4 has-text-warning">{ventasMes}</p>
-                </div>
-            </div>
-            <div class="column is-12-mobile is-6-tablet is-4-desktop">
-                <div class="box has-text-centered">
-                    <p class="heading">Ticket Promedio (30 días)</p>
-                    <p class="title is-3 has-text-success">{ticketPromedio}</p>
-                </div>
-            </div>
-            <div class="column is-12-mobile is-6-tablet is-4-desktop">
-                <div class="box has-text-centered">
-                    <p class="heading">Transacciones Hoy</p>
-                    <p class="title is-3 has-text-primary">{transaccionesHoy}</p>
-                </div>
-            </div>
-            <div class="column is-12-mobile is-6-tablet is-4-desktop">
-                <div class="box has-text-centered">
-                    <p class="heading">Artículos Vendidos Hoy</p>
-                    <p class="title is-3 has-text-success">{articulosVendidos}</p>
-                </div>
-            </div>
+        {! One strip, one answer, one colour. The period is in the label, so
+           no legend is needed to read what a number means. !}
+        <div class="metric-strip">
+            {#include _kit/metric label="Ventas hoy" value=ventasHoy
+                 detail=crecimientoDiario detailSuffix="vs ayer" /}
+            {#include _kit/metric label="Ventas ayer" value=ventasAyer /}
+            {#include _kit/metric label="Esta semana" value=ventasSemana /}
+            {#include _kit/metric label="Ultimos 30 dias" value=ventasMes /}
+            {#include _kit/metric label="Ticket promedio (30 dias)" value=ticketPromedio /}
+            {#include _kit/metric label="Transacciones hoy" value=transaccionesHoy /}
+            {#include _kit/metric label="Articulos vendidos hoy" value=articulosVendidos /}
         </div>
 
-        <div id="panel-graficas" class="columns is-multiline mb-5"
+        <div id="panel-graficas" class="columns is-variable is-4 mt-5"
              data-root="{config:['quarkus.http.root-path']}"
              data-base="{config:['quarkus.http.root-path']}/app/dashboard/data">
             <div class="column is-12-tablet is-6-desktop">
-                <div class="box">
-                    <p class="title is-5 has-text-centered">Ventas por Hora</p>
-                    <div style="height: 300px; width: 100%;">
-                        <canvas id="grafica-ventas-hora" aria-label="Ventas por hora" role="img">
-                            Su navegador no soporta canvas.
-                        </canvas>
-                    </div>
-                </div>
+                {#include _kit/chart-card title="Ventas por hora"
+                     subtitle="Colones y transacciones por hora"
+                     canvasId="grafica-ventas-hora" /}
             </div>
             <div class="column is-12-tablet is-6-desktop">
-                <div class="box">
-                    <p class="title is-5 has-text-centered">Tendencia Semanal</p>
-                    <div style="height: 300px; width: 100%;">
-                        <canvas id="grafica-tendencia-semanal" aria-label="Tendencia semanal de ventas" role="img">
-                            Su navegador no soporta canvas.
-                        </canvas>
-                    </div>
-                </div>
+                {#include _kit/chart-card title="Tendencia semanal"
+                     subtitle="Colones por dia, ultimos 7 dias"
+                     canvasId="grafica-tendencia-semanal" /}
             </div>
         </div>
 
@@ -108,12 +77,20 @@
 
         <script type="module">
         (async function () {
-            const Chart = window.Chart;
+            const factory = window.MercuriusCharts;
             const panel = document.getElementById('panel-graficas');
-            if (!Chart || !panel) {
+            if (!factory || !panel) {
                 return;
             }
             const base = panel.getAttribute('data-base');
+
+            // The chart ink comes from the CSS layer, so it follows the active
+            // colour scheme. Two SERIES, ONE HUE: the second is a lighter step
+            // of the same primary, not a second colour - two unrelated hues
+            // would make the two series look like two different subjects.
+            const rootStyle = getComputedStyle(document.documentElement);
+            const seriesOne = rootStyle.getPropertyValue('--mercurius-chart-series-1').trim();
+            const seriesTwo = rootStyle.getPropertyValue('--mercurius-chart-series-2').trim();
 
             async function cargar(clave, respaldoId) {
                 try {
@@ -136,58 +113,89 @@
             }
 
             const porHora = await cargar('hourly', 'datos-respaldo-horas');
-            new Chart(document.getElementById('grafica-ventas-hora'), {
+            factory.create('grafica-ventas-hora', {
                 type: 'bar',
-                data: {
-                    labels: porHora.map(function (p) { return p.hora; }),
-                    datasets: [
-                        {
-                            label: 'Ventas (colones)',
-                            data: importes(porHora),
-                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                            borderColor: 'rgb(54, 162, 235)',
-                            borderWidth: 1
-                        },
-                        {
-                            label: 'Transacciones',
-                            data: porHora.map(function (p) { return p.transacciones; }),
-                            backgroundColor: 'rgba(255, 99, 132, 0.4)',
-                            borderColor: 'rgb(255, 99, 132)',
-                            borderWidth: 1
-                        }
-                    ]
-                },
+                labels: porHora.map(function (p) { return p.hora; }),
+                datasets: [
+                    {
+                        label: 'Ventas (colones)',
+                        data: importes(porHora),
+                        backgroundColor: seriesOne,
+                        borderWidth: 0,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Transacciones',
+                        type: 'line',
+                        data: porHora.map(function (p) { return Number(p.transacciones); }),
+                        borderColor: seriesTwo,
+                        backgroundColor: seriesTwo,
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        tension: 0,
+                        yAxisID: 'y1'
+                    }
+                ],
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } },
-                    plugins: { legend: { display: true, position: 'top' }, title: { display: false } }
+                    scales: {
+                        // Colones on the left, transactions on the right. They
+                        // are different units; one axis made the transaction
+                        // line flat on the floor.
+                        y: {
+                            position: 'left',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Colones' },
+                            grid: { display: true }
+                        },
+                        y1: {
+                            position: 'right',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Transacciones' },
+                            grid: { display: false }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: 'top' }
+                    }
                 }
             });
 
             const semanal = await cargar('weekly', 'datos-respaldo-semana');
-            new Chart(document.getElementById('grafica-tendencia-semanal'), {
+            factory.create('grafica-tendencia-semanal', {
                 type: 'line',
-                data: {
-                    labels: semanal.map(function (p) { return p.dia; }),
-                    datasets: [
-                        {
-                            label: 'Ventas diarias',
-                            data: importes(semanal),
-                            fill: false,
-                            borderColor: 'rgb(75, 192, 192)',
-                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                            tension: 0.3,
-                            pointRadius: 4,
-                            pointBackgroundColor: 'rgb(75, 192, 192)'
-                        }
-                    ]
-                },
+                labels: semanal.map(function (p) { return p.dia; }),
+                datasets: [
+                    {
+                        label: 'Ventas diarias (colones)',
+                        data: importes(semanal),
+                        fill: false,
+                        borderColor: seriesOne,
+                        backgroundColor: seriesOne,
+                        // Straight segments: a smoothed curve invents values
+                        // between the daily totals it was given.
+                        tension: 0,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }
+                ],
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true } },
-                    plugins: { legend: { display: false }, title: { display: false } }
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Colones' },
+                            grid: { display: true }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
                 }
             });
         })();
@@ -195,58 +203,45 @@
         {/if}
 
         {#if !esKpi}
-        <div class="columns mb-5">
-            <div class="column is-4">
-                <div class="box">
-                    <h3 class="title is-5 mb-4">Resumen de Hoy</h3>
-                    <div class="box">
-                        <p class="title is-3 has-text-primary">{transaccionesHoy}</p>
-                        <p class="subtitle is-6">Transacciones</p>
-                    </div>
-                    <div class="box mt-4">
-                        <p class="title is-3 has-text-success">{articulosVendidos}</p>
-                        <p class="subtitle is-6">Artículos Vendidos</p>
-                    </div>
-                    <div class="box mt-4">
-                        <p class="title is-6 has-text-warning">{ultimaTransaccion}</p>
-                        <p class="subtitle is-6">Última Transacción</p>
-                    </div>
-                </div>
-            </div>
+        {! The old layout nested three boxes inside a fourth box. A box inside
+           a box is a card inside a card: the inner frame carries no
+           information and makes the numbers look like they belong to
+           something else. One strip, three numbers. !}
+        <div class="metric-strip">
+            {#include _kit/metric label="Transacciones hoy" value=transaccionesHoy /}
+            {#include _kit/metric label="Articulos vendidos" value=articulosVendidos /}
+            {#include _kit/metric label="Ultima transaccion" value=ultimaTransaccion /}
         </div>
         {/if}
 
         {#if esInventario}
-        <div class="columns mb-5">
-            <div class="column is-12">
-                <div class="box">
-                    <h3 class="title is-5 mb-4">Productos Más Vendidos (7 días)</h3>
-                    <div class="table-container">
-                    <table class="table is-fullwidth is-striped" data-kit-table>
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th class="has-text-centered">Unidades</th>
-                                <th class="has-text-right">Ingresos</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {#for prod in topProductos}
-                            <tr>
-                                <td>{prod.nombre}</td>
-                                <td class="has-text-centered"><span class="tag is-info is-light">{prod.unidades}</span></td>
-                                <td class="has-text-right">{prod.ingresos}</td>
-                            </tr>
-                            {/for}
-                            {#if topProductos.isEmpty()}
-                            <tr><td colspan="3" class="has-text-grey">No hay datos de ventas disponibles</td></tr>
-                            {/if}
-                        </tbody>
-                    </table>
-                    </div>
-                </div>
+        {#include _kit/surface title="Productos mas vendidos (7 dias)"}
+            {#content}
+            <div class="table-container">
+            <table class="table is-hoverable is-fullwidth">
+                <thead>
+                    <tr>
+                        <th scope="col">Producto</th>
+                        <th scope="col" class="num">Unidades</th>
+                        <th scope="col" class="num">Ingresos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {#for prod in topProductos}
+                    <tr>
+                        <td>{prod.nombre}</td>
+                        <td class="num">{prod.unidades}</td>
+                        <td class="num">{prod.ingresos}</td>
+                    </tr>
+                    {/for}
+                    {#if topProductos.isEmpty()}
+                    <tr><td colspan="3" class="has-text-centered has-text-grey">No hay datos de ventas disponibles</td></tr>
+                    {/if}
+                </tbody>
+            </table>
             </div>
-        </div>
+            {/content}
+        {/include}
         {/if}
     {/body}
 {/include}

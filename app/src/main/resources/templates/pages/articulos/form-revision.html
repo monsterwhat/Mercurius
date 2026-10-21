@@ -31,9 +31,22 @@
         <button class="button mt-3" type="button" data-kit-close>Cerrar</button>
     </div>
     {#else if articulo??}
-    <div class="box is-shadowless" style="border-left:4px solid #ff9800">
-        <h3 class="title is-5">{articulo.nombre}</h3>
-        <p class="subtitle is-7">Artículo pendiente de procesamiento</p>
+    {! The 4px orange border-left was a "warning" mark that crowded the
+       heading against the rule and told the reader nothing the subtitle did
+       not already say. The callout is now a plain surface with the warning
+       carried by a tag beside the title. !}
+    <div class="surface">
+        <div class="surface-body">
+            <div class="level">
+                <div class="level-left">
+                    <h3 class="title is-5">{articulo.nombre}</h3>
+                </div>
+                <div class="level-right">
+                    <span class="status-chip is-warning">Pendiente</span>
+                </div>
+            </div>
+            <p class="subtitle is-7">Artículo pendiente de procesamiento</p>
+        </div>
     </div>
 
     <form hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/revision"

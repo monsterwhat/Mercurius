@@ -78,7 +78,7 @@
                                        hx-include="#filtros-stock-alert-config"
                                        hx-target="#{modelo.id}" hx-swap="outerHTML"/>
                                 <span class="icon is-left">
-                                    <i class="fas fa-search"></i>
+                                    {#include _kit/icon name="search" /}
                                 </span>
                             </div>
                         </div>
@@ -152,15 +152,17 @@
                                     data-kit-open="editar-config"
                                     hx-get="{config:['quarkus.http.root-path']}/api/app/stock-alert-config/{fila.id}/editar"
                                     hx-target="#editar-config-body" hx-swap="innerHTML"
+                                    aria-label="Editar configuración"
                                     title="Editar configuración">
-                                <span class="icon"><i class="fas fa-edit"></i></span>
+                                <span class="icon">{#include _kit/icon name="edit" /}</span>
                             </button>
                             <button type="button" class="button is-danger is-small"
                                     hx-post="{config:['quarkus.http.root-path']}/api/app/stock-alert-config/{fila.id}/toggle"
                                     hx-confirm="¿{#if fila.activo}Desactivar{#else}Activar{/if} la configuración de alerta para {fila.articuloNombre ?? fila.categoriaNombre}?"
                                     hx-target="#{modelo.id}" hx-swap="outerHTML"
+                                    aria-label="{#if fila.activo}Desactivar{#else}Activar{/if} configuración"
                                     title="{#if fila.activo}Desactivar{#else}Activar{/if}">
-                                <span class="icon"><i class="fas fa-power-off"></i></span>
+                                <span class="icon">{#include _kit/icon name="power" /}</span>
                             </button>
                         </div>
                     </td>

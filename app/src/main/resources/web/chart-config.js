@@ -108,10 +108,19 @@ export function applyChartDefaults() {
     Chart.defaults.borderColor = border;
     Chart.defaults.maintainAspectRatio = false;
     Chart.defaults.responsive = true;
-    Chart.defaults.animation.duration = 350;
+
+    // Animation. A chart that grows out of nothing delays the number the
+    // operator came for, so the draw is short and, when the OS asks for
+    // reduced motion, absent altogether.
+    const reduceMotion = typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    Chart.defaults.animation.duration = reduceMotion ? 0 : 220;
+    Chart.defaults.animation.easing = 'easeOutQuart';
+
     Chart.defaults.plugins.legend.labels.boxWidth = 12;
     Chart.defaults.plugins.legend.labels.boxHeight = 12;
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    Chart.defaults.plugins.legend.labels.padding = 14;
     Chart.defaults.plugins.tooltip.backgroundColor = surface;
     Chart.defaults.plugins.tooltip.titleColor = text;
     Chart.defaults.plugins.tooltip.bodyColor = text;
@@ -121,9 +130,15 @@ export function applyChartDefaults() {
     Chart.defaults.plugins.tooltip.cornerRadius = 6;
     Chart.defaults.plugins.tooltip.displayColors = true;
     Chart.defaults.elements.line.borderWidth = 2;
-    Chart.defaults.elements.point.radius = 3;
-    Chart.defaults.elements.point.hoverRadius = 5;
+    // No point markers on a line. A dot on every sample turns a trend into
+    // a row of beads and adds ink without adding information; the hover dot
+    // is enough to read a value.
+    Chart.defaults.elements.point.radius = 0;
+    Chart.defaults.elements.point.hoverRadius = 4;
     Chart.defaults.elements.bar.borderWidth = 0;
+    // Hovering anywhere on the plot reads the whole column at once, which is
+    // how anyone actually uses a chart.
+    Chart.defaults.interaction = { mode: 'index', intersect: false };
 }
 
 /** Merge the Mercurius scale defaults into a partial page config. */

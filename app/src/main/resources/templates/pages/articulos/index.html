@@ -7,6 +7,20 @@
   tab's table lives in its own include so GET /api/app/articulos/table?tab=…
   can swap it independently (docs/ui-kit.md §2.9 dual-mode contract).
 
+  WHAT CHANGED IN THE UI PASS
+  --------------------------
+  - The gradient banner and the five glass stat-cards are gone. They were one
+    of the twelve module banners (a 135° gradient, the decoration of a
+    decoration) with a backdrop-filter blur behind each number. The board now
+    opens with _kit/page-header and its view switcher is the same
+    _kit/view-tabs every other board uses.
+  - The tab switcher keeps the counts. A count on a tab is useful; what made
+    the old version loud was the uppercase tracked label and the frosted tile
+    behind each number, not the number itself.
+  - Each panel's heading is an <h2> under the page's single <h1>, and the
+    per-panel action row is one _kit/action-bar instead of a hand-rolled
+    .level with a button on one side and a form on the other.
+
   Model keys supplied by Controllers.Api.App.ArticuloResource#renderFullPage:
     activosTabla / inactivosTabla / catalogoTabla / pendientesTabla /
     promocionesTabla    Map   - tabla-*.html models
@@ -15,7 +29,7 @@
     canExport           Boolean - SessionController.registros parity
 
   Interactions:
-    - Tab switching: Alpine x-show driven by the stat cards (legacy
+    - Tab switching: Alpine x-show driven by the view tabs (legacy
       switchTab parity); { followed by a space keeps Qute literal.
     - Create/edit dialogs: _kit/modal default triggers + shared hidden modals
       opened by row buttons via data-kit-open (bridge script below).
@@ -30,46 +44,44 @@
     {#body}
     <section class="section" style="padding-top:1rem"
              x-data="{ tab: 'activos' }">
-        <div class="articulos-header">
-            <p class="title is-3 has-text-centered">Gestión de Artículos</p>
 
-            {! Stat cards — legacy clickable tabs (switchTab parity) !}
-            <div class="stats-grid">
-                <button type="button" class="stat-card" style="cursor:pointer"
-                        :class="{ 'active': tab === 'activos' }"
-                        @click="tab = 'activos'">
-                    <span class="stat-number">{activosCount}</span>
-                    <span class="stat-label">Activos</span>
-                </button>
-                <button type="button" class="stat-card" style="cursor:pointer"
-                        :class="{ 'active': tab === 'inactivos' }"
-                        @click="tab = 'inactivos'">
-                    <span class="stat-number">{inactivosCount}</span>
-                    <span class="stat-label">Inactivos</span>
-                </button>
-                <button type="button" class="stat-card" style="cursor:pointer"
-                        :class="{ 'active': tab === 'catalogo' }"
-                        @click="tab = 'catalogo'">
-                    <span class="stat-number">{catalogoCount}</span>
-                    <span class="stat-label">Catálogo</span>
-                </button>
-                <button type="button" class="stat-card" style="cursor:pointer"
-                        :class="{ 'active': tab === 'pendientes' }"
-                        @click="tab = 'pendientes'">
-                    <span class="stat-number">{pendientesCount}</span>
-                    <span class="stat-label">Pendientes</span>
-                </button>
-                <button type="button" class="stat-card" style="cursor:pointer"
-                        :class="{ 'active': tab === 'promociones' }"
-                        @click="tab = 'promociones'">
-                    <span class="stat-number">{promocionesCount}</span>
-                    <span class="stat-label">Promociones</span>
-                </button>
-            </div>
-        </div>
+        {#include _kit/page-header title="Artículos"
+             subtitle="Inventario, catálogo, revisiones y promociones" /}
+
+        {! One view switcher for the whole app. The counts stay: a number that
+           answers "how much is waiting for me" belongs on the switcher. !}
+        {#include _kit/view-tabs ariaLabel="Vistas de artículos"}
+            {#tabs}
+            <button type="button" class="view-tab" :class="{ 'is-active': tab === 'activos' }"
+                    aria-controls="panel-activos" @click="tab = 'activos'">
+                <span>Activos</span>
+                <span class="view-tab-count">{activosCount}</span>
+            </button>
+            <button type="button" class="view-tab" :class="{ 'is-active': tab === 'inactivos' }"
+                    aria-controls="panel-inactivos" @click="tab = 'inactivos'">
+                <span>Inactivos</span>
+                <span class="view-tab-count">{inactivosCount}</span>
+            </button>
+            <button type="button" class="view-tab" :class="{ 'is-active': tab === 'catalogo' }"
+                    aria-controls="panel-catalogo" @click="tab = 'catalogo'">
+                <span>Catálogo</span>
+                <span class="view-tab-count">{catalogoCount}</span>
+            </button>
+            <button type="button" class="view-tab" :class="{ 'is-active': tab === 'pendientes' }"
+                    aria-controls="panel-pendientes" @click="tab = 'pendientes'">
+                <span>Pendientes</span>
+                <span class="view-tab-count">{pendientesCount}</span>
+            </button>
+            <button type="button" class="view-tab" :class="{ 'is-active': tab === 'promociones' }"
+                    aria-controls="panel-promociones" @click="tab = 'promociones'">
+                <span>Promociones</span>
+                <span class="view-tab-count">{promocionesCount}</span>
+            </button>
+            {/tabs}
+        {/include}
 
         {! ── Tab: Activos ────────────────────────────────────────── !}
-        <div x-show="tab === 'activos'">
+        <div id="panel-activos" x-show="tab === 'activos'">
             <div class="level">
                 <div class="level-left">
                     <h2 class="title is-4" style="margin-bottom:0">Artículos Activos</h2>
@@ -77,7 +89,7 @@
                 <div class="level-right">
                     <div class="buttons">
                         {#include _kit/modal id="crear-articulo" title="Crear Artículo" triggerLabel="Crear Artículo" triggerClass="is-primary"
-                             bodyUrl="/api/app/articulos/formularios/articulos/nueva"}{/include}
+                             bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
                         {#if canExport}
                         <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
@@ -93,11 +105,11 @@
             {#include pages/articulos/tabla-articulos modelo=activosTabla q=activosTabla.q /}
             {!$1!}
             {#include _kit/modal id="editar-articulo" title="Editar Artículo" triggerClass="is-hidden"
-                 bodyUrl="/api/app/articulos/formularios/articulos/nueva"}{/include}
+                 bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
         </div>
 
         {! ── Tab: Inactivos ──────────────────────────────────────── !}
-        <div x-show="tab === 'inactivos'" style="display:none">
+        <div id="panel-inactivos" x-show="tab === 'inactivos'" style="display:none">
             <div class="level">
                 <div class="level-left">
                     <h2 class="title is-4" style="margin-bottom:0">Artículos Inactivos</h2>
@@ -118,7 +130,7 @@
         </div>
 
         {! ── Tab: Catálogo (legacy Procesados) ───────────────────── !}
-        <div x-show="tab === 'catalogo'" style="display:none">
+        <div id="panel-catalogo" x-show="tab === 'catalogo'" style="display:none">
             <div class="level">
                 <div class="level-left">
                     <h2 class="title is-4" style="margin-bottom:0">Catálogo de Artículos</h2>
@@ -139,7 +151,7 @@
         </div>
 
         {! ── Tab: Pendientes (revision workflow) ─────────────────── !}
-        <div x-show="tab === 'pendientes'" style="display:none">
+        <div id="panel-pendientes" x-show="tab === 'pendientes'" style="display:none">
             <div class="level">
                 <div class="level-left">
                     <h2 class="title is-4" style="margin-bottom:0">Artículos Pendientes</h2>
@@ -147,7 +159,7 @@
                 <div class="level-right">
                     <div class="buttons">
                         {#include _kit/modal id="revision-rapida" title="Procesado Rápido" triggerLabel="Procesado Rápido" triggerClass="is-warning"
-                             bodyUrl="/api/app/articulos/revision/siguiente"}{/include}
+                             bodyUrl="/api/app/articulos/revision/siguiente" /}
                         {#if canExport}
                         <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
@@ -163,11 +175,11 @@
             {#include pages/articulos/tabla-articulos modelo=pendientesTabla q=pendientesTabla.q /}
             {!$1!}
             {#include _kit/modal id="revision-articulo" title="Revisión de Artículo" triggerClass="is-hidden"
-                 bodyUrl="/api/app/articulos/revision/siguiente"}{/include}
+                 bodyUrl="/api/app/articulos/revision/siguiente" /}
         </div>
 
         {! ── Tab: Promociones ────────────────────────────────────── !}
-        <div x-show="tab === 'promociones'" style="display:none">
+        <div id="panel-promociones" x-show="tab === 'promociones'" style="display:none">
             <div class="level">
                 <div class="level-left">
                     <h2 class="title is-4" style="margin-bottom:0">Promociones</h2>
@@ -175,7 +187,7 @@
                 <div class="level-right">
                     <div class="buttons">
                         {#include _kit/modal id="crear-promocion" title="Crear Promoción" triggerLabel="Crear Promoción" triggerClass="is-primary"
-                             bodyUrl="/api/app/articulos/formularios/promociones/nueva"}{/include}
+                             bodyUrl="/api/app/articulos/formularios/promociones/nueva" /}
                         {#if canExport}
                         <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
@@ -190,17 +202,17 @@
             {#include pages/articulos/tabla-promociones modelo=promocionesTabla q=promocionesTabla.q /}
             {!$1!}
             {#include _kit/modal id="editar-promocion" title="Editar Promoción" triggerClass="is-hidden"
-                 bodyUrl="/api/app/articulos/formularios/promociones/nueva"}{/include}
+                 bodyUrl="/api/app/articulos/formularios/promociones/nueva" /}
             {!$1!}
             {#include _kit/modal id="selector-articulo-promo" title="Seleccionar Artículo" triggerClass="is-hidden"
-                 bodyUrl="/api/app/articulos/formularios/promociones/articulos"}{/include}
+                 bodyUrl="/api/app/articulos/formularios/promociones/articulos" /}
         </div>
 
         {! Shared read-only details dialog (verDetalles port) and CAByS picker !}
         {#include _kit/modal id="detalles-articulo" title="Detalles del Artículo" triggerClass="is-hidden"
-             bodyUrl="/api/app/articulos/table?tab=activos"}{/include}
+             bodyUrl="/api/app/articulos/table?tab=activos" /}
         {#include _kit/modal id="buscador-cabys" title="Seleccionar Código CABYS" triggerClass="is-hidden"
-             bodyUrl="/api/app/articulos/cabys?q="}{/include}
+             bodyUrl="/api/app/articulos/cabys?q=" /}
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}

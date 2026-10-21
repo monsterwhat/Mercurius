@@ -50,11 +50,35 @@
 
 // -----------------------------------------------------------------------------
 // 3.3 Elevation — three levels only
+//
+// A panel gets a BORDER OR A SHADOW, never both. Every resting surface in this
+// layer uses a 1px border plus a tone step; --mercurius-shadow-raised is
+// reserved for what genuinely floats (menus, popovers, dragged rows).
 // -----------------------------------------------------------------------------
 :root {
     --mercurius-shadow-none: none;
     --mercurius-shadow-subtle: 0 1px 2px rgba(0, 0, 0, .06);
     --mercurius-shadow-raised: 0 4px 12px rgba(0, 0, 0, .10);
+}
+
+// -----------------------------------------------------------------------------
+// 3.4 Motion — one vocabulary, shared by every component.
+//
+// The built-in `ease` curve is too weak for UI: it starts slow, which reads as
+// lag at the exact moment the user is watching. `ease-out` starts fast and
+// settles, so an element that is entering feels immediate. Durations stay
+// under 300ms for anything the user triggers more than a few times a day.
+//
+// Every rule that animates transform/opacity must also be neutralised under
+// prefers-reduced-motion — see the block at the end of this file.
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-ease-out: cubic-bezier(.23, 1, .32, 1);
+    --mercurius-ease-in-out: cubic-bezier(.77, 0, .175, 1);
+    --mercurius-dur-press: 120ms;
+    --mercurius-dur-fast: 150ms;
+    --mercurius-dur-base: 200ms;
+    --mercurius-dur-slow: 280ms;
 }
 
 // -----------------------------------------------------------------------------
@@ -69,9 +93,51 @@
     --mercurius-accent-danger: var(--bulma-danger);
     --mercurius-accent-link: var(--bulma-link);
 
-    --mercurius-surface: var(--bulma-scheme-main);
+    --mercurius-surface: var(--bulma-surface, var(--bulma-scheme-main));
     --mercurius-surface-alt: var(--bulma-scheme-main-bis);
     --mercurius-border: var(--bulma-border);
+}
+
+// -----------------------------------------------------------------------------
+// 3.6 Chart ink — one hue for the data, plus a lighter step of the SAME hue.
+//
+// A chart that carries two series in two unrelated colours makes them look
+// like two different subjects. The second series is therefore a lighter step
+// of the primary, not a second hue. The tokens live here (rather than in the
+// page script) so they follow the active colour scheme.
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-chart-series-1: var(--bulma-primary);
+    --mercurius-chart-series-2: color-mix(in srgb, var(--bulma-primary) 45%, transparent);
+}
+
+// -----------------------------------------------------------------------------
+// 3.7 Status pills — pale tint, dark ink.
+//
+// A saturated fill with white text is how the previous chip styling read, and
+// it failed WCAG AA on every semantic colour (white on Bulma success is
+// ~1.9:1; white on Bulma warning is ~1.1:1). The pair below is derived from
+// the SAME Bulma semantic hue, so the palette stays Bulma's, but the ink is
+// mixed toward the scheme's inverse — dark on a light scheme, light on a dark
+// one — and lands above 4.5:1 in both.
+//
+// color-mix() keeps the tokens scheme-aware without a single hex literal.
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-pill-success-bg: color-mix(in srgb, var(--bulma-success) 15%, var(--bulma-scheme-main));
+    --mercurius-pill-success-ink: color-mix(in srgb, var(--bulma-success) 45%, var(--bulma-scheme-invert));
+
+    --mercurius-pill-warning-bg: color-mix(in srgb, var(--bulma-warning) 20%, var(--bulma-scheme-main));
+    --mercurius-pill-warning-ink: color-mix(in srgb, var(--bulma-warning) 45%, var(--bulma-scheme-invert));
+
+    --mercurius-pill-info-bg: color-mix(in srgb, var(--bulma-info) 15%, var(--bulma-scheme-main));
+    --mercurius-pill-info-ink: color-mix(in srgb, var(--bulma-info) 45%, var(--bulma-scheme-invert));
+
+    --mercurius-pill-danger-bg: color-mix(in srgb, var(--bulma-danger) 12%, var(--bulma-scheme-main));
+    --mercurius-pill-danger-ink: color-mix(in srgb, var(--bulma-danger) 45%, var(--bulma-scheme-invert));
+
+    --mercurius-pill-neutral-bg: var(--bulma-scheme-main-ter);
+    --mercurius-pill-neutral-ink: var(--bulma-text);
 }
 
 // =============================================================================
@@ -82,7 +148,6 @@
     background: var(--bulma-scheme-main-bis);
     border: 1px solid var(--mercurius-border);
     border-radius: var(--mercurius-radius-lg);
-    box-shadow: var(--mercurius-shadow-subtle);
     margin-bottom: var(--mercurius-space-5);
     overflow: hidden;
 }
@@ -100,21 +165,24 @@
     min-width: 0;
 }
 
-.page-eyebrow {
-    color: var(--bulma-text-light);
-    font-size: .75rem;
-    font-weight: 600;
-    letter-spacing: .06em;
-    margin-bottom: var(--mercurius-space-1);
-    text-transform: uppercase;
-}
+// The eyebrow (a small kicker above the title) is gone. It was the "tiny
+// uppercase label above a heading" habit: the heading already says what the
+// screen is, and the kicker repeated it in smaller, greyer, tracked type.
+// No page used it — the kit was the only place it existed.
 
+// APP TYPE IS NOT DISPLAY TYPE.
+// Bulma's .title.is-3 is 2.5rem (40px), which is a landing-page size. An
+// operator scanning a board all day reads a 40px heading as shouting and pays
+// for it in vertical space. The page title is capped at 1.75rem (28px) —
+// still the largest thing on the screen, still one clear h1.
 .page-header .page-title {
+    font-size: 1.75rem;
+    line-height: 1.2;
     margin-bottom: var(--mercurius-space-1);
 }
 
 .page-header .page-subtitle {
-    color: var(--bulma-text-light);
+    color: var(--bulma-text-weak);
     margin-bottom: 0;
 }
 
@@ -141,7 +209,6 @@
     color: #fff;
 }
 
-.page-header-accent .page-eyebrow,
 .page-header-accent .page-subtitle {
     color: rgba(255, 255, 255, .85);
 }
@@ -175,34 +242,39 @@
     background: var(--mercurius-surface);
     border: 1px solid var(--mercurius-border);
     border-radius: var(--mercurius-radius-md);
-    box-shadow: var(--mercurius-shadow-subtle);
     color: var(--bulma-text);
     display: flex;
     flex-direction: column;
     gap: var(--mercurius-space-1);
     padding: var(--mercurius-space-4);
-    text-align: center;
-    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    text-align: left;
+    transition: border-color var(--mercurius-dur-fast) var(--mercurius-ease-out),
+                background-color var(--mercurius-dur-fast) var(--mercurius-ease-out),
+                transform var(--mercurius-dur-press) var(--mercurius-ease-out);
 }
 
+// Label above, value below, sentence case. The previous treatment was an
+// uppercase, letter-spaced 12px caption in a light grey — the "tiny tracked
+// caps" habit, which reads as a label from a 2014 admin template and fights
+// the value it sits above. A 12px sentence-case label at 500 in the weak
+// ink carries the same information at the same size and does not shout.
 .metric-label {
-    color: var(--bulma-text-light);
+    color: var(--bulma-text-weak);
     font-size: .75rem;
-    font-weight: 600;
-    letter-spacing: .05em;
+    font-weight: 500;
     order: 1;
-    text-transform: uppercase;
 }
 
 .metric-value {
-    font-size: 1.75rem;
-    font-weight: 700;
-    line-height: 1.1;
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    line-height: 1.2;
     order: 2;
 }
 
 .metric-detail {
-    color: var(--bulma-text-light);
+    color: var(--bulma-text-weak);
     font-size: .75rem;
     order: 3;
 }
@@ -211,16 +283,24 @@
     cursor: pointer;
 }
 
-.metric-card.is-interactive:hover {
-    border-color: var(--bulma-primary);
-    box-shadow: var(--mercurius-shadow-raised);
-    transform: translateY(-2px);
+// Hover is gated on a fine pointer: on touch, the hover state fires on tap
+// and leaves the card looking stuck in an active state it is not in.
+@media (hover: hover) and (pointer: fine) {
+    .metric-card.is-interactive:hover {
+        border-color: var(--bulma-primary);
+    }
+}
+
+// Press feedback: the scale is what makes the control feel like it heard
+// the click. 0.97, not 0.95 — a card that visibly shrinks reads as broken.
+.metric-card.is-interactive:active {
+    transform: scale(.97);
 }
 
 .metric-card.is-active {
+    background: color-mix(in srgb, var(--bulma-primary) 6%, var(--mercurius-surface));
     border-color: var(--bulma-primary);
     border-width: 2px;
-    box-shadow: var(--mercurius-shadow-raised);
 }
 
 .metric-card.is-active .metric-label {
@@ -255,26 +335,28 @@ button.metric-card {
 
 .view-tab {
     align-items: center;
-    border: 1px solid transparent;
-    border-bottom: 0;
-    border-radius: var(--mercurius-radius-sm) var(--mercurius-radius-sm) 0 0;
+    border: 0;
+    border-bottom: 2px solid transparent;
     color: var(--bulma-text);
     display: inline-flex;
     gap: var(--mercurius-space-2);
     margin-bottom: -1px;
     padding: var(--mercurius-space-2) var(--mercurius-space-4);
     white-space: nowrap;
+    transition: color var(--mercurius-dur-fast) var(--mercurius-ease-out),
+                border-color var(--mercurius-dur-fast) var(--mercurius-ease-out);
 }
 
+// The active tab is a 2px rule under the label, sitting on the nav's own
+// 1px rule. It used to be a boxed tab (border + fill + radius), which reads
+// as a second navigation control rather than a selected label.
 .view-tab:hover {
-    background: var(--bulma-scheme-main-ter);
     color: var(--bulma-primary);
     text-decoration: none;
 }
 
 .view-tab.is-active {
-    background: var(--mercurius-surface);
-    border-color: var(--mercurius-border);
+    border-bottom-color: var(--bulma-primary);
     color: var(--bulma-primary);
     font-weight: 600;
 }
@@ -343,7 +425,6 @@ button.metric-card {
     background: var(--mercurius-surface);
     border: 1px solid var(--mercurius-border);
     border-radius: var(--mercurius-radius-md);
-    box-shadow: var(--mercurius-shadow-subtle);
     margin-bottom: var(--mercurius-space-4);
 }
 
@@ -400,7 +481,6 @@ button.metric-card {
     background: var(--mercurius-surface);
     border: 1px solid var(--mercurius-border);
     border-radius: var(--mercurius-radius-md);
-    box-shadow: var(--mercurius-shadow-subtle);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -468,16 +548,38 @@ button.metric-card {
 //     already ships in index.scss and is intentionally NOT redefined here;
 //     only the .is-* modifiers below are new. W6 drops the legacy
 //     .status-processed/.status-active/... aliases.
+//
+//     The modifiers used to be a SATURATED fill with white text. On Bulma's
+//     semantics that is not merely loud, it fails WCAG AA: white on
+//     --bulma-success is about 1.9:1 and white on --bulma-warning about
+//     1.1:1, so the word inside the chip was unreadable. The chip now carries
+//     a pale tint of its own hue with ink mixed toward the scheme inverse —
+//     above 4.5:1 in both schemes, and still unmistakably "that colour".
 // =============================================================================
 .status-chip.is-neutral {
-    background: var(--bulma-scheme-main-ter) !important;
-    color: var(--bulma-text) !important;
+    background: var(--mercurius-pill-neutral-bg) !important;
+    color: var(--mercurius-pill-neutral-ink) !important;
 }
 
-.status-chip.is-success { background: var(--bulma-success) !important; color: #fff !important; }
-.status-chip.is-warning { background: var(--bulma-warning) !important; color: #fff !important; }
-.status-chip.is-info { background: var(--bulma-info) !important; color: #fff !important; }
-.status-chip.is-danger { background: var(--bulma-danger) !important; color: #fff !important; }
+.status-chip.is-success {
+    background: var(--mercurius-pill-success-bg) !important;
+    color: var(--mercurius-pill-success-ink) !important;
+}
+
+.status-chip.is-warning {
+    background: var(--mercurius-pill-warning-bg) !important;
+    color: var(--mercurius-pill-warning-ink) !important;
+}
+
+.status-chip.is-info {
+    background: var(--mercurius-pill-info-bg) !important;
+    color: var(--mercurius-pill-info-ink) !important;
+}
+
+.status-chip.is-danger {
+    background: var(--mercurius-pill-danger-bg) !important;
+    color: var(--mercurius-pill-danger-ink) !important;
+}
 
 // =============================================================================
 // 26. Accessibility baseline for the new primitives
@@ -487,6 +589,127 @@ button.metric-card:focus-visible,
 .view-tab:focus-visible {
     outline: 2px solid var(--bulma-primary);
     outline-offset: 2px;
+}
+
+// =============================================================================
+// 27. Figures — tabular numerals where numbers stack in a column
+//
+// Proportional digits make a column of colones jitter as it updates, because
+// every value is a different width. Anything that sits in a column, a table
+// cell, a KPI or a money readout takes tabular figures; the right edge of the
+// column is then a straight line.
+// =============================================================================
+.kit-figure,
+.metric-value,
+.table td.num,
+.table th.num {
+    font-variant-numeric: tabular-nums;
+}
+
+.table td.num,
+.table th.num {
+    text-align: right;
+}
+
+// A missing value is a dash, not a zero, and never at full value size.
+.kit-empty {
+    color: var(--bulma-text-weak);
+}
+
+// =============================================================================
+// 28. Motion safety
+//
+// Reduced motion is not "no motion": colour and opacity changes that aid
+// comprehension stay, travel does not. Before this block the app had NO
+// reduced-motion handling at all, so a user with vestibular sensitivity got
+// the card lifts, the tab fade-in and every chart animation on every visit.
+// The chart half is handled in web/chart-config.js, which cannot be reached
+// from CSS.
+// =============================================================================
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+// =============================================================================
+// 29. Dialog entrance
+//
+// Bulma 1.0.4's .modal has NO transition at all — it goes from display:none
+// to display:flex, so a dialog used to appear as a plate that was already
+// there. The card now rises 8px and scales from 0.96 over 200ms on an
+// ease-out curve.
+//
+// Two deliberate choices:
+//   - It starts at 0.96, never 0. Nothing in the real world appears from
+//     nothing; a card that grows out of a point reads as a gimmick.
+//   - transform-origin stays centered. A modal is not anchored to a trigger,
+//     so it scales from the middle of the screen.
+//
+// The exit stays instant: closing a dialog should feel like letting go of a
+// handle, not like watching a fade.
+// =============================================================================
+.modal-card {
+    opacity: 0;
+    transform: scale(.96) translateY(8px);
+    transform-origin: center;
+    transition: opacity var(--mercurius-dur-base) var(--mercurius-ease-out),
+                transform var(--mercurius-dur-base) var(--mercurius-ease-out);
+}
+
+.modal.is-active .modal-card {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
+// @starting-style gives the card a "before" state the first time it is
+// rendered, which is what makes the entrance animate at all: without it the
+// browser has no previous computed style to transition FROM. Browsers without
+// support simply show the dialog instantly, which is the old behaviour.
+@starting-style {
+    .modal.is-active .modal-card {
+        opacity: 0;
+        transform: scale(.96) translateY(8px);
+    }
+}
+
+// =============================================================================
+// 31. Toast entrance / exit
+//
+// The toast stack lives in the top-right corner, so a notification enters and
+// leaves from the RIGHT — same direction in and out, which is what makes a
+// swipe-to-dismiss gesture feel like it belongs. The exit is faster than the
+// entrance (150ms against 200ms): the system is answering, not performing.
+//
+// The container is pointer-events:none so a toast never blocks a control
+// underneath it; each toast takes its own pointer events back.
+// =============================================================================
+#toast-container {
+    pointer-events: none;
+}
+
+.notification[data-toast] {
+    opacity: 0;
+    pointer-events: auto;
+    transform: translateX(16px);
+    transition: opacity var(--mercurius-dur-base) var(--mercurius-ease-out),
+                transform var(--mercurius-dur-base) var(--mercurius-ease-out);
+}
+
+.notification[data-toast].is-visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification[data-toast].is-leaving {
+    opacity: 0;
+    transform: translateX(16px);
+    transition-duration: var(--mercurius-dur-fast);
 }
 
 // =============================================================================
@@ -559,6 +782,45 @@ button.metric-card:focus-visible,
     }
 }
 
+// ── Navbar ────────────────────────────────────────────────────────────────────
+// The navbar used to be `navbar is-black`: a saturated dark bar sitting on top
+// of a light canvas. No screen in the app's own reference set puts a dark
+// navigation against a light page - the navigation recedes onto the page
+// ground and the current section is the only thing that carries colour.
+// It is now the default Bulma navbar (the page ground) with one 1px rule
+// under it.
+.navbar {
+    border-bottom: 1px solid var(--bulma-border);
+}
+
+// The dropdown headers and the "Tipo de cambio" entry are <button> elements
+// now, so the keyboard can reach them. A bare <button> carries the browser's
+// own border and font, so they are reset to match Bulma's .navbar-item /
+// .navbar-link.
+button.navbar-item,
+button.navbar-link {
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    width: 100%;
+}
+
+button.navbar-link {
+    width: auto;
+}
+
+// The signed-in operator. Quiet by design: it is context, not an action, so
+// it carries no colour and no weight of its own.
+.navbar-user {
+    align-items: center;
+    color: var(--bulma-text-weak);
+    display: inline-flex;
+    font-size: .875rem;
+    gap: .25rem;
+}
+
 // ── Navbar en pantallas angostas ───────────────────────────────────────────
 // Bulma colapsa .navbar-menu a display:none por debajo de 1024px y solo lo
 // muestra cuando el burger anade la clase .is-active (manejador vanilla en
@@ -566,17 +828,17 @@ button.metric-card:focus-visible,
 // permanentemente abierto en ventanas angostas (p. ej. media pantalla en
 // 1920x1080) y rompia el comportamiento del burger.
 @media screen and (max-width: 1023px) {
-  .navbar.is-black .navbar-menu .navbar-item,
-  .navbar.is-black .navbar-menu .navbar-link {
-    color: var(--bulma-black-invert, #fff);
+  .navbar .navbar-menu .navbar-item,
+  .navbar .navbar-menu .navbar-link {
+    color: var(--bulma-text);
   }
 
   // Bulma keeps desktop dropdown panels absolutely positioned and hidden until
   // hover/focus; touch screens cannot hover, so these entries expand inline
-  // ONLY when their header is tapped (.is-open, toggled by the vanilla
-  // handler in fragments/navbar.html). Never display:block unconditionally:
-  // that splays every submenu open and makes the burger menu look broken.
-  .navbar.is-black .navbar-item.has-dropdown .navbar-dropdown {
+  // ONLY when their header is tapped or focused. Never display:block
+  // unconditionally: that splays every submenu open and makes the burger menu
+  // look broken.
+  .navbar .navbar-item.has-dropdown .navbar-dropdown {
     background: transparent;
     box-shadow: none;
     border: 0;
@@ -584,11 +846,12 @@ button.metric-card:focus-visible,
     padding: 0 0 .5rem 1rem;
     position: static;
   }
-  .navbar.is-black .navbar-item.has-dropdown.is-open .navbar-dropdown {
+  .navbar .navbar-item.has-dropdown.is-active .navbar-dropdown,
+  .navbar .navbar-item.has-dropdown:focus-within .navbar-dropdown {
     display: block;
   }
 
-  .navbar.is-black .navbar-divider {
+  .navbar .navbar-divider {
     background: var(--bulma-border);
     display: block;
   }

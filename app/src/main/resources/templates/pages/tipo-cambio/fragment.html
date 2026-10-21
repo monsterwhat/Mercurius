@@ -68,7 +68,7 @@
                             hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/actualizar"
                             hx-target="#modal-tipo-cambio-body"
                             hx-swap="innerHTML">
-                        <span class="icon"><i class="fas fa-sync-alt"></i></span>
+                        <span class="icon">{#include _kit/icon name="refresh" /}</span>
                         <span>Actualizar</span>
                     </button>
                     <button class="button is-light is-rounded is-inline" type="button"

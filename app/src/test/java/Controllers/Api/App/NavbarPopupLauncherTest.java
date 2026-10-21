@@ -158,7 +158,7 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
     void launcherStaysBehindTheFacturacionRole() {
         String body = html(BASE + REPORTES_URL);
 
-        assertTrue(body.contains("<nav class=\"navbar is-black\""),
+        assertTrue(body.contains("<nav class=\"navbar\""),
                 "the navbar itself must render, so the absence below is the gate and not a blank page");
         assertFalse(body.contains("data-kit-popup"),
                 "the launcher is facturacion-gated and this identity holds only registro");
@@ -206,5 +206,41 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
         int start = body.lastIndexOf("<a ", at);
         int end = body.indexOf('>', at);
         return start < 0 || end < 0 ? null : body.substring(start, end);
+    }
+
+    // ── the navigation itself is reachable with the keyboard ─────────────────
+    //
+    // The dropdown headers used to be <a class="navbar-link"> with no href.
+    // An anchor without an href is not focusable and cannot be activated, so
+    // on a desktop the Articulos / Usuarios / Tributacion / Ajustes menus
+    // were reachable with a mouse only. They are now real buttons that carry
+    // aria-expanded, which is also what tells a screen reader whether the
+    // menu is open.
+
+    @Test
+    @TestSecurity(user = "almacenero", roles = {"inventario"})
+    @DisplayName("the dropdown headers are real buttons, so the keyboard can open them")
+    void dropdownHeadersAreKeyboardReachable() {
+        // The "Articulos" dropdown is gated by the `inventario` role, so this
+        // identity is the one that gets a dropdown header on the page.
+        String body = html(BASE + REPORTES_URL);
+
+        assertTrue(body.contains("<button type=\"button\" class=\"navbar-link\""),
+                "a dropdown header must be a button: an anchor without href is not focusable");
+        assertTrue(body.contains("aria-haspopup=\"true\""),
+                "the header must announce that it opens a menu");
+        assertTrue(body.contains("aria-expanded=\"false\""),
+                "the open/closed state must be exposed to assistive tech");
+    }
+
+    @Test
+    @TestSecurity(user = "cajero", roles = {"facturacion"})
+    @DisplayName("the navigation sits on the page ground, it is not a dark bar")
+    void navigationIsNotADarkBar() {
+        String body = html(BASE + RECIBOS_URL);
+
+        assertFalse(body.contains("navbar is-black"),
+                "a saturated dark bar over a light canvas is the one navigation treatment "
+                        + "no screen in the app's own reference set uses");
     }
 }

@@ -15,8 +15,6 @@
 
   PARAMS
     title    String - REQUIRED. Visible page title.
-    eyebrow  String - OPTIONAL. Small uppercase kicker above the title
-                       ("Inventario", "Tributacion", ...).
     subtitle String - OPTIONAL. One line of supporting copy.
     variant  String - OPTIONAL. "compact" for dense boards (tighter padding,
                        smaller title). Anything else = default.
@@ -25,6 +23,12 @@
                        with that semantic colour. Use sparingly: reserve it for
                        pages whose whole surface is one workflow (POS, wizard).
 
+  THE EYEBROW IS GONE
+    W1 shipped an `eyebrow` parameter: a small uppercase kicker above the
+    title ("Inventario", "Tributacion"). It was removed because a kicker above
+    a heading repeats the heading in smaller, greyer, tracked type, and no
+    page ever passed one. The title carries the name of the screen on its own.
+
   SLOTS
     {#actions} - controls aligned right on >=768px, full-width stacked below.
                  Default is empty (a header with no actions is valid).
@@ -32,8 +36,8 @@
                  header. Default is empty.
 
   TYPOGRAPHY CONTRACT (see docs/ui-kit.md 3.4)
-    .page-eyebrow   -> .is-size-7, uppercase, letterspaced
-    .page-title     -> title is-3
+    .page-title     -> title is-3 (capped to 1.75rem by the CSS layer:
+                       app type is not display type)
     .page-subtitle  -> subtitle
   No page may override those sizes with inline styles.
 
@@ -43,7 +47,6 @@
 
   EXAMPLE
     {#include _kit/page-header title="Articulos"
-         eyebrow="Inventario"
          subtitle="Administre los articulos del inventario" /}
       {#actions}
         {#include _kit/modal id="crear-articulo" title="Crear Articulo"
@@ -56,7 +59,6 @@
 <header class="page-header{#if variant??} page-header-{variant}{/if}{#if accent??} page-header-accent is-{accent}{/if}">
     <div class="page-header-content">
         <div class="page-header-text">
-            {#if eyebrow??}<p class="page-eyebrow">{eyebrow}</p>{/if}
             <h1 class="title is-3 page-title">{title}</h1>
             {#if subtitle??}<p class="subtitle is-6 page-subtitle">{subtitle}</p>{/if}
         </div>

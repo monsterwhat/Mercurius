@@ -34,10 +34,10 @@ class DashboardResourceTest {
                 .statusCode(200)
                 .body(containsString("grafica-ventas-hora"))
                 .body(containsString("grafica-tendencia-semanal"))
-                .body(containsString("Ventas Hoy"))
-                .body(containsString("Ticket Promedio"))
+                .body(containsString("Ventas hoy"))
+                .body(containsString("Ticket promedio (30 dias)"))
                 .body(containsString("type=\"module\""))
-                .body(containsString("window.Chart"));
+                .body(containsString("window.MercuriusCharts"));
     }
 
     @Test
@@ -49,7 +49,7 @@ class DashboardResourceTest {
                 .statusCode(200)
                 .body(containsString("datos-respaldo-horas"))
                 .body(containsString("datos-respaldo-semana"))
-                .body(containsString("Productos Más Vendidos"));
+                .body(containsString("Productos mas vendidos (7 dias)"));
     }
 
     @Test
@@ -59,8 +59,8 @@ class DashboardResourceTest {
                 .when().get(PAGE)
                 .then()
                 .statusCode(200)
-                .body(containsString("Resumen de Hoy"))
-                .body(containsString("Última Transacción"))
+                .body(containsString("Transacciones hoy"))
+                .body(containsString("Ultima transaccion"))
                 .body(not(containsString("grafica-ventas-hora")));
     }
 

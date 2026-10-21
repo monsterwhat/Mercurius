@@ -40,6 +40,17 @@
     value       Object - REQUIRED. The number/text. Rendered second, .metric-value.
     detail      String - OPTIONAL. Sub-line under the value ("+8 esta semana",
                           "+4.2% vs ayer", "12 alertas"). Rendered third.
+    detailSuffix String- OPTIONAL. Fixed text appended after `detail`, separated
+                          by one space (e.g. "vs ayer"). It exists because a
+                          composed string ("+8.2% vs ayer") cannot be passed
+                          as one include parameter without relying on how Qute
+                          resolves an expression inside a string literal; the
+                          suffix is passed as its own literal instead.
+
+                          The separating space lives HERE, not in the caller's
+                          value: a quoted include parameter whose value starts
+                          with a space breaks Qute's parameter scanner and the
+                          whole template fails to parse.
     href        String - OPTIONAL. Makes the card a link.
     interactive Boolean- OPTIONAL. Makes the card a <button> for Alpine /
                           click handlers.
@@ -86,22 +97,22 @@
 {#if href??}<a class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}" href="{href}"{#if id??} id="{id}"{/if}>
 <span class="metric-label">{label}</span>
 <span class="metric-value">{value}</span>
-{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+{#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </a>
 {#else}{#if interactive??}{#if interactive}<button type="button" class="metric-card is-interactive{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
 <span class="metric-label">{label}</span>
 <span class="metric-value">{value}</span>
-{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+{#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </button>
 {#else}<div class="metric-card{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
 <span class="metric-label">{label}</span>
 <span class="metric-value">{value}</span>
-{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+{#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </div>
 {/if}
 {#else}<div class="metric-card{#if active??}{#if active} is-active{/if}{/if}"{#if id??} id="{id}"{/if}>
 <span class="metric-label">{label}</span>
 <span class="metric-value">{value}</span>
-{#if detail??}<span class="metric-detail">{detail}</span>{/if}
+{#if detail??}<span class="metric-detail">{detail}{#if detailSuffix??} {detailSuffix}{/if}</span>{/if}
 </div>
 {/if}{/if}
