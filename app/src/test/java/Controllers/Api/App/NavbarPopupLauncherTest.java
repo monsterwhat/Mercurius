@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Real endpoints only, no scaffolding. The fixture is chosen so the gate is
  * proven in both directions with the navbar's own gate tokens and nothing else:
- * {@code /app/recibos} is a layout page a {@code facturacion}-only identity may
+ * {@code /app/facturas} is a layout page a {@code facturacion}-only identity may
  * open ({@code RecibosPagesResource}, {@code @RolesAllowed{admin,facturacion}}),
  * and {@code /app/reportes} is the equivalent for a {@code registro}-only
  * identity. Deliberately NOT the POS page: the navbar is a layout fragment, so
@@ -63,7 +63,7 @@ class NavbarPopupLauncherTest extends support.ContextPathIsolation {
     private static final String BASE = "/Mercurius";
 
     /** Layout page a facturacion-only identity can open. */
-    private static final String RECIBOS_URL = "/app/recibos";
+    private static final String RECIBOS_URL = "/app/facturas";
 
     /** Layout page a registro-only identity can open. */
     private static final String REPORTES_URL = "/app/reportes";
