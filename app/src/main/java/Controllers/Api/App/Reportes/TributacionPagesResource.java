@@ -376,9 +376,14 @@ public class TributacionPagesResource {
 
     /** Consultas model: counters + countdown seed + first page of each bucket. */
     private Map<String, Object> consultasModel(@Nonnull String tab, @Nullable String q) {
-        List<ComprobantesEmitidos> pendientes = orEmpty(emitidosService.findFacturasPendientes());
-        List<ComprobantesEmitidos> aceptadas = orEmpty(emitidosService.findFacturasAceptadas());
-        List<ComprobantesEmitidos> rechazadas = orEmpty(emitidosService.findFacturasRechazadas());
+        // Las tablas muestran la primera pagina: el bucket completo son miles de
+        // comprobantes y materializarlo costaba 10 s por pagina.
+        List<ComprobantesEmitidos> pendientes = emitidosService.findFacturasParaTabla("pendientes", 0, 15, q);
+        List<ComprobantesEmitidos> aceptadas = emitidosService.findFacturasParaTabla("aceptadas", 0, 15, q);
+        List<ComprobantesEmitidos> rechazadas = emitidosService.findFacturasParaTabla("rechazadas", 0, 15, q);
+        long totalPendientes = emitidosService.countFacturasPendientes();
+        long totalAceptadas = emitidosService.countFacturasAceptadas();
+        long totalRechazadas = emitidosService.countFacturasRechazadas();
 
         ReporteProgramado proximo = reportesProgramadosService.findNextScheduledReport();
         Date nextScheduledTime = proximo != null ? proximo.getNextRunTime() : null;
@@ -397,9 +402,9 @@ public class TributacionPagesResource {
         Map<String, Object> model = new LinkedHashMap<>();
         model.put("titulo", "Consultas de Facturas");
         model.put("tabActiva", tab);
-        model.put("contadorPendientes", (long) pendientes.size());
-        model.put("contadorAceptadas", (long) aceptadas.size());
-        model.put("contadorRechazadas", (long) rechazadas.size());
+        model.put("contadorPendientes", totalPendientes);
+        model.put("contadorAceptadas", totalAceptadas);
+        model.put("contadorRechazadas", totalRechazadas);
         model.put("hasProximoEnvio", hasProximoEnvio);
         model.put("proximoEnvioDisplay", proximoEnvioDisplay);
         model.put("countdownDisplay", countdownDisplay);

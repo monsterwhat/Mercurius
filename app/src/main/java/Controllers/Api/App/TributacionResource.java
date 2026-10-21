@@ -706,14 +706,14 @@ public class TributacionResource {
 
     /** Rows for one consultas bucket as template-friendly maps. */
     private List<Map<String, Object>> bucketRows(@Nonnull String bucket, @Nullable String q) {
-        List<ComprobantesEmitidos> source;
-        switch (bucket == null ? "" : bucket.toLowerCase(Locale.ROOT)) {
-            case "pendientes" -> source = orEmpty(emitidosService.findFacturasPendientes());
-            case "aceptadas" -> source = orEmpty(emitidosService.findFacturasAceptadas());
-            case "rechazadas" -> source = orEmpty(emitidosService.findFacturasRechazadas());
+        String cubeta = switch (bucket == null ? "" : bucket.toLowerCase(Locale.ROOT)) {
+            case "pendientes", "aceptadas", "rechazadas" -> bucket.toLowerCase(Locale.ROOT);
             default -> throw new IllegalArgumentException(
                     "bucket debe ser pendientes, aceptadas o rechazadas");
-        }
+        };
+        // El bucket y la busqueda van a SQL: cargarlos todos y mapearlos en
+        // Java (con una consulta por receptor) costaba 10 s por pagina.
+        List<ComprobantesEmitidos> source = emitidosService.findFacturasParaTabla(cubeta, 0, 5000, q);
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
         List<Map<String, Object>> rows = new ArrayList<>();
         for (ComprobantesEmitidos f : source) {

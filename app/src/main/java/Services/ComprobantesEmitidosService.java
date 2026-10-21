@@ -651,7 +651,8 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
                 "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
                 "LEFT JOIN f.encabezado e " +
                 "WHERE f.status = true " +
-                "AND (e.estado IS NULL OR e.estado = 'PENDIENTE')",
+                "AND (e.estado IS NULL OR e.estado = 'PENDIENTE') " +
+                "AND e.clave IS NOT NULL",
                 Long.class
             );
             return query.getSingleResult();
@@ -667,7 +668,8 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
                     "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
                             "LEFT JOIN f.encabezado e " +
                             "WHERE f.status = true " +
-                            "AND e.estado = 'ACEPTADO'",
+                            "AND e.estado = 'ACEPTADO' " +
+                            "AND e.clave IS NOT NULL",
                     Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
@@ -682,12 +684,81 @@ public @Nullable List<ComprobantesEmitidos> listByDateRangeConClave(@Nonnull Dat
                     "SELECT COUNT(f) FROM ComprobantesEmitidos f " +
                             "LEFT JOIN f.encabezado e " +
                             "WHERE f.status = true " +
-                            "AND e.estado = 'RECHAZADO'",
+                            "AND e.estado = 'RECHAZADO' " +
+                            "AND e.clave IS NOT NULL",
                     Long.class);
             return query.getSingleResult();
         } catch (PersistenceException e) {
             LOG.warn("Error counting facturas rechazadas: " + e.getMessage() + " | source=ComprobantesEmitidosService.countFacturasRechazadas() | despues=" + e.getMessage());
             return 0L;
+        }
+    }
+
+    /**
+     * Comprobantes de un bucket de consultas, acotados y filtrados en SQL.
+     *
+     * <p>Solo documentos electronicos (con clave): el historico importado nunca
+     * fue a Hacienda. Antes se cargaba el bucket completo y se mapeaba en Java
+     * (con una consulta por receptor): con miles de comprobantes la pagina de
+     * consultas tardaba 10 s.</p>
+     *
+     * @param bucket  "pendientes", "aceptadas" o "rechazadas"
+     * @param offset  primera fila (0-based)
+     * @param max     numero maximo de filas
+     * @param q       filtro de busqueda (consecutivo, cliente, total, estado)
+     */
+    public @Nonnull List<ComprobantesEmitidos> findFacturasParaTabla(@Nonnull String bucket, int offset,
+                                                                     int max, @Nullable String q) {
+        String estado = switch (bucket) {
+            case "aceptadas" -> " AND e.estado = 'ACEPTADO'";
+            case "rechazadas" -> " AND e.estado = 'RECHAZADO'";
+            default -> " AND (e.estado IS NULL OR e.estado = 'PENDIENTE')";
+        };
+        StringBuilder sql = new StringBuilder(
+                "SELECT f.id FROM comprobantesemitidos f "
+                        + "JOIN encabezado e ON e.id = f.encabezado_id "
+                        + "LEFT JOIN resumen_factura r ON r.id = f.resumen_id "
+                        + "LEFT JOIN receptor rc ON rc.id = e.receptor_id "
+                        + "WHERE f.status = true AND e.clave IS NOT NULL")
+                .append(estado);
+        String texto = q == null ? "" : q.trim();
+        if (!texto.isEmpty()) {
+            sql.append(" AND (UPPER(COALESCE(e.numero_consecutivo,'')) LIKE :q")
+                    .append(" OR UPPER(COALESCE(rc.nombre,'')) LIKE :q")
+                    .append(" OR UPPER(COALESCE(e.motivo_rechazo,'')) LIKE :q")
+                    .append(" OR UPPER(COALESCE(f.haciendaestado,'')) LIKE :q")
+                    .append(" OR COALESCE(e.fecha_emision::text,'') LIKE :q")
+                    .append(" OR COALESCE(r.total_comprobante::text,'') LIKE :q)");
+        }
+        sql.append(" ORDER BY e.fecha_emision DESC NULLS LAST, f.id DESC LIMIT :lim OFFSET :off");
+        try {
+            var query = em.createNativeQuery(sql.toString());
+            if (!texto.isEmpty()) {
+                query.setParameter("q", "%" + texto.toUpperCase(java.util.Locale.ROOT) + "%");
+            }
+            query.setParameter("lim", Math.max(max, 1));
+            query.setParameter("off", Math.max(offset, 0));
+            @SuppressWarnings("unchecked")
+            List<Number> ids = (List<Number>) query.getResultList();
+            if (ids.isEmpty()) {
+                return java.util.List.of();
+            }
+            List<Long> longs = new java.util.ArrayList<>(ids.size());
+            for (Number n : ids) {
+                longs.add(n.longValue());
+            }
+            TypedQuery<ComprobantesEmitidos> q2 = em.createQuery(
+                    "SELECT f FROM ComprobantesEmitidos f"
+                            + " LEFT JOIN FETCH f.resumen"
+                            + " LEFT JOIN FETCH f.encabezado e LEFT JOIN FETCH e.emisor LEFT JOIN FETCH e.receptor"
+                            + " WHERE f.id IN :ids",
+                    ComprobantesEmitidos.class);
+            q2.setParameter("ids", longs);
+            return q2.getResultList();
+        } catch (PersistenceException e) {
+            LOG.warn("Error listing comprobantes de consulta: " + e.getMessage()
+                    + " | source=ComprobantesEmitidosService.findFacturasParaTabla() | despues=" + e.getMessage());
+            return java.util.List.of();
         }
     }
 
