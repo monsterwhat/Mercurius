@@ -24,9 +24,9 @@
                         <label class="label" for="declaracion-mes">Mes</label>
                         <div class="select">
                             <select id="declaracion-mes" name="mes">
-                                {#for nombre in meses}
-                                <option value="{nombre_index + 1}"
-                                        {#if nombre_index + 1 == mesSeleccionado}selected{/if}>{nombre}</option>
+                                {#for mes in mesesNumerados}
+                                <option value="{mes.numero}"
+                                        {#if mes.numero == mesSeleccionado}selected{/if}>{mes.nombre}</option>
                                 {/for}
                             </select>
                         </div>
