@@ -11,6 +11,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
 import io.quarkus.cache.CacheResult;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -511,6 +512,17 @@ public class StockForecastService {
 
     public record SalesData(LocalDate date, double quantity) {}
 
+    /**
+     * Pronóstico de un artículo.
+     *
+     * <p>Los getters no siguen la convención de JavaBean ({@code getX()}) sino
+     * el estilo record ({@code x()}), así que Jackson no encuentra
+     * serializadores: el endpoint /api/stock-forecast/bulk-forecast devolvía
+     * 500 y la gráfica de "Demanda Pronosticada" nunca se dibujaba. Con
+     * {@code @JsonProperty} el JSON sale con los mismos nombres que el
+     * JavaScript ya esperaba ({@code articuloNombre}, {@code predictedSales},
+     * ...).</p>
+     */
     public static class ProductForecast {
         private Long articuloId;
         private String articuloNombre;
@@ -536,14 +548,23 @@ public class StockForecastService {
             this.salesVelocity = salesVelocity;
         }
 
+        @JsonProperty("articuloId")
         public Long articuloId() { return articuloId; }
+        @JsonProperty("articuloNombre")
         public String articuloNombre() { return articuloNombre; }
+        @JsonProperty("forecastDate")
         public LocalDate forecastDate() { return forecastDate; }
+        @JsonProperty("currentStock")
         public int currentStock() { return currentStock; }
+        @JsonProperty("predictedSales")
         public int predictedSales() { return predictedSales; }
+        @JsonProperty("predictedStock")
         public int predictedStock() { return predictedStock; }
+        @JsonProperty("shouldReorder")
         public boolean shouldReorder() { return shouldReorder; }
+        @JsonProperty("avgDailySales")
         public BigDecimal avgDailySales() { return avgDailySales; }
+        @JsonProperty("salesVelocity")
         public BigDecimal salesVelocity() { return salesVelocity; }
     }
 

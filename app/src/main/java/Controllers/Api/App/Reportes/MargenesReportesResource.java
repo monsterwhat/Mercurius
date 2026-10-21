@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -88,40 +89,57 @@ public class MargenesReportesResource {
             @QueryParam("familia") @Nullable String familia,
             @QueryParam("seccion") @Nullable String seccion) {
 
-        Date endDate = toDate(ReportePageSupport.parseDate(fin), LocalDate.now());
-        Date startDate = toDate(ReportePageSupport.parseDate(inicio), LocalDate.now().minusDays(30));
-
-        List<CorteMargen> snapshots;
-        if (departamento != null && !departamento.isBlank()) {
-            snapshots = profitAnalysisService.getMarginTrend(departamento, "department", startDate, endDate);
-        } else if (familia != null && !familia.isBlank()) {
-            snapshots = profitAnalysisService.getMarginTrend(familia, "family", startDate, endDate);
-        } else {
-            snapshots = profitAnalysisService.getMarginTrend(null, "department", startDate, endDate);
+        // Sin fechas el reporte muestra TODO el historico: el rango por defecto
+        // (30 dias) dejaba fuera once anos de historia.
+        LocalDate finDefecto = LocalDate.now();
+        LocalDate inicioDefecto = profitAnalysisService.primeraFechaMargen();
+        if (inicioDefecto == null) {
+            inicioDefecto = finDefecto.minusDays(30);
         }
-        snapshots = orEmpty(snapshots);
+        Date endDate = toDate(ReportePageSupport.parseDate(fin), finDefecto);
+        Date startDate = toDate(ReportePageSupport.parseDate(inicio), inicioDefecto);
+
+        String tipoGrupo = "departamento";
+        String nombreGrupo = null;
+        if (departamento != null && !departamento.isBlank()) {
+            nombreGrupo = departamento;
+        } else if (familia != null && !familia.isBlank()) {
+            tipoGrupo = "familia";
+            nombreGrupo = familia;
+        }
+
+        List<Map<String, Object>> margenes = profitAnalysisService.margenesPorGrupo(
+                tipoGrupo, startDate, endDate, nombreGrupo);
+        margenes = orEmpty(margenes);
 
         BigDecimal averageMargin = profitAnalysisService.getAverageProfitMargin(startDate, endDate);
-        BigDecimal totalRevenue = snapshots.stream()
-                .map(CorteMargen::getTotalVentas)
+        BigDecimal totalRevenue = margenes.stream()
+                .map(f -> (BigDecimal) f.get("ventas"))
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalProfit = snapshots.stream()
-                .map(CorteMargen::getTotalUtilidad)
+        BigDecimal totalProfit = margenes.stream()
+                .map(f -> (BigDecimal) f.get("utilidad"))
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<Map<String, Object>> filasBase = new ArrayList<>();
-        List<String> chartLabels = new ArrayList<>();
-        List<BigDecimal> chartValues = new ArrayList<>();
-        for (CorteMargen snapshot : snapshots) {
-            filasBase.add(Map.of(
-                    "s", snapshot,
-                    "etiqueta", etiquetaDesempeno(snapshot.getMargenPromedio())));
-            chartLabels.add(snapshot.getDepartamento() != null ? snapshot.getDepartamento() : "-");
-            chartValues.add(snapshot.getTotalVentas() != null ? snapshot.getTotalVentas() : BigDecimal.ZERO);
+        for (Map<String, Object> margen : margenes) {
+            Map<String, Object> fila = new LinkedHashMap<>(margen);
+            fila.put("etiqueta", etiquetaDesempeno((BigDecimal) margen.get("margen")));
+            filasBase.add(fila);
         }
         List<Map<String, Object>> filas = sortFilas(filasBase, sort, dir);
+
+        // La grafica se queda con los 12 grupos mas grandes: con todo el
+        // historico serian decenas de miles de barras.
+        List<Map<String, Object>> paraGrafica = new ArrayList<>(filasBase);
+        paraGrafica.sort((a, b) -> ((BigDecimal) b.get("ventas")).compareTo((BigDecimal) a.get("ventas")));
+        List<String> chartLabels = new ArrayList<>();
+        List<BigDecimal> chartValues = new ArrayList<>();
+        for (Map<String, Object> margen : paraGrafica.stream().limit(12).toList()) {
+            chartLabels.add(String.valueOf(margen.get("grupo")));
+            chartValues.add((BigDecimal) margen.get("ventas"));
+        }
 
         int current = ReportePageSupport.clampPage(page);
         int pageSize = ReportePageSupport.clampSize(size);
@@ -144,9 +162,9 @@ public class MargenesReportesResource {
                 "averageMargin", averageMargin,
                 "totalRevenue", totalRevenue,
                 "totalProfit", totalProfit,
-                "registros", snapshots.size(),
-                "topArticulos", orEmpty(profitAnalysisService.getTopProfitMarginArticles(10, startDate, endDate)),
-                "peoresArticulos", orEmpty(profitAnalysisService.getWorstProfitMarginArticles(10, startDate, endDate)),
+                "registros", filas.size(),
+                "topArticulos", filasArticulo(profitAnalysisService.getTopProfitMarginArticles(10, startDate, endDate)),
+                "peoresArticulos", filasArticulo(profitAnalysisService.getWorstProfitMarginArticles(10, startDate, endDate)),
                 "comparativoDepartamentos", profitAnalysisService.getDepartmentMarginComparison(startDate, endDate),
                 "departamentos", departamentoService.listAll().stream().map(d -> d.getNombre()).toList(),
                 "familias", familiaService.listAll().stream().map(Familia::getNombre).toList(),
@@ -196,6 +214,10 @@ public class MargenesReportesResource {
                 ReportePageSupport.columna("Familia", null),
                 Map.of("label", "Total Ventas", "key", "ventas"),
                 Map.of("label", "Utilidad", "key", "utilidad"),
+                Map.of("label", "Precio Venta", "key", "precioVenta"),
+                Map.of("label", "Precio Costo", "key", "precioCosto"),
+                Map.of("label", "Diferencia", "key", "diferencia"),
+                Map.of("label", "Diferencia %", "key", "diferenciaPct"),
                 Map.of("label", "Margen Promedio", "key", "margen"),
                 ReportePageSupport.columna("Desempeño", null));
     }
@@ -205,10 +227,14 @@ public class MargenesReportesResource {
             @Nullable String sort, @Nullable String dir) {
         boolean ascending = !ReportePageSupport.isDescending(dir);
         Comparator<Map<String, Object>> comparator = switch (sort == null ? "" : sort) {
-            case "departamento" -> ReportePageSupport.sortBy(f -> (String) ((CorteMargen) f.get("s")).getDepartamento(), ascending);
-            case "ventas" -> ReportePageSupport.sortBy(f -> ((CorteMargen) f.get("s")).getTotalVentas(), ascending);
-            case "utilidad" -> ReportePageSupport.sortBy(f -> ((CorteMargen) f.get("s")).getTotalUtilidad(), ascending);
-            case "margen" -> ReportePageSupport.sortBy(f -> ((CorteMargen) f.get("s")).getMargenPromedio(), ascending);
+            case "departamento" -> ReportePageSupport.sortBy(f -> String.valueOf(f.get("grupo")), ascending);
+            case "ventas" -> ReportePageSupport.sortBy(f -> (BigDecimal) f.get("ventas"), ascending);
+            case "utilidad" -> ReportePageSupport.sortBy(f -> (BigDecimal) f.get("utilidad"), ascending);
+            case "margen" -> ReportePageSupport.sortBy(f -> (BigDecimal) f.get("margen"), ascending);
+            case "precioVenta" -> ReportePageSupport.sortBy(f -> (BigDecimal) f.get("precioVenta"), ascending);
+            case "precioCosto" -> ReportePageSupport.sortBy(f -> (BigDecimal) f.get("precioCosto"), ascending);
+            case "diferencia" -> ReportePageSupport.sortBy(f -> (BigDecimal) f.get("diferencia"), ascending);
+            case "diferenciaPct" -> ReportePageSupport.sortBy(f -> (BigDecimal) f.get("diferenciaPct"), ascending);
             default -> null;
         };
         if (comparator != null) {
@@ -222,6 +248,40 @@ public class MargenesReportesResource {
     private static Date toDate(@Nullable LocalDate parsed, @Nonnull LocalDate fallback) {
         LocalDate effective = parsed != null ? parsed : fallback;
         return Date.from(effective.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    /**
+     * Filas de articulo con la diferencia de precio calculada (en colones y en
+     * porcentaje).
+     *
+     * <p>La diferencia se calcula en el servidor: en la plantilla solo se
+     * muestra, y asi no depende de que el motor de expresiones sepa restar
+     * BigDecimals.</p>
+     */
+    private static @Nonnull List<Map<String, Object>> filasArticulo(
+            @Nullable List<Models.Articulos.Articulos> articulos) {
+        List<Map<String, Object>> filas = new ArrayList<>();
+        for (Models.Articulos.Articulos articulo : orEmpty(articulos)) {
+            Models.Articulos.ArticuloPrecio precio = articulo.getLastPrecio();
+            BigDecimal venta = precio == null || precio.getPrecioFinal() == null
+                    ? BigDecimal.ZERO : precio.getPrecioFinal();
+            BigDecimal costo = precio == null || precio.getPrecioCostoSinIVA() == null
+                    ? BigDecimal.ZERO : precio.getPrecioCostoSinIVA();
+            BigDecimal diferencia = venta.subtract(costo);
+            BigDecimal diferenciaPct = venta.signum() == 0
+                    ? BigDecimal.ZERO
+                    : diferencia.multiply(BigDecimal.valueOf(100))
+                            .divide(venta, 2, java.math.RoundingMode.HALF_UP);
+            Map<String, Object> fila = new LinkedHashMap<>();
+            fila.put("codigo", articulo.getCodigo());
+            fila.put("nombre", articulo.getNombre());
+            fila.put("precioVenta", venta);
+            fila.put("precioCosto", costo);
+            fila.put("diferencia", diferencia);
+            fila.put("diferenciaPct", diferenciaPct);
+            filas.add(fila);
+        }
+        return filas;
     }
 
     private static @Nonnull <T> List<T> orEmpty(@Nullable List<T> list) {

@@ -12,12 +12,15 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceException;
 import jakarta.persistence.Query;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import jakarta.transaction.Transactional.TxType;
+import org.jboss.logging.Logger;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,6 +30,8 @@ import java.util.stream.Collectors;
 @Named
 @ApplicationScoped
 public class ProfitAnalysisService extends GService<HistorialMargen> {
+
+    private static final Logger LOG = Logger.getLogger(ProfitAnalysisService.class);
 
     @Inject @Nonnull
     private EntityManager em;
@@ -279,6 +284,92 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
             return new BigDecimal(n.toString());
         }
         return new BigDecimal(valor.toString());
+    }
+
+    /**
+     * Margenes por departamento (o por familia) y dia, con el precio de venta
+     * y el de costo promedio.
+     *
+     * <p>La diferencia de precio sale explicita: en colones (precio de venta
+     * promedio menos costo promedio) y en porcentaje. Antes el reporte solo
+     * mostraba el margen promedio en %, sin el numero detras.</p>
+     *
+     * @param tipo   "departamento" o "familia"
+     * @param nombre filtro por nombre del grupo (null o vacio = todos)
+     */
+    @Transactional(TxType.SUPPORTS)
+    public @Nonnull List<Map<String, Object>> margenesPorGrupo(@Nonnull String tipo,
+                                                                @Nonnull Date start,
+                                                                @Nonnull Date end,
+                                                                @Nullable String nombre) {
+        boolean porFamilia = "familia".equalsIgnoreCase(tipo);
+        String grupo = porFamilia ? "a.familia" : "a.departamento";
+        StringJoiner condiciones = new StringJoiner(" AND ");
+        condiciones.add("h.fecha BETWEEN :startDate AND :endDate");
+        if (nombre != null && !nombre.isBlank()) {
+            condiciones.add("g.nombre = :nombre");
+        }
+        String jpql = "SELECT g.nombre, h.fecha, SUM(h.totalIngresos), "
+                + "SUM(h.totalIngresos * h.margenReal / 100), AVG(h.margenReal), "
+                + "SUM(h.precioVenta * h.cantidadVendida), SUM(h.precioCosto * h.cantidadVendida), "
+                + "SUM(h.cantidadVendida), COUNT(h.id) "
+                + "FROM HistorialMargen h JOIN h.articulo a JOIN " + grupo + " g "
+                + "WHERE " + condiciones + " "
+                + "GROUP BY g.nombre, h.fecha ORDER BY g.nombre, h.fecha";
+        try {
+            TypedQuery<Object[]> query = em.createQuery(jpql, Object[].class)
+                    .setParameter("startDate", start)
+                    .setParameter("endDate", end);
+            if (nombre != null && !nombre.isBlank()) {
+                query.setParameter("nombre", nombre);
+            }
+            List<Map<String, Object>> filas = new ArrayList<>();
+            for (Object[] fila : query.getResultList()) {
+                BigDecimal ventas = aBigDecimal(fila[2]);
+                BigDecimal utilidad = aBigDecimal(fila[3]);
+                BigDecimal unidades = aBigDecimal(fila[7]);
+                BigDecimal precioVenta = unidades.signum() == 0
+                        ? BigDecimal.ZERO : aBigDecimal(fila[5]).divide(unidades, 2, RoundingMode.HALF_UP);
+                BigDecimal precioCosto = unidades.signum() == 0
+                        ? BigDecimal.ZERO : aBigDecimal(fila[6]).divide(unidades, 2, RoundingMode.HALF_UP);
+                BigDecimal diferencia = precioVenta.subtract(precioCosto).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal diferenciaPct = precioVenta.signum() == 0
+                        ? BigDecimal.ZERO
+                        : diferencia.multiply(BigDecimal.valueOf(100))
+                                .divide(precioVenta, 2, RoundingMode.HALF_UP);
+                Map<String, Object> mapa = new LinkedHashMap<>();
+                mapa.put("grupo", fila[0] == null ? "" : String.valueOf(fila[0]));
+                mapa.put("fecha", fila[1]);
+                mapa.put("ventas", ventas);
+                mapa.put("utilidad", utilidad);
+                mapa.put("margen", aBigDecimal(fila[4]).setScale(2, RoundingMode.HALF_UP));
+                mapa.put("precioVenta", precioVenta);
+                mapa.put("precioCosto", precioCosto);
+                mapa.put("diferencia", diferencia);
+                mapa.put("diferenciaPct", diferenciaPct);
+                mapa.put("articulos", fila[8] instanceof Number n ? n.intValue() : 0);
+                filas.add(mapa);
+            }
+            return filas;
+        } catch (PersistenceException e) {
+            LOG.warn("Error calculando margenes por grupo: " + e.getMessage()
+                    + " | source=ProfitAnalysisService.margenesPorGrupo() | despues=" + e.getMessage());
+            return java.util.List.of();
+        }
+    }
+
+    /** Primera fecha con historial de margenes (para el rango por defecto del reporte). */
+    @Transactional(TxType.SUPPORTS)
+    public @Nullable LocalDate primeraFechaMargen() {
+        try {
+            TypedQuery<LocalDate> query = em.createQuery(
+                    "SELECT MIN(pmh.fecha) FROM HistorialMargen pmh", LocalDate.class);
+            return query.getSingleResult();
+        } catch (PersistenceException e) {
+            LOG.warn("Error obteniendo la primera fecha de margenes: " + e.getMessage()
+                    + " | source=ProfitAnalysisService.primeraFechaMargen() | despues=" + e.getMessage());
+            return null;
+        }
     }
 
     /**

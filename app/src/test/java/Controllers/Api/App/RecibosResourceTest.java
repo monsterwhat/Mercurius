@@ -67,7 +67,9 @@ class RecibosResourceTest extends support.ContextPathIsolation {
 
     private static final String BASE = "/Mercurius";
     private static final String API = BASE + "/api/app/recibos";
-    private static final String PAGE = BASE + "/app/recibos";
+    // La pantalla de las EMITIDAS quedo en /app/facturas ("recibos" son las
+    // facturas que se reciben).
+    private static final String PAGE = BASE + "/app/facturas";
 
     @Inject
     ComprobantesEmitidosService emitidosService;
@@ -794,7 +796,7 @@ class RecibosResourceTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .contentType(containsString("text/html"))
-                .body(containsString("Gestión de Recibos"))
+                .body(containsString("Facturas Emitidas"))
                 .body(containsString("id=\"recibos-tablero\""))
                 .body(containsString("id=\"recibos-stats\""))
                 .body(containsString("id=\"recibos-tabla-todas\""))

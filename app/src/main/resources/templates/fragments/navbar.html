@@ -77,6 +77,21 @@
               reached from the Reportes hub like the legacy Registros/index.xhtml).
             !}
 
+            {! token: facturacion - "Facturas": emitidas (lo que emitimos y hay que
+               cobrar) y recibidas (lo que nos pasan los proveedores). "Recibos" son
+               las recibidas, como en el sistema viejo. !}
+            {#if inject:securityIdentity.hasRole('facturacion')}
+            <div class="navbar-item has-dropdown is-hoverable">
+                <button type="button" class="navbar-link"
+                        aria-haspopup="true" aria-expanded="false">Facturas</button>
+                <div class="navbar-dropdown">
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/facturas" data-planned-route="/app/facturas">Facturas Emitidas</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/recibos" data-planned-route="/app/recibos">Recibos</a>
+                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/facturas-recibidas" data-planned-route="/app/facturas-recibidas">Facturas Recibidas</a>
+                </div>
+            </div>
+            {/if}
+
             {! token: inventario - legacy: "Articulos" dropdown !}
             {#if inject:securityIdentity.hasRole('inventario')}
             <div class="navbar-item has-dropdown is-hoverable">

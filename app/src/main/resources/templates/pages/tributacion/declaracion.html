@@ -103,7 +103,7 @@
                     {#for f in filasEmitidas}
                     <tr data-row-key="{f.id}">
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
-                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
                         <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td class="has-text-right">₡{#if f.impuesto??}{f.impuesto}{#else}0{/if}</td>
@@ -122,7 +122,7 @@
                     {#for f in filasRecibidas}
                     <tr data-row-key="{f.id}">
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
-                        <td>{#if f.fechaEmision??}{{time:format(f.fechaEmision, 'dd/MM/yyyy')}}{#else}-{/if}</td>
+                        <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy')}{#else}-{/if}</td>
                         <td>{#if f.proveedor??}{f.proveedor}{#else}-{/if}</td>
                         <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td class="has-text-right">₡{#if f.impuesto??}{f.impuesto}{#else}0{/if}</td>

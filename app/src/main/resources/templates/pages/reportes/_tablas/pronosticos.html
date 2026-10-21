@@ -15,15 +15,21 @@
         <tr>
             {#if seccion == 'salud'}
             <td>{f.articulo}</td>
+            <td>{f.departamento}</td>
+            <td>{f.familia}</td>
             <td><span class="tag is-danger">{f.estado}</span></td>
             {#else}
             {#if seccion == 'reorden'}
             <td>{f.articulo}</td>
+            <td>{f.departamento}</td>
+            <td>{f.familia}</td>
             <td>{f.stockActual}</td>
             <td>{f.cantidadSugerida}</td>
             <td><span class="tag {#if f.prioridad == 'Comprar'}is-danger{#else}{#if f.prioridad == 'Pronto'}is-warning{#else}is-success{/if}{/if}">{f.prioridad}</span></td>
             {#else}
             <td>{f.articulo}</td>
+            <td>{f.departamento}</td>
+            <td>{f.familia}</td>
             <td>{f.stockActual}</td>
             <td>{f.demandaEstimada}</td>
             <td>{f.diasRestantes}</td>

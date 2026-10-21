@@ -107,17 +107,19 @@
                 {#if seccion == 'top'}
                 <div class="table-container" id="margenes-top-tabla">
                     <table class="table is-striped is-hoverable is-fullwidth">
-                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th></tr></thead>
+                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th><th>Diferencia</th><th>Diferencia %</th></tr></thead>
                         <tbody>
                             {#if topArticulos == null || topArticulos.isEmpty()}
-                            <tr><td colspan="4" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                            <tr><td colspan="6" class="has-text-centered has-text-grey">Sin registros</td></tr>
                             {#else}
                             {#for a in topArticulos}
                             <tr data-row-key="{a.codigo}">
                                 <td>{a.codigo}</td>
                                 <td>{a.nombre}</td>
-                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioFinal}{#else}0{/if}</td>
-                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioCostoSinIVA}{#else}0{/if}</td>
+                                <td>₡{a.precioVenta}</td>
+                                <td>₡{a.precioCosto}</td>
+                                <td>₡{a.diferencia}</td>
+                                <td>{a.diferenciaPct}%</td>
                             </tr>
                             {/for}
                             {/if}
@@ -127,17 +129,19 @@
                 {#else if seccion == 'bajo'}
                 <div class="table-container" id="margenes-bajo-tabla">
                     <table class="table is-striped is-hoverable is-fullwidth">
-                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th></tr></thead>
+                        <thead><tr><th>Código</th><th>Nombre</th><th>Precio Venta</th><th>Costo</th><th>Diferencia</th><th>Diferencia %</th></tr></thead>
                         <tbody>
                             {#if peoresArticulos == null || peoresArticulos.isEmpty()}
-                            <tr><td colspan="4" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                            <tr><td colspan="6" class="has-text-centered has-text-grey">Sin registros</td></tr>
                             {#else}
                             {#for a in peoresArticulos}
                             <tr data-row-key="{a.codigo}">
                                 <td>{a.codigo}</td>
                                 <td>{a.nombre}</td>
-                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioFinal}{#else}0{/if}</td>
-                                <td>₡{#if a.lastPrecio??}{a.lastPrecio.precioCostoSinIVA}{#else}0{/if}</td>
+                                <td>₡{a.precioVenta}</td>
+                                <td>₡{a.precioCosto}</td>
+                                <td>₡{a.diferencia}</td>
+                                <td>{a.diferenciaPct}%</td>
                             </tr>
                             {/for}
                             {/if}
@@ -150,12 +154,16 @@
                      page=page size=size total=total totalPages=totalPages pages=pages params=filtros}
                   {#rows}
                     {#for fila in filas}
-                    <tr data-row-key="{fila.s.id}">
-                        <td>{fila.s.departamento}</td>
-                        <td>{fila.s.familia}</td>
-                        <td>₡{#if fila.s.totalVentas??}{fila.s.totalVentas}{#else}0{/if}</td>
-                        <td>₡{#if fila.s.totalUtilidad??}{fila.s.totalUtilidad}{#else}0{/if}</td>
-                        <td>{#if fila.s.margenPromedio??}{fila.s.margenPromedio}{#else}0{/if}%</td>
+                    <tr data-row-key="{fila.grupo}">
+                        <td>{fila.grupo}</td>
+                        <td>{#if fila.familia??}{fila.familia}{#else}-{/if}</td>
+                        <td>₡{#if fila.ventas??}{fila.ventas}{#else}0{/if}</td>
+                        <td>₡{#if fila.utilidad??}{fila.utilidad}{#else}0{/if}</td>
+                        <td>₡{#if fila.precioVenta??}{fila.precioVenta}{#else}0{/if}</td>
+                        <td>₡{#if fila.precioCosto??}{fila.precioCosto}{#else}0{/if}</td>
+                        <td>₡{#if fila.diferencia??}{fila.diferencia}{#else}0{/if}</td>
+                        <td>{#if fila.diferenciaPct??}{fila.diferenciaPct}{#else}0{/if}%</td>
+                        <td>{#if fila.margen??}{fila.margen}{#else}0{/if}%</td>
                         <td><span class="tag {#if fila.etiqueta == 'Excelente'}is-success{#else if fila.etiqueta == 'Bueno'}is-link{#else if fila.etiqueta == 'Regular'}is-warning{#else}is-danger{/if}">{fila.etiqueta}</span></td>
                     </tr>
                     {/for}
