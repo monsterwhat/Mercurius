@@ -362,9 +362,16 @@ public class ProfitAnalysisService extends GService<HistorialMargen> {
     @Transactional(TxType.SUPPORTS)
     public @Nullable LocalDate primeraFechaMargen() {
         try {
-            TypedQuery<LocalDate> query = em.createQuery(
-                    "SELECT MIN(pmh.fecha) FROM HistorialMargen pmh", LocalDate.class);
-            return query.getSingleResult();
+            // la columna fecha es un DATE mapeado a java.util.Date: el MIN
+            // devuelve Date, no LocalDate (con LocalDate la consulta falla y el
+            // reporte se queda con el rango por defecto de 30 dias).
+            TypedQuery<Date> query = em.createQuery(
+                    "SELECT MIN(pmh.fecha) FROM HistorialMargen pmh", Date.class);
+            Date minimo = query.getSingleResult();
+            if (minimo == null) {
+                return null;
+            }
+            return minimo.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
         } catch (PersistenceException e) {
             LOG.warn("Error obteniendo la primera fecha de margenes: " + e.getMessage()
                     + " | source=ProfitAnalysisService.primeraFechaMargen() | despues=" + e.getMessage());
