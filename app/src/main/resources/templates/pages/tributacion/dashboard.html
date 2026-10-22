@@ -121,7 +121,7 @@
             <div class="box">
                 <h2 class="title is-5">
                     Pendientes de envío
-                    <span class="tag is-warning ml-2">{totalPendientes}</span>
+                    <span class="status-chip is-warning ml-2">{totalPendientes}</span>
                 </h2>
                 {#include _kit/data-table id="tributacion-pendientes-envio" baseUrl=baseUrl
                      headers=pendingHeaders}
@@ -131,8 +131,8 @@
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
-                        <td><span class="tag is-warning">Pendiente</span></td>
+                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td><span class="status-chip is-warning">Pendiente</span></td>
                     </tr>
                     {/for}
                   {/rows}
@@ -144,7 +144,7 @@
             <div class="box">
                 <h2 class="title is-5">
                     Rechazados recientes
-                    <span class="tag is-danger ml-2">{totalRechazados}</span>
+                    <span class="status-chip is-danger ml-2">{totalRechazados}</span>
                 </h2>
                 {#include _kit/data-table id="tributacion-rechazados-recientes" baseUrl=baseUrl
                      headers=rejectedHeaders}
@@ -155,7 +155,7 @@
                         <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
                         <td class="num">{f.intentos}</td>
-                        <td><span class="tag is-danger">Rechazado</span></td>
+                        <td><span class="status-chip is-danger">Rechazado</span></td>
                     </tr>
                     {/for}
                   {/rows}

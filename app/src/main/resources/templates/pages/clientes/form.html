@@ -160,7 +160,13 @@
                     </div>
                 </div>
             </div>
-            <button class="button is-light is-small" type="button" id="agregar-actividad">+ Agregar actividad</button>
+            {! `is-light` is a near-white FILLED chip - the brightest object on
+               the panel - so the secondary action is the plain bordered
+               button, and the plus is the kit icon. !}
+            <button class="button is-small" type="button" id="agregar-actividad">
+                {#include _kit/icon name="plus" /}
+                <span>Agregar actividad</span>
+            </button>
         </div>
         {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
         <div class="field is-grouped is-grouped-right">

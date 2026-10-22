@@ -16,8 +16,20 @@
   Acciones column exposing the one write the REST API offers (PUT
   descripcion/estado). Filter parity: case-insensitive contains over
   codigo/descripcion (CabysController.globalFilterFunction port).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The wrapper is a _kit/surface (no title: the panel has no heading). It
+    KEEPS its id, because that element IS the hx-target of the search input
+    - the swap replaces the whole surface.
+  - The 14-digit Codigo is an IDENTIFIER, so it stays left-aligned in
+    .kit-code; only the Impuesto percentage is a quantity and carries `num`.
+    NOTE: the column HEADERS are built server-side (the headers map of
+    _kit/data-table), so the "num" flag on the header is out of this
+    template's reach.
 !}
-<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+{#include _kit/surface id=modelo.id}
+    {#content}
     <div class="field">
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{q}" autocomplete="off"
@@ -50,4 +62,5 @@
         {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
     </div>
     {/if}
-</div>
+    {/content}
+{/include}

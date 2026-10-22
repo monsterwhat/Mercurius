@@ -6,71 +6,62 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <input type="hidden" name="seccion" value="{seccion}"/>
-                <div class="column is-narrow field">
-                    <label class="label" for="desde">Fecha Inicio</label>
-                    <div class="control">
-                        <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label" for="hasta">Fecha Fin</label>
-                    <div class="control">
-                        <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
-                    <div class="control">
-                        <button class="button is-danger" type="submit">Actualizar</button>
-                    </div>
-                </div>
-            </form>
-            {#if !hayDatos}
-            <p class="has-text-grey">
-                No se encontraron movimientos de merma en el período seleccionado.
-            </p>
-            {/if}
+        {! Title first, then the numbers, then the filter: the banner used to
+           sit BELOW the filter box, so the screen opened on a form with no
+           name. The four counts are FILTERS (each links to the same board
+           with a different seccion, preserving the dates); a metric with an
+           href IS the filter card. !}
+        {#include _kit/page-header title=titulo subtitle="Pérdidas por sección y período" /}
+        <div class="metric-strip">
+            {#include _kit/metric label="Total mermas" value=totalMerma
+                 href=(baseUrl + "?seccion=detalle" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+                 active=(seccion == 'detalle') /}
+            {#include _kit/metric label="% de merma" value=(porcentajeMerma + "%")
+                 href=(baseUrl + "?seccion=causas" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+                 active=(seccion == 'causas') /}
+            {#include _kit/metric label="Movimiento total" value=movimientoTotal
+                 href=(baseUrl + "?seccion=departamentos" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+                 active=(seccion == 'departamentos') /}
+            {#include _kit/metric label="Registros" value=registros
+                 href=(baseUrl + "?seccion=detalle" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+                 active=(seccion == 'detalle') /}
         </div>
 
-        <div class="inventario-header">
-            <h1 class="title is-3 has-text-centered">{titulo}</h1>
-            <div class="stats-grid">
-                <a class="stat-card {#if seccion == 'detalle'}active{/if}" style="color:inherit"
-                   href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">
-                    <span class="stat-number">{totalMerma}</span>
-                    <span class="stat-label">Total Mermas</span>
-                </a>
-                <a class="stat-card {#if seccion == 'causas'}active{/if}" style="color:inherit"
-                   href="?seccion=causas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">
-                    <span class="stat-number">{porcentajeMerma}%</span>
-                    <span class="stat-label">% de Merma</span>
-                </a>
-                <a class="stat-card {#if seccion == 'departamentos'}active{/if}" style="color:inherit"
-                   href="?seccion=departamentos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">
-                    <span class="stat-number">{movimientoTotal}</span>
-                    <span class="stat-label">Movimiento Total</span>
-                </a>
-                <a class="stat-card {#if seccion == 'detalle'}active{/if}" style="color:inherit"
-                   href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">
-                    <span class="stat-number">{registros}</span>
-                    <span class="stat-label">Registros</span>
-                </a>
+        {#include _kit/filter-bar id="filtros-merma" method="get"}
+            <input type="hidden" name="seccion" value="{seccion}"/>
+            <div class="field">
+                <label class="label" for="desde">Fecha Inicio</label>
+                <div class="control">
+                    <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
+                </div>
             </div>
+            <div class="field">
+                <label class="label" for="hasta">Fecha Fin</label>
+                <div class="control">
+                    <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
+                </div>
+            </div>
+            {#actions}
+            <button class="button is-primary" type="submit">Actualizar</button>
+            {/actions}
+        {/include}
+        {#if !hayDatos}
+        <p class="mercurius-text-muted">
+            No se encontraron movimientos de merma en el período seleccionado.
+        </p>
+        {/if}
+
+
+
+
         </div>
 
-        <div class="nav-cards">
-            <a class="nav-card button is-danger {#if seccion == 'causas'}is-outlined{/if}"
-               href="?seccion=causas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Causa</a>
-            <a class="nav-card button is-info {#if seccion == 'departamentos'}is-outlined{/if}"
-               href="?seccion=departamentos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Departamento</a>
-            <a class="nav-card button is-link {#if seccion == 'detalle'}is-outlined{/if}"
-               href="?seccion=detalle{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Detalle de Movimientos</a>
-        </div>
+        {! The three section switches below used to be big coloured buttons
+           that repeated the metric strip above (Por Causa = % de merma, Por
+           Departamento = Movimiento total, Detalle = Total mermas). The
+           strip already switches the seccion, so the duplicates are gone. !}
+
+
 
         {#include _kit/chart-card title=chartTitle subtitle=(filtros.desde + " - " + filtros.hasta) canvasId="grafica-merma" height="320px"}
         {/include}
@@ -80,10 +71,16 @@
             var labels = [{#for l in chartLabels}'{l}',{/for}];
             var values = [{#for v in chartValues}{v},{/for}];
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                // One hue for the data: the series colour comes from the
+                // --mercurius-chart-series-1 token (resolved through
+                // resolveColour(), because a canvas cannot paint var()).
+                var rootStyle = getComputedStyle(document.documentElement);
+                var seriesOne = window.MercuriusCharts.resolveColour(
+                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
                 window.MercuriusCharts.create('grafica-merma', {
                     type: 'bar',
                     labels: labels,
-                    datasets: [{ label: 'Merma', data: values, backgroundColor: '#f14668' }],
+                    datasets: [{ label: 'Merma', data: values, backgroundColor: seriesOne }],
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
             }

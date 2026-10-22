@@ -12,12 +12,12 @@
 <div id="recibo-detalle-cuerpo">
     <div class="level mb-2">
         <div class="level-left">
-            <h3 class="title is-5 mb-0" class="kit-code">
+            <h3 class="title is-5 mb-0 kit-code">
                 {#if vista.detalle.consecutivo??}{vista.detalle.consecutivo}{#else}Recibo #{vista.detalle.id}{/if}
             </h3>
         </div>
         <div class="level-right">
-            <button type="button" class="button is-small is-link"
+            <button type="button" class="button is-small"
                     hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{vista.detalle.id}"
                     hx-target="#recibo-detalle-cuerpo" hx-swap="innerHTML">Refrescar</button>
         </div>
@@ -25,19 +25,19 @@
 
     <div class="columns is-multiline is-mobile">
         <div class="column is-half"><p class="heading">Clave Hacienda</p><p class="subtitle is-6" class="kit-code is-size-7">{#if vista.detalle.haciendaClave??}{vista.detalle.haciendaClave}{#else}&mdash;{/if}</p></div>
-        <div class="column is-half"><p class="heading">Estado Hacienda</p><p>{#if vista.detalle.haciendaEstado??}<span class="tag is-light">{vista.detalle.haciendaEstado}</span>{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Estado Hacienda</p><p>{#if vista.detalle.haciendaEstado??}<span class="status-chip is-neutral">{vista.detalle.haciendaEstado}</span>{#else}&mdash;{/if}</p></div>
         <div class="column is-half"><p class="heading">Emisor</p><p class="subtitle is-6">{#if vista.detalle.emisorNombre??}{vista.detalle.emisorNombre}{#else}&mdash;{/if}</p></div>
         <div class="column is-half"><p class="heading">Receptor</p><p class="subtitle is-6">{#if vista.detalle.receptorNombre??}{vista.detalle.receptorNombre}{#else}&mdash;{/if}</p></div>
         <div class="column is-half"><p class="heading">Fecha de emisión</p><p class="subtitle is-6">{#if vista.detalle.fechaEmision??}{vista.detalle.fechaEmision}{#else}&mdash;{/if}</p></div>
         <div class="column is-half"><p class="heading">Condición de venta / Plazo</p><p class="subtitle is-6">{#if vista.detalle.condicionVenta??}{vista.detalle.condicionVenta}{#else}&mdash;{/if} / {#if vista.detalle.plazoCredito??}{vista.detalle.plazoCredito}{#else}&mdash;{/if}</p></div>
-        <div class="column is-half"><p class="heading">Medios de pago</p><p>{#for medio in vista.detalle.mediosPago}<span class="tag is-info">{medio}</span>{#else}&mdash;{/for}</p></div>
+        <div class="column is-half"><p class="heading">Medios de pago</p><p>{#for medio in vista.detalle.mediosPago}<span class="status-chip is-info">{medio}</span>{#else}&mdash;{/for}</p></div>
         <div class="column is-half">
             <p class="heading">Estado</p>
-            {#if vista.activa}<span class="tag is-success">Activa</span>{#else}<span class="tag is-danger">Inactiva</span>{/if}
-            {#if vista.pagada}<span class="tag is-info">Pagada</span>{/if}
-            {#if vista.procesada}<span class="tag is-link">Procesada</span>{/if}
-            {#if vista.vencida}<span class="tag is-danger">Vencida</span>{/if}
-            {#if vista.detalle.motivoRechazo??}<span class="tag is-warning">Motivo: {vista.detalle.motivoRechazo}</span>{/if}
+            {#if vista.activa}<span class="status-chip is-success">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
+            {#if vista.pagada}<span class="status-chip is-info">Pagada</span>{/if}
+            {#if vista.procesada}<span class="status-chip is-info">Procesada</span>{/if}
+            {#if vista.vencida}<span class="status-chip is-danger">Vencida</span>{/if}
+            {#if vista.detalle.motivoRechazo??}<span class="status-chip is-warning">Motivo: {vista.detalle.motivoRechazo}</span>{/if}
         </div>
     </div>
 

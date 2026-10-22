@@ -23,7 +23,22 @@
     - Export: normal browser POSTs to the T17 endpoint (NOT htmx) so
       Content-Disposition downloads, mirroring the legacy p:dataExporter
       buttons gated by SessionController.registros.
-!}
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The two panels are _kit/surfaces, so each list has a REAL <h2> under the
+    page's single <h1> and its actions sit in the surface header. The panels
+    used to be a hand-rolled `div.level` (an <h2 class="title is-4"> on the
+    left, two buttons on the right) floating ABOVE the table panel, which
+    left the heading and its own buttons outside the frame they belong to.
+  - The table fragment keeps its OWN wrapper id ("tabla-familias"), so an
+    htmx swap replaces the table INSIDE the surface and the panel's title and
+    actions survive the refresh.
+  - The supplier ranking is a surface too, with the totals as its subtitle.
+    Its table lost the zebra striping (the ui-kit's rule for every table in
+    the app) and its numeric columns carry `num`: right-aligned with tabular
+    figures.
+ !}
 {#include layout}
     {#title}Gestión de Categorías | Mercurius{/title}
 
@@ -52,11 +67,12 @@
 
         {! ── Familias ─────────────────────────────────────────────── !}
         <div x-show="tab === 'familias'">
-        <div class="level">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Familias</h2>
-            </div>
-            <div class="level-right">
+        {#include _kit/surface title="Familias"}
+            {#actions}
+                {! The surface header is a flex row with space-between, so a
+                   group of controls goes in ONE wrapper: otherwise the
+                   primary action lands in the middle of the header instead
+                   of at its edge. !}
                 <div class="buttons">
                     {#include _kit/modal id="crear-familia" title="Crear Familia" triggerLabel="Crear Familia" triggerClass="is-primary"
                          bodyUrl="/api/app/categorias/formularios/familia/nueva"}{/include}
@@ -69,9 +85,11 @@
                     </form>
                     {/if}
                 </div>
-            </div>
-        </div>
-        {#include pages/categorias/tabla-familias modelo=familiasTabla q=familiasTabla.q /}
+            {/actions}
+            {#content}
+                {#include pages/categorias/tabla-familias modelo=familiasTabla q=familiasTabla.q /}
+            {/content}
+        {/include}
 
         {!$1!}
         {#include _kit/modal id="editar-familia" title="Editar Familia" triggerClass="is-hidden"
@@ -80,11 +98,8 @@
 
         {! ── Departamentos ────────────────────────────────────────── !}
         <div x-show="tab === 'departamentos'" style="display:none">
-        <div class="level mt-5">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Departamentos</h2>
-            </div>
-            <div class="level-right">
+        {#include _kit/surface title="Departamentos"}
+            {#actions}
                 <div class="buttons">
                     {#include _kit/modal id="crear-departamento" title="Crear Departamento" triggerLabel="Crear Departamento" triggerClass="is-primary"
                          bodyUrl="/api/app/categorias/formularios/departamento/nueva"}{/include}
@@ -97,9 +112,11 @@
                     </form>
                     {/if}
                 </div>
-            </div>
-        </div>
-        {#include pages/categorias/tabla-departamentos modelo=departamentosTabla q=departamentosTabla.q /}
+            {/actions}
+            {#content}
+                {#include pages/categorias/tabla-departamentos modelo=departamentosTabla q=departamentosTabla.q /}
+            {/content}
+        {/include}
 
         {!$1!}
         {#include _kit/modal id="editar-departamento" title="Editar Departamento" triggerClass="is-hidden"
@@ -109,42 +126,43 @@
         {! ── Ranking de Rendimiento de Proveedores ─────────────── !
             Parity with the legacy supplier scoreboard: precomputed chips/bars
             from renderFullPage (metricasFilas + totals). !}
-        <div class="mt-5">
-            <h2 class="title is-4" style="margin-bottom:0">Ranking de Rendimiento de Proveedores</h2>
-            <p class="subtitle is-6 has-text-grey">Proveedores: {metricasTotalProveedores} · Score promedio: {metricasScorePromedio} · Compras totales: {metricasComprasTotales}</p>
-            {#if metricasFilas?? && metricasFilas.size() > 0}
-            <div class="table-container">
-            <table class="table is-striped is-fullwidth">
-                <thead>
-                    <tr>
-                        <th>Proveedor</th>
-                        <th class="has-text-right">Score</th>
-                        <th>Rendimiento</th>
-                        <th class="has-text-right">Facturas</th>
-                        <th class="has-text-right">Pagadas</th>
-                        <th class="has-text-right">Monto total</th>
-                        <th class="has-text-right">A tiempo %</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#for fila in metricasFilas}
-                    <tr>
-                        <td>{fila.proveedor}</td>
-                        <td class="has-text-right">{fila.score}</td>
-                        <td><progress class="progress {fila.barColor}" value="{fila.score}" max="100">{fila.score}</progress></td>
-                        <td class="has-text-right">{fila.facturas}</td>
-                        <td class="has-text-right">{fila.pagadas}</td>
-                        <td class="has-text-right">{fila.montoTotal}</td>
-                        <td class="has-text-right">{fila.onTime}</td>
-                    </tr>
-                    {/for}
-                </tbody>
-            </table>
-            </div>
-            {#else}
-            <p class="has-text-grey">Aún no hay métricas de proveedores.</p>
-            {/if}
-        </div>
+        {#include _kit/surface title="Ranking de Rendimiento de Proveedores"
+             subtitle=("Proveedores: " + metricasTotalProveedores + " · Score promedio: " + metricasScorePromedio + " · Compras totales: " + metricasComprasTotales)}
+            {#content}
+                {#if metricasFilas?? && metricasFilas.size() > 0}
+                <div class="table-container">
+                <table class="table is-hoverable is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th scope="col">Proveedor</th>
+                            <th scope="col" class="num">Score</th>
+                            <th scope="col">Rendimiento</th>
+                            <th scope="col" class="num">Facturas</th>
+                            <th scope="col" class="num">Pagadas</th>
+                            <th scope="col" class="num">Monto total</th>
+                            <th scope="col" class="num">A tiempo %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#for fila in metricasFilas}
+                        <tr>
+                            <td>{fila.proveedor}</td>
+                            <td class="num">{fila.score}</td>
+                            <td><progress class="progress {fila.barColor}" value="{fila.score}" max="100">{fila.score}</progress></td>
+                            <td class="num">{fila.facturas}</td>
+                            <td class="num">{fila.pagadas}</td>
+                            <td class="num">{fila.montoTotal}</td>
+                            <td class="num">{fila.onTime}</td>
+                        </tr>
+                        {/for}
+                    </tbody>
+                </table>
+                </div>
+                {#else}
+                <p class="has-text-grey">Aún no hay métricas de proveedores.</p>
+                {/if}
+            {/content}
+        {/include}
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}

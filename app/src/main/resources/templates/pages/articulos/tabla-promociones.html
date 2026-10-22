@@ -14,9 +14,19 @@
       (legacy deletePromocion hard-delete parity)
     - items count: links to the promotion detail JSON for API clients; the
       editor shows the full item table.
+
+  WHAT CHANGED IN THE UI PASS
+    - The legacy `.box` panel became the _kit/surface that WRAPS this
+      fragment in index.html: the panel carries the tab title and the tab
+      actions, and this fragment is the panel's content, so the title and
+      the buttons survive every HTMX swap of it.
+    - The wrapper keeps the id and the hx-* attributes it needs to be the
+      swap target (hx-boost / hx-target / hx-swap).
+    - The row actions are plain bordered buttons carrying `_kit/icon`
+      glyphs: one accent per screen, no numeric HTML entity as an icon.
+    - The item count and the discount carry `num`: right-aligned, tabular.
 !}
-<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
-     hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
+<div id="{modelo.id}" hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
     <input type="hidden" id="tab-{modelo.id}" name="tab" value="promociones"/>
     <div class="field">
         <div class="control has-icons-left">
@@ -35,24 +45,26 @@
             {#for promocion in modelo.filas}
             <tr>
                 <td style="font-weight:500">{#if promocion.nombre??}{promocion.nombre}{#else}&mdash;{/if}</td>
-                <td class="has-text-centered">{promocion.articulosCarrito.size()}</td>
+                <td class="num">{promocion.articulosCarrito.size()}</td>
                 <td>{#if promocion.fechaInicio??}{time:format(promocion.fechaInicio, 'dd/MM/yyyy')}{#else}&mdash;{/if}</td>
                 <td>{#if promocion.fechaFin??}{time:format(promocion.fechaFin, 'dd/MM/yyyy')}{#else}&mdash;{/if}</td>
-                <td class="has-text-right">{#if promocion.descuento??}{promocion.descuento}%{#else}N/A{/if}</td>
+                <td class="num">{#if promocion.descuento??}{promocion.descuento}%{#else}N/A{/if}</td>
                 <td class="has-text-centered">
-                    {#if promocion.activa}<span class="tag is-success">Activa</span>
-                    {#else}<span class="tag is-danger">Inactiva</span>{/if}
+                    {#if promocion.activa}<span class="status-chip is-success">Activa</span>
+                    {#else}<span class="status-chip is-danger">Inactiva</span>{/if}
                 </td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
-                        <button type="button" class="button is-small is-success" title="Editar promoción"
+                        <button type="button" class="button is-small" title="Editar promoción"
+                                aria-label="Editar promoción"
                                 aria-haspopup="dialog" data-kit-open="editar-promocion"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/{promocion.id}"
-                                hx-target="#editar-promocion-body" hx-swap="innerHTML">&#9998;</button>
-                        <button type="button" class="button is-small is-warning" title="Eliminar promoción"
+                                hx-target="#editar-promocion-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
+                        <button type="button" class="button is-small" title="Eliminar promoción"
+                                aria-label="Eliminar promoción"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/articulos/promociones/{promocion.id}"
                                 hx-confirm="¿Eliminar la promoción {promocion.nombre}?"
-                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                     </div>
                 </td>
             </tr>

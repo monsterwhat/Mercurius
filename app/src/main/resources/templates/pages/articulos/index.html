@@ -20,6 +20,10 @@
   - Each panel's heading is an <h2> under the page's single <h1>, and the
     per-panel action row is one _kit/action-bar instead of a hand-rolled
     .level with a button on one side and a form on the other.
+  - The per-panel action row was the last `div.level` on this screen: it is
+    a _kit/action-bar now, with the panel heading in its {#left} slot and
+    the buttons in its {#actions} slot. Every table below it is a
+    _kit/surface, so the board is one kind of panel from top to bottom.
 
   Model keys supplied by Controllers.Api.App.ArticuloResource#renderFullPage:
     activosTabla / inactivosTabla / catalogoTabla / pendientesTabla /
@@ -82,11 +86,8 @@
 
         {! ── Tab: Activos ────────────────────────────────────────── !}
         <div id="panel-activos" x-show="tab === 'activos'">
-            <div class="level">
-                <div class="level-left">
-                    <h2 class="title is-4" style="margin-bottom:0">Artículos Activos</h2>
-                </div>
-                <div class="level-right">
+            {#include _kit/surface title="Artículos Activos" }
+                {#actions}
                     <div class="buttons">
                         {#include _kit/modal id="crear-articulo" title="Crear Artículo" triggerLabel="Crear Artículo" triggerClass="is-primary"
                              bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
@@ -100,9 +101,11 @@
                         </form>
                         {/if}
                     </div>
-                </div>
-            </div>
-            {#include pages/articulos/tabla-articulos modelo=activosTabla q=activosTabla.q /}
+                {/actions}
+                {#content}
+                    {#include pages/articulos/tabla-articulos modelo=activosTabla q=activosTabla.q /}
+                {/content}
+            {/include}
             {!$1!}
             {#include _kit/modal id="editar-articulo" title="Editar Artículo" triggerClass="is-hidden"
                  bodyUrl="/api/app/articulos/formularios/articulos/nueva" /}
@@ -110,11 +113,8 @@
 
         {! ── Tab: Inactivos ──────────────────────────────────────── !}
         <div id="panel-inactivos" x-show="tab === 'inactivos'" style="display:none">
-            <div class="level">
-                <div class="level-left">
-                    <h2 class="title is-4" style="margin-bottom:0">Artículos Inactivos</h2>
-                </div>
-                <div class="level-right">
+            {#include _kit/surface title="Artículos Inactivos" }
+                {#actions}
                     {#if canExport}
                     <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
@@ -124,18 +124,17 @@
                         <button class="button" type="submit">Exportar Excel</button>
                     </form>
                     {/if}
-                </div>
-            </div>
-            {#include pages/articulos/tabla-articulos modelo=inactivosTabla q=inactivosTabla.q /}
+                {/actions}
+                {#content}
+                    {#include pages/articulos/tabla-articulos modelo=inactivosTabla q=inactivosTabla.q /}
+                {/content}
+            {/include}
         </div>
 
         {! ── Tab: Catálogo (legacy Procesados) ───────────────────── !}
         <div id="panel-catalogo" x-show="tab === 'catalogo'" style="display:none">
-            <div class="level">
-                <div class="level-left">
-                    <h2 class="title is-4" style="margin-bottom:0">Catálogo de Artículos</h2>
-                </div>
-                <div class="level-right">
+            {#include _kit/surface title="Catálogo de Artículos" }
+                {#actions}
                     {#if canExport}
                     <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
@@ -145,21 +144,27 @@
                         <button class="button" type="submit">Exportar Excel</button>
                     </form>
                     {/if}
-                </div>
-            </div>
-            {#include pages/articulos/tabla-articulos modelo=catalogoTabla q=catalogoTabla.q /}
+                {/actions}
+                {#content}
+                    {#include pages/articulos/tabla-articulos modelo=catalogoTabla q=catalogoTabla.q /}
+                {/content}
+            {/include}
         </div>
 
         {! ── Tab: Pendientes (revision workflow) ─────────────────── !}
         <div id="panel-pendientes" x-show="tab === 'pendientes'" style="display:none">
-            <div class="level">
-                <div class="level-left">
-                    <h2 class="title is-4" style="margin-bottom:0">Artículos Pendientes</h2>
-                </div>
-                <div class="level-right">
+            {#include _kit/surface title="Artículos Pendientes" }
+                {#actions}
                     <div class="buttons">
-                        {#include _kit/modal id="revision-rapida" title="Procesado Rápido" triggerLabel="Procesado Rápido" triggerClass="is-warning"
-                             bodyUrl="/api/app/articulos/revision/siguiente" /}
+                        {#include _kit/modal id="revision-rapida" title="Procesado Rápido" triggerClass="is-hidden"
+                             bodyUrl="/api/app/articulos/revision/siguiente" }
+                            {#trigger}
+                                <button type="button" class="button" aria-haspopup="dialog"
+                                        @click="open = true; $nextTick(() => $refs.card.focus())"
+                                        hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/revision/siguiente"
+                                        hx-target="#revision-rapida-body" hx-swap="innerHTML">Procesado Rápido</button>
+                            {/trigger}
+                        {/include}
                         {#if canExport}
                         <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                             <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
@@ -170,9 +175,11 @@
                         </form>
                         {/if}
                     </div>
-                </div>
-            </div>
-            {#include pages/articulos/tabla-articulos modelo=pendientesTabla q=pendientesTabla.q /}
+                {/actions}
+                {#content}
+                    {#include pages/articulos/tabla-articulos modelo=pendientesTabla q=pendientesTabla.q /}
+                {/content}
+            {/include}
             {!$1!}
             {#include _kit/modal id="revision-articulo" title="Revisión de Artículo" triggerClass="is-hidden"
                  bodyUrl="/api/app/articulos/revision/siguiente" /}
@@ -180,11 +187,8 @@
 
         {! ── Tab: Promociones ────────────────────────────────────── !}
         <div id="panel-promociones" x-show="tab === 'promociones'" style="display:none">
-            <div class="level">
-                <div class="level-left">
-                    <h2 class="title is-4" style="margin-bottom:0">Promociones</h2>
-                </div>
-                <div class="level-right">
+            {#include _kit/surface title="Promociones" }
+                {#actions}
                     <div class="buttons">
                         {#include _kit/modal id="crear-promocion" title="Crear Promoción" triggerLabel="Crear Promoción" triggerClass="is-primary"
                              bodyUrl="/api/app/articulos/formularios/promociones/nueva" /}
@@ -197,9 +201,11 @@
                         </form>
                         {/if}
                     </div>
-                </div>
-            </div>
-            {#include pages/articulos/tabla-promociones modelo=promocionesTabla q=promocionesTabla.q /}
+                {/actions}
+                {#content}
+                    {#include pages/articulos/tabla-promociones modelo=promocionesTabla q=promocionesTabla.q /}
+                {/content}
+            {/include}
             {!$1!}
             {#include _kit/modal id="editar-promocion" title="Editar Promoción" triggerClass="is-hidden"
                  bodyUrl="/api/app/articulos/formularios/promociones/nueva" /}

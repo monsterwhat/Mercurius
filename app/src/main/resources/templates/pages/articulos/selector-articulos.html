@@ -10,6 +10,10 @@
 
   Picking appends hidden itemCodigo/itemCantidad inputs to the editor form
   (#forma-promocion) plus a visible row; totals refresh on submit.
+
+  WHAT CHANGED IN THE UI PASS
+    - The picker table lost its zebra striping (banded rows make a dense
+      table louder than its data) and the price column carries `num`.
 !}
 <div id="selector-articulos-fragmento">
     <div class="field">
@@ -24,15 +28,15 @@
         </div>
     </div>
 
-    <table class="table is-striped is-hoverable is-fullwidth is-narrow">
+    <table class="table is-hoverable is-fullwidth is-narrow">
         <thead>
-            <tr><th>Nombre</th><th class="has-text-right">Precio</th><th class="has-text-centered">Cantidad</th><th></th></tr>
+            <tr><th>Nombre</th><th class="num">Precio</th><th class="has-text-centered">Cantidad</th><th></th></tr>
         </thead>
         <tbody>
             {#for articulo in resultados}
             <tr data-codigo="{articulo.codigo}" data-nombre="{articulo.nombre}">
                 <td style="font-weight:500">{articulo.nombre}</td>
-                <td class="has-text-right">{#if articulo.precioFinal??}{articulo.precioFinal}{#else}&mdash;{/if}</td>
+                <td class="num">{#if articulo.precioFinal??}{articulo.precioFinal}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered" style="width:7rem">
                     <input class="input is-small" type="number" min="1" step="1" value="1"
                            data-cantidad="{articulo.codigo}"/>

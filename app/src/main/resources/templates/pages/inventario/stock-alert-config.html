@@ -21,71 +21,52 @@
   CSRF is inherited from layout.html body hx-headers; root-path prefixing is
   applied from configuration ({config:['quarkus.http.root-path']}), so this
   template never hard-codes the deployment root.
+
+  WHAT CHANGED IN THE UI PASS
+    - The header was a hand-rolled `div.level` with a bare <h1>; it is a
+      `_kit/page-header` now: one real <h1>, one subtitle.
+    - The three `.box` panels are `_kit/surface` panels now: one panel
+      rule, one padding rule, no hand-rolled inline styles.
+    - The eight engine constants were eight display-size numbers in a
+      grid; they are a `_kit/metric` strip now (a label, a value and its
+      unit), because a column of numbers is what the metric card is for.
+    - The quantity columns of the alerts table carry `num`: right-aligned,
+      tabular figures.
+    - "Cargar" is a plain bordered button: the page's one filled primary
+      is "Guardar Umbrales".
 !}
 {#include layout}
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="level mb-5">
-            <div class="level-left">
-                <div>
-                    <h1 class="title is-3">Configuración de Alertas de Stock</h1>
-                    <p class="subtitle is-5 has-text-grey">Umbrales del motor de alertas y sugerencias de reorden</p>
-                </div>
-            </div>
-        </div>
+        <section class="section" style="padding-top:1rem">
+        {#include _kit/page-header title="Configuración de Alertas de Stock"
+             subtitle="Umbrales del motor de alertas y sugerencias de reorden" /}
 
-        <div class="box mb-5">
-            <p class="title is-5">Parámetros del Motor</p>
-            <p class="subtitle is-6 has-text-grey">
-                Valores efectivos usados por el sistema para calcular el stock óptimo.
-                No son editables: se aplican a todos los artículos.
-            </p>
-            <div class="columns is-multiline">
-                <div class="column is-3">
-                    <p class="heading">Ventana de Velocidad de Venta</p>
-                    <p class="title is-4">{global.ventanaVelocidadDias} días</p>
-                </div>
-                <div class="column is-3">
-                    <p class="heading">Plazo de Entrega</p>
-                    <p class="title is-4">{global.plazoEntregaDias} días</p>
-                </div>
-                <div class="column is-3">
-                    <p class="heading">Stock de Seguridad por Defecto</p>
-                    <p class="title is-4">{global.diasStockSeguridadPorDefecto} días</p>
-                </div>
-                <div class="column is-3">
-                    <p class="heading">Respaldo de Stock Óptimo</p>
-                    <p class="title is-4">{global.stockOptimoRespaldoDias} días</p>
-                </div>
-                <div class="column is-3">
-                    <p class="heading">Buffer de Reorden</p>
-                    <p class="title is-4">{global.bufferReordenDias} días de ventas</p>
-                </div>
-                <div class="column is-3">
-                    <p class="heading">Umbral de Sobrestock</p>
-                    <p class="title is-4">x{global.multiploSobrestock} del óptimo</p>
-                </div>
-                <div class="column is-3">
-                    <p class="heading">Antigüedad Mínima</p>
-                    <p class="title is-4">{global.antiguedadMinimaDias} días de historia</p>
-                </div>
-                <div class="column is-3">
-                    <p class="heading">Tope de Nuevas por Barrido</p>
-                    <p class="title is-4">{global.maximoNuevasPorBarrido} alertas</p>
-                    <p class="help has-text-grey">
-                        Un artículo con menos historia no se juzga; el tope (0 = sin tope)
-                        reparte el backlog de alertas dormidas en varias corridas.
-                    </p>
-                </div>
+        {#include _kit/surface title="Parámetros del Motor"
+             subtitle="Valores efectivos usados por el sistema para calcular el stock óptimo. No son editables: se aplican a todos los artículos." }
+            {#content}
+            <div class="metric-strip">
+                {#include _kit/metric label="Ventana de velocidad de venta" value=global.ventanaVelocidadDias detail="días" /}
+                {#include _kit/metric label="Plazo de entrega" value=global.plazoEntregaDias detail="días" /}
+                {#include _kit/metric label="Stock de seguridad por defecto" value=global.diasStockSeguridadPorDefecto detail="días" /}
+                {#include _kit/metric label="Respaldo de stock óptimo" value=global.stockOptimoRespaldoDias detail="días" /}
+                {#include _kit/metric label="Buffer de reorden" value=global.bufferReordenDias detail="días de ventas" /}
+                {#include _kit/metric label="Umbral de sobrestock" value=global.multiploSobrestock detail="x del óptimo" /}
+                {#include _kit/metric label="Antigüedad mínima" value=global.antiguedadMinimaDias detail="días de historia" /}
+                {#include _kit/metric label="Tope de nuevas por barrido" value=global.maximoNuevasPorBarrido detail="alertas" /}
             </div>
-        </div>
+            <p class="help has-text-grey">
+                Un artículo con menos historia no se juzga; el tope (0 = sin tope)
+                reparte el backlog de alertas dormidas en varias corridas.
+            </p>
+            {/content}
+        {/include}
 
 {#fragment forma}
         <div id="alerta-config-forma">
-            <div class="box mb-5">
-                <p class="title is-5">Umbrales por Artículo</p>
-
+            {#include _kit/surface title="Umbrales por Artículo" }
+                {#content}
                 <div class="field has-addons">
                     <div class="control is-expanded">
                         <input id="input-articulo" class="input" type="text"
@@ -97,7 +78,7 @@
                                hx-target="#alerta-config-forma" hx-swap="outerHTML"/>
                     </div>
                     <div class="control">
-                        <button class="button is-info" type="button"
+                        <button class="button" type="button"
                                 hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                                 hx-include="#input-articulo"
                                 hx-target="#alerta-config-forma" hx-swap="outerHTML">Cargar</button>
@@ -144,7 +125,8 @@
                     Escriba el código de un artículo y cárguelo para editar sus umbrales.
                 </p>
                 {/if}
-            </div>
+                {/content}
+            {/include}
 
             {#if mensajeToast??}
             <div hx-swap-oob="beforeend:#toast-container">
@@ -154,12 +136,9 @@
         </div>
 {/fragment}
 
-        <div class="box">
-            <p class="title is-5">Alertas Disparadas Actualmente</p>
-            <p class="subtitle is-6 has-text-grey">
-                Instantánea de solo lectura; la gestión y el reporte completo viven en
-                Reportes &rarr; Inventario &rarr; Alertas de Stock.
-            </p>
+        {#include _kit/surface title="Alertas Disparadas Actualmente"
+             subtitle="Instantánea de solo lectura; la gestión y el reporte completo viven en Reportes → Inventario → Alertas de Stock." }
+            {#content}
             {#include _kit/data-table id="alertas-disparadas-tabla" baseUrl=baseUrl headers=columnas
                  page=page size=size total=total totalPages=totalPages pages=paginas}
               {#rows}
@@ -167,9 +146,9 @@
                 <tr>
                     <td>{fila.tipo}</td>
                     <td>{fila.articulo}</td>
-                    <td>{fila.cantidadActual}</td>
-                    <td>{fila.cantidadMinima}</td>
-                    <td>{fila.sugeridoReordenar}</td>
+                    <td class="num">{fila.cantidadActual}</td>
+                    <td class="num">{fila.cantidadMinima}</td>
+                    <td class="num">{fila.sugeridoReordenar}</td>
                     <td>{fila.fechaCreacion}</td>
                     <td>{fila.estado}</td>
                 </tr>
@@ -178,6 +157,8 @@
                 {/for}
               {/rows}
             {/include}
-        </div>
+            {/content}
+        {/include}
+        </section>
     {/body}
 {/include}

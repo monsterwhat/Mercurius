@@ -21,25 +21,40 @@
     titulo, tipo, q, busquedaActiva, baseUrl, resultados[], total, page,
     size, totalPages, pages[], headersResultados[], historialNotas[],
     headersHistorial[]
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The bare <h1 class="title is-3"> + <p class="subtitle is-6"> pair is the
+    _kit/page-header now: one real <h1> per screen, and it is the screen's
+    name.
+  - The three .box panels are _kit/surfaces, so the screen is one kind of
+    panel from top to bottom and each panel heading is a real <h2>.
+  - "Buscar" was a filled amber (is-warning) button; the app's teal is the
+    only accent, so the screen's one affirmative action is is-primary. The
+    "Seleccionar" row action is a bordered button, like every other row
+    action in the app.
+  - The hand-written tables lost the zebra striping and their figures are
+    `num` cells: right-aligned with tabular figures. The invoice numbers are
+    the app's one monospace class (.kit-code).
 !}
 {#include layout}
     {#title}Devoluciones y Notas de Credito | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3">Devoluciones y Notas de Credito</h1>
-        <p class="subtitle is-6">Procese devoluciones de articulos y genere notas de credito</p>
+        {#include _kit/page-header title="Devoluciones y Notas de Credito"
+             subtitle="Procese devoluciones de artículos y genere notas de crédito" /}
 
         {! ── Buscar Factura (legacy buscarFactura) ── !}
-        <div class="box">
-            <h3 class="title is-5">Buscar Factura</h3>
+        {#include _kit/surface title="Buscar Factura" }
+            {#content}
             <form id="busqueda-form">
                 <div class="field">
-                    <label class="label">Tipo de Busqueda</label>
+                    <label class="label">Tipo de Búsqueda</label>
                     <div class="control">
                         <label class="radio">
                             <input type="radio" name="tipo" value="consecutivo"
                                    {#if tipo != 'cliente'}checked{/if} />
-                            Numero Consecutivo
+                            Número Consecutivo
                         </label>
                         <label class="radio">
                             <input type="radio" name="tipo" value="cliente"
@@ -49,28 +64,29 @@
                     </div>
                 </div>
                 <div class="field">
-                    <label class="label" for="criterio-busqueda">Criterio de Busqueda</label>
+                    <label class="label" for="criterio-busqueda">Criterio de Búsqueda</label>
                     <div class="control">
                         <input class="input" type="text" id="criterio-busqueda" name="q"
                                value="{q}" placeholder="Consecutivo o nombre del cliente"/>
                     </div>
                 </div>
-                <button type="button" class="button is-warning"
+                <button type="button" class="button is-primary"
                         hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                         hx-include="#busqueda-form"
                         hx-target="#resultados" hx-swap="innerHTML">
                     Buscar
                 </button>
             </form>
-        </div>
+            {/content}
+        {/include}
 
         {! ── Resultados (fragment swapped by Buscar) ── !}
-        <div class="box" id="resultados-box">
-            <h3 class="title is-5">Resultados de Busqueda</h3>
+        {#include _kit/surface id="resultados-box" title="Resultados de Búsqueda" }
+            {#content}
             <div id="resultados">
                 {#fragment id=resultados}
                 {#if !busquedaActiva}
-                    <p class="has-text-grey">Ingrese un criterio de busqueda y presione Buscar.</p>
+                    <p class="has-text-grey">Ingrese un criterio de búsqueda y presione Buscar.</p>
                 {/if}
                 {#include _kit/data-table id="devoluciones-busqueda" baseUrl=baseUrl
                      headers=headersResultados
@@ -78,12 +94,12 @@
                   {#rows}
                     {#for f in resultados}
                     <tr>
-                        <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
+                        <td class="kit-code">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td class="has-text-centered">
-                            <button type="button" class="button is-warning is-small"
+                            <button type="button" class="button is-small"
                                     hx-get="{config:['quarkus.http.root-path']}/api/app/devoluciones/{f.id}/lineas"
                                     hx-target="#devolucion-panel" hx-swap="innerHTML">
                                 Seleccionar
@@ -100,16 +116,17 @@
                 {/include}
                 {/fragment}
             </div>
-        </div>
+            {/content}
+        {/include}
 
         {! ── Panel de seleccion (llenado por /api/app/devoluciones/{id}/lineas) ── !}
         <div id="devolucion-panel"></div>
 
         {! ── Historial de Notas de Credito ── !}
-        <div class="box">
-            <h3 class="title is-5">Historial de Notas de Credito</h3>
+        {#include _kit/surface title="Historial de Notas de Crédito" }
+            {#content}
             <div class="table-container">
-            <table class="table is-striped is-hoverable is-fullwidth">
+            <table class="table is-hoverable is-fullwidth">
                 <thead>
                     <tr>
                         {#for col in headersHistorial}
@@ -121,20 +138,21 @@
                     {#for nota in historialNotas}
                     <tr>
                         <td>{#if nota.fecha??}{time:format(nota.fecha, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
-                        <td class="is-family-monospace">{#if nota.facturaOriginal??}{nota.facturaOriginal}{#else}-{/if}</td>
+                        <td class="kit-code">{#if nota.facturaOriginal??}{nota.facturaOriginal}{#else}-{/if}</td>
                         <td>{#if nota.motivo??}{nota.motivo}{#else}-{/if}</td>
-                        <td class="has-text-right">₡{#if nota.montoTotal??}{nota.montoTotal}{#else}0{/if}</td>
+                        <td class="num">₡{#if nota.montoTotal??}{nota.montoTotal}{#else}0{/if}</td>
                         <td class="has-text-centered">
-                            {#if nota.haciendaEstado??}<span class="tag is-info">{nota.haciendaEstado}</span>{#else}-{/if}
+                            {#if nota.haciendaEstado??}<span class="status-chip is-info">{nota.haciendaEstado}</span>{#else}-{/if}
                         </td>
                     </tr>
                     {/for}
                     {#if historialNotas.isEmpty()}
-                    <tr><td colspan="5" class="has-text-centered has-text-grey">No hay notas de credito registradas</td></tr>
+                    <tr><td colspan="5" class="has-text-centered has-text-grey">No hay notas de crédito registradas</td></tr>
                     {/if}
                 </tbody>
             </table>
             </div>
-        </div>
+            {/content}
+        {/include}
     {/body}
 {/include}

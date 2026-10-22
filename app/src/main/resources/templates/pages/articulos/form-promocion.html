@@ -23,6 +23,14 @@
   (itemCodigo[i] / itemCantidad[i]); "Agregar Producto" hx-loads the shared
   article picker fragment into #promo-picker-body and the picked row appends
   a line via the inline add-item helper before submitting.
+
+  WHAT CHANGED IN THE UI PASS
+    - The totals block was a `.box`; it is a `_kit/surface` now. The panel
+      rule and the padding come from the kit instead of an inline style.
+    - The items table lost its zebra striping (banded rows make a dense
+      table louder than its data) and the quantity column carries `num`.
+    - "Agregar Producto" is a plain bordered button: the dialog carries
+      one filled primary (the submit).
 !}
 <div id="forma-promocion">
     {#if modo == 'editar' && promocion??}
@@ -50,15 +58,15 @@
            both the hidden inputs and the visible tbody. !}
         <div class="field">
             <label class="label">Artículos en la Promoción:</label>
-            <table class="table is-striped is-fullwidth is-narrow">
+            <table class="table is-fullwidth is-narrow">
                 <thead>
-                    <tr><th>Artículo</th><th class="has-text-centered">Cantidad</th></tr>
+                    <tr><th>Artículo</th><th class="num">Cantidad</th></tr>
                 </thead>
                 <tbody id="promo-items-body">
                     {#for item in items}
                     <tr>
                         <td>{#if item.articulo??}{item.articulo.nombre}{/if}</td>
-                        <td class="has-text-centered">{item.cantidad}</td>
+                        <td class="num">{item.cantidad}</td>
                     </tr>
                     {#else}
                     <tr class="promo-items-empty"><td colspan="2" class="has-text-centered has-text-grey">No hay artículos en la promoción</td></tr>
@@ -69,7 +77,7 @@
             <input type="hidden" name="itemCodigo" value="{#if item.articulo??}{item.articulo.codigo}{/if}"/>
             <input type="hidden" name="itemCantidad" value="{item.cantidad}"/>
             {/for}
-            <button type="button" class="button is-primary is-small"
+            <button type="button" class="button is-small"
                     aria-haspopup="dialog" data-kit-open="selector-articulo-promo"
                     hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/promociones/articulos"
                     hx-target="#selector-articulo-promo-body" hx-swap="innerHTML">Agregar Producto</button>
@@ -157,11 +165,15 @@
         </div>
 
         {! Totals precomputed server-side (legacy totalListaCon* / TotalDescuentoEIVA) !}
-        <div class="box is-shadowless has-background-success-00" style="text-align:center">
-            <p class="is-size-7 has-text-grey">Total Sin IVA: &#8353; {totalConUtilidad}</p>
-            <p class="is-size-7 has-text-grey">Total Con IVA: &#8353; {totalConIVA}</p>
-            <p class="title is-5 has-text-success" style="margin-bottom:0">Total con Descuento e IVA: &#8353; {totalDescuentoEIVA}</p>
-        </div>
+        {#include _kit/surface }
+            {#content}
+            <div style="text-align:center">
+                <p class="is-size-7 has-text-grey">Total Sin IVA: &#8353; {totalConUtilidad}</p>
+                <p class="is-size-7 has-text-grey">Total Con IVA: &#8353; {totalConIVA}</p>
+                <p class="title is-5 has-text-success" style="margin-bottom:0">Total con Descuento e IVA: &#8353; {totalDescuentoEIVA}</p>
+            </div>
+            {/content}
+        {/include}
 
         <div class="field is-grouped is-grouped-right">
             <div class="control">

@@ -10,84 +10,67 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="inventario-header">
-            <h1 class="title is-3 has-text-centered">{titulo}</h1>
-            <div class="stats-grid">
-                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == 'Sin Stock'}active{/if}" style="color:inherit"
-                   href="?seccion=alertas&tipo=Sin Stock{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
-                    <span class="stat-number">{sinStock}</span>
-                    <span class="stat-label">Sin Stock</span>
-                </a>
-                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == 'Stock Bajo'}active{/if}" style="color:inherit"
-                   href="?seccion=alertas&tipo=Stock Bajo{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
-                    <span class="stat-number">{stockBajo}</span>
-                    <span class="stat-label">Stock Bajo</span>
-                </a>
-                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == 'Sobrestock'}active{/if}" style="color:inherit"
-                   href="?seccion=alertas&tipo=Sobrestock{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
-                    <span class="stat-number">{sobrestock}</span>
-                    <span class="stat-label">Sobrestock</span>
-                </a>
-                <a class="stat-card {#if seccion == 'sugerencias'}active{/if}" style="color:inherit"
-                   href="?seccion=sugerencias{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
-                    <span class="stat-number">{sugerencias}</span>
-                    <span class="stat-label">Sugerencias</span>
-                </a>
-                <a class="stat-card {#if seccion == 'alertas' && filtros.tipo == null}active{/if}" style="color:inherit"
-                   href="?seccion=alertas{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">
-                    <span class="stat-number">{totalAlertas}</span>
-                    <span class="stat-label">Total Alertas</span>
-                </a>
+        {! One strip, one answer, one colour. The five counts are FILTERS: each
+           one links to the same board with a different seccion/tipo,
+           preserving the other filters. A metric with an href IS the
+           filter card. !}
+        {#include _kit/page-header title=titulo subtitle="Existencias bajo mínimo, sobrestock y sugerencias" /}
+        <div class="metric-strip">
+            {#include _kit/metric label="Sin stock" value=sinStock
+                 href=(baseUrl + "?seccion=alertas&tipo=Sin Stock" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 active=(seccion == 'alertas' && filtros.tipo == 'Sin Stock') /}
+            {#include _kit/metric label="Stock bajo" value=stockBajo
+                 href=(baseUrl + "?seccion=alertas&tipo=Stock Bajo" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 active=(seccion == 'alertas' && filtros.tipo == 'Stock Bajo') /}
+            {#include _kit/metric label="Sobrestock" value=sobrestock
+                 href=(baseUrl + "?seccion=alertas&tipo=Sobrestock" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 active=(seccion == 'alertas' && filtros.tipo == 'Sobrestock') /}
+            {#include _kit/metric label="Sugerencias" value=sugerencias
+                 href=(baseUrl + "?seccion=sugerencias" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 active=(seccion == 'sugerencias') /}
+            {#include _kit/metric label="Total alertas" value=totalAlertas
+                 href=(baseUrl + "?seccion=alertas" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 active=(seccion == 'alertas' && filtros.tipo == null) /}
+        </div>
+
+        {#include _kit/filter-bar id="filtros-alertas" method="get"}
+            <input type="hidden" name="seccion" value="{seccion}"/>
+            <div class="field">
+                <label class="label" for="departamento">Departamento</label>
+                <div class="control select">
+                    <select name="departamento" id="departamento">
+                        <option value="">Todos</option>
+                        {#for d in departamentos}
+                        <option value="{d}" {#if filtros.departamento == d}selected{/if}>{d}</option>
+                        {/for}
+                    </select>
+                </div>
             </div>
-        </div>
+            {#if seccion == 'sugerencias'}
+            <div class="field">
+                <label class="label" for="prioridad">Prioridad</label>
+                <div class="control select">
+                    <select name="prioridad" id="prioridad">
+                        <option value="">Todas</option>
+                        <option value="urgent" {#if filtros.prioridad == 'urgent'}selected{/if}>Urgente</option>
+                        <option value="high" {#if filtros.prioridad == 'high'}selected{/if}>Alta</option>
+                        <option value="medium" {#if filtros.prioridad == 'medium'}selected{/if}>Media</option>
+                        <option value="low" {#if filtros.prioridad == 'low'}selected{/if}>Baja</option>
+                    </select>
+                </div>
+            </div>
+            {/if}
+            {#actions}
+            <button class="button is-primary" type="submit">Filtrar</button>
+            <a class="button"
+               href="{config:['quarkus.http.root-path']}{baseUrl}?seccion={seccion}">Limpiar</a>
+            {/actions}
+        {/include}
 
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <input type="hidden" name="seccion" value="{seccion}"/>
-                <div class="column is-narrow field">
-                    <label class="label" for="departamento">Departamento</label>
-                    <div class="control select">
-                        <select name="departamento" id="departamento">
-                            <option value="">Todos</option>
-                            {#for d in departamentos}
-                            <option value="{d}" {#if filtros.departamento == d}selected{/if}>{d}</option>
-                            {/for}
-                        </select>
-                    </div>
-                </div>
-                {#if seccion == 'sugerencias'}
-                <div class="column is-narrow field">
-                    <label class="label" for="prioridad">Prioridad</label>
-                    <div class="control select">
-                        <select name="prioridad" id="prioridad">
-                            <option value="">Todas</option>
-                            <option value="urgent" {#if filtros.prioridad == 'urgent'}selected{/if}>Urgente</option>
-                            <option value="high" {#if filtros.prioridad == 'high'}selected{/if}>Alta</option>
-                            <option value="medium" {#if filtros.prioridad == 'medium'}selected{/if}>Media</option>
-                            <option value="low" {#if filtros.prioridad == 'low'}selected{/if}>Baja</option>
-                        </select>
-                    </div>
-                </div>
-                {/if}
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
-                    <div class="control">
-                        <button class="button is-danger" type="submit">Filtrar</button>
-                        <a class="button is-light"
-                           href="{config:['quarkus.http.root-path']}{baseUrl}?seccion={seccion}">Limpiar</a>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <div class="nav-cards">
-            <a class="nav-card button is-danger {#if seccion == 'alertas'}is-outlined{/if}"
-               href="?seccion=alertas{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">Alertas Activas</a>
-            <a class="nav-card button is-warning {#if seccion == 'sugerencias'}is-outlined{/if}"
-               href="?seccion=sugerencias{#if filtros.departamento??}&departamento={filtros.departamento}{/if}{#if filtros.prioridad??}&prioridad={filtros.prioridad}{/if}">Sugerencias de Reorden</a>
-        </div>
+        {! The two section switches below used to be big coloured buttons that
+           repeated the metric strip above word for word (Alertas Activas =
+           Total alertas, Sugerencias de Reorden = Sugerencias). The strip
+           already switches the section, so the duplicates are gone. !}
 
         {#include pages/reportes/_tablas/alertas /}
 

@@ -8,42 +8,54 @@
 
   Download links hit GET /app/registros/log/descargar?archivo= (role-gated,
   traversal-guarded, served as attachment).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The .registros-header banner (a teal gradient with the title inside it)
+    is the _kit/page-header now: one real <h1> per screen, flat and
+    theme-aware.
+  - The count was a glass stat-card; it is a _kit/metric card now (the
+    hand-written table below has no footer count, so the number needs a home).
+  - The .box panel is a _kit/surface, so the screen is one kind of panel
+    from top to bottom.
+  - "Descargar" was a filled blue (is-info) button: a second accent family
+    next to the teal primary. It is a bordered button.
+  - The table lost the zebra striping and its size column is a `num` cell:
+    right-aligned with tabular figures.
 !}
 {#include layout}
     {#title}Log de Actividades | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="registros-header">
-            <h1 class="title is-3 has-text-centered">Log de Actividades</h1>
-            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Archivos de registro de la aplicación</p>
-            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
-                <div class="stat-card">
-                    <span class="stat-number">{totalArchivos}</span>
-                    <span class="stat-label">Archivos</span>
-                </div>
-            </div>
+        {#include _kit/page-header title="Log de Actividades"
+             subtitle="Archivos de registro de la aplicación" /}
+
+        {! The count is a KPI, not a filter and not a tab: a plain metric card. !}
+        <div class="metric-strip">
+            {#include _kit/metric label="Archivos" value=(totalArchivos ?: 0) /}
         </div>
 
-        <div class="box">
+        {#include _kit/surface title="Archivos de registro" }
+            {#content}
             <div class="table-container">
-            <table class="table is-striped is-hoverable is-fullwidth">
+            <table class="table is-hoverable is-fullwidth">
                 <thead>
                     <tr>
-                        <th>Archivo</th>
-                        <th class="has-text-right">Tamaño</th>
-                        <th>Modificado</th>
-                        <th class="has-text-centered">Descarga</th>
+                        <th scope="col">Archivo</th>
+                        <th scope="col" class="num">Tamaño</th>
+                        <th scope="col">Modificado</th>
+                        <th scope="col" class="has-text-centered">Descarga</th>
                     </tr>
                 </thead>
                 <tbody>
                     {#for a in archivos}
                     <tr>
                         <td class="kit-code">{a.nombre}</td>
-                        <td class="has-text-right">{a.tamanio}</td>
+                        <td class="num">{a.tamanio}</td>
                         <td>{a.modificado}</td>
                         <td class="has-text-centered">
-                            <a class="button is-small is-info"
+                            <a class="button is-small"
                                href="{config:['quarkus.http.root-path']}/app/registros/log/descargar?archivo={a.nombre}">
                                 Descargar</a>
                         </td>
@@ -58,7 +70,8 @@
             <p class="help has-text-grey">
                 Los respaldos rotados se comprimen (.gz) tras 30 días y se eliminan tras 4 años.
             </p>
-        </div>
+            {/content}
+        {/include}
     </section>
     {/body}
 {/include}

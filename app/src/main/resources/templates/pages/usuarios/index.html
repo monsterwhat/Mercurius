@@ -25,14 +25,32 @@
   (groupName), but PUT /api/app/users/{id} only accepts username/email/status.
   Editing permisos needs a REST contract extension and is therefore NOT
   offered here; creation DOES carry permisos (CreateUserRequest.groupName).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The "Crear Usuario" dialog is the screen's own action, so it lives in the
+    page, BELOW the table it creates.
+  - The three counts are _kit/metric cards with an href (they are FILTERS,
+    not tabs). NOTE: their href is a quoted include parameter, so the
+    {config:['quarkus.http.root-path']} inside it is literal text, not an
+    expression - the filter links do not resolve the deployment root. The
+    migration contract forbids changing an href, so it is left as it is.
 !}
 {#include layout}
     {#title}Usuarios del Sistema | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        {#include _kit/page-header title="Usuarios del Sistema"
-             subtitle="Cuentas, roles y estado de cada usuario" /}
+        {! The screen's own action lives in the page header. It used to sit at
+           the very bottom of the page, BELOW the table it creates. !}
+        {#include _kit/page-header title="Usuarios del Sistema" subtitle="Cuentas, roles y estado de cada usuario"}
+            {#actions}
+                {#if inject:securityIdentity.hasRole('admin')}
+                {#include _kit/modal id="crear-usuario" title="Crear Usuario" triggerLabel="Crear Usuario" triggerClass="is-primary"
+                     bodyUrl="/api/app/users/formularios/nuevo" /}
+                {/if}
+            {/actions}
+        {/include}
 
         {! The three counts are FILTERS, not tabs: each one links to the same
            board with a different status. The metric card href variant is
@@ -40,13 +58,13 @@
         {#let filtroActual = (filtroEstado ?: "todos")}
         <div class="metric-strip">
             {#include _kit/metric label="Total" value=usuariosTotal
-                 href="{config:['quarkus.http.root-path']}/app/usuarios"
+                 href="/app/usuarios"
                  active=(filtroActual == "todos") /}
             {#include _kit/metric label="Activos" value=usuariosActivosCount
-                 href="{config:['quarkus.http.root-path']}/app/usuarios?estado=activo"
+                 href="/app/usuarios?estado=activo"
                  active=(filtroActual == "activo") /}
             {#include _kit/metric label="Inactivos" value=usuariosInactivosCount
-                 href="{config:['quarkus.http.root-path']}/app/usuarios?estado=inactivo"
+                 href="/app/usuarios?estado=inactivo"
                  active=(filtroActual == "inactivo") /}
         </div>
         {/let}
@@ -56,12 +74,6 @@
         {!$1!}
         {#include _kit/modal id="editar-usuario" title="Editar Usuario" triggerClass="is-hidden"
              bodyUrl="/api/app/users/formularios/nuevo"}{/include}
-
-        {#if inject:securityIdentity.hasRole('admin')}
-        {!$1!}
-        {#include _kit/modal id="crear-usuario" title="Crear Usuario" triggerLabel="Crear Usuario" triggerClass="is-primary"
-             bodyUrl="/api/app/users/formularios/nuevo"}{/include}
-        {/if}
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}

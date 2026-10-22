@@ -46,7 +46,7 @@
                     {#for u in rows}
                     <tr data-row-key="{u.id}">
                         <td>
-                            {#if u.status?? && u.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                            {#if u.status?? && u.status}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}
                         </td>
                         <td>{u.username}</td>
                         <td>{u.groupName}</td>

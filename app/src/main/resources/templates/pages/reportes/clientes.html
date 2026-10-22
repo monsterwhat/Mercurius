@@ -57,7 +57,7 @@
                     {#for c in rows}
                     <tr data-row-key="{c.code}">
                         <td>
-                            {#if c.status?? && c.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                            {#if c.status?? && c.status}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}
                         </td>
                         <td>{c.name}</td>
                         <td>{c.address}</td>

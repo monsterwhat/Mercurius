@@ -1021,6 +1021,13 @@ fieldset[disabled] .select select::placeholder,
     font-weight: 500;
 }
 
+// Secondary text that must hold 4.5:1 in BOTH schemes. Bulma's
+// `has-text-grey` is a fixed mid-grey that vanishes on the dark ground, and
+// its `has-text-...` scale is not scheme-aware; this is the token version.
+.mercurius-text-muted {
+    color: var(--mercurius-text-muted);
+}
+
 // A number that refreshes on its own: monospace so the digits do not jitter
 // as they change, and the page's ink so it is readable wherever it sits.
 .kit-countdown {

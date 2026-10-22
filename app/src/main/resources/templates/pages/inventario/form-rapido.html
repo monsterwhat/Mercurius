@@ -5,12 +5,16 @@
   fragment with the next pending movement ("Se proceso el ajuste" toast,
   "No hay más artículos para revisar" at the end); "Omitir" posts to the
   skip endpoint (audit-only, no mutation) — both legacy behaviors.
+
+  WHAT CHANGED IN THE UI PASS
+    - The legacy `.box` panel became a `_kit/surface`: the article name is
+      the surface title and the pending note is its subtitle.
+    - The action row carries one filled primary ("Procesar y Siguiente");
+      "Omitir" is a plain bordered button.
 !}
 {#if ajuste??}
-<div class="box is-shadowless">
-    <h4 class="title is-5 has-text-warning-dark">{ajuste.articuloNombre}</h4>
-    <p class="subtitle is-7">Movimiento pendiente de procesar</p>
-
+{#include _kit/surface title=ajuste.articuloNombre subtitle="Movimiento pendiente de procesar" }
+    {#content}
     <div class="columns">
         <div class="column">
             <div class="field">
@@ -21,7 +25,7 @@
         <div class="column">
             <div class="field">
                 <label class="label">Código de Barras:</label>
-                <p class="input is-static" class="kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
+                <p class="input is-static kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
             </div>
         </div>
     </div>
@@ -58,14 +62,15 @@
             </div>
         </div>
         <div class="buttons is-centered mt-4">
-            <button class="button is-success is-medium" type="submit">Procesar y Siguiente</button>
-            <button class="button is-warning" type="button"
+            <button class="button is-primary is-medium" type="submit">Procesar y Siguiente</button>
+            <button class="button" type="button"
                     hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes/{ajuste.codigo}/omitir"
                     hx-target="#rapido-inventario-body" hx-swap="innerHTML">Omitir</button>
             <button class="button" type="button" data-kit-close>Cerrar</button>
         </div>
     </form>
-</div>
+    {/content}
+{/include}
 {#else}
 <div class="has-text-centered p-5">
     <p class="has-text-grey">No hay movimientos pendientes para procesar</p>

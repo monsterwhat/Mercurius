@@ -65,13 +65,13 @@
                     {#if factura.haciendaMensajeReceptorEstado??}
                     <span class="tag {factura.haciendaMensajeReceptorEstado eq 'ACEPTADO' ? 'is-success' : 'is-danger'}">{factura.haciendaMensajeReceptorEstado}</span>
                     {#else}
-                    <span class="tag is-light">Sin MR</span>
+                    <span class="status-chip is-neutral">Sin MR</span>
                     {/if}
-                    {#if factura.paid}<span class="tag is-info">Pagada</span>{/if}
-                    {#if factura.processed}<span class="tag is-success">Procesada</span>{/if}
+                    {#if factura.paid}<span class="status-chip is-info">Pagada</span>{/if}
+                    {#if factura.processed}<span class="status-chip is-success">Procesada</span>{/if}
                 </td>
-                <td class="has-text-right" style="font-weight:600">{#if factura.totalComprobante??}&#8362;{factura.totalComprobante}{#else}&mdash;{/if}</td>
-                <td class="has-text-right">{#if factura.totalImpuesto??}&#8362;{factura.totalImpuesto}{#else}&mdash;{/if}</td>
+                <td class="num" style="font-weight:600">{#if factura.totalComprobante??}&#8362;{factura.totalComprobante}{#else}&mdash;{/if}</td>
+                <td class="num">{#if factura.totalImpuesto??}&#8362;{factura.totalImpuesto}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
                     <div style="display:flex;gap:0.25rem;justify-content:center;align-items:center">
                         {#if !factura.processed && factura.status}

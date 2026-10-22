@@ -15,7 +15,7 @@
     id       String - OPTIONAL. DOM id; put it on the <form> so
                        `hx-include="closest form"` works from any control.
     method   String - OPTIONAL. "get" (default) or "post".
-    action   String - OPTIONAL. form action; only meaningful with method="post".
+    action   String - OPTIONAL. form action; only meaningful with method="post". A CONTEXT-PATH-RELATIVE URL: the deployment root is prepended HERE, like every other kit component.
     id_field String - OPTIONAL. DOM id of a hidden input that carries the
                        active view key, so a filtered board can post back into
                        the same view.
@@ -63,7 +63,7 @@
   .filter-actions buttons become full width at 480px.
 !}
 <section class="filter-bar"{#if id??} id="{id}"{/if}>
-    <form class="filter-grid" method="{method ?: 'get'}"{#if action??} action="{action}"{/if}>
+    <form class="filter-grid" method="{method ?: 'get'}"{#if action??} action="{config:['quarkus.http.root-path']}{action}"{/if}>
         {#insert}{/insert}
     </form>
     <div class="filter-actions">

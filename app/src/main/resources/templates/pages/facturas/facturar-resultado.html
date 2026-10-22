@@ -25,7 +25,7 @@
         <p>Consecutivo: <span class="has-text-weight-semibold">{resultado.consecutivo}</span></p>
         {/if}
         {#if resultado.haciendaEstado??}
-        <p>Hacienda: <span class="tag is-light">{resultado.haciendaEstado}</span>
+        <p>Hacienda: <span class="status-chip is-neutral">{resultado.haciendaEstado}</span>
             {#if resultado.haciendaMensaje??}{resultado.haciendaMensaje}{/if}</p>
         {/if}
         {#if resultado.puntosOtorgados?? && !resultado.puntosOtorgados}
@@ -46,7 +46,7 @@
     {#else}
     <div class="notification is-danger" role="alert">
         <p><strong>No se pudo facturar</strong></p>
-        <p><span class="tag is-dark">{resultado.errorCode}</span> {resultado.errorMessage}</p>
+        <p><span class="status-chip is-neutral">{resultado.errorCode}</span> {resultado.errorMessage}</p>
         {#if resultado.errorCode == 'SUPERVISOR_REQUIRED'}
         <p class="help">Use el botón &laquo;Autorizar precios&raquo; del carrito e intente de nuevo.</p>
         {/if}

@@ -17,9 +17,9 @@
             {#for resultado in resultados}
             <li>
                 {#if resultado.exito}
-                <span class="tag is-success">Procesado</span>
+                <span class="status-chip is-success">Procesado</span>
                 {#else}
-                <span class="tag is-danger">Error</span>
+                <span class="status-chip is-danger">Error</span>
                 {/if}
                 <strong>{resultado.fileName}</strong>
                 {#if resultado.mensaje??}— {resultado.mensaje}{/if}

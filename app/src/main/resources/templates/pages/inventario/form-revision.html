@@ -7,11 +7,16 @@
   quantity through InventarioService.markAsProcessed (stock update parity).
 
   Model: ajuste = Controllers.Api.App.InventarioResource.InventarioDTO
+
+  WHAT CHANGED IN THE UI PASS
+    - The legacy `.box` panel became a `_kit/surface`; the article name is
+      the surface title.
+    - The code cell carried TWO class attributes (the second was dropped by
+      the parser): it now carries `kit-code` for real.
 !}
 {#if ajuste??}
-<div class="box is-shadowless">
-    <h4 class="title is-5">{ajuste.articuloNombre}</h4>
-
+{#include _kit/surface title=ajuste.articuloNombre }
+    {#content}
     <div class="columns">
         <div class="column">
             <div class="field">
@@ -22,7 +27,7 @@
         <div class="column">
             <div class="field">
                 <label class="label">Código de barras:</label>
-                <p class="input is-static" class="kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
+                <p class="input is-static kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</p>
             </div>
         </div>
     </div>
@@ -47,7 +52,8 @@
             <button class="button" type="button" data-kit-close>Cerrar</button>
         </div>
     </form>
-</div>
+    {/content}
+{/include}
 {#else}
 <div class="has-text-centered p-4">
     <p class="has-text-grey">No hay movimiento seleccionado</p>

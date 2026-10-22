@@ -30,15 +30,15 @@
             {#if d.haciendaMensajeReceptorEstado??}
             <span class="tag {d.haciendaMensajeReceptorEstado eq 'ACEPTADO' ? 'is-success' : 'is-danger'}">{d.haciendaMensajeReceptorEstado}</span>
             {#else}
-            <span class="tag is-light">Sin enviar</span>
+            <span class="status-chip is-neutral">Sin enviar</span>
             {/if}
-            {#if d.mensajeReceptorLimite??}<span class="tag is-info">Límite: {d.mensajeReceptorLimite}</span>{/if}
+            {#if d.mensajeReceptorLimite??}<span class="status-chip is-info">Límite: {d.mensajeReceptorLimite}</span>{/if}
         </div>
         <div class="column is-half">
             <p class="heading">Estado</p>
-            {#if d.status?? && d.status}<span class="tag is-success">Activa</span>{#else}<span class="tag is-danger">Inactiva</span>{/if}
-            {#if d.processed?? && d.processed}<span class="tag is-success">Procesada</span>{/if}
-            {#if d.paid?? && d.paid}<span class="tag is-info">Pagada</span>{/if}
+            {#if d.status?? && d.status}<span class="status-chip is-success">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
+            {#if d.processed?? && d.processed}<span class="status-chip is-success">Procesada</span>{/if}
+            {#if d.paid?? && d.paid}<span class="status-chip is-info">Pagada</span>{/if}
         </div>
     </div>
 
@@ -59,7 +59,7 @@
             <h3 class="title is-5" style="margin-bottom:0">Pre-validación</h3>
         </div>
         <div class="level-right">
-            <button type="button" class="button is-small is-link"
+            <button type="button" class="button is-small"
                     hx-get="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/{d.id}/prevalidacion"
                     hx-target="#prevalidacion-panel" hx-swap="innerHTML">Refrescar</button>
         </div>

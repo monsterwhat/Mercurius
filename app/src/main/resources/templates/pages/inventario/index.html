@@ -24,6 +24,14 @@
     - Export: normal browser POST to the T17 endpoint (NOT htmx) so
       Content-Disposition downloads; gated to the 'registro' role like the
       legacy SessionController.registros rendered checks.
+
+  WHAT CHANGED IN THE UI PASS
+    - The upload card was a `.box`; it is a _kit/surface now (same recipe
+      as pages/recibos/index.html), so the screen has one kind of panel.
+    - The per-tab `div.level` rows are _kit/action-bar: the tab heading in
+      the {#left} slot, the buttons in the {#actions} slot. A row that
+      only held a heading is that heading and nothing else.
+    - Every table below is a _kit/surface (see tabla-*.html).
 !}
 {#include layout}
     {#title}Gestión de Inventario | Mercurius{/title}
@@ -44,12 +52,8 @@
         {! ── Subir XML (subirFacturas.xhtml parity: uploadController → Parser).
             hx-encoding="multipart/form-data" POST with progress bar; the
             upload-resultado fragment surfaces parser errors. ── !}
-        <div class="level mt-5">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Subir Facturas Electrónicas</h2>
-            </div>
-        </div>
-        <div class="box is-shadowless" style="padding:0.75rem">
+        {#include _kit/surface title="Subir Facturas Electrónicas" }
+            {#content}
             <form id="inventario-upload-forma"
                   hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/upload"
                   hx-encoding="multipart/form-data"
@@ -67,15 +71,13 @@
                 </div>
             </form>
             <div id="inventario-upload-resultado"></div>
-        </div>
+            {/content}
+        {/include}
 
         {! ── Ajustes Activos ──────────────────────────────────────── !}
         <div x-show="tab === 'activos'">
-        <div class="level mt-5">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Ajustes Activos</h2>
-            </div>
-            <div class="level-right">
+        {#include _kit/surface title="Ajustes Activos" }
+            {#actions}
                 <div class="buttons">
                     {#include _kit/modal id="crear-ajuste" title="Crear Ajuste" triggerLabel="Crear Ajuste" triggerClass="is-primary"
                          bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
@@ -88,43 +90,49 @@
                     </form>
                     {/if}
                 </div>
-            </div>
-        </div>
-        {#include pages/inventario/tabla-activos modelo=tablaActivos q=tablaActivos.q /}
+            {/actions}
+            {#content}
+                {#include pages/inventario/tabla-activos modelo=tablaActivos q=tablaActivos.q /}
+            {/content}
+        {/include}
         </div>
 
         {! ── Ajustes Inactivos ────────────────────────────────────── !}
         <div x-show="tab === 'inactivos'" style="display:none">
-        <div class="level mt-5">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Ajustes Inactivos</h2>
-            </div>
-        </div>
-        {#include pages/inventario/tabla-inactivos modelo=tablaInactivos q=tablaInactivos.q /}
+        {#include _kit/surface title="Ajustes Inactivos" }
+            {#content}
+                {#include pages/inventario/tabla-inactivos modelo=tablaInactivos q=tablaInactivos.q /}
+            {/content}
+        {/include}
         </div>
 
         {! ── Movimientos Procesados ───────────────────────────────── !}
         <div x-show="tab === 'procesados'" style="display:none">
-        <div class="level mt-5">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Movimientos Procesados</h2>
-            </div>
-        </div>
-        {#include pages/inventario/tabla-procesados modelo=tablaProcesados q=tablaProcesados.q /}
+        {#include _kit/surface title="Movimientos Procesados" }
+            {#content}
+                {#include pages/inventario/tabla-procesados modelo=tablaProcesados q=tablaProcesados.q /}
+            {/content}
+        {/include}
         </div>
 
         {! ── Movimientos Pendientes (revisión) ────────────────────── !}
         <div x-show="tab === 'pendientes'" style="display:none">
-        <div class="level mt-5">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Movimientos Pendientes</h2>
-            </div>
-            <div class="level-right">
-                {#include _kit/modal id="rapido-inventario" title="Procesado Rápido de Inventario" triggerLabel="Procesado Rápido" triggerClass="is-warning"
-                     bodyUrl="/api/app/inventario/formularios/rapido"}{/include}
-            </div>
-        </div>
-        {#include pages/inventario/tabla-pendientes modelo=tablaPendientes q=tablaPendientes.q /}
+        {#include _kit/surface title="Movimientos Pendientes" }
+            {#actions}
+                {#include _kit/modal id="rapido-inventario" title="Procesado Rápido de Inventario" triggerClass="is-hidden"
+                     bodyUrl="/api/app/inventario/formularios/rapido" }
+                    {#trigger}
+                        <button type="button" class="button" aria-haspopup="dialog"
+                                @click="open = true; $nextTick(() => $refs.card.focus())"
+                                hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/formularios/rapido"
+                                hx-target="#rapido-inventario-body" hx-swap="innerHTML">Procesado Rápido</button>
+                    {/trigger}
+                {/include}
+            {/actions}
+            {#content}
+                {#include pages/inventario/tabla-pendientes modelo=tablaPendientes q=tablaPendientes.q /}
+            {/content}
+        {/include}
         </div>
     </section>
 

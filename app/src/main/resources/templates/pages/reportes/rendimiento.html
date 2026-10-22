@@ -11,64 +11,48 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="inventario-header">
-            <h1 class="title is-3 has-text-centered">{titulo}</h1>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-number">{totalProductos}</span>
-                    <span class="stat-label">Total Productos</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{totalIngresos}</span>
-                    <span class="stat-label">Ingresos</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{precioPromedio}</span>
-                    <span class="stat-label">Precio Promedio</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{categoriaTop}</span>
-                    <span class="stat-label">Categoría Top</span>
+        {! One strip, one answer, one colour. The four counts are plain
+           numbers, not links and not tabs: a metric with no href IS the
+           number card. !}
+        {#include _kit/page-header title=titulo subtitle="Qué se vende, a qué precio y dónde" /}
+        <div class="metric-strip">
+            {#include _kit/metric label="Total productos" value=totalProductos /}
+            {#include _kit/metric label="Ingresos" value=totalIngresos /}
+            {#include _kit/metric label="Precio promedio" value=precioPromedio /}
+            {#include _kit/metric label="Categoría top" value=categoriaTop /}
+        </div>
+
+        {#include _kit/filter-bar id="filtros-rendimiento" method="get"}
+            <input type="hidden" name="seccion" value="{seccion}"/>
+            <div class="field">
+                <label class="label" for="desde">Fecha Inicio</label>
+                <div class="control">
+                    <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
                 </div>
             </div>
-        </div>
+            <div class="field">
+                <label class="label" for="hasta">Fecha Fin</label>
+                <div class="control">
+                    <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
+                </div>
+            </div>
+            {#actions}
+            <button class="button is-primary" type="submit">Cargar Datos</button>
+            {/actions}
+        {/include}
 
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <input type="hidden" name="seccion" value="{seccion}"/>
-                <div class="column is-narrow field">
-                    <label class="label" for="desde">Fecha Inicio</label>
-                    <div class="control">
-                        <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label" for="hasta">Fecha Fin</label>
-                    <div class="control">
-                        <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
-                    <div class="control">
-                        <button class="button is-danger" type="submit">Cargar Datos</button>
-                    </div>
-                </div>
-            </form>
-        </div>
 
-        <div class="nav-cards">
-            <a class="nav-card button is-success {#if seccion == 'mas'}is-outlined{/if}"
-               href="?seccion=mas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Más Vendidos</a>
-            <a class="nav-card button is-danger {#if seccion == 'menos'}is-outlined{/if}"
-               href="?seccion=menos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Menos Vendidos</a>
-            <a class="nav-card button is-info {#if seccion == 'ingresos'}is-outlined{/if}"
-               href="?seccion=ingresos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Ingresos</a>
-            <a class="nav-card button is-link {#if seccion == 'departamento'}is-outlined{/if}"
-               href="?seccion=departamento{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Por Departamento</a>
-        </div>
+
+        {#include _kit/view-tabs ariaLabel="Vistas de rendimiento"}
+            {#tabs}
+            <a class="view-tab {#if seccion == 'mas'}is-active{/if}" href="?seccion=mas{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'mas'}aria-current="page"{/if}>Más vendidos</a>
+            <a class="view-tab {#if seccion == 'menos'}is-active{/if}" href="?seccion=menos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'menos'}aria-current="page"{/if}>Menos vendidos</a>
+            <a class="view-tab {#if seccion == 'ingresos'}is-active{/if}" href="?seccion=ingresos{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'ingresos'}aria-current="page"{/if}>Por ingresos</a>
+            <a class="view-tab {#if seccion == 'departamento'}is-active{/if}" href="?seccion=departamento{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'departamento'}aria-current="page"{/if}>Por departamento</a>
+            {/tabs}
+        {/include}
+
+
 
         {#include pages/reportes/_tablas/rendimiento /}
 
@@ -118,10 +102,15 @@
                 valores.push(Number(datos[clave]));
             });
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                // One hue for the data: --mercurius-chart-series-1, resolved
+                // through resolveColour() because a canvas cannot paint var().
+                var rootStyle = getComputedStyle(document.documentElement);
+                var seriesOne = window.MercuriusCharts.resolveColour(
+                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
                 window.MercuriusCharts.create('grafica-rendimiento', {
                     type: 'bar',
                     labels: etiquetas,
-                    datasets: [{ label: 'Ventas por departamento', data: valores, backgroundColor: '#48c78e' }],
+                    datasets: [{ label: 'Ventas por departamento', data: valores, backgroundColor: seriesOne }],
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
             }

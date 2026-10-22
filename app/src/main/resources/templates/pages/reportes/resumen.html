@@ -9,71 +9,59 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="inventario-header">
-            <h1 class="title is-3">{titulo}</h1>
-            <div class="stats-grid">
-                <a class="stat-card button {#if vista == 'todos'}is-primary{/if}"
-                   href="?vista=todos{#if filtros.q??}&q={filtros.q}{/if}{#if filtros.familia??}&familia={filtros.familia}{/if}{#if filtros.departamento??}&departamento={filtros.departamento}{/if}">
-                    <span class="stat-number">{todosCount}</span>
-                    <span class="stat-label">Todos</span>
-                </a>
-                <a class="stat-card button is-danger {#if vista == 'cero'}is-outlined{/if}"
-                   href="?vista=cero{#if filtros.q??}&q={filtros.q}{/if}{#if filtros.familia??}&familia={filtros.familia}{/if}{#if filtros.departamento??}&departamento={filtros.departamento}{/if}">
-                    <span class="stat-number">{ceroCount}</span>
-                    <span class="stat-label">Cero</span>
-                </a>
-                <a class="stat-card button is-dark {#if vista == 'negativos'}is-outlined{/if}"
-                   href="?vista=negativos{#if filtros.q??}&q={filtros.q}{/if}{#if filtros.familia??}&familia={filtros.familia}{/if}{#if filtros.departamento??}&departamento={filtros.departamento}{/if}">
-                    <span class="stat-number">{negativoCount}</span>
-                    <span class="stat-label">Negativos</span>
-                </a>
-            </div>
+        {! One strip, one answer, one colour. The three counts are FILTERS: each
+           one links to the same board with a different vista, preserving the
+           other filters. A metric with an href IS the filter card. !}
+        {#include _kit/page-header title=titulo subtitle="Niveles de existencias por vista" /}
+        <div class="metric-strip">
+            {#include _kit/metric label="Todos" value=todosCount
+                 href=(baseUrl + "?vista=todos" + ((filtros.q ?: "") != "" ? "&q=" + filtros.q : "") + ((filtros.familia ?: "") != "" ? "&familia=" + filtros.familia : "") + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : ""))
+                 active=(vista == "todos") /}
+            {#include _kit/metric label="En cero" value=ceroCount
+                 href=(baseUrl + "?vista=cero" + ((filtros.q ?: "") != "" ? "&q=" + filtros.q : "") + ((filtros.familia ?: "") != "" ? "&familia=" + filtros.familia : "") + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : ""))
+                 active=(vista == "cero") /}
+            {#include _kit/metric label="Negativos" value=negativoCount
+                 href=(baseUrl + "?vista=negativos" + ((filtros.q ?: "") != "" ? "&q=" + filtros.q : "") + ((filtros.familia ?: "") != "" ? "&familia=" + filtros.familia : "") + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : ""))
+                 active=(vista == "negativos") /}
         </div>
 
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <input type="hidden" name="vista" value="{vista}"/>
-                <div class="column is-narrow field">
-                    <label class="label" for="q">Buscar</label>
-                    <div class="control">
-                        <input class="input" type="text" id="q" name="q"
-                               placeholder="Búsqueda general..." value="{filtros.q}"/>
-                    </div>
+        {#include _kit/filter-bar id="filtros-resumen" method="get"}
+            <input type="hidden" name="vista" value="{vista}"/>
+            <div class="field">
+                <label class="label" for="q">Buscar</label>
+                <div class="control">
+                    <input class="input" type="text" id="q" name="q"
+                           placeholder="Búsqueda general..." value="{filtros.q}"/>
                 </div>
-                <div class="column is-narrow field">
-                    <label class="label" for="familia">Familia</label>
-                    <div class="control select">
-                        <select name="familia" id="familia">
-                            <option value="">Todas las Familias</option>
-                            {#for f in familias}
-                            <option value="{f.id}" {#if filtros.familia == f.id.toString()}selected{/if}>{f.nombre}</option>
-                            {/for}
-                        </select>
-                    </div>
+            </div>
+            <div class="field">
+                <label class="label" for="familia">Familia</label>
+                <div class="control select">
+                    <select name="familia" id="familia">
+                        <option value="">Todas las Familias</option>
+                        {#for f in familias}
+                        <option value="{f.id}" {#if filtros.familia == f.id.toString()}selected{/if}>{f.nombre}</option>
+                        {/for}
+                    </select>
                 </div>
-                <div class="column is-narrow field">
-                    <label class="label" for="departamento">Departamento</label>
-                    <div class="control select">
-                        <select name="departamento" id="departamento">
-                            <option value="">Todos los Departamentos</option>
-                            {#for d in departamentos}
-                            <option value="{d.id}" {#if filtros.departamento == d.id.toString()}selected{/if}>{d.nombre}</option>
-                            {/for}
-                        </select>
-                    </div>
+            </div>
+            <div class="field">
+                <label class="label" for="departamento">Departamento</label>
+                <div class="control select">
+                    <select name="departamento" id="departamento">
+                        <option value="">Todos los Departamentos</option>
+                        {#for d in departamentos}
+                        <option value="{d.id}" {#if filtros.departamento == d.id.toString()}selected{/if}>{d.nombre}</option>
+                        {/for}
+                    </select>
                 </div>
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
-                    <div class="control">
-                        <button class="button is-warning" type="submit">Filtrar</button>
-                        <a class="button is-light"
-                           href="{config:['quarkus.http.root-path']}{baseUrl}?vista={vista}">Limpiar Filtros</a>
-                    </div>
-                </div>
-            </form>
-        </div>
+            </div>
+            {#actions}
+            <button class="button is-primary" type="submit">Filtrar</button>
+            <a class="button"
+               href="{config:['quarkus.http.root-path']}{baseUrl}?vista={vista}">Limpiar Filtros</a>
+            {/actions}
+        {/include}
 
         {#include pages/reportes/_tablas/resumen /}
 
@@ -85,10 +73,16 @@
             var labels = [{#for l in chartLabels}'{l}',{/for}];
             var values = [{#for v in chartValues}{v},{/for}];
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                // One hue for the data: the series colour comes from the
+                // --mercurius-chart-series-1 token (resolved through
+                // resolveColour(), because a canvas cannot paint var()).
+                var rootStyle = getComputedStyle(document.documentElement);
+                var seriesOne = window.MercuriusCharts.resolveColour(
+                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
                 window.MercuriusCharts.create('grafica-resumen', {
                     type: 'bar',
                     labels: labels,
-                    datasets: [{ label: 'Stock Actual', data: values, backgroundColor: '#3298dc' }],
+                    datasets: [{ label: 'Stock Actual', data: values, backgroundColor: seriesOne }],
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
             }

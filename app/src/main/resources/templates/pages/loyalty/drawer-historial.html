@@ -18,48 +18,59 @@
   Legacy parity: pointsHistoryDialog of secured/pages/Loyalty/index.xhtml —
   Fecha dd/MM/yyyy HH:mm, Tipo + descripción, Puntos (earn=green, else red),
   Saldo; emptyMessage "No hay transacciones de puntos".
-!}
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The summary card is a _kit/surface: the client name is the panel's title
+    (a real <h2> under the page's <h1>) and the tier chip sits in the surface
+    header's action slot. The old <div class="level"> with a <p class="title">
+    on the left and the chip on the right was a hand-rolled header.
+  - The tier chip follows the app's chip recipe (docs/ui-kit.md 10.1): a PALE
+    TINT of the tier hue carrying an ink mixed toward the text colour. The old
+    markup painted the raw hue with #ffffff text, which is 1.1:1 on the gold
+    tier - the word inside the chip was unreadable.
+  - The pager row is a _kit/action-bar: the "Página X de Y" text on the left
+    and the two pager buttons on the right, instead of a hand-rolled level.
+  - The table lost its zebra striping (the ui-kit's rule for every table in
+    the app) and its numeric columns carry `num`: right-aligned with tabular
+    figures.
+ !}
 <div id="drawer-historial">
     {! ── Client summary card (LoyaltySummaryDTO + tier badge) ────────── !}
-    <div class="box is-shadowless has-background-light" style="margin-bottom:1rem">
-        <div class="level">
-            <div class="level-left">
-                <div>
-                    <p class="title is-5" style="margin-bottom:0">{resumen.clienteNombre}</p>
-                    <p class="subtitle is-6" style="margin-bottom:0">
-                        {#if resumen.lastPurchaseDate??}Última compra: {time:format(resumen.lastPurchaseDate, 'dd/MM/yyyy')}{#else}Sin compras registradas{/if}
-                    </p>
+    {#include _kit/surface title=resumen.clienteNombre}
+        {#actions}
+            <span class="tag" style="background-color:color-mix(in srgb, {resumen.tierColor} 20%, var(--bulma-scheme-main)); color:color-mix(in srgb, {resumen.tierColor} 30%, var(--bulma-text-strong))">
+                {#if resumen.tierColor == '#ffd700'}Oro{#else if resumen.tierColor == '#c0c0c0'}Plata{#else if resumen.tierColor == '#cd7f32'}Bronce{#else}Básico{/if}
+            </span>
+        {/actions}
+        {#content}
+            <p class="subtitle is-6">
+                {#if resumen.lastPurchaseDate??}Última compra: {time:format(resumen.lastPurchaseDate, 'dd/MM/yyyy')}{#else}Sin compras registradas{/if}
+            </p>
+            <div class="columns has-text-centered" style="margin-top:0.5rem;margin-bottom:0">
+                <div class="column">
+                    <p class="heading">Puntos Acumulados</p>
+                    <p class="title is-4" style="margin-bottom:0">{#if resumen.puntosAcumulados??}{resumen.puntosAcumulados}{#else}0{/if}</p>
+                </div>
+                <div class="column">
+                    <p class="heading">Estado de Puntos</p>
+                    {#if resumen.statusPuntos == 'active'}<span class="status-chip is-success">Activo</span>
+                    {#else if resumen.statusPuntos == 'inactive'}<span class="status-chip is-warning">Inactivo</span>
+                    {#else if resumen.statusPuntos == 'expired'}<span class="status-chip is-danger">Expirado</span>
+                    {#else}<span class="tag">Sin estado</span>{/if}
                 </div>
             </div>
-            <div class="level-right">
-                <span class="tag is-medium" style="background-color:{resumen.tierColor};color:#ffffff">
-                    {#if resumen.tierColor == '#ffd700'}Oro{#else if resumen.tierColor == '#c0c0c0'}Plata{#else if resumen.tierColor == '#cd7f32'}Bronce{#else}B&aacute;sico{/if}
-                </span>
-            </div>
-        </div>
-        <div class="columns has-text-centered" style="margin-top:0.5rem;margin-bottom:0">
-            <div class="column">
-                <p class="heading">Puntos Acumulados</p>
-                <p class="title is-4" style="margin-bottom:0">{#if resumen.puntosAcumulados??}{resumen.puntosAcumulados}{#else}0{/if}</p>
-            </div>
-            <div class="column">
-                <p class="heading">Estado de Puntos</p>
-                {#if resumen.statusPuntos == 'active'}<span class="tag is-success">Activo</span>
-                {#else if resumen.statusPuntos == 'inactive'}<span class="tag is-warning">Inactivo</span>
-                {#else if resumen.statusPuntos == 'expired'}<span class="tag is-danger">Expirado</span>
-                {#else}<span class="tag is-light">Sin estado</span>{/if}
-            </div>
-        </div>
-    </div>
+        {/content}
+    {/include}
 
     {! ── Paginated points history (PuntosTransaccionDTO) ─────────────── !}
-    <table class="table is-striped is-hoverable is-fullwidth is-narrow">
+    <table class="table is-hoverable is-fullwidth">
         <thead>
             <tr>
                 <th scope="col">Fecha</th>
                 <th scope="col">Tipo</th>
-                <th scope="col" class="has-text-right">Puntos</th>
-                <th scope="col" class="has-text-right">Saldo</th>
+                <th scope="col" class="num">Puntos</th>
+                <th scope="col" class="num">Saldo</th>
             </tr>
         </thead>
         <tbody>
@@ -70,10 +81,10 @@
                     <strong>{t.tipoTransaccion}</strong>
                     {#if t.descripcion??}<br/><span class="is-size-7 has-text-grey">{t.descripcion}</span>{/if}
                 </td>
-                <td class="has-text-right has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
+                <td class="num has-text-weight-bold {#if t.tipoTransaccion == 'earn'}has-text-success{#else}has-text-danger{/if}">
                     {#if t.puntos??}{t.puntos}{#else}0{/if}
                 </td>
-                <td class="has-text-right has-text-weight-bold">{#if t.saldoPuntos??}{t.saldoPuntos}{#else}&mdash;{/if}</td>
+                <td class="num has-text-weight-bold">{#if t.saldoPuntos??}{t.saldoPuntos}{#else}&mdash;{/if}</td>
             </tr>
             {#else}
             <tr><td colspan="4" class="has-text-centered has-text-grey">No hay transacciones de puntos</td></tr>
@@ -82,11 +93,11 @@
     </table>
 
     {! ── Drawer-local pager (hx swaps keep the dialog open) ──────────── !}
-    <div class="level">
-        <div class="level-left">
-            <span class="has-text-grey">P&aacute;gina {paginaActual} de {totalPages} &middot; {total} movimientos</span>
-        </div>
-        <div class="level-right buttons" style="margin-bottom:0">
+    {#include _kit/action-bar}
+        {#left}
+            <span>Página {paginaActual} de {totalPages} · {total} movimientos</span>
+        {/left}
+        {#actions}
             {#if paginaAnterior >= 0}
             <button type="button" class="button is-small"
                     hx-get="{config:['quarkus.http.root-path']}/api/app/loyalty/{resumen.clienteCode}/view?page={paginaAnterior}&size={size}"
@@ -101,8 +112,8 @@
             {#else}
             <button type="button" class="button is-small" disabled>Siguiente &rarr;</button>
             {/if}
-        </div>
-    </div>
+        {/actions}
+    {/include}
 
     {! Close affordance for the shared kit modal bridge (index.html). !}
     <div class="has-text-right">

@@ -44,10 +44,10 @@
                         <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
                         <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
                         <td>
-                            {#if c.statusPuntos == 'active'}<span class="tag is-success">{c.statusPuntos}</span>
-                            {#else if c.statusPuntos == 'inactive'}<span class="tag is-warning">{c.statusPuntos}</span>
-                            {#else if c.statusPuntos??}<span class="tag is-danger">{c.statusPuntos}</span>
-                            {#else}<span class="tag is-light">Sin estado</span>{/if}
+                            {#if c.statusPuntos == 'active'}<span class="status-chip is-success">{c.statusPuntos}</span>
+                            {#else if c.statusPuntos == 'inactive'}<span class="status-chip is-warning">{c.statusPuntos}</span>
+                            {#else if c.statusPuntos??}<span class="status-chip is-danger">{c.statusPuntos}</span>
+                            {#else}<span class="status-chip is-neutral">Sin estado</span>{/if}
                         </td>
                         <td>
                             <button type="button" class="button is-small is-info"

@@ -8,6 +8,12 @@
     resultados  List    - Models.Cabys rows (CabysService.searchByName, cap 10)
     pickerId    String  - optional DOM id of the target code input; when set,
                           picking a row writes the codigo there (data-picker-id)
+
+  WHAT CHANGED IN THE UI PASS
+    - The picker table lost its zebra striping (banded rows make a dense
+      table louder than its data) and the tax column carries `num`.
+    - "Seleccionar" is the dialog's one filled primary; it was a second
+      accent (is-success).
 !}
 <div id="buscador-cabys-fragmento">
     <div class="field">
@@ -22,18 +28,18 @@
         </div>
     </div>
 
-    <table class="table is-striped is-hoverable is-fullwidth is-narrow">
+    <table class="table is-hoverable is-fullwidth is-narrow">
         <thead>
-            <tr><th>Código</th><th>Descripción</th><th class="has-text-centered">Impuesto</th><th></th></tr>
+            <tr><th>Código</th><th>Descripción</th><th class="num">Impuesto</th><th></th></tr>
         </thead>
         <tbody>
             {#for cabys in resultados}
             <tr>
                 <td class="kit-code">{cabys.codigo}</td>
                 <td>{#if cabys.descripcion??}{cabys.descripcion}{#else}&mdash;{/if}</td>
-                <td class="has-text-centered">{#if cabys.impuesto??}{cabys.impuesto}%{#else}&mdash;{/if}</td>
+                <td class="num">{#if cabys.impuesto??}{cabys.impuesto}%{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
-                    <button type="button" class="button is-small is-success"
+                    <button type="button" class="button is-small is-primary"
                             data-kit-pick="{cabys.codigo}"
                             {#if cabys.impuesto??}data-kit-impuesto="{cabys.impuesto}"{/if}
                             {#if pickerId??}data-picker-id="{pickerId}"{/if}>Seleccionar</button>
