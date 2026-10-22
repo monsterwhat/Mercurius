@@ -15,13 +15,13 @@
         {#include _kit/page-header title=titulo subtitle="Niveles de existencias por vista" /}
         <div class="metric-strip">
             {#include _kit/metric label="Todos" value=todosCount
-                 href=(baseUrl + "?vista=todos" + ((filtros.q ?: "") != "" ? "&q=" + filtros.q : "") + ((filtros.familia ?: "") != "" ? "&familia=" + filtros.familia : "") + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : ""))
+                 href=(baseUrl + "?vista=todos" + ("&q=" + (filtros.q ?: "")) + ("&familia=" + (filtros.familia ?: "")) + ("&departamento=" + (filtros.departamento ?: "")))
                  active=(vista == "todos") /}
             {#include _kit/metric label="En cero" value=ceroCount
-                 href=(baseUrl + "?vista=cero" + ((filtros.q ?: "") != "" ? "&q=" + filtros.q : "") + ((filtros.familia ?: "") != "" ? "&familia=" + filtros.familia : "") + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : ""))
+                 href=(baseUrl + "?vista=cero" + ("&q=" + (filtros.q ?: "")) + ("&familia=" + (filtros.familia ?: "")) + ("&departamento=" + (filtros.departamento ?: "")))
                  active=(vista == "cero") /}
             {#include _kit/metric label="Negativos" value=negativoCount
-                 href=(baseUrl + "?vista=negativos" + ((filtros.q ?: "") != "" ? "&q=" + filtros.q : "") + ((filtros.familia ?: "") != "" ? "&familia=" + filtros.familia : "") + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : ""))
+                 href=(baseUrl + "?vista=negativos" + ("&q=" + (filtros.q ?: "")) + ("&familia=" + (filtros.familia ?: "")) + ("&departamento=" + (filtros.departamento ?: "")))
                  active=(vista == "negativos") /}
         </div>
 

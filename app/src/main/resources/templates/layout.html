@@ -53,7 +53,7 @@
     <footer class="footer">
         <div class="content has-text-centered">
             <p>{#include fragments/logo-img alt="Mercurius" style="width:28px;height:28px;vertical-align:middle;" /}
-                <strong>Mercurius</strong> &mdash; Sistema de Inventarios</p>
+                <strong>Mercurius</strong> &mdash; Inventario, facturación y Hacienda</p>
         </div>
     </footer>
 
@@ -69,6 +69,21 @@
       should converge on in W6.
     !}
     {#include _kit/toast-container /}
+
+    {!
+      Global keyboard accelerator: / focuses the first search field on any
+      board (the operator's one accelerator besides the scanner's Enter).
+      Ignored while typing in a field, and never hijacks a modified key.
+    !}
+    <script>
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+        var tag = (document.activeElement && document.activeElement.tagName) || '';
+        if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+        var q = document.querySelector('input[type="search"], input[name="q"]');
+        if (q) { e.preventDefault(); q.focus(); }
+    });
+    </script>
 
 </body>
 </html>

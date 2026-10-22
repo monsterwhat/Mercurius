@@ -40,11 +40,11 @@ class MargenesReportesPageTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body(containsString("Análisis de Márgenes de Utilidad"))
-                .body(containsString("Margen Promedio"))
-                .body(containsString("Ingresos Totales"))
-                .body(containsString("Resumen por Departamento"))
-                .body(containsString("Top Artículos por Margen"))
-                .body(containsString("Artículos con Bajo Margen"))
+                .body(containsString("Margen promedio"))
+                .body(containsString("Ingresos totales"))
+                .body(containsString("Resumen por departamento"))
+                .body(containsString("Top artículos por margen"))
+                .body(containsString("Artículos con bajo margen"))
                 // T17 export contract: POST /api/app/export with dataset=profit-margins
                 .body(containsString("/api/app/export"))
                 .body(containsString("profit-margins"));

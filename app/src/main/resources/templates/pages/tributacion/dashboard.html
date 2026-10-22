@@ -52,7 +52,7 @@
                         @click="tab = 'resumen'">
                     <span class="metric-label">Total Emitidos</span>
                     <span class="metric-value">{totalEmitidos}</span>
-                    <span class="metric-detail">Tasa de éxito: {tasaExito}%</span>
+                    <span class="metric-detail">{#if totalEmitidos == 0}Sin datos todavía{#else}Tasa de éxito: {tasaExito}%{/if}</span>
                 </button>
                 <button type="button" class="metric-card is-interactive"
                         :class="{ 'is-active': tab === 'resumen' }"

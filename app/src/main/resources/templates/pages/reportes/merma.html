@@ -14,16 +14,16 @@
         {#include _kit/page-header title=titulo subtitle="Pérdidas por sección y período" /}
         <div class="metric-strip">
             {#include _kit/metric label="Total mermas" value=totalMerma
-                 href=(baseUrl + "?seccion=detalle" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+                 href=(baseUrl + "?seccion=detalle" + ("&desde=" + (filtros.desde ?: "")) + ("&hasta=" + (filtros.hasta ?: "")))
                  active=(seccion == 'detalle') /}
-            {#include _kit/metric label="% de merma" value=(porcentajeMerma + "%")
-                 href=(baseUrl + "?seccion=causas" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+            {#include _kit/metric label="% de merma" value=(porcentajeMerma.toString() + "%")
+                 href=(baseUrl + "?seccion=causas" + ("&desde=" + (filtros.desde ?: "")) + ("&hasta=" + (filtros.hasta ?: "")))
                  active=(seccion == 'causas') /}
             {#include _kit/metric label="Movimiento total" value=movimientoTotal
-                 href=(baseUrl + "?seccion=departamentos" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+                 href=(baseUrl + "?seccion=departamentos" + ("&desde=" + (filtros.desde ?: "")) + ("&hasta=" + (filtros.hasta ?: "")))
                  active=(seccion == 'departamentos') /}
             {#include _kit/metric label="Registros" value=registros
-                 href=(baseUrl + "?seccion=detalle" + ((filtros.desde ?: "") != "" ? "&desde=" + filtros.desde : "") + ((filtros.hasta ?: "") != "" ? "&hasta=" + filtros.hasta : ""))
+                 href=(baseUrl + "?seccion=detalle" + ("&desde=" + (filtros.desde ?: "")) + ("&hasta=" + (filtros.hasta ?: "")))
                  active=(seccion == 'detalle') /}
         </div>
 

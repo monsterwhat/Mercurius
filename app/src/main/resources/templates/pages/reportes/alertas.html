@@ -17,19 +17,19 @@
         {#include _kit/page-header title=titulo subtitle="Existencias bajo mínimo, sobrestock y sugerencias" /}
         <div class="metric-strip">
             {#include _kit/metric label="Sin stock" value=sinStock
-                 href=(baseUrl + "?seccion=alertas&tipo=Sin Stock" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 href=(baseUrl + "?seccion=alertas&tipo=Sin Stock" + ("&departamento=" + (filtros.departamento ?: "")) + ("&prioridad=" + (filtros.prioridad ?: "")))
                  active=(seccion == 'alertas' && filtros.tipo == 'Sin Stock') /}
             {#include _kit/metric label="Stock bajo" value=stockBajo
-                 href=(baseUrl + "?seccion=alertas&tipo=Stock Bajo" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 href=(baseUrl + "?seccion=alertas&tipo=Stock Bajo" + ("&departamento=" + (filtros.departamento ?: "")) + ("&prioridad=" + (filtros.prioridad ?: "")))
                  active=(seccion == 'alertas' && filtros.tipo == 'Stock Bajo') /}
             {#include _kit/metric label="Sobrestock" value=sobrestock
-                 href=(baseUrl + "?seccion=alertas&tipo=Sobrestock" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 href=(baseUrl + "?seccion=alertas&tipo=Sobrestock" + ("&departamento=" + (filtros.departamento ?: "")) + ("&prioridad=" + (filtros.prioridad ?: "")))
                  active=(seccion == 'alertas' && filtros.tipo == 'Sobrestock') /}
             {#include _kit/metric label="Sugerencias" value=sugerencias
-                 href=(baseUrl + "?seccion=sugerencias" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 href=(baseUrl + "?seccion=sugerencias" + ("&departamento=" + (filtros.departamento ?: "")) + ("&prioridad=" + (filtros.prioridad ?: "")))
                  active=(seccion == 'sugerencias') /}
             {#include _kit/metric label="Total alertas" value=totalAlertas
-                 href=(baseUrl + "?seccion=alertas" + ((filtros.departamento ?: "") != "" ? "&departamento=" + filtros.departamento : "") + ((filtros.prioridad ?: "") != "" ? "&prioridad=" + filtros.prioridad : ""))
+                 href=(baseUrl + "?seccion=alertas" + ("&departamento=" + (filtros.departamento ?: "")) + ("&prioridad=" + (filtros.prioridad ?: "")))
                  active=(seccion == 'alertas' && filtros.tipo == null) /}
         </div>
 
