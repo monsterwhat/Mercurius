@@ -27,7 +27,11 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <h1 class="title is-3">Facturas Recibidas</h1>
+        {! The screen's title was a bare heading on the page background while
+           the h2 below it sat inside a bordered box, so the h2 read louder
+           than the h1. _kit/page-header owns the header now. !}
+        {#include _kit/page-header title="Facturas Recibidas"
+             subtitle="Buzón de facturas electrónicas recibidas de proveedores" /}
 
         {! ── Subir XML (parseXMLFromUploadedFile/processFacturas parity) ── !}
         <div class="level">
@@ -47,7 +51,8 @@
                                name="files" accept=".xml" multiple required/>
                     </div>
                 </div>
-                <progress id="upload-progreso" class="progress is-primary" value="0" max="100">0%</progress>
+                <progress id="upload-progreso" class="progress is-primary" value="0" max="100"
+                          aria-label="Progreso de la carga">0%</progress>
                 <div class="field">
                     <button class="button is-primary" type="submit">Procesar Facturas</button>
                 </div>

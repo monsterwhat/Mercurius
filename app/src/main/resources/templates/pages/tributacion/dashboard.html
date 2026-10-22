@@ -10,6 +10,20 @@
   HTMX: the "Actualizar Dashboard" button re-fetches this same URL with the
   HX-Request header; the resource then renders ONLY the {#fragment id=kpis}
   section below into #tributacion-kpis (ui-kit §2.9 dual-mode contract).
+
+  THE LEGACY WRAPPER IS GONE
+  --------------------------
+  This screen used to open with <div class="tributacion-header"> and close it
+  at the very END of the fragment, so the pre-kit banner of web/index.scss
+  wrapped the WHOLE screen: a saturated teal slab with 2rem of padding, and
+  the kit's dark panel inherited --bulma-primary-invert on its <h1> - a
+  1.00:1 contrast, the screen's own name unreadable. _kit/page-header owns
+  the header now, and the metric strip and everything below it sit OUTSIDE
+  that wrapper.
+
+  The "Actualizar Dashboard" action also moved out of its position:fixed
+  container into the header's {#actions} slot: a floating control sits on
+  top of the last rows of the tables underneath it.
 !}
 {#include layout}
     {#title}Dashboard Hacienda | Mercurius{/title}
@@ -17,9 +31,16 @@
     {#body}
             <div id="tributacion-kpis" x-data="{ tab: 'resumen' }">
             {#fragment id=kpis}
-            <div class="tributacion-header">
             {#include _kit/page-header title="Dashboard Hacienda"
-                 subtitle="Estado actual de las facturas enviadas a Hacienda" /}
+                 subtitle="Estado actual de las facturas enviadas a Hacienda"}
+                {#actions}
+                    <button type="button" class="button is-primary"
+                            hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                            hx-target="#tributacion-kpis" hx-swap="innerHTML">
+                        Actualizar Dashboard
+                    </button>
+                {/actions}
+            {/include}
 
             {! The six numbers are KPIs AND the switcher for the three views.
                The kit metric include cannot take Alpine attributes, so this
@@ -65,14 +86,6 @@
                     <span class="metric-label">Emitidos Hoy</span>
                     <span class="metric-value">{emitidosHoy}</span>
                     <span class="metric-detail">{#include _kit/icon name="check" /} {aceptadosHoy} &nbsp;{#include _kit/icon name="close" /} {rechazadosHoy}</span>
-                </button>
-            </div>
-
-            <div class="buttons is-centered" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
-                <button type="button" class="button is-primary"
-                        hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
-                        hx-target="#tributacion-kpis" hx-swap="innerHTML">
-                    Actualizar Dashboard
                 </button>
             </div>
 
@@ -150,6 +163,6 @@
             </div>
             </div>
             {/fragment}
-        </div>
+            </div>
     {/body}
 {/include}

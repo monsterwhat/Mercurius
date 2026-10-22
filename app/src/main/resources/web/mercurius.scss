@@ -129,32 +129,97 @@
 }
 
 // -----------------------------------------------------------------------------
+// 3.6b The accent as TEXT.
+//
+// Bulma's primary is a LIGHT colour (teal, L~0.49). Used as a text colour on
+// the light ground it measures about 1.9:1 — the active tab's label, the
+// sort arrow and the active metric label simply vanish on a light page, and
+// the app only looked right because this machine was in dark mode.
+//
+// Mixed toward the text colour, the accent becomes a deep teal on a light
+// page and a bright teal on a dark one, and clears 4.5:1 in both. Every place
+// the accent is TEXT uses this token; every place it is a FILL or a rule uses
+// --bulma-primary itself.
+// -----------------------------------------------------------------------------
+:root {
+    --mercurius-accent-ink: color-mix(in srgb, var(--bulma-primary) 45%, var(--bulma-text-strong));
+}
+
+// -----------------------------------------------------------------------------
 // 3.7 Status pills — pale tint, dark ink.
 //
 // A saturated fill with white text is how the previous chip styling read, and
 // it failed WCAG AA on every semantic colour (white on Bulma success is
 // ~1.9:1; white on Bulma warning is ~1.1:1). The pair below is derived from
 // the SAME Bulma semantic hue, so the palette stays Bulma's, but the ink is
-// mixed toward the scheme's inverse — dark on a light scheme, light on a dark
-// one — and lands above 4.5:1 in both.
+// mixed toward the text colour, which flips with the scheme — dark ink on a
+// light scheme, light ink on a dark one — and lands above 4.5:1 in both.
+//
+// The ink mixes toward --bulma-text-strong and NOT toward
+// --bulma-scheme-invert. The name looks like the scheme's inverse and is
+// not: in Bulma 1.0.4 --bulma-scheme-invert-l is 4% in BOTH schemes, so it
+// is a fixed near-black. Mixing toward it produced dark ink on the dark
+// scheme's tint, which is about 2:1 — the chip was unreadable in the dark
+// scheme and fine in the light one.
 //
 // color-mix() keeps the tokens scheme-aware without a single hex literal.
 // -----------------------------------------------------------------------------
 :root {
     --mercurius-pill-success-bg: color-mix(in srgb, var(--bulma-success) 15%, var(--bulma-scheme-main));
-    --mercurius-pill-success-ink: color-mix(in srgb, var(--bulma-success) 45%, var(--bulma-scheme-invert));
+    --mercurius-pill-success-ink: color-mix(in srgb, var(--bulma-success) 30%, var(--bulma-text-strong));
 
     --mercurius-pill-warning-bg: color-mix(in srgb, var(--bulma-warning) 20%, var(--bulma-scheme-main));
-    --mercurius-pill-warning-ink: color-mix(in srgb, var(--bulma-warning) 45%, var(--bulma-scheme-invert));
+    --mercurius-pill-warning-ink: color-mix(in srgb, var(--bulma-warning) 30%, var(--bulma-text-strong));
 
     --mercurius-pill-info-bg: color-mix(in srgb, var(--bulma-info) 15%, var(--bulma-scheme-main));
-    --mercurius-pill-info-ink: color-mix(in srgb, var(--bulma-info) 45%, var(--bulma-scheme-invert));
+    --mercurius-pill-info-ink: color-mix(in srgb, var(--bulma-info) 30%, var(--bulma-text-strong));
 
     --mercurius-pill-danger-bg: color-mix(in srgb, var(--bulma-danger) 12%, var(--bulma-scheme-main));
-    --mercurius-pill-danger-ink: color-mix(in srgb, var(--bulma-danger) 45%, var(--bulma-scheme-invert));
+    --mercurius-pill-danger-ink: color-mix(in srgb, var(--bulma-danger) 30%, var(--bulma-text-strong));
 
     --mercurius-pill-neutral-bg: var(--bulma-scheme-main-ter);
     --mercurius-pill-neutral-ink: var(--bulma-text);
+}
+
+// -----------------------------------------------------------------------------
+// 3.8 Focus — the ring is the accent, not Bulma's link blue
+//
+// Bulma drives EVERY focus ring (the input border, the button halo, the
+// pagination link, the checkbox) through three variables, and points them at
+// --bulma-link, which is Bulma's blue. A blue ring next to teal tabs is a
+// SECOND accent on the same screen, and the ring is the one thing a keyboard
+// user sees first. Repointing the three variables moves every ring to the
+// primary hue in one move, without touching a single control.
+//
+// The hue never changes; only the lightness does, because teal at 41% is
+// 1.95:1 on a white ground and 9.3:1 on the dark one. On the light scheme
+// the ring drops to a darker step of the SAME hue (--bulma-primary-30,
+// 4.8:1 on white). The accent is the accent in both schemes.
+//
+// NOTE: --bulma-scheme-invert is NOT the inverse of the current scheme. It is
+// a fixed near-black (4% lightness) in BOTH of Bulma's schemes, so it cannot
+// be used to pick "the far end of the ground" for an ink colour.
+// -----------------------------------------------------------------------------
+:root,
+.theme-light,
+.theme-dark {
+    --mercurius-focus-ring: var(--bulma-primary);
+
+    --bulma-focus-h: var(--bulma-primary-h);
+    --bulma-focus-s: var(--bulma-primary-s);
+    --bulma-focus-l: var(--bulma-primary-l);
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --mercurius-focus-ring: var(--bulma-primary-30);
+        --bulma-focus-l: var(--bulma-primary-30-l);
+    }
+}
+
+.theme-light {
+    --mercurius-focus-ring: var(--bulma-primary-30);
+    --bulma-focus-l: var(--bulma-primary-30-l);
 }
 
 // =============================================================================
@@ -188,10 +253,12 @@
 // No page used it — the kit was the only place it existed.
 
 // APP TYPE IS NOT DISPLAY TYPE.
-// Bulma's .title.is-3 is 2.5rem (40px), which is a landing-page size. An
-// operator scanning a board all day reads a 40px heading as shouting and pays
-// for it in vertical space. The page title is capped at 1.75rem (28px) —
-// still the largest thing on the screen, still one clear h1.
+// Bulma's .title.is-3 is 2rem (32px), which is the very TOP of the range an
+// app-screen title may take (18-32px) - 40px is .title.is-2, and that is a
+// landing-page size. An operator scanning a board all day reads a 32px
+// heading as shouting and pays for it in vertical space on every screen, so
+// the page title is capped at 1.75rem (28px): still the largest thing on
+// the screen, still one clear h1, and still inside the app range.
 .page-header .page-title {
     font-size: 1.75rem;
     line-height: 1.2;
@@ -276,7 +343,7 @@
 // the value it sits above. A 12px sentence-case label at 500 in the weak
 // ink carries the same information at the same size and does not shout.
 .metric-label {
-    color: var(--bulma-text-weak);
+    color: var(--mercurius-text-muted);
     font-size: .75rem;
     font-weight: 500;
     order: 1;
@@ -291,7 +358,7 @@
 }
 
 .metric-detail {
-    color: var(--bulma-text-weak);
+    color: var(--mercurius-text-muted);
     font-size: .75rem;
     order: 3;
 }
@@ -321,7 +388,7 @@
 }
 
 .metric-card.is-active .metric-label {
-    color: var(--bulma-primary);
+    color: var(--mercurius-accent-ink);
 }
 
 a.metric-card {
@@ -347,6 +414,12 @@ button.metric-card {
     margin-bottom: var(--mercurius-space-4);
     overflow-x: auto;
     padding-bottom: 0;
+    // The row scrolls, so the last tab ends wherever the scroll ends. Without
+    // an inset the label can sit flush against the edge of the screen, which
+    // reads as a clipped word rather than as a tab you can scroll to. The
+    // inset is part of the scrollable area, so the far end of the row always
+    // stops short of the edge; the scroll itself is untouched.
+    padding-right: var(--mercurius-space-4);
     scrollbar-width: thin;
 }
 
@@ -368,20 +441,20 @@ button.metric-card {
 // 1px rule. It used to be a boxed tab (border + fill + radius), which reads
 // as a second navigation control rather than a selected label.
 .view-tab:hover {
-    color: var(--bulma-primary);
+    color: var(--mercurius-accent-ink);
     text-decoration: none;
 }
 
 .view-tab.is-active {
     border-bottom-color: var(--bulma-primary);
-    color: var(--bulma-primary);
+    color: var(--mercurius-accent-ink);
     font-weight: 600;
 }
 
 .view-tab-count {
     background: var(--bulma-scheme-main-ter);
     border-radius: var(--mercurius-radius-pill);
-    color: var(--bulma-text-light);
+    color: var(--mercurius-text-muted);
     font-size: .7rem;
     font-weight: 700;
     min-width: 1.5rem;
@@ -389,9 +462,20 @@ button.metric-card {
     text-align: center;
 }
 
+// The count on the ACTIVE tab used to be white on the accent: 1.95:1, and
+// the count is the one thing the operator is looking for ("how much is
+// waiting for me"). It is now a PALE TINT of the primary carrying an ink of
+// the SAME hue, the trick the status pills use in 3.7: 5.9:1 inside the chip
+// in both schemes, and the chip still reads as the accent because it is the
+// same hue as the label and the rule under it.
+//
+// The tint is mixed against --bulma-white and the ink against --bulma-black
+// on purpose: the active chip is the one bright element in the row, so it is
+// the same pale chip on a white page and on a black one. (--bulma-scheme-invert
+// cannot do this job: it is a fixed near-black in both schemes.)
 .view-tab.is-active .view-tab-count {
-    background: var(--bulma-primary);
-    color: #fff;
+    background: color-mix(in srgb, var(--bulma-primary) 18%, var(--bulma-scheme-main));
+    color: color-mix(in srgb, var(--bulma-primary) 25%, var(--bulma-text-strong));
 }
 
 // =============================================================================
@@ -426,7 +510,7 @@ button.metric-card {
 }
 
 .action-count {
-    color: var(--bulma-text-light);
+    color: var(--mercurius-text-muted);
     font-size: .875rem;
 }
 
@@ -515,7 +599,7 @@ button.metric-card {
 }
 
 .chart-subtitle {
-    color: var(--bulma-text-light);
+    color: var(--mercurius-text-muted);
     font-size: .8rem;
     margin: 0;
 }
@@ -609,11 +693,34 @@ button.metric-card {
 
 // =============================================================================
 // 26. Accessibility baseline for the new primitives
+//
+// THE RING IS ON EVERY INTERACTIVE ELEMENT, NOT ON THREE.
+//
+// Only .metric-card and .view-tab carried an outline; every other control in
+// the app was left to whatever the browser or Bulma happened to draw, which
+// is how a keyboard user loses their place. The rule below names the whole
+// interactive set, so a control added later gets the ring for free.
+//
+// The class-qualified selectors are not repetition: Bulma sets `outline: none`
+// on .input, .textarea, .select select, .button and the pagination links, so
+// a bare `input:focus-visible` would lose to them on specificity. The same
+// specificity, declared later, wins.
 // =============================================================================
-a.metric-card:focus-visible,
-button.metric-card:focus-visible,
-.view-tab:focus-visible {
-    outline: 2px solid var(--bulma-primary);
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible,
+.button:focus-visible,
+.input:focus-visible,
+.textarea:focus-visible,
+.select select:focus-visible,
+.pagination-link:focus-visible,
+.pagination-previous:focus-visible,
+.pagination-next:focus-visible {
+    outline: 2px solid var(--mercurius-focus-ring);
     outline-offset: 2px;
 }
 
@@ -639,7 +746,7 @@ button.metric-card:focus-visible,
 
 // A missing value is a dash, not a zero, and never at full value size.
 .kit-empty {
-    color: var(--bulma-text-weak);
+    color: var(--mercurius-text-muted);
 }
 
 // =============================================================================
@@ -738,6 +845,43 @@ button.metric-card:focus-visible,
     transition-duration: var(--mercurius-dur-fast);
 }
 
+// The brand mark is a black silhouette with white highlights. On the dark
+// ground it is a smudge whose one specular highlight does more work than the
+// silhouette — the product's own name is the one thing the operator must be
+// able to read. Inverting it in the dark scheme gives a white bull on black;
+// the light scheme keeps the original ink.
+@media (prefers-color-scheme: dark) {
+    .mercurius-mark {
+        filter: invert(1);
+    }
+}
+
+// The native file input is the one control the OS draws, so it arrives in a
+// dark UI as a white "Choose Files" button - the most jarring element on an
+// otherwise themed screen. ::file-selector-button is the supported way to
+// theme it, and it keeps the real input (and its accessibility) intact.
+input[type="file"] {
+    color: var(--bulma-text-strong);
+}
+
+input[type="file"]::file-selector-button {
+    background: var(--bulma-scheme-main-ter);
+    border: 1px solid var(--mercurius-border);
+    border-radius: var(--mercurius-radius-sm, 6px);
+    color: var(--bulma-text-strong);
+    cursor: pointer;
+    font: inherit;
+    margin-right: .5rem;
+    padding: .35rem .75rem;
+    transition: border-color var(--mercurius-dur-fast) var(--mercurius-ease-out),
+                color var(--mercurius-dur-fast) var(--mercurius-ease-out);
+}
+
+input[type="file"]::file-selector-button:hover {
+    border-color: var(--bulma-primary);
+    color: var(--mercurius-accent-ink);
+}
+
 // =============================================================================
 // 32. Buttons and table headers
 //
@@ -746,7 +890,8 @@ button.metric-card:focus-visible,
 // dozens of times a day, the shadow only adds noise and makes the primary
 // action louder than the data around it. The control becomes a flat fill in
 // one colour. Bulma's `.button:focus-visible` is a separate, more specific
-// rule and is left alone: that one is the keyboard's way home.
+// rule and is left alone: that one is the keyboard's way home, and it now
+// draws in the accent (see 3.8).
 //
 // The table header is a header, not a link. Bulma's <th> is 16px at weight
 // 700 in the strong ink, which is louder than the data it labels; and the
@@ -789,8 +934,62 @@ button.metric-card:focus-visible,
     opacity: 1;
 }
 
+// ── Pagination: the current page is a SELECTED ITEM, not a link ───────────
+// Bulma paints the current page in the link blue, which put a second hue in
+// the middle of a teal screen and made the pager look like a row of links
+// with one of them hot. The app-screens rule is "the selected one carries the
+// active fill and an ink label": a NEUTRAL fill one step above the ground,
+// the page's own strong ink on it, and a border strong enough to separate it
+// from the rest of the row. No hue - the accent belongs to the data.
+//
+// The chip also loses the elevation Bulma gives it. It has a fill and a
+// border now, and a resting element carries one or the other, never both
+// (the same rule that flattens .button above).
+.pagination-previous,
+.pagination-next,
+.pagination-link {
+    box-shadow: none;
+}
+
+.pagination-link.is-current,
+.pagination-link.is-selected {
+    background-color: var(--bulma-scheme-main-ter);
+    border-color: var(--bulma-text-strong);
+    color: var(--bulma-text-strong);
+    font-weight: 600;
+}
+
+// ── Placeholders: the muted token, not Bulma's dimmed text ────────────────
+// Bulma draws a placeholder at 30% alpha over the ground, which measures
+// about 2.5:1 on the dark ground: the hint is there and unreadable at the
+// same time. --mercurius-text-muted is the same idea resolved per scheme
+// and clears 4.5:1 in both.
+//
+// Bulma ships that colour on the VENDOR pseudo-elements only
+// (::-webkit-input-placeholder, ::-moz-placeholder, :-ms-input-placeholder)
+// and its class selectors (.input, .textarea, .select select) outrank a bare
+// `input::placeholder`. So the override repeats the class selectors: equal
+// specificity, declared later, same target. opacity: 1 makes sure nothing
+// dims the hint on top of the colour.
+input::placeholder,
+textarea::placeholder,
+select::placeholder,
+.input::placeholder,
+.textarea::placeholder,
+.select select::placeholder,
+.input[disabled]::placeholder,
+.textarea[disabled]::placeholder,
+.select select[disabled]::placeholder,
+fieldset[disabled] .input::placeholder,
+fieldset[disabled] .textarea::placeholder,
+fieldset[disabled] .select select::placeholder,
+.select fieldset[disabled] select::placeholder {
+    color: var(--mercurius-text-muted);
+    opacity: 1;
+}
+
 .table thead th {
-    color: var(--bulma-text-weak);
+    color: var(--mercurius-text-muted);
     font-size: .75rem;
     font-weight: 500;
     letter-spacing: 0;
@@ -805,11 +1004,11 @@ button.metric-card:focus-visible,
 }
 
 .table thead th a:hover {
-    color: var(--bulma-primary);
+    color: var(--mercurius-accent-ink);
 }
 
 .kit-sort {
-    color: var(--bulma-primary);
+    color: var(--mercurius-accent-ink);
     font-size: .7rem;
     margin-left: .25rem;
 }
@@ -829,11 +1028,12 @@ button.metric-card:focus-visible,
     font-weight: 600;
 }
 
-// An app screen's title is 18-32px. Bulma's .title.is-3 is 2.5rem (40px) —
-// a landing-page size. An operator reads the title of every screen all day
-// and pays for it in vertical space on each one, so the page title is capped
-// at 28px here. The selector is deliberately narrow: it only touches the
-// screen's own h1, not the .title elements used inside a page for a figure.
+// An app screen's title is 18-32px. Bulma's .title.is-3 is 2rem (32px), the
+// very TOP of that range - 40px is .title.is-2, and that is a landing-page
+// size. An operator reads the title of every screen all day and pays for it
+// in vertical space on each one, so the page title is capped at 28px here.
+// The selector is deliberately narrow: it only touches the screen's own h1,
+// not the .title elements used inside a page for a figure.
 h1.title.is-3 {
     font-size: 1.75rem;
 }
@@ -846,6 +1046,15 @@ h1.title.is-3 {
 @media screen and (max-width: 768px) {
     .table thead th {
         white-space: nowrap;
+    }
+
+    // A tab row that scrolls sideways cuts a label at the viewport edge, and a
+    // half-shown tab reads as broken rather than as "there is more this way".
+    // Four short labels wrap onto two rows, which is readable and keeps every
+    // tab reachable without a sideways scroll.
+    .view-tabs {
+        flex-wrap: wrap;
+        overflow-x: visible;
     }
 }
 
@@ -961,7 +1170,7 @@ button.navbar-link {
 // it carries no colour and no weight of its own.
 .navbar-user {
     align-items: center;
-    color: var(--bulma-text-weak);
+    color: var(--mercurius-text-muted);
     display: inline-flex;
     font-size: .875rem;
     gap: .25rem;

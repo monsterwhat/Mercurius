@@ -5,7 +5,8 @@
   markup without letting the copies drift.
 
   Classic "Emitir Factura" vertical sequence, in this order:
-    1. centered "Crear Factura - {usuario}" header + tipo-cambio badge
+    1. _kit/page-header: "Crear Factura - {usuario}" (left-aligned, the only
+       h1 on the screen) + the labelled tipo de cambio on the right
     2. Tipo de Factura + Cliente row
     3. Cantidad + código de barras row (scan form)
     4. scrollable cart (pages/facturas/cart-panel include)
@@ -30,13 +31,24 @@
   that attribute itself because it does not include layout.html.
 !}
 <section class="section" style="padding-top:1rem" id="pos-page">
-    <div class="has-text-centered" style="margin-bottom:1rem">
-        <h1 class="title is-3" id="pos-titulo" style="margin-bottom:0.35rem">Crear Factura - {usuario}</h1>
-        <span id="badge-tipo-cambio" class="tag is-info is-medium"
-              title="Tipo de cambio de venta (dólar)">
-            {#if badge.disponible}&#36;1 = &#8353;{badge.venta}{#else}&#8353; tipo de cambio N/D{/if}
+    {! The screen's name lives in the kit header, left-aligned like every
+       other screen: this was the only centred h1 in the app, and it sat on
+       the page background instead of in the panel the other screens use.
+       The tipo de cambio is the one live reference value on the till, so it
+       sits on the right of the header - with a LABEL. "$1 = ¢457.54" on its
+       own was a bare numeric pair reading as the screen's subtitle. !}
+    {#include _kit/page-header title=("Crear Factura - " + usuario)}
+        {#actions}
+        <span id="badge-tipo-cambio" title="Tipo de cambio de venta (dólar)">
+            {#if badge.disponible}
+            <span class="has-text-grey">Tipo de cambio:</span>
+            <span class="has-text-weight-semibold">&#36;1 = &#8353;{badge.venta}</span>
+            {#else}
+            <span class="has-text-grey">Tipo de cambio no disponible</span>
+            {/if}
         </span>
-    </div>
+        {/actions}
+    {/include}
 
     <div class="box" style="margin-bottom:0.75rem;padding-top:0.75rem;padding-bottom:0.75rem">
         <div class="columns is-variable is-4" style="align-items:flex-end;margin-bottom:-0.75rem">
@@ -60,7 +72,7 @@
                         Opcional &mdash; el cliente asignado se muestra en el carrito
                     </div>
                     <div class="control">
-                        <button type="button" class="button is-medium is-link" aria-haspopup="dialog"
+                        <button type="button" class="button is-medium is-primary is-outlined" aria-haspopup="dialog"
                                 title="Buscar y asignar un cliente"
                                 data-kit-open="modal-cliente"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/pos/client-picker?q="
@@ -94,11 +106,11 @@
                         <button type="submit" class="button is-medium is-primary is-fullwidth">Agregar</button>
                     </p>
                     <p class="control">
-                        <button type="button" class="button is-medium is-light" aria-haspopup="dialog"
+                        <button type="button" class="button is-medium" aria-haspopup="dialog"
                                 title="Buscar y agregar un artículo"
                                 data-kit-open="modal-articulos"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/pos/articulos-picker?q="
-                                hx-target="#modal-articulos-body" hx-swap="innerHTML">&#128270; Buscar</button>
+                                hx-target="#modal-articulos-body" hx-swap="innerHTML">{#include _kit/icon name="search" /} Buscar</button>
                     </p>
                 </div>
             </div>

@@ -1,5 +1,5 @@
 {!
-  pages/reportes/index - Reportes navigation hub (link cards to every report).
+  pages/reportes/index - Reportes navigation hub (link list to every report).
 
   Rendered by GET /app/reportes (MiscPagesResource). Mirror of the legacy
   Registros/index.xhtml four-card dashboard (Facturación / Recibos /
@@ -19,110 +19,160 @@
     - Visibility mirrors the legacy page: buttons are shown to every role and
       the destination pages enforce their own gates; only "Registros Internos"
       stays admin-gated (as in legacy rendered="#{SessionController.admin}").
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The title is the kit's _kit/page-header: a real <h1> with the scope in
+    the muted subtitle.
+  - The hub is ONE column of four groups. It used to be four is-one-quarter
+    columns whose cards started at four different heights (y = 193, 271, 375
+    and 453 - a 282px spread), so no two cards began on the same line.
+  - Each group is a _kit/surface, so the group title is a real <h2> and the
+    heading order of the page is h1 -> h2. They were <p class="title is-5">,
+    which is not a heading at all, and at 20px/800 they read LOUDER than the
+    page's own <h1>.
+  - The links are QUIET text links separated by a 1px rule, not thirty-two
+    filled buttons of the same weight (ui-kit 10.1: "A hub of report links is
+    a LIST, not twenty buttons: the links are quiet and the card titles carry
+    the structure"). The rule is drawn with the design token, so it follows
+    the colour scheme.
+  - Every report, its href and its title attribute are unchanged.
 !}
 {#include layout}
     {#title}Reportes | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3">Reportes</h1>
-        <p class="subtitle is-6">Seleccione un reporte</p>
+        {#include _kit/page-header title="Reportes"
+             subtitle="Facturación, recibos, inventarios y usuarios" /}
 
-        <div class="columns is-centered is-vcentered is-multiline has-text-centered">
+        {! ── Reportes de Facturación ─────────────────────────────────────── !}
+        {#include _kit/surface title="Reportes de Facturación"}
+            {#content}
+                <ul class="menu-list">
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">Movimientos</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">Facturación de Artículos</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">Ventas por Familia</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">Ventas por Departamento</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/facturas" title="Lista completa de facturas emitidas">Todas las Facturas</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">Tendencias de Ventas</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas-fecha-historica" title="Ventas de un mismo día/mes a través de los años">Ventas por Fecha Histórica</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">Productos Destacados</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">Estacionalidad</a>
+                    </li>
+                    <li>
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion" title="Resumen de impuestos por período">Resumen de Impuestos</a>
+                    </li>
+                </ul>
+            {/content}
+        {/include}
 
-            {! Reportes de Facturación (legacy: is-info card) !}
-            <div class="column is-one-quarter">
-                <div class="card">
-                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
-                        <div class="column is-full">
-                            <p class="title is-5">Reportes de Facturación</p>
-                        </div>
-                        <div class="column">
-                            <div class="buttons">
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas" title="Movimientos de artículos por rango de fechas">Movimientos</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas" title="Ventas individuales de cada artículo">Facturación de Artículos</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias" title="Resumen de ventas agrupado por familia">Ventas por Familia</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos" title="Resumen de ventas agrupado por departamento">Ventas por Departamento</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/facturas" title="Lista completa de facturas emitidas">Todas las Facturas</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias" title="Análisis de tendencias y patrones de ventas">Tendencias de Ventas</a>
-<a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas-fecha-historica" title="Ventas de un mismo día/mes a través de los años">Ventas por Fecha Histórica</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/rendimiento" title="Artículos con mejor rendimiento en ventas">Productos Destacados</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad" title="Análisis de estacionalidad de las ventas">Estacionalidad</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion" title="Resumen de impuestos por período">Resumen de Impuestos</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        {! ── Reportes de Recibos ─────────────────────────────────────────── !}
+        {#include _kit/surface title="Reportes de Recibos"}
+            {#content}
+                <ul class="menu-list">
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/recibos" title="Lista completa de recibos generados">Todos los Recibos</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/pendientes" title="Recibos pendientes de pago">Recibos Pendientes</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/vencidos" title="Recibos vencidos">Recibos Vencidos</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/correos" title="Configuración de envío automático de reportes">Reportes por Email</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">Plantillas de Correo</a>
+                    </li>
+                    {#if inject:securityIdentity.hasRole('admin')}
+                    <li>
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/registros/log" title="Registros internos del sistema">Registros Internos</a>
+                    </li>
+                    {/if}
+                </ul>
+            {/content}
+        {/include}
 
-            {! Reportes de Recibos (legacy: is-primary card) !}
-            <div class="column is-one-quarter">
-                <div class="card">
-                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
-                        <div class="column is-full">
-                            <p class="title is-5">Reportes de Recibos</p>
-                        </div>
-                        <div class="column">
-                            <div class="buttons">
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/recibos" title="Lista completa de recibos generados">Todos los Recibos</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/pendientes" title="Recibos pendientes de pago">Recibos Pendientes</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/vencidos" title="Recibos vencidos">Recibos Vencidos</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/correos" title="Configuración de envío automático de reportes">Reportes por Email</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/correos/plantillas" title="Gestión de plantillas de correo electrónico">Plantillas de Correo</a>
-                                {#if inject:securityIdentity.hasRole('admin')}
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/registros/log" title="Registros internos del sistema">Registros Internos</a>
-                                {/if}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        {! ── Reportes de Inventarios ─────────────────────────────────────── !}
+        {#include _kit/surface title="Reportes de Inventarios"}
+            {#content}
+                <ul class="menu-list">
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/articulos" title="Catálogo completo de artículos">Artículos</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen" title="Estado general del inventario">Resumen de Inventario</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por departamento">Departamentos</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por familia">Familias</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/inventarios" title="Historial de inventarios realizados">Inventarios</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">Generar Etiquetas</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">Márgenes de Utilidad</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">Alertas de Stock</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">Pronósticos de Stock</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">Mermas y Perdidas</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios" title="Histórico de precios de artículos">Historico de Precios</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/api/app/ordenes/table" title="Órdenes de compra a proveedores">Órdenes de Compra</a>
+                    </li>
+                    <li>
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/categorias" title="Métricas de rendimiento de proveedores">Scorecard de Proveedores</a>
+                    </li>
+                </ul>
+            {/content}
+        {/include}
 
-            {! Reportes de Inventarios (legacy: is-danger card) !}
-            <div class="column is-one-quarter">
-                <div class="card">
-                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
-                        <div class="column is-full">
-                            <p class="title is-5">Reportes de Inventarios</p>
-                        </div>
-                        <div class="column">
-                            <div class="buttons">
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/articulos" title="Catálogo completo de artículos">Artículos</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/resumen" title="Estado general del inventario">Resumen de Inventario</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por departamento">Departamentos</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/categorias" title="Reporte de artículos por familia">Familias</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/inventarios" title="Historial de inventarios realizados">Inventarios</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/etiquetas" title="Generación de etiquetas de precio">Generar Etiquetas</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/margenes" title="Análisis de márgenes de utilidad por artículo">Márgenes de Utilidad</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/alertas" title="Artículos con stock bajo o agotado">Alertas de Stock</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/pronosticos" title="Predicción de necesidades de reabastecimiento">Pronósticos de Stock</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/merma" title="Mermas y pérdidas registradas">Mermas y Perdidas</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/inventario/precios" title="Histórico de precios de artículos">Historico de Precios</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/api/app/ordenes/table" title="Órdenes de compra a proveedores">Órdenes de Compra</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/categorias" title="Métricas de rendimiento de proveedores">Scorecard de Proveedores</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {! Reportes de Usuarios (legacy: is-warning card) !}
-            <div class="column is-one-quarter">
-                <div class="card">
-                    <div class="columns is-multiline is-centered is-vcentered has-text-centered p-2">
-                        <div class="column is-full">
-                            <p class="title is-5">Reportes de Usuarios</p>
-                        </div>
-                        <div class="column">
-                            <div class="buttons">
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/usuarios" title="Información detallada de usuarios del sistema">Usuarios Detallados</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" title="Reporte de clientes registrados">Clientes</a>
-                                <a class="button is-fullwidth" href="{config:['quarkus.http.root-path']}/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">Puntos y Recompensas</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
+        {! ── Reportes de Usuarios ─────────────────────────────────────────── !}
+        {#include _kit/surface title="Reportes de Usuarios"}
+            {#content}
+                <ul class="menu-list">
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/usuarios" title="Información detallada de usuarios del sistema">Usuarios Detallados</a>
+                    </li>
+                    <li style="border-bottom:1px solid var(--mercurius-border)">
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/clientes" title="Reporte de clientes registrados">Clientes</a>
+                    </li>
+                    <li>
+                        <a class="menu-link" href="{config:['quarkus.http.root-path']}/app/reportes/loyalty" title="Estado del programa de lealtad y recompensas">Puntos y Recompensas</a>
+                    </li>
+                </ul>
+            {/content}
+        {/include}
     {/body}
 {/include}

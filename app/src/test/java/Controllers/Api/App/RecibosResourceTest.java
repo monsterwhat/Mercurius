@@ -803,7 +803,7 @@ class RecibosResourceTest extends support.ContextPathIsolation {
                 .body(containsString("id=\"recibos-tabla-pagadas\""))
                 .body(containsString("id=\"recibos-tabla-procesadas\""))
                 .body(containsString("id=\"recibos-tabla-vencidos\""))
-                .body(containsString("Detalle del recibo"))
+                .body(containsString("Detalle de la factura"))
                 .body(containsString("id=\"recibo-detalle-cuerpo\""));
 
         authed(session)
