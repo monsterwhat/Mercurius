@@ -25,16 +25,25 @@
   processes out-of-band swaps only for top-level response elements).
   Nested form fragments inherit this template's data model via Qute include
   context propagation.
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The .box panel with its <h5> heading is a _kit/surface now, so the
+    panel's title is a real <h2> and the "Abierta" chip sits in the panel
+    header (the surface's {#actions} slot).
+  - The session figure is a money readout, so it carries .kit-figure (the
+    app's tabular-figures class outside a table).
 !}
 {#if sesion}
-<div class="box" id="panel-sesion-activa">
-    <h5 class="title is-5">Sesion Activa
-        <span class="tag is-success" style="margin-left:0.5rem">Abierta</span>
-    </h5>
+{#include _kit/surface title="Sesión Activa" }
+    {#actions}
+        <span class="status-chip is-success">Abierta</span>
+    {/actions}
+    {#content}
     <div class="columns">
         <div class="column">
             <p class="heading">Monto Inicial</p>
-            <p class="subtitle is-5">{sesion.montoInicial}</p>
+            <p class="subtitle is-5 kit-figure">{sesion.montoInicial}</p>
         </div>
         <div class="column">
             <p class="heading">Fecha Apertura</p>
@@ -45,9 +54,10 @@
             <p class="subtitle is-5">{sesion.usuarioUsername}</p>
         </div>
     </div>
+    {/content}
+{/include}
 
-    {#include pages/caja/form-cerrar /}
-</div>
+{#include pages/caja/form-cerrar /}
 {#else}
 {#include pages/caja/form-abrir /}
 {/if}

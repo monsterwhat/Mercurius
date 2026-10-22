@@ -21,37 +21,30 @@
                       open-session form (legacy rendered="#{!sesionAbierta}")
     modelo Map      - model of tabla-historial.html (kit data-table contract)
 
-  Legacy visual parity: the green gradient header is ported verbatim from the
-  xhtml <style> block (.caja-header); status/difference coloring uses Bulma
-  tag/text classes (tag is-success / has-text-success|danger).
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The .caja-header banner was the LAST of the twelve module headers: it
+    carried its own inline <style> block with a teal gradient and white
+    text. Both the banner and the <style> block are gone; the screen opens
+    with the _kit/page-header every other screen uses, so it is flat and it
+    follows the colour scheme.
+  - The "Abrir Sesion" / "Cerrar Sesion" / "Sesion Activa" boxes are
+    _kit/surfaces now, so the screen is one kind of panel from top to bottom
+    and each panel heading is a real <h2>.
+  - "Abrir Sesion" was a filled green (is-success) button with a lock
+    emoji; the app's teal is the only accent, so it is the one filled
+    primary, and the glyph is a kit icon.
+  - The history table lost its .box frame (the panel around it is the
+    _kit/surface here) and its money columns are `num` cells: right-aligned
+    with tabular figures.
 !}
 {#include layout}
     {#title}Control de Caja | Mercurius{/title}
 
     {#body}
-    <style>
-        {! The caja banner is the last of the twelve module headers. It used
-           to carry its own green gradient with two hard-coded hex stops and
-           white text; it now matches every other module banner: one flat,
-           theme-aware fill from a Bulma token, so it follows the colour
-           scheme and keeps its contrast. See web/index.scss, "THE TWELVE
-           MODULE BANNERS ARE NOW ONE BANNER". !}
-        .caja-header {
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-bottom: 1.5rem;
-            background: var(--bulma-primary);
-            color: var(--bulma-primary-invert);
-        }
-        .caja-header .title { color: inherit; margin-bottom: 1rem; }
-        .caja-header .subtitle { color: inherit; opacity: .85; }
-    </style>
-
     <section class="section" style="padding-top:1rem">
-        <div class="caja-header">
-            <h1 class="title is-3 has-text-centered">Control de Caja</h1>
-            <p class="subtitle has-text-centered">Apertura y cierre de sesion de caja</p>
-        </div>
+        {#include _kit/page-header title="Control de Caja"
+             subtitle="Apertura y cierre de sesión de caja" /}
 
         {! Open form OR active-session cards + close form; swapped by the
            open/close form twins after each mutation. !}
@@ -60,7 +53,11 @@
         </div>
 
         {! Historial de Cierres — legacy p:dataTable (rows=10 paginator). !}
-        {#include pages/caja/tabla-historial modelo=modelo /}
+        {#include _kit/surface title="Historial de Cierres" }
+            {#content}
+                {#include pages/caja/tabla-historial modelo=modelo /}
+            {/content}
+        {/include}
 
         {! Styled confirm dialog for the close button (hx-confirm). Include
            ONCE per page; self-guards against double install. !}

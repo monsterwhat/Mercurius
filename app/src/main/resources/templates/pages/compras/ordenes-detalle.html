@@ -13,6 +13,16 @@
                 totalEstimado, totalReal, mostrarTotalReal, notas,
                 lineas(nombre/codigo/codigoBarra/cantidad/precio/subtotal),
                 puedeRecibir, puedeCancelar
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The articles table lost the zebra striping (the ui-kit's rule for every
+    table in the app) and its figures are `num` cells: right-aligned with
+    tabular figures.
+  - "Artículos" is a real heading now, not a paragraph.
+  - "Marcar como Recibida" was a filled green (is-success) button; the app's
+    teal is the only accent, so the affirmative action is the one filled
+    primary. The destructive action keeps is-danger.
 !}
 <div id="panel-detalle">
     <div class="columns is-multiline mb-4">
@@ -50,7 +60,7 @@
         </div>
         <div class="column is-6">
             <p class="heading">Total Estimado</p>
-            <p class="title is-4 has-text-success">{orden.totalEstimado}</p>
+            <p class="title is-4">{orden.totalEstimado}</p>
         </div>
         {#if orden.notas??}
         <div class="column is-12">
@@ -61,16 +71,16 @@
     </div>
 
     <hr/>
-    <p class="title is-6">Artículos</p>
+    <h3 class="title is-6">Artículos</h3>
 
     <div class="table-container">
-    <table class="table is-striped is-fullwidth">
+    <table class="table is-hoverable is-fullwidth">
         <thead>
             <tr>
-                <th>Artículo</th>
-                <th style="text-align:center;width:100px">Cantidad</th>
-                <th style="text-align:right;width:120px">Precio Unit.</th>
-                <th style="text-align:right;width:120px">Subtotal</th>
+                <th scope="col">Artículo</th>
+                <th scope="col" class="num" style="width:100px">Cantidad</th>
+                <th scope="col" class="num" style="width:120px">Precio Unit.</th>
+                <th scope="col" class="num" style="width:120px">Subtotal</th>
             </tr>
         </thead>
         <tbody>
@@ -83,9 +93,9 @@
                         {#if linea.codigoBarra??} | {linea.codigoBarra}{/if}
                     </span>
                 </td>
-                <td style="text-align:center">{linea.cantidad}</td>
-                <td style="text-align:right">{linea.precio}</td>
-                <td style="text-align:right;font-weight:600">{linea.subtotal}</td>
+                <td class="num">{linea.cantidad}</td>
+                <td class="num">{linea.precio}</td>
+                <td class="num" style="font-weight:600">{linea.subtotal}</td>
             </tr>
             {#else}
             <tr><td colspan="4" class="has-text-centered has-text-grey">No hay artículos en esta orden.</td></tr>
@@ -105,7 +115,7 @@
 
     <div class="buttons is-centered mt-4">
         {#if orden.puedeRecibir}
-        <button class="button is-success" type="button"
+        <button class="button is-primary" type="button"
                 hx-put="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}/recibir"
                 hx-swap="none">{#include _kit/icon name="check" /} Marcar como Recibida</button>
         {/if}

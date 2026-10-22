@@ -31,28 +31,49 @@
     - Edit dialogs: shared hidden-trigger _kit/modal; row buttons carry
       data-kit-open and their own hx-get into #{id}-body (T18 bridge pattern).
     - Delete: hx-delete + hx-confirm handled inside tabla-plantillas.html.
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The .correos-header banner (a teal gradient with the title inside it) is
+    the _kit/page-header now: one real <h1> per screen, flat and theme-aware.
+  - The count was a glass stat-card; it is a _kit/metric card now (the table
+    footer does NOT repeat the count on this screen, so the number has to
+    live somewhere).
+  - "Crear Plantilla" was a filled green (is-success) button; the app's teal
+    is the only accent, so the screen's own action is the one filled primary
+    and it lives in the page header's {#actions} slot.
+  - The table sits in a _kit/surface: the board is one kind of panel from top
+    to bottom.
 !}
 {#include layout}
     {#title}Plantillas de Correo | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="correos-header">
-            <h1 class="title is-3 has-text-centered">Plantillas de Correo Electronico</h1>
-            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
-                <div class="stat-card">
-                    <span class="stat-number">{#if totalPlantillas??}{totalPlantillas}{#else}0{/if}</span>
-                    <span class="stat-label">Plantillas</span>
+        {#include _kit/page-header title="Plantillas de Correo Electrónico"
+             subtitle="Plantillas reutilizables para el envío automático de reportes" }
+            {#actions}
+                {#include _kit/modal id="crear-plantilla" title="Crear Plantilla de Correo" triggerLabel="Crear Plantilla" triggerClass="is-primary"
+                     bodyUrl="/api/app/email-templates/formularios/nueva" /}
+            {/actions}
+        {/include}
+
+        {! The count is a KPI, not a filter and not a tab: a plain metric card.
+           The strip is a grid of cards, so a single card is held to a third
+           of the board instead of being stretched across it. !}
+        <div class="columns is-variable is-1">
+            <div class="column is-one-third">
+                <div class="metric-strip">
+                    {#include _kit/metric label="Plantillas" value=(totalPlantillas ?: 0) /}
                 </div>
             </div>
         </div>
 
-        <div class="buttons">
-            {#include _kit/modal id="crear-plantilla" title="Crear Plantilla de Correo" triggerLabel="Crear Plantilla" triggerClass="is-success"
-                 bodyUrl="/api/app/email-templates/formularios/nueva"}{/include}
-        </div>
-
-        {#include pages/correos/tabla-plantillas modelo=tablaPlantillas q=tablaPlantillas.q /}
+        {#include _kit/surface title="Listado de plantillas" }
+            {#content}
+                {#include pages/correos/tabla-plantillas modelo=tablaPlantillas q=tablaPlantillas.q /}
+            {/content}
+        {/include}
 
         {!$1!}
         {#include _kit/modal id="editar-plantilla" title="Editar Plantilla de Correo" triggerClass="is-hidden"

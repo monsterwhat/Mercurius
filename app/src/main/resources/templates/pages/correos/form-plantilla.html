@@ -22,6 +22,14 @@
 
   NOTE: the placeholder help block writes its braces as HTML entities because
   a literal {{nombre}} would be parsed by Qute as an expression.
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The textarea carried TWO class attributes ("textarea" and "kit-code"), so
+    the second one was dropped by the HTML parser and the body field was not
+    rendered in the app's one monospace class. They are one attribute now.
+  - The placeholder help block was a blue (is-info) notification: a second
+    accent family next to the teal primary. It is the neutral light one.
 !}
 <div id="forma-plantilla">
     {#if modo == 'editar' && plantilla??}
@@ -68,12 +76,12 @@
         <div class="field">
             <label class="label" for="tpl-cuerpo">Cuerpo HTML:</label>
             <div class="control">
-                <textarea class="textarea" id="tpl-cuerpo" name="cuerpoHtml" rows="10" required="required"
-                          class="kit-code">{#if plantilla?? && plantilla.cuerpoHtml??}{plantilla.cuerpoHtml}{/if}</textarea>
+                <textarea class="textarea kit-code" id="tpl-cuerpo" name="cuerpoHtml" rows="10" required="required"
+                          >{#if plantilla?? && plantilla.cuerpoHtml??}{plantilla.cuerpoHtml}{/if}</textarea>
             </div>
         </div>
 
-        <div class="notification is-info is-light">
+        <div class="notification is-light">
             <p><strong>Placeholders disponibles:</strong></p>
             <p class="kit-code is-size-7">
                 &#123;&#123;nombre&#125;&#125; - Nombre del reporte &#160;|&#160;

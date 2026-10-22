@@ -23,55 +23,61 @@
   The article picker inside the create/edit forms consumes the clientes-style
   search-as-you-type recipe (docs/ui-kit.md §8) against
   GET /api/app/ordenes/articulos?q= (legacy completeArticulo search reused).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The bare <h1 class="title is-3 has-text-centered"> is the _kit/page-header
+    now: one real <h1> per screen, and it is the screen's name.
+  - The six glass stat-cards were FILTERS (each one linked to the same board
+    with a different estado), so they are _kit/metric cards with an href and
+    an active state — not tabs. The kit prepends the deployment root to the
+    href, so the caller writes it context-relative.
+  - "Nueva Orden" is the screen's own action, so it lives in the page header's
+    {#actions} slot. It was a filled green (is-success) button: the app's teal
+    is the only accent on a screen, so it is the one filled primary.
+  - The table sits in a _kit/surface, so the board is one kind of panel from
+    top to bottom (the fragment's own .box frame is gone).
 !}
 {#include layout}
     {#title}Órdenes de Compra | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <h1 class="title is-3 has-text-centered">Órdenes de Compra</h1>
+        {#include _kit/page-header title="Órdenes de Compra"
+             subtitle="Estados, proveedores y seguimiento de cada orden" }
+            {#actions}
+                {#include _kit/modal id="crear-orden" title="Nueva Orden de Compra" triggerLabel="Nueva Orden" triggerClass="is-primary"
+                     bodyUrl="/api/app/ordenes/formularios/nueva" /}
+            {/actions}
+        {/include}
 
-        {! Stat cards — legacy filterByEstado cards became plain links (no-JS safe) !}
-        <div class="stats-grid" style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem">
-            <a class="box has-text-centered stat-card {#if estadoActivo == null}active{/if}"
-               style="min-width:7rem;text-decoration:none;color:inherit"
-               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table">
-                <span class="title is-4" style="display:block">{ordenesTotal ?: 0}</span>
-                <span class="subtitle is-6">Todas</span>
-            </a>
-            <a class="box has-text-centered stat-card {#if estadoActivo == 'BORRADOR'}active{/if}"
-               style="min-width:7rem;text-decoration:none;color:inherit"
-               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=BORRADOR">
-                <span class="title is-4" style="display:block">{countBorrador ?: 0}</span>
-                <span class="subtitle is-6">Borrador</span>
-            </a>
-            <a class="box has-text-centered stat-card {#if estadoActivo == 'ENVIADA'}active{/if}"
-               style="min-width:7rem;text-decoration:none;color:inherit"
-               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=ENVIADA">
-                <span class="title is-4" style="display:block">{countEnviada ?: 0}</span>
-                <span class="subtitle is-6">Enviadas</span>
-            </a>
-            <a class="box has-text-centered stat-card {#if estadoActivo == 'CONFIRMADA'}active{/if}"
-               style="min-width:7rem;text-decoration:none;color:inherit"
-               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=CONFIRMADA">
-                <span class="title is-4" style="display:block">{countConfirmada ?: 0}</span>
-                <span class="subtitle is-6">Confirmadas</span>
-            </a>
-            <a class="box has-text-centered stat-card {#if estadoActivo == 'RECIBIDA'}active{/if}"
-               style="min-width:7rem;text-decoration:none;color:inherit"
-               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=RECIBIDA">
-                <span class="title is-4" style="display:block">{countRecibida ?: 0}</span>
-                <span class="subtitle is-6">Recibidas</span>
-            </a>
-            <a class="box has-text-centered stat-card {#if estadoActivo == 'FACTURADA'}active{/if}"
-               style="min-width:7rem;text-decoration:none;color:inherit"
-               href="{config:['quarkus.http.root-path']}/api/app/ordenes/table?estado=FACTURADA">
-                <span class="title is-4" style="display:block">{countFacturada ?: 0}</span>
-                <span class="subtitle is-6">Facturadas</span>
-            </a>
+        {! The six cards were FILTERS that linked to the same board with a
+           different estado: the metric card with an href is exactly that, and
+           the active one is the current filter. estadoActivo is null when no
+           estado is filtered, and Qute's == is not null-safe, so the filter
+           state is normalised once into a plain string. !}
+        {#let estadoActual = (estadoActivo ?: "TODAS")}
+        <div class="metric-strip">
+            {#include _kit/metric label="Todas" value=(ordenesTotal ?: 0)
+                 href="/api/app/ordenes/table" active=(estadoActual == "TODAS") /}
+            {#include _kit/metric label="Borrador" value=(countBorrador ?: 0)
+                 href="/api/app/ordenes/table?estado=BORRADOR" active=(estadoActual == "BORRADOR") /}
+            {#include _kit/metric label="Enviadas" value=(countEnviada ?: 0)
+                 href="/api/app/ordenes/table?estado=ENVIADA" active=(estadoActual == "ENVIADA") /}
+            {#include _kit/metric label="Confirmadas" value=(countConfirmada ?: 0)
+                 href="/api/app/ordenes/table?estado=CONFIRMADA" active=(estadoActual == "CONFIRMADA") /}
+            {#include _kit/metric label="Recibidas" value=(countRecibida ?: 0)
+                 href="/api/app/ordenes/table?estado=RECIBIDA" active=(estadoActual == "RECIBIDA") /}
+            {#include _kit/metric label="Facturadas" value=(countFacturada ?: 0)
+                 href="/api/app/ordenes/table?estado=FACTURADA" active=(estadoActual == "FACTURADA") /}
         </div>
+        {/let}
 
-        {#include pages/compras/ordenes-tabla modelo=tablaOrdenes q=tablaOrdenes.q /}
+        {#include _kit/surface title="Listado de órdenes" }
+            {#content}
+                {#include pages/compras/ordenes-tabla modelo=tablaOrdenes q=tablaOrdenes.q /}
+            {/content}
+        {/include}
 
         {! Shared stage dialogs (bodies filled per-row via hx-get) !}
         {#include _kit/modal id="editar-orden" title="Editar Orden de Compra" triggerClass="is-hidden"
@@ -82,10 +88,6 @@
              bodyUrl="/api/app/ordenes/table"}{/include}
         {#include _kit/modal id="cancelar-orden" title="Cancelar Orden de Compra" triggerClass="is-hidden"
              bodyUrl="/api/app/ordenes/table"}{/include}
-
-        {! Create dialog: default trigger hx-gets the empty staged form !}
-        {#include _kit/modal id="crear-orden" title="Nueva Orden de Compra" triggerLabel="+ Nueva Orden" triggerClass="is-success"
-             bodyUrl="/api/app/ordenes/formularios/nueva"}{/include}
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}

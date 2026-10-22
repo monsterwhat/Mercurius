@@ -1,12 +1,12 @@
 {!
-  pages/compras/ordenes-form - staged crear|editar form for Ã“rdenes de Compra
+  pages/compras/ordenes-form - staged crear|editar form for Órdenes de Compra
   (T31). Returned by GET /api/app/ordenes/formularios[/nueva|/{id}] and
   re-rendered by the form-urlencoded POST/PUT twins on validation failure
   (ui-kit.md Pattern A: fragment redisplay + out-of-band toast).
 
   Field labels and required semantics are verbatim ports of the legacy
   CrearOrdenDialog/EditarOrdenDialog ("Proveedor *", "Fecha Entrega Estimada",
-  "Notas", "ArtÃ­culos de la Orden", "Cantidad", "Precio Unitario", "Subtotal",
+  "Notas", "Artículos de la Orden", "Cantidad", "Precio Unitario", "Subtotal",
   "Total Estimado"). The proveedor guard message
   ("Debe seleccionar un proveedor!") and the line guards live server-side in
   OrdenCompraResource.validarPayload (saveOrden/updateOrden parity).
@@ -22,9 +22,20 @@
     errorGeneral   String  - guard failures surfaced by the API
     toastSeverity / toastMessage - OOB toast (nullable)
 
-  Article picker: clientes-style search-as-you-type (ui-kit Â§8) against
+  Article picker: clientes-style search-as-you-type (ui-kit §8) against
   GET /api/app/ordenes/articulos?q=; selection is wired by the page-level
   script in ordenes.html (.js-articulo-opcion fills the row).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The file was double-encoded (UTF-8 bytes decoded as cp1252 and written
+    back): "Ordenes", "Articulos", "N° Orden" and the colon sign all came out
+    as mojibake. They are proper UTF-8 Spanish again.
+  - "Guardar Orden" was a filled green (is-success) button; the app's teal is
+    the only accent, so the affirmative action is the one filled primary.
+    "Agregar Articulo" is a bordered secondary and the row's remove button
+    keeps is-danger.
+  - "Articulos de la Orden" is a real heading now, not a paragraph.
 !}
 <div id="forma-orden">
     {#if modo == 'editar' && orden??}
@@ -38,7 +49,7 @@
         <div class="columns">
             <div class="column">
                 <div class="field">
-                    <label class="label" for="orden-numero">NÂ° Orden</label>
+                    <label class="label" for="orden-numero">N° Orden</label>
                     <div class="control">
                         <input class="input is-static" id="orden-numero" readonly="readonly"
                                value="{orden.numeroOrden}"/>
@@ -92,7 +103,7 @@
         </div>
 
         <hr/>
-        <p class="title is-6">ArtÃ­culos de la Orden</p>
+        <h3 class="title is-6">Artículos de la Orden</h3>
 
         <div id="lineas-lista">
             {#if modo == 'editar'}
@@ -101,7 +112,7 @@
                 <input type="hidden" name="articuloCodigo" value="{#if linea.codigo??}{linea.codigo}{/if}"/>
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
                     <input class="input js-articulo-nombre" type="text" autocomplete="off"
-                           placeholder="Buscar artÃ­culo..." value="{#if linea.nombre??}{linea.nombre}{/if}"
+                           placeholder="Buscar artículo..." value="{#if linea.nombre??}{linea.nombre}{/if}"
                            hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
                            hx-trigger="keyup changed delay:300ms"
                            hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
@@ -119,8 +130,9 @@
                     <span class="js-subtotal" style="font-weight:600">{linea.subtotal}</span>
                 </div>
                 <div class="control">
-                    <button class="button is-danger is-small" type="button" title="Eliminar artÃ­culo"
-                            data-quitar-linea>&times;</button>
+                    <button class="button is-danger is-small" type="button" title="Eliminar artículo"
+                            aria-label="Eliminar artículo"
+                            data-quitar-linea>{#include _kit/icon name="close" /}</button>
                 </div>
             </div>
             {/for}
@@ -132,7 +144,7 @@
                 <input type="hidden" name="articuloCodigo" value=""/>
                 <div class="control is-expanded" style="position:relative;min-width:14rem">
                     <input class="input js-articulo-nombre" type="text" autocomplete="off"
-                           placeholder="Buscar artÃ­culo..."
+                           placeholder="Buscar artículo..."
                            hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/articulos"
                            hx-trigger="keyup changed delay:300ms"
                            hx-target="next .js-articulo-resultados" hx-swap="innerHTML"/>
@@ -147,24 +159,25 @@
                            placeholder="0.00" style="width:8rem;text-align:center"/>
                 </div>
                 <div class="control">
-                    <span class="js-subtotal" style="font-weight:600">â‚¡0.00</span>
+                    <span class="js-subtotal" style="font-weight:600">₡0.00</span>
                 </div>
                 <div class="control">
-                    <button class="button is-danger is-small" type="button" title="Eliminar artÃ­culo"
-                            data-quitar-linea>&times;</button>
+                    <button class="button is-danger is-small" type="button" title="Eliminar artículo"
+                            aria-label="Eliminar artículo"
+                            data-quitar-linea>{#include _kit/icon name="close" /}</button>
                 </div>
             </div>
         </template>
 
         <div class="buttons mt-3">
-            <button class="button is-light" type="button" id="agregar-linea">+ Agregar ArtÃ­culo</button>
+            <button class="button" type="button" id="agregar-linea">{#include _kit/icon name="plus" /} Agregar Artículo</button>
         </div>
 
         <div class="columns is-vcentered mt-3">
             <div class="column has-text-right">
                 <span class="title is-5">Total Estimado: </span>
-                <span class="title is-4 has-text-success" id="total-estimado">
-                    {#if modo == 'editar' && orden??}{#if orden.totalEstimado??}â‚¡{orden.totalEstimado}{#else}â‚¡0.00{/if}{#else}â‚¡0.00{/if}
+                <span class="title is-4" id="total-estimado">
+                    {#if modo == 'editar' && orden??}{#if orden.totalEstimado??}₡{orden.totalEstimado}{#else}₡0.00{/if}{#else}₡0.00{/if}
                 </span>
             </div>
         </div>
@@ -172,7 +185,7 @@
         {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
         <div class="field is-grouped is-grouped-centered mt-4">
             <div class="control">
-                <button class="button is-success" type="submit">
+                <button class="button is-primary" type="submit">
                     {#if modo == 'editar'}Guardar Cambios{#else}Guardar Orden{/if}
                 </button>
             </div>
@@ -185,7 +198,7 @@
 
 {!
   Line editor: add-row clones the template, remove-row drops the row, and any
-  cantidad/precio edit recomputes row subtotal + grand total (display only â€”
+  cantidad/precio edit recomputes row subtotal + grand total (display only —
   the server recomputes authoritatively via calcularSubtotal/calcularTotal).
   Kept brace-safe for Qute: every "{" is followed by whitespace/newline.
 !}
@@ -207,18 +220,18 @@
             var subtotal = fila.querySelector('.js-subtotal');
             if (cantidad && precio && subtotal) {
                 var total = numero(cantidad.value) * numero(precio.value);
-                subtotal.textContent = 'â‚¡' + total.toFixed(2);
+                subtotal.textContent = '₡' + total.toFixed(2);
             }
             var granTotal = 0;
             filas().forEach(function (actual) {
                 var s = actual.querySelector('.js-subtotal');
                 if (s) {
-                    granTotal += numero((s.textContent || '').replace('â‚¡', '').replace(/,/g, ''));
+                    granTotal += numero((s.textContent || '').replace('₡', '').replace(/,/g, ''));
                 }
             });
             var salida = document.getElementById('total-estimado');
             if (salida) {
-                salida.textContent = 'â‚¡' + granTotal.toFixed(2);
+                salida.textContent = '₡' + granTotal.toFixed(2);
             }
         }
         document.addEventListener('input', function (e) {

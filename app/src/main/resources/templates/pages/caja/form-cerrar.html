@@ -18,10 +18,16 @@
     toastSeverity / toastMessage - optional OOB toast
 
   CSRF: inherited automatically from the layout <body hx-headers> pattern.
-!}
-<div id="panel-cerrar-caja">
-    <h5 class="title is-5">Cerrar Sesion</h5>
 
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The panel with its <h5> heading is a _kit/surface now, so the panel's
+    title is a real <h2>.
+  - "Cerrar Sesion" keeps is-danger (it closes the shift and books a
+    difference), but the lock emoji is a kit icon now.
+!}
+{#include _kit/surface id="panel-cerrar-caja" title="Cerrar Sesión" }
+    {#content}
     <form id="forma-cerrar-caja"
           hx-post="{config:['quarkus.http.root-path']}/api/app/caja/close/form"
           hx-target="#caja-estado" hx-swap="innerHTML">
@@ -66,7 +72,8 @@
         {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
         <div class="field">
             <button class="button is-danger" type="submit"
-                    hx-confirm="&iquest;Cerrar la sesi&oacute;n de caja? La diferencia calculada entre lo contado y lo esperado quedar&aacute; registrada en el historial.">&#128274; Cerrar Sesion</button>
+                    hx-confirm="&iquest;Cerrar la sesi&oacute;n de caja? La diferencia calculada entre lo contado y lo esperado quedar&aacute; registrada en el historial.">{#include _kit/icon name="lock" /} Cerrar Sesión</button>
         </div>
     </form>
-</div>
+    {/content}
+{/include}

@@ -19,8 +19,20 @@
   Editar (BORRADOR only), Cambiar Estado (BORRADOR/ENVIADA/CONFIRMADA/
   RECIBIDA), Eliminar (BORRADOR only, hx-confirm parity with the legacy
   onclick confirm).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The wrapper's .box frame is gone: the panel around it is the _kit/surface
+    in ordenes.html, so the table sits inside ONE frame instead of two. The id
+    is still the hx-target, so a refresh swaps the table and the panel's title
+    survive.
+  - The row actions are icon-only buttons (kit icons, own aria-label) instead
+    of emoji glyphs and per-row semantic hues. Only the destructive one keeps
+    is-danger; the others are bordered buttons, because the teal accent is the
+    screen's one filled primary.
+  - The Total column is a `num` cell: right-aligned with tabular figures.
 !}
-<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+<div id="{modelo.id}">
     <div class="field">
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{q}" autocomplete="off"
@@ -43,30 +55,34 @@
                 <td class="has-text-centered">
                     <span class="tag {fila.estadoClass}">{fila.estado}</span>
                 </td>
-                <td class="has-text-right" style="font-weight:700">{fila.total}</td>
+                <td class="num" style="font-weight:700">{fila.total}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
-                        <button type="button" class="button is-small is-info" title="Ver detalles"
+                        <button type="button" class="button is-small" title="Ver detalles"
+                                aria-label="Ver detalles"
                                 aria-haspopup="dialog" data-kit-open="detalle-orden"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/detalle"
-                                hx-target="#detalle-orden-body" hx-swap="innerHTML">&#128065;</button>
+                                hx-target="#detalle-orden-body" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                         {#if fila.puedeEditar}
-                        <button type="button" class="button is-small is-success" title="Editar orden"
+                        <button type="button" class="button is-small" title="Editar orden"
+                                aria-label="Editar orden"
                                 aria-haspopup="dialog" data-kit-open="editar-orden"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/formularios/{fila.id}"
-                                hx-target="#editar-orden-body" hx-swap="innerHTML">&#9998;</button>
+                                hx-target="#editar-orden-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
                         {/if}
                         {#if fila.puedeCambiarEstado}
-                        <button type="button" class="button is-small is-warning" title="Cambiar estado"
+                        <button type="button" class="button is-small" title="Cambiar estado"
+                                aria-label="Cambiar estado"
                                 aria-haspopup="dialog" data-kit-open="estado-orden"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}/estado"
-                                hx-target="#estado-orden-body" hx-swap="innerHTML">&#8594;</button>
+                                hx-target="#estado-orden-body" hx-swap="innerHTML">{#include _kit/icon name="arrow-right" /}</button>
                         {/if}
                         {#if fila.puedeEliminar}
                         <button type="button" class="button is-small is-danger" title="Eliminar orden"
+                                aria-label="Eliminar orden"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/ordenes/{fila.id}"
                                 hx-confirm="¿Está seguro de eliminar esta orden?"
-                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#128465;</button>
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                         {/if}
                     </div>
                 </td>
