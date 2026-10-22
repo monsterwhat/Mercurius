@@ -127,7 +127,7 @@ class CorreosAdminPagesTest extends support.ContextPathIsolation {
                 .statusCode(200)
                 .contentType(ContentType.HTML)
                 .body(containsString("<html"))
-                .body(containsString("Reportes Programados X Correo Electronico"))
+                .body(containsString("Reportes Programados por Correo"))
                 .body(containsString("data-kit-table"))
                 .body(containsString("data-kit-modal"))
                 .body(containsString("data-kit-confirm-modal"))

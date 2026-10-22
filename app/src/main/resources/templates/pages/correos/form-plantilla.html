@@ -69,13 +69,13 @@
             <label class="label" for="tpl-cuerpo">Cuerpo HTML:</label>
             <div class="control">
                 <textarea class="textarea" id="tpl-cuerpo" name="cuerpoHtml" rows="10" required="required"
-                          style="font-family: monospace;">{#if plantilla?? && plantilla.cuerpoHtml??}{plantilla.cuerpoHtml}{/if}</textarea>
+                          class="kit-code">{#if plantilla?? && plantilla.cuerpoHtml??}{plantilla.cuerpoHtml}{/if}</textarea>
             </div>
         </div>
 
         <div class="notification is-info is-light">
             <p><strong>Placeholders disponibles:</strong></p>
-            <p style="font-family: monospace; font-size: 0.9em;">
+            <p class="kit-code is-size-7">
                 &#123;&#123;nombre&#125;&#125; - Nombre del reporte &#160;|&#160;
                 &#123;&#123;fecha&#125;&#125; - Fecha actual &#160;|&#160;
                 &#123;&#123;total&#125;&#125; - Total de registros &#160;|&#160;

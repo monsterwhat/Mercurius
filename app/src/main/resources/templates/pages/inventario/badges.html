@@ -9,25 +9,27 @@
     badges.inactivos   Long - countInactivos()
     badges.procesados  Long - legacy tab-counter arithmetic activos - pendientes
 !}
-<div class="stats-grid">
-    <button type="button" class="stat-card" @click="tab = 'activos'"
-            :class="{ 'active': tab === 'activos' }">
-        <span class="stat-number">{badges.activos}</span>
-        <span class="stat-label">Activos</span>
+{#include _kit/view-tabs ariaLabel="Vistas de inventario"}
+    {#tabs}
+    <button type="button" class="view-tab" :class="{ 'is-active': tab === 'activos' }"
+            @click="tab = 'activos'">
+        <span>Activos</span>
+        <span class="view-tab-count">{badges.activos}</span>
     </button>
-    <button type="button" class="stat-card" @click="tab = 'pendientes'"
-            :class="{ 'active': tab === 'pendientes' }">
-        <span class="stat-number">{badges.pendientes}</span>
-        <span class="stat-label">Pendientes</span>
+    <button type="button" class="view-tab" :class="{ 'is-active': tab === 'pendientes' }"
+            @click="tab = 'pendientes'">
+        <span>Pendientes</span>
+        <span class="view-tab-count">{badges.pendientes}</span>
     </button>
-    <button type="button" class="stat-card" @click="tab = 'procesados'"
-            :class="{ 'active': tab === 'procesados' }">
-        <span class="stat-number">{badges.procesados}</span>
-        <span class="stat-label">Procesados</span>
+    <button type="button" class="view-tab" :class="{ 'is-active': tab === 'procesados' }"
+            @click="tab = 'procesados'">
+        <span>Procesados</span>
+        <span class="view-tab-count">{badges.procesados}</span>
     </button>
-    <button type="button" class="stat-card" @click="tab = 'inactivos'"
-            :class="{ 'active': tab === 'inactivos' }">
-        <span class="stat-number">{badges.inactivos}</span>
-        <span class="stat-label">Inactivos</span>
+    <button type="button" class="view-tab" :class="{ 'is-active': tab === 'inactivos' }"
+            @click="tab = 'inactivos'">
+        <span>Inactivos</span>
+        <span class="view-tab-count">{badges.inactivos}</span>
     </button>
-</div>
+    {/tabs}
+{/include}

@@ -39,7 +39,7 @@
         {/if}
         {#if resultado.pdfUrl??}
         <p style="margin-top:0.5rem">
-            <a id="pdf-link" class="button is-dark" href="{resultado.pdfUrl}">&#11015; Descargar PDF</a>
+            <a id="pdf-link" class="button is-dark" href="{resultado.pdfUrl}">{#include _kit/icon name="download" /} Descargar PDF</a>
         </p>
         {/if}
     </div>

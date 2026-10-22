@@ -814,6 +814,50 @@ button.metric-card:focus-visible,
     margin-left: .25rem;
 }
 
+// A code, an ID, a key: the ONE place monospace is right. The inline
+// `style="font-family:monospace"` declarations that used to carry it are
+// gone; this is the class that replaces them.
+.kit-code {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    font-weight: 500;
+}
+
+// A number that refreshes on its own: monospace so the digits do not jitter
+// as they change, and the page's ink so it is readable wherever it sits.
+.kit-countdown {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+// An app screen's title is 18-32px. Bulma's .title.is-3 is 2.5rem (40px) —
+// a landing-page size. An operator reads the title of every screen all day
+// and pays for it in vertical space on each one, so the page title is capped
+// at 28px here. The selector is deliberately narrow: it only touches the
+// screen's own h1, not the .title elements used inside a page for a figure.
+h1.title.is-3 {
+    font-size: 1.75rem;
+}
+
+// ── The phone table ─────────────────────────────────────────────────────────
+// Below 768px the table keeps its natural width and the CONTAINER scrolls;
+// the columns are not compressed. A header that wraps to two lines ("Código
+// Barra" -> "Código" / "Barra") reads as two labels and shrinks the whole
+// table until the identity column has no room left.
+@media screen and (max-width: 768px) {
+    .table thead th {
+        white-space: nowrap;
+    }
+}
+
+// The empty state lives in a cell as wide as the table, so on a phone the
+// message is cut off mid-sentence by the scroll frame. Sticking it to the
+// left edge of the frame keeps it in view.
+.table td[colspan] {
+    background: var(--bulma-surface, var(--bulma-scheme-main));
+    left: 0;
+    position: sticky;
+}
+
 // =============================================================================
 // 21. Responsive
 // =============================================================================

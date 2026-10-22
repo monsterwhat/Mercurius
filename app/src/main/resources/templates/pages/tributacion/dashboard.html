@@ -18,49 +18,58 @@
             <div id="tributacion-kpis" x-data="{ tab: 'resumen' }">
             {#fragment id=kpis}
             <div class="tributacion-header">
-            <p class="title is-3 has-text-centered">Dashboard Hacienda</p>
-            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Estado actual de las facturas enviadas a Hacienda</p>
+            {#include _kit/page-header title="Dashboard Hacienda"
+                 subtitle="Estado actual de las facturas enviadas a Hacienda" /}
 
-            <div class="stats-grid">
-                <button type="button" class="stat-card" @click="tab = 'resumen'"
-                        :class="{ 'active': tab === 'resumen' }">
-                    <span class="stat-number">{totalEmitidos}</span>
-                    <span class="stat-label">Total Emitidos</span>
-                    <p class="is-size-7" style="opacity:0.85">Tasa de éxito: {tasaExito}%</p>
+            {! The six numbers are KPIs AND the switcher for the three views.
+               The kit metric include cannot take Alpine attributes, so this
+               is the component markup written out, exactly as the kit
+               documents for a bound card. !}
+            <div class="metric-strip">
+                <button type="button" class="metric-card is-interactive"
+                        :class="{ 'is-active': tab === 'resumen' }"
+                        @click="tab = 'resumen'">
+                    <span class="metric-label">Total Emitidos</span>
+                    <span class="metric-value">{totalEmitidos}</span>
+                    <span class="metric-detail">Tasa de éxito: {tasaExito}%</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'resumen'"
-                        :class="{ 'active': tab === 'resumen' }">
-                    <span class="stat-number">{totalAceptados}</span>
-                    <span class="stat-label">Aceptados</span>
-                    <p class="is-size-7" style="opacity:0.85">{montoAceptados}</p>
+                <button type="button" class="metric-card is-interactive"
+                        :class="{ 'is-active': tab === 'resumen' }"
+                        @click="tab = 'resumen'">
+                    <span class="metric-label">Aceptados</span>
+                    <span class="metric-value">{totalAceptados}</span>
+                    <span class="metric-detail">{montoAceptados}</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'rechazados'"
-                        :class="{ 'active': tab === 'rechazados' }">
-                    <span class="stat-number">{totalRechazados}</span>
-                    <span class="stat-label">Rechazados</span>
+                <button type="button" class="metric-card is-interactive"
+                        :class="{ 'is-active': tab === 'rechazados' }"
+                        @click="tab = 'rechazados'">
+                    <span class="metric-label">Rechazados</span>
+                    <span class="metric-value">{totalRechazados}</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'pendientes'"
-                        :class="{ 'active': tab === 'pendientes' }">
-                    <span class="stat-number">{totalPendientes}</span>
-                    <span class="stat-label">Pendientes</span>
-                    <p class="is-size-7" style="opacity:0.85">{montoPendientes}</p>
+                <button type="button" class="metric-card is-interactive"
+                        :class="{ 'is-active': tab === 'pendientes' }"
+                        @click="tab = 'pendientes'">
+                    <span class="metric-label">Pendientes</span>
+                    <span class="metric-value">{totalPendientes}</span>
+                    <span class="metric-detail">{montoPendientes}</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'pendientes'"
-                        :class="{ 'active': tab === 'pendientes' }">
-                    <span class="stat-number">{totalEnviadosSinRespuesta}</span>
-                    <span class="stat-label">Enviados s/Respuesta</span>
+                <button type="button" class="metric-card is-interactive"
+                        :class="{ 'is-active': tab === 'pendientes' }"
+                        @click="tab = 'pendientes'">
+                    <span class="metric-label">Enviados s/Respuesta</span>
+                    <span class="metric-value">{totalEnviadosSinRespuesta}</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'resumen'"
-                        :class="{ 'active': tab === 'resumen' }">
-                    <span class="stat-number">{emitidosHoy}</span>
-                    <span class="stat-label">Emitidos Hoy</span>
-                    <p class="is-size-7 stat-detail">{#include _kit/icon name="check" /} {aceptadosHoy} &nbsp;{#include _kit/icon name="close" /} {rechazadosHoy}</p>
+                <button type="button" class="metric-card is-interactive"
+                        :class="{ 'is-active': tab === 'resumen' }"
+                        @click="tab = 'resumen'">
+                    <span class="metric-label">Emitidos Hoy</span>
+                    <span class="metric-value">{emitidosHoy}</span>
+                    <span class="metric-detail">{#include _kit/icon name="check" /} {aceptadosHoy} &nbsp;{#include _kit/icon name="close" /} {rechazadosHoy}</span>
                 </button>
-            </div>
             </div>
 
             <div class="buttons is-centered" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
-                <button type="button" class="button is-info"
+                <button type="button" class="button is-primary"
                         hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
                         hx-target="#tributacion-kpis" hx-swap="innerHTML">
                     Actualizar Dashboard
@@ -75,18 +84,18 @@
                     <thead>
                         <tr>
                             <th>Día</th>
-                            <th class="has-text-centered">Emitidos</th>
-                            <th class="has-text-centered">Aceptados</th>
-                            <th class="has-text-centered">Tasa Aceptación</th>
+                            <th class="num">Emitidos</th>
+                            <th class="num">Aceptados</th>
+                            <th class="num">Tasa Aceptación</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#for day in dailyStats}
                         <tr>
                             <td class="has-text-weight-semibold">{day.dia}</td>
-                            <td class="has-text-centered">{day.emitidos}</td>
-                            <td class="has-text-centered has-text-success has-text-weight-semibold">{day.aceptados}</td>
-                            <td class="has-text-centered">{day.tasa}%</td>
+                            <td class="num">{day.emitidos}</td>
+                            <td class="num has-text-success has-text-weight-semibold">{day.aceptados}</td>
+                            <td class="num">{day.tasa}%</td>
                         </tr>
                         {/for}
                     </tbody>
@@ -132,7 +141,7 @@
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
-                        <td class="has-text-centered">{f.intentos}</td>
+                        <td class="num">{f.intentos}</td>
                         <td><span class="tag is-danger">Rechazado</span></td>
                     </tr>
                     {/for}

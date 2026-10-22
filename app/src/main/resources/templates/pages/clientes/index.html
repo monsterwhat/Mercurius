@@ -31,28 +31,24 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="clientes-header">
-            <p class="title is-3 has-text-centered">Gestión de Clientes</p>
+        {#include _kit/page-header title="Gestión de Clientes"
+             subtitle="Cartera de clientes y su estado" /}
 
-            {! Stat cards — click to filter the table by status !}
-            <div class="stats-grid">
-                <a class="stat-card {#if filtroEstado == null}active{/if}" style="color:inherit"
-                   href="{config:['quarkus.http.root-path']}/api/app/clientes/table">
-                    <span class="stat-number">{clientesTotal ?: 0}</span>
-                    <span class="stat-label">Total</span>
-                </a>
-                <a class="stat-card {#if filtroEstado == 'activo'}active{/if}" style="color:inherit"
-                   href="{config:['quarkus.http.root-path']}/api/app/clientes/table?estado=activo">
-                    <span class="stat-number">{clientesActivosCount ?: 0}</span>
-                    <span class="stat-label">Activos</span>
-                </a>
-                <a class="stat-card {#if filtroEstado == 'inactivo'}active{/if}" style="color:inherit"
-                   href="{config:['quarkus.http.root-path']}/api/app/clientes/table?estado=inactivo">
-                    <span class="stat-number">{clientesInactivosCount ?: 0}</span>
-                    <span class="stat-label">Inactivos</span>
-                </a>
-            </div>
+        {! The three counts are FILTERS, not tabs: each one links to the same
+           board with a different status. !}
+        {#let filtroActual = (filtroEstado ?: "todos")}
+        <div class="metric-strip">
+            {#include _kit/metric label="Total" value=clientesTotal
+                 href="{config:['quarkus.http.root-path']}/api/app/clientes/table"
+                 active=(filtroActual == "todos") /}
+            {#include _kit/metric label="Activos" value=clientesActivosCount
+                 href="{config:['quarkus.http.root-path']}/api/app/clientes/table?estado=activo"
+                 active=(filtroActual == "activo") /}
+            {#include _kit/metric label="Inactivos" value=clientesInactivosCount
+                 href="{config:['quarkus.http.root-path']}/api/app/clientes/table?estado=inactivo"
+                 active=(filtroActual == "inactivo") /}
         </div>
+        {/let}
 
         {#include pages/clientes/tabla modelo=tablaClientes q=tablaClientes.q /}
 
@@ -61,7 +57,7 @@
              bodyUrl="/api/app/clientes/formularios/nueva"}{/include}
 
         {! Create dialog: default trigger hx-gets the empty form into the body !}
-        {#include _kit/modal id="crear-cliente" title="Crear Cliente" triggerLabel="Crear Cliente" triggerClass="is-success"
+        {#include _kit/modal id="crear-cliente" title="Crear Cliente" triggerLabel="Crear Cliente" triggerClass="is-primary"
              bodyUrl="/api/app/clientes/formularios/nueva"}{/include}
     </section>
 

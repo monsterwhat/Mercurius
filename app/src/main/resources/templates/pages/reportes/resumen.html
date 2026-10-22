@@ -10,7 +10,7 @@
 
     {#body}
         <div class="inventario-header">
-            <p class="title is-3">{titulo}</p>
+            <h1 class="title is-3">{titulo}</h1>
             <div class="stats-grid">
                 <a class="stat-card button {#if vista == 'todos'}is-primary{/if}"
                    href="?vista=todos{#if filtros.q??}&q={filtros.q}{/if}{#if filtros.familia??}&familia={filtros.familia}{/if}{#if filtros.departamento??}&departamento={filtros.departamento}{/if}">

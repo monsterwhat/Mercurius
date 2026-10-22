@@ -30,15 +30,15 @@
 
     {#body}
     <section class="section" style="padding-top:1rem" x-data="{ tab: 'activos' }">
-        <div class="inventario-header">
-            <p class="title is-3 has-text-centered">Gestión de Inventario</p>
+        {#include _kit/page-header title="Gestión de Inventario"
+             subtitle="Ajustes, movimientos y su estado" /}
 
-            {! Stat cards — polled so approvals made elsewhere stay fresh !}
-            <div id="inventario-badges"
-                 hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/badges"
-                 hx-trigger="every 30s" hx-swap="innerHTML">
-                {#include pages/inventario/badges badges=badges /}
-            </div>
+        {! The four counts are a TAB SWITCHER, and they are polled so an
+           approval made on another screen shows up here without a reload. !}
+        <div id="inventario-badges"
+             hx-get="{config:['quarkus.http.root-path']}/api/app/inventario/badges"
+             hx-trigger="every 30s" hx-swap="innerHTML">
+            {#include pages/inventario/badges badges=badges /}
         </div>
 
         {! ── Subir XML (subirFacturas.xhtml parity: uploadController → Parser).
@@ -77,14 +77,14 @@
             </div>
             <div class="level-right">
                 <div class="buttons">
-                    {#include _kit/modal id="crear-ajuste" title="Crear Ajuste" triggerLabel="Crear Ajuste" triggerClass="is-success"
+                    {#include _kit/modal id="crear-ajuste" title="Crear Ajuste" triggerLabel="Crear Ajuste" triggerClass="is-primary"
                          bodyUrl="/api/app/inventario/formularios/ajuste/nueva"}{/include}
                     {#if inject:securityIdentity.hasRole('registro')}
                     <form method="post" action="{config:['quarkus.http.root-path']}/api/app/export">
                         <input type="hidden" name="{inject:csrf.parameterName}" value="{inject:csrf.token}"/>
                         <input type="hidden" name="dataset" value="inventario"/>
                         <input type="hidden" name="type" value="pdf"/>
-                        <button class="button is-info" type="submit">Exportar PDF</button>
+                        <button class="button" type="submit">Exportar PDF</button>
                     </form>
                     {/if}
                 </div>

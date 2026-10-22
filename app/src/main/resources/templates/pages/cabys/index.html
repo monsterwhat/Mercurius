@@ -30,15 +30,7 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="cabys-header">
-            <p class="title is-3 has-text-centered">Catálogo de Bienes y Servicios (CAByS)</p>
-            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
-                <div class="stat-card">
-                    <span class="stat-number">{totalCodigos ?: 0}</span>
-                    <span class="stat-label">Códigos CAByS</span>
-                </div>
-            </div>
-        </div>
+        {#include _kit/page-header title="Catálogo de Bienes y Servicios (CAByS)"              subtitle="Códigos del catálogo de Hacienda" /}          {! The single count was a card of its own. The table footer already            says how many rows there are, so the card repeated it in a box. !}
 
         <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
             {#if canImport}
@@ -86,11 +78,11 @@
             document.querySelectorAll('[data-col-toggle]').forEach(function (btn) {
                 var col = parseInt(btn.getAttribute('data-col-toggle'), 10);
                 if (ocultas.indexOf(col) !== -1) {
-                    btn.classList.add('is-info');
+                    btn.classList.add('is-primary');
                     btn.classList.remove('is-light');
                 } else {
                     btn.classList.add('is-light');
-                    btn.classList.remove('is-info');
+                    btn.classList.remove('is-primary');
                 }
             });
         }

@@ -183,7 +183,7 @@ class UsersPageTest extends support.ContextPathIsolation {
                     .when().post(BASE + "/api/app/users")
                     .then()
                     .statusCode(200)
-                    .header("HX-Redirect", equalTo("/api/app/users/table"));
+                    .header("HX-Redirect", equalTo("/Mercurius/api/app/users/table"));
 
             Usuarios creado = loginService.findByUsername(marker);
             assertNotNull(creado, "the HTMX form twin must persist the user");
