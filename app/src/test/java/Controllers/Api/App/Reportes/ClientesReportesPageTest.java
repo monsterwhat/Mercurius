@@ -39,9 +39,9 @@ class ClientesReportesPageTest extends support.ContextPathIsolation {
                 .then()
                 .statusCode(200)
                 .body(containsString("Reportes de Clientes"))
-                .body(containsString("Clientes Activos"))
-                .body(containsString("Clientes Inactivos"))
-                .body(containsString("Total Clientes"))
+                .body(containsString("Clientes activos"))
+                .body(containsString("Clientes inactivos"))
+                .body(containsString("Total clientes"))
                 .body(containsString("data-kit-table"));
     }
 

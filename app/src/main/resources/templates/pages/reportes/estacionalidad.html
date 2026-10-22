@@ -10,26 +10,23 @@
     {#title}Análisis de Estacionalidad | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3 has-text-centered">Análisis de Estacionalidad</h1>
+        {#include _kit/page-header title="Análisis de Estacionalidad" subtitle="Ventas por mes, día, departamento, familia y fecha" /}
 
-        <div class="box">
-            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="estacionalidad-filtros">
-                <div class="field is-horizontal">
-                    <div class="field mr-3">
-                        <label class="label" for="estacionalidad-inicio">Fecha Inicio</label>
-                        <input class="input" type="date" id="estacionalidad-inicio" name="inicio" value="{filtroInicio}"/>
-                    </div>
-                    <div class="field mr-3">
-                        <label class="label" for="estacionalidad-fin">Fecha Fin</label>
-                        <input class="input" type="date" id="estacionalidad-fin" name="fin" value="{filtroFin}"/>
-                    </div>
-                    <div class="field">
-                        <label class="label">&nbsp;</label>
-                        <button class="button is-primary" type="submit">Actualizar</button>
-                    </div>
-                </div>
-            </form>
-        </div>
+        {#include _kit/filter-bar id="estacionalidad-filtros" method="get"}
+            <div class="field">
+                <label class="label" for="estacionalidad-inicio">Fecha Inicio</label>
+                <input class="input" type="date" id="estacionalidad-inicio" name="inicio" value="{filtroInicio}"/>
+            </div>
+            <div class="field">
+                <label class="label" for="estacionalidad-fin">Fecha Fin</label>
+                <input class="input" type="date" id="estacionalidad-fin" name="fin" value="{filtroFin}"/>
+            </div>
+            {#actions}
+            <button class="button is-primary" type="submit">Actualizar</button>
+            {/actions}
+        {/include}
+
+
 
         {! TODO(T29): replace these tables with Chart.js line/bar charts consuming
            SeasonalityService JSON (monthly trend, day-of-week, department,
@@ -58,91 +55,101 @@
             {#fragment id=tabla}
                 <div class="columns is-multiline">
                     <div class="column is-half">
-                        <div class="box">
-                            <h2 class="title is-5 has-text-centered">Tendencia Mensual de Ventas</h2>
+        {#include _kit/surface title="Tendencia Mensual de Ventas"}
+            {#content}
                             <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-mensual">
                                 <thead><tr><th>Mes</th><th>Total Ventas</th></tr></thead>
                                 <tbody>
                                     {#if mensual == null || mensual.isEmpty()}
-                                    <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                                    <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
                                     {#else}
                                     {#for m in mensual}
-                                    <tr data-row-key="{m.mes}"><td>{m.mes}</td><td>₡{m.total}</td></tr>
+                                    <tr data-row-key="{m.mes}"><td>{m.mes}</td><td class="num">₡{m.total}</td></tr>
                                     {/for}
                                     {/if}
                                 </tbody>
                             </table>
-                        </div>
+            {/content}
+        {/include}
                     </div>
                     <div class="column is-half">
-                        <div class="box">
-                            <h2 class="title is-5 has-text-centered">Ventas por Día de la Semana</h2>
+        {#include _kit/surface title="Ventas por Día de la Semana"}
+            {#content}
                             <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-dias">
                                 <thead><tr><th>Día</th><th>Total Ventas</th></tr></thead>
                                 <tbody>
                                     {#for d in dias}
-                                    <tr data-row-key="{d.dia}"><td>{d.dia}</td><td>₡{d.total}</td></tr>
+                                    <tr data-row-key="{d.dia}"><td>{d.dia}</td><td class="num">₡{d.total}</td></tr>
                                     {/for}
                                 </tbody>
                             </table>
-                        </div>
+            {/content}
+        {/include}
                     </div>
                     <div class="column is-half">
-                        <div class="box">
-                            <h2 class="title is-5 has-text-centered">Ventas por Departamento</h2>
+        {#include _kit/surface title="Ventas por Departamento"}
+            {#content}
                             <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-departamentos">
                                 <thead><tr><th>Departamento</th><th>Total Ventas</th></tr></thead>
                                 <tbody>
                                     {#if departamentos == null || departamentos.isEmpty()}
-                                    <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                                    <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
                                     {#else}
                                     {#for d in departamentos}
-                                    <tr data-row-key="{d.nombre}"><td>{d.nombre}</td><td>₡{d.total}</td></tr>
+                                    <tr data-row-key="{d.nombre}"><td>{d.nombre}</td><td class="num">₡{d.total}</td></tr>
                                     {/for}
                                     {/if}
                                 </tbody>
                             </table>
-                        </div>
+            {/content}
+        {/include}
                     </div>
                     <div class="column is-half">
-                        <div class="box">
-                            <h2 class="title is-5 has-text-centered">Ventas por Familia</h2>
+        {#include _kit/surface title="Ventas por Familia"}
+            {#content}
                             <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-familias">
                                 <thead><tr><th>Familia</th><th>Total Ventas</th></tr></thead>
                                 <tbody>
                                     {#if familias == null || familias.isEmpty()}
-                                    <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                                    <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
                                     {#else}
                                     {#for f in familias}
-                                    <tr data-row-key="{f.nombre}"><td>{f.nombre}</td><td>₡{f.total}</td></tr>
+                                    <tr data-row-key="{f.nombre}"><td>{f.nombre}</td><td class="num">₡{f.total}</td></tr>
                                     {/for}
                                     {/if}
                                 </tbody>
                             </table>
-                        </div>
+            {/content}
+        {/include}
                     </div>
                 </div>
 
-                <div class="box">
-                    <h2 class="title is-5 has-text-centered">Datos Diarios</h2>
+        {#include _kit/surface title="Datos Diarios"}
+            {#content}
                     <table class="table is-striped is-hoverable is-fullwidth" id="estacionalidad-diarios">
                         <thead><tr><th>Fecha</th><th>Total Ventas</th></tr></thead>
                         <tbody>
                             {#if diarios == null || diarios.isEmpty()}
-                            <tr><td colspan="2" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                            <tr><td colspan="2" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
                             {#else}
                             {#for row in diarios}
-                            <tr data-row-key="{row.fecha}"><td>{row.fecha}</td><td>₡{row.total}</td></tr>
+                            <tr data-row-key="{row.fecha}"><td>{row.fecha}</td><td class="num">₡{row.total}</td></tr>
                             {/for}
                             {/if}
                         </tbody>
                     </table>
-                </div>
+            {/content}
+        {/include}
             {/fragment}
         </div>
 <script>
 (function () {
     if (!window.MercuriusCharts || typeof window.MercuriusCharts.create !== 'function') { return; }
+    // One hue for the data on all four charts: --mercurius-chart-series-1,
+    // resolved through resolveColour() because a canvas cannot paint var().
+    var rootStyle = getComputedStyle(document.documentElement);
+    var seriesOne = window.MercuriusCharts.resolveColour(
+        rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
     var monthlyLabels = [{#for m in mensual}'{m.mes}',{/for}];
     var monthlyValues = [{#for m in mensual}{m.total},{/for}];
     var dayLabels = [{#for d in dias}'{d.dia}',{/for}];
@@ -155,25 +162,25 @@
     window.MercuriusCharts.create('estacionalidad-mensual-chart', {
         type: 'bar',
         labels: monthlyLabels,
-        datasets: [{ label: 'Ventas', data: monthlyValues, backgroundColor: '#3298dc' }],
+        datasets: [{ label: 'Ventas', data: monthlyValues, backgroundColor: seriesOne }],
         options: { plugins: { legend: { display: false } } }
     });
     window.MercuriusCharts.create('estacionalidad-dias-chart', {
         type: 'bar',
         labels: dayLabels,
-        datasets: [{ label: 'Ventas', data: dayValues, backgroundColor: '#48c78e' }],
+        datasets: [{ label: 'Ventas', data: dayValues, backgroundColor: seriesOne }],
         options: { plugins: { legend: { display: false } } }
     });
     window.MercuriusCharts.create('estacionalidad-departamentos-chart', {
         type: 'bar',
         labels: departmentLabels,
-        datasets: [{ label: 'Ventas', data: departmentValues, backgroundColor: '#ffdd57' }],
+        datasets: [{ label: 'Ventas', data: departmentValues, backgroundColor: seriesOne }],
         options: { plugins: { legend: { display: false } } }
     });
     window.MercuriusCharts.create('estacionalidad-familias-chart', {
         type: 'bar',
         labels: familyLabels,
-        datasets: [{ label: 'Ventas', data: familyValues, backgroundColor: '#f14668' }],
+        datasets: [{ label: 'Ventas', data: familyValues, backgroundColor: seriesOne }],
         options: { plugins: { legend: { display: false } } }
     });
 })();
