@@ -12,20 +12,29 @@
     totalAceptadas   Long   - invoices accepted by Hacienda
     totalRechazadas  Long   - invoices rejected by Hacienda
     baseUrl          String - base URL for this page
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The title is the kit's _kit/page-header: a real <h1> in the page's own
+    ink, with the scope in the muted subtitle.
+  - The four totals are ONE _kit/metric strip. They used to be four boxes
+    with four hues and 48px numbers: four unrelated facts instead of one
+    answer.
+  - The four navigation cards carry a real <h2> (they were <p class="title">,
+    which is not a heading at all), and their call to action is the SAME
+    quiet bordered button. Four filled buttons in four hues were four
+    accents and four competing calls to action on one screen.
 !}
 {#include layout}
     {#title}Gestión Tributaria | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="level">
-            <div class="level-left">
-                <div>
-                    <h1 class="title is-3">Gestión Tributaria</h1>
-                    <p class="subtitle is-5 has-text-grey">Administración de facturación electrónica, CAByS y declaraciones</p>
-                </div>
-            </div>
-        </div>
+        {! The screen's name is the kit's page header: a real <h1> in the
+           page's own ink, with the scope in the muted subtitle - the same
+           header every other board in the app carries. !}
+        {#include _kit/page-header title="Gestión Tributaria"
+             subtitle="Administración de facturación electrónica, CAByS y declaraciones" /}
 
         {! ── KPI Summary Cards ──────────────────────────────────── !}
         {! The four totals were four boxes with four hues and 48px numbers.
@@ -42,17 +51,17 @@
         <div class="columns is-multiline">
             <div class="column is-4">
                 <div class="box">
-                    <p class="title is-5">
+                    <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="gauge" /}</span>
                             <span>Dashboard</span>
                         </span>
-                    </p>
+                    </h2>
                     <p class="has-text-grey mb-4">
                         Vista general del estado de facturación electrónica: KPIs, últimos 7 días,
                         pendientes de envío y rechazados recientes.
                     </p>
-                    <a class="button is-info is-fullwidth"
+                    <a class="button is-fullwidth"
                        href="{config:['quarkus.http.root-path']}/app/tributacion/dashboard">
                         Ir al Dashboard
                     </a>
@@ -61,17 +70,17 @@
 
             <div class="column is-4">
                 <div class="box">
-                    <p class="title is-5">
+                    <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="search" /}</span>
                             <span>Consultas de Facturas</span>
                         </span>
-                    </p>
+                    </h2>
                     <p class="has-text-grey mb-4">
                         Consulta el estado de facturas pendientes, aceptadas y rechazadas.
                         Envío programado y corrección de facturas rechazadas por Hacienda.
                     </p>
-                    <a class="button is-warning is-fullwidth"
+                    <a class="button is-fullwidth"
                        href="{config:['quarkus.http.root-path']}/app/tributacion/consultas">
                         Ir a Consultas
                     </a>
@@ -80,17 +89,17 @@
 
             <div class="column is-4">
                 <div class="box">
-                    <p class="title is-5">
+                    <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="file" /}</span>
                             <span>Declaración IVA (D-104)</span>
                         </span>
-                    </p>
+                    </h2>
                     <p class="has-text-grey mb-4">
                         Cálculo de la declaración mensual de IVA. Resumen de ventas y compras
                         por período, débito y crédito fiscal.
                     </p>
-                    <a class="button is-link is-fullwidth"
+                    <a class="button is-fullwidth"
                        href="{config:['quarkus.http.root-path']}/app/tributacion/declaracion">
                         Ir a Declaración
                     </a>
@@ -99,17 +108,17 @@
 
             <div class="column is-4">
                 <div class="box">
-                    <p class="title is-5">
+                    <h2 class="title is-5">
                         <span class="icon-text">
                             <span class="icon">{#include _kit/icon name="barcode" /}</span>
                             <span>Catálogo CAByS</span>
                         </span>
-                    </p>
+                    </h2>
                     <p class="has-text-grey mb-4">
                         Consulta y gestión del catálogo de Bienes y Servicios de Hacienda.
                         Búsqueda por código o descripción.
                     </p>
-                    <a class="button is-success is-fullwidth"
+                    <a class="button is-fullwidth"
                        href="{config:['quarkus.http.root-path']}/app/cabys">
                         Ir a CAByS
                     </a>

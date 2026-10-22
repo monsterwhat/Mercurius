@@ -27,7 +27,7 @@
                 <div class="control has-icons-left">
                     <input class="input is-small" type="text" name="q"
                            value="{#if q??}{q}{/if}" autocomplete="off"
-                           placeholder="Buscar recibos..."
+                           placeholder="Buscar facturas..."
                            hx-get="{config:['quarkus.http.root-path']}{modelo.baseUrl}?bucket={modelo.bucket}"
                            hx-trigger="keyup changed delay:300ms"
                            hx-target="#{modelo.id}" hx-swap="outerHTML"/>
@@ -55,33 +55,38 @@
                 </td>
                 <td class="has-text-centered" style="white-space:nowrap">
                     <button type="button" class="button is-small is-info" title="Ver detalles"
+                            aria-label="Ver detalles"
                             aria-haspopup="dialog"
                             hx-get="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}"
-                            hx-target="#recibo-detalle-cuerpo" hx-swap="innerHTML">&#128065;</button>
+                            hx-target="#recibo-detalle-cuerpo" hx-swap="innerHTML">{#include _kit/icon name="eye" /}</button>
                     {#if !fila.notaCredito}
                     <button type="button" class="button is-small is-warning" title="Marcar como pagada"
+                            aria-label="Marcar como pagada"
                             {#if fila.pagada}disabled{/if}
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/pay"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-confirm="&iquest;Marcar como pagada la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}?">&#128176;</button>
+                            hx-confirm="&iquest;Marcar como pagada la factura {#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}{fila.dto.id}{/if}?">{#include _kit/icon name="money" /}</button>
                     {/if}
                     <button type="button" class="button is-small is-success" title="Procesar (enviar a Hacienda)"
+                            aria-label="Procesar (enviar a Hacienda)"
                             {#if fila.procesada}disabled{/if}
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/process"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-confirm="&iquest;Procesar la factura y enviarla a Hacienda?">&#8635;</button>
+                            hx-confirm="&iquest;Procesar la factura y enviarla a Hacienda?">{#include _kit/icon name="refresh" /}</button>
                     <button type="button" class="button is-small is-link" title="Aceptar factura (Mensaje Receptor)"
+                            aria-label="Aceptar factura (Mensaje Receptor)"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/accept"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
                             hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">{#include _kit/icon name="check" /}</button>
                     <button type="button" class="button is-small is-danger" title="Rechazar factura (Mensaje Receptor)"
+                            aria-label="Rechazar factura (Mensaje Receptor)"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/reject"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
                             hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">{#include _kit/icon name="close" /}</button>
                 </td>
             </tr>
             {#else}
-            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron recibos con los criterios proporcionados</td></tr>
+            <tr><td colspan="{modelo.columnas.size()}" class="has-text-centered has-text-grey">No se encontraron facturas con los criterios proporcionados</td></tr>
             {/for}
         {/rows}
     {/include}

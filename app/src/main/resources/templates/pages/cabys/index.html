@@ -24,32 +24,61 @@
     - Import: "Importar/Actualizar Catálogo" button hx-post to
       POST /api/app/cabys/import (admin/tributacion only), hx-confirm styled
       via _kit/confirm, HX-Redirect refreshes the page on success.
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The title is "Catálogo CAByS" with the full name of the catalog in the
+    subtitle: "Catálogo de Bienes y Servicios (CAByS)" wrapped to THREE
+    lines at 390px, and the screen's name is not three lines long.
+  - The import action is an ordinary action in the page header. It used to
+    sit in a position:fixed container at the bottom right, where it floated
+    ON TOP of the cells of a table row (the 13% and the "-" of the Impuesto
+    and Estado columns).
+  - The column toggles are quiet bordered controls. `button is-light` is a
+    near-white filled chip in the dark scheme - the brightest objects on the
+    screen - so the resting state is the plain bordered button and the
+    active state is the accent as TEXT on that same control.
 !}
 {#include layout}
     {#title}Catálogo CaByS | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        {#include _kit/page-header title="Catálogo de Bienes y Servicios (CAByS)"              subtitle="Códigos del catálogo de Hacienda" /}          {! The single count was a card of its own. The table footer already            says how many rows there are, so the card repeated it in a box. !}
-
-        <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
-            {#if canImport}
-                    <button type="button" class="button is-warning"
+        {! The single count was a card of its own. The table footer already
+           says how many rows there are, so the card repeated it in a box.
+           The visible title is short enough to stay on ONE line on a phone;
+           the full name of the catalog lives in the subtitle. !}
+        {#include _kit/page-header title="Catálogo CAByS"
+             subtitle="Catálogo de Bienes y Servicios de Hacienda"}
+            {#actions}
+                {! The import action is an ordinary action in the header row.
+                   It used to live in a position:fixed container at the
+                   bottom right, where it floated ON TOP of the cells of a
+                   table row. It is the ONE filled button of this screen, so
+                   it carries the app's accent. !}
+                {#if canImport}
+                    <button type="button" class="button is-primary"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/cabys/import"
                             hx-target="#tabla-cabys"
                             hx-swap="outerHTML"
                             hx-disabled-elt="this"
                             hx-on::response-error="cabysImportFailed(event)"
                             hx-confirm="Importar/actualizar el catálogo CABYS desde Hacienda? Esta operación puede tardar unos minutos.">
-                Importar/Actualizar Catálogo
-            </button>
-            {/if}
-        </div>
+                        Importar/Actualizar Catálogo
+                    </button>
+                {/if}
+            {/actions}
+        {/include}
 
+        {! The column toggles are quiet bordered controls. `button is-light` is
+           a near-white filled chip in the dark scheme - it was the brightest
+           object on the screen - so the resting state is the plain bordered
+           button and the active state is the accent as TEXT on that same
+           control. !}
         <div class="buttons are-small mb-3">
             <span class="has-text-grey is-size-7" style="align-self:center">Columnas:</span>
-            <button type="button" class="button is-light" data-col-toggle="2">Categoría</button>
-            <button type="button" class="button is-light" data-col-toggle="3">Descripción</button>
+            <button type="button" class="button" data-col-toggle="2">Categoría</button>
+            <button type="button" class="button" data-col-toggle="3">Descripción</button>
         </div>
 
         {#include pages/cabys/tabla modelo=tablaCabys q=tablaCabys.q /}
@@ -78,11 +107,9 @@
             document.querySelectorAll('[data-col-toggle]').forEach(function (btn) {
                 var col = parseInt(btn.getAttribute('data-col-toggle'), 10);
                 if (ocultas.indexOf(col) !== -1) {
-                    btn.classList.add('is-primary');
-                    btn.classList.remove('is-light');
+                    btn.classList.add('has-text-primary');
                 } else {
-                    btn.classList.add('is-light');
-                    btn.classList.remove('is-primary');
+                    btn.classList.remove('has-text-primary');
                 }
             });
         }

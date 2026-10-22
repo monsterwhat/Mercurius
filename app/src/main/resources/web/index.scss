@@ -368,10 +368,12 @@ select,
 }
 
 /* Pestañas mejoradas */
+// A resting panel carries a border OR a shadow, never both, and the tab
+// strip has neither: it is a row of labels on the page ground, and the
+// elevation under it only made it a box that floats above the board.
 .ui-tabs.ui-tabs-top {
     border-radius: 1rem !important;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .ui-tabs .ui-tabs-nav {
@@ -429,12 +431,13 @@ select,
 }
 
 /* Tarjetas para contenido de pestañas */
+// The card keeps its surface and its radius and loses the shadow: a resting
+// element carries one or the other, never both.
 .tab-content-card {
     background: var(--bulma-scheme-main);
     border-radius: 1rem;
     padding: 1.5rem;
     margin-top: 0;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 /* Barra de acciones mejorada */
@@ -458,12 +461,13 @@ select,
 }
 
 /* Botones mejorados */
+// The button is a flat fill: a resting control carries none, and the
+// elevation under it only made the primary action louder than the data
+// around it.
 .action-btn {
     border-radius: 0.75rem !important;
     font-weight: 500;
-    transition: box-shadow .15s cubic-bezier(.23, 1, .32, 1),
-                transform .12s cubic-bezier(.23, 1, .32, 1);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform .12s cubic-bezier(.23, 1, .32, 1);
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -471,7 +475,6 @@ select,
 
 .action-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .action-btn:active {
@@ -507,10 +510,11 @@ select,
 }
 
 /* Tablas mejoradas */
+// The table keeps its own header and footer rules and loses the shadow: a
+// resting element carries a border OR a shadow, never both.
 .articulos-table {
     border-radius: 0.75rem;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .articulos-table .ui-datatable-header {
@@ -595,7 +599,6 @@ select,
     border-radius: 1rem;
     padding: 1.5rem;
     transition: border-color .15s cubic-bezier(.23, 1, .32, 1),
-                box-shadow .15s cubic-bezier(.23, 1, .32, 1),
                 transform .15s cubic-bezier(.23, 1, .32, 1);
     cursor: pointer;
     position: relative;
@@ -633,11 +636,11 @@ select,
     padding: 0.25rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.875rem;
-    color: var(--bulma-text-light);
+    color: var(--mercurius-text-muted);
 }
 
 .articulo-card-body {
-    color: var(--bulma-text-light);
+    color: var(--mercurius-text-muted);
     margin-bottom: 1rem;
 }
 
@@ -724,12 +727,15 @@ select,
 }
 
 /* Tooltip mejorado */
+// The elevation is gone: this legacy rule carried one on its own, and a
+// resting element carries none. A tooltip that genuinely floats gets
+// its elevation from the kit's --mercurius-shadow-raised token, not from a
+// hard-coded offset here.
 .ui-tooltip {
     background: var(--bulma-text) !important;
     color: white !important;
     border-radius: 0.5rem !important;
     font-size: 0.875rem !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
 /* Loading state */
@@ -751,7 +757,7 @@ select,
 .empty-state {
     text-align: center;
     padding: 3rem 1rem;
-    color: var(--bulma-text-light);
+    color: var(--mercurius-text-muted);
 }
 
 .empty-state .icon {
@@ -951,5 +957,5 @@ select,
     color: var(--bulma-text-strong);
 }
 .modal-card-body .help {
-    color: var(--bulma-text-weak);
+    color: var(--mercurius-text-muted);
 }

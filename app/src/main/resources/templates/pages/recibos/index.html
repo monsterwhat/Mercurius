@@ -1,5 +1,5 @@
 {!
-  pages/recibos/index - Gestión de Recibos (T27). Qute/HTMX/Bulma port of
+  pages/recibos/index - Gestión de Facturas Emitidas (T27). Qute/HTMX/Bulma port of
   secured/pages/Recibos/index.xhtml: the four-bucket board (Todas / Pagadas /
   Procesadas / Vencidos) with a server-computed stats header, per-bucket kit
   data-tables and a row-select detail panel.
@@ -14,21 +14,47 @@
   GET /api/app/recibos/tabla?bucket=X; row actions swap #recibos-tablero;
   the detail panel fills from GET /api/app/recibos/{id}. Reads/actions live
   in Controllers.Api.App.RecibosResource.
+
+  ONE DATASET, ONE TABLE ON SCREEN
+  --------------------------------
+  The four tables are four VIEWS of the same comprobantes-emitidos dataset
+  (todas / pagadas / procesadas / vencidos). Rendering all four made the
+  screen two screens tall and left the clerk unable to tell which bucket
+  they were reading, so they read all of them. The board now shows ONE
+  bucket at a time: _kit/view-tabs carries the counts and the Alpine
+  `bucket` variable picks the visible panel.
+
+  The Alpine scope lives on this <section>, ABOVE the #recibos-tablero
+  swap target. A row action re-renders the whole board (outerHTML on
+  #recibos-tablero); a scope declared inside the board would be destroyed
+  and rebuilt with every action, throwing the operator back to the first
+  bucket. Here the scope survives, so the bucket they picked survives too.
+
+  ONE WORD: FACTURA
+  -----------------
+  The route is /app/facturas and the navbar calls this screen "Facturas
+  Emitidas", but the detail panel and the empty states said "recibo" while
+  the title said "facturas" - the title and the content contradicted each
+  other. The screen is about the invoices the business issues, so every
+  word on it is now "factura".
 !}
 {#include layout}
     {#title}Facturas Emitidas | Mercurius{/title}
 
     {#body}
-    <section class="section" style="padding-top:1rem">
-        <h1 class="title is-3">Facturas Emitidas</h1>
+    <section class="section" style="padding-top:1rem"
+             x-data="{ bucket: '{#if bucket??}{bucket}{#else}todas{/if}' }">
+
+        {! The screen's name is the page-header's <h1>. The bare
+           <h1 class="title is-3"> sat on the page background while the
+           panel heading below it wore a border, so the h2 read louder than
+           the h1. !}
+        {#include _kit/page-header title="Facturas Emitidas"
+             subtitle="Las facturas que el negocio emite y tiene que cobrar" /}
 
         {! ── Subir XML (facturas electrónicas) — port of legacy subirFacturas dialog ── !}
-        <div class="level">
-            <div class="level-left">
-                <h2 class="title is-4" style="margin-bottom:0">Subir Facturas Electrónicas</h2>
-            </div>
-        </div>
-        <div class="box is-shadowless" style="padding:0.75rem">
+        {#include _kit/surface id="recibos-upload-panel" title="Subir Facturas Electrónicas"}
+            {#content}
             <form id="recibos-upload-forma"
                   hx-post="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/upload"
                   hx-encoding="multipart/form-data"
@@ -46,20 +72,18 @@
                 </div>
             </form>
             <div id="upload-resultado-recibos"></div>
-        </div>
+            {/content}
+        {/include}
 
         {#include pages/recibos/tablero /}
 
-        <div class="box is-shadowless mt-5">
-            <div class="level mb-2">
-                <div class="level-left">
-                    <h2 class="title is-4 mb-0">Detalle del recibo</h2>
-                </div>
-            </div>
+        {#include _kit/surface id="recibo-detalle-panel" title="Detalle de la factura"}
+            {#content}
             <div id="recibo-detalle-cuerpo">
-                <p class="has-text-grey">Seleccione una fila de cualquier tabla para ver el detalle aqu&iacute;.</p>
+                <p class="has-text-grey">Seleccione una fila de la tabla para ver el detalle aqu&iacute;.</p>
             </div>
-        </div>
+            {/content}
+        {/include}
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}
