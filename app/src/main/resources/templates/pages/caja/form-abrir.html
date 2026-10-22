@@ -14,10 +14,17 @@
     toastSeverity / toastMessage - optional OOB toast
 
   CSRF: inherited automatically from the layout <body hx-headers> pattern.
-!}
-<div class="box" id="panel-abrir-caja">
-    <h5 class="title is-5">Abrir Sesion de Caja</h5>
 
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The .box panel with its <h5> heading is a _kit/surface now, so the
+    panel's title is a real <h2>.
+  - "Abrir Sesion" was a filled green (is-success) button with a lock
+    emoji; the app's teal is the only accent, so it is the one filled
+    primary, and the glyph is a kit icon.
+!}
+{#include _kit/surface id="panel-abrir-caja" title="Abrir Sesión de Caja" }
+    {#content}
     <form id="forma-abrir-caja"
           hx-post="{config:['quarkus.http.root-path']}/api/app/caja/open/form"
           hx-target="#caja-estado" hx-swap="innerHTML">
@@ -35,10 +42,11 @@
             </div>
         </div>
         <div class="field">
-            <button class="button is-success" type="submit">&#128274; Abrir Sesion</button>
+            <button class="button is-primary" type="submit">{#include _kit/icon name="lock" /} Abrir Sesión</button>
         </div>
     </form>
+    {/content}
+{/include}
 
-    {! Server-rendered toasts land in the layout container via estado-caja's
-       OOB sibling; nothing extra needed here. !}
-</div>
+{! Server-rendered toasts land in the layout container via estado-caja's
+   OOB sibling; nothing extra needed here. !}

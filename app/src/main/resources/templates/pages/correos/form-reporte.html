@@ -23,6 +23,11 @@
   interval, so the form twin enforces that whitelist server-side while the
   JSON contract stays untouched. Correos replaces the legacy p:chips widget
   with one-address-per-line textarea semantics.
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The report labels carry their accents again ("Facturación", "Artículos").
+    The checkbox VALUES are untouched: they are the legacy wire keys.
 !}
 <div id="forma-reporte">
     {#if modo == 'editar' && reporte??}
@@ -74,11 +79,11 @@
                 </label>
                 <label class="checkbox">
                     <input type="checkbox" name="reportes" value="FACTURACION"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FACTURACION')}checked{/if}/> Facturacion
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('FACTURACION')}checked{/if}/> Facturación
                 </label>
                 <label class="checkbox">
                     <input type="checkbox" name="reportes" value="ARTICULOS"
-                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('ARTICULOS')}checked{/if}/> Articulos
+                           {#if reporte?? && reporte.reportes?? && reporte.reportes.contains('ARTICULOS')}checked{/if}/> Artículos
                 </label>
                 <label class="checkbox">
                     <input type="checkbox" name="reportes" value="DEPARTAMENTOS"

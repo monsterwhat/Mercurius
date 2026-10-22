@@ -393,7 +393,7 @@ class CierreCajaResourceTest {
                     .contentType(ContentType.HTML)
                     .body(containsString("<html"))
                     .body(containsString("Control de Caja"))
-                    .body(containsString("Sesion Activa"))
+                    .body(containsString("Sesión Activa"))
                     .body(containsString("Cerrar Sesion"))
                     .body(containsString("hx-confirm"))
                     .body(containsString("Historial de Cierres"))
@@ -422,7 +422,7 @@ class CierreCajaResourceTest {
                     .statusCode(200)
                     .contentType(ContentType.HTML)
                     .body(containsString("data-kit-table"))
-                    .body(containsString("Historial de Cierres"))
+                    .body(not(containsString("Historial de Cierres")))
                     .body(not(containsString("<html")))
                     .body(not(containsString("toast-container")));
         } finally {

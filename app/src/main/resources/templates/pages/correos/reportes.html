@@ -26,6 +26,20 @@
   NOT PORTED (documented strangler gap): the "send now" envelope button
   (helper.checkChanges) — it drives CorreosScheduler's helper directly and no
   REST endpoint exposes that trigger.
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The page-header include was CORRUPTED: the subtitle was broken across
+    lines ("Env / í / o autom / á / tico...") and the whole include was
+    duplicated, so the second copy was rendered as visible text under the
+    header. The include is written once, with one clean subtitle.
+  - The count is a _kit/metric card, the same as its sibling screen
+    (correos/templates): the rendered table footer says "Página 1 de 1" and
+    does NOT repeat the count, so the number needs a home.
+  - "Crear Reporte Programado" is the screen's own action, so it lives in the
+    page header's {#actions} slot instead of a loose <div class="buttons">.
+  - The table sits in a _kit/surface: the board is one kind of panel from top
+    to bottom.
 !}
 {#include layout}
     {#title}Reportes Programados | Mercurius{/title}
@@ -33,33 +47,23 @@
     {#body}
     <section class="section" style="padding-top:1rem">
         {#include _kit/page-header title="Reportes Programados por Correo"
-             subtitle="Env
-í
-o autom
-á
-tico de reportes por correo electr
-ó
-nico" /}
+             subtitle="Envío automático de reportes por correo electrónico" }
+            {#actions}
+                {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-primary"
+                     bodyUrl="/api/app/reportes-programados/formularios/nueva" /}
+            {/actions}
+        {/include}
 
-        {! The single count was a card of its own. The table footer already
-           says how many rows there are, so the card repeated it in a box. !}
-             subtitle="Env
-í
-o autom
-á
-tico de reportes por correo electr
-ó
-nico" /}
-
-        {! The single count was a card of its own. The table footer already
-           says how many rows there are, so the card repeated it in a box. !}
-
-        <div class="buttons">
-            {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-primary"
-                 bodyUrl="/api/app/reportes-programados/formularios/nueva"}{/include}
+        {! The count is a KPI, not a filter and not a tab: a plain metric card. !}
+        <div class="metric-strip">
+            {#include _kit/metric label="Reportes" value=(totalReportes ?: 0) /}
         </div>
 
-        {#include pages/correos/tabla-reportes modelo=tablaReportes q=tablaReportes.q isAdmin=isAdmin /}
+        {#include _kit/surface title="Listado de reportes programados" }
+            {#content}
+                {#include pages/correos/tabla-reportes modelo=tablaReportes q=tablaReportes.q isAdmin=isAdmin /}
+            {/content}
+        {/include}
 
         {!$1!}
         {#include _kit/modal id="editar-reporte" title="Editar Reporte Programado" triggerClass="is-hidden"

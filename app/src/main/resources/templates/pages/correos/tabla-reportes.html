@@ -21,8 +21,19 @@
   Reportes / Acciones). Filter parity: globalFilterFunction over
   perfil/correos/reportes/frecuencia. Row actions: toggle (PUT /{id}/toggle),
   edit (data-kit-open), delete (admin-gated, hx-delete + hx-confirm).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The wrapper's .box frame is gone: the panel around it is the _kit/surface
+    in reportes.html, so the table sits inside ONE frame instead of two. The
+    id is still the hx-target, so a refresh swaps the table and the panel's
+    title survives.
+  - The row actions are icon-only buttons (kit icons, own aria-label) instead
+    of emoji glyphs. Only the destructive one keeps is-danger; the rest are
+    bordered buttons, because the teal accent is the screen's one filled
+    primary.
 !}
-<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+<div id="{modelo.id}">
     <div class="field">
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{#if q??}{q}{/if}" autocomplete="off"
@@ -39,7 +50,7 @@
             {#for reporte in modelo.filas}
             <tr>
                 <td class="has-text-centered">
-                    {#if reporte.estado}<span class="tag is-success">Habilitado</span>{#else}<span class="tag is-danger">Deshabilitado</span>{/if}
+                    {#if reporte.estado}<span class="status-chip is-success">Habilitado</span>{#else}<span class="status-chip is-danger">Deshabilitado</span>{/if}
                 </td>
                 <td style="font-weight:500">{reporte.perfil}</td>
                 <td>{#if reporte.correos??}{reporte.correos}{#else}&mdash;{/if}</td>
@@ -47,19 +58,22 @@
                 <td>{#if reporte.reportes??}{reporte.reportes}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
-                        <button type="button" class="button is-small is-success" title="Editar reporte programado"
+                        <button type="button" class="button is-small" title="Editar reporte programado"
+                                aria-label="Editar reporte programado"
                                 aria-haspopup="dialog" data-kit-open="editar-reporte"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/reportes-programados/formularios/{reporte.id}"
-                                hx-target="#editar-reporte-body" hx-swap="innerHTML">&#9998;</button>
-                        <button type="button" class="button is-small is-warning" title="Habilitar/Deshabilitar"
+                                hx-target="#editar-reporte-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
+                        <button type="button" class="button is-small" title="Habilitar/Deshabilitar"
+                                aria-label="Habilitar/Deshabilitar"
                                 hx-put="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}/toggle"
                                 hx-confirm="¿Cambiar el estado del reporte programado {reporte.perfil}?"
-                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                         {#if isAdmin??}{#if isAdmin}
                         <button type="button" class="button is-small is-danger" title="Eliminar reporte programado"
+                                aria-label="Eliminar reporte programado"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/reportes-programados/{reporte.id}"
                                 hx-confirm="¿Eliminar el reporte programado {reporte.perfil}? Esta acción no se puede deshacer."
-                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#128465;</button>
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="trash" /}</button>
                         {/if}{/if}
                     </div>
                 </td>
