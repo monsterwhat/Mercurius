@@ -6,7 +6,7 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        {#include _kit/page-header title=titulo subtitle="Movimientos de artículos por rango de fechas" /}
+        {#include _kit/page-header title="Movimientos por fecha" subtitle="Movimientos de artículos por rango de fechas" /}
 
         {#include _kit/filter-bar id="filtros-fechas" method="get"}
                 <div class="field">
@@ -37,6 +37,21 @@
                     </div>
                 </div>
                     {/include}
+
+        {! One family, four cuts: Por cajero, Por fecha, Por departamento
+           y Por familia comparten el mismo rango (y el mismo cajero donde
+           aplica). Las pestanas cambian de corte llevando los filtros.
+           Los parametros vacios equivalen a ausentes: el recurso los trata
+           como sin filtro (blank-safe), asi que el enlace siempre lleva
+           los tres y nunca rompe el ? con un & huerfano. !}
+        {#include _kit/view-tabs ariaLabel="Vistas de ventas"}
+            {#tabs}
+            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/ventas?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por cajero</a>
+            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/fechas?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por fecha</a>
+            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/departamentos?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por departamento</a>
+            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/familias?desde={filtros.desde ?: ''}&hasta={filtros.hasta ?: ''}&usuario={filtros.usuario ?: ''}">Por familia</a>
+            {/tabs}
+        {/include}
 
         {#include pages/reportes/_tablas/fechas /}
 
