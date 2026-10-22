@@ -36,6 +36,7 @@
                 <td class="has-text-centered">
                     {#if cliente.status??}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
                 </td>
+                <td class="is-family-monospace">{#if cliente.code??}{cliente.code}{#else}&mdash;{/if}</td>
                 <td style="font-weight:500">{cliente.name}</td>
                 <td>{#if cliente.address??}{cliente.address}{#else}&mdash;{/if}</td>
                 <td>{#if cliente.email??}{cliente.email}{#else}&mdash;{/if}</td>

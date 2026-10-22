@@ -108,6 +108,7 @@ public class ClientesReportesResource {
 
     private static @Nonnull List<Map<String, Object>> columnas() {
         return List.of(
+                Map.of("label", "Estado", "key", "estado"),
                 Map.of("label", "Nombre", "key", "nombre"),
                 Map.of("label", "Dirección", "key", "direccion"),
                 Map.of("label", "Correo", "key", "email"),

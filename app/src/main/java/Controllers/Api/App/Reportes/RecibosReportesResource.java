@@ -135,6 +135,7 @@ public class RecibosReportesResource {
 
     private static @Nonnull List<Map<String, Object>> columnas() {
         return List.of(
+                Map.of("label", "Estado", "key", "estado"),
                 Map.of("label", "Numero Consecutivo", "key", "consecutivo"),
                 Map.of("label", "Fecha", "key", "fecha"),
                 Map.of("label", "Emisor", "key", "emisor"),

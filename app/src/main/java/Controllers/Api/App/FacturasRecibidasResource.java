@@ -340,6 +340,7 @@ public class FacturasRecibidasResource {
         columnas.add(columna("Estado MR", null));
         columnas.add(columna("Total", "totalComprobante"));
         columnas.add(columna("Impuesto", "totalImpuesto"));
+        columnas.add(columna("Procesado", null));
         return ReportePageSupport.model(
                 "id", "facturas-recibidas",
                 "baseUrl", "/api/app/facturas-recibidas/tabla",
