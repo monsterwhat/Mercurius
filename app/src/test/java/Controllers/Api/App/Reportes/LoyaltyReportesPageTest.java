@@ -86,7 +86,7 @@ class LoyaltyReportesPageTest extends support.ContextPathIsolation {
                 .body(containsString("Programa de Lealtad - Reportes"))
                 .body(containsString("Top Clientes por Puntos"))
                 .body(containsString("% Cashback"))
-                .body(containsString("Meses Inactividad"));
+                .body(containsString("Meses inactividad"));
     }
 
     @Test
