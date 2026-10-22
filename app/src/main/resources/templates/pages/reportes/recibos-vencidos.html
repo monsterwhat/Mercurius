@@ -13,6 +13,16 @@
     {#body}
         {#include _kit/page-header title="Recibos Vencidos" subtitle="Comprobantes recibidos con el plazo vencido" /}
 
+        {! Un mismo buzon, dos estados: pendientes y vencidos comparten
+           la busqueda. La pestana cambia de estado llevandola. !}
+        {#include _kit/view-tabs ariaLabel="Vistas de recibos"}
+            {#tabs}
+            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/pendientes?q={filtros.q ?: ''}">Pendientes</a>
+            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/recibos/vencidos?q={filtros.q ?: ''}">Vencidos</a>
+            {/tabs}
+        {/include}
+
+
         <div class="notification">
             Este reporte es de solo lectura. Para marcar como pagados, procesar o
             activar/desactivar los recibos,

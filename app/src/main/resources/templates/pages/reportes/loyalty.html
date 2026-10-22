@@ -9,23 +9,13 @@
     {#title}Programa de Lealtad - Reportes | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3 has-text-centered">Programa de Lealtad - Reportes</h1>
+        {#include _kit/page-header title="Programa de Lealtad - Reportes" subtitle="Puntos acumulados y redenciones por cliente" /}
 
-        <div class="columns is-multiline has-text-centered box">
-            <div class="column">
-                <p class="heading">Clientes con Puntos</p>
-                <p class="title is-4">{topClientes.size()}</p>
-            </div>
-            <div class="column">
-                <p class="heading">% Cashback</p>
-                <p class="title is-4">{cashbackPercentage}%</p>
-            </div>
-            <div class="column">
-                <p class="heading">Meses Inactividad</p>
-                <p class="title is-4">{puntosInactivityMonths}</p>
-            </div>
+        <div class="metric-strip">
+            {#include _kit/metric label="Clientes con puntos" value=topClientes.size() /}
+            {#include _kit/metric label="% Cashback" value=(cashbackPercentage.toString() + "%") /}
+            {#include _kit/metric label="Meses inactividad" value=puntosInactivityMonths /}
         </div>
-
         <h2 class="title is-5">Top Clientes por Puntos</h2>
         <div class="table-container" id="loyalty-top-tabla">
             <table class="table is-striped is-hoverable is-fullwidth">
@@ -34,14 +24,14 @@
                 </thead>
                 <tbody>
                     {#if topClientes == null || topClientes.isEmpty()}
-                    <tr><td colspan="7" class="has-text-centered has-text-grey">Sin registros</td></tr>
+                    <tr><td colspan="7" class="has-text-centered mercurius-text-muted">Sin registros</td></tr>
                     {#else}
                     {#for c in topClientes}
                     <tr data-row-key="{c.code}">
                         <td>{c.name}</td>
                         <td>{#if c.email??}{c.email}{/if}</td>
                         <td>{#if c.idNumber??}{c.idNumber}{/if}</td>
-                        <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                        <td class="num">{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
                         <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
                         <td>
                             {#if c.statusPuntos == 'active'}<span class="status-chip is-success">{c.statusPuntos}</span>
@@ -50,7 +40,7 @@
                             {#else}<span class="status-chip is-neutral">Sin estado</span>{/if}
                         </td>
                         <td>
-                            <button type="button" class="button is-small is-info"
+                            <button type="button" class="button is-small"
                                     hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
                                     hx-target="#loyalty-historial-body"
                                     onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
@@ -64,20 +54,20 @@
 
         <h2 class="title is-5 mt-5">Todos los Clientes</h2>
 
-        <div class="box">
-            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="loyalty-filtros">
-                <div class="field">
-                    <label class="label" for="loyalty-q">Búsqueda general</label>
-                    <input class="input" type="text" id="loyalty-q" name="q"
-                           value="{#if filtros.q??}{filtros.q}{/if}"
-                           placeholder="Nombre, correo, cédula, puntos…"
-                           hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
-                           hx-trigger="keyup changed delay:300ms"
-                           hx-include="closest form"
-                           hx-target="#loyalty-tabla-container" hx-swap="innerHTML"/>
-                </div>
-            </form>
-        </div>
+        {#include _kit/filter-bar id="loyalty-filtros" method="get"}
+            <div class="field">
+                <label class="label" for="loyalty-q">Búsqueda general</label>
+                <input class="input" type="text" id="loyalty-q" name="q"
+                       value="{#if filtros.q??}{filtros.q}{/if}"
+                       placeholder="Nombre, correo, cédula, puntos."
+                       hx-get="{config:['quarkus.http.root-path']}{baseUrl}"
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-include="closest form"
+                       hx-target="#loyalty-tabla-container" hx-swap="innerHTML"/>
+            </div>
+        {/include}
+
+
 
         <div id="loyalty-tabla-container">
             {#fragment id=tabla}
@@ -90,10 +80,10 @@
                         <td>{c.name}</td>
                         <td>{#if c.email??}{c.email}{/if}</td>
                         <td>{#if c.phoneNumber??}{c.phoneNumber}{/if}</td>
-                        <td>{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
+                        <td class="num">{#if c.puntosAcumulados??}{c.puntosAcumulados}{#else}0{/if}</td>
                         <td>{#if c.lastPurchaseDate??}{time:format(c.lastPurchaseDate, 'dd/MM/yyyy')}{/if}</td>
                         <td>
-                            <button type="button" class="button is-small is-info"
+                            <button type="button" class="button is-small"
                                     hx-get="{config:['quarkus.http.root-path']}{baseUrl}/{c.code}/historial"
                                     hx-target="#loyalty-historial-body"
                                     onclick="document.getElementById('loyalty-historial-modal').classList.add('is-active')">Ver Historial</button>
