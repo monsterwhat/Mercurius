@@ -76,13 +76,20 @@
       Ignored while typing in a field, and never hijacks a modified key.
     !}
     <script>
-    document.addEventListener('keydown', function (e) {
-        if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
-        var tag = (document.activeElement && document.activeElement.tagName) || '';
-        if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
-        var q = document.querySelector('input[type="search"], input[name="q"]');
-        if (q) { e.preventDefault(); q.focus(); }
-    });
+    (function () {
+        function searchFields() {
+            return document.querySelectorAll('input[type="search"], input[name="q"]');
+        }
+        // The shortcut is discoverable: every search field names it.
+        searchFields().forEach(function (f) { if (!f.title) { f.title = 'Buscar (/)'; } });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+            var tag = (document.activeElement && document.activeElement.tagName) || '';
+            if (/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+            var q = searchFields()[0];
+            if (q) { e.preventDefault(); q.focus(); }
+        });
+    })();
     </script>
 
 </body>
