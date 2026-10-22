@@ -49,18 +49,18 @@
                 <p class="heading" style="margin-bottom:0">Venta de</p>
                 {#if panel.clienteCode??}
                 <p class="has-text-weight-semibold">{panel.clienteName}
-                    <span class="tag is-light">{panel.clientePuntos} pts</span></p>
+                    <span class="status-chip is-neutral">{panel.clientePuntos} pts</span></p>
                 {#else}
-                <p class="has-text-grey">Cliente ocasional</p>
+                <p class="mercurius-text-muted">Cliente ocasional</p>
                 {/if}
             </div>
         </div>
         <div class="level-right">
             {#if panel.hasOverrides}
             {#if panel.authorizedBy}
-            <span class="tag is-success">Autoriza: {panel.authorizedBy}</span>
+            <span class="status-chip is-success">Autoriza: {panel.authorizedBy}</span>
             {#else}
-            <button type="button" class="button is-small is-warning" aria-haspopup="dialog"
+            <button type="button" class="button is-small" aria-haspopup="dialog"
                     data-kit-open="modal-autorizacion">Autorizar precios</button>
             {/if}
             {/if}
@@ -83,8 +83,8 @@
         <tr data-codigo="{item.codigo}">
             <td>
                 {item.nombre}
-                {#if item.promo}<span class="tag is-success is-light">Promo</span>{/if}
-                {#if item.precioPersonalizado}<span class="tag is-warning is-light">Precio autorizado</span>{/if}
+                {#if item.promo}<span class="status-chip is-success">Promo</span>{/if}
+                {#if item.precioPersonalizado}<span class="status-chip is-warning">Precio autorizado</span>{/if}
             </td>
             <td class="has-text-centered" style="white-space:nowrap">
                 <form class="is-inline" style="display:inline">
@@ -173,11 +173,11 @@
     </div>
 
     <div class="buttons" style="margin-bottom:0">
-        <button type="button" id="btn-cancelar" class="button is-danger is-light"
+        <button type="button" id="btn-cancelar" class="button is-danger"
                 hx-post="{config:['quarkus.http.root-path']}/api/app/pos/cancel-form"
                 hx-confirm="¿Cancelar la venta actual?"
                 hx-target="#cart-panel" hx-swap="outerHTML">Cancelar venta</button>
-        <button type="button" id="btn-facturar" class="button is-success"
+        <button type="button" id="btn-facturar" class="button is-primary"
                 hx-post="{config:['quarkus.http.root-path']}/api/app/pos/facturar-form"
                 hx-include="#forma-tipo-documento"
                 hx-target="#facturar-resultado" hx-swap="innerHTML">{#include _kit/icon name="file" /} Facturar</button>

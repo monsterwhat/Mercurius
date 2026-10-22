@@ -9,7 +9,7 @@
   (Contacto / Telefono / Email / Plazo Pago / Entrega) ported from
   DepartamentosTableDetallada.xhtml.
 !}
-<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem"
+<div id="{modelo.id}"
      hx-boost="true" hx-target="#{modelo.id}" hx-swap="outerHTML">
     <input type="hidden" id="tab-departamentos" name="tab" value="departamentos"/>
     <div class="field">
@@ -29,25 +29,44 @@
             {#for departamento in modelo.filas}
             <tr>
                 <td class="has-text-centered">
-                    {#if departamento.status??}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                    {#if departamento.status??}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}
                 </td>
                 <td style="font-weight:500">{departamento.nombre}</td>
                 <td>{#if departamento.contactoNombre??}{departamento.contactoNombre}{#else}&mdash;{/if}</td>
                 <td>{#if departamento.contactoTelefono??}{departamento.contactoTelefono}{#else}&mdash;{/if}</td>
                 <td>{#if departamento.contactoEmail??}{departamento.contactoEmail}{#else}&mdash;{/if}</td>
-                <td class="has-text-right">{#if departamento.plazoPagoDias??}{departamento.plazoPagoDias}{#else}&mdash;{/if}</td>
-                <td class="has-text-right">{#if departamento.tiempoEntregaDias??}{departamento.tiempoEntregaDias}{#else}&mdash;{/if}</td>
+                <td class="num">{#if departamento.plazoPagoDias??}{departamento.plazoPagoDias}{#else}&mdash;{/if}</td>
+                <td class="num">{#if departamento.tiempoEntregaDias??}{departamento.tiempoEntregaDias}{#else}&mdash;{/if}</td>
                 <td>{#if departamento.usuario??}{departamento.usuario.username}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
-                        <button type="button" class="button is-small is-success" title="Editar departamento"
+                        {! Icon-only row actions are BORDERED buttons: the teal
+                           accent is the screen's one filled primary, and a
+                           second semantic hue per row is noise.
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The wrapper keeps its OWN id ("tabla-departamentos") and its old .box frame
+    is gone: the panel around it is the _kit/surface in index.html, so the
+    table sits INSIDE one frame instead of two. The id is still the hx-target,
+    so a refresh swaps the table and the panel's title and actions survive.
+  - The row actions are icon-only BORDERED buttons (kit icons, own
+    aria-label). They used to carry is-success / is-warning, which put a
+    second and a third accent hue on a screen whose only accent is teal.
+  - Plazo Pago and Entrega are quantities, so their cells carry `num`
+    (right-aligned, tabular figures). The column HEADERS are built
+    server-side (the headers map of _kit/data-table), so the matching "num"
+    flag on the header is out of this template's reach.
+ !}
+                        <button type="button" class="button is-small" title="Editar departamento"
+                                aria-label="Editar departamento"
                                 aria-haspopup="dialog" data-kit-open="editar-departamento"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/categorias/formularios/departamento/{departamento.id}"
-                                hx-target="#editar-departamento-body" hx-swap="innerHTML">&#9998;</button>
-                        <button type="button" class="button is-small is-warning" title="Cambiar estado"
+                                hx-target="#editar-departamento-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
+                        <button type="button" class="button is-small" title="Cambiar estado"
+                                aria-label="Cambiar estado"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/categorias/departamentos/{departamento.id}"
                                 hx-confirm="¿Cambiar el estado del departamento {departamento.nombre}?"
-                                hx-target="#{modelo.id}" hx-swap="outerHTML">&#9211;</button>
+                                hx-target="#{modelo.id}" hx-swap="outerHTML">{#include _kit/icon name="power" /}</button>
                     </div>
                 </td>
             </tr>

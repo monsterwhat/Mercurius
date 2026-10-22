@@ -10,17 +10,17 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="correos-header" style="text-align:center">
-            <p class="title is-1" style="color:white;margin-bottom:0.5rem">404</p>
-            <p class="title is-4 has-text-centered" style="color:white">Página no encontrada</p>
+        <div style="text-align:center">
+            <p class="title is-1" style="margin-bottom:0.5rem">404</p>
+            <h1 class="title is-4 has-text-centered">Página no encontrada</h1>
             {#if ruta??}
-            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85;word-break:break-all">{ruta}</p>
+            <p class="subtitle is-6 has-text-centered mercurius-text-muted" style="word-break:break-all">{ruta}</p>
             {/if}
         </div>
 
         <div class="buttons is-centered">
-            <a class="button is-link" href="{config:['quarkus.http.root-path']}/app/dashboard">Ir al dashboard</a>
-            <a class="button is-light" href="javascript:history.back()">Volver atrás</a>
+            <a class="button is-primary" href="{config:['quarkus.http.root-path']}/app/dashboard">Ir al dashboard</a>
+            <a class="button" href="javascript:history.back()">Volver atrás</a>
         </div>
     </section>
     {/body}

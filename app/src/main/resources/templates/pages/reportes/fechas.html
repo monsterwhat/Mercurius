@@ -6,14 +6,10 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3">{titulo}</h1>
-        <p class="subtitle">Movimientos de artículos por rango de fechas</p>
+        {#include _kit/page-header title=titulo subtitle="Movimientos de artículos por rango de fechas" /}
 
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <div class="column is-narrow field">
+        {#include _kit/filter-bar id="filtros-fechas" method="get"}
+                <div class="field">
                     <label class="label" for="usuario">Usuario</label>
                     <div class="control select">
                         <select name="usuario" id="usuario">
@@ -24,31 +20,23 @@
                         </select>
                     </div>
                 </div>
-                <div class="column is-narrow field">
+                <div class="field">
                     <label class="label" for="desde">Desde</label>
                     <div class="control">
                         <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
                     </div>
                 </div>
-                <div class="column is-narrow field">
+                <div class="field">
                     <label class="label" for="hasta">Hasta</label>
                     <div class="control">
                         <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
                     </div>
                 </div>
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
                     <div class="control">
                         <button class="button is-primary" type="submit">Cargar Reportes</button>
                     </div>
                 </div>
-            </form>
-            {#if !consultaCompleta}
-            <p class="has-text-danger">
-                Seleccione el usuario y las fechas a consultar para cargar el reporte.
-            </p>
-            {/if}
-        </div>
+                    {/include}
 
         {#include pages/reportes/_tablas/fechas /}
 

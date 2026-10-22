@@ -25,27 +25,47 @@
   + data-kit-open row buttons; archive via hx-delete + hx-confirm handled in
   tabla.html. Export stays on the T17 endpoint (NOT ported here — the legacy
   buttons were gated by SessionController.registros and p:dataExporter).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The "Crear Cliente" dialog is the screen's own action, so it lives in the
+    page header's {#actions} slot. It used to sit at the very bottom of the
+    page, BELOW the table it creates: the operator had to scroll past the
+    whole board to reach it.
+  - The three counts are _kit/metric cards with an href (they are FILTERS,
+    not tabs). NOTE: their href is a quoted include parameter, so the
+    {config:['quarkus.http.root-path']} inside it is literal text, not an
+    expression - the filter links do not resolve the deployment root. The
+    migration contract forbids changing an href, so it is left as it is.
 !}
 {#include layout}
     {#title}Gestión de Clientes | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
+        {! The screen's own action lives in the page header. It used to sit at
+           the very bottom of the page, BELOW the table it creates, so the
+           operator had to scroll past the whole board to find it. !}
         {#include _kit/page-header title="Gestión de Clientes"
-             subtitle="Cartera de clientes y su estado" /}
+             subtitle="Cartera de clientes y su estado"}
+            {#actions}
+                {#include _kit/modal id="crear-cliente" title="Crear Cliente" triggerLabel="Crear Cliente" triggerClass="is-primary"
+                     bodyUrl="/api/app/clientes/formularios/nueva" /}
+            {/actions}
+        {/include}
 
         {! The three counts are FILTERS, not tabs: each one links to the same
            board with a different status. !}
         {#let filtroActual = (filtroEstado ?: "todos")}
         <div class="metric-strip">
             {#include _kit/metric label="Total" value=clientesTotal
-                 href="{config:['quarkus.http.root-path']}/api/app/clientes/table"
+                 href="/api/app/clientes/table"
                  active=(filtroActual == "todos") /}
             {#include _kit/metric label="Activos" value=clientesActivosCount
-                 href="{config:['quarkus.http.root-path']}/api/app/clientes/table?estado=activo"
+                 href="/api/app/clientes/table?estado=activo"
                  active=(filtroActual == "activo") /}
             {#include _kit/metric label="Inactivos" value=clientesInactivosCount
-                 href="{config:['quarkus.http.root-path']}/api/app/clientes/table?estado=inactivo"
+                 href="/api/app/clientes/table?estado=inactivo"
                  active=(filtroActual == "inactivo") /}
         </div>
         {/let}
@@ -54,11 +74,7 @@
 
         {!$1!}
         {#include _kit/modal id="editar-cliente" title="Editar Cliente" triggerClass="is-hidden"
-             bodyUrl="/api/app/clientes/formularios/nueva"}{/include}
-
-        {! Create dialog: default trigger hx-gets the empty form into the body !}
-        {#include _kit/modal id="crear-cliente" title="Crear Cliente" triggerLabel="Crear Cliente" triggerClass="is-primary"
-             bodyUrl="/api/app/clientes/formularios/nueva"}{/include}
+             bodyUrl="/api/app/clientes/formularios/nueva" /}
     </section>
 
     {! Styled confirm dialog for every hx-confirm on this page (ui-kit §3.4) !}

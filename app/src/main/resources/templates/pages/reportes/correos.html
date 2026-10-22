@@ -9,10 +9,9 @@
     {#title}Reportes Programados por Correo | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3">Reportes Programados X Correo Electronico</h1>
+        {#include _kit/page-header title="Reportes por Correo" subtitle="Qué reporte sale por correo, a quién y cuándo" /}
 
-        <div class="box">
-            <form method="get" action="{config:['quarkus.http.root-path']}{baseUrl}" id="correos-filtros">
+        {#include _kit/filter-bar id="correos-filtros" method="get"}
                 <div class="field">
                     <label class="label" for="correos-q">Búsqueda general</label>
                     <input class="input" type="text" id="correos-q" name="q"
@@ -23,8 +22,7 @@
                            hx-include="closest form"
                            hx-target="#correos-tabla-container" hx-swap="innerHTML"/>
                 </div>
-            </form>
-        </div>
+                    {/include}
 
         <div id="correos-tabla-container">
             {#fragment id=tabla}
@@ -35,7 +33,7 @@
                     {#for r in rows}
                     <tr data-row-key="{r.id}">
                         <td>
-                            {#if r.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                            {#if r.status}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}
                         </td>
                         <td>{r.perfil}</td>
                         <td>{#if r.correos??}{r.correos}{/if}</td>

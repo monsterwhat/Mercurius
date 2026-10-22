@@ -18,10 +18,19 @@
   the legacy widget's cosmetic 0.1–5.0 / 1–12 ranges were display hints the
   legacy controller never enforced, so they are intentionally not reproduced
   as hard input constraints.
-!}
-<div id="panel-ajustes" class="box">
-    <h5 class="title is-5">Configuraci&oacute;n del Programa</h5>
 
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The panel is a _kit/surface, so its title is a real <h2> under the page's
+    single <h1>. The old <h5 class="title is-5"> was display type wearing a
+    heading's clothes, and it shouted louder than the screen's own name.
+  - The panel KEEPS its id ("panel-ajustes"): that element IS the hx-target
+    of the settings form, so the swap replaces the whole surface.
+  - The submit button is the screen's one filled primary; the copy is plain
+    UTF-8 instead of an &oacute; entity.
+!}
+{#include _kit/surface id="panel-ajustes" title="Configuración del Programa"}
+    {#content}
     <form id="forma-ajustes"
           hx-put="{config:['quarkus.http.root-path']}/api/app/loyalty/settings/form"
           hx-target="#panel-ajustes" hx-swap="outerHTML">
@@ -49,7 +58,7 @@
         </div>
         {#if errorGeneral??}<p class="help is-danger">{errorGeneral}</p>{/if}
         <div class="field">
-            <button class="button is-primary" type="submit">Guardar Configuraci&oacute;n</button>
+            <button class="button is-primary" type="submit">Guardar Configuración</button>
         </div>
     </form>
 
@@ -58,4 +67,5 @@
         {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
     </div>
     {/if}
-</div>
+    {/content}
+{/include}

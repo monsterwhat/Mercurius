@@ -11,17 +11,17 @@
         <tr>
             {#if seccion == 'causas'}
             <td>{f.causa}</td>
-            <td>{f.total}</td>
-            <td>{f.porcentaje}%</td>
+            <td class="num">{f.total}</td>
+            <td class="num">{f.porcentaje}%</td>
             {#else}
             {#if seccion == 'departamentos'}
             <td>{f.departamento}</td>
-            <td>{f.total}</td>
-            <td>{f.porcentaje}%</td>
+            <td class="num">{f.total}</td>
+            <td class="num">{f.porcentaje}%</td>
             {#else}
             <td>{f.tipo}</td>
             <td>{f.articulo}</td>
-            <td>{f.cantidad}</td>
+            <td class="num">{f.cantidad}</td>
             <td>{f.fechaMovimiento}</td>
             <td>{f.notas}</td>
             <td>{f.usuario}</td>

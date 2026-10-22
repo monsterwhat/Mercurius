@@ -13,23 +13,40 @@
       the API answers HX-Redirect: /app/perfil (full page reload with fresh
       data); on guard failure it answers 400 with an OOB toast that lands in
       the layout's #toast-container without touching #perfil-resultado.
-!}
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The title is the kit's _kit/page-header: a real <h1> with the scope in the
+    muted subtitle. The old markup used a bare <h1 class="title is-3">, which
+    sat on the page background while every panel below it wore a border.
+  - The four panels are _kit/surfaces. The three forms took their heading from
+    a <h2 class="title is-5">, which is display type at 20px/800 - louder than
+    the screen's own name. A surface title is a real <h2> at 1.25rem/600.
+  - The first panel (the account summary) had NO heading, so its surface
+    carries no title either: the content is kept exactly as it was.
+  - The submit buttons were `is-link`, which is Bulma's blue - a SECOND accent
+    next to the app's teal. They are `is-primary` now, one filled primary per
+    panel, so the only accent on the screen is the app's teal.
+  - The labels are proper Spanish: "electrónico", "contraseña".
+ !}
 {#include layout}
     {#title}Mi Perfil | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <h1 class="title is-3">Mi Perfil</h1>
+        {#include _kit/page-header title="Mi Perfil"
+             subtitle="Datos de la cuenta y cambio de credenciales" /}
 
         {! ── Datos del usuario ───────────────────────────────────── !}
-        <div class="box">
+        {#include _kit/surface}
+            {#content}
             <div class="columns is-multiline">
                 <div class="column is-3">
                     <p class="heading">Nombre de usuario</p>
                     <p class="title is-5" id="perfil-username">{usuario.username}</p>
                 </div>
                 <div class="column is-3">
-                    <p class="heading">Correo electronico</p>
+                    <p class="heading">Correo electrónico</p>
                     <p class="title is-5" id="perfil-email">{#if usuario.email??}{usuario.email}{#else}&mdash;{/if}</p>
                 </div>
                 <div class="column is-3">
@@ -38,14 +55,15 @@
                 </div>
                 <div class="column is-3">
                     <p class="heading">Estado</p>
-                    <p class="title is-5">{#if usuario.status?? && usuario.status}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}</p>
+                    <p class="title is-5">{#if usuario.status?? && usuario.status}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}</p>
                 </div>
             </div>
-        </div>
+            {/content}
+        {/include}
 
         {! ── Cambiar nombre de usuario ───────────────────────────── !}
-        <div class="box">
-            <h2 class="title is-5">Cambiar nombre de usuario</h2>
+        {#include _kit/surface title="Cambiar nombre de usuario"}
+            {#content}
             <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/nombre"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
@@ -55,53 +73,56 @@
                         <input class="input" type="text" id="nuevoNombre" name="nuevoNombre" required/>
                     </div>
                 </div>
-                <button class="button is-link" type="submit">Actualizar nombre</button>
+                <button class="button is-primary" type="submit">Actualizar nombre</button>
             </form>
-        </div>
+            {/content}
+        {/include}
 
-        {! ── Cambiar correo electronico ──────────────────────────── !}
-        <div class="box">
-            <h2 class="title is-5">Cambiar correo electronico</h2>
+        {! ── Cambiar correo electrónico ──────────────────────────── !}
+        {#include _kit/surface title="Cambiar correo electrónico"}
+            {#content}
             <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/email"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
                 <div class="field">
-                    <label class="label" for="nuevoEmail">Nuevo correo electronico</label>
+                    <label class="label" for="nuevoEmail">Nuevo correo electrónico</label>
                     <div class="control">
                         <input class="input" type="email" id="nuevoEmail" name="nuevoEmail" required/>
                     </div>
                 </div>
-                <button class="button is-link" type="submit">Actualizar correo</button>
+                <button class="button is-primary" type="submit">Actualizar correo</button>
             </form>
-        </div>
+            {/content}
+        {/include}
 
-        {! ── Cambiar contrasena ──────────────────────────────────── !}
-        <div class="box">
-            <h2 class="title is-5">Cambiar contrasena</h2>
+        {! ── Cambiar contraseña ──────────────────────────────────── !}
+        {#include _kit/surface title="Cambiar contraseña"}
+            {#content}
             <form hx-put="{config:['quarkus.http.root-path']}/api/app/perfil/password"
                   hx-target="#perfil-resultado"
                   hx-swap="innerHTML">
                 <div class="field">
-                    <label class="label" for="currentPassword">Contrasena actual</label>
+                    <label class="label" for="currentPassword">Contraseña actual</label>
                     <div class="control">
                         <input class="input" type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password"/>
                     </div>
                 </div>
                 <div class="field">
-                    <label class="label" for="newPassword">Nueva contrasena</label>
+                    <label class="label" for="newPassword">Nueva contraseña</label>
                     <div class="control">
                         <input class="input" type="password" id="newPassword" name="newPassword" required autocomplete="new-password"/>
                     </div>
                 </div>
                 <div class="field">
-                    <label class="label" for="confirmPassword">Confirmar nueva contrasena</label>
+                    <label class="label" for="confirmPassword">Confirmar nueva contraseña</label>
                     <div class="control">
                         <input class="input" type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password"/>
                     </div>
                 </div>
-                <button class="button is-link" type="submit">Actualizar contrasena</button>
+                <button class="button is-primary" type="submit">Actualizar contraseña</button>
             </form>
-        </div>
+            {/content}
+        {/include}
 
         {! HTMX swap target for non-OOB responses (kept empty; guard failures are OOB toasts) !}
         <div id="perfil-resultado"></div>

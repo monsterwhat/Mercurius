@@ -23,6 +23,14 @@
       Catálogo tab (updateArticuloRevision).
     - Saltar: audit alerta + next pending article without processing
       (skipCurrentArticle).
+
+  WHAT CHANGED IN THE UI PASS
+    - The article header is a `_kit/surface` with the pending chip in its
+      actions slot, instead of a hand-rolled `.surface` + `div.level`.
+    - The price block was a `.box` painted in the info hue; it is a plain
+      `_kit/surface` now. One accent per screen.
+    - The action row carries one filled primary (the submit); "Saltar" and
+      "Cerrar" are plain bordered buttons.
 !}
 <div id="forma-revision">
     {#if sinPendientes}
@@ -35,19 +43,14 @@
        heading against the rule and told the reader nothing the subtitle did
        not already say. The callout is now a plain surface with the warning
        carried by a tag beside the title. !}
-    <div class="surface">
-        <div class="surface-body">
-            <div class="level">
-                <div class="level-left">
-                    <h3 class="title is-5">{articulo.nombre}</h3>
-                </div>
-                <div class="level-right">
-                    <span class="status-chip is-warning">Pendiente</span>
-                </div>
-            </div>
+    {#include _kit/surface title=articulo.nombre }
+        {#actions}
+            <span class="status-chip is-warning">Pendiente</span>
+        {/actions}
+        {#content}
             <p class="subtitle is-7">Artículo pendiente de procesamiento</p>
-        </div>
-    </div>
+        {/content}
+    {/include}
 
     <form hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/revision"
           hx-target="#forma-revision" hx-swap="outerHTML">
@@ -92,7 +95,7 @@
                 <input class="input" id="revision-cabys" name="cabysCodigo" required="required"
                        class="kit-code" placeholder="Seleccione un código del CABYS"
                        value="{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
-                <button type="button" class="button is-link"
+                <button type="button" class="button"
                         aria-haspopup="dialog" data-kit-open="buscador-cabys"
                         hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys?q="
                         hx-target="#buscador-cabys-body" hx-swap="innerHTML">Seleccionar Código CABYS</button>
@@ -149,7 +152,8 @@
             <p class="help">El margen de ganancia se aplica automáticamente según el tipo seleccionado.</p>
         </div>
 
-        <div class="box is-shadowless" style="background:var(--bulma-info-00);border:1px solid var(--bulma-info)">
+        {#include _kit/surface }
+            {#content}
             <div class="columns">
                 <div class="column">
                     <div class="field">
@@ -176,18 +180,19 @@
                 El precio con utilidad y el precio final con IVA se recalculan en el servidor
                 con la misma fórmula del diálogo legado (utilidad 4 decimales, redondeo hacia arriba).
             </p>
-        </div>
+            {/content}
+        {/include}
 
         <div class="buttons is-centered mt-4">
-            <button class="button is-warning is-rounded" type="button"
+            <button class="button is-rounded" type="button"
                     hx-post="{config:['quarkus.http.root-path']}/api/app/articulos/{articulo.codigo}/revision/saltar"
                     hx-target="#forma-revision" hx-swap="outerHTML">
                 Saltar
             </button>
-            <button class="button is-success is-medium is-rounded" type="submit">
+            <button class="button is-primary is-medium is-rounded" type="submit">
                 {#if modoRapido}Guardar y Siguiente{#else}Procesar Artículo{/if}
             </button>
-            <button class="button is-light" type="button" data-kit-close>Cerrar</button>
+            <button class="button" type="button" data-kit-close>Cerrar</button>
         </div>
     </form>
     {/if}

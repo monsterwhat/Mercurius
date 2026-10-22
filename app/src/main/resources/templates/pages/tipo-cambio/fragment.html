@@ -23,70 +23,70 @@
   even though the parent modal owns the outer scope. CSRF headers are inherited
   from layout.html body hx-headers (swapped fragments stay inside the body).
   Alpine braces ALWAYS carry a space after "{" (Qute golden rule).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The two rate tiles were .box panels with a display-size number inside;
+    they are _kit/metric cards now (label, value, caption), so the screen's
+    figures are the app's KPI type and not display type.
+  - The two remaining .box panels are _kit/surfaces. The panel that held a
+    `div.level` (the date on the left, the buttons on the right) keeps its
+    buttons in the surface's {#actions} slot, so they sit in the panel's own
+    header instead of floating in a hand-rolled level row.
+  - "Actualizar" is the screen's one filled primary (it was is-primary
+    already); "Guardar tasa manual" was a filled green (is-success) button
+    and is a bordered one now, and "Historial" was is-light and is a
+    bordered one too.
+  - This fragment is a MODAL BODY: the dialog's own header carries the
+    screen's name, so there is no <h1> inside it (the page it is swapped
+    into already has one).
 !}
 <div id="tc-contenido" x-data="{ tcHistorialOpen:false }">
     {#if errorMensaje??}
     <div class="notification is-danger" role="alert" style="padding:0.5rem 0.75rem">{errorMensaje}</div>
     {/if}
-    <div class="columns is-multiline">
-        <div class="column is-half">
-            <div class="box has-text-centered">
-                <p class="heading">Compra</p>
-                <p class="title is-2 has-text-success">
-                    {#if disponible}&#8353;{compra}{#else}&mdash;{/if}
-                </p>
-                <p class="subtitle is-6 has-text-grey">El banco compra dólares</p>
-            </div>
-        </div>
-        <div class="column is-half">
-            <div class="box has-text-centered">
-                <p class="heading">Venta</p>
-                <p class="title is-2 has-text-danger">
-                    {#if disponible}&#8353;{venta}{#else}&mdash;{/if}
-                </p>
-                <p class="subtitle is-6 has-text-grey">El banco vende dólares</p>
-            </div>
-        </div>
+
+    {! The two rates are KPIs, not filters and not tabs: plain metric cards. !}
+    <div class="metric-strip">
+        {#include _kit/metric label="Compra" value=(compra ?: "—")
+             detail="El banco compra dólares (₡ por dólar)" /}
+        {#include _kit/metric label="Venta" value=(venta ?: "—")
+             detail="El banco vende dólares (₡ por dólar)" /}
     </div>
 
-    <div class="box">
-        <div class="level">
-            <div class="level-left">
-                <div>
-                    <p class="heading">Fecha del tipo de cambio</p>
-                    <p class="title is-5">
-                        {#if disponible}{fecha}{#else}No disponible{/if}
-                        {#if manual} <span class="tag is-warning">Manual</span>
-                        {#else if disponible} <span class="tag is-info">BCCR</span>{/if}
-                    </p>
-                </div>
+    {#include _kit/surface title="Fecha del tipo de cambio" }
+        {#actions}
+            <div class="buttons">
+                <button class="button is-primary" type="button"
+                        data-tc-actualizar
+                        hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/actualizar"
+                        hx-target="#modal-tipo-cambio-body"
+                        hx-swap="innerHTML">
+                    <span class="icon">{#include _kit/icon name="refresh" /}</span>
+                    <span>Actualizar</span>
+                </button>
+                <button class="button" type="button"
+                        @click="tcHistorialOpen = true">
+                    Historial
+                </button>
             </div>
-            <div class="level-right">
-                <div class="buttons">
-                    <button class="button is-primary is-rounded" type="button"
-                            data-tc-actualizar
-                            hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/actualizar"
-                            hx-target="#modal-tipo-cambio-body"
-                            hx-swap="innerHTML">
-                        <span class="icon">{#include _kit/icon name="refresh" /}</span>
-                        <span>Actualizar</span>
-                    </button>
-                    <button class="button is-light is-rounded is-inline" type="button"
-                            @click="tcHistorialOpen = true">
-                        Historial
-                    </button>
-                </div>
-            </div>
-        </div>
-        <p class="help has-text-grey">
-            La actualización consulta la API de Hacienda/BCCR. El sistema
-            registra un único tipo de cambio por día; si ya existe el de hoy,
-            se conserva el vigente.
-        </p>
-    </div>
+        {/actions}
+        {#content}
+            <p class="title is-5">
+                {#if disponible}{fecha}{#else}No disponible{/if}
+                {#if manual} <span class="status-chip is-warning">Manual</span>
+                {#else if disponible} <span class="status-chip is-info">BCCR</span>{/if}
+            </p>
+            <p class="help has-text-grey">
+                La actualización consulta la API de Hacienda/BCCR. El sistema
+                registra un único tipo de cambio por día; si ya existe el de hoy,
+                se conserva el vigente.
+            </p>
+        {/content}
+    {/include}
 
-    <div class="box">
-        <p class="heading">Tasa manual del dólar</p>
+    {#include _kit/surface title="Tasa manual del dólar" }
+        {#content}
         <form hx-post="{config:['quarkus.http.root-path']}/app/tipo-cambio/manual"
               hx-target="#modal-tipo-cambio-body" hx-swap="innerHTML">
             <div class="columns is-mobile">
@@ -101,13 +101,14 @@
                            min="0" step="0.01" required="required" placeholder="0.00"/>
                 </div>
             </div>
-            <button class="button is-success is-fullwidth" type="submit">Guardar tasa manual</button>
+            <button class="button is-fullwidth" type="submit">Guardar tasa manual</button>
         </form>
         <p class="help has-text-grey">
             Registra la tasa del día con sus propios valores en lugar de la API de Hacienda/BCCR.
             La tasa manual se mantiene hasta que se cambie; Actualizar vuelve a la tasa BCCR.
         </p>
-    </div>
+        {/content}
+    {/include}
 
     {! ── Nested Historial modal (loaded via hx-get into its own body) ── !}
     <div class="kit-modal-root" style="display:inline-block">

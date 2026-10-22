@@ -49,28 +49,26 @@
             </p>
 
             <div id="consultas-contadores">
-            <div class="stats-grid">
-                <button type="button" class="stat-card" @click="tab = 'pendientes'"
-                        :class="{ 'active': tab === 'pendientes' }">
-                    <span class="stat-number" data-contador="pendientes">{contadorPendientes}</span>
-                    <span class="stat-label">Pendientes</span>
+            {#include _kit/view-tabs ariaLabel="Vistas de consultas"}
+                {#tabs}
+                <button type="button" class="view-tab" @click="tab = 'pendientes'"
+                        :class="{ 'is-active': tab === 'pendientes' }">
+                    Pendientes <span class="view-tab-count" data-contador="pendientes">{contadorPendientes}</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'aceptadas'"
-                        :class="{ 'active': tab === 'aceptadas' }">
-                    <span class="stat-number" data-contador="aceptadas">{contadorAceptadas}</span>
-                    <span class="stat-label">Aceptadas</span>
+                <button type="button" class="view-tab" @click="tab = 'aceptadas'"
+                        :class="{ 'is-active': tab === 'aceptadas' }">
+                    Aceptadas <span class="view-tab-count" data-contador="aceptadas">{contadorAceptadas}</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'rechazadas'"
-                        :class="{ 'active': tab === 'rechazadas' }">
-                    <span class="stat-number" data-contador="rechazadas">{contadorRechazadas}</span>
-                    <span class="stat-label">Rechazadas</span>
+                <button type="button" class="view-tab" @click="tab = 'rechazadas'"
+                        :class="{ 'is-active': tab === 'rechazadas' }">
+                    Rechazadas <span class="view-tab-count" data-contador="rechazadas">{contadorRechazadas}</span>
                 </button>
-                <button type="button" class="stat-card" @click="tab = 'mensajes'"
-                        :class="{ 'active': tab === 'mensajes' }">
-                    <span class="stat-number" data-contador="mensajes">{contadorMensajes}</span>
-                    <span class="stat-label">Mensajes</span>
+                <button type="button" class="view-tab" @click="tab = 'mensajes'"
+                        :class="{ 'is-active': tab === 'mensajes' }">
+                    Mensajes <span class="view-tab-count" data-contador="mensajes">{contadorMensajes}</span>
                 </button>
-            </div>
+                {/tabs}
+            {/include}
             </div>
 
         <div id="consultas-tablas">
@@ -85,8 +83,8 @@
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
-                        <td><span class="tag is-warning">Pendiente</span></td>
+                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td><span class="status-chip is-warning">Pendiente</span></td>
                     </tr>
                     {/for}
                   {/rows}
@@ -102,8 +100,8 @@
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
-                        <td><span class="tag is-success">Aceptada</span></td>
+                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td><span class="status-chip is-success">Aceptada</span></td>
                     </tr>
                     {/for}
                   {/rows}
@@ -119,11 +117,11 @@
                         <td class="is-family-monospace">{#if f.consecutivo??}{f.consecutivo}{#else}-{/if}</td>
                         <td>{#if f.fechaEmision??}{time:format(f.fechaEmision, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
-                        <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
+                        <td class="num">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
                         <td class="num">{f.intentos}</td>
                         <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
-                        <td><span class="tag is-danger" title="Rechazado por Hacienda: no tiene validez fiscal y debe reemitirse (Art. 19). No se realiza nota de crédito.">Rechazada — pendiente de re-emisión</span></td>
+                        <td><span class="status-chip is-danger" title="Rechazado por Hacienda: no tiene validez fiscal y debe reemitirse (Art. 19). No se realiza nota de crédito.">Rechazada — pendiente de re-emisión</span></td>
                         <td>
                             <button type="button" class="button is-primary is-small"
                                     title="Art. 19: se emite un comprobante nuevo que referencia el rechazado con el código 16. No corresponde nota de crédito."
@@ -152,7 +150,7 @@
                         <td class="has-text-centered">
                             <span class="tag {m.chipClass}" title="Días restantes: {m.diasRestantes}">{m.indicador}</span>
                         </td>
-                        <td class="has-text-right">₡{#if m.montoImpuesto??}{m.montoImpuesto}{#else}0{/if}</td>
+                        <td class="num">₡{#if m.montoImpuesto??}{m.montoImpuesto}{#else}0{/if}</td>
                     </tr>
                     {/for}
                   {/rows}

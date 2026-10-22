@@ -18,6 +18,12 @@
   variants bind them. Success answers with HX-Redirect (full page reload).
   CAByS selection uses the shared buscador-cabys modal: the picked code is
   written into the hidden cabysCodigo input via a DOM event.
+
+  WHAT CHANGED IN THE UI PASS
+    - The CABYS picker button and the create-departamento / create-familia
+      buttons are plain bordered controls. The dialog carries ONE accent
+      (the submit), and the "+" glyph is now an `_kit/icon` instead of a
+      bare character.
 !}
 <div id="forma-articulo">
     {#if modo == 'editar' && articulo??}
@@ -45,7 +51,7 @@
                 <input class="input" id="articulo-cabys" name="cabysCodigo" class="kit-code"
                        placeholder="Seleccione un código del CABYS"
                        value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
-                <button type="button" class="button is-link"
+                <button type="button" class="button"
                         aria-haspopup="dialog" data-kit-open="buscador-cabys"
                         hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/cabys?q="
                         hx-target="#buscador-cabys-body" hx-swap="innerHTML">Buscar</button>
@@ -120,8 +126,9 @@
                                 {/for}
                             </select>
                         </div>
-                        <button type="button" class="button is-small is-success"
-                                data-action="create-departamento" title="Crear departamento">+</button>
+                        <button type="button" class="button is-small"
+                                data-action="create-departamento" title="Crear departamento"
+                                aria-label="Crear departamento">{#include _kit/icon name="plus" /}</button>
                     </div>
                 </div>
             </div>
@@ -138,8 +145,9 @@
                                 {/for}
                             </select>
                         </div>
-                        <button type="button" class="button is-small is-success"
-                                data-action="create-familia" title="Crear familia">+</button>
+                        <button type="button" class="button is-small"
+                                data-action="create-familia" title="Crear familia"
+                                aria-label="Crear familia">{#include _kit/icon name="plus" /}</button>
                     </div>
                 </div>
             </div>

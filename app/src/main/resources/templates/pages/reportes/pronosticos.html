@@ -10,83 +10,68 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="inventario-header">
-            <h1 class="title is-3 has-text-centered">{titulo}</h1>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <span class="stat-number">{totalProductos}</span>
-                    <span class="stat-label">Total Productos</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{saludables}</span>
-                    <span class="stat-label">Saludable</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{stockBajo}</span>
-                    <span class="stat-label">Stock Bajo</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{sinStock}</span>
-                    <span class="stat-label">Sin Stock</span>
+        {! One strip, one answer, one colour. The four counts are plain
+           numbers, not links and not tabs: a metric with no href IS the
+           number card. !}
+        {#include _kit/page-header title=titulo subtitle="Demanda proyectada y salud del inventario" /}
+        <div class="metric-strip">
+            {#include _kit/metric label="Total productos" value=totalProductos /}
+            {#include _kit/metric label="Saludables" value=saludables /}
+            {#include _kit/metric label="Stock bajo" value=stockBajo /}
+            {#include _kit/metric label="Sin stock" value=sinStock /}
+        </div>
+
+        {#include _kit/filter-bar id="filtros-pronosticos" method="get"}
+            <input type="hidden" name="seccion" value="{seccion}"/>
+            <div class="field">
+                <label class="label" for="dias">Días de pronóstico</label>
+                <div class="control select">
+                    <select name="dias" id="dias">
+                        <option value="7" {#if dias == 7}selected{/if}>7 días</option>
+                        <option value="14" {#if dias == 14}selected{/if}>14 días</option>
+                        <option value="30" {#if dias == 30}selected{/if}>30 días</option>
+                        <option value="60" {#if dias == 60}selected{/if}>60 días</option>
+                    </select>
                 </div>
             </div>
-        </div>
+            <div class="field">
+                <label class="label" for="departamento">Departamento</label>
+                <div class="control select">
+                    <select name="departamento" id="departamento">
+                        <option value="">Todos</option>
+                        {#for d in departamentos}
+                        <option value="{d}" {#if d == departamentoSeleccionado}selected{/if}>{d}</option>
+                        {/for}
+                    </select>
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="familia">Familia</label>
+                <div class="control select">
+                    <select name="familia" id="familia">
+                        <option value="">Todas</option>
+                        {#for f in familias}
+                        <option value="{f}" {#if f == familiaSeleccionada}selected{/if}>{f}</option>
+                        {/for}
+                    </select>
+                </div>
+            </div>
+            {#actions}
+            <button class="button is-primary" type="submit">Generar pronóstico</button>
+            {/actions}
+        {/include}
 
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <input type="hidden" name="seccion" value="{seccion}"/>
-                <div class="column is-narrow field">
-                    <label class="label" for="dias">Días de Pronóstico</label>
-                    <div class="control select">
-                        <select name="dias" id="dias">
-                            <option value="7" {#if dias == 7}selected{/if}>7 días</option>
-                            <option value="14" {#if dias == 14}selected{/if}>14 días</option>
-                            <option value="30" {#if dias == 30}selected{/if}>30 días</option>
-                            <option value="60" {#if dias == 60}selected{/if}>60 días</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label" for="departamento">Departamento</label>
-                    <div class="control select">
-                        <select name="departamento" id="departamento">
-                            <option value="">Todos</option>
-                            {#for d in departamentos}
-                            <option value="{d}" {#if d == departamentoSeleccionado}selected{/if}>{d}</option>
-                            {/for}
-                        </select>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label" for="familia">Familia</label>
-                    <div class="control select">
-                        <select name="familia" id="familia">
-                            <option value="">Todas</option>
-                            {#for f in familias}
-                            <option value="{f}" {#if f == familiaSeleccionada}selected{/if}>{f}</option>
-                            {/for}
-                        </select>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
-                    <div class="control">
-                        <button class="button is-info" type="submit">Generar Pronóstico</button>
-                    </div>
-                </div>
-            </form>
-        </div>
 
-        <div class="nav-cards">
-            <a class="nav-card button is-success {#if seccion == 'pronosticos'}is-outlined{/if}"
-               href="?seccion=pronosticos&dias={dias}">Pronósticos de Demanda</a>
-            <a class="nav-card button is-info {#if seccion == 'salud'}is-outlined{/if}"
-               href="?seccion=salud&dias={dias}">Salud del Inventario</a>
-            <a class="nav-card button is-warning {#if seccion == 'reorden'}is-outlined{/if}"
-               href="?seccion=reorden&dias={dias}">Sugerencias de Reorden</a>
-        </div>
+
+        {#include _kit/view-tabs ariaLabel="Secciones del pronóstico"}
+            {#tabs}
+            <a class="view-tab {#if seccion == 'pronosticos'}is-active{/if}" href="?seccion=pronosticos&dias={dias}" {#if seccion == 'pronosticos'}aria-current="page"{/if}>Pronósticos de demanda</a>
+            <a class="view-tab {#if seccion == 'salud'}is-active{/if}" href="?seccion=salud&dias={dias}" {#if seccion == 'salud'}aria-current="page"{/if}>Salud del inventario</a>
+            <a class="view-tab {#if seccion == 'reorden'}is-active{/if}" href="?seccion=reorden&dias={dias}" {#if seccion == 'reorden'}aria-current="page"{/if}>Sugerencias de reorden</a>
+            {/tabs}
+        {/include}
+
+
 
         {#include pages/reportes/_tablas/pronosticos /}
 
@@ -128,10 +113,15 @@
                 valores.push(Number(pronostico.predictedSales));
             });
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                // One hue for the data: --mercurius-chart-series-1, resolved
+                // through resolveColour() because a canvas cannot paint var().
+                var rootStyle = getComputedStyle(document.documentElement);
+                var seriesOne = window.MercuriusCharts.resolveColour(
+                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
                 window.MercuriusCharts.create('grafica-pronosticos', {
                     type: 'bar',
                     labels: etiquetas,
-                    datasets: [{ label: 'Demanda pronosticada', data: valores, backgroundColor: '#3e8ed0' }],
+                    datasets: [{ label: 'Demanda pronosticada', data: valores, backgroundColor: seriesOne }],
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
             }

@@ -7,6 +7,9 @@
     articulo  Object  - Models.Articulos
     stock     double  - InventarioService.getStock(codigoBarra)
     precios   List    - ArticuloPrecio history (newest last)
+
+  WHAT CHANGED IN THE UI PASS
+    - The price and stock cells carry `num`: right-aligned, tabular figures.
 !}
 <div id="detalles-articulo-fragmento">
     <table class="table is-fullwidth is-narrow">
@@ -31,12 +34,12 @@
             {#for precio in precios}
             <tr>
                 <th>Precio {precio_index + 1} (Costo / Utilidad / Final)</th>
-                <td>{#if precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if} /
+                <td class="num">{#if precio.precioCostoSinIVA??}{precio.precioCostoSinIVA}{/if} /
                     {#if precio.porcentajeUtilidad??}{precio.porcentajeUtilidad}%{/if} /
                     <strong>{#if precio.precioFinal??}{precio.precioFinal}{/if}</strong></td>
             </tr>
             {/for}
-            <tr><th>Stock</th><td style="font-weight:600">{stock}</td></tr>
+            <tr><th>Stock</th><td class="num" style="font-weight:600">{stock}</td></tr>
             <tr><th>Creado por</th><td>{#if articulo.usuario??}{articulo.usuario.username}{#else}&mdash;{/if}</td></tr>
         </tbody>
     </table>

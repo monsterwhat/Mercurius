@@ -72,25 +72,17 @@
             {/if}
 
             {!
-              token: facturacion - removed to match legacy userBar parity (user directive:
-              "el legacy navbar tenia menos botones"; Recibos board and Devoluciones are
-              reached from the Reportes hub like the legacy Registros/index.xhtml).
-            !}
+              token: facturacion - the "Facturas" dropdown is GONE.
 
-            {! token: facturacion - "Facturas": emitidas (lo que emitimos y hay que
-               cobrar) y recibidas (lo que nos pasan los proveedores). "Recibos" son
-               las recibidas, como en el sistema viejo. !}
-            {#if inject:securityIdentity.hasRole('facturacion')}
-            <div class="navbar-item has-dropdown is-hoverable">
-                <button type="button" class="navbar-link"
-                        aria-haspopup="true" aria-expanded="false">Facturas</button>
-                <div class="navbar-dropdown">
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/facturas" data-planned-route="/app/facturas">Facturas Emitidas</a>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/app/recibos" data-planned-route="/app/recibos">Recibos</a>
-                    <a class="navbar-item" href="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/tabla" data-planned-route="/api/app/facturas-recibidas/tabla">Facturas Recibidas</a>
-                </div>
-            </div>
-            {/if}
+              It was added by another change and never asked for. It also
+              contradicted itself: "Recibos" redirects to the same page as
+              "Facturas Recibidas" (the two are the same board), and its third
+              entry pointed at an API FRAGMENT, not a page - a link that
+              renders a bare <tbody> to the operator.
+
+              The two boards it listed are reachable from the dashboard, which
+              is where an operator starts and where the next action belongs.
+            !}
 
             {! token: inventario - legacy: "Articulos" dropdown !}
             {#if inject:securityIdentity.hasRole('inventario')}

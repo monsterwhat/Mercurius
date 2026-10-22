@@ -10,10 +10,10 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3">{titulo}</h1>
-        <p class="subtitle">Seleccione los artículos para generar etiquetas</p>
+        {#include _kit/page-header title=titulo subtitle="Seleccione los artículos para generar etiquetas" /}
 
-        <div class="box" id="etiquetas-panel">
+        {#include _kit/surface id="etiquetas-panel"}
+            {#content}
             <div class="columns is-multiline">
                 <div class="column is-3 field">
                     <label class="label" for="cantidad">Cantidad por Artículo</label>
@@ -25,13 +25,13 @@
                 </div>
                 <div class="column is-3 field">
                     <label class="label">Total Etiquetas</label>
-                    <p class="tag is-medium is-info"><span id="total-etiquetas">0</span> etiquetas</p>
+                    <p><strong><span id="total-etiquetas">0</span></strong> <span class="mercurius-text-muted">etiquetas</span></p>
                 </div>
                 <div class="column is-3 field">
                     <label class="label">Acciones</label>
                     <div class="buttons">
-                        <button type="button" class="button is-success" id="btn-todos">Seleccionar Todos</button>
-                        <button type="button" class="button is-warning" id="btn-limpiar">Limpiar</button>
+                        <button type="button" class="button" id="btn-todos">Seleccionar Todos</button>
+                        <button type="button" class="button" id="btn-limpiar">Limpiar</button>
                         <button type="button" class="button is-primary" id="btn-imprimir">Imprimir Etiquetas</button>
                     </div>
                 </div>
@@ -45,26 +45,27 @@
                     <input type="hidden" name="dataset" value="etiquetas"/>
                     <input type="hidden" name="type" value="pdf"/>
                     {#for f in params.entrySet()}<input type="hidden" name="{f.key}" value="{f.value}"/>{/for}
-                    <button class="button is-primary" type="submit">Exportar PDF</button>
+                    <button class="button" type="submit">Exportar PDF</button>
                 </form>
             </div>
 
-            <div class="card mt-4">
-                <div class="card-header"><p class="card-header-title">Vista Previa de Etiquetas</p></div>
-                <div class="card-content">
+            {#include _kit/surface title="Vista Previa de Etiquetas"}
+            {#content}
+
                     <div class="selection-info">
                         <p><strong>Artículos seleccionados:</strong> <span id="conteo-seleccion">0</span></p>
                         <p><strong>Etiquetas por artículo:</strong> <span id="eco-cantidad">1</span></p>
                         <p><strong>Copias:</strong> <span id="eco-copias">1</span></p>
                     </div>
                     <div id="vista-previa" class="mt-2"></div>
-                    <p class="has-text-grey" id="sin-seleccion">
+                    <p class="mercurius-text-muted" id="sin-seleccion">
                         Seleccione artículos de la tabla para ver la vista previa
                     </p>
-                </div>
-            </div>
-        </div>
+            {/content}
+        {/include}
 
+            {/content}
+        {/include}
         <script>
         (function () {
             /* Client-side catalog read from the rendered table (no server calls,

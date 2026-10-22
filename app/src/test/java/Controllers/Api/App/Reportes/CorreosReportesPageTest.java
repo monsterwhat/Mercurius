@@ -37,7 +37,7 @@ class CorreosReportesPageTest extends support.ContextPathIsolation {
                 .when().get(PAGE_URL)
                 .then()
                 .statusCode(200)
-                .body(containsString("Reportes Programados X Correo Electronico"))
+                .body(containsString("Reportes por Correo"))
                 .body(containsString("data-kit-table"))
                 // mutation actions belong to T24 — must not appear on this view
                 .body(not(containsString("Crear Reporte Programado")));

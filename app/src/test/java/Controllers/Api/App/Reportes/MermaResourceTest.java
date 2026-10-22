@@ -28,7 +28,7 @@ class MermaResourceTest {
                 .statusCode(200)
                 .body(containsString("data-kit-table"))
                 .body(containsString("reporte-merma"))
-                .body(containsString("Total Mermas"));
+                .body(containsString("Total mermas"));
     }
 
     @Test

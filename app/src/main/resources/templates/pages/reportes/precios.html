@@ -6,30 +6,23 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <h1 class="title is-3">{titulo}</h1>
-        <p class="subtitle">Historial de precios de compra y venta por artículo</p>
+        {#include _kit/page-header title=titulo subtitle="Historial de precios de compra y venta por artículo" /}
 
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <div class="column is-narrow field">
+        {#include _kit/filter-bar id="filtros-precios" method="get"}
+                <div class="field">
                     <label class="label" for="q">Búsqueda general</label>
                     <div class="control">
                         <input class="input" type="text" id="q" name="q"
                                placeholder="Búsqueda general de todos los campos" value="{filtros.q}"/>
                     </div>
                 </div>
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
                     <div class="control">
-                        <button class="button is-info" type="submit">Filtrar</button>
-                        <a class="button is-light"
+                        <button class="button is-primary" type="submit">Filtrar</button>
+                        <a class="button"
                            href="{config:['quarkus.http.root-path']}{baseUrl}">Limpiar</a>
                     </div>
                 </div>
-            </form>
-        </div>
+                    {/include}
 
         {#include pages/reportes/_tablas/precios /}
 

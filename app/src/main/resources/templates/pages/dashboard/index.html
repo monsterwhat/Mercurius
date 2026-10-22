@@ -40,7 +40,16 @@
     {#body}
         {! The page title is a noun and the subtitle carries the scope. The
            operator's name is shown in the navigation bar, not in a greeting. !}
-        {#include _kit/page-header title=titulo subtitle=fechaActual /}
+        {#include _kit/page-header title=titulo subtitle=fechaActual}
+            {#actions}
+                {! The two invoice boards. They used to be reachable only from a
+                   navbar dropdown that nobody asked for, and that listed the
+                   same board twice. The dashboard is where an operator starts,
+                   and the next job is one click away. !}
+                <a class="button" href="{config:['quarkus.http.root-path']}/app/facturas">Facturas Emitidas</a>
+                <a class="button" href="{config:['quarkus.http.root-path']}/api/app/facturas-recibidas/tabla">Facturas Recibidas</a>
+            {/actions}
+        {/include}
 
         {#if esKpi}
         {! One strip, one answer, one colour. The period is in the label, so

@@ -44,14 +44,14 @@
                 <td class="kit-code">{#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}&mdash;{/if}</td>
                 <td>{#if fila.dto.fechaEmision??}{fila.dto.fechaEmision}{#else}&mdash;{/if}</td>
                 <td>{#if fila.dto.emisorNombre??}{fila.dto.emisorNombre}{#else}&mdash;{/if}</td>
-                <td class="has-text-right" style="font-weight:600">{#if fila.dto.totalComprobante??}&#8362;{fila.dto.totalComprobante}{#else}&mdash;{/if}</td>
-                <td class="has-text-right">{#if fila.dto.totalImpuesto??}&#8362;{fila.dto.totalImpuesto}{#else}&mdash;{/if}</td>
+                <td class="num" style="font-weight:600">{#if fila.dto.totalComprobante??}&#8362;{fila.dto.totalComprobante}{#else}&mdash;{/if}</td>
+                <td class="num">{#if fila.dto.totalImpuesto??}&#8362;{fila.dto.totalImpuesto}{#else}&mdash;{/if}</td>
                 <td>
-                    {#if fila.activa}<span class="tag is-success">Activa</span>{#else}<span class="tag is-danger">Inactiva</span>{/if}
-                    {#if fila.pagada}<span class="tag is-info">Pagada</span>{/if}
-                    {#if fila.procesada}<span class="tag is-link">Procesada</span>{/if}
-                    {#if fila.vencida}<span class="tag is-danger">Vencida</span>{/if}
-                    {#if fila.dto.haciendaEstado??}<span class="tag is-light">{fila.dto.haciendaEstado}</span>{/if}
+                    {#if fila.activa}<span class="status-chip is-success">Activa</span>{#else}<span class="status-chip is-danger">Inactiva</span>{/if}
+                    {#if fila.pagada}<span class="status-chip is-info">Pagada</span>{/if}
+                    {#if fila.procesada}<span class="status-chip is-info">Procesada</span>{/if}
+                    {#if fila.vencida}<span class="status-chip is-danger">Vencida</span>{/if}
+                    {#if fila.dto.haciendaEstado??}<span class="status-chip is-neutral">{fila.dto.haciendaEstado}</span>{/if}
                 </td>
                 <td class="has-text-centered" style="white-space:nowrap">
                     <button type="button" class="button is-small is-info" title="Ver detalles"

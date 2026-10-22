@@ -17,8 +17,21 @@
   (UsersController.globalFilterFunction port). Row actions: edit opens the
   shared modal via data-kit-open + hx-get; archive is the REST soft-delete
   (DELETE = status=false parity with UsersController.deleteUser()).
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The wrapper is a _kit/surface (no title: the panel has no heading). It
+    KEEPS its id, because that element IS the hx-target of the search input
+    and of the row actions - the swap replaces the whole surface.
+  - The row actions are icon-only BORDERED buttons (kit icons, own
+    aria-label). They used to carry is-success / is-warning, which put a
+    second and a third accent hue on a screen whose only accent is teal.
+  - The profile identifier is a KEY, so it is set in .kit-code (the app's one
+    monospace class) and stays left-aligned; it is not a quantity, so it
+    does not take `num`.
 !}
-<div id="{modelo.id}" class="box is-shadowless" style="padding:0.75rem">
+{#include _kit/surface id=modelo.id}
+    {#content}
     <div class="field">
         <div class="control has-icons-left">
             <input class="input" type="text" name="q" value="{q}" autocomplete="off"
@@ -34,21 +47,24 @@
         {#rows}
             {#for usuario in modelo.filas}
             <tr>
-                <td>{usuario.id}</td>
+                <td class="kit-code">{usuario.id}</td>
                 <td style="font-weight:500">{usuario.username}</td>
                 <td>{#if usuario.email??}{usuario.email}{#else}&mdash;{/if}</td>
                 <td>{#if usuario.groupName??}{usuario.groupName}{#else}&mdash;{/if}</td>
                 <td class="has-text-centered">
-                    {#if usuario.status??}<span class="tag is-success">Activo</span>{#else}<span class="tag is-danger">Inactivo</span>{/if}
+                    {#if usuario.status??}<span class="status-chip is-success">Activo</span>{#else}<span class="status-chip is-danger">Inactivo</span>{/if}
                 </td>
                 <td class="has-text-centered">
                     <div class="buttons is-centered" style="margin:0">
-                        <button type="button" class="button is-small is-success" title="Editar usuario"
+                        {! Icon-only row actions are BORDERED buttons: the teal
+                           accent is the screen's one filled primary, and a
+                           second semantic hue per row is noise. !}
+                        <button type="button" class="button is-small" title="Editar usuario"
                                 aria-label="Editar usuario"
                                 aria-haspopup="dialog" data-kit-open="editar-usuario"
                                 hx-get="{config:['quarkus.http.root-path']}/api/app/users/formularios/{usuario.id}"
                                 hx-target="#editar-usuario-body" hx-swap="innerHTML">{#include _kit/icon name="edit" /}</button>
-                        <button type="button" class="button is-small is-warning" title="Cambiar estado"
+                        <button type="button" class="button is-small" title="Cambiar estado"
                                 aria-label="Cambiar estado"
                                 hx-delete="{config:['quarkus.http.root-path']}/api/app/users/{usuario.id}"
                                 hx-confirm="¿Cambiar el estado del usuario {usuario.username}?"
@@ -67,4 +83,5 @@
         {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
     </div>
     {/if}
-</div>
+    {/content}
+{/include}

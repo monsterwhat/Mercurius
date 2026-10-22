@@ -23,15 +23,29 @@
   contract); "Ver Historial" row buttons open the shared hidden-trigger kit
   modal via data-kit-open + hx-get (clientes edit-modal bridge, T18).
   The legacy "Procesar Expiración" MUTATION is NOT ported here.
+
+  WHAT CHANGED IN THE UI PASS
+  ---------------------------
+  - The title is the kit's _kit/page-header: a real <h1> with the scope in the
+    muted subtitle. The old markup used a bare <h1 class="title is-3">, which
+    sat on the page background while every panel below it wore a border, so
+    the panels read louder than the screen's own name.
+  - Both panels are _kit/surfaces now (settings + top-10), so each carries a
+    real <h2> under the page's <h1>.
 !}
 {#include layout}
     {#title}Programa de Lealtad | Mercurius{/title}
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <h1 class="title is-3">Programa de Lealtad</h1>
+        {! The title was a bare <h1 class="title is-3"> sitting on the page
+           background while the panels below it wore a border, so the panels
+           read louder than the screen's own name. The page header is the one
+           h1 of the screen. !}
+        {#include _kit/page-header title="Programa de Lealtad"
+             subtitle="Configuración del programa y clientes con más puntos" /}
 
-        {! Settings card — legacy "Configuración del Programa" !}
+        {! Settings panel — legacy "Configuración del Programa" !}
         {#include pages/loyalty/panel-ajustes ajustes=ajustes /}
 
         {! Top-customers kit table — legacy loadTopCustomers() limit 10 !}

@@ -8,8 +8,15 @@
   The article is chosen via a searchable picker (selector-articulos-ajuste)
   that fills the hidden articuloId input; tipoMovimiento is a select with a
   "Personalizado..." option that reveals a free-text input (Alpine toggle).
+
+  WHAT CHANGED IN THE UI PASS
+    - The legacy `.box` panel became a `_kit/surface`: one panel rule, one
+      padding rule, no hand-rolled inline style.
+    - The article picker button is a plain bordered control: the dialog
+      carries one filled primary (the submit).
 !}
-<div class="box is-shadowless">
+{#include _kit/surface }
+    {#content}
     <form hx-post="{config:['quarkus.http.root-path']}/api/app/inventario/ajustes"
           hx-target="#crear-ajuste-body" hx-swap="innerHTML">
         <div class="field">
@@ -17,7 +24,7 @@
             <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
                 <input class="input" id="ajuste-articulo-display" type="text" readonly
                        placeholder="Busque y seleccione un artículo"/>
-                <button type="button" class="button is-link"
+                <button type="button" class="button"
                         aria-haspopup="dialog" data-kit-open="selector-articulo-ajuste"
                         hx-get="{config:['quarkus.http.root-path']}/api/app/articulos/formularios/ajuste/articulos"
                         hx-target="#selector-articulo-ajuste-body" hx-swap="innerHTML">Buscar</button>
@@ -67,15 +74,14 @@
             <button class="button" type="button" data-kit-close>Cancelar</button>
         </div>
     </form>
+    {/content}
+{/include}
 
-    {! Article picker modal: search-as-you-type fragment fills the hidden
-       articuloId input and the read-only display. !}
-    {#include _kit/modal id="selector-articulo-ajuste" title="Seleccionar Artículo" triggerClass="is-hidden"
-         bodyUrl="/api/app/articulos/formularios/ajuste/articulos"}{/include}
+{#include _kit/modal id="selector-articulo-ajuste" title="Seleccionar Artículo" triggerClass="is-hidden"
+     bodyUrl="/api/app/articulos/formularios/ajuste/articulos"}{/include}
 
-    {#if toastMessage??}
-    <div hx-swap-oob="beforeend:#toast-container">
-        {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
-    </div>
-    {/if}
+{#if toastMessage??}
+<div hx-swap-oob="beforeend:#toast-container">
+    {#include _kit/toast-item severity=toastSeverity message=toastMessage /}
 </div>
+{/if}

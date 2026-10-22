@@ -11,65 +11,49 @@
     {#title}{titulo} | Mercurius{/title}
 
     {#body}
-        <div class="inventario-header">
-            <h1 class="title is-3 has-text-centered">{titulo}</h1>
-            <p class="subtitle is-6 has-text-centered" style="color: var(--bulma-text-strong);">{periodoTexto}</p>
-            <div class="stats-grid">
-                <div class="stat-card" title="{periodoTexto}">
-                    <span class="stat-number">{tasaCrecimiento}</span>
-                    <span class="stat-label">Tasa de Crecimiento</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{ventaDiariaPromedio}</span>
-                    <span class="stat-label">Venta Diaria Prom.</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{ingresosTotales}</span>
-                    <span class="stat-label">Ingresos Totales</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-number">{direccionTendencia}</span>
-                    <span class="stat-label">Tendencia</span>
+        {! One strip, one answer, one colour. The four counts are plain
+           numbers, not links and not tabs: a metric with no href IS the
+           number card. The period the banner printed under the title is the
+           header subtitle now, where a scope line belongs. !}
+        {#include _kit/page-header title=titulo subtitle=periodoTexto /}
+        <div class="metric-strip">
+            {#include _kit/metric label="Tasa de crecimiento" value=tasaCrecimiento /}
+            {#include _kit/metric label="Venta diaria prom." value=ventaDiariaPromedio /}
+            {#include _kit/metric label="Ingresos totales" value=ingresosTotales /}
+            {#include _kit/metric label="Tendencia" value=direccionTendencia /}
+        </div>
+
+        {#include _kit/filter-bar id="filtros-tendencias" method="get"}
+            <input type="hidden" name="seccion" value="{seccion}"/>
+            <div class="field">
+                <label class="label" for="desde">Fecha Inicio</label>
+                <div class="control">
+                    <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
                 </div>
             </div>
-        </div>
+            <div class="field">
+                <label class="label" for="hasta">Fecha Fin</label>
+                <div class="control">
+                    <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
+                </div>
+            </div>
+            {#actions}
+            <button class="button is-primary" type="submit">Cargar Datos</button>
+            {/actions}
+        {/include}
 
-        <div class="box">
-            <form method="get"
-                  action="{config:['quarkus.http.root-path']}{baseUrl}"
-                  class="columns is-multiline is-vcentered is-mobile">
-                <input type="hidden" name="seccion" value="{seccion}"/>
-                <div class="column is-narrow field">
-                    <label class="label" for="desde">Fecha Inicio</label>
-                    <div class="control">
-                        <input class="input" type="date" id="desde" name="desde" value="{filtros.desde}"/>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label" for="hasta">Fecha Fin</label>
-                    <div class="control">
-                        <input class="input" type="date" id="hasta" name="hasta" value="{filtros.hasta}"/>
-                    </div>
-                </div>
-                <div class="column is-narrow field">
-                    <label class="label">&nbsp;</label>
-                    <div class="control">
-                        <button class="button is-info" type="submit">Cargar Datos</button>
-                    </div>
-                </div>
-            </form>
-        </div>
 
-        <div class="nav-cards">
-            <a class="nav-card button is-success {#if seccion == 'diarias'}is-outlined{/if}"
-               href="?seccion=diarias{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Ventas Diarias</a>
-            <a class="nav-card button is-info {#if seccion == 'semanales'}is-outlined{/if}"
-               href="?seccion=semanales{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Ventas Semanales</a>
-            <a class="nav-card button is-link {#if seccion == 'mensuales'}is-outlined{/if}"
-               href="?seccion=mensuales{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Ventas Mensuales</a>
-            <a class="nav-card button is-warning {#if seccion == 'indicadores'}is-outlined{/if}"
-               href="?seccion=indicadores{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Indicadores</a>
-        </div>
+
+        {#include _kit/view-tabs ariaLabel="Vistas de tendencias"}
+            {#tabs}
+            <a class="view-tab {#if seccion == 'diarias'}is-active{/if}" href="?seccion=diarias{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'diarias'}aria-current="page"{/if}>Ventas diarias</a>
+            <a class="view-tab {#if seccion == 'semanales'}is-active{/if}" href="?seccion=semanales{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'semanales'}aria-current="page"{/if}>Ventas semanales</a>
+            <a class="view-tab {#if seccion == 'mensuales'}is-active{/if}" href="?seccion=mensuales{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'mensuales'}aria-current="page"{/if}>Ventas mensuales</a>
+            <a class="view-tab {#if seccion == 'indicadores'}is-active{/if}" href="?seccion=indicadores{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'indicadores'}aria-current="page"{/if}>Indicadores</a>
+            {/tabs}
+        {/include}
+
+
 
         {#include pages/reportes/_tablas/tendencias /}
 
@@ -119,10 +103,15 @@
                 valores.push(Number(punto.totalSales));
             });
             if (window.MercuriusCharts && typeof window.MercuriusCharts.create === 'function') {
+                // One hue for the data: --mercurius-chart-series-1, resolved
+                // through resolveColour() because a canvas cannot paint var().
+                var rootStyle = getComputedStyle(document.documentElement);
+                var seriesOne = window.MercuriusCharts.resolveColour(
+                    rootStyle.getPropertyValue('--mercurius-chart-series-1'), '#00d1b2');
                 window.MercuriusCharts.create('grafica-tendencias', {
                     type: 'line',
                     labels: etiquetas,
-                    datasets: [{ label: 'Ventas diarias', data: valores, borderColor: '#3e8ed0', tension: 0.2, fill: false }],
+                    datasets: [{ label: 'Ventas diarias', data: valores, borderColor: seriesOne, tension: 0.2, fill: false }],
                     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
             }
