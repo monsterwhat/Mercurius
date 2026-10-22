@@ -12,6 +12,17 @@
     {#body}
         {#include _kit/page-header title="Análisis de Estacionalidad" subtitle="Ventas por mes, día, departamento, familia y fecha" /}
 
+        {! Una familia, dos preguntas: como se mueve la venta en el tiempo
+           (tendencias) y como se repite por ciclo (estacionalidad). Comparten
+           el rango; la seccion es propia de cada tablero. !}
+        {#include _kit/view-tabs ariaLabel="Analisis en el tiempo"}
+            {#tabs}
+            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias?desde={filtroInicio}&hasta={filtroFin}">Tendencias</a>
+            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad?inicio={filtroInicio}&fin={filtroFin}">Estacionalidad</a>
+            {/tabs}
+        {/include}
+
+
         {#include _kit/filter-bar id="estacionalidad-filtros" method="get"}
             <div class="field">
                 <label class="label" for="estacionalidad-inicio">Fecha Inicio</label>
