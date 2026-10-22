@@ -44,6 +44,16 @@
 
 
 
+        {! Una familia, dos preguntas: como se mueve la venta en el tiempo
+           (tendencias) y como se repite por ciclo (estacionalidad). Comparten
+           el rango; la seccion es propia de cada tablero. !}
+        {#include _kit/view-tabs ariaLabel="Analisis en el tiempo"}
+            {#tabs}
+            <a class="view-tab is-active" aria-current="page" href="{config:['quarkus.http.root-path']}/app/reportes/articulos/tendencias{#if filtros.desde??}?desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}">Tendencias</a>
+            <a class="view-tab" href="{config:['quarkus.http.root-path']}/app/reportes/estacionalidad{#if filtros.desde??}?inicio={filtros.desde}{/if}{#if filtros.hasta??}&fin={filtros.hasta}{/if}">Estacionalidad</a>
+            {/tabs}
+        {/include}
+
         {#include _kit/view-tabs ariaLabel="Vistas de tendencias"}
             {#tabs}
             <a class="view-tab {#if seccion == 'diarias'}is-active{/if}" href="?seccion=diarias{#if filtros.desde??}&desde={filtros.desde}{/if}{#if filtros.hasta??}&hasta={filtros.hasta}{/if}" {#if seccion == 'diarias'}aria-current="page"{/if}>Ventas diarias</a>
