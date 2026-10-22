@@ -202,7 +202,7 @@ class ClientesPageTest extends support.ContextPathIsolation {
                 .when().post(BASE + "/api/app/clientes")
                 .then()
                 .statusCode(200)
-                .header("HX-Redirect", equalTo("/api/app/clientes/table"));
+                .header("HX-Redirect", equalTo("/Mercurius/api/app/clientes/table"));
 
         Integer code = authed(session)
                 .queryParam("q", marker)

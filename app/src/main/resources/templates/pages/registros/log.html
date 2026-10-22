@@ -15,7 +15,7 @@
     {#body}
     <section class="section" style="padding-top:1rem">
         <div class="registros-header">
-            <p class="title is-3 has-text-centered">Log de Actividades</p>
+            <h1 class="title is-3 has-text-centered">Log de Actividades</h1>
             <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Archivos de registro de la aplicación</p>
             <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
                 <div class="stat-card">
@@ -39,7 +39,7 @@
                 <tbody>
                     {#for a in archivos}
                     <tr>
-                        <td style="font-family:monospace">{a.nombre}</td>
+                        <td class="kit-code">{a.nombre}</td>
                         <td class="has-text-right">{a.tamanio}</td>
                         <td>{a.modificado}</td>
                         <td class="has-text-centered">

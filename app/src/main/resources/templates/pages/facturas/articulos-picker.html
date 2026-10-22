@@ -41,7 +41,7 @@
         <tbody>
         {#for hit in picker.resultados}
         <tr>
-            <td style="font-family:monospace">{hit.codigo}</td>
+            <td class="kit-code">{hit.codigo}</td>
             <td style="font-weight:500">
                 {hit.nombre}
                 {#if hit.departamento?? || hit.familia??}

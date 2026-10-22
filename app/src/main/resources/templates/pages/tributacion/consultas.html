@@ -24,13 +24,12 @@
         {#include _kit/confirm /}
 
         <div x-data="{ tab: '{tabActiva}' }">
-        <div class="tributacion-header">
-            <p class="title is-3 has-text-centered">Consultas de Facturas</p>
-            <p class="subtitle is-6 has-text-centered" style="color:white;opacity:0.85">Estado de facturas y envíos programados</p>
+        {#include _kit/page-header title="Consultas de Facturas"
+             subtitle="Estado de facturas y envíos programados" /}
+
             <p class="has-text-centered">
                 <span id="consultas-countdown"
-                      class="is-family-monospace has-text-weight-bold is-size-4"
-                      style="color:white"
+                      class="kit-countdown kit-code"
                       title="{proximoEnvioDisplay}"
                       hx-get="{config:['quarkus.http.root-path']}/api/app/tributacion/consultas/countdown"
                       hx-trigger="every 5s"
@@ -61,7 +60,6 @@
                 </button>
             </div>
             </div>
-        </div>
 
         <div class="buttons" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:40">
             <button type="button" class="button is-info"
@@ -120,7 +118,7 @@
                         <td>{#if f.cliente??}{f.cliente}{#else}-{/if}</td>
                         <td class="has-text-right">₡{#if f.total??}{f.total}{#else}0{/if}</td>
                         <td>{#if f.motivoRechazo??}{f.motivoRechazo}{#else}No especificado{/if}</td>
-                        <td class="has-text-centered">{f.intentos}</td>
+                        <td class="num">{f.intentos}</td>
                         <td>{#if f.fechaRechazo??}{time:format(f.fechaRechazo, 'dd/MM/yyyy HH:mm')}{#else}-{/if}</td>
                         <td><span class="tag is-danger" title="Rechazado por Hacienda: no tiene validez fiscal y debe reemitirse (Art. 19). No se realiza nota de crédito.">Rechazada — pendiente de re-emisión</span></td>
                         <td>

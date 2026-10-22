@@ -105,12 +105,26 @@ public final class AppRecursoBase {
         return Response.ok(html)
                 .type(MediaType.TEXT_HTML_TYPE.withCharset("UTF-8")).build();
     }
-
     /** Redirección del cliente: HTMX navega y la página se vuelve a renderizar. */
     public static Response hxRedirect(@Nonnull String url) {
         return Response.status(Response.Status.OK)
-                .header("HX-Redirect", url)
+                .header("HX-Redirect", rootPath() + url)
                 .build();
+    }
+
+    /**
+     * La ruta raíz se antepone aquí. El valor del encabezado
+     * HX-Redirect lo resuelve el NAVEGADOR contra el origen, no contra la
+     * aplicación: sin el prefijo de {@code quarkus.http.root-path} el navegador
+     * pedía {@code /api/app/...} sobre una aplicación montada en
+     * {@code /Mercurius} y la respuesta era un 404. Todos los call sites
+     * pasan una ruta relativa al despliegue y el helper la vuelve absoluta.
+     */
+    private static String rootPath() {
+        return org.eclipse.microprofile.config.ConfigProvider.getConfig()
+                .getOptionalValue("quarkus.http.root-path", String.class)
+                .map(path -> path.endsWith("/") ? path.substring(0, path.length() - 1) : path)
+                .orElse("");
     }
 
     /** Columna del modelo de tabla; el orden de inserción define el orden visible. */

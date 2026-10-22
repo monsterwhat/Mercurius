@@ -11,7 +11,7 @@
         <tbody>
             <tr><th>Código</th><td>{ajuste.codigo}</td></tr>
             <tr><th>Artículo</th><td>{#if ajuste.articuloNombre??}{ajuste.articuloNombre}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Código de barra</th><td style="font-family:monospace">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Código de barra</th><td class="kit-code">{#if ajuste.codigoBarra??}{ajuste.codigoBarra}{#else}&mdash;{/if}</td></tr>
             <tr><th>Cantidad</th><td>{#if ajuste.cantidad??}{ajuste.cantidad}{#else}&mdash;{/if}</td></tr>
             <tr><th>Unidades recomendadas</th><td>{#if ajuste.unidadesRecomendadasFactura??}{ajuste.unidadesRecomendadasFactura}{#else}&mdash;{/if}</td></tr>
             <tr><th>Tipo de movimiento</th><td>{#if ajuste.tipoMovimiento??}{ajuste.tipoMovimiento}{#else}&mdash;{/if}</td></tr>

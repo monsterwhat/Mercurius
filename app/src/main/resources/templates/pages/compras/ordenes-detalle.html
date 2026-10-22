@@ -107,7 +107,7 @@
         {#if orden.puedeRecibir}
         <button class="button is-success" type="button"
                 hx-put="{config:['quarkus.http.root-path']}/api/app/ordenes/{orden.id}/recibir"
-                hx-swap="none">&#10003; Marcar como Recibida</button>
+                hx-swap="none">{#include _kit/icon name="check" /} Marcar como Recibida</button>
         {/if}
         {#if orden.puedeCancelar}
         <button class="button is-danger" type="button" aria-haspopup="dialog" data-kit-open="cancelar-orden"

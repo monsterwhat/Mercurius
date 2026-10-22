@@ -19,8 +19,8 @@
 <div id="detalle-factura-body">
     {! ── Encabezado ──────────────────────────────────────────────────── !}
     <div class="columns is-multiline is-mobile">
-        <div class="column is-half"><p class="heading">Consecutivo</p><p class="subtitle is-6" style="font-family:monospace">{#if d.consecutivo??}{d.consecutivo}{#else}&mdash;{/if}</p></div>
-        <div class="column is-half"><p class="heading">Clave Hacienda</p><p class="subtitle is-6" style="font-family:monospace;font-size:0.75rem">{#if d.clave??}{d.clave}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Consecutivo</p><p class="subtitle is-6" class="kit-code">{#if d.consecutivo??}{d.consecutivo}{#else}&mdash;{/if}</p></div>
+        <div class="column is-half"><p class="heading">Clave Hacienda</p><p class="subtitle is-6" class="kit-code is-size-7">{#if d.clave??}{d.clave}{#else}&mdash;{/if}</p></div>
         <div class="column is-half"><p class="heading">Emisor</p><p class="subtitle is-6">{#if d.emisorNombre??}{d.emisorNombre}{#else}&mdash;{/if}</p></div>
         <div class="column is-half"><p class="heading">Receptor</p><p class="subtitle is-6">{#if d.receptorNombre??}{d.receptorNombre}{#else}&mdash;{/if}</p></div>
         <div class="column is-half"><p class="heading">Fecha de emisión</p><p class="subtitle is-6">{#if d.fechaEmision??}{d.fechaEmision}{#else}&mdash;{/if}</p></div>

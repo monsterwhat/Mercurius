@@ -21,38 +21,21 @@
         <div class="level">
             <div class="level-left">
                 <div>
-                    <p class="title is-3">Gestión Tributaria</p>
+                    <h1 class="title is-3">Gestión Tributaria</h1>
                     <p class="subtitle is-5 has-text-grey">Administración de facturación electrónica, CAByS y declaraciones</p>
                 </div>
             </div>
         </div>
 
         {! ── KPI Summary Cards ──────────────────────────────────── !}
-        <div class="columns is-multiline mb-5">
-            <div class="column is-3">
-                <div class="box has-text-centered">
-                    <p class="title is-1" style="margin-bottom:0">{totalFacturas ?: 0}</p>
-                    <p class="subtitle is-6">Total Facturas</p>
-                </div>
-            </div>
-            <div class="column is-3">
-                <div class="box has-text-centered">
-                    <p class="title is-1 has-text-info" style="margin-bottom:0">{totalEnviadas ?: 0}</p>
-                    <p class="subtitle is-6">Enviadas</p>
-                </div>
-            </div>
-            <div class="column is-3">
-                <div class="box has-text-centered">
-                    <p class="title is-1 has-text-success" style="margin-bottom:0">{totalAceptadas ?: 0}</p>
-                    <p class="subtitle is-6">Aceptadas</p>
-                </div>
-            </div>
-            <div class="column is-3">
-                <div class="box has-text-centered">
-                    <p class="title is-1 has-text-danger" style="margin-bottom:0">{totalRechazadas ?: 0}</p>
-                    <p class="subtitle is-6">Rechazadas</p>
-                </div>
-            </div>
+        {! The four totals were four boxes with four hues and 48px numbers.
+           A set of peer metrics is ONE strip: the numbers are the same
+           size, the same colour, and the period is in the label. !}
+        <div class="metric-strip">
+            {#include _kit/metric label="Total facturas" value=totalFacturas /}
+            {#include _kit/metric label="Enviadas" value=totalEnviadas /}
+            {#include _kit/metric label="Aceptadas" value=totalAceptadas /}
+            {#include _kit/metric label="Rechazadas" value=totalRechazadas /}
         </div>
 
         {! ── Navigation Cards ───────────────────────────────────── !}

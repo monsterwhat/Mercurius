@@ -166,7 +166,7 @@ class CabysPageTest extends support.ContextPathIsolation {
                     .when().put(BASE + "/api/app/cabys/" + codigo)
                     .then()
                     .statusCode(200)
-                    .header("HX-Redirect", equalTo("/api/app/cabys/table"));
+                    .header("HX-Redirect", equalTo("/Mercurius/api/app/cabys/table"));
 
             Models.Cabys updated = cabysService.find(codigo);
             assertNotNull(updated);

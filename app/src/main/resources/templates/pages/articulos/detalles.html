@@ -12,14 +12,14 @@
     <table class="table is-fullwidth is-narrow">
         <tbody>
             <tr><th style="width:35%">Código</th><td>{articulo.codigo}</td></tr>
-            <tr><th>Código Barra</th><td style="font-family:monospace">{#if articulo.codigoBarra??}{articulo.codigoBarra}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Código Barra</th><td class="kit-code">{#if articulo.codigoBarra??}{articulo.codigoBarra}{#else}&mdash;{/if}</td></tr>
             <tr><th>Nombre</th><td style="font-weight:500">{articulo.nombre}</td></tr>
             <tr><th>Descripción</th><td>{#if articulo.descripcion??}{articulo.descripcion}{#else}&mdash;{/if}</td></tr>
             <tr><th>Unidad de Medida</th><td>{#if articulo.unidadMedida??}{articulo.unidadMedida}{#else}&mdash;{/if}</td></tr>
             <tr><th>Unidad de Medida Comercial</th><td>{#if articulo.unidadMedidaComercial??}{articulo.unidadMedidaComercial}{#else}&mdash;{/if}</td></tr>
             <tr><th>Departamento</th><td>{#if articulo.departamento??}{articulo.departamento.nombre}{#else}&mdash;{/if}</td></tr>
             <tr><th>Familia</th><td>{#if articulo.familia??}{articulo.familia.nombre}{#else}&mdash;{/if}</td></tr>
-            <tr><th>Código CABYS</th><td style="font-family:monospace">{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo} - {articulo.codigoCabys.descripcion}{#else}&mdash;{/if}</td></tr>
+            <tr><th>Código CABYS</th><td class="kit-code">{#if articulo.codigoCabys??}{articulo.codigoCabys.codigo} - {articulo.codigoCabys.descripcion}{#else}&mdash;{/if}</td></tr>
             <tr><th>Tipo de Refrigeración</th><td>
                 {#if articulo.tipoRefrigeracion??}
                     {#if articulo.tipoRefrigeracion == 'NINGUNA'}Sin refrigeración

@@ -41,7 +41,7 @@
         {#rows}
             {#for fila in modelo.filas}
             <tr>
-                <td style="font-weight:500;font-family:monospace;font-size:0.875rem">{#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}&mdash;{/if}</td>
+                <td class="kit-code">{#if fila.dto.consecutivo??}{fila.dto.consecutivo}{#else}&mdash;{/if}</td>
                 <td>{#if fila.dto.fechaEmision??}{fila.dto.fechaEmision}{#else}&mdash;{/if}</td>
                 <td>{#if fila.dto.emisorNombre??}{fila.dto.emisorNombre}{#else}&mdash;{/if}</td>
                 <td class="has-text-right" style="font-weight:600">{#if fila.dto.totalComprobante??}&#8362;{fila.dto.totalComprobante}{#else}&mdash;{/if}</td>
@@ -73,11 +73,11 @@
                     <button type="button" class="button is-small is-link" title="Aceptar factura (Mensaje Receptor)"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/accept"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">&#10004;</button>
+                            hx-confirm="&iquest;Aceptar la factura (Mensaje Receptor)?">{#include _kit/icon name="check" /}</button>
                     <button type="button" class="button is-small is-danger" title="Rechazar factura (Mensaje Receptor)"
                             hx-post="{config:['quarkus.http.root-path']}/api/app/recibos/{fila.dto.id}/reject"
                             hx-target="#recibos-tablero" hx-swap="outerHTML"
-                            hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">&#10008;</button>
+                            hx-confirm="&iquest;Rechazar la factura (Mensaje Receptor)?">{#include _kit/icon name="close" /}</button>
                 </td>
             </tr>
             {#else}

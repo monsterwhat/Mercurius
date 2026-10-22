@@ -42,7 +42,7 @@
         <div class="field">
             <label class="label" for="articulo-cabys">Código CABYS:</label>
             <div class="control has-buttons-right" style="display:flex; gap:0.5rem">
-                <input class="input" id="articulo-cabys" name="cabysCodigo" style="font-family:monospace"
+                <input class="input" id="articulo-cabys" name="cabysCodigo" class="kit-code"
                        placeholder="Seleccione un código del CABYS"
                        value="{#if modo == 'editar' && articulo.codigoCabys??}{articulo.codigoCabys.codigo}{/if}"/>
                 <button type="button" class="button is-link"

@@ -31,28 +31,25 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="usuarios-header">
-            <p class="title is-3 has-text-centered">Usuarios del Sistema</p>
+        {#include _kit/page-header title="Usuarios del Sistema"
+             subtitle="Cuentas, roles y estado de cada usuario" /}
 
-            {! Stat cards — click to filter the table by status !}
-            <div class="stats-grid">
-                <a class="stat-card {#if filtroEstado == null}active{/if}" style="color:inherit"
-                   href="{config:['quarkus.http.root-path']}/app/usuarios">
-                    <span class="stat-number">{usuariosTotal ?: 0}</span>
-                    <span class="stat-label">Total</span>
-                </a>
-                <a class="stat-card {#if filtroEstado == 'activo'}active{/if}" style="color:inherit"
-                   href="{config:['quarkus.http.root-path']}/app/usuarios?estado=activo">
-                    <span class="stat-number">{usuariosActivosCount ?: 0}</span>
-                    <span class="stat-label">Activos</span>
-                </a>
-                <a class="stat-card {#if filtroEstado == 'inactivo'}active{/if}" style="color:inherit"
-                   href="{config:['quarkus.http.root-path']}/app/usuarios?estado=inactivo">
-                    <span class="stat-number">{usuariosInactivosCount ?: 0}</span>
-                    <span class="stat-label">Inactivos</span>
-                </a>
-            </div>
+        {! The three counts are FILTERS, not tabs: each one links to the same
+           board with a different status. The metric card href variant is
+           exactly that, and the active one is the current filter. !}
+        {#let filtroActual = (filtroEstado ?: "todos")}
+        <div class="metric-strip">
+            {#include _kit/metric label="Total" value=usuariosTotal
+                 href="{config:['quarkus.http.root-path']}/app/usuarios"
+                 active=(filtroActual == "todos") /}
+            {#include _kit/metric label="Activos" value=usuariosActivosCount
+                 href="{config:['quarkus.http.root-path']}/app/usuarios?estado=activo"
+                 active=(filtroActual == "activo") /}
+            {#include _kit/metric label="Inactivos" value=usuariosInactivosCount
+                 href="{config:['quarkus.http.root-path']}/app/usuarios?estado=inactivo"
+                 active=(filtroActual == "inactivo") /}
         </div>
+        {/let}
 
         {#include pages/usuarios/tabla modelo=tablaUsuarios q=tablaUsuarios.q /}
 
@@ -62,7 +59,7 @@
 
         {#if inject:securityIdentity.hasRole('admin')}
         {!$1!}
-        {#include _kit/modal id="crear-usuario" title="Crear Usuario" triggerLabel="Crear Usuario" triggerClass="is-success"
+        {#include _kit/modal id="crear-usuario" title="Crear Usuario" triggerLabel="Crear Usuario" triggerClass="is-primary"
              bodyUrl="/api/app/users/formularios/nuevo"}{/include}
         {/if}
     </section>

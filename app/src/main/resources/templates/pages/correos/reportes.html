@@ -32,18 +32,30 @@
 
     {#body}
     <section class="section" style="padding-top:1rem">
-        <div class="correos-header">
-            <p class="title is-3 has-text-centered">Reportes Programados X Correo Electronico</p>
-            <div class="stats-grid" style="max-width:320px;margin-left:auto;margin-right:auto">
-                <div class="stat-card">
-                    <span class="stat-number">{#if totalReportes??}{totalReportes}{#else}0{/if}</span>
-                    <span class="stat-label">Reportes Programados</span>
-                </div>
-            </div>
-        </div>
+        {#include _kit/page-header title="Reportes Programados por Correo"
+             subtitle="Env
+í
+o autom
+á
+tico de reportes por correo electr
+ó
+nico" /}
+
+        {! The single count was a card of its own. The table footer already
+           says how many rows there are, so the card repeated it in a box. !}
+             subtitle="Env
+í
+o autom
+á
+tico de reportes por correo electr
+ó
+nico" /}
+
+        {! The single count was a card of its own. The table footer already
+           says how many rows there are, so the card repeated it in a box. !}
 
         <div class="buttons">
-            {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-success"
+            {#include _kit/modal id="crear-reporte" title="Crear Reporte Programado" triggerLabel="Crear Reporte Programado" triggerClass="is-primary"
                  bodyUrl="/api/app/reportes-programados/formularios/nueva"}{/include}
         </div>
 

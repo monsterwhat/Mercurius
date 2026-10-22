@@ -500,7 +500,22 @@ These are the decisions the components now encode. They are written down because
 * **A module does not get its own colour.** The twelve gradient banners are now ONE flat banner. They carried three separate defects: a gradient that carried no information, hard-coded hex palettes on five of them that ignored the colour scheme, and contrast failures (white on the pale-yellow warning banner measured 1.1:1).
 * **One filled primary per screen.** The export buttons were filled green next to the filled primary, which gave the screen two accents and two competing calls to action. They are bordered secondaries now.
 
-### Type
+### The screen
+
+* **Every screen has exactly one `<h1>`, and it is the screen's name.** A `<p class="title is-3">` is not a heading: it gives the document no outline and a screen reader nothing to name the screen by. The legacy pages carried their title that way; they now carry a real `<h1>`.
+* **The page title is 18-32px.** Bulma's `.title.is-3` is 2.5rem (40px) — a landing-page size. An operator reads the title of every screen all day and pays for it in vertical space on each one. The title is capped at 28px by the CSS layer, so a page that carries Bulma's class still lands at the app's size.
+* **One filled primary per screen.** A filled export button next to the filled primary gave the screen two accents and two competing calls to action; the export is a bordered secondary now. A hub of report links is a LIST, not twenty buttons: the links are quiet and the card titles carry the structure.
+* **A board's counts are either FILTERS or TABS — not stat cards.** The legacy `.stat-card` was doing both jobs at once: on `usuarios` and `clientes` the three cards were filters that linked to the same board with a different status, and on `categorias` and `inventario` they were a tab switcher. The filter is `_kit/metric` with an `href` and an `active` state; the switcher is `_kit/view-tabs`. A card that switches a panel and reports a count is neither.
+* **A metric card that Alpine binds to is written out, not included.** `_kit/metric` cannot take arbitrary attributes, so a bound card is the component's markup written by hand — exactly as `_kit/metric` documents. The alternative (a second include just for the Alpine case) would break "one component per concern".
+* **A count that the table footer already reports does not get a card of its own.** The single-count stat cards on `cabys` and `correos/reportes` repeated what the table's own footer said, in a box.
+* **Numbers are right-aligned with tabular figures.** A column of colones that is centred, or set in proportional digits, jitters as it updates. The `num` class does both.
+
+### Type and code
+
+* **Monospace is one class.** A code, an ID or a key is set in `.kit-code`. The twenty-five inline `style="font-family:monospace"` declarations are gone: they were a different font stack in every file, and they were the only place in the app where a number was not tabular.
+* **Uppercase tracked micro-labels are gone** from the kit, the legacy stat cards and the filter groups.
+
+### Type and colour of the legacy layer
 
 * **App type is not display type.** The page title is capped at 1.75rem (28px). Bulma's `.title.is-3` is 2.5rem (40px) — a landing-page size that an operator reads all day as shouting, and that costs vertical space on every screen.
 * **A KPI value is 1.5rem at 600.** Not 36px, not bold, not in the brand colour.

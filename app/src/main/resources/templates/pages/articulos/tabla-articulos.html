@@ -61,9 +61,9 @@
                         {#else}<span class="tag is-warning">Sin procesar</span>{/if}
                     {/if}
                 </td>
-                <td style="font-family:monospace">{#if articulo.codigoBarra??}{articulo.codigoBarra}{#else}&mdash;{/if}</td>
+                <td class="kit-code">{#if articulo.codigoBarra??}{articulo.codigoBarra}{#else}&mdash;{/if}</td>
                 {#if modelo.tab == 'activos'}
-                <td style="font-family:monospace">{#if articulo.cabysCodigo??}{articulo.cabysCodigo}{#else}&mdash;{/if}</td>
+                <td class="kit-code">{#if articulo.cabysCodigo??}{articulo.cabysCodigo}{#else}&mdash;{/if}</td>
                 {/if}
                 <td style="font-weight:500">{articulo.nombre}</td>
                 {#if modelo.tab == 'catalogo'}
